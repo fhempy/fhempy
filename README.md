@@ -6,6 +6,10 @@ This repository includes following examples:
  - googlecast
  - mdnsscanner
  
+## Usage in FHEM
+ 1. define pythonbinding BindingIo Python
+ 2. define castdevice PythonModule googlecast "Living Room"
+
 ## Functionality
 
 ### 10_BindingsIo
@@ -27,7 +31,3 @@ This example shows how Define function is called from the Python module.
  6. Python Define returns the result via JSON via websocket to BindingsIo
 
 At any time within the functions FHEM functons like readingsSingleUpdate(...) can be called by using the fhem.py module (fhem.readingsSingleUpdate(...)). There are just a few functions supported at the moment.
-
-## Usage in FHEM
- 1. define pythonbinding BindingIo Python
- 2. define castdevice PythonModule googlecast "Living Room"
