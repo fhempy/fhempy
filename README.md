@@ -7,7 +7,7 @@ This repository includes following examples:
  - mdnsscanner
  
 ## Usage in FHEM
- 1. define pythonbinding BindingIo Python
+ 1. define pythonbinding BindingsIo Python
  2. define castdevice PythonModule googlecast "Living Room"
 
 ## Functionality
