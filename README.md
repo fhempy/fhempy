@@ -10,8 +10,9 @@ This repository includes following examples:
 pip install asyncio pychromecast autobahn
  
 ## Usage in FHEM
- 1. define pythonbinding BindingsIo Python
- 2. define castdevice PythonModule googlecast "Living Room"
+ 1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/control_pythonbinding.txt
+ 2. define pythonbinding BindingsIo Python
+ 3. define castdevice PythonModule googlecast "Living Room"
 
 ## Functionality
 
