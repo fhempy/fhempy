@@ -5,6 +5,9 @@ FHEM Python binding allows the usage of Python language to write FHEM modules
 This repository includes following examples:
  - googlecast
  - mdnsscanner
+
+## Dependencies
+pip install asyncio pychromecast autobahn
  
 ## Usage in FHEM
  1. define pythonbinding BindingsIo Python
