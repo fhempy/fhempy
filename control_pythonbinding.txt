@@ -1,0 +1,16 @@
+DIR FHEM/bindings
+DIR FHEM/bindings/python
+DIR FHEM/bindings/python/lib
+DIR FHEM/bindings/python/lib/googlecast
+DIR FHEM/bindings/python/lib/mdnsscanner
+UPD 2020-07-15_21:47:49 7216 FHEM/10_BindingsIo.pm
+UPD 2020-07-15_21:47:49 2683 FHEM/10_PythonBinding.pm
+UPD 2020-07-15_21:47:49 2489 FHEM/10_PythonModule.pm
+UPD 2020-07-15_21:47:49 72 FHEM/bindings/python/pythonbinding.py
+UPD 2020-07-15_21:47:49 4433 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-07-15_21:47:49 3108 FHEM/bindings/python/lib/fhem.py
+UPD 2020-07-15_21:47:49 0 FHEM/bindings/python/lib/__init__.py
+UPD 2020-07-15_21:47:49 16746 FHEM/bindings/python/lib/googlecast/googlecast.py
+UPD 2020-07-15_21:47:49 0 FHEM/bindings/python/lib/googlecast/__init__.py
+UPD 2020-07-15_21:47:49 2314 FHEM/bindings/python/lib/mdnsscanner/mdnsscanner.py
+UPD 2020-07-15_21:47:49 0 FHEM/bindings/python/lib/mdnsscanner/__init__.py
