@@ -260,7 +260,7 @@ sub BindingsIo_readWebsocketMessage($$) {
           return $json->{error};
         }
         if ($devhash->{NAME} ne $json->{NAME}) {
-          Log3 $hash, 1, "Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
+          Log3 $hash, 1, "ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
           return "error";
         }
         foreach my $key (keys %$json) {
@@ -274,7 +274,7 @@ sub BindingsIo_readWebsocketMessage($$) {
     } elsif ($json->{msgtype} eq "command") {
       my $ret = 0;
       my %res;
-      eval "\$ret=".$json->{command};
+      $ret = eval $json->{command};
       if ($@) {
         Log3 $hash, 3, "Failed (".$json->{command}."): ".$@;
         %res = (
