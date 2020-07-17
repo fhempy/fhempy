@@ -6,12 +6,15 @@ import json
 import traceback
 import logging
 
+# import all modules for faster loading during runtime
 import lib.googlecast.googlecast
+import lib.mdnsscanner.mdnsscanner
+import lib.helloworld.helloworld
 
 from importlib import import_module
 from . import fhem
 
-logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(message)s', level=logging.ERROR)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -62,9 +65,8 @@ class FhemPyProtocol(WebSocketServerProtocol):
                 if (hash['function'] != "Undefine"):
                     if (not (hash["NAME"] in loadedModuleInstances)):
                         nm = 0
-                    
+
                         try:
-                            # TODO move import to startup to prevent timeout at the beginning
                             module_object = import_module(
                                 "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
                             target_class = getattr(module_object, hash["PYTHONTYPE"])
@@ -82,6 +84,7 @@ class FhemPyProtocol(WebSocketServerProtocol):
                     try:
                         func = getattr(nmInstance, hash["function"], "nofunction")
                         if (func != "nofunction"):
+                            # TODO use asyncio.wait_for to use a timeout for functions
                             ret = await func(hash, hash['args'], hash['argsh'])
                             if (ret == None):
                                 ret = ""
