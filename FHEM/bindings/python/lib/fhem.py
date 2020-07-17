@@ -1,5 +1,4 @@
 
-import telnetlib
 import json
 import random
 import asyncio
@@ -46,6 +45,13 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 async def CommandDefine(hash, definition):
     cmd = "CommandDefine(undef, \"" + definition + "\")"
+    return await sendCommandHash(hash, cmd)
+
+async def checkIfDeviceExists(hash, pythontype, internal, value):
+    cmd = "foreach my $fhem_dev (sort keys %main::defs) {" + \
+        "  return 1 if($main::defs{$fhem_dev}{PYTHONTYPE} eq '" + pythontype + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
+        "}" + \
+        "return 0;;"
     return await sendCommandHash(hash, cmd)
 
 # UTILS FUNCTIONS TO SEND COMMAND TO FHEM
