@@ -47,9 +47,9 @@ async def CommandDefine(hash, definition):
     cmd = "CommandDefine(undef, \"" + definition + "\")"
     return await sendCommandHash(hash, cmd)
 
-async def checkIfDeviceExists(hash, pythontype, internal, value):
+async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
     cmd = "foreach my $fhem_dev (sort keys %main::defs) {" + \
-        "  return 1 if($main::defs{$fhem_dev}{PYTHONTYPE} eq '" + pythontype + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
+        "  return 1 if($main::defs{$fhem_dev}{" + typeinternal + "} eq '" + pythontype + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
         "}" + \
         "return 0;;"
     return await sendCommandHash(hash, cmd)

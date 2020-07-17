@@ -48,11 +48,17 @@ class mdnsscanner:
 
             if (info.type == "_googlecast._tcp.local."):
                 # check if device exists already, if not commanddefine
-                if not (await fhem.checkIfDeviceExists(self.hash, "googlecast", "CASTNAME", get_value('fn'))):
+                if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "googlecast", "CASTNAME", get_value('fn'))):
                     logger.debug("create device: " + get_value('fn'))
                     await fhem.CommandDefine(self.hash, get_value('md').replace(" ", "_") + "_" + get_value('fn').replace(" ", "_") +  " PythonModule googlecast '" + get_value('fn') + "'")
                 else:
                     logger.debug("device " + get_value('fn') + " exists already, do not create")
+            elif (info.type == "_soundtouch._tcp.local."):
+                if not (await fhem.checkIfDeviceExists(self.hash, "TYPE", "BOSEST", "DEVICEID", "0")):
+                    logger.debug("create bosest")
+                    await fhem.CommandDefine(self.hash, "bosesystem BOSEST")
+                else:
+                    logger.debug("device BOSEST exists already, do not create")
         except Exception as err:
             logger.error(traceback.print_exc())
         self.foundDeviceActive = 0
