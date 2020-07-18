@@ -83,8 +83,19 @@ sub
 BindingsIo_doInit($) {
   my ($hash) = @_;
 
-  # TODO initialize all devices (send Define)
   BindingsIo_connectionCheck($hash);
+
+  # initialize all devices (send Define)
+  foreach my $fhem_dev (sort keys %main::defs) {
+    my $devhash = $main::defs{$fhem_dev};
+    if(defined($devhash->{PYTHONTYPE})) {
+      if (defined($devhash->{DEF})) {
+        fhem("defmod ".$devhash->{NAME}." PythonModule ".$devhash->{DEF});
+      } else {
+        fhem("defmod ".$devhash->{NAME}." PythonModule");
+      }
+    }
+  }
 }
 
 sub 
@@ -94,15 +105,13 @@ BindingsIo_connectionCheck($) {
     "msgtype" => "ping"
   );
   DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
-  my $response = DevIo_SimpleReadWithTimeout($hash, 1);
-  my $frame = Protocol::WebSocket::Frame->new;
-  $frame->append($response);
-  $response = $frame->next;
-  if ($response eq "") {
-    RemoveInternalTimer($hash);
+  my $ret = BindingsIo_readWebsocketMessage($hash, undef);
+  RemoveInternalTimer($hash, "BindingsIo_connectionCheck");
+  # TODO TODO re-connect doesn't work, InternalTimer doesn't continue when pythonbinding erstarts
+  if ($ret eq "offline" || $ret eq "empty") {
+    Log3 $hash, 1, "ERROR: No ping answer received, disconnected";
     DevIo_Disconnected($hash);
   } else {
-    RemoveInternalTimer($hash);
     InternalTimer(gettimeofday()+10, "BindingsIo_connectionCheck", $hash, 0);
   }
 }
@@ -271,6 +280,9 @@ sub BindingsIo_processMessage($$$) {
         }
         $returnval = $json->{returnval};
       }
+    } else {
+      Log3 $hash, 1, "ERROR: Received finished without devhash, add to queue";
+      $hash->{TempReceiverQueue}->enqueue($response);
     }
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
@@ -310,18 +322,16 @@ sub BindingsIo_readWebsocketMessage($$) {
   while ($response = $frame->next) {
     Log3 $hash, 3, ">>> WS: ".$response;
 
-    my $ret = BindingsIo_processMessage($hash, $devhash, $response);
-    if ($ret ne "continue") {
-      return $ret;
-    }
+    $hash->{ReceiverQueue}->enqueue($response);
   }
 
   # still no matching message received, check queue
+  my $returnval = "continue";
   $hash->{TempReceiverQueue} = Thread::Queue->new();
   while ($response = $hash->{ReceiverQueue}->dequeue_nb()) {
     my $ret = BindingsIo_processMessage($hash, $devhash, $response);
     if ($ret ne "continue") {
-      return $ret;
+      $returnval = $ret;
     }
   }
 
@@ -329,7 +339,7 @@ sub BindingsIo_readWebsocketMessage($$) {
   while ($response = $hash->{TempReceiverQueue}->dequeue_nb()) {
     $hash->{ReceiverQueue}->enqueue($response);
   }
-  return "continue";
+  return $returnval;
 }
 
 1;
