@@ -41,6 +41,9 @@ class FhemPyProtocol(WebSocketServerProtocol):
         logger.debug("<<< WS: " + json.dumps(retHash))
         hash['ws'].sendMessage(json.dumps(retHash).encode("utf-8"))
 
+    def onConnect(self, response):
+        logger.info("FHEM connection started from: {}".format(response.peer))
+
     async def onMessage(self, payload, isBinary):
         msg = payload.decode("utf-8")
         logger.debug(">>> WS: " + msg)
@@ -73,8 +76,10 @@ class FhemPyProtocol(WebSocketServerProtocol):
                             loadedModuleInstances[hash["NAME"]] = target_class()
                             if (hash["function"] != "Define"):
                                 func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                # TODO use asyncio.wait_for to use a timeout for functions
-                                await func(hash, hash['defargs'], hash['defargsh'])
+                                await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), timeout=0.8)
+                        except asyncio.TimeoutError:
+                            self.sendBackError(hash, "Function execution >0.8s, cancelled: " + hash["NAME"] + " - Define")
+                            return 0
                         except Exception as e:
                             self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
                             return 0
@@ -84,10 +89,12 @@ class FhemPyProtocol(WebSocketServerProtocol):
                     try:
                         func = getattr(nmInstance, hash["function"], "nofunction")
                         if (func != "nofunction"):
-                            # TODO use asyncio.wait_for to use a timeout for functions
-                            ret = await func(hash, hash['args'], hash['argsh'])
+                            ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), timeout=0.8)
                             if (ret == None):
                                 ret = ""
+                    except asyncio.TimeoutError:
+                        self.sendBackError(hash, "Function execution >0.8s, cancelled: " + hash["NAME"] + " - " + hash["function"])
+                        return 0
                     except Exception as e:
                         self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
                         return 0

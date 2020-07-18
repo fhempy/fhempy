@@ -6,6 +6,9 @@ package main;
 use strict;
 use warnings;
 
+use threads;
+use Thread::Queue;
+
 use JSON;
 use Time::HiRes qw(time);
 use Protocol::WebSocket::Frame;
@@ -52,6 +55,8 @@ BindingsIo_Define($$$)
     $port = 15733;
   }
   $hash->{DeviceName} = "ws:127.0.0.1:".$port;
+  $hash->{BindingType} = $bindingType;
+  $hash->{ReceiverQueue} = Thread::Queue->new();
 
   my $foundServer = 0;
   foreach my $fhem_dev (sort keys %main::defs) {
@@ -126,18 +131,20 @@ BindingsIo_Write($$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
 
   if($hash->{STATE} eq "disconnected") {
-    readingsSingleUpdate($devhash, "state", "PythonServer offline", 1);
+    readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
     return undef;
   }
 
-  Log3 $hash, 3, "callPythonFunction: ".$devhash->{NAME}." => ".$function;
+  Log3 $hash, 3, "start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => ".$function;
 
   if ($function eq "Define") {
     $devhash->{args} = $a;
     $devhash->{argsh} = $h;
+    # FIXME remove Python wording to be language independent
     $devhash->{PYTHONTYPE} = @$a[2];
   }
 
+  # FIXME remove Python wording to be language independent
   my %msg = (
     "msgtype" => "function",
     "NAME" => $devhash->{NAME},
@@ -157,7 +164,7 @@ BindingsIo_Write($$$$) {
     my $t2 = time * 1000;
     if (($t2 - $t1) > 1000) {
       # stop loop after ... ms
-      Log3 $hash, 3, "Timeout while waiting for function to finish ($function)";
+      Log3 $hash, 1, "ERROR: Timeout while waiting for function to finish ($function)";
       $returnval = "Timeout while waiting for reply from $function";
       last;
     }
@@ -167,10 +174,12 @@ BindingsIo_Write($$$$) {
       last;
     }
   }
+  Log3 $hash, 3, "end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => ".$function." - result: ".$returnval;
 
   if ($returnval eq "") {
     $returnval = undef;
   } elsif ($returnval eq "offline") {
+    # FIXME remove Python wording to be language independent
     #readingsSingleUpdate($devhash, "state", "PythonServer offline", 1);
   }
   
@@ -232,67 +241,93 @@ BindingsIo_Shutdown($)
   return undef;
 }
 
-#### CALL NODE SUBS ####
-sub BindingsIo_readWebsocketMessage($$) {
-  my ($hash, $devhash) = @_;
+sub BindingsIo_processMessage($$$) {
+  my ($hash, $devhash, $response) = @_;
 
-  my $response = DevIo_SimpleReadWithTimeout($hash, 1);
-  return "empty" if (!defined($response));
+  if ($response eq "") {
+    DevIo_Disconnected($hash);
+    return "offline";
+  }
+  my $json = eval {decode_json($response)};
+  if ($@) {
+    Log3 $hash, 3, "JSON error: ".$@;
+    return "error";
+  }
 
-  my $frame = Protocol::WebSocket::Frame->new;
-  $frame->append($response);
-  while ($response = $frame->next) {
-    Log3 $hash, 3, ">>> WS: ".$response;
-    if ($response eq "") {
-      DevIo_Disconnected($hash);
-      return "offline";
-    }
-    my $json = eval {decode_json($response)};
-    if ($@) {
-      Log3 $hash, 3, "JSON error: ".$@;
-      return "error";
-    }
-
-    my $returnval = "";
-    if ($json->{msgtype} eq "function") {
-      if ($json->{finished} == "1" && defined($devhash)) {
-        if ($json->{error}) {
-          return $json->{error};
-        }
-        if ($devhash->{NAME} ne $json->{NAME}) {
-          Log3 $hash, 1, "ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
-          return "error";
-        }
+  my $returnval = "continue";
+  if ($json->{msgtype} eq "function") {
+    if ($json->{finished} == "1" && defined($devhash)) {
+      if ($json->{error}) {
+        return $json->{error};
+      }
+      if ($devhash->{NAME} ne $json->{NAME}) {
+        Log3 $hash, 1, "ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
+        $hash->{TempReceiverQueue}->enqueue($response);
+      } else {
         foreach my $key (keys %$json) {
           next if ($key eq "msgtype" or $key eq "finished" or $key eq "ws" or $key eq "returnval" or $key 
             eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh");
           $devhash->{$key} = $json->{$key};
         }
         $returnval = $json->{returnval};
-        return $returnval;
       }
-    } elsif ($json->{msgtype} eq "command") {
-      my $ret = 0;
-      my %res;
-      $ret = eval $json->{command};
-      if ($@) {
-        Log3 $hash, 3, "Failed (".$json->{command}."): ".$@;
-        %res = (
-          awaitId => $json->{awaitId},
-          error => 1,
-          errorText => $@,
-          result => $ret
-        );
-      } else {
-        %res = (
-          awaitId => $json->{awaitId},
-          error => 0,
-          result => $ret
-        );
-      }
-      Log3 $hash, 3, "<<< WS: ".encode_json(\%res);
-      DevIo_SimpleWrite($hash, encode_json(\%res), 0);
     }
+  } elsif ($json->{msgtype} eq "command") {
+    my $ret = 0;
+    my %res;
+    $ret = eval $json->{command};
+    if ($@) {
+      Log3 $hash, 3, "Failed (".$json->{command}."): ".$@;
+      %res = (
+        awaitId => $json->{awaitId},
+        error => 1,
+        errorText => $@,
+        result => $ret
+      );
+    } else {
+      %res = (
+        awaitId => $json->{awaitId},
+        error => 0,
+        result => $ret
+      );
+    }
+    Log3 $hash, 3, "<<< WS: ".encode_json(\%res);
+    DevIo_SimpleWrite($hash, encode_json(\%res), 0);
+    return "continue";
+  }
+  return $returnval;
+}
+
+sub BindingsIo_readWebsocketMessage($$) {
+  my ($hash, $devhash) = @_;
+
+  # read messages from websocket
+  my $response = DevIo_SimpleReadWithTimeout($hash, 0.1);
+  return "empty" if (!defined($response));
+
+  my $frame = Protocol::WebSocket::Frame->new;
+  $frame->append($response);
+  while ($response = $frame->next) {
+    Log3 $hash, 3, ">>> WS: ".$response;
+
+    my $ret = BindingsIo_processMessage($hash, $devhash, $response);
+    if ($ret ne "continue") {
+      return $ret;
+    }
+  }
+
+  # still no matching message received, check queue
+  $hash->{TempReceiverQueue} = Thread::Queue->new();
+  while ($response = $hash->{ReceiverQueue}->dequeue_nb()) {
+    my $ret = BindingsIo_processMessage($hash, $devhash, $response);
+    if ($ret ne "continue") {
+      return $ret;
+    }
+  }
+
+  # add not matching messages to the queue
+  while ($response = $hash->{TempReceiverQueue}->dequeue_nb()) {
+    $hash->{ReceiverQueue}->enqueue($response);
   }
   return "continue";
 }
