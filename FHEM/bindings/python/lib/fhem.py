@@ -5,7 +5,7 @@ import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def updateConnection(ws):
     global wsconnection
@@ -82,9 +82,10 @@ def send_and_wait(name, cmd):
 
     wsconnection.msg_listeners.append(
         {"func": listener, "awaitId": msg['awaitId']})
-    logger.debug("<<< WS: " + json.dumps(msg))
+    msg = json.dumps(msg) + "\n";
+    logger.debug("<<< WS: " + msg)
     try:
-        wsconnection.sendMessage(json.dumps(msg).encode("utf-8"))
+        wsconnection.sendMessage(msg.encode("utf-8"))
     except Exception as e:
         logger.error("Failed to send message via websocket: " + e)
         future.set_exception(Exception("Failed to send message via web"))

@@ -17,7 +17,7 @@ from . import fhem
 logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(message)s', level=logging.ERROR)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 loadedModuleInstances = {}
 
@@ -30,16 +30,18 @@ class FhemPyProtocol(WebSocketServerProtocol):
         del retHash['ws']
         retHash['finished'] = 1
         retHash['returnval'] = ret
-        logger.debug("<<< WS: " + json.dumps(retHash))
-        hash['ws'].sendMessage(json.dumps(retHash).encode("utf-8"))
+        msg = json.dumps(retHash) + "\n";
+        logger.debug("<<< WS: " + msg)
+        hash['ws'].sendMessage(msg.encode("utf-8"))
 
     def sendBackError(self, hash, error):
         retHash = hash.copy()
         del retHash['ws']
         retHash['finished'] = 1
         retHash['error'] = error
-        logger.debug("<<< WS: " + json.dumps(retHash))
-        hash['ws'].sendMessage(json.dumps(retHash).encode("utf-8"))
+        msg = json.dumps(retHash) + "\n";
+        logger.debug("<<< WS: " + msg)
+        hash['ws'].sendMessage(msg.encode("utf-8"))
 
     def onConnect(self, response):
         logger.info("FHEM connection started from: {}".format(response.peer))
@@ -70,6 +72,7 @@ class FhemPyProtocol(WebSocketServerProtocol):
                         nm = 0
 
                         try:
+                            # TODO check how Set works if Define wasn't called (e.g. pythonbinding restart)
                             module_object = import_module(
                                 "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
                             target_class = getattr(module_object, hash["PYTHONTYPE"])
