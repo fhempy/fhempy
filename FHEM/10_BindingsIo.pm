@@ -11,7 +11,6 @@ use Thread::Queue;
 
 use JSON;
 use Time::HiRes qw(time);
-use Protocol::WebSocket::Frame;
 
 sub Log($$);
 sub Log3($$$);
@@ -75,44 +74,31 @@ BindingsIo_Define($$$)
 sub
 BindingsIo_connectDev($) {
   my ($hash) = @_;
-  DevIo_CloseDev($hash);
-  DevIo_OpenDev($hash, 0, undef, "BindingsIo_doInit");
+  DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
+  DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
 }
 
 sub
 BindingsIo_doInit($) {
   my ($hash) = @_;
 
-  BindingsIo_connectionCheck($hash);
-
   # initialize all devices (send Define)
   foreach my $fhem_dev (sort keys %main::defs) {
     my $devhash = $main::defs{$fhem_dev};
     if(defined($devhash->{PYTHONTYPE})) {
-      if (defined($devhash->{DEF})) {
-        fhem("defmod ".$devhash->{NAME}." PythonModule ".$devhash->{DEF});
-      } else {
-        fhem("defmod ".$devhash->{NAME}." PythonModule");
-      }
+      BindingsIo_Write($hash, $devhash, "Define", $devhash->{args}, $devhash->{argsh});
     }
   }
+
+  return undef;
 }
 
-sub 
-BindingsIo_connectionCheck($) {
-  my ($hash) = @_;
-  my %msg = (
-    "msgtype" => "ping"
-  );
-  DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
-  my $ret = BindingsIo_readWebsocketMessage($hash, undef);
-  RemoveInternalTimer($hash, "BindingsIo_connectionCheck");
-  # TODO TODO re-connect doesn't work, InternalTimer doesn't continue when pythonbinding erstarts
-  if ($ret eq "offline" || $ret eq "empty") {
-    Log3 $hash, 1, "ERROR: No ping answer received, disconnected";
-    DevIo_Disconnected($hash);
-  } else {
-    InternalTimer(gettimeofday()+10, "BindingsIo_connectionCheck", $hash, 0);
+sub
+BindingsIo_Callback($$) {
+  my ($hash, $error) = @_;
+  my $name = $hash->{NAME};
+  if (defined($error)) {
+    Log3 $name, 3, "BindingsIo ($name) - error while connecting: $error"; 
   }
 }
 
@@ -122,8 +108,7 @@ BindingsIo_Read($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  my $ret = BindingsIo_readWebsocketMessage($hash, undef);
-  # TODO set alle modules to offline if $ret eq "offline"
+  BindingsIo_readWebsocketMessage($hash, undef, 1);
 }
 
 sub
@@ -132,11 +117,11 @@ BindingsIo_Ready($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  return DevIo_OpenDev($hash, 1, undef, "BindingsIo_doInit") if($hash->{STATE} eq "disconnected");
+  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
 }
 
 sub
-BindingsIo_Write($$$$) {
+BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
 
   if($hash->{STATE} eq "disconnected") {
@@ -178,7 +163,7 @@ BindingsIo_Write($$$$) {
       last;
     }
     
-    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash);
+    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, 0);
     if ($returnval ne "empty" && $returnval ne "continue") {
       last;
     }
@@ -253,10 +238,6 @@ BindingsIo_Shutdown($)
 sub BindingsIo_processMessage($$$) {
   my ($hash, $devhash, $response) = @_;
 
-  if ($response eq "") {
-    DevIo_Disconnected($hash);
-    return "offline";
-  }
   my $json = eval {decode_json($response)};
   if ($@) {
     Log3 $hash, 3, "JSON error: ".$@;
@@ -310,22 +291,36 @@ sub BindingsIo_processMessage($$$) {
   return $returnval;
 }
 
-sub BindingsIo_readWebsocketMessage($$) {
-  my ($hash, $devhash) = @_;
+sub BindingsIo_readWebsocketMessage($$$) {
+  my ($hash, $devhash, $socketready) = @_;
 
   # read messages from websocket
-  my $response = DevIo_SimpleReadWithTimeout($hash, 0.1);
+  my $response = "";
+  if (defined($socketready) && $socketready == 1) {
+    $response = DevIo_SimpleRead($hash);
+    Log3 $hash, 3, "NoTimeout";
+  } else {
+    $response = DevIo_SimpleReadWithTimeout($hash, 0.1);
+    Log3 $hash, 3, "WithTimeout";
+  }
+  Log3 $hash, 3, "RAW RECEIVED: ".$response;
   return "empty" if (!defined($response));
 
-  my $frame = Protocol::WebSocket::Frame->new;
-  $frame->append($response);
-  while ($response = $frame->next) {
+  # read message from partial and socket and create final message
+  my $buffer = $hash->{PARTIAL};
+  $buffer .= $response;
+  
+  # extract messages and add to queue
+  while($buffer =~ m/\n/) {
+    my $msg;
+    ($msg, $buffer) = split("\n", $buffer, 2);
+    $response = $msg;
     Log3 $hash, 3, ">>> WS: ".$response;
-
     $hash->{ReceiverQueue}->enqueue($response);
   }
+  $hash->{PARTIAL} = $buffer;
 
-  # still no matching message received, check queue
+  # handle messages on the queue
   my $returnval = "continue";
   $hash->{TempReceiverQueue} = Thread::Queue->new();
   while ($response = $hash->{ReceiverQueue}->dequeue_nb()) {
