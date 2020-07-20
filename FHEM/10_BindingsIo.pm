@@ -140,6 +140,7 @@ BindingsIo_Write($$$$$) {
 
   # FIXME remove Python wording to be language independent
   my %msg = (
+    "id" => int(rand()*100000000),
     "msgtype" => "function",
     "NAME" => $devhash->{NAME},
     "PYTHONTYPE" => $devhash->{PYTHONTYPE},
@@ -149,6 +150,7 @@ BindingsIo_Write($$$$$) {
     "defargs" => $devhash->{args},
     "defargsh" => $devhash->{argsh}
   );
+  $devhash->{waitingForId} = $msg{id};
   Log3 $hash, 3, "<<< WS: ".encode_json(\%msg);
   DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
 
@@ -238,6 +240,7 @@ BindingsIo_Shutdown($)
 sub BindingsIo_processMessage($$$) {
   my ($hash, $devhash, $response) = @_;
 
+  Log3 $hash, 3, "processMessage: ".$response;
   my $json = eval {decode_json($response)};
   if ($@) {
     Log3 $hash, 3, "JSON error: ".$@;
@@ -246,7 +249,7 @@ sub BindingsIo_processMessage($$$) {
 
   my $returnval = "continue";
   if ($json->{msgtype} eq "function") {
-    if ($json->{finished} == "1" && defined($devhash)) {
+    if ($json->{finished} == "1" && defined($devhash) && $json->{id} eq $devhash->{waitingForId}) {
       if ($json->{error}) {
         return $json->{error};
       }
@@ -291,44 +294,66 @@ sub BindingsIo_processMessage($$$) {
   return $returnval;
 }
 
+# will be removed from DevIo, therefore it's copied here
+sub
+BindingsIo_SimpleReadWithTimeout($$)
+{
+  my ($hash, $timeout) = @_;
+
+  my $rin = "";
+  vec($rin, $hash->{FD}, 1) = 1;
+  my $nfound = select($rin, undef, undef, $timeout);
+  if ($nfound > 0) {
+    my $buf = DevIo_DoSimpleRead($hash);
+    $buf = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
+    return $buf;
+  }
+  return undef;
+}
+
 sub BindingsIo_readWebsocketMessage($$$) {
   my ($hash, $devhash, $socketready) = @_;
 
-  # read messages from websocket
+  # read message from websocket
+  my $returnval = "continue";
   my $response = "";
+  my $buffer = $hash->{PARTIAL};
   if (defined($socketready) && $socketready == 1) {
+    Log3 $hash, 3, "DevIo_SimpleRead";
     $response = DevIo_SimpleRead($hash);
-    Log3 $hash, 3, "NoTimeout";
+    Log3 $hash, 3, "DevIo_SimpleRead NoTimeout";
   } else {
-    $response = DevIo_SimpleReadWithTimeout($hash, 0.1);
-    Log3 $hash, 3, "WithTimeout";
+    Log3 $hash, 3, "DevIo_SimpleRead";
+    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.001);
+    Log3 $hash, 3, "DevIo_SimpleRead WithTimeout";
   }
   Log3 $hash, 3, "RAW RECEIVED: ".$response;
-  return "empty" if (!defined($response));
 
-  # read message from partial and socket and create final message
-  my $buffer = $hash->{PARTIAL};
-  $buffer .= $response;
-  
+  # add message to buffer
+  $buffer .= $response if (defined($response));
+
   # extract messages and add to queue
   while($buffer =~ m/\n/) {
     my $msg;
     ($msg, $buffer) = split("\n", $buffer, 2);
-    $response = $msg;
-    Log3 $hash, 3, ">>> WS: ".$response;
-    $hash->{ReceiverQueue}->enqueue($response);
+    Log3 $hash, 3, ">>> WS: ".$msg;
+    my $ret = BindingsIo_processMessage($hash, $devhash, $msg);
+    if ($ret ne "continue") {
+      $returnval = $ret;
+    }
   }
   $hash->{PARTIAL} = $buffer;
-
+  
   # handle messages on the queue
-  my $returnval = "continue";
   $hash->{TempReceiverQueue} = Thread::Queue->new();
+  Log3 $hash, 3, "QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
   while ($response = $hash->{ReceiverQueue}->dequeue_nb()) {
     my $ret = BindingsIo_processMessage($hash, $devhash, $response);
     if ($ret ne "continue") {
       $returnval = $ret;
     }
   }
+  Log3 $hash, 3, "QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
 
   # add not matching messages to the queue
   while ($response = $hash->{TempReceiverQueue}->dequeue_nb()) {
