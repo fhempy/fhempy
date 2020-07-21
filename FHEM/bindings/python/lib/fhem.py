@@ -82,7 +82,7 @@ def send_and_wait(name, cmd):
 
     wsconnection.msg_listeners.append(
         {"func": listener, "awaitId": msg['awaitId']})
-    msg = json.dumps(msg) + "\n";
+    msg = json.dumps(msg)
     logger.debug("<<< WS: " + msg)
     try:
         wsconnection.sendMessage(msg.encode("utf-8"))

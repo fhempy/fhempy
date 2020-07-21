@@ -31,7 +31,7 @@ class FhemPyProtocol(WebSocketServerProtocol):
         retHash['finished'] = 1
         retHash['returnval'] = ret
         retHash['id'] = hash['id']
-        msg = json.dumps(retHash) + "\n";
+        msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         hash['ws'].sendMessage(msg.encode("utf-8"))
 
@@ -41,7 +41,7 @@ class FhemPyProtocol(WebSocketServerProtocol):
         retHash['finished'] = 1
         retHash['error'] = error
         retHash['id'] = hash['id']
-        msg = json.dumps(retHash) + "\n";
+        msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         hash['ws'].sendMessage(msg.encode("utf-8"))
 

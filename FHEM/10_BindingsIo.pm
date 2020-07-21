@@ -317,7 +317,6 @@ sub BindingsIo_readWebsocketMessage($$$) {
   # read message from websocket
   my $returnval = "continue";
   my $response = "";
-  my $buffer = $hash->{PARTIAL};
   if (defined($socketready) && $socketready == 1) {
     Log3 $hash, 3, "DevIo_SimpleRead";
     $response = DevIo_SimpleRead($hash);
@@ -327,22 +326,14 @@ sub BindingsIo_readWebsocketMessage($$$) {
     $response = BindingsIo_SimpleReadWithTimeout($hash, 0.001);
     Log3 $hash, 3, "DevIo_SimpleRead WithTimeout";
   }
-  Log3 $hash, 3, "RAW RECEIVED: ".$response;
-
-  # add message to buffer
-  $buffer .= $response if (defined($response));
+  return "empty" if (!defined($response));
 
   # extract messages and add to queue
-  while($buffer =~ m/\n/) {
-    my $msg;
-    ($msg, $buffer) = split("\n", $buffer, 2);
-    Log3 $hash, 3, ">>> WS: ".$msg;
-    my $ret = BindingsIo_processMessage($hash, $devhash, $msg);
-    if ($ret ne "continue") {
-      $returnval = $ret;
-    }
+  Log3 $hash, 3, ">>> WS: ".$response;
+  my $ret = BindingsIo_processMessage($hash, $devhash, $response);
+  if ($ret ne "continue") {
+    $returnval = $ret;
   }
-  $hash->{PARTIAL} = $buffer;
   
   # handle messages on the queue
   $hash->{TempReceiverQueue} = Thread::Queue->new();
