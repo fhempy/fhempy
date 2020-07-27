@@ -3,7 +3,8 @@ import asyncio
 import logging
 import traceback
 import concurrent.futures
-from zeroconf import ServiceBrowser, Zeroconf, ZeroconfServiceTypes
+from zeroconf import ServiceBrowser, Zeroconf
+import threading
 
 from .. import fhem
 
@@ -16,7 +17,7 @@ class mdnsscanner:
         self.loop = asyncio.get_event_loop()
         self.zeroconf = None
         self.hash = None
-        self.foundDeviceActive = 0
+        self.foundDeviceActive = asyncio.Lock()
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -26,18 +27,11 @@ class mdnsscanner:
     def add_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
         logger.debug("Service %s added, service info: %s" % (name, info))
-        self.loop.create_task(self.foundDevice(name, info))
+        asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
 
     async def foundDevice(self, name, info):
-        # due to non async callback, we need to make sure that only one process runs
-        while True:
-            if self.foundDeviceActive == 1:
-                await asyncio.sleep(1)
-            else:
-                break
-
+        await self.foundDeviceActive.acquire()
         try:
-            self.foundDeviceActive = 1
             def get_value(key):
                 """Retrieve value and decode to UTF-8."""
                 value = info.properties.get(key.encode("utf-8"))
@@ -61,7 +55,7 @@ class mdnsscanner:
                     logger.debug("device BOSEST exists already, do not create")
         except Exception as err:
             logger.error(traceback.print_exc())
-        self.foundDeviceActive = 0
+        self.foundDeviceActive.release()
     
     async def runZeroconfScan(self):
         self.zeroconf = Zeroconf()

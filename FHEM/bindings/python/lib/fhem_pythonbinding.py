@@ -5,6 +5,7 @@ from autobahn.asyncio.websocket import WebSocketServerProtocol, \
 import json
 import traceback
 import logging
+import threading
 
 # import all modules for faster loading during runtime
 import lib.googlecast.googlecast
@@ -33,7 +34,8 @@ class FhemPyProtocol(WebSocketServerProtocol):
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
-        hash['ws'].sendMessage(msg.encode("utf-8"))
+        hash['ws'].sendMessage(msg.encode("utf-8"), isBinary=False)
+
 
     def sendBackError(self, hash, error):
         retHash = hash.copy()
@@ -43,74 +45,77 @@ class FhemPyProtocol(WebSocketServerProtocol):
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
-        hash['ws'].sendMessage(msg.encode("utf-8"))
+        hash['ws'].sendMessage(msg.encode("utf-8"), isBinary=False)
 
     def onConnect(self, response):
         logger.info("FHEM connection started from: {}".format(response.peer))
 
     async def onMessage(self, payload, isBinary):
-        msg = payload.decode("utf-8")
-        logger.debug(">>> WS: " + msg)
-        hash = json.loads(msg)
-        hash['ws'] = self
-        fhem.updateConnection(self)
+        try:
+            msg = payload.decode("utf-8")
+            logger.debug(">>> WS: " + msg)
+            hash = json.loads(msg)
+            hash['ws'] = self
+            fhem.updateConnection(self)
 
-        if ("awaitId" in hash and len(self.msg_listeners) > 0):
-            removeElement = None
-            for listener in self.msg_listeners:
-                if (listener['awaitId'] == hash["awaitId"]):
-                    listener['func'](msg)
-                    removeElement = listener
-            if (removeElement):
-                self.msg_listeners.remove(removeElement)
-        else:
-            ret = ''
-            if (hash['msgtype'] == "function"):
-                
-                # load module
-                nmInstance = None
-                if (hash['function'] != "Undefine"):
-                    if (not (hash["NAME"] in loadedModuleInstances)):
-                        nm = 0
+            if ("awaitId" in hash and len(self.msg_listeners) > 0):
+                removeElement = None
+                for listener in self.msg_listeners:
+                    if (listener['awaitId'] == hash["awaitId"]):
+                        listener['func'](msg)
+                        removeElement = listener
+                if (removeElement):
+                    self.msg_listeners.remove(removeElement)
+            else:
+                ret = ''
+                if (hash['msgtype'] == "function"):
+                    
+                    # load module
+                    nmInstance = None
+                    if (hash['function'] != "Undefine"):
+                        if (not (hash["NAME"] in loadedModuleInstances)):
+                            nm = 0
 
+                            try:
+                                # TODO check how Set works if Define wasn't called (e.g. pythonbinding restart)
+                                module_object = import_module(
+                                    "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
+                                target_class = getattr(module_object, hash["PYTHONTYPE"])
+                                loadedModuleInstances[hash["NAME"]] = target_class()
+                                if (hash["function"] != "Define"):
+                                    func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
+                                    await func(hash, hash['defargs'], hash['defargsh'])
+                            except asyncio.TimeoutError:
+                                self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - Define")
+                                return 0
+                            except Exception as e:
+                                self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
+                                return 0
+                        nmInstance = loadedModuleInstances[hash["NAME"]]
+
+                    if (nmInstance != None):
                         try:
-                            # TODO check how Set works if Define wasn't called (e.g. pythonbinding restart)
-                            module_object = import_module(
-                                "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
-                            target_class = getattr(module_object, hash["PYTHONTYPE"])
-                            loadedModuleInstances[hash["NAME"]] = target_class()
-                            if (hash["function"] != "Define"):
-                                func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                await func(hash, hash['defargs'], hash['defargsh'])
+                            func = getattr(nmInstance, hash["function"], "nofunction")
+                            if (func != "nofunction"):
+                                ret = await func(hash, hash['args'], hash['argsh'])
+                                if (ret == None):
+                                    ret = ""
                         except asyncio.TimeoutError:
-                            self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - Define")
+                            self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - " + hash["function"])
                             return 0
                         except Exception as e:
-                            self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
+                            self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
                             return 0
-                    nmInstance = loadedModuleInstances[hash["NAME"]]
+                    
+                    if (hash['function'] == "Undefine"):
+                        if hash["NAME"] in loadedModuleInstances:
+                            del loadedModuleInstances[hash["NAME"]]
+                    self.sendBackReturn(hash, ret)
 
-                if (nmInstance != None):
-                    try:
-                        func = getattr(nmInstance, hash["function"], "nofunction")
-                        if (func != "nofunction"):
-                            ret = await func(hash, hash['args'], hash['argsh'])
-                            if (ret == None):
-                                ret = ""
-                    except asyncio.TimeoutError:
-                        self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - " + hash["function"])
-                        return 0
-                    except Exception as e:
-                        self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
-                        return 0
-                
-                if (hash['function'] == "Undefine"):
-                    if hash["NAME"] in loadedModuleInstances:
-                        del loadedModuleInstances[hash["NAME"]]
-                self.sendBackReturn(hash, ret)
-
-            elif (hash['msgtype'] == "ping"):
-                self.sendBackReturn(hash, 0)
+                elif (hash['msgtype'] == "ping"):
+                    self.sendBackReturn(hash, 0)
+        except Exception as err:
+            logger.error("Failed to handle message: " + str(err))
 
 def run():
     logger.info("Starting pythonbinding...")
