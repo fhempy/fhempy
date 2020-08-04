@@ -344,7 +344,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
       DevIo_SimpleRead($hash);
       return "Websocket connection closed unexpected";
     }
-    Log3 $hash, 5, "BindingsIo: BindingsIo: DevIo_SimpleRead WithTimeout";
+    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout";
   }
   return "empty" if(!defined($response) || $response eq "");
 

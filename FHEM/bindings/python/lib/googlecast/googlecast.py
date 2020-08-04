@@ -13,8 +13,14 @@ logger.setLevel(logging.DEBUG)
 
 import pychromecast
 from pychromecast.error import ChromecastConnectionError
+# YouTube
 from pychromecast.controllers.youtube import YouTubeController
+# DashCast
 import pychromecast.controllers.dashcast as dashcast
+# Spotify
+from pychromecast.controllers.spotify import SpotifyController
+from spotipy.oauth2 import SpotifyClientCredentials
+import spotipy
 
 from .. import fhem
 
@@ -70,10 +76,13 @@ class googlecast:
                     url = argsh['url']
                     videoid = self.extract_video_id(url)
                     if (videoid == None):
-                        #get mime type
-                        with urllib.request.urlopen(url) as response:
-                            mime = response.info()
-                            self.cast.play_media(url, mime)
+                        if url.find("spotify"):
+                            self.loop.create_task(self.playSpotifyThread(url))
+                        else:
+                            #get mime type
+                            with urllib.request.urlopen(url) as response:
+                                mime = response.info()
+                                self.cast.play_media(url, mime)
                     else:
                         playlistid = self.extract_playlist_id(url)
                         self.loop.create_task(self.playYoutube(videoid, playlistid))
@@ -128,6 +137,53 @@ class googlecast:
                 if (len(args) > 2):
                     dashUrl = args[2]
                 self.loop.create_task(self.displayWebsite(dashUrl))
+
+    async def playSpotifyThread(self, uri):
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            result = await self.loop.run_in_executor(
+                pool, functools.partial(self.playSpotify, uri))
+
+    async def playSpotify(self, uri):
+        # FIXME user needs to enter CLIENT_ID and CLIENT_SECRET from Spotify Dashboard
+        client_credentials_manager = SpotifyClientCredentials("CLIENT_ID","CLIENT_SECRET")
+        data = client_credentials_manager.get_access_token()
+        access_token = data["access_token"]
+        expires = data["expires_in"]
+
+        # Create a spotify client
+        client = spotipy.Spotify(auth=access_token)
+
+        # Launch the spotify app on the cast we want to cast to
+        sp = SpotifyController(access_token, expires)
+        cast.register_handler(sp)
+        sp.launch_app()
+
+        if not sp.is_launched and not sp.credential_error:
+            logger.error("Failed to launch spotify controller due to timeout")
+            return
+        if not sp.is_launched and sp.credential_error:
+            logger.error("Failed to launch spotify controller due to credential error")
+            return
+
+        # Query spotify for active devices
+        devices_available = client.devices()
+
+        # Match active spotify devices with the spotify controller's device id
+        for device in devices_available["devices"]:
+            if device["id"] == sp.device:
+                spotify_device_id = device["id"]
+                break
+
+        if not spotify_device_id:
+            logger.error('No device with id "{}" known by Spotify'.format(sp.device))
+            logger.error("Known devices: {}".format(devices_available["devices"]))
+            return
+
+        # Start playback
+        if uri.find("track") > 0:
+            client.start_playback(device_id=spotify_device_id, uris=args.uri)
+        else:
+            client.start_playback(device_id=spotify_device_id, context_uri=args.uri[0])
 
     async def displayWebsite(self, url):
         d = dashcast.DashCastController()
