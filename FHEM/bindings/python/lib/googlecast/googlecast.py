@@ -1,14 +1,12 @@
 
 import asyncio
 import functools
-from threading import Thread, current_thread, Event
-from concurrent.futures import Future
+import concurrent.futures
 import urllib.request
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 import logging
 import traceback
-import threading
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -27,9 +25,7 @@ class googlecast:
         self.loop = asyncio.get_running_loop()
         self.hash = None
         self.currPosTask = None
-        self.updateReadingReady = asyncio.Lock()
         self.connectionStateCache = ""
-        self.tid = current_thread()
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -141,7 +137,9 @@ class googlecast:
     async def playYoutube(self, videoid, playlistid):
         yt = YouTubeController()
         self.cast.register_handler(yt)
-        yt.play_video(videoid, playlistid)
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            result = await self.loop.run_in_executor(
+                pool, functools.partial(yt.play_video, videoid, playlistid))
 
     def extract_video_id(self, url):
         # Examples:
@@ -186,41 +184,50 @@ class googlecast:
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
-        # make sure that only one update reading task is running
-        # wait for other updateReadingsTask to complete, this is needed due to new_connection_status not awaited
         logger.debug("new_connection_status: " + status.status)
 
         # prevent to many disconnect events
         if (status.status != self.connectionStateCache):
             self.connectionStateCache = status.status
-            updateReadingsTask = asyncio.run_coroutine_threadsafe(self.updateConnectionReadings(self.hash, status), self.loop)
+            # run reading updates in main thread
+            res = asyncio.run_coroutine_threadsafe(self.updateConnectionReadings(self.hash, status), self.loop)
+            res.result()
 
         if (status.status == "CONNECTED"):
-            updateReadingsTask = asyncio.run_coroutine_threadsafe(self.updateDeviceReadings(self.hash), self.loop)
+            # run reading updates in main thread
+            res = asyncio.run_coroutine_threadsafe(self.updateDeviceReadings(self.hash), self.loop)
+            res.result()
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_cast_status(self, status):
-        # async, therefore it needs to be added to mainloop
-        # wait for other updateReadingsTask to complete, this is needed due to new_cast_status not awaited
         logger.debug("new_cast_status")
-        updateReadingsTask = asyncio.run_coroutine_threadsafe(self.updateStatusReadings(self.hash, status), self.loop)
+        # run reading updates in main thread
+        res = asyncio.run_coroutine_threadsafe(self.updateStatusReadings(self.hash, status), self.loop)
+        res.result()
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_media_status(self, status):
-        #if (status.player_state == "PLAYING" and self.currPosTask == None and status.duration > 0):
-        #    self.currPosTask = self.loop.create_task(self.updateCurrentPosition())
-        #elif (status.player_state != "PLAYING"):
-        #    if (self.currPosTask):
-        #        self.currPosTask.cancel()
-        #        self.currPosTask = None
-        # async, therefore it needs to be added to mainloop
-        # wait for other updateReadingsTask to complete, this is needed due to new_media_status not awaited
+        if (status.player_state == "PLAYING" and self.currPosTask == None and status.duration > 0):
+            self.currPosTask = self.loop.create_task(self.updateCurrentPosition())
+        elif (status.player_state != "PLAYING"):
+            if (self.currPosTask):
+                self.currPosTask.cancel()
+                self.currPosTask = None
         logger.debug("new_media_status")
-        updateReadingsTask = asyncio.run_coroutine_threadsafe(self.updateMediaStatusReadings(self.hash, status), self.loop)
+        # run reading updates in main thread
+        res = asyncio.run_coroutine_threadsafe(self.updateMediaStatusReadings(self.hash, status), self.loop)
+        res.result()
+        
+    async def updateCurrentPosition(self):
+        try:
+            while True:
+                await asyncio.sleep(30)
+                self.cast.media_controller.update_status()
+        except Exception as err:
+            logger.error(err)
 
     async def updateConnectionReadings(self, hash, status):
         logger.debug("updateConnectionReading")
-        await self.updateReadingReady.acquire()
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "connection", status.status.lower())
         if (status.status == "CONNECTED"):
@@ -228,11 +235,9 @@ class googlecast:
         else:
             await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsEndUpdate(hash, 1)
-        self.updateReadingReady.release()
-
+        
     async def updateStatusReadings(self, hash, status):
         logger.debug("updateStatusReadings")
-        await self.updateReadingReady.acquire()
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "volume", round(status.volume_level*100))
         await fhem.readingsBulkUpdateIfChanged(hash, "is_active_input", status.is_active_input)
@@ -246,15 +251,6 @@ class googlecast:
         await fhem.readingsBulkUpdateIfChanged(hash, "icon_url", status.icon_url)
         await fhem.readingsBulkUpdateIfChanged(hash, "app_id", status.app_id)
         await fhem.readingsEndUpdate(hash, 1)
-        self.updateReadingReady.release()
-        
-    async def updateCurrentPosition(self):
-        try:
-            while True:
-                await asyncio.sleep(30)
-                self.cast.media_controller.update_status()
-        except Exception as err:
-            logger.error(err)
 
     async def updateMediaStatusReadings(self, hash, status):
         logger.debug("updateMediaStatusReadings")
@@ -298,11 +294,9 @@ class googlecast:
             else:
                 await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsEndUpdate(hash, 1)
-        self.updateReadingReady.release()
 
     async def updateDeviceReadings(self, hash):
         logger.debug("updateDeviceReadings")
-        await self.updateReadingReady.acquire()
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "name", self.cast.name)
         await fhem.readingsBulkUpdateIfChanged(hash, "model_name", self.cast.model_name)
@@ -311,4 +305,3 @@ class googlecast:
         #await fhem.readingsBulkUpdateIfChanged(hash, "uri", self.cast.uri)
         await fhem.readingsBulkUpdateIfChanged(hash, "ignore_cec", self.cast.ignore_cec)
         await fhem.readingsEndUpdate(hash, 1)
-        self.updateReadingReady.release()

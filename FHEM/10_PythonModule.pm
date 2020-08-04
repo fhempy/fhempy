@@ -107,31 +107,31 @@ PythonModule_Shutdown($)
 1;
 
 =pod
-=item summary    Module for FHEMSync devices
-=item summary_DE Modul zur Nutzung von FHEMSync Devices
+=item summary    Interface for Python modules
+=item summary_DE Schnittstelle fuer Python Module
 =begin html
 
 <a name="PythonModule"></a>
 <h3>PythonModule</h3>
 <ul>
-  FHEMSync synced devices are using this module.<br><br>
+  This module provides the interface for python modules.<br><br>
 
   <a name="PythonModule_Set"></a>
   <b>Set</b>
   <ul>
-  Please see REMOTETYPE module commandref.
+  Commandref for Python modules not yet supported.
   </ul>
 
   <a name="PythonModule_Get"></a>
   <b>Get</b>
   <ul>
-  Please see REMOTETYPE module commandref.
+  Commandref for Python modules not yet supported.
   </ul>
 
   <a name="PythonModule_Attr"></a>
   <b>Attr</b>
   <ul>
-  Please set attributes on the remote device.
+  Commandref for Python modules not yet supported.
   </ul>
 </ul><br>
 

@@ -17,7 +17,6 @@ class mdnsscanner:
         self.loop = asyncio.get_event_loop()
         self.zeroconf = None
         self.hash = None
-        self.foundDeviceActive = asyncio.Lock()
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -27,10 +26,10 @@ class mdnsscanner:
     def add_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
         logger.debug("Service %s added, service info: %s" % (name, info))
-        asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
+        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
+        res.result()
 
     async def foundDevice(self, name, info):
-        await self.foundDeviceActive.acquire()
         try:
             def get_value(key):
                 """Retrieve value and decode to UTF-8."""
@@ -45,6 +44,8 @@ class mdnsscanner:
                 if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "googlecast", "CASTNAME", get_value('fn'))):
                     logger.debug("create device: " + get_value('fn'))
                     await fhem.CommandDefine(self.hash, get_value('md').replace(" ", "_") + "_" + get_value('fn').replace(" ", "_") +  " PythonModule googlecast '" + get_value('fn') + "'")
+                    # wait for the device to initialize
+                    await asyncio.sleep(5)
                 else:
                     logger.debug("device " + get_value('fn') + " exists already, do not create")
             elif (info.type == "_soundtouch._tcp.local."):
@@ -55,7 +56,6 @@ class mdnsscanner:
                     logger.debug("device BOSEST exists already, do not create")
         except Exception as err:
             logger.error(traceback.print_exc())
-        self.foundDeviceActive.release()
     
     async def runZeroconfScan(self):
         self.zeroconf = Zeroconf()

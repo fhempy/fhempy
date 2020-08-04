@@ -3,16 +3,19 @@ import json
 import random
 import asyncio
 import logging
-import threading
+import traceback
+import concurrent.futures
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-lock = asyncio.Lock()
-
 def updateConnection(ws):
     global wsconnection
     wsconnection = ws
+
+def setCurrentDeviceName(name):
+    global current_dev
+    current_dev = name
 
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
@@ -55,7 +58,7 @@ async def CommandDefine(hash, definition):
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
     cmd = "foreach my $fhem_dev (sort keys %main::defs) {" + \
-        "  return 1 if($main::defs{$fhem_dev}{TYPE} eq 'PYTHONMODULE' && $main::defs{$fhem_dev}{" + typeinternal + "} eq '" + typevalue + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
+        "  return 1 if(defined($main::defs{$fhem_dev}{" + typeinternal + "}) && $main::defs{$fhem_dev}{" + typeinternal + "} eq '" + typevalue + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
         "}" + \
         "return 0;;"
     return await sendCommandHash(hash, cmd)
@@ -72,9 +75,8 @@ def convertValue(value):
     return str(value)
 
 
-def send_and_wait(name, cmd):
-    future = asyncio.get_running_loop().create_future()
-
+async def send_and_wait(name, cmd):
+    fut = asyncio.get_running_loop().create_future()
     msg = {
         "awaitId": random.randint(10000000, 99999999),
         "NAME": name,
@@ -83,48 +85,52 @@ def send_and_wait(name, cmd):
     }
 
     def listener(rmsg):
-        logger.debug("RECEIVED awaitid with Thread: " + str(threading.get_ident()))
         try:
-            future.set_result(rmsg)
+            fut.set_result(rmsg)
         except:
             logger.error("Failed to set result, received: " + rmsg)
 
-    wsconnection.msg_listeners.append(
-        {"func": listener, "awaitId": msg['awaitId']})
+    wsconnection.registerMsgListener(listener, msg['awaitId'])
     msg = json.dumps(msg)
     logger.debug("<<< WS: " + msg)
     try:
-        wsconnection.sendMessage(msg.encode("utf-8"), isBinary=False)
+        await wsconnection.send(msg)
     except Exception as e:
         logger.error("Failed to send message via websocket: " + e)
-        future.set_exception(Exception("Failed to send message via web"))
-
-    return future
+        fut.set_exception(Exception("Failed to send message via websocket"))
+    
+    return await fut
 
 
 async def sendCommandName(name, cmd):
     ret = ""
-    logger.debug("sendCommandName, waiting for lock")
-    await lock.acquire()
-    logger.debug("sendCommandName, locked")
+    # while True:
+    #     if current_dev is None:
+    #         # no function call running
+    #         break
+    #     elif current_dev == name:
+    #         # function call running, only send own command
+    #         break
+    #     else:
+    #         await asyncio.sleep(0.2)
     try:
         logger.debug("sendCommandName START")
         # wait max 1s for reply from FHEM
-        res = await asyncio.wait_for(send_and_wait(name, cmd), 1)
+        jsonmsg = await send_and_wait(name, cmd)
         logger.debug("sendCommandName END")
-        ret = json.loads(res)['result']
+        ret = json.loads(jsonmsg)['result']
     except asyncio.TimeoutError:
         logger.error("Timeout - NO RESPONSE for command: " + cmd)
         ret = ""
+    except concurrent.futures.CancelledError:
+        # function timeout
+        pass
     except Exception as e:
-        logger.error("Exception while waiting for reply: " + str(e))
+        logger.error("Exception while waiting for reply: " + e)
+        traceback.format_exc()
         ret = str(e)
-    finally:
-        lock.release()
-        logger.debug("sendCommandName, released")
     
     return ret
 
 async def sendCommandHash(hash, cmd):
     return await sendCommandName(hash["NAME"], cmd)
-

@@ -1,11 +1,9 @@
 
 import asyncio
-from autobahn.asyncio.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
+import websockets
 import json
 import traceback
 import logging
-import threading
 
 # import all modules for faster loading during runtime
 import lib.googlecast.googlecast
@@ -21,42 +19,59 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 loadedModuleInstances = {}
+wsconnection = None
 
-class FhemPyProtocol(WebSocketServerProtocol):
+async def pybinding(websocket, path):
+        logger.info("FHEM connection started: " + websocket.remote_address[0])
+        pb = PyBinding(websocket)
+        fhem.updateConnection(pb)
+        try:
+            async for message in websocket:
+                asyncio.create_task(pb.onMessage(message))
+        except websockets.exceptions.ConnectionClosedError:
+            logger.error("Connection closed error")
+            logger.info("Waiting for new FHEM connection...")
+
+
+class PyBinding:
 
     msg_listeners = []
 
-    def sendBackReturn(self, hash, ret):
+    def __init__(self, websocket):
+        self.wsconnection = websocket
+
+    def registerMsgListener(self, listener, awaitid):
+        self.msg_listeners.append({"func": listener, "awaitId": awaitid})
+
+    async def send(self, msg):
+        await self.wsconnection.send(msg)
+
+    async def sendBackReturn(self, hash, ret):
         retHash = hash.copy()
-        del retHash['ws']
         retHash['finished'] = 1
         retHash['returnval'] = ret
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
-        hash['ws'].sendMessage(msg.encode("utf-8"), isBinary=False)
+        await self.wsconnection.send(msg)
 
 
-    def sendBackError(self, hash, error):
+    async def sendBackError(self, hash, error):
+        logger.error(error + "(id: " + hash['id'] + ")")
         retHash = hash.copy()
-        del retHash['ws']
         retHash['finished'] = 1
         retHash['error'] = error
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
-        hash['ws'].sendMessage(msg.encode("utf-8"), isBinary=False)
+        await self.wsconnection.send(msg)
 
-    def onConnect(self, response):
-        logger.info("FHEM connection started from: {}".format(response.peer))
 
-    async def onMessage(self, payload, isBinary):
+    async def onMessage(self, payload):
         try:
-            msg = payload.decode("utf-8")
+            msg = payload
             logger.debug(">>> WS: " + msg)
             hash = json.loads(msg)
-            hash['ws'] = self
-            fhem.updateConnection(self)
 
             if ("awaitId" in hash and len(self.msg_listeners) > 0):
                 removeElement = None
@@ -70,6 +85,8 @@ class FhemPyProtocol(WebSocketServerProtocol):
                 ret = ''
                 if (hash['msgtype'] == "function"):
                     
+                    # prio for this device
+                    fhem.setCurrentDeviceName(hash["NAME"])
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
@@ -84,12 +101,12 @@ class FhemPyProtocol(WebSocketServerProtocol):
                                 loadedModuleInstances[hash["NAME"]] = target_class()
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                    await func(hash, hash['defargs'], hash['defargsh'])
+                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 1)
                             except asyncio.TimeoutError:
-                                self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - Define")
+                                await self.sendBackError(hash, "Function execution >1s, cancelled: " + hash["NAME"] + " - Define")
                                 return 0
                             except Exception as e:
-                                self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
+                                await self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
                                 return 0
                         nmInstance = loadedModuleInstances[hash["NAME"]]
 
@@ -97,39 +114,28 @@ class FhemPyProtocol(WebSocketServerProtocol):
                         try:
                             func = getattr(nmInstance, hash["function"], "nofunction")
                             if (func != "nofunction"):
-                                ret = await func(hash, hash['args'], hash['argsh'])
+                                ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
                                 if (ret == None):
                                     ret = ""
                         except asyncio.TimeoutError:
-                            self.sendBackError(hash, "Function execution >2s, cancelled: " + hash["NAME"] + " - " + hash["function"])
+                            await self.sendBackError(hash, "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"])
                             return 0
                         except Exception as e:
-                            self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
+                            await self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
                             return 0
                     
                     if (hash['function'] == "Undefine"):
                         if hash["NAME"] in loadedModuleInstances:
                             del loadedModuleInstances[hash["NAME"]]
-                    self.sendBackReturn(hash, ret)
+                    await self.sendBackReturn(hash, ret)
 
-                elif (hash['msgtype'] == "ping"):
-                    self.sendBackReturn(hash, 0)
         except Exception as err:
             logger.error("Failed to handle message: " + str(err))
+        finally:
+            fhem.setCurrentDeviceName(None)
 
 def run():
     logger.info("Starting pythonbinding...")
-    factory = WebSocketServerFactory("ws://127.0.0.1:15733")
-    factory.protocol = FhemPyProtocol
-
-    loop = asyncio.get_event_loop()
-    coro = loop.create_server(factory, '0.0.0.0', 15733)
-    server = loop.run_until_complete(coro)
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.close()
-        loop.close()
+    asyncio.get_event_loop().run_until_complete(
+        websockets.serve(pybinding, '0.0.0.0', 15733))
+    asyncio.get_event_loop().run_forever()

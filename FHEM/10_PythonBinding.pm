@@ -18,6 +18,7 @@ PythonBinding_Initialize($)
 
   $hash->{DefFn}    = 'PythonBinding_Define';
   $hash->{UndefFn}  = 'PythonBinding_Undefine';
+  $hash->{NotifyFn} = "PythonBinding_Notify";
   $hash->{GetFn}    = 'PythonBinding_Get';
   $hash->{SetFn}    = 'PythonBinding_Set';
   $hash->{AttrFn}   = 'PythonBinding_Attr';
@@ -38,6 +39,7 @@ sub
 PythonBinding_Define($$$)
 {
   my ($hash, $a, $h) = @_;
+  my $name = $hash->{NAME};
 
   Log3 $hash, 3, "PythonBinding v1.0.0";
 
@@ -48,6 +50,24 @@ PythonBinding_Define($$$)
 
   CoProcess::start($hash);
 
+  # TODO put in hidden room if everything works
+  #CommandAttr(undef, "$name room hidden");
+
+  return undef;
+}
+
+sub
+PythonBinding_Notify($$)
+{
+  my ($hash,$dev) = @_;
+   
+  return if($dev->{NAME} ne "global");
+   
+  if( grep(m/^INITIALIZED|REREADCFG$/, @{$dev->{CHANGED}}) ) {
+    CoProcess::start($hash);
+    return undef;
+  }
+   
   return undef;
 }
 
@@ -145,7 +165,7 @@ PythonBinding_Shutdown($)
 <a name="PythonBinding"></a>
 <h3>PythonBinding</h3>
 <ul>
-  PythonBinding runs the pythonbinding server .<br><br>
+  PythonBinding runs the pythonbinding server.<br><br>
 
   <a name="PythonBinding_Set"></a>
   <b>Set</b>
