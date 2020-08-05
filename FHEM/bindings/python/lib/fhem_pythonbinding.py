@@ -94,7 +94,6 @@ class PyBinding:
                             nm = 0
 
                             try:
-                                # TODO check how Set works if Define wasn't called (e.g. pythonbinding restart)
                                 module_object = import_module(
                                     "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
                                 target_class = getattr(module_object, hash["PYTHONTYPE"])
