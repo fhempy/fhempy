@@ -92,6 +92,7 @@ async def send_and_wait(name, cmd):
     logger.debug("<<< WS: " + msg)
     try:
         await wsconnection.send(msg)
+        logger.debug("message sent successfully")
     except Exception as e:
         logger.error("Failed to send message via websocket: " + e)
         fut.set_exception(Exception("Failed to send message via websocket"))
@@ -101,15 +102,6 @@ async def send_and_wait(name, cmd):
 
 async def sendCommandName(name, cmd):
     ret = ""
-    # while True:
-    #     if current_dev is None:
-    #         # no function call running
-    #         break
-    #     elif current_dev == name:
-    #         # function call running, only send own command
-    #         break
-    #     else:
-    #         await asyncio.sleep(0.2)
     try:
         logger.debug("sendCommandName START")
         # wait max 1s for reply from FHEM
