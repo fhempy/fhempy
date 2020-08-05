@@ -280,7 +280,8 @@ class googlecast:
                 await asyncio.sleep(30)
                 self.cast.media_controller.update_status()
         except Exception as err:
-            logger.error(err)
+            logger.error("Update media status failed")
+            traceback.print_exc()
 
     async def updateConnectionReadings(self, hash, status):
         logger.debug("updateConnectionReading")
