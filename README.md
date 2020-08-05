@@ -3,6 +3,7 @@
 FHEM Python binding allows the usage of Python language to write FHEM modules
 
 This repository includes following examples:
+ - helloworld
  - googlecast
  - mdnsscanner
 
@@ -13,6 +14,7 @@ pip install asyncio websockets pychromecast spotifpy zeroconf
  1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/control_pythonbinding.txt
  2. define pythonbinding BindingsIo Python
  3. define castdevice PythonModule googlecast "Living Room"
+ 4. set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"
 
 ## Functionality
 
