@@ -50,8 +50,8 @@ PythonBinding_Define($$$)
 
   CoProcess::start($hash);
 
-  # TODO put in hidden room if everything works
-  #CommandAttr(undef, "$name room hidden");
+  # put in hidden room
+  CommandAttr(undef, "$name room hidden");
 
   return undef;
 }
