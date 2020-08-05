@@ -54,6 +54,10 @@ class mdnsscanner:
                     await fhem.CommandDefine(self.hash, "bosesystem BOSEST")
                 else:
                     logger.debug("device BOSEST exists already, do not create")
+            else:
+                return
+
+            await fhem.readingsSingleUpdate(self.hash, "foundService", info.type, 1)
         except Exception as err:
             logger.error(traceback.print_exc())
     
@@ -66,6 +70,7 @@ class mdnsscanner:
     # FHEM
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
         self.loop.create_task(self.runZeroconfScan())
         return ""
 
