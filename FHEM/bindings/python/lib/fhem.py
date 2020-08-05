@@ -23,20 +23,17 @@ async def ReadingsVal(name, reading, default):
 
 async def readingsBeginUpdate(hash):
     cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
-    hash["cmdCache"] = cmd
+    return await sendCommandHash(hash, cmd)
 
 async def readingsBulkUpdateIfChanged(hash, reading, value):
     value = convertValue(value)
     cmd = "readingsBulkUpdateIfChanged($defs{'" + hash["NAME"] + "'},'" + \
         reading + "','" + value.replace("'", "\\'") + "');;"
-    hash["cmdCache"] += cmd
+    return await sendCommandHash(hash, cmd)
 
 async def readingsEndUpdate(hash, do_trigger):
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
-    hash["cmdCache"] += cmd
-    ret = await sendCommandHash(hash, hash["cmdCache"])
-    del hash["cmdCache"]
-    return ret
+    return await sendCommandHash(hash,cmd)
 
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
     value = convertValue(value)
