@@ -67,8 +67,8 @@ BindingsIo_Define($$$)
     BindingsIo_connectDev($hash);
   }
 
-  # TODO put in hidden room if everything works
-  #CommandAttr(undef, "$name room hidden");
+  # put in hidden room
+  CommandAttr(undef, "$name room hidden");
 
   return undef;
 }
@@ -307,7 +307,7 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
 
   if (!defined($hash->{FD})) {
     # connection closed
-    return "";
+    return "connectionclosed";
   }
   my $rin = "";
   vec($rin, $hash->{FD}, 1) = 1;
