@@ -44,8 +44,6 @@ class mdnsscanner:
                 if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "googlecast", "CASTNAME", get_value('fn'))):
                     logger.debug("create device: " + get_value('fn'))
                     await fhem.CommandDefine(self.hash, get_value('md').replace(" ", "_") + "_" + get_value('fn').replace(" ", "_") +  " PythonModule googlecast '" + get_value('fn') + "'")
-                    # wait for the device to initialize
-                    await asyncio.sleep(5)
                 else:
                     logger.debug("device " + get_value('fn') + " exists already, do not create")
             elif (info.type == "_soundtouch._tcp.local."):
@@ -57,11 +55,15 @@ class mdnsscanner:
             else:
                 return
 
-            await fhem.readingsSingleUpdate(self.hash, "foundService", info.type, 1)
+            await fhem.readingsSingleUpdate(self.hash, "lastFoundService", name, 1)
+            # wait for the devices to initialize
+            await asyncio.sleep(5)
         except Exception as err:
             logger.error(traceback.print_exc())
     
     async def runZeroconfScan(self):
+        # await here to finish define before zeroconf object is created
+        await asyncio.sleep(1)
         self.zeroconf = Zeroconf()
         listener = self
         services = ["_googlecast._tcp.local.", "_soundtouch._tcp.local."]
