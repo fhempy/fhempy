@@ -279,6 +279,9 @@ class googlecast:
             while True:
                 await asyncio.sleep(30)
                 self.cast.media_controller.update_status()
+        except concurrent.futures.CancelledError:
+            # task was cancelled, nothing playing
+            pass
         except Exception as err:
             logger.error("Update media status failed")
             traceback.print_exc()
