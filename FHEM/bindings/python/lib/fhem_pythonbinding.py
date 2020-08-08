@@ -54,6 +54,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
+        fhem.setFunctionInactive(hash["NAME"])
 
 
     async def sendBackError(self, hash, error):
@@ -65,14 +66,20 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
+        fhem.setFunctionInactive(hash["NAME"])
 
 
     async def onMessage(self, payload):
+        msg = payload
+        logger.debug(">>> WS: " + msg)
+        hash = None
         try:
-            msg = payload
-            logger.debug(">>> WS: " + msg)
             hash = json.loads(msg)
+        except:
+            logger.error("Websocket JSON couldn't be decoded")
+            return
 
+        try:
             if ("awaitId" in hash and len(self.msg_listeners) > 0):
                 removeElement = None
                 for listener in self.msg_listeners:
@@ -85,8 +92,8 @@ class PyBinding:
                 ret = ''
                 if (hash['msgtype'] == "function"):
                     
-                    # prio for this device
-                    fhem.setCurrentDeviceName(hash["NAME"])
+                    # prio for this device, do not send any other calls to fhem
+                    fhem.setFunctionActive(hash["NAME"])
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
@@ -130,8 +137,6 @@ class PyBinding:
 
         except Exception as err:
             logger.error("Failed to handle message: " + str(err))
-        finally:
-            fhem.setCurrentDeviceName(None)
 
 def run():
     logger.info("Starting pythonbinding...")

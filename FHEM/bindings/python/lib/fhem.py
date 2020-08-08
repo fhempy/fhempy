@@ -9,13 +9,18 @@ import concurrent.futures
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+function_active = []
+
 def updateConnection(ws):
     global wsconnection
     wsconnection = ws
 
-def setCurrentDeviceName(name):
-    global current_dev
-    current_dev = name
+def setFunctionActive(name):
+    function_active.append(name)
+
+def setFunctionInactive(name):
+    if function_active.pop() != name:
+        logger.error(f"Set wrong function inactive, tried {name}")
 
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
@@ -104,7 +109,13 @@ async def sendCommandName(name, cmd):
     ret = ""
     try:
         logger.debug("sendCommandName START")
-        # wait max 1s for reply from FHEM
+        # check if function_active[-1] == name
+        # if not, wait until len(function_active)==0
+        while len(function_active) != 0:
+            if function_active[-1] == name:
+                break
+            await asyncio.sleep(0.2)
+        # TODO wait max 1s for reply from FHEM
         jsonmsg = await send_and_wait(name, cmd)
         logger.debug("sendCommandName END")
         ret = json.loads(jsonmsg)['result']
