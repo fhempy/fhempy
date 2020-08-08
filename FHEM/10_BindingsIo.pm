@@ -53,7 +53,7 @@ BindingsIo_Define($$$)
     $port = 15733;
   }
   $hash->{DeviceName} = "ws:127.0.0.1:".$port;
-  $hash->{nextOpenDelay} = 1;
+  $hash->{nextOpenDelay} = 2;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
 
@@ -70,6 +70,7 @@ BindingsIo_Define($$$)
 
   # put in hidden room
   CommandAttr(undef, "$name room hidden");
+  CommandAttr(undef, "$name verbose 5");
 
   return undef;
 }
@@ -343,6 +344,12 @@ sub BindingsIo_readWebsocketMessage($$$$) {
       Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
       # connection seems to be closed, call simpleread to disconnect
       DevIo_SimpleRead($hash);
+      if (ReadingsVal($hash->{NAME}, "state", "opened") eq "opened") {
+        # for some reason it might happen that ws gets closed
+        # when received close message, DevIo_Disconnected tries
+        # to reopen
+        DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
+      }
       return "Websocket connection closed unexpected";
     }
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout";
