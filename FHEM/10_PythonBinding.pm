@@ -50,6 +50,8 @@ PythonBinding_Define($$$)
 
   CoProcess::start($hash);
 
+  readingsSingleUpdate($hash, "state", "active", 1);
+
   # put in hidden room
   CommandAttr(undef, "$name room hidden");
 
