@@ -8,8 +8,6 @@ use warnings;
 
 use JSON;
 use Time::HiRes qw(time);
-use Protocol::WebSocket::Handshake::Client;
-use Protocol::WebSocket::Frame;
 
 sub Log($$);
 sub Log3($$$);
