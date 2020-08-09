@@ -54,7 +54,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
-        fhem.setFunctionInactive(hash["NAME"])
+        fhem.setFunctionInactive(hash)
 
 
     async def sendBackError(self, hash, error):
@@ -66,7 +66,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
-        fhem.setFunctionInactive(hash["NAME"])
+        fhem.setFunctionInactive(hash)
 
 
     async def onMessage(self, payload):
@@ -93,7 +93,7 @@ class PyBinding:
                 if (hash['msgtype'] == "function"):
                     
                     # prio for this device, do not send any other calls to fhem
-                    fhem.setFunctionActive(hash["NAME"])
+                    fhem.setFunctionActive(hash)
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
