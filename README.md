@@ -8,7 +8,7 @@ This repository includes following examples:
  - mdnsscanner
 
 ## Dependencies
-pip install asyncio websockets pychromecast spotifpy zeroconf
+sudo pip3 install asyncio websockets pychromecast spotipy zeroconf
  
 ## Usage in FHEM
  1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
