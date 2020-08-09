@@ -1,6 +1,6 @@
 # FHEM Python Binding (BETA, might not be stable!)
 
-FHEM Python binding allows the usage of Python language to write FHEM modules
+FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
 This repository includes following examples:
  - helloworld
