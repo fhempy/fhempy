@@ -53,7 +53,7 @@ BindingsIo_Define($$$)
     $port = 15733;
   }
   $hash->{DeviceName} = "ws:127.0.0.1:".$port;
-  $hash->{nextOpenDelay} = 2;
+  $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
 
