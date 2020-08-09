@@ -12,9 +12,10 @@ pip install asyncio websockets pychromecast spotifpy zeroconf
  
 ## Usage in FHEM
  1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
- 2. define pythonbinding BindingsIo Python
- 3. define castdevice PythonModule googlecast "Living Room"
- 4. set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"
+ 2. update
+ 3. define pythonbinding BindingsIo Python
+ 4. define castdevice PythonModule googlecast "Living Room"
+ 5. set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"
 
 ## Functionality
 
