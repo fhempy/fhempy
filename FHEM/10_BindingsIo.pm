@@ -358,7 +358,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
 
   # extract messages and add to queue
   $hash->{TempReceiverQueue} = Thread::Queue->new();
-  Log3 $hash, 4, ">>> WS: ".$response;
+  Log3 $hash, 4, "BindingsIo: >>> WS: ".$response;
   my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
   if ($ret ne "continue") {
     $returnval = $ret;
