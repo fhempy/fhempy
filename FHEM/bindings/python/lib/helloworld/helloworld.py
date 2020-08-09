@@ -18,7 +18,6 @@ class helloworld:
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "on")
         await fhem.readingsBulkUpdateIfChanged(hash, "hello", "world")
         await fhem.readingsEndUpdate(hash, 1)
-
         return ""
 
     # FHEM FUNCTION
