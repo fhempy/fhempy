@@ -48,6 +48,7 @@ PythonBinding_Define($$$)
                           cmdFn => 'PythonBinding_getCmd',
                        };
 
+  chmod(744, PythonBinding_getCmd($hash));
   CoProcess::start($hash);
 
   readingsSingleUpdate($hash, "state", "active", 1);
