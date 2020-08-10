@@ -263,7 +263,7 @@ class googlecast:
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_media_status(self, status):
-        if (status.player_state == "PLAYING" and self.currPosTask == None and status.duration > 0):
+        if (status.player_state == "PLAYING" and self.currPosTask == None and status.duration and status.duration > 0):
             self.currPosTask = self.loop.create_task(self.updateCurrentPosition())
         elif (status.player_state != "PLAYING"):
             if (self.currPosTask):
