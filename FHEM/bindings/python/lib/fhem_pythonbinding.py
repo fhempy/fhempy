@@ -54,8 +54,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
-        fhem.setFunctionInactive(hash)
-
+        
 
     async def sendBackError(self, hash, error):
         logger.error(error + "(id: " + hash['id'] + ")")
@@ -66,8 +65,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
-        fhem.setFunctionInactive(hash)
-
+        
 
     async def onMessage(self, payload):
         msg = payload
@@ -91,9 +89,6 @@ class PyBinding:
             else:
                 ret = ''
                 if (hash['msgtype'] == "function"):
-                    
-                    # prio for this device, do not send any other calls to fhem
-                    fhem.setFunctionActive(hash)
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
@@ -141,5 +136,5 @@ class PyBinding:
 def run():
     logger.info("Starting pythonbinding...")
     asyncio.get_event_loop().run_until_complete(
-        websockets.serve(pybinding, '0.0.0.0', 15733))
+        websockets.serve(pybinding, '0.0.0.0', 15733, ping_timeout=None, ping_interval=None))
     asyncio.get_event_loop().run_forever()

@@ -10,6 +10,8 @@ use threads;
 use Thread::Queue;
 use Encode;
 
+use Protocol::WebSocket::Frame;
+
 use JSON;
 use Time::HiRes qw(time);
 
@@ -80,6 +82,17 @@ BindingsIo_connectDev($) {
   my ($hash) = @_;
   DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
   DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
+  # start reconnect checks
+  BindingsIo_reconnectDev($hash);
+}
+
+sub
+BindingsIo_reconnectDev($) {
+  my ($hash) = @_;
+  if (!DevIo_IsOpen($hash)) {
+    DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
+  }
+  InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
 }
 
 sub
@@ -166,7 +179,8 @@ BindingsIo_Write($$$$$) {
     if (($t2 - $t1) > 1100) {
       # stop loop after 1100ms
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
-      $returnval = "Timeout while waiting for reply from $function";
+      readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
+      $returnval = ""; # was before "Timeout while waiting for reply from $function"
       last;
     }
     
@@ -320,8 +334,10 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       # connection closed
       return "connectionclosed";
     } else {
-      my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
-      return $bufws;
+      #FIXME DevIo_DecodeWS not working properly
+      #my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
+      #return $bufws;
+      return $buf;
     }
   }
   return undef;
@@ -335,28 +351,31 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   my $response = "";
   if (defined($socketready) && $socketready == 1) {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
+    delete $hash->{WEBSOCKET};
     $response = DevIo_SimpleRead($hash);
+    my $frame = Protocol::WebSocket::Frame->new;
+    $frame->append($response);
+    $response = $frame->next;
+    $hash->{WEBSOCKET} = 1;
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
   } else {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
-    $response = BindingsIo_SimpleReadWithTimeout($hash, 1);
+    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.01);
+    my $frame = Protocol::WebSocket::Frame->new;
+    $frame->append($response);
+    $response = $frame->next;
     if (defined($response) && $response eq "connectionclosed") {
       Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
       # connection seems to be closed, call simpleread to disconnect
+      # connection will be reopened by reconnect
       DevIo_SimpleRead($hash);
-      if (ReadingsVal($hash->{NAME}, "state", "opened") eq "opened") {
-        # for some reason it might happen that ws gets closed
-        # when received close message, DevIo_Disconnected tries
-        # to reopen
-        DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
-      }
       return "Websocket connection closed unexpected";
     }
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout";
   }
   return "empty" if(!defined($response) || $response eq "");
 
-  # extract messages and add to queue
+  # handle current message
   $hash->{TempReceiverQueue} = Thread::Queue->new();
   Log3 $hash, 4, "BindingsIo: >>> WS: ".$response;
   my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);

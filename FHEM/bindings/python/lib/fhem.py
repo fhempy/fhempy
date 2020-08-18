@@ -15,16 +15,6 @@ def updateConnection(ws):
     global wsconnection
     wsconnection = ws
 
-def setFunctionActive(hash):
-    hash["pyFunctionActive"] = 1
-    function_active.append(hash["NAME"])
-
-def setFunctionInactive(hash):
-    hash["pyFunctionActive"] = 0
-    name = hash["NAME"]
-    if function_active.pop() != hash["NAME"]:
-        logger.error(f"Set wrong function inactive, tried {hash['NAME']}")
-
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
     return await sendCommandName(name, cmd)
@@ -114,12 +104,6 @@ async def sendCommandName(name, cmd, hash=None):
     ret = ""
     try:
         logger.debug("sendCommandName START")
-        # check if function_active[-1] == name
-        # if not, wait until len(function_active)==0
-        while len(function_active) != 0:
-            if function_active[-1] == name and hash is not None and hash["pyFunctionActive"] == 1:
-                break
-            await asyncio.sleep(0.2)
         # TODO wait max 1s for reply from FHEM
         jsonmsg = await send_and_wait(name, cmd)
         logger.debug("sendCommandName END")
