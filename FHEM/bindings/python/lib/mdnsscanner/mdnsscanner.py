@@ -17,6 +17,7 @@ class mdnsscanner:
         self.loop = asyncio.get_event_loop()
         self.zeroconf = None
         self.hash = None
+        self.browser = None
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -57,7 +58,7 @@ class mdnsscanner:
 
             await fhem.readingsSingleUpdate(self.hash, "lastFoundService", name, 1)
             # wait for the devices to initialize
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
         except Exception as err:
             logger.error(traceback.print_exc())
     
@@ -67,7 +68,7 @@ class mdnsscanner:
         self.zeroconf = Zeroconf()
         listener = self
         services = ["_googlecast._tcp.local.", "_soundtouch._tcp.local."]
-        browser = ServiceBrowser(self.zeroconf, services, listener)
+        self.browser = ServiceBrowser(self.zeroconf, services, listener)
 
     # FHEM
     async def Define(self, hash, args, argsh):
@@ -82,4 +83,6 @@ class mdnsscanner:
 
     # FHEM
     async def Undefine(self, hash, args, argsh):
+        if self.browser:
+            self.browser.cancel()
         self.zeroconf.close()
