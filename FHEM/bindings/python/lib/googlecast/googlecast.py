@@ -32,12 +32,18 @@ class googlecast:
         self.hash = None
         self.currPosTask = None
         self.connectionStateCache = ""
+        self.browser = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         if (len(args) > 3):
             hash["CASTNAME"] = args[3]
         self.hash = hash
+
+        if self.browser:
+            pychromecast.stop_discovery(self.browser)
+        if self.cast:
+            self.cast.disconnect()
 
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
@@ -188,7 +194,7 @@ class googlecast:
     async def displayWebsite(self, url):
         d = dashcast.DashCastController()
         self.cast.register_handler(d)
-        d.load_url(url, reload_seconds=60)
+        d.load_url(url, force=True, reload_seconds=30)
 
     async def playYoutube(self, videoid, playlistid):
         yt = YouTubeController()
@@ -236,7 +242,7 @@ class googlecast:
                 logger.debug("wait finished")
 
         logger.debug("Start discovery")
-        self.browser = pychromecast.get_chromecasts(blocking=False, tries=None, retry_wait=5, timeout=1, callback=castFound)
+        self.browser = pychromecast.get_chromecasts(blocking=False, tries=None, retry_wait=5, timeout=5, callback=castFound)
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
@@ -295,7 +301,7 @@ class googlecast:
         else:
             await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsEndUpdate(hash, 1)
-        
+
     async def updateStatusReadings(self, hash, status):
         logger.debug("updateStatusReadings")
         await fhem.readingsBeginUpdate(hash)
