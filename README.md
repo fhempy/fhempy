@@ -6,6 +6,7 @@ This repository includes following examples:
  - helloworld
  - googlecast
  - mdnsscanner
+ - blescanner
 
 ## Dependencies
 Python 3 is required, Python 2 won't work!
