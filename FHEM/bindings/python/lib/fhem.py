@@ -21,8 +21,9 @@ def setFunctionActive(hash):
 
 def setFunctionInactive(hash):
     name = hash["NAME"]
-    if function_active.pop() != hash["NAME"]:
-        logger.error(f"Set wrong function inactive, tried {hash['NAME']}")
+    element = function_active.pop()
+    if element != hash["NAME"]:
+        logger.error(f"Set wrong function inactive, tried {hash['NAME']}, current function_active: {function_active},{element}")
 
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
