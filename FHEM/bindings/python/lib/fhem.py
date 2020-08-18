@@ -5,6 +5,7 @@ import asyncio
 import logging
 import traceback
 import concurrent.futures
+import websockets
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -14,6 +15,14 @@ function_active = []
 def updateConnection(ws):
     global wsconnection
     wsconnection = ws
+
+def setFunctionActive(hash):
+    function_active.append(hash["NAME"])
+
+def setFunctionInactive(hash):
+    name = hash["NAME"]
+    if function_active.pop() != hash["NAME"]:
+        logger.error(f"Set wrong function inactive, tried {hash['NAME']}")
 
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
@@ -91,7 +100,7 @@ async def send_and_wait(name, cmd):
     try:
         await wsconnection.send(msg)
         logger.debug("message sent successfully")
-    except websockets.exceptions.ConnectionClosedError:
+    except websockets.exceptions.ConnectionClosed:
         logger.error("Connection closed, can't send message.")
     except Exception as e:
         logger.error("Failed to send message via websocket: " + e)
@@ -104,8 +113,12 @@ async def sendCommandName(name, cmd, hash=None):
     ret = ""
     try:
         logger.debug("sendCommandName START")
-        # TODO wait max 1s for reply from FHEM
-        jsonmsg = await send_and_wait(name, cmd)
+        while len(function_active) != 0:
+            if function_active[-1] == name:
+                break
+            await asyncio.sleep(0.1)
+        # wait max 1s for reply from FHEM
+        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 1)
         logger.debug("sendCommandName END")
         ret = json.loads(jsonmsg)['result']
     except asyncio.TimeoutError:

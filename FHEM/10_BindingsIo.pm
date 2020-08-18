@@ -255,10 +255,19 @@ BindingsIo_Shutdown($)
 
 sub BindingsIo_processMessage($$$$) {
   my ($hash, $devhash, $waitingForId, $response) = @_;
+  Log3 $hash, 5, "processMessage: ".$response;
   my $json = eval {decode_json($response)};
   if ($@) {
     Log3 $hash, 1, "BindingsIo: ERROR JSON: ".$@;
     return "error";
+  }
+
+  if ($waitingForId != 0) {
+    # function running
+    # skip messages which aren't part of the function
+    if ($devhash->{NAME} ne $json->{NAME}) {
+      return "nothandled";
+    }
   }
 
   my $returnval = "continue";
@@ -269,11 +278,7 @@ sub BindingsIo_processMessage($$$$) {
       }
       if ($devhash->{NAME} ne $json->{NAME}) {
         Log3 $hash, 1, "BindingsIo: ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
-        my $resTemp = {
-          "response" => $response,
-          "time" => time
-        };
-        $hash->{TempReceiverQueue}->enqueue($resTemp);
+        return "nothandled";
       } else {
         foreach my $key (keys %$json) {
           next if ($key eq "msgtype" or $key eq "finished" or $key eq "ws" or $key eq "returnval" or $key 
@@ -285,11 +290,7 @@ sub BindingsIo_processMessage($$$$) {
     } else {
       Log3 $hash, 4, "BindingsIo: Received message doesn't match, continue waiting...";
       Log3 $hash, 4, "BindingsIo:   received id (".$json->{id}.") = waiting for id (".$waitingForId.")";
-      my $resTemp = {
-        "response" => $response,
-        "time" => time
-      };
-      $hash->{TempReceiverQueue}->enqueue($resTemp);
+      return "nothandled";
     }
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
@@ -353,37 +354,34 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
     delete $hash->{WEBSOCKET};
     $response = DevIo_SimpleRead($hash);
-    my $frame = Protocol::WebSocket::Frame->new;
-    $frame->append($response);
-    $response = $frame->next;
     $hash->{WEBSOCKET} = 1;
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
   } else {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
     $response = BindingsIo_SimpleReadWithTimeout($hash, 0.01);
-    my $frame = Protocol::WebSocket::Frame->new;
-    $frame->append($response);
-    $response = $frame->next;
-    if (defined($response) && $response eq "connectionclosed") {
-      Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
-      # connection seems to be closed, call simpleread to disconnect
-      # connection will be reopened by reconnect
-      DevIo_SimpleRead($hash);
-      return "Websocket connection closed unexpected";
-    }
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout";
   }
-  return "empty" if(!defined($response) || $response eq "");
-
-  # handle current message
-  $hash->{TempReceiverQueue} = Thread::Queue->new();
-  Log3 $hash, 4, "BindingsIo: >>> WS: ".$response;
-  my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
-  if ($ret ne "continue") {
-    $returnval = $ret;
+  if (defined($response) && $response eq "connectionclosed") {
+    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
+    # connection seems to be closed, call simpleread to disconnect
+    # connection will be reopened by reconnect
+    DevIo_SimpleRead($hash);
+    return "Websocket connection closed unexpected";
   }
-  
+
+  my $frame = Protocol::WebSocket::Frame->new;
+  $frame->append($response);
+  while (my $r = $frame->next) {
+    Log3 $hash, 4, "BindingsIo: >>> WS: ".$r;
+    my $resTemp = {
+      "response" => $r,
+      "time" => time
+    };
+    $hash->{ReceiverQueue}->enqueue($resTemp);
+  }
+
   # handle messages on the queue
+  $hash->{TempReceiverQueue} = Thread::Queue->new();
   Log3 $hash, 5, "BindingsIo: QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
   while (my $msg = $hash->{ReceiverQueue}->dequeue_nb()) {
     if ((time - $msg->{'time'}) > 10) {
@@ -393,6 +391,9 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
     if ($ret ne "continue") {
       $returnval = $ret;
+    }
+    if ($ret eq "nothandled") {
+      $hash->{TempReceiverQueue}->enqueue($msg);
     }
   }
   Log3 $hash, 5, "BindingsIo: QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
