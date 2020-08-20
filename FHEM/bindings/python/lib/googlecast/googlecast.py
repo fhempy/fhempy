@@ -3,7 +3,7 @@ import asyncio
 import functools
 import concurrent.futures
 import logging
-import traceback
+import threading
 import urllib.request
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -23,6 +23,8 @@ import pychromecast.controllers.dashcast as dashcast
 from pychromecast.controllers.spotify import SpotifyController
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
+
+connection_update_lock = threading.Lock()
 
 class googlecast:
 
@@ -246,6 +248,8 @@ class googlecast:
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
+        # connection update might come from different threads
+        connection_update_lock.acquire()
         logger.debug("new_connection_status: " + status.status)
 
         # prevent to many disconnect events
@@ -259,6 +263,7 @@ class googlecast:
             # run reading updates in main thread
             res = asyncio.run_coroutine_threadsafe(self.updateDeviceReadings(self.hash), self.loop)
             res.result()
+        connection_update_lock.release()
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_cast_status(self, status):
@@ -289,8 +294,7 @@ class googlecast:
             # task was cancelled, nothing playing
             pass
         except Exception as err:
-            logger.error("Update media status failed")
-            traceback.print_exc()
+            logger.error("Update media status failed", exc_info=True)
 
     async def updateConnectionReadings(self, hash, status):
         logger.debug("updateConnectionReading")

@@ -117,7 +117,7 @@ async def sendCommandName(name, cmd, hash=None):
         while len(function_active) != 0:
             if function_active[-1] == name:
                 break
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
         # wait max 1s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 1)
         logger.debug("sendCommandName END")
