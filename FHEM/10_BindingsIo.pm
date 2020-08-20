@@ -18,6 +18,8 @@ use Time::HiRes qw(time);
 sub Log($$);
 sub Log3($$$);
 
+my $USE_DEVIO_DECODEWS = 0;
+
 sub
 BindingsIo_Initialize($)
 {
@@ -335,10 +337,12 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       # connection closed
       return "connectionclosed";
     } else {
-      #FIXME DevIo_DecodeWS not working properly
-      #my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
-      #return $bufws;
-      return $buf;
+      if ($USE_DEVIO_DECODEWS == 1) {
+        my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
+        return $bufws;
+      } else {
+        return $buf;
+      }
     }
   }
   return undef;
@@ -352,7 +356,9 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   my $response = "";
   if (defined($socketready) && $socketready == 1) {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
-    delete $hash->{WEBSOCKET};
+    if ($USE_DEVIO_DECODEWS == 0) {
+      delete $hash->{WEBSOCKET};
+    }
     $response = DevIo_SimpleRead($hash);
     $hash->{WEBSOCKET} = 1;
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
@@ -369,15 +375,26 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     return "Websocket connection closed unexpected";
   }
 
-  my $frame = Protocol::WebSocket::Frame->new;
-  $frame->append($response);
-  while (my $r = $frame->next) {
-    Log3 $hash, 4, "BindingsIo: >>> WS: ".$r;
-    my $resTemp = {
-      "response" => $r,
-      "time" => time
-    };
-    $hash->{ReceiverQueue}->enqueue($resTemp);
+  if ($USE_DEVIO_DECODEWS == 0) {
+    my $frame = Protocol::WebSocket::Frame->new;
+    $frame->append($response);
+    while (my $r = $frame->next) {
+      Log3 $hash, 4, "BindingsIo: >>> WS: ".$r;
+      my $resTemp = {
+        "response" => $r,
+        "time" => time
+      };
+      $hash->{ReceiverQueue}->enqueue($resTemp);
+    }
+  } else {
+    if (defined($response) && $response ne "") {
+      Log3 $hash, 4, "BindingsIo: >>> WS: ".$response;
+      my $resTemp = {
+        "response" => $response,
+        "time" => time
+      };
+      $hash->{ReceiverQueue}->enqueue($resTemp);
+    }
   }
 
   # handle messages on the queue

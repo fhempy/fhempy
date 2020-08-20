@@ -5,7 +5,7 @@ DIR FHEM/bindings/python/lib/helloworld
 DIR FHEM/bindings/python/lib/blescanner
 DIR FHEM/bindings/python/lib/googlecast
 DIR FHEM/bindings/python/lib/mdnsscanner
-UPD 2020-08-18_21:32:38 10791 FHEM/10_BindingsIo.pm
+UPD 2020-08-20_20:27:48 11195 FHEM/10_BindingsIo.pm
 UPD 2020-08-20_20:14:19 3160 FHEM/10_PythonBinding.pm
 UPD 2020-08-09_22:28:38 2437 FHEM/10_PythonModule.pm
 UPD 2020-08-09_22:23:29 73 FHEM/bindings/python/pythonbinding.py
