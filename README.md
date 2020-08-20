@@ -10,7 +10,9 @@ This repository includes following examples:
 
 ## Dependencies
 Python 3 is required, Python 2 won't work!
-sudo apt-get install libprotocol-websocket-perl
+
+sudo cpan Protocol::WebSocket
+
 sudo pip3 install asyncio websockets pychromecast spotipy zeroconf
  
 ## Usage in FHEM
