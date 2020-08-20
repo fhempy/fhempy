@@ -8,8 +8,8 @@ This repository includes following examples:
  - mdnsscanner
  - blescanner
 
-## Dependencies
-Python 3 is required, Python 2 won't work!
+## Installation
+Python 3.7 is required, Python 2 won't work!
 
 sudo cpan Protocol::WebSocket
 
