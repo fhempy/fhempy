@@ -13,7 +13,7 @@ Python 3.7 is required, Python 2 won't work!
 
 sudo cpan Protocol::WebSocket
 
-sudo pip3 install asyncio websockets pychromecast spotipy zeroconf
+sudo pip3 install asyncio websockets pychromecast spotipy zeroconf aiohttp
  
 ## Usage in FHEM
  1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
