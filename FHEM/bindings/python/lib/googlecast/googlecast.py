@@ -80,8 +80,13 @@ class googlecast:
 
             action = args[1]
             if (action == "play"):
+                url = ""
                 if ("url" in argsh):
                     url = argsh['url']
+                elif (len(args) > 2):
+                    url = args[2]
+
+                if len(url) > 0:
                     videoid = self.extract_video_id(url)
                     if (videoid == None):
                         if url.find("spotify"):
@@ -231,6 +236,9 @@ class googlecast:
         def castFound(chromecast):
             if chromecast.name == self.hash["CASTNAME"]:
                 logger.info("=> Discovered cast: " + chromecast.name)
+                if self.cast:
+                    # disconnect existing cast device if there is any
+                    self.cast.disconnect(blocking=False)
                 self.cast = chromecast
                 # add status listener
                 self.cast.register_connection_listener(self)
