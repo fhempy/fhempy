@@ -69,7 +69,8 @@ BindingsIo_Define($$$)
     CommandDefine(undef, $bindingType."binding ".$bindingType."Binding ".$port);
     InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
   } else {
-    BindingsIo_connectDev($hash);
+    # startup in process
+    InternalTimer(gettimeofday()+10, "BindingsIo_connectDev", $hash, 0);
   }
 
   # put in hidden room
@@ -82,10 +83,14 @@ BindingsIo_Define($$$)
 sub
 BindingsIo_connectDev($) {
   my ($hash) = @_;
-  DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
-  DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
-  # start reconnect checks
-  BindingsIo_reconnectDev($hash);
+  if ($init_done) {
+    DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
+    DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
+    # start reconnect checks
+    InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
+  } else {
+    InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
+  }
 }
 
 sub
@@ -144,7 +149,7 @@ sub
 BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
 
-  if($hash->{STATE} eq "disconnected") {
+  if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
     readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
     return undef;
   }
@@ -153,11 +158,6 @@ BindingsIo_Write($$$$$) {
   Log3 $hash, 4, "BindingsIo: start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
 
   my $bindingType = uc($hash->{BindingType})."TYPE";
-  if ($function eq "Define") {
-    $devhash->{args} = $a;
-    $devhash->{argsh} = $h;
-    $devhash->{$bindingType} = @$a[2];
-  }
 
   my %msg = (
     "id" => $waitingForId,

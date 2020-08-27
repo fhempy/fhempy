@@ -29,7 +29,7 @@ async def pybinding(websocket, path):
             async for message in websocket:
                 asyncio.create_task(pb.onMessage(message))
         except websockets.exceptions.ConnectionClosedError:
-            logger.error("Connection closed error")
+            logger.error("Connection closed error", exc_info=True)
             logger.info("Waiting for new FHEM connection...")
 
 
@@ -134,7 +134,7 @@ class PyBinding:
                     await self.sendBackReturn(hash, ret)
 
         except Exception as err:
-            logger.error("Failed to handle message: " + str(err))
+            logger.error("Failed to handle message: ", exc_info=True)
 
 def run():
     logger.info("Starting pythonbinding...")

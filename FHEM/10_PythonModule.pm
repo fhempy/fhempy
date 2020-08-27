@@ -32,6 +32,8 @@ sub
 PythonModule_Define($$$)
 {
   my ($hash, $a, $h) = @_;
+  $hash->{args} = $a;
+  $hash->{argsh} = $h;
   $hash->{PYTHONTYPE} = @$a[2];
   
   # check if PythonServer is running
@@ -48,6 +50,11 @@ PythonModule_Define($$$)
   Log3 $hash, 3, "PythonModule v1.0.0 (".$hash->{PYTHONTYPE}.")";
 
   AssignIoPort($hash, "pyBinding");
+
+  if (!$init_done) {
+    # Define will be done by PythonBinding connection callback
+    return undef;
+  }
 
   return IOWrite($hash, $hash, "Define", $a, $h);
 }
