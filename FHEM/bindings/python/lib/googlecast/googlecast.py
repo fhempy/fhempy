@@ -1,5 +1,6 @@
 
 import asyncio
+import aiohttp
 import functools
 import concurrent.futures
 import logging
@@ -89,13 +90,10 @@ class googlecast:
                 if len(url) > 0:
                     videoid = self.extract_video_id(url)
                     if (videoid == None):
-                        if url.find("spotify"):
+                        if url.find("spotify") >= 0:
                             self.loop.create_task(self.playSpotifyThread(url))
                         else:
-                            #get mime type
-                            with urllib.request.urlopen(url) as response:
-                                mime = response.info()
-                                self.cast.play_media(url, mime)
+                            self.loop.create_task(self.playDefaultMedia(url))
                     else:
                         playlistid = self.extract_playlist_id(url)
                         self.loop.create_task(self.playYoutube(videoid, playlistid))
@@ -150,6 +148,15 @@ class googlecast:
                 if (len(args) > 2):
                     dashUrl = args[2]
                 self.loop.create_task(self.displayWebsite(dashUrl))
+
+    async def playDefaultMedia(self, uri):
+        try:
+            session = aiohttp.ClientSession()
+            res = await session.get(uri)
+            mime = res.headers['Content-Type']
+            self.cast.play_media(uri, mime)
+        except:
+            logger.exception(f"Failed to play: {uri}")
 
     async def playSpotifyThread(self, uri):
         with concurrent.futures.ThreadPoolExecutor() as pool:
