@@ -49,9 +49,11 @@ PythonBinding_Define($$$)
                        };
 
   chmod(0744, PythonBinding_getCmd($hash));
-  CoProcess::start($hash);
 
   readingsSingleUpdate($hash, "state", "active", 1);
+  if ($init_done) {
+    CoProcess::start($hash);
+  }
 
   # put in hidden room
   CommandAttr(undef, "$name room hidden");

@@ -32,6 +32,7 @@ BindingsIo_Initialize($)
   $hash->{GetFn}    = 'BindingsIo_Get';
   $hash->{SetFn}    = 'BindingsIo_Set';
   $hash->{AttrFn}   = 'BindingsIo_Attr';
+  $hash->{NotifyFn}   = 'BindingsIo_Notify';
 
   $hash->{ReadFn}   = 'BindingsIo_Read';
   $hash->{ReadyFn}  = 'BindingsIo_Ready';
@@ -61,16 +62,15 @@ BindingsIo_Define($$$)
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
 
-  my $foundServer = 0;
-  foreach my $fhem_dev (sort keys %main::defs) {
-    $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
-  }
-  if ($foundServer == 0) {
-    CommandDefine(undef, $bindingType."binding ".$bindingType."Binding ".$port);
-    InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
-  } else {
-    # startup in process
-    InternalTimer(gettimeofday()+10, "BindingsIo_connectDev", $hash, 0);
+  if ($init_done) {
+    my $foundServer = 0;
+    foreach my $fhem_dev (sort keys %main::defs) {
+      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
+    }
+    if ($foundServer == 0) {
+      CommandDefine(undef, $bindingType."binding ".$bindingType."Binding ".$port);
+      InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
+    }
   }
 
   # put in hidden room
@@ -83,14 +83,10 @@ BindingsIo_Define($$$)
 sub
 BindingsIo_connectDev($) {
   my ($hash) = @_;
-  if ($init_done) {
-    DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
-    DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
-    # start reconnect checks
-    InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
-  } else {
-    InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
-  }
+  DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
+  DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
+  # start reconnect checks
+  InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
 }
 
 sub
@@ -113,6 +109,20 @@ BindingsIo_doInit($) {
     if(defined($devhash->{$bindingType})) {
       BindingsIo_Write($hash, $devhash, "Define", $devhash->{args}, $devhash->{argsh});
     }
+  }
+
+  return undef;
+}
+
+sub
+BindingsIo_Notify($)
+{
+  my ($hash, $dev) = @_;
+  return if($dev->{NAME} ne "global");
+
+  if( grep(m/^INITIALIZED$/, @{$dev->{CHANGED}}) ) {
+    InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
+    return undef;
   }
 
   return undef;
