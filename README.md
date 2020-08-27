@@ -8,8 +8,8 @@ This repository includes following examples:
  - mdnsscanner
  - blescanner
 
-## Dependencies
-Python 3 is required, Python 2 won't work!
+## Installation
+Python 3.7 is required, Python 2 won't work!
 
 sudo cpan Protocol::WebSocket
 
@@ -43,6 +43,8 @@ This example shows how Define function is called from the Python module.
  6. Python Define returns the result via JSON via websocket to BindingsIo
 
 At any time within the functions FHEM functons like readingsSingleUpdate(...) can be called by using the fhem.py module (fhem.readingsSingleUpdate(...)). There are just a few functions supported at the moment.
+
+![Flow Chart](/flowchart.png)
 
 ## Write own module
 Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use run_in_executor (see googlecast code).
