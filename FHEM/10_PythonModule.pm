@@ -49,7 +49,7 @@ PythonModule_Define($$$)
 
   Log3 $hash, 3, "PythonModule v1.0.0 (".$hash->{PYTHONTYPE}.")";
 
-  AssignIoPort($hash, "pyBinding");
+  AssignIoPort($hash);
 
   if (!$init_done) {
     # Define will be done by PythonBinding connection callback

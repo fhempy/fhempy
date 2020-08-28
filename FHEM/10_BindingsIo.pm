@@ -68,7 +68,7 @@ BindingsIo_Define($$$)
       $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
     }
     if ($foundServer == 0) {
-      CommandDefine(undef, $bindingType."binding ".$bindingType."Binding ".$port);
+      CommandDefine(undef, $bindingType."binding_".$port." ".$bindingType."Binding ".$port);
       InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
     }
   }
