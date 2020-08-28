@@ -241,11 +241,8 @@ class googlecast:
 
     def startDiscovery(self):
         def castFound(chromecast):
-            if chromecast.name == self.hash["CASTNAME"]:
+            if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
                 logger.info("=> Discovered cast: " + chromecast.name)
-                if self.cast:
-                    # disconnect existing cast device if there is any
-                    self.cast.disconnect(blocking=False)
                 self.cast = chromecast
                 # add status listener
                 self.cast.register_connection_listener(self)
