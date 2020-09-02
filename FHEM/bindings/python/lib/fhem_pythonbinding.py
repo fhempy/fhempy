@@ -118,7 +118,7 @@ class PyBinding:
                                     await fhem.readingsSingleUpdate(hash, "state", "Installing updates...", 1)
                                     # run only one installation and do depcheck before any other installation
                                     async with pip_lock:
-                                        # make sure that all import caches are up2date
+                                        # make sure that all import caches are up2date before check
                                         invalidate_caches()
                                         # check again if something changed for dependencies
                                         deps_ok = pkg_installer.check_dependencies(hash["PYTHONTYPE"])
@@ -129,6 +129,8 @@ class PyBinding:
                                                         pool, functools.partial(
                                                             pkg_installer.check_and_install_dependencies,
                                                             hash["PYTHONTYPE"]))
+                                    # update cache again after install
+                                    invalidate_caches()
                                     # when installation finished, inform user
                                     await fhem.readingsSingleUpdate(hash, "state", "Installation finished. Define now...", 1)
                                     # wait 5s so that user can read the msg about installation
