@@ -6,6 +6,8 @@ import traceback
 import logging
 import concurrent.futures
 import functools
+import site
+import sys
 
 from importlib import import_module, invalidate_caches
 from . import fhem
@@ -129,8 +131,11 @@ class PyBinding:
                                                         pool, functools.partial(
                                                             pkg_installer.check_and_install_dependencies,
                                                             hash["PYTHONTYPE"]))
-                                    # update cache again after install
-                                    invalidate_caches()
+                                            # update cache again after install
+                                            if not site.getusersitepackages() in sys.path:
+                                                logger.debug("add pip path: " + site.getusersitepackages())
+                                                sys.path.append(site.getusersitepackages())
+                                            invalidate_caches()
                                     # when installation finished, inform user
                                     await fhem.readingsSingleUpdate(hash, "state", "Installation finished. Define now...", 1)
                                     # wait 5s so that user can read the msg about installation
