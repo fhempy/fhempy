@@ -9,11 +9,13 @@ This repository includes following examples:
  - blescanner
 
 ## Installation
-Python 3.7 is required, Python 2 won't work!
+Python >=3.7 is required, Python 2 won't work!
 
 sudo cpan Protocol::WebSocket
 
 sudo pip3 install asyncio websockets importlib_metadata
+
+All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
 ## Usage in FHEM
  1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
