@@ -15,9 +15,12 @@ UPD 2020-09-02_21:18:28 3934 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-08-09_22:03:55 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-08-09_21:48:28 1029 FHEM/bindings/python/lib/helloworld/helloworld.py
 UPD 2020-08-09_22:04:06 30 FHEM/bindings/python/lib/helloworld/__init__.py
+UPD 2020-09-02_21:26:45 39 FHEM/bindings/python/lib/blescanner/manifest.json
 UPD 2020-08-18_17:39:29 1540 FHEM/bindings/python/lib/blescanner/blescanner.py
 UPD 2020-08-16_12:48:40 30 FHEM/bindings/python/lib/blescanner/__init__.py
+UPD 2020-09-02_21:17:07 170 FHEM/bindings/python/lib/googlecast/manifest.json
 UPD 2020-09-02_21:18:55 18731 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-08-09_22:04:02 30 FHEM/bindings/python/lib/googlecast/__init__.py
+UPD 2020-09-02_21:25:45 35 FHEM/bindings/python/lib/mdnsscanner/manifest.json
 UPD 2020-09-02_21:19:06 3310 FHEM/bindings/python/lib/mdnsscanner/mdnsscanner.py
 UPD 2020-08-09_22:04:10 30 FHEM/bindings/python/lib/mdnsscanner/__init__.py

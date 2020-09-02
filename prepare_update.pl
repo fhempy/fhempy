@@ -21,7 +21,7 @@ foreach(@dirs) {
 
 sub find_files {
   my $F = $File::Find::name;
-  if ($F =~ /pm$\|py$/ ) {
+  if ($F =~ /pm$\|json$\|py$/ ) {
     my $filename = $F;
     my @statOutput = stat($filename);
     my $mtime = $statOutput[9];
