@@ -4,22 +4,23 @@ import websockets
 import json
 import traceback
 import logging
+import concurrent.futures
+import functools
 
-# import all modules for faster loading during runtime
-import lib.googlecast.googlecast
-import lib.mdnsscanner.mdnsscanner
-import lib.helloworld.helloworld
-
-from importlib import import_module
+from importlib import import_module, invalidate_caches
 from . import fhem
+from . import pkg_installer
 
 logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(message)s', level=logging.ERROR)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 loadedModuleInstances = {}
+moduleLoadingRunning = {}
 wsconnection = None
+
+pip_lock = asyncio.Lock()
 
 async def pybinding(websocket, path):
         logger.info("FHEM connection started: " + websocket.remote_address[0])
@@ -91,27 +92,72 @@ class PyBinding:
             else:
                 ret = ''
                 if (hash['msgtype'] == "function"):
+                    # this is needed to avoid 2 replies on dep installation
+                    fhem_reply_done = False
                     fhem.setFunctionActive(hash)
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
                         if (not (hash["NAME"] in loadedModuleInstances)):
+                            if hash["NAME"] in moduleLoadingRunning:
+                                await self.sendBackReturn(hash, "")
+                                return 0
+
+                            moduleLoadingRunning[hash["NAME"]] = True
                             nm = 0
 
+                            # loading a module might take some time, therefore sendBackReturn now
+                            await self.sendBackReturn(hash, "")
+                            fhem_reply_done = True
+
                             try:
+                                # check dependencies
+                                deps_ok = pkg_installer.check_dependencies(hash["PYTHONTYPE"])
+                                if deps_ok == False:
+                                    # readingsSingleUpdate inform about dep installation
+                                    await fhem.readingsSingleUpdate(hash, "state", "Installing updates...", 1)
+                                    # run only one installation and do depcheck before any other installation
+                                    async with pip_lock:
+                                        # make sure that all import caches are up2date
+                                        invalidate_caches()
+                                        # check again if something changed for dependencies
+                                        deps_ok = pkg_installer.check_dependencies(hash["PYTHONTYPE"])
+                                        if deps_ok == False:
+                                            # start installation in a separate asyncio thread
+                                            with concurrent.futures.ThreadPoolExecutor() as pool:
+                                                result = await asyncio.get_event_loop().run_in_executor(
+                                                        pool, functools.partial(
+                                                            pkg_installer.check_and_install_dependencies,
+                                                            hash["PYTHONTYPE"]))
+                                    # when installation finished, inform user
+                                    await fhem.readingsSingleUpdate(hash, "state", "Installation finished. Define now...", 1)
+                                    # wait 5s so that user can read the msg about installation
+                                    await asyncio.sleep(5)
+                                    # continue define
+
                                 module_object = import_module(
                                     "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
                                 target_class = getattr(module_object, hash["PYTHONTYPE"])
                                 loadedModuleInstances[hash["NAME"]] = target_class()
+                                del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
                                     await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 1)
                             except asyncio.TimeoutError:
-                                await self.sendBackError(hash, "Function execution >1s, cancelled: " + hash["NAME"] + " - Define")
+                                errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - Define"
+                                if fhem_reply_done:
+                                    await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                                else:
+                                    await self.sendBackError(hash, errorMsg)
                                 return 0
                             except Exception as e:
-                                await self.sendBackError(hash, "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc())
+                                errorMsg = "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc()
+                                if fhem_reply_done:
+                                    await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                                else:
+                                    await self.sendBackError(hash, errorMsg)
                                 return 0
+                        
                         nmInstance = loadedModuleInstances[hash["NAME"]]
 
                     if (nmInstance != None):
@@ -122,16 +168,26 @@ class PyBinding:
                                 if (ret == None):
                                     ret = ""
                         except asyncio.TimeoutError:
-                            await self.sendBackError(hash, "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"])
+                            errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"]
+                            if fhem_reply_done:
+                                await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                            else:
+                                await self.sendBackError(hash, errorMsg)
                             return 0
                         except Exception as e:
-                            await self.sendBackError(hash, "Failed to execute function " + hash["function"] + ": " + traceback.format_exc())
+                            errorMsg = "Failed to execute function " + hash["function"] + ": " + traceback.format_exc()
+                            if fhem_reply_done:
+                                await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                            else:
+                                await self.sendBackError(hash, errorMsg)
                             return 0
                     
                     if (hash['function'] == "Undefine"):
                         if hash["NAME"] in loadedModuleInstances:
                             del loadedModuleInstances[hash["NAME"]]
-                    await self.sendBackReturn(hash, ret)
+                    
+                    if fhem_reply_done is False:
+                        await self.sendBackReturn(hash, ret)
 
         except Exception as err:
             logger.error("Failed to handle message: ", exc_info=True)

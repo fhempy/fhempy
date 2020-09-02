@@ -9,7 +9,7 @@ import threading
 from .. import fhem
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 class mdnsscanner:
 

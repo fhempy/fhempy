@@ -8,7 +8,7 @@ import concurrent.futures
 import websockets
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 
 function_active = []
 

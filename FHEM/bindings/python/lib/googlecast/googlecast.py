@@ -11,7 +11,7 @@ from urllib.parse import parse_qs
 from .. import fhem
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # PyChromecast
 import pychromecast
@@ -22,8 +22,11 @@ from pychromecast.controllers.youtube import YouTubeController
 import pychromecast.controllers.dashcast as dashcast
 # Spotify
 from pychromecast.controllers.spotify import SpotifyController
-from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+
+# youtube_dl
+import youtube_dl
 
 connection_update_lock = threading.Lock()
 
@@ -95,8 +98,12 @@ class googlecast:
                         else:
                             self.loop.create_task(self.playDefaultMedia(url))
                     else:
-                        playlistid = self.extract_playlist_id(url)
-                        self.loop.create_task(self.playYoutube(videoid, playlistid))
+                        if self.cast.cast_type == "audio":
+                            self.loop.create_task(self.playYoutubeAudio(url))
+                        else:
+                            playlistid = self.extract_playlist_id(url)
+                            self.loop.create_task(self.playYoutube(videoid, playlistid))
+                        
                 else:
                     self.cast.media_controller.play()
             elif (action == "stop"):
@@ -210,6 +217,25 @@ class googlecast:
         self.cast.register_handler(d)
         d.load_url(url, force=True, reload_seconds=30)
 
+    async def playYoutubeAudio(self, uri):
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            video_url = await self.loop.run_in_executor(
+                pool, functools.partial(self.getYoutubeAudioUrl, uri)
+            )
+            self.cast.play_media(video_url, "audio/mp4")
+
+    def getYoutubeAudioUrl(self, uri):
+        ydl = youtube_dl.YoutubeDL({'forceurl': True, 'simulate': True, 'quiet': '1', 'no_warnings': '1', 'skip_download': True, 'format': 'bestaudio/best', 'youtube_include_dash_manifest': True})
+        result = ydl.extract_info(uri, download=False)
+        if 'entries' in result:
+            # Can be a playlist or a list of videos
+            video = result['entries'][0]
+        else:
+            # Just a video
+            video = result
+        video_url = video['url']
+        return video_url
+
     async def playYoutube(self, videoid, playlistid):
         yt = YouTubeController()
         self.cast.register_handler(yt)
@@ -242,7 +268,7 @@ class googlecast:
     def startDiscovery(self):
         def castFound(chromecast):
             if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
-                logger.info("=> Discovered cast: " + chromecast.name)
+                logger.info("Discovered cast: " + chromecast.name)
                 self.cast = chromecast
                 # add status listener
                 self.cast.register_connection_listener(self)

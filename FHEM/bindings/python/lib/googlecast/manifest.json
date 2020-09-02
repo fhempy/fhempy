@@ -1,0 +1,7 @@
+{
+  "requirements": ["pychromecast>=7.2.1",
+                   "youtube_dl",
+                   "spotipy",
+                   "zeroconf",
+                   "aiohttp"]
+}
