@@ -9,7 +9,7 @@ UPD 2020-08-28_10:17:47 11438 FHEM/10_BindingsIo.pm
 UPD 2020-08-27_22:56:37 3186 FHEM/10_PythonBinding.pm
 UPD 2020-08-28_10:11:46 2576 FHEM/10_PythonModule.pm
 UPD 2020-08-09_22:23:29 73 FHEM/bindings/python/pythonbinding.py
-UPD 2020-09-02_21:55:16 9574 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-09-02_22:41:49 9904 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-02_21:11:34 4765 FHEM/bindings/python/lib/fhem.py
 UPD 2020-09-02_21:18:28 3934 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-08-09_22:03:55 30 FHEM/bindings/python/lib/__init__.py
