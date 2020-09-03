@@ -11,6 +11,8 @@ This repository includes following examples:
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
 
+sudo apt install python3 python3-pip
+
 sudo cpan Protocol::WebSocket
 
 sudo pip3 install asyncio websockets importlib_metadata
