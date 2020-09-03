@@ -11,20 +11,22 @@ This repository includes following examples:
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
 
+```
 sudo apt install python3 python3-pip
 
 sudo cpan Protocol::WebSocket
 
 sudo pip3 install asyncio websockets importlib_metadata
+```
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
 ## Usage in FHEM
- 1. update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
- 2. update
- 3. define pythonbinding BindingsIo Python
- 4. define castdevice PythonModule googlecast "Living Room"
- 5. set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"
+ 1. `update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt`
+ 2. `update`
+ 3. `define pythonbinding BindingsIo Python`
+ 4. `define castdevice PythonModule googlecast "Living Room"`
+ 5. `set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"`
 
 ## Functionality
 
@@ -50,5 +52,5 @@ At any time within the functions FHEM functons like readingsSingleUpdate(...) ca
 
 ![Flow Chart](/flowchart.png)
 
-## Write own module
+## Write your own module
 Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use run_in_executor (see googlecast code).
