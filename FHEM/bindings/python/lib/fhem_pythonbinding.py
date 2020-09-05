@@ -8,8 +8,7 @@ import concurrent.futures
 import functools
 import site
 import sys
-
-from importlib import import_module, invalidate_caches
+import importlib
 from . import fhem
 from . import pkg_installer
 
@@ -121,7 +120,7 @@ class PyBinding:
                                     # run only one installation and do depcheck before any other installation
                                     async with pip_lock:
                                         # make sure that all import caches are up2date before check
-                                        invalidate_caches()
+                                        importlib.invalidate_caches()
                                         # check again if something changed for dependencies
                                         deps_ok = pkg_installer.check_dependencies(hash["PYTHONTYPE"])
                                         if deps_ok == False:
@@ -135,15 +134,15 @@ class PyBinding:
                                             if not site.getusersitepackages() in sys.path:
                                                 logger.debug("add pip path: " + site.getusersitepackages())
                                                 sys.path.append(site.getusersitepackages())
-                                            invalidate_caches()
+                                            importlib.invalidate_caches()
                                     # when installation finished, inform user
                                     await fhem.readingsSingleUpdate(hash, "state", "Installation finished. Define now...", 1)
                                     # wait 5s so that user can read the msg about installation
                                     await asyncio.sleep(5)
                                     # continue define
 
-                                module_object = import_module(
-                                    "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"])
+                                pymodule = "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"]
+                                module_object = importlib.import_module(pymodule)
                                 target_class = getattr(module_object, hash["PYTHONTYPE"])
                                 loadedModuleInstances[hash["NAME"]] = target_class()
                                 del moduleLoadingRunning[hash["NAME"]]
