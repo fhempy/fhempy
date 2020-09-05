@@ -2,25 +2,29 @@ DIR FHEM/bindings
 DIR FHEM/bindings/python
 DIR FHEM/bindings/python/lib
 DIR FHEM/bindings/python/lib/helloworld
-DIR FHEM/bindings/python/lib/blescanner
+DIR FHEM/bindings/python/lib/discover_mdns
+DIR FHEM/bindings/python/lib/discover_upnp
 DIR FHEM/bindings/python/lib/googlecast
-DIR FHEM/bindings/python/lib/mdnsscanner
-UPD 2020-08-28_10:17:47 11438 FHEM/10_BindingsIo.pm
+DIR FHEM/bindings/python/lib/discover_ble
+UPD 2020-09-05_10:36:33 11753 FHEM/10_BindingsIo.pm
 UPD 2020-08-27_22:56:37 3186 FHEM/10_PythonBinding.pm
 UPD 2020-08-28_10:11:46 2576 FHEM/10_PythonModule.pm
 UPD 2020-08-09_22:23:29 73 FHEM/bindings/python/pythonbinding.py
-UPD 2020-09-02_22:41:49 9904 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-09-03_13:28:03 9910 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-02_21:11:34 4765 FHEM/bindings/python/lib/fhem.py
 UPD 2020-09-02_21:18:28 3934 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-08-09_22:03:55 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-08-09_21:48:28 1029 FHEM/bindings/python/lib/helloworld/helloworld.py
 UPD 2020-08-09_22:04:06 30 FHEM/bindings/python/lib/helloworld/__init__.py
-UPD 2020-09-02_21:26:45 39 FHEM/bindings/python/lib/blescanner/manifest.json
-UPD 2020-08-18_17:39:29 1540 FHEM/bindings/python/lib/blescanner/blescanner.py
-UPD 2020-08-16_12:48:40 30 FHEM/bindings/python/lib/blescanner/__init__.py
+UPD 2020-09-02_21:25:45 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
+UPD 2020-09-03_14:55:10 3431 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
+UPD 2020-08-09_22:04:10 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
+UPD 2020-09-03_13:42:03 42 FHEM/bindings/python/lib/discover_upnp/manifest.json
+UPD 2020-09-03_14:50:10 3157 FHEM/bindings/python/lib/discover_upnp/discover_upnp.py
+UPD 2020-09-03_13:50:09 23 FHEM/bindings/python/lib/discover_upnp/__init__.py
 UPD 2020-09-02_21:17:07 170 FHEM/bindings/python/lib/googlecast/manifest.json
 UPD 2020-09-02_21:18:55 18731 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-08-09_22:04:02 30 FHEM/bindings/python/lib/googlecast/__init__.py
-UPD 2020-09-02_21:25:45 35 FHEM/bindings/python/lib/mdnsscanner/manifest.json
-UPD 2020-09-02_21:19:06 3310 FHEM/bindings/python/lib/mdnsscanner/mdnsscanner.py
-UPD 2020-08-09_22:04:10 30 FHEM/bindings/python/lib/mdnsscanner/__init__.py
+UPD 2020-09-02_21:26:45 39 FHEM/bindings/python/lib/discover_ble/manifest.json
+UPD 2020-09-03_14:49:04 2049 FHEM/bindings/python/lib/discover_ble/discover_ble.py
+UPD 2020-08-16_12:48:40 30 FHEM/bindings/python/lib/discover_ble/__init__.py
