@@ -19,6 +19,7 @@ sub Log($$);
 sub Log3($$$);
 
 my $USE_DEVIO_DECODEWS = 0;
+my $timeouts = 0;
 
 sub
 BindingsIo_Initialize($)
@@ -75,7 +76,7 @@ BindingsIo_Define($$$)
 
   # put in hidden room
   CommandAttr(undef, "$name room hidden");
-  CommandAttr(undef, "$name verbose 5");
+  #CommandAttr(undef, "$name verbose 5");
 
   return undef;
 }
@@ -190,14 +191,21 @@ BindingsIo_Write($$$$$) {
     my $t2 = time * 1000;
     if (($t2 - $t1) > 1100) {
       # stop loop after 1100ms
+      $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
+      if ($timeouts > 3) {
+        # SimpleRead will close the connection and DevIo reconnect starts
+        Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
+        DevIo_SimpleRead($hash);
+      }
       last;
     }
     
     $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, $waitingForId, 0);
     if ($returnval ne "empty" && $returnval ne "continue") {
+      $timeouts = 0;
       last;
     }
   }
