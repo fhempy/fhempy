@@ -11,7 +11,7 @@ from .. import fhem
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class mdnsscanner:
+class discover_mdns:
 
     def __init__(self):
         self.loop = asyncio.get_event_loop()
@@ -20,8 +20,13 @@ class mdnsscanner:
         self.browser = None
 
     # zeroconf callback
+    def update_service(self, zeroconf, type, name):
+        info = zeroconf.get_service_info(type, name)
+        logger.debug("Service %s updated, service info %s" % (name,info))
+
+    # zeroconf callback
     def remove_service(self, zeroconf, type, name):
-        logger.debug("Service %s removed" % (name,))
+        logger.debug("Service %s removed" % (name))
 
     # zeroconf callback
     def add_service(self, zeroconf, type, name):
@@ -56,7 +61,6 @@ class mdnsscanner:
             else:
                 return
 
-            await fhem.readingsSingleUpdate(self.hash, "lastFoundService", name, 1)
             # wait for the devices to initialize
             await asyncio.sleep(10)
         except Exception as err:

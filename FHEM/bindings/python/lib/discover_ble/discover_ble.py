@@ -8,7 +8,7 @@ logger.setLevel(logging.DEBUG)
 
 from .. import fhem
 
-class blescanner:
+class discover_ble:
 
     def __init__(self):
         self.hash = None
@@ -19,14 +19,18 @@ class blescanner:
         while True:
             try:
                 devices = await discover()
-                await fhem.readingsBeginUpdate(self.hash)
                 for d in devices:
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, d.address + "_rssi", d.rssi)
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, d.address + "_name", d.name)
-                await fhem.readingsEndUpdate(self.hash, 1)
+                    if d.name == "GfBT Project":
+                        if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "GFPROBT", "MAC", d.address):
+                            logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + d.rssi)
+                            await fhem.CommandDefine(self.hash, d.name + "_" d.address.replace(":", "") +  " GFPROBT '" + d.address + "'")
+                    else if d.name == "CC-RT-BLE":
+                        if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "EQ3BT", "MAC", d.address):
+                            logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + d.rssi)
+                            await fhem.CommandDefine(self.hash, d.name + "_" d.address.replace(":", "") +  " EQ3BT '" + d.address + "'")
             except:
-                logger.error("BLE Scan failed, retry in 30s", exc_info=True)
-            await asyncio.sleep(30)
+                logger.error("BLE Scan failed, retry in 300s", exc_info=True)
+            await asyncio.sleep(300)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
