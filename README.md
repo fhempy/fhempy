@@ -5,8 +5,9 @@ FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM
 This repository includes following examples:
  - helloworld
  - googlecast
- - mdnsscanner
- - blescanner
+ - discover_mdns
+ - discover_ble
+ - discover_upnp
 
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
