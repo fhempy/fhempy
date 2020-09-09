@@ -10,8 +10,6 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from .. import fhem
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 # PyChromecast
 import pychromecast
@@ -32,7 +30,10 @@ connection_update_lock = threading.Lock()
 
 class googlecast:
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
+        # do only error logging for pychromecast library
+        logging.getLogger("pychromecast").setLevel(logging.ERROR)
         self.cast = None
         self.loop = asyncio.get_running_loop()
         self.hash = None
@@ -54,6 +55,7 @@ class googlecast:
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsBulkUpdateIfChanged(hash, "connection", "disconnected")
+        await fhem.setDevAttrList(hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5")
         await fhem.readingsEndUpdate(hash, 1)
 
         self.startDiscovery()
@@ -91,21 +93,14 @@ class googlecast:
                     url = args[2]
 
                 if len(url) > 0:
-                    videoid = self.extract_video_id(url)
-                    if (videoid == None):
-                        if url.find("spotify") >= 0:
-                            self.loop.create_task(self.playSpotifyThread(url))
-                        else:
-                            self.loop.create_task(self.playDefaultMedia(url))
-                    else:
-                        if self.cast.cast_type == "audio":
-                            self.loop.create_task(self.playYoutubeAudio(url))
-                        else:
-                            playlistid = self.extract_playlist_id(url)
-                            self.loop.create_task(self.playYoutube(videoid, playlistid))
-                        
+                    self.playUrl(url)                        
                 else:
                     self.cast.media_controller.play()
+            elif action == "playFavorite":
+                url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + args[2], "")
+                if len(url) == 0:
+                    return "Please set favorite before usage"
+                self.playUrl(url)
             elif (action == "stop"):
                 self.cast.media_controller.stop()
             elif (action == "pause"):
@@ -156,6 +151,20 @@ class googlecast:
                     dashUrl = args[2]
                 self.loop.create_task(self.displayWebsite(dashUrl))
 
+    def playUrl(self, url):
+        videoid = self.extract_video_id(url)
+        if (videoid == None):
+            if url.find("spotify") >= 0:
+                self.loop.create_task(self.playSpotifyThread(url))
+            else:
+                self.loop.create_task(self.playDefaultMedia(url))
+        else:
+            if self.cast.cast_type == "audio":
+                self.loop.create_task(self.playYoutubeAudio(url))
+            else:
+                playlistid = self.extract_playlist_id(url)
+                self.loop.create_task(self.playYoutube(videoid, playlistid))
+
     async def playDefaultMedia(self, uri):
         try:
             session = aiohttp.ClientSession()
@@ -163,7 +172,7 @@ class googlecast:
             mime = res.headers['Content-Type']
             self.cast.play_media(uri, mime)
         except:
-            logger.exception(f"Failed to play: {uri}")
+            self.logger.exception(f"Failed to play: {uri}")
 
     async def playSpotifyThread(self, uri):
         with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -186,10 +195,10 @@ class googlecast:
         sp.launch_app()
 
         if not sp.is_launched and not sp.credential_error:
-            logger.error("Failed to launch spotify controller due to timeout")
+            self.logger.error("Failed to launch spotify controller due to timeout")
             return
         if not sp.is_launched and sp.credential_error:
-            logger.error("Failed to launch spotify controller due to credential error")
+            self.logger.error("Failed to launch spotify controller due to credential error")
             return
 
         # Query spotify for active devices
@@ -202,8 +211,8 @@ class googlecast:
                 break
 
         if not spotify_device_id:
-            logger.error('No device with id "{}" known by Spotify'.format(sp.device))
-            logger.error("Known devices: {}".format(devices_available["devices"]))
+            self.logger.error('No device with id "{}" known by Spotify'.format(sp.device))
+            self.logger.error("Known devices: {}".format(devices_available["devices"]))
             return
 
         # Start playback
@@ -268,27 +277,27 @@ class googlecast:
     def startDiscovery(self):
         def castFound(chromecast):
             if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
-                logger.info("Discovered cast: " + chromecast.name)
+                self.logger.info("Discovered cast: " + chromecast.name)
                 self.cast = chromecast
                 # add status listener
                 self.cast.register_connection_listener(self)
                 self.cast.register_status_listener(self)
                 # add media controller listener
                 self.cast.media_controller.register_status_listener(self)
-                logger.debug("wait for chromecast")
+                self.logger.debug("wait for chromecast")
                 # timeout 0.001 just waits for status to be ready
                 # but we just need the thread to start by calling wait()
                 self.cast.wait(0.001)
-                logger.debug("wait finished")
+                self.logger.debug("wait finished")
 
-        logger.debug("Start discovery")
+        self.logger.debug("Start discovery")
         self.browser = pychromecast.get_chromecasts(blocking=False, tries=None, retry_wait=5, timeout=5, callback=castFound)
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
         # connection update might come from different threads
         connection_update_lock.acquire()
-        logger.debug("new_connection_status: " + status.status)
+        self.logger.debug("new_connection_status: " + status.status)
 
         # prevent to many disconnect events
         if (status.status != self.connectionStateCache):
@@ -305,7 +314,7 @@ class googlecast:
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_cast_status(self, status):
-        logger.debug("new_cast_status")
+        self.logger.debug("new_cast_status")
         # run reading updates in main thread
         res = asyncio.run_coroutine_threadsafe(self.updateStatusReadings(self.hash, status), self.loop)
         res.result()
@@ -318,7 +327,7 @@ class googlecast:
             if (self.currPosTask):
                 self.currPosTask.cancel()
                 self.currPosTask = None
-        logger.debug("new_media_status")
+        self.logger.debug("new_media_status")
         # run reading updates in main thread
         res = asyncio.run_coroutine_threadsafe(self.updateMediaStatusReadings(self.hash, status), self.loop)
         res.result()
@@ -332,10 +341,10 @@ class googlecast:
             # task was cancelled, nothing playing
             pass
         except Exception as err:
-            logger.error("Update media status failed", exc_info=True)
+            self.logger.error("Update media status failed", exc_info=True)
 
     async def updateConnectionReadings(self, hash, status):
-        logger.debug("updateConnectionReading")
+        self.logger.debug("updateConnectionReading")
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "connection", status.status.lower())
         if (status.status == "CONNECTED"):
@@ -345,7 +354,7 @@ class googlecast:
         await fhem.readingsEndUpdate(hash, 1)
 
     async def updateStatusReadings(self, hash, status):
-        logger.debug("updateStatusReadings")
+        self.logger.debug("updateStatusReadings")
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "volume", round(status.volume_level*100))
         await fhem.readingsBulkUpdateIfChanged(hash, "is_active_input", status.is_active_input)
@@ -361,7 +370,7 @@ class googlecast:
         await fhem.readingsEndUpdate(hash, 1)
 
     async def updateMediaStatusReadings(self, hash, status):
-        logger.debug("updateMediaStatusReadings")
+        self.logger.debug("updateMediaStatusReadings")
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "mediaPlayerState", status.player_state)
         await fhem.readingsBulkUpdateIfChanged(hash, "mediaContentId", status.content_id)
@@ -404,7 +413,7 @@ class googlecast:
         await fhem.readingsEndUpdate(hash, 1)
 
     async def updateDeviceReadings(self, hash):
-        logger.debug("updateDeviceReadings")
+        self.logger.debug("updateDeviceReadings")
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "name", self.cast.name)
         await fhem.readingsBulkUpdateIfChanged(hash, "model_name", self.cast.model_name)

@@ -1,7 +1,7 @@
 """
 Starts a service to scan in intervals for new devices.
 
-ATTENTION: This one should only be used for DLNA_DMR devices as netdisco is deprecated!!!
+ATTENTION: This one should only be used for DLNA_DMR devices as the used library netdisco is deprecated!!!
 """
 from datetime import timedelta
 import json
@@ -13,12 +13,10 @@ import asyncio
 from netdisco.discovery import NetworkDiscovery
 from .. import fhem
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 class discover_upnp:
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self.hash = None
         self.loop = asyncio.get_event_loop()
 
@@ -44,7 +42,7 @@ class discover_upnp:
         """Handle a new service if one is found."""
         discovery_hash = json.dumps([service, info], sort_keys=True)
         if discovery_hash in self.already_discovered:
-            logger.debug("Already discovered service %s %s.", service, info)
+            self.logger.debug("Already discovered service %s %s.", service, info)
             return
 
         self.already_discovered.add(discovery_hash)
@@ -54,11 +52,11 @@ class discover_upnp:
             exist_check_fct = service + "_exist_check"
             exists = await getattr(self, exist_check_fct)(service, info)
         except AttributeError:
-            logger.info("Unknown service discovered: %s %s", service, info)
+            self.logger.debug("Unknown service discovered: %s %s", service, info)
             return
 
         if exists is False:
-            logger.info("Found new service: %s %s", service, info)
+            self.logger.info("Found new service: %s %s", service, info)
             define_fct = service + "_define"
             await getattr(self, define_fct)(service, info)
 
@@ -74,7 +72,7 @@ class discover_upnp:
                     for result in results:
                         asyncio.create_task(self.new_service_found(*result))
             except OSError:
-                logger.error("Network is unreachable")
+                self.logger.error("Network is unreachable")
 
             # scan every 300s
             await asyncio.sleep(300)

@@ -12,10 +12,9 @@ import importlib
 from . import fhem
 from . import pkg_installer
 
-logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(message)s', level=logging.ERROR)
+logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(name)s: %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 loadedModuleInstances = {}
 moduleLoadingRunning = {}
@@ -99,6 +98,7 @@ class PyBinding:
                     # load module
                     nmInstance = None
                     if (hash['function'] != "Undefine"):
+                        # Load module and execute Define if Define isn't called right now
                         if (not (hash["NAME"] in loadedModuleInstances)):
                             if hash["NAME"] in moduleLoadingRunning:
                                 await self.sendBackReturn(hash, "")
@@ -141,10 +141,13 @@ class PyBinding:
                                     await asyncio.sleep(5)
                                     # continue define
 
+                                # import module
                                 pymodule = "lib." + hash["PYTHONTYPE"] + "." + hash["PYTHONTYPE"]
                                 module_object = importlib.import_module(pymodule)
+                                # create instance of class with logger
                                 target_class = getattr(module_object, hash["PYTHONTYPE"])
-                                loadedModuleInstances[hash["NAME"]] = target_class()
+                                moduleLogger = logging.getLogger(hash["NAME"])
+                                loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
                                 del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
@@ -168,11 +171,27 @@ class PyBinding:
 
                     if (nmInstance != None):
                         try:
-                            func = getattr(nmInstance, hash["function"], "nofunction")
-                            if (func != "nofunction"):
-                                ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
-                                if (ret == None):
-                                    ret = ""
+                            # handle verbose level of logging
+                            if hash["function"] == "Attr":
+                                if hash["args"][2] == "verbose":
+                                    moduleLogger = logging.getLogger(hash["NAME"])
+                                    if hash["args"][0] == "set":
+                                        verbose_level = hash["args"][3]
+                                        if verbose_level == "5":
+                                            moduleLogger.setLevel(logging.DEBUG)
+                                        elif verbose_level == "4":
+                                            moduleLogger.setLevel(logging.INFO)
+                                        elif verbose_level <= "3":
+                                            moduleLogger.setLevel(logging.ERROR)
+                                    else:
+                                        moduleLogger.setLevel(logging.ERROR)
+                            else:
+                                # call Set/Attr/Define/...
+                                func = getattr(nmInstance, hash["function"], "nofunction")
+                                if (func != "nofunction"):
+                                    ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
+                                    if (ret == None):
+                                        ret = ""
                         except asyncio.TimeoutError:
                             errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"]
                             if fhem_reply_done:

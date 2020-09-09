@@ -1,15 +1,12 @@
 
 import asyncio
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 from .. import fhem
 
 class helloworld:
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         return
 
     # FHEM FUNCTION

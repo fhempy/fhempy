@@ -3,14 +3,14 @@ import asyncio
 import logging
 from bleak import discover
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
 from .. import fhem
 
 class discover_ble:
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
+        # disable bleak discovery messages
+        logging.getLogger("bleak.backends.bluezdbus.discovery").setLevel(logging.ERROR)
         self.hash = None
         self.blescanTask = None
         return
@@ -22,14 +22,20 @@ class discover_ble:
                 for d in devices:
                     if d.name == "GfBT Project":
                         if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "GFPROBT", "MAC", d.address):
-                            logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + d.rssi)
-                            await fhem.CommandDefine(self.hash, d.name + "_" d.address.replace(":", "") +  " GFPROBT '" + d.address + "'")
-                    else if d.name == "CC-RT-BLE":
+                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " GFPROBT '" + d.address + "'")
+                        else:
+                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                    elif d.name == "CC-RT-BLE":
                         if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "EQ3BT", "MAC", d.address):
-                            logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + d.rssi)
-                            await fhem.CommandDefine(self.hash, d.name + "_" d.address.replace(":", "") +  " EQ3BT '" + d.address + "'")
+                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " EQ3BT '" + d.address + "'")
+                        else:
+                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                    else:
+                        self.logger.debug("found unhandled device: " + d.name + ", " + d.address + ", rssi: " + str(d.rssi))
             except:
-                logger.error("BLE Scan failed, retry in 300s", exc_info=True)
+                self.logger.error("BLE Scan failed, retry in 300s", exc_info=True)
             await asyncio.sleep(300)
 
     # FHEM FUNCTION
@@ -52,7 +58,3 @@ class discover_ble:
         if self.blescanTask:
             self.blescanTask.cancel()
         return
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return ("Unknown argument ?, choose one of ")
