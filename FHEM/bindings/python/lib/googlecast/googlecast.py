@@ -147,7 +147,9 @@ class googlecast:
                 self.cast.play_media(ttsUrl, "audio/mpeg")
             elif (action == "displayWebsite"):
                 dashUrl = "https://fhem.de/"
-                if (len(args) > 2):
+                if ("url" in argsh):
+                    dashUrl = argsh['url']
+                elif (len(args) > 2):
                     dashUrl = args[2]
                 self.loop.create_task(self.displayWebsite(dashUrl))
 
@@ -176,7 +178,7 @@ class googlecast:
 
     async def playSpotifyThread(self, uri):
         with concurrent.futures.ThreadPoolExecutor() as pool:
-            result = await self.loop.run_in_executor(
+            await self.loop.run_in_executor(
                 pool, functools.partial(self.playSpotify, uri))
 
     async def playSpotify(self, uri):
@@ -191,7 +193,7 @@ class googlecast:
 
         # Launch the spotify app on the cast we want to cast to
         sp = SpotifyController(access_token, expires)
-        cast.register_handler(sp)
+        self.cast.register_handler(sp)
         sp.launch_app()
 
         if not sp.is_launched and not sp.credential_error:
@@ -217,9 +219,9 @@ class googlecast:
 
         # Start playback
         if uri.find("track") > 0:
-            client.start_playback(device_id=spotify_device_id, uris=args.uri)
+            client.start_playback(device_id=spotify_device_id, uris=uri)
         else:
-            client.start_playback(device_id=spotify_device_id, context_uri=args.uri[0])
+            client.start_playback(device_id=spotify_device_id, context_uri=uri[0])
 
     async def displayWebsite(self, url):
         d = dashcast.DashCastController()
@@ -249,7 +251,7 @@ class googlecast:
         yt = YouTubeController()
         self.cast.register_handler(yt)
         with concurrent.futures.ThreadPoolExecutor() as pool:
-            result = await self.loop.run_in_executor(
+            await self.loop.run_in_executor(
                 pool, functools.partial(yt.play_video, videoid, playlistid))
 
     def extract_video_id(self, url):
@@ -340,7 +342,7 @@ class googlecast:
         except concurrent.futures.CancelledError:
             # task was cancelled, nothing playing
             pass
-        except Exception as err:
+        except Exception:
             self.logger.error("Update media status failed", exc_info=True)
 
     async def updateConnectionReadings(self, hash, status):
@@ -376,8 +378,11 @@ class googlecast:
         await fhem.readingsBulkUpdateIfChanged(hash, "mediaContentId", status.content_id)
         await fhem.readingsBulkUpdateIfChanged(hash, "mediaContentType", status.content_type)
         await fhem.readingsBulkUpdateIfChanged(hash, "mediaDuration", status.duration)
-        await fhem.readingsBulkUpdateIfChanged(hash, "mediaCurrentPosition", round(status.current_time))
-        if (status.duration):
+        if status.current_time:
+            await fhem.readingsBulkUpdateIfChanged(hash, "mediaCurrentPosition", round(status.current_time))
+        else:
+            await fhem.readingsBulkUpdateIfChanged(hash, "mediaCurrentPosition", "")
+        if status.duration and status.current_time:
             await fhem.readingsBulkUpdateIfChanged(hash, "mediaCurrentPosPercent", round(status.current_time/status.duration*100))
         else:
             await fhem.readingsBulkUpdateIfChanged(hash, "mediaCurrentPosPercent", "")

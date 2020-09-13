@@ -68,6 +68,17 @@ class PyBinding:
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
         fhem.setFunctionInactive(hash)
+
+    def getLogLevel(self, verbose_level):
+        if verbose_level == "5":
+            return logging.DEBUG
+        elif verbose_level == "4":
+            return logging.INFO
+        elif verbose_level == "3":
+            return logging.WARNING
+        else:
+            return logging.ERROR
+        
         
 
     async def onMessage(self, payload):
@@ -147,6 +158,7 @@ class PyBinding:
                                 # create instance of class with logger
                                 target_class = getattr(module_object, hash["PYTHONTYPE"])
                                 moduleLogger = logging.getLogger(hash["NAME"])
+                                moduleLogger.setLevel(self.getLogLevel(await fhem.AttrVal(hash["NAME"], "verbose", "3")))
                                 loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
                                 del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
@@ -176,13 +188,7 @@ class PyBinding:
                                 if hash["args"][2] == "verbose":
                                     moduleLogger = logging.getLogger(hash["NAME"])
                                     if hash["args"][0] == "set":
-                                        verbose_level = hash["args"][3]
-                                        if verbose_level == "5":
-                                            moduleLogger.setLevel(logging.DEBUG)
-                                        elif verbose_level == "4":
-                                            moduleLogger.setLevel(logging.INFO)
-                                        elif verbose_level <= "3":
-                                            moduleLogger.setLevel(logging.ERROR)
+                                        moduleLogger.setLevel(self.getLogLevel(hash["args"][3]))
                                     else:
                                         moduleLogger.setLevel(logging.ERROR)
                             else:

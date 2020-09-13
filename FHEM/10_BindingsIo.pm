@@ -424,7 +424,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     }
     $response = $msg->{'response'};
     my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
-    if ($ret ne "continue") {
+    if ($ret ne "continue" && $ret ne "nothandled") {
       $returnval = $ret;
     }
     if ($ret eq "nothandled") {

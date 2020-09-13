@@ -20,7 +20,6 @@ def setFunctionActive(hash):
     function_active.append(hash["NAME"])
 
 def setFunctionInactive(hash):
-    name = hash["NAME"]
     element = function_active.pop()
     if element != hash["NAME"]:
         logger.error(f"Set wrong function inactive, tried {hash['NAME']}, current function_active: {function_active},{element}")
