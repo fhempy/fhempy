@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 function_active = []
+update_locks = {}
 
 def updateConnection(ws):
     global wsconnection
@@ -41,6 +42,9 @@ async def setDevAttrList(name, attr_list):
     return await sendCommandName(name, cmd)
 
 async def readingsBeginUpdate(hash):
+    if hash["NAME"] not in update_locks:
+        update_locks[hash["NAME"]] = asyncio.Lock()
+    await update_locks[hash["NAME"]].acquire()
     cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
     return await sendCommandHash(hash, cmd)
 
@@ -52,13 +56,18 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
 
 async def readingsEndUpdate(hash, do_trigger):
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
-    return await sendCommandHash(hash,cmd)
+    res = await sendCommandHash(hash,cmd)
+    update_locks[hash["NAME"]].release()
+    return res
 
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
-    value = convertValue(value)
-    cmd = "readingsSingleUpdate($defs{'" + hash["NAME"] + "'},'" + \
-        reading + "','" + value.replace("'", "\\'") + "'," + str(do_trigger) + ")"
-    return await sendCommandHash(hash, cmd)
+    if hash["NAME"] not in update_locks:
+        update_locks[hash["NAME"]] = asyncio.Lock()
+    async with update_locks[hash["NAME"]]:
+        value = convertValue(value)
+        cmd = "readingsSingleUpdate($defs{'" + hash["NAME"] + "'},'" + \
+            reading + "','" + value.replace("'", "\\'") + "'," + str(do_trigger) + ")"
+        return await sendCommandHash(hash, cmd)
 
 async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
     value = convertValue(value)

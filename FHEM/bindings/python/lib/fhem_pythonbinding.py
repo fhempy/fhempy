@@ -116,7 +116,6 @@ class PyBinding:
                                 return 0
 
                             moduleLoadingRunning[hash["NAME"]] = True
-                            nm = 0
 
                             # loading a module might take some time, therefore sendBackReturn now
                             await self.sendBackReturn(hash, "")
@@ -137,7 +136,7 @@ class PyBinding:
                                         if deps_ok == False:
                                             # start installation in a separate asyncio thread
                                             with concurrent.futures.ThreadPoolExecutor() as pool:
-                                                result = await asyncio.get_event_loop().run_in_executor(
+                                                await asyncio.get_event_loop().run_in_executor(
                                                         pool, functools.partial(
                                                             pkg_installer.check_and_install_dependencies,
                                                             hash["PYTHONTYPE"]))
@@ -171,7 +170,7 @@ class PyBinding:
                                 else:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
-                            except Exception as e:
+                            except Exception:
                                 errorMsg = "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc()
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
@@ -179,7 +178,7 @@ class PyBinding:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
                         
-                        nmInstance = loadedModuleInstances[hash["NAME"]]
+                    nmInstance = loadedModuleInstances[hash["NAME"]]
 
                     if (nmInstance != None):
                         try:
@@ -205,7 +204,7 @@ class PyBinding:
                             else:
                                 await self.sendBackError(hash, errorMsg)
                             return 0
-                        except Exception as e:
+                        except Exception:
                             errorMsg = "Failed to execute function " + hash["function"] + ": " + traceback.format_exc()
                             if fhem_reply_done:
                                 await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
@@ -220,7 +219,7 @@ class PyBinding:
                     if fhem_reply_done is False:
                         await self.sendBackReturn(hash, ret)
 
-        except Exception as err:
+        except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
 
 def run():
