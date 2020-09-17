@@ -55,8 +55,7 @@ class PyBinding:
         msg = json.dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
-        fhem.setFunctionInactive(hash)
-        
+        fhem.setFunctionInactive(hash)        
 
     async def sendBackError(self, hash, error):
         logger.error(error + "(id: " + hash['id'] + ")")
@@ -68,6 +67,14 @@ class PyBinding:
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg)
         fhem.setFunctionInactive(hash)
+
+    async def updateHash(self, hash):
+        retHash = hash.copy()
+        retHash['msgtype'] = "update_hash"
+        del retHash['id']
+        msg = json.dumps(retHash)
+        logger.debug("<<< WS: " + msg)
+        await self.wsconnection.send(msg)
 
     def getLogLevel(self, verbose_level):
         if verbose_level == "5":
@@ -194,9 +201,14 @@ class PyBinding:
                                 # call Set/Attr/Define/...
                                 func = getattr(nmInstance, hash["function"], "nofunction")
                                 if (func != "nofunction"):
-                                    ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
+                                    if hash["function"] == "Undefine":
+                                        ret = await asyncio.wait_for(func(hash), 1)
+                                    else:
+                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
                                     if (ret == None):
                                         ret = ""
+                                    if fhem_reply_done:
+                                        await self.updateHash(hash)
                         except asyncio.TimeoutError:
                             errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"]
                             if fhem_reply_done:
@@ -218,6 +230,7 @@ class PyBinding:
                     
                     if fhem_reply_done is False:
                         await self.sendBackReturn(hash, ret)
+                        
 
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
