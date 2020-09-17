@@ -4,41 +4,17 @@ import datetime as dt
 from datetime import timedelta
 import functools
 import logging
-import sys
 import time
-
 import aiohttp
-from ipaddress import IPv4Address
-from async_upnp_client import UpnpFactory
+
 from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
 from async_upnp_client.aiohttp import get_local_ip
-from async_upnp_client.search import async_search as async_ssdp_search
-from async_upnp_client.advertisement import UpnpAdvertisementListener
 
 from .. import fhem
+from ..discover_upnp.discover_upnp import ssdp
 
-SUPPORT_PAUSE = 1
-SUPPORT_SEEK = 2
-SUPPORT_VOLUME_SET = 4
-SUPPORT_VOLUME_MUTE = 8
-SUPPORT_PREVIOUS_TRACK = 16
-SUPPORT_NEXT_TRACK = 32
-
-SUPPORT_TURN_ON = 128
-SUPPORT_TURN_OFF = 256
-SUPPORT_PLAY_MEDIA = 512
-SUPPORT_VOLUME_STEP = 1024
-SUPPORT_SELECT_SOURCE = 2048
-SUPPORT_STOP = 4096
-SUPPORT_CLEAR_PLAYLIST = 8192
-SUPPORT_PLAY = 16384
-SUPPORT_SHUFFLE_SET = 32768
-SUPPORT_SELECT_SOUND_MODE = 65536
-
-DEFAULT_NAME = "DLNA Digital Media Renderer"
 DEFAULT_LISTEN_PORT = 8301
-
 
 def catch_request_errors():
     """Catch asyncio.TimeoutError, aiohttp.ClientError errors."""
@@ -57,157 +33,6 @@ def catch_request_errors():
         return wrapper
 
     return call_wrapper
-
-
-class ssdp:
-
-    __instance = None
-
-    @staticmethod
-    def getInstance(logger):
-        if ssdp.__instance is None:
-            ssdp.__instance = ssdp(logger)
-        return ssdp.__instance
-
-    def __init__(self, logger):
-        if ssdp.__instance is not None:
-            raise Exception("ssdp already defined, use getInstance")
-        self.logger = logger
-        self.devices = {}
-        self.listeners = []
-        self.search_task = None
-        self.advertisement_task = None
-        self.nr_started_searches = 0
-
-        # build upnp/aiohttp requester
-        session = aiohttp.ClientSession()
-        self.requester = AiohttpSessionRequester(session, True)
-        # create upnp device
-        self.factory = UpnpFactory(self.requester)
-
-    async def start_search(self):
-        self.nr_started_searches += 1
-        if self.search_task:
-            self.search_task.cancel()
-        self.search_task = asyncio.create_task(self.search())
-
-        if self.advertisement_task is None:
-            self.advertisement_task = asyncio.create_task(
-                self.advertisements())
-
-    async def stop_search(self):
-        self.nr_started_searches -= 1
-        # stop search only when last client stops it
-        if self.nr_started_searches == 0:
-            await self.listener.async_stop()
-            if self.search_task:
-                self.search_task.cancel()
-            if self.advertisement_task:
-                self.advertisement_task.cancel()
-
-    def register_listener(self, listener, ssdp_filter):
-        listenerFilter = {
-            "listener": listener,
-            "ssdp_filter": ssdp_filter
-        }
-        self.listeners.append(listenerFilter)
-
-    async def updated_device(self, udn):
-        return
-
-    async def search(self):
-        while True:
-            await self.search_once()
-            await asyncio.sleep(300)
-
-    async def search_once(self):
-        timeout = 30
-        service_type = "ssdp:all"
-        source_ip = None
-        if sys.platform == 'win32' and not source_ip:
-            self.logger.debug(
-                'Running on win32 without --bind argument, forcing to "0.0.0.0"')
-            source_ip = '0.0.0.0'  # force to IPv4 to prevent asyncio crash/WinError 10022
-        if source_ip:
-            source_ip = IPv4Address(source_ip)
-
-        async def on_response(data):
-            await self.handle_msg("alive", data)
-
-        await async_ssdp_search(service_type=service_type,
-                                source_ip=source_ip,
-                                timeout=timeout,
-                                async_callback=on_response)
-
-    async def create_device(self, msg, data):
-        upnp_device = None
-        try:
-            if msg != "byebye":
-                upnp_device = await self.factory.async_create_device(data['location'])
-        except:
-            # upnp_device remains None
-            pass
-        return upnp_device
-
-    async def handle_msg(self, msg, data):
-        data = {key.lower(): str(value) for key, value in data.items()}
-        usn = data['usn']
-        arr = usn.split("::")
-        udn = arr[0]
-        if len(arr) > 1:
-            st = arr[1]
-        else:
-            st = ""
-        self.logger.debug("found: " + usn)
-        # filter for listeners
-        for listenerFilter in self.listeners:
-            listener = listenerFilter['listener']
-            ssdp_filter = listenerFilter['ssdp_filter']
-            filter_udn = None
-            filter_st = None
-            if "udn" in ssdp_filter:
-                filter_udn = ssdp_filter['udn']
-            if "service_type" in ssdp_filter:
-                filter_st = ssdp_filter['service_type']
-            if ((udn == filter_udn or filter_udn is None) and
-              (st == filter_st or filter_st is None) and
-              (usn not in self.devices)):
-                self.logger.debug("create device: " + usn)
-                upnp_device = await self.create_device(msg, data)
-                if msg == "alive":
-                    self.logger.debug("found device: " + usn)
-                    self.devices[usn] = upnp_device
-                    await listener.found_device(upnp_device)
-                elif msg == "byebye":
-                    self.logger.debug("removed device: " + usn)
-                    del self.devices[usn]
-                    await listener.removed_device(upnp_device)
-
-    async def advertisements(self):
-        """Listen for advertisements."""
-        source_ip = None
-        if sys.platform == 'win32' and not source_ip:
-            self.logger.debug(
-                'Running on win32 without --bind argument, forcing to "0.0.0.0"')
-            source_ip = '0.0.0.0'  # force to IPv4 to prevent asyncio crash/WinError 10022
-        if source_ip:
-            source_ip = IPv4Address(source_ip)
-
-        async def on_alive(data):
-            await self.handle_msg("alive", data)
-
-        async def on_byebye(data):
-            await self.handle_msg("byebye", data)
-
-        async def on_update(data):
-            return
-
-        self.listener = UpnpAdvertisementListener(on_alive=on_alive,
-                                                  on_byebye=on_byebye,
-                                                  on_update=on_update,
-                                                  source_ip=source_ip)
-        await self.listener.async_start()
-
 
 class dlna_dmr:
 
@@ -276,8 +101,7 @@ class dlna_dmr:
 
     # FHEM Function
     async def Undefine(self, hash):
-        self.logger.error("UNDEFINE CALLED")
-        ssdp.getInstance(self.logger).stop_search()
+        await ssdp.getInstance(self.logger).stop_search()
         if self.server:
             await self.server.stop_server()
         if self.device:
@@ -294,6 +118,7 @@ class dlna_dmr:
 
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
         udn = args[3]
+        self.hash["UDN"] = udn
         ssdp_filter = {
             "udn": udn,
             "service_type": "urn:schemas-upnp-org:device:MediaRenderer:1"
@@ -306,7 +131,7 @@ class dlna_dmr:
         if (len(args) < 2 or args[1] == "?"):
             return ("Unknown argument ?, choose one of "
                     "play volume:slider,0,1,100 mute:on,off,toggle pause:noArgs next:noArgs previous:noArgs "
-                    "off:noArgs stop:noArgs seek")
+                    "off:noArgs stop:noArgs seek speak")
         else:
             cmd = args[1]
             if cmd == "play":
@@ -314,7 +139,10 @@ class dlna_dmr:
                 if url is None:
                     await self.device.dlna_dmrdevice.async_media_play()
                 else:
-                    asyncio.create_task(self.device.async_play_media("", url))
+                    asyncio.create_task(self.device.async_play_media(url))
+            elif cmd == "speak":
+                tts_url = "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q=" + "%20".join(args[2:])
+                asyncio.create_task(self.device.async_play_media(tts_url))
             elif cmd == "volume":
                 new_vol = int(args[2])
                 asyncio.create_task(
@@ -326,7 +154,7 @@ class dlna_dmr:
                 elif onoff == "off":
                     onoff = False
                 else:
-                    onoff = not self.device.dlna_dmrdevice.is_volume_muted()
+                    onoff = not (self.device.dlna_dmrdevice.is_volume_muted())
                 self.device.dlna_dmrdevice.async_mute_volume(onoff)
             elif cmd == "pause":
                 self.device.dlna_dmrdevice.async_pause()
@@ -445,37 +273,11 @@ class DlnaDmrDevice:
         asyncio.create_task(self.dlna_dmrinstance.updateReadings())
 
     @property
-    def supported_features(self):
-        """Flag media player features that are supported."""
-        supported_features = 0
-
-        if self._device.has_volume_level:
-            supported_features |= SUPPORT_VOLUME_SET
-        if self._device.has_volume_mute:
-            supported_features |= SUPPORT_VOLUME_MUTE
-        if self._device.has_play:
-            supported_features |= SUPPORT_PLAY
-        if self._device.has_pause:
-            supported_features |= SUPPORT_PAUSE
-        if self._device.has_stop:
-            supported_features |= SUPPORT_STOP
-        if self._device.has_previous:
-            supported_features |= SUPPORT_PREVIOUS_TRACK
-        if self._device.has_next:
-            supported_features |= SUPPORT_NEXT_TRACK
-        if self._device.has_play_media:
-            supported_features |= SUPPORT_PLAY_MEDIA
-        if self._device.has_seek_rel_time:
-            supported_features |= SUPPORT_SEEK
-
-        return supported_features
-
-    @property
     def dlna_dmrdevice(self):
         return self._device
 
     @catch_request_errors()
-    async def async_play_media(self, media_type, media_id):
+    async def async_play_media(self, media_id, media_type=""):
         """Play a piece of media."""
         title = "FHEM"
         mime_type = media_type
