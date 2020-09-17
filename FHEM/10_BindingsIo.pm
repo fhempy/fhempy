@@ -312,6 +312,14 @@ sub BindingsIo_processMessage($$$$) {
       Log3 $hash, 4, "BindingsIo:   received id (".$json->{id}.") = waiting for id (".$waitingForId.")";
       return "nothandled";
     }
+  } elsif ($json->{msgtype} eq "update_hash") {
+    my $devname = $json->{NAME};
+    $devhash = $defs{$devname};
+    foreach my $key (keys %$json) {
+      next if ($key eq "msgtype" or $key eq "update_hash" or $key eq "ws" or $key eq "returnval" or $key 
+        eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh" or $key eq "id");
+      $devhash->{$key} = $json->{$key};
+    }
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
