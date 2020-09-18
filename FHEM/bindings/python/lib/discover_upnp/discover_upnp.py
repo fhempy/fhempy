@@ -35,7 +35,6 @@ class ssdp:
         if ssdp.__instance is not None:
             raise Exception("ssdp already defined, use getInstance")
         self.logger = logger
-        self.devices = {}
         self.listeners = []
         self.search_task = None
         self.advertisement_task = None
@@ -49,8 +48,6 @@ class ssdp:
 
     async def start_search(self):
         self.nr_started_searches += 1
-        if self.search_task:
-            self.search_task.cancel()
         self.search_task = asyncio.create_task(self.search())
 
         if self.advertisement_task is None:
@@ -70,7 +67,8 @@ class ssdp:
     def register_listener(self, listener, ssdp_filter={"service_type":"ssdp:all"}):
         listenerFilter = {
             "listener": listener,
-            "ssdp_filter": ssdp_filter
+            "ssdp_filter": ssdp_filter,
+            "found_devices": {}
         }
         self.listeners.append(listenerFilter)
 
@@ -110,26 +108,22 @@ class ssdp:
                     filter_st = ssdp_filter['service_type']
                 if ((udn == filter_udn or filter_udn is None) and
                 (st == filter_st or filter_st == "ssdp:all")):
-                    if usn not in self.devices and msg == "alive":
+                    if usn not in listenerFilter['found_devices'] and msg == "alive":
                         self.logger.debug("create device: " + usn)
-                        self.devices[usn] = await self.create_device(msg, data)
-                        if self.devices[usn]:
+                        listenerFilter['found_devices'][usn] = await self.create_device(msg, data)
+                        if listenerFilter['found_devices'][usn]:
                             self.logger.debug("found device: " + usn)
-                            await listener.found_device(self.devices[usn])
-                    elif usn in self.devices and msg == "byebye":
+                            await listener.found_device(listenerFilter['found_devices'][usn])
+                    elif usn in listenerFilter['found_devices'] and msg == "byebye":
                         self.logger.debug("removed device: " + usn)
-                        await listener.removed_device(self.devices[usn])
-                        del self.devices[usn]
+                        await listener.removed_device(listenerFilter['found_devices'][usn])
+                        del listenerFilter['found_devices'][usn]
         except:
             self.logger.exception("Error in handle_msg")
 
     async def search(self):
-        while True:
-            try:
-                await self.search_once()
-            except:
-                self.logger.exception("Error in search")
-            await asyncio.sleep(600)
+        await self.search_once()
+
 
     async def search_once(self):
         timeout = 30

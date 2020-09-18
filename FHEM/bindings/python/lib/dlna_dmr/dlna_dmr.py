@@ -130,8 +130,8 @@ class dlna_dmr:
     async def Set(self, hash, args, argsh):
         if (len(args) < 2 or args[1] == "?"):
             return ("Unknown argument ?, choose one of "
-                    "play volume:slider,0,1,100 mute:on,off,toggle pause:noArgs next:noArgs previous:noArgs "
-                    "off:noArgs stop:noArgs seek speak")
+                    "play volume:slider,0,1,100 mute:on,off,toggle pause:noArg next:noArg previous:noArg "
+                    "off:noArg stop:noArg seek speak")
         else:
             cmd = args[1]
             if cmd == "play":
