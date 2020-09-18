@@ -182,14 +182,20 @@ class discover_upnp:
         self.logger = logger
         self.hash = None
         self.loop = asyncio.get_event_loop()
+        self.create_devs = {}
 
     async def found_device(self, upnp_device):
         await fhem.readingsSingleUpdate(self.hash, upnp_device.udn + "::" + upnp_device.device_type, upnp_device.friendly_name, 1)
         if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
-            if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "dlna_dmr", "UDN", upnp_device.udn)):
-                devname = upnp_device.friendly_name + "_" + upnp_device.model_name
-                devname = ''.join(filter(str.isalpha, devname))
-                # await fhem.CommandDefine(self.hash, devname + " PythonModule dlna_dmr " + upnp_device.udn)
+            self.create_devs[upnp_device.udn] = {
+                "name": "".join(filter(str.isalpha, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2],
+                "devname": "".join(filter(str.isalpha, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2]
+            }
+        # if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
+        #     if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "dlna_dmr", "UDN", upnp_device.udn)):
+        #         devname = devname = upnp_device.friendly_name + "_" + upnp_device.model_name
+        #         devname = ''.join(filter(str.isalpha, devname))
+        #         await fhem.CommandDefine(self.hash, devname + " PythonModule dlna_dmr " + upnp_device.udn)
 
     async def removed_device(self, upnp_device):
         return
@@ -202,6 +208,23 @@ class discover_upnp:
         await ssdp.getInstance(self.logger).start_search()
         await fhem.readingsSingleUpdate(hash, "state", "active", 0)
         return ""
+    
+    # FHEM Set
+    async def Set(self, hash, args, argsh):
+        if (len(args) < 2 or args[1] == "?"):
+            set_devs = []
+            for dev in self.create_devs:
+                set_devs.append(self.create_devs[dev]["name"])
+            set_list = ""
+            if len(set_devs) > 0:
+                set_list = "create:" + ",".join(set_devs)
+            return ("Unknown argument ?, choose one of " + set_list)
+        else:
+            cmd = args[1]
+            if cmd == "create":
+                for udn in self.create_devs:
+                    if self.create_devs[udn]["name"] == args[2]:
+                        await fhem.CommandDefine(self.hash, self.create_devs[udn]["devname"] + " PythonModule dlna_dmr " + udn)
 
     # FHEM Undefine
     async def Undefine(self, hash):
