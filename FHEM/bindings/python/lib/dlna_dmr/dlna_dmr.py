@@ -101,6 +101,7 @@ class dlna_dmr:
 
     # FHEM Function
     async def Undefine(self, hash):
+        self.update_task.cancel()
         await ssdp.getInstance(self.logger).stop_search()
         if self.server:
             await self.server.stop_server()
