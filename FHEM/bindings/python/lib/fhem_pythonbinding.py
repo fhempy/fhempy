@@ -169,7 +169,7 @@ class PyBinding:
                                 del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 1)
+                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 5)
                             except asyncio.TimeoutError:
                                 errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - Define"
                                 if fhem_reply_done:
@@ -202,9 +202,9 @@ class PyBinding:
                                 func = getattr(nmInstance, hash["function"], "nofunction")
                                 if (func != "nofunction"):
                                     if hash["function"] == "Undefine":
-                                        ret = await asyncio.wait_for(func(hash), 1)
+                                        ret = await asyncio.wait_for(func(hash), 5)
                                     else:
-                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 1)
+                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 5)
                                     if (ret == None):
                                         ret = ""
                                     if fhem_reply_done:
