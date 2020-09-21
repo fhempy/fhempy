@@ -51,7 +51,7 @@ class eq3bt:
         asyncio.create_task(self.thermostat.activate_comfort())
     
     async def set_off(self):
-        asyncio.create_task(self.thermostat.target_temperature(30))
+        asyncio.create_task(self.thermostat.target_temperature(4.5))
     
     async def set_desiredTemperature(self, params):
         asyncio.create_task(self.thermostat.target_temperature(params["target_temp"]))
