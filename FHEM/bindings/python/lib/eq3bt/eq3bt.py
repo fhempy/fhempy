@@ -101,23 +101,18 @@ class FhemThermostat(eq3.Thermostat):
     async def set_schedule(self, data):
         await utils.run_blocking(functools.partial(super().set_schedule, data))
     
-    @target_temperature.setter
     async def target_temperature(self, temperature):
         await utils.run_blocking(functools.partial(super().target_temperature, temperature))
 
-    @mode.setter
     async def mode(self, mode):
         await utils.run_blocking(functools.partial(super().mode, mode))
 
-    @boost.setter
     async def boost(self, boost):
         await utils.run_blocking(functools.partial(super().boost, boost))
     
-    @locked.setter
     async def locked(self, lock):
         await utils.run_blocking(functools.partial(super().locked, lock))
     
-    @temperature_offset.setter
     async def temperature_offset(self, offset):
         await utils.run_blocking(functools.partial(super().temperature_offset, offset))
     
