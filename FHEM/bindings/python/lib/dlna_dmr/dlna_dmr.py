@@ -75,7 +75,7 @@ class dlna_dmr:
     async def removed_device(self, upnp_device):
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
         self.update_task.cancel()
-        self.device.cleanup()
+        await self.device.cleanup()
         self.device = None
 
     async def async_start_event_handler(
