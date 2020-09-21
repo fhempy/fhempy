@@ -18,7 +18,7 @@ async def run_blocking_task(function):
 #    "on": { "args": ["seconds"], "params": { "seconds": {"optional": True}}},
 #    "off": {}
 # }
-def handle_set(set_list_conf, obj, hash, args, argsh):
+async def handle_set(set_list_conf, obj, hash, args, argsh):
   fhem_set_list = []
   if len(args) < 2 or (len(argsh) == 0 and args[1] == "?"): 
     for cmd in set_list_conf:

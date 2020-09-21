@@ -40,7 +40,7 @@ class eq3bt:
 
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
-        return utils.handle_set(self.set_list_conf, self, hash, args, argsh)
+        return await utils.handle_set(self.set_list_conf, self, hash, args, argsh)
     
     async def update_readings(self):
         # TODO update all readings from thermostat device (device, state, schedule)
