@@ -23,10 +23,7 @@ class Mode(IntEnum):
     Away = 4
     Boost = 5
 
-# TEST change iface if connection fails
-# TEST set own handle to update after every write
-# TEST set offline if update failes for 30 minutes
-# TODO get schedules and set schedules
+# TODO set schedules
 # TODO set windowOpen, windowOpenTime, eco/comfortTemperature
 
 class eq3bt:
