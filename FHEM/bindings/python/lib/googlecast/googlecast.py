@@ -8,6 +8,7 @@ import threading
 import urllib.request
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
+from .. import utils
 from .. import fhem
 
 
@@ -250,9 +251,7 @@ class googlecast:
     async def playYoutube(self, videoid, playlistid):
         yt = YouTubeController()
         self.cast.register_handler(yt)
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            await self.loop.run_in_executor(
-                pool, functools.partial(yt.play_video, videoid, playlistid))
+        await utils.run_blocking(functools.partial(yt.play_video, videoid, playlistid))
 
     def extract_video_id(self, url):
         # Examples:

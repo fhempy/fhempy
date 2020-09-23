@@ -1,13 +1,18 @@
 
 import asyncio
+import logging
 import concurrent.futures
 
 async def run_blocking(function):
-  with concurrent.futures.ThreadPoolExecutor() as pool:
-    return await asyncio.get_event_loop().run_in_executor(
-        pool, function)
+  try:
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+      return await asyncio.get_event_loop().run_in_executor(
+          pool, function)
+  except:
+    logging.getLogger(__name__).exception("Error in asyncio thread")
+    raise
 
-async def run_blocking_task(function):
+def run_blocking_task(function):
   asyncio.create_task(run_blocking(function))
 
 # example config
@@ -38,7 +43,7 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
       cmd_def = set_list_conf[cmd]
       # map arguments to params
       # add args to all_args
-      if (len(args) - 2) > len(cmd_def["args"]):
+      if "args" in cmd_def and (len(args) - 2) > len(cmd_def["args"]):
         return f"Too many args provided. Usage: set {hash['NAME']} {cmd} " + " ".join(cmd_def["args"])
       i=0
       for arg in args[2:]:
