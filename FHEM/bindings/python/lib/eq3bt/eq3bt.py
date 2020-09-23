@@ -143,7 +143,7 @@ class eq3bt:
 
     # SET Functions BEGIN
     async def set_on(self):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_comfort)))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperatur, 30)))
     
     async def set_off(self):
         asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 4.5)))
