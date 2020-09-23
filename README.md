@@ -3,12 +3,13 @@
 FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
 This repository includes following examples:
- - helloworld
- - googlecast
- - dlna_dmr
- - discover_mdns
- - discover_ble
- - discover_upnp
+ - helloworld:      Hello World example
+ - googlecast:      Control Cast devices
+ - dlna_dmr:        Control DLNA MediaRenderer devices)
+ - eq3bt:           Control EQ3 Bluetooth thermostat
+ - discover_mdns:   Discover mDNS devices
+ - discover_ble:    Discover Bluetooth LE devices
+ - discover_upnp:   Discover UPnP devices
 
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
