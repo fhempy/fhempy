@@ -14,6 +14,7 @@ This repository includes following examples:
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
 
+Console
 ```
 sudo apt install python3 python3-pip
 
@@ -21,15 +22,21 @@ sudo cpan Protocol::WebSocket
 
 sudo pip3 install asyncio websockets importlib_metadata
 ```
+FHEM
+```
+update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
+
+update
+
+define pythonbinding BindingsIo Python
+```
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
 ## Usage in FHEM
- 1. `update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt`
- 2. `update`
- 3. `define pythonbinding BindingsIo Python`
- 4. `define castdevice PythonModule googlecast "Living Room"`
- 5. `set castdevice play url="https://www.youtube.com/watch?v=oHg5SJYRHA0"`
+ - `define castdevice PythonModule googlecast "Living Room"`
+ - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
+ - `define upnp PythonModule discover_upnp`
 
 ## Functionality
 
