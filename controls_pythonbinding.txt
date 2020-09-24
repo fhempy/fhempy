@@ -8,7 +8,7 @@ DIR FHEM/bindings/python/lib/dlna_dmr
 DIR FHEM/bindings/python/lib/googlecast
 DIR FHEM/bindings/python/lib/helloworld
 DIR FHEM/bindings/python/lib/eq3bt
-UPD 2020-09-19_17:52:13 12198 FHEM/10_BindingsIo.pm
+UPD 2020-09-24_20:22:17 12214 FHEM/10_BindingsIo.pm
 UPD 2020-09-19_17:52:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-09-19_17:52:13 2576 FHEM/10_PythonModule.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
@@ -35,6 +35,6 @@ UPD 2020-09-23_21:24:01 19331 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/helloworld/__init__.py
 UPD 2020-09-19_17:52:13 983 FHEM/bindings/python/lib/helloworld/helloworld.py
 UPD 2020-09-23_21:24:01 21 FHEM/bindings/python/lib/eq3bt/__init__.py
-UPD 2020-09-23_21:24:01 3999 FHEM/bindings/python/lib/eq3bt/connection.py
-UPD 2020-09-23_21:29:55 9637 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-09-24_21:09:04 4080 FHEM/bindings/python/lib/eq3bt/connection.py
 UPD 2020-09-23_21:24:01 39 FHEM/bindings/python/lib/eq3bt/manifest.json
+UPD 2020-09-24_21:13:52 10856 FHEM/bindings/python/lib/eq3bt/eq3bt.py
