@@ -52,6 +52,7 @@ class eq3bt:
         mac = args[3]
         self.hash["MAC"] = mac
         self.logger.info(f"Define: eq3bt {mac}")
+        await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
         # handle missing dbus configuration
         try:
@@ -81,10 +82,13 @@ class eq3bt:
     async def check_online(self):
         await asyncio.sleep(int(random.random()*200))
         while True:
-            if time.time() - self._last_update > (60 * 30):
-                await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
-                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
-            await self.update_all()
+            try:
+                if time.time() - self._last_update > (60 * 30):
+                    await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
+                    await fhem.readingsSingleUpdate(self.hash, "state", "update", 1)
+                await self.update_all()
+            except:
+                self.logger.error("Failed to update, retry in 300s")
             await asyncio.sleep(300)
 
     # FHEM FUNCTION
