@@ -3,12 +3,14 @@ import asyncio
 import functools
 import concurrent.futures
 import time
+import random
 
 from enum import IntEnum
 
 from bluepy.btle import BTLEException
 import eq3bt as eq3
 from .connection import BTLEConnection
+from dbus import DBusException
 
 from .. import utils
 from .. import fhem
@@ -50,7 +52,24 @@ class eq3bt:
         mac = args[3]
         self.hash["MAC"] = mac
         self.logger.info(f"Define: eq3bt {mac}")
-        self.thermostat = FhemThermostat(self.logger, mac)
+
+        # handle missing dbus configuration
+        try:
+            self.thermostat = FhemThermostat(self.logger, mac)
+        except DBusException:
+            dbus_conf_err = 'Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n \
+                        <policy user="fhem">\n \
+                            <allow own="org.bluez"/>\n \
+                            <allow send_destination="org.bluez"/>\n \
+                            <allow send_interface="org.bluez.GattCharacteristic1"/>\n \
+                            <allow send_interface="org.bluez.GattDescriptor1"/>\n \
+                            <allow send_interface="org.freedesktop.DBus.ObjectManager"/>\n \
+                            <allow send_interface="org.freedesktop.DBus.Properties"/>\n \
+                        </policy>\n \
+                        Restart dbus afterwards: sudo systemctl restart dbus'
+            self.logger.error(dbus_conf_err)
+            return dbus_conf_err
+
         self._presence_task = asyncio.create_task(self.check_online())
         return ""
 
@@ -60,6 +79,7 @@ class eq3bt:
         return
     
     async def check_online(self):
+        await asyncio.sleep(int(random.random()*200))
         while True:
             if time.time() - self._last_update > (60 * 30):
                 await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
@@ -156,7 +176,7 @@ class eq3bt:
         asyncio.create_task(self.update_all())
     
     async def set_boost(self, params):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.boost, params["target_state"] == "on")))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_boost, params["target_state"] == "on")))
     
     async def set_mode(self, params):
         target_mode = params["target_mode"]
@@ -164,7 +184,7 @@ class eq3bt:
             target_mode = eq3.Mode.Auto
         else:
             target_mode = eq3.Mode.Manual
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.mode, target_mode)))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_mode, target_mode)))
     
     async def set_eco(self):
         asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_eco)))
@@ -173,7 +193,7 @@ class eq3bt:
         asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_comfort)))
     
     async def set_childlock(self, params):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.locked, params["target_state"] == "on")))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_locked, params["target_state"] == "on")))
     # SET Functions END
 
 class FhemThermostat(eq3.Thermostat):
@@ -190,6 +210,15 @@ class FhemThermostat(eq3.Thermostat):
 
     def set_target_temperature(self, temp):
         self.target_temperature = temp
+    
+    def set_boost(self, state):
+        self.boost = state
+
+    def set_locked(self, state):
+        self.locked = state
+
+    def set_mode(self, mode):
+        self.mode = mode
     
     @property
     def mode(self):
