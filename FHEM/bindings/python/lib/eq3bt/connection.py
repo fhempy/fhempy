@@ -28,9 +28,9 @@ class BTLEConnection(btle.DefaultDelegate):
         self._callbacks = {}
     
     def next_iface(self):
-        self._iface_idx += 1
-        if self._iface_idx >= len(self._ifaces):
-            self._iface_idx = 0
+        self._nr_conn_errors += 1
+        self._iface_idx = (self._iface_idx + 1) % len(self._ifaces)
+        if self._nr_conn_errors >= len(self._ifaces)*2:
             return False
         return True
 
@@ -54,6 +54,7 @@ class BTLEConnection(btle.DefaultDelegate):
         """
         self._conn = btle.Peripheral()
         self._conn.withDelegate(self)
+        self._nr_conn_errors = 0
         _LOGGER.debug("Trying to connect to %s", self._mac)
         while True:
             # try to connect with all ifaces

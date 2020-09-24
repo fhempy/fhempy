@@ -12,6 +12,8 @@ use Encode;
 
 use Protocol::WebSocket::Frame;
 
+use CoProcess;
+
 use JSON;
 use Time::HiRes qw(time);
 
