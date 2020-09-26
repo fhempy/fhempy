@@ -232,7 +232,10 @@ class DlnaDmrDevice:
         self._device.on_event = self._on_event
 
     async def cleanup(self):
-        await self._device.async_unsubscribe_services()
+        try:
+            await self._device.async_unsubscribe_services()
+        except:
+            pass
 
     @property
     def available(self):
