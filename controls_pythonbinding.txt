@@ -8,9 +8,10 @@ DIR FHEM/bindings/python/lib/dlna_dmr
 DIR FHEM/bindings/python/lib/googlecast
 DIR FHEM/bindings/python/lib/helloworld
 DIR FHEM/bindings/python/lib/eq3bt
-UPD 2020-09-24_20:22:17 12214 FHEM/10_BindingsIo.pm
+DIR FHEM/bindings/python/lib/xiaomi_gateway3
 UPD 2020-09-19_17:52:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-09-19_17:52:13 2576 FHEM/10_PythonModule.pm
+UPD 2020-09-26_20:42:39 12349 FHEM/10_BindingsIo.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-09-19_17:52:13 5608 FHEM/bindings/python/lib/fhem.py
@@ -24,17 +25,22 @@ UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
 UPD 2020-09-19_17:52:13 3440 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
 UPD 2020-09-19_17:52:13 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
 UPD 2020-09-19_17:52:13 23 FHEM/bindings/python/lib/discover_upnp/__init__.py
-UPD 2020-09-19_17:52:13 9108 FHEM/bindings/python/lib/discover_upnp/discover_upnp.py
 UPD 2020-09-19_17:52:13 83 FHEM/bindings/python/lib/discover_upnp/manifest.json
+UPD 2020-09-26_20:42:39 9176 FHEM/bindings/python/lib/discover_upnp/discover_upnp.py
 UPD 2020-09-19_17:52:13 24 FHEM/bindings/python/lib/dlna_dmr/__init__.py
 UPD 2020-09-19_17:52:13 83 FHEM/bindings/python/lib/dlna_dmr/manifest.json
-UPD 2020-09-23_21:24:01 12273 FHEM/bindings/python/lib/dlna_dmr/dlna_dmr.py
+UPD 2020-09-26_20:42:39 12323 FHEM/bindings/python/lib/dlna_dmr/dlna_dmr.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/googlecast/__init__.py
-UPD 2020-09-19_17:52:13 170 FHEM/bindings/python/lib/googlecast/manifest.json
-UPD 2020-09-23_21:24:01 19331 FHEM/bindings/python/lib/googlecast/googlecast.py
+UPD 2020-09-24_22:34:31 170 FHEM/bindings/python/lib/googlecast/manifest.json
+UPD 2020-09-24_22:33:26 19763 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/helloworld/__init__.py
 UPD 2020-09-19_17:52:13 983 FHEM/bindings/python/lib/helloworld/helloworld.py
 UPD 2020-09-23_21:24:01 21 FHEM/bindings/python/lib/eq3bt/__init__.py
-UPD 2020-09-24_21:09:04 4080 FHEM/bindings/python/lib/eq3bt/connection.py
 UPD 2020-09-23_21:24:01 39 FHEM/bindings/python/lib/eq3bt/manifest.json
-UPD 2020-09-24_21:13:52 10856 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-09-24_21:25:39 4080 FHEM/bindings/python/lib/eq3bt/connection.py
+UPD 2020-09-26_20:42:39 11151 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-09-24_22:36:30 30 FHEM/bindings/python/lib/xiaomi_gateway3/__init__.py
+UPD 2020-09-24_22:46:33 78 FHEM/bindings/python/lib/xiaomi_gateway3/manifest.json
+UPD 2020-09-25_23:24:04 734 FHEM/bindings/python/lib/xiaomi_gateway3/xiaomi_gateway3.py
+UPD 2020-09-24_22:45:07 18399 FHEM/bindings/python/lib/xiaomi_gateway3/gateway3.py
+UPD 2020-09-25_23:47:43 3085 FHEM/bindings/python/lib/xiaomi_gateway3/mqttudp_bidir_gate.py
