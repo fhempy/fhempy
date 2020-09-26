@@ -77,7 +77,7 @@ class googlecast:
         if (len(args) < 2 or args[1] == "?"):
             return ("Unknown argument ?, choose one of "
                     "stop:noArg pause:noArg rewind:noArg skip:noArg quitApp:noArg "
-                    "play playFavorite:1,2,3,4,5 volume:slider,0,1,100 seek "
+                    "play addToQueue playFavorite:1,2,3,4,5 volume:slider,0,1,100 seek "
                     "next:noArg prev:noArg subtitles:on,off "
                     "displayWebsite speak startApp "
                     "volUp:noArg volDown:noArg")
@@ -97,6 +97,15 @@ class googlecast:
                     self.playUrl(url)                        
                 else:
                     self.cast.media_controller.play()
+            elif action == "addToQueue":
+                url = ""
+                if ("url" in argsh):
+                    url = argsh['url']
+                elif (len(args) > 2):
+                    url = args[2]
+
+                if len(url) > 0:
+                    self.queueUrl(url)
             elif action == "playFavorite":
                 url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + args[2], "")
                 if len(url) == 0:
@@ -168,12 +177,15 @@ class googlecast:
                 playlistid = self.extract_playlist_id(url)
                 self.loop.create_task(self.playYoutube(videoid, playlistid))
 
-    async def playDefaultMedia(self, uri):
+    def queueUrl(self, url):
+        self.loop.create_task(self.playDefaultMedia(url, enqueue=True))
+
+    async def playDefaultMedia(self, uri, enqueue=False):
         try:
             session = aiohttp.ClientSession()
             res = await session.get(uri)
             mime = res.headers['Content-Type']
-            self.cast.play_media(uri, mime)
+            self.cast.play_media(uri, mime, enqueue=enqueue)
         except:
             self.logger.exception(f"Failed to play: {uri}")
 
