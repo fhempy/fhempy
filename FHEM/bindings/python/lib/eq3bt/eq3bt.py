@@ -52,6 +52,8 @@ class eq3bt:
         mac = args[3]
         self.hash["MAC"] = mac
         self.logger.info(f"Define: eq3bt {mac}")
+        await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
+        await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
         # handle missing dbus configuration
         try:
@@ -79,12 +81,15 @@ class eq3bt:
         return
     
     async def check_online(self):
-        await asyncio.sleep(int(random.random()*200))
+        await asyncio.sleep(int(random.random()*100))
         while True:
-            if time.time() - self._last_update > (60 * 30):
-                await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
-                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
-            await self.update_all()
+            try:
+                if time.time() - self._last_update > (60 * 30):
+                    await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
+                    await fhem.readingsSingleUpdate(self.hash, "state", "update", 1)
+                await self.update_all()
+            except:
+                self.logger.error("Failed to update, retry in 300s")
             await asyncio.sleep(300)
 
     # FHEM FUNCTION
@@ -113,7 +118,7 @@ class eq3bt:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "ecoTemperature", self.thermostat.eco_temperature)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "temperatureOffset", self.thermostat.temperature_offset)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "comfortTemperature", self.thermostat.comfort_temperature)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "mode", self.thermostat.mode)
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "mode", self.thermostat.fhem_mode)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", self.thermostat.state)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "completeState", self.thermostat.mode_readable)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "valvePosition", self.thermostat.valve_state)
@@ -184,7 +189,7 @@ class eq3bt:
             target_mode = eq3.Mode.Auto
         else:
             target_mode = eq3.Mode.Manual
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_mode, target_mode)))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_fhem_mode, target_mode)))
     
     async def set_eco(self):
         asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_eco)))
@@ -217,11 +222,11 @@ class FhemThermostat(eq3.Thermostat):
     def set_locked(self, state):
         self.locked = state
 
-    def set_mode(self, mode):
+    def set_fhem_mode(self, mode):
         self.mode = mode
     
     @property
-    def mode(self):
+    def fhem_mode(self):
         if self._mode == Mode.Boost:
             return "boost"
         elif self._mode == Mode.Away:

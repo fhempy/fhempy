@@ -187,12 +187,16 @@ BindingsIo_Write($$$$$) {
   Log3 $hash, 4, "BindingsIo: <<< WS: ".encode_json(\%msg);
   DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
 
+  my $py_timeout = 1100;
+  if ($function eq "Define" or $init_done == 0) {
+    # wait 10s on Define, this might happen on startup
+    $py_timeout = 10000;
+  }
   my $returnval = "";
   my $t1 = time * 1000;
   while (1) {
     my $t2 = time * 1000;
-    if (($t2 - $t1) > 1100) {
-      # stop loop after 1100ms
+    if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);

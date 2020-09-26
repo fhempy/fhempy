@@ -185,16 +185,17 @@ class discover_upnp:
         self.create_devs = {}
 
     async def found_device(self, upnp_device):
-        await fhem.readingsSingleUpdate(self.hash, upnp_device.udn + "::" + upnp_device.device_type, upnp_device.friendly_name, 1)
-        if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
-            self.create_devs[upnp_device.udn] = {
-                "name": "".join(filter(str.isalpha, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2],
-                "devname": "".join(filter(str.isalpha, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2]
-            }
+        if upnp_device and upnp_device.udn:
+            await fhem.readingsSingleUpdate(self.hash, upnp_device.udn + "::" + upnp_device.device_type, upnp_device.friendly_name, 1)
+            if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
+                self.create_devs[upnp_device.udn] = {
+                    "name": "".join(filter(str.isalnum, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2],
+                    "devname": "".join(filter(str.isalnum, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2]
+                }
         # if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
         #     if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "dlna_dmr", "UDN", upnp_device.udn)):
         #         devname = devname = upnp_device.friendly_name + "_" + upnp_device.model_name
-        #         devname = ''.join(filter(str.isalpha, devname))
+        #         devname = ''.join(filter(str.isalnum, devname))
         #         await fhem.CommandDefine(self.hash, devname + " PythonModule dlna_dmr " + upnp_device.udn)
 
     async def removed_device(self, upnp_device):
