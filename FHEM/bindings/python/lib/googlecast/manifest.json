@@ -1,5 +1,5 @@
 {
-  "requirements": ["pychromecast>=7.2.1",
+  "requirements": ["pychromecast>=7.3.0",
                    "youtube_dl",
                    "spotipy",
                    "zeroconf",
