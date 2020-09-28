@@ -22,6 +22,11 @@ wsconnection = None
 
 pip_lock = asyncio.Lock()
 
+def getFhemPyDeviceByName(name):
+    if name in loadedModuleInstances:
+        return loadedModuleInstances[name]
+    return None
+
 async def pybinding(websocket, path):
         logger.info("FHEM connection started: " + websocket.remote_address[0])
         pb = PyBinding(websocket)
@@ -169,7 +174,7 @@ class PyBinding:
                                 del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 5)
+                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 15)
                             except asyncio.TimeoutError:
                                 errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - Define"
                                 if fhem_reply_done:
@@ -202,9 +207,9 @@ class PyBinding:
                                 func = getattr(nmInstance, hash["function"], "nofunction")
                                 if (func != "nofunction"):
                                     if hash["function"] == "Undefine":
-                                        ret = await asyncio.wait_for(func(hash), 5)
+                                        ret = await asyncio.wait_for(func(hash), 15)
                                     else:
-                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 5)
+                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 15)
                                     if (ret == None):
                                         ret = ""
                                     if fhem_reply_done:
