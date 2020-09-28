@@ -70,25 +70,6 @@ class xiaomi_gateway3:
     # create task which handles MQTT messages
     asyncio.create_task(self.gw.connect_mqtt())
 
-class UDPProtocol:
-
-  def __init__(self, logger, gw):
-    self.logger = logger
-    self.gw = gw
-
-  def connection_made(self, transport):
-    self.gw.udptransport = transport
-    sock = transport.get_extra_info("socket")
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-  def datagram_received(self, data, addr):
-    # TODO convert data and send to MQTT
-    # call self.mqttclient.publish(topic, message, qos=1)
-    # filter out message previsouly broadcasted
-    self.logger.debug('Message from UDP: ' + str(data, "utf-8") + ", " + str(addr))
-
 class Gateway:
 
   def __init__(self, logger, hash, host, token):
@@ -98,7 +79,6 @@ class Gateway:
     self.token = token
     self.devices = {}
     self.miio = Device(host, token)
-    self.udptransport = None
     self.child_devices = {}
 
   def register_device(self, did, upd_listener):
@@ -115,6 +95,7 @@ class Gateway:
 
   async def connect(self):
     await fpyutils.run_blocking(functools.partial(self.thread_blocking_connect))
+    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
     await self.create_devices()
     await self.report_all()
 
@@ -231,8 +212,6 @@ class Gateway:
                 if msg['did'] in self.child_devices:
                   for listener in self.child_devices[msg['did']]:
                     await listener.update(msg['data'])
-                # broadcast miio msg
-                #self.broadcast(json.dumps(udp_msg))
               except:
                 self.logger.exception("Failed to handle MQTT message")
     except:
@@ -390,15 +369,3 @@ class Gateway:
           "cmd": cmd,
           "data": payload
         }
-
-  async def start_udp_server(self):
-    coro = asyncio.get_event_loop().create_datagram_endpoint(
-      lambda: UDPProtocol(self.logger, self), local_addr=('0.0.0.0', 9898))
-    asyncio.get_event_loop().create_task(coro)
-  
-  def broadcast(self, data):
-    self.logger.debug("Broadcast UDP message: " + data)
-    if self.udptransport:
-      self.udptransport.sendto(data.encode(), ('192.168.86.150', 9898))
-    else:
-      self.logger.error("UDP transport not ready yet")
