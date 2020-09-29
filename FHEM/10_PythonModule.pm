@@ -24,6 +24,7 @@ PythonModule_Initialize($)
   $hash->{GetFn}    = 'PythonModule_Get';
   $hash->{SetFn}    = 'PythonModule_Set';
   $hash->{AttrFn}   = 'PythonModule_Attr';
+  $hash->{AttrList} = $readingFnAttributes;
 
   return undef;
 }
