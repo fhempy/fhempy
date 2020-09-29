@@ -20,6 +20,8 @@ from . import utils
 from .. import fhem
 from .. import utils as fpyutils
 
+RE_NWK_KEY = re.compile(r'lumi send-nwk-key (0x.+?) {(.+?)}')
+
 class xiaomi_gateway3:
 
   def __init__(self, logger):
@@ -49,12 +51,16 @@ class xiaomi_gateway3:
 
   # FHEM FUNCTION
   async def Set(self, hash, args, argsh):
-    set_conf_list = {
-      "reconnect": {}
-    }
-    return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
+    # set_conf_list = {
+    #   "pair": { "args": ["new_state"], "format": "on,off" },
+    #   "pairmodel": { "args": ["model"] }
+    # }
+    # return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
+    return ""
   
-  async def set_reconnect(self, params):
+  async def set_pair(self, params):
+    new_state = params["new_state"]
+    #TODO send pairing request via mqtt
     return
 
   def register_device(self, did, upd_listener):
@@ -81,6 +87,8 @@ class Gateway:
     self.miio = Device(host, token)
     self.child_devices = {}
     self.connected = False
+    self.pair_model = None
+    self.pair_payload = None
 
   def register_device(self, did, upd_listener):
     if did not in self.child_devices:
@@ -217,24 +225,52 @@ class Gateway:
   async def connect_mqtt(self):
     try:
       async with Client(self.host) as client:
-        self.mqttclient = client
+        self.mqtt = client
         async with client.filtered_messages("#") as messages:
           await client.subscribe("#")
           async for message in messages:
-            self.logger.debug("Message from MQTT: " + message.payload.decode())
-            if message.topic == 'zigbee/send':
-              try:
+            self.logger.debug(f"Message from MQTT: {message.topic}: {message.payload.decode()}")
+            try:
+              if message.topic == 'zigbee/send':
                 payload = json.loads(message.payload.decode())
                 # convert to miio msg
                 msg = self.process_message(payload)
                 if msg['did'] in self.child_devices:
                   for listener in self.child_devices[msg['did']]:
                     await listener.update(msg['data'])
-              except:
+              elif message.topic.endswith('/heartbeat'):
+                for listener in self.child_devices['lumi.0']:
+                  await listener.update(json.loads(message.payload.decode()))
+              elif self.pair_model and message.topic.endswith('/commands'):
+                self.process_pair(message.payload)
+            except:
                 self.logger.exception("Failed to handle MQTT message")
     except:
       self.connected = False
       self.logger.exception("Failed to connect to MQTT server: " + self.host)
+
+  def process_pair(self, raw: bytes):
+    # get shortID and eui64 of paired device
+    if b'lumi send-nwk-key' in raw:
+        # create model response
+        payload = f"0x18010105000042{len(self.pair_model):02x}" \
+                  f"{self.pair_model.encode().hex()}"
+        m = RE_NWK_KEY.search(raw.decode())
+        self.pair_payload = json.dumps({
+            'sourceAddress': m[1],
+            'eui64': '0x' + m[2],
+            'profileId': '0x0104',
+            'clusterId': '0x0000',
+            'sourceEndpoint': '0x01',
+            'destinationEndpoint': '0x01',
+            'APSCounter': '0x01',
+            'APSPlayload': payload
+        }, separators=(',', ':'))
+
+    # send model response "from device"
+    elif b'zdo active ' in raw:
+        mac = '' #self.device['mac'][2:].upper()
+        self.mqtt.publish(f"gw/{mac}/MessageReceived", self.pair_payload)
 
   def _get_devices_v3(self):
         """Load device list via Telnet."""
@@ -313,7 +349,13 @@ class Gateway:
             telnet.read_until(b'\r\n')  # skip command
             raw = telnet.read_until(b'# ')
 
-            device = json.loads(raw[:-2])
+            device = self.miio.info()
+            devices.append({
+                'did': 'lumi.0',
+                'sid': '0',
+                'mac': device.mac_address,  # wifi mac!!!
+                'model': device.model
+            })
 
             self.connected = True
 

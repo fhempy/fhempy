@@ -76,6 +76,9 @@ class xiaomi_gateway3_device:
             },
             "lumi.sensor_motion.v1": {
                 "devStateIcon": "motion:motion_detector\@red off:motion_detector\@green no_motion:motion_detector\@green"
+            },
+            "lumi.gateway.mgl03": {
+                "stateFormat": "presence"
             }
         }
 
@@ -89,7 +92,8 @@ class xiaomi_gateway3_device:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "model", self.device_details['model'], 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "sid", self.device_details['sid'], 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "mac", self.device_details['mac'], 1)
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "zb_ver", self.device_details['zb_ver'], 1)
+            if 'zb_ver' in self.device_details:
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "zb_ver", self.device_details['zb_ver'], 1)
 
         # device is online    
         await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "online", 1)
