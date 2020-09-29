@@ -80,6 +80,7 @@ class Gateway:
     self.devices = {}
     self.miio = Device(host, token)
     self.child_devices = {}
+    self.connected = False
 
   def register_device(self, did, upd_listener):
     if did not in self.child_devices:
@@ -94,23 +95,39 @@ class Gateway:
     return None
 
   async def connect(self):
+    # first connect
     await fpyutils.run_blocking(functools.partial(self.thread_blocking_connect))
     await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
     await self.create_devices()
     await self.report_all()
+    # start check_connection task to reconnect on gw reboot
+    asyncio.create_task(self.check_connection())
 
-  def thread_blocking_connect(self):
-    while len(self.devices) == 0:
+  async def check_connection(self):
+    while True:
+      if self.connected is False:
+        await fpyutils.run_blocking(functools.partial(self.thread_blocking_connect))
+        if self.connected:
+          await self.create_devices()
+          await self.report_all()
+      # sleep 30s
+      await asyncio.sleep(30)
+
+  def thread_blocking_connect(self, keepconnection=0):
+    while self.connected is False:
       if self._miio_connect():
-          devices = self._get_devices_v3()
-          if devices is None:
-              self._enable_telnet()
-              self._enable_mqtt()
-          else:
-              self.setup_devices(devices)
+          self.update_devices()
       else:
           time.sleep(30)
     # connected
+
+  def update_devices(self):
+    devices = self._get_devices_v3()
+    if devices is None:
+        self._enable_telnet()
+        self._enable_mqtt()
+    else:
+        self.setup_devices(devices)
 
   def setup_devices(self, devices: list):
     """Add devices to hass."""
@@ -134,7 +151,8 @@ class Gateway:
   async def create_devices(self):
     for did in self.devices:
       if not await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did):
-        await fhem.CommandDefine(self.hash, "".join(filter(str.isalnum, did)) + " PythonModule xiaomi_gateway3_device " + self.hash["NAME"] + " " + did)
+        devname = "".join(filter(str.isalnum, self.devices[did]['model'])) + "_" + self.devices[did]['sid']
+        await fhem.CommandDefine(self.hash, devname + " PythonModule xiaomi_gateway3_device " + self.hash["NAME"] + " " + did)
         # avoid fhem commands overload
         await asyncio.sleep(3)
       # avoid fhem commands overload
@@ -215,6 +233,7 @@ class Gateway:
               except:
                 self.logger.exception("Failed to handle MQTT message")
     except:
+      self.connected = False
       self.logger.exception("Failed to connect to MQTT server: " + self.host)
 
   def _get_devices_v3(self):
@@ -256,27 +275,28 @@ class Gateway:
                     continue
 
                 retain = json.loads(data[did + '.prop'])['props']
-                self.logger.debug(f"{self.host} | {model} retain: {retain}")
 
-                params = {
-                    p[2]: retain.get(p[1])
-                    for p in desc['params']
-                    if p[1] is not None
-                }
+                params = retain
+                # params = {
+                #     p[2]: retain.get(p[1])
+                #     for p in desc['params']
+                #     if p[1] is not None
+                # }
 
                 # fix some param values
-                for k, v in params.items():
+                for k, v in list(params.items()):
                     if k in ('temperature', 'humidity', 'pressure'):
                         params[k] = v / 100.0
                     elif k in ('voltage'):
                         params[k] = v / 1000.0
-                    elif v in ('on', 'open'):
-                        params[k] = 1
-                    elif v in ('off', 'close'):
-                        params[k] = 0
-                    elif k == 'battery' and v and v > 1000:
-                        params['batteryPercentage'] = round((min(v, 3200) - 2500) / 7)
+                    elif k in ('battery') and v:
+                        params['batteryPercentage'] = params['battery']
                         params['battery'] = "low" if params['batteryPercentage'] < 25 else "ok"
+                    elif k in ('status'):
+                        params['state'] = params['status']
+                        del params['status']
+
+                self.logger.debug(f"{self.host} | {model} retain: {params}")
 
                 device = {
                     'did': did,
@@ -294,6 +314,8 @@ class Gateway:
             raw = telnet.read_until(b'# ')
 
             device = json.loads(raw[:-2])
+
+            self.connected = True
 
             return devices
 
@@ -321,10 +343,6 @@ class Gateway:
 
         did = data['did']
 
-        # skip without callback
-        #if did not in self.updates:
-        #    return
-
         device = self.devices[did]
         payload = {}
 
@@ -344,12 +362,14 @@ class Gateway:
 
             if prop in ('temperature', 'humidity', 'pressure'):
                 payload[prop] = param['value'] / 100.0
-            elif prop == 'voltage':
+            elif prop in ('voltage'):
                 payload[prop] = param['value'] / 1000.0
-            elif prop == 'battery' and param['value'] > 1000:
+            elif prop in ('battery'):
                 # xiaomi light sensor
-                payload['batteryPercentage'] = round((min(param['value'], 3200) - 2500) / 7)
+                payload['batteryPercentage'] = param['value']
                 payload['battery'] = "low" if payload['batteryPercentage'] < 25 else "ok"
+            elif prop in ('status'):
+                payload['state'] = param['value']
             elif prop == 'angle':
                 # xiaomi cube 100 points = 360 degrees
                 payload[prop] = param['value'] * 4
@@ -361,6 +381,12 @@ class Gateway:
 
         self.logger.debug(f"{self.host} | {device['did']} {device['model']} <= "
                       f"{payload}")
+
+        if did in self.devices:
+          self.devices[did]['init'] = payload
+        else:
+          # TODO create device
+          pass
 
         return {
           "did": did,
