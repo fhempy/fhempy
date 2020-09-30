@@ -9,6 +9,7 @@ helloworld|Hello World example
 googlecast|Control Cast devices
 dlna_dmr|Control DLNA MediaRenderer devices)
 eq3bt|Control EQ3 Bluetooth thermostat
+xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 discover_mdns|Discover mDNS devices
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
