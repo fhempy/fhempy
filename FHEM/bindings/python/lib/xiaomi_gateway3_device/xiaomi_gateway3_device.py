@@ -19,6 +19,9 @@ class xiaomi_gateway3_device:
     async def Define(self, hash, args, argsh):
         self.hash = hash
 
+        if len(args) < 5:
+            return "Usage: define devname PythonModule xiaomi_gateway3 <IP> <token>"
+
         self.gw_name = args[3]
         self.did = args[4]
         
