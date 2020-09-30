@@ -24,6 +24,7 @@ PythonModule_Initialize($)
   $hash->{GetFn}    = 'PythonModule_Get';
   $hash->{SetFn}    = 'PythonModule_Set';
   $hash->{AttrFn}   = 'PythonModule_Attr';
+  $hash->{AttrList} = $readingFnAttributes;
 
   return undef;
 }
@@ -51,8 +52,8 @@ PythonModule_Define($$$)
 
   AssignIoPort($hash);
 
-  if (!$init_done) {
-    # Define will be done by PythonBinding connection callback
+  if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
+    Log3 $hash, 1, "PythonModule: PythonBinding not yet connected! Define after connect...";
     return undef;
   }
 

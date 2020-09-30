@@ -37,6 +37,10 @@ async def InternalVal(name, internal, default):
     cmd = "InternalVal('" + name + "', '" + internal + "', '" + default + "')"
     return await sendCommandName(name, cmd)
 
+async def addToDevAttrList(name, attr_list):
+    cmd = "addToDevAttrList('" + name + "', '" + attr_list + "')"
+    return await sendCommandName(name, cmd)
+
 async def setDevAttrList(name, attr_list):
     cmd = "setDevAttrList('" + name + "', '" + attr_list + " '.$readingFnAttributes)"
     return await sendCommandName(name, cmd)
@@ -79,6 +83,10 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 async def CommandDefine(hash, definition):
     cmd = "CommandDefine(undef, \"" + definition + "\")"
+    return await sendCommandHash(hash, cmd)
+
+async def CommandAttr(hash, attrdef):
+    cmd = "CommandAttr(undef, \"" + attrdef + "\")"
     return await sendCommandHash(hash, cmd)
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
@@ -139,7 +147,7 @@ async def sendCommandName(name, cmd, hash=None):
                 break
             await asyncio.sleep(0.01)
         # wait max 1s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 5)
+        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 15)
         logger.debug("sendCommandName END")
         ret = json.loads(jsonmsg)['result']
     except asyncio.TimeoutError:

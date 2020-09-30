@@ -64,6 +64,7 @@ BindingsIo_Define($$$)
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
+  $hash->{frame} = Protocol::WebSocket::Frame->new;
 
   if ($init_done) {
     my $foundServer = 0;
@@ -187,7 +188,7 @@ BindingsIo_Write($$$$$) {
   Log3 $hash, 4, "BindingsIo: <<< WS: ".encode_json(\%msg);
   DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
 
-  my $py_timeout = 1100;
+  my $py_timeout = 1500;
   if ($function eq "Define" or $init_done == 0) {
     # wait 10s on Define, this might happen on startup
     $py_timeout = 10000;
@@ -285,6 +286,7 @@ sub BindingsIo_processMessage($$$$) {
   my $json = eval {decode_json($response)};
   if ($@) {
     Log3 $hash, 1, "BindingsIo: ERROR JSON: ".$@;
+    Log3 $hash, 1, "BindingsIo: received JSON was: ".$response;
     return "error";
   }
 
@@ -408,9 +410,8 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   }
 
   if ($USE_DEVIO_DECODEWS == 0) {
-    my $frame = Protocol::WebSocket::Frame->new;
-    $frame->append($response);
-    while (my $r = $frame->next) {
+    $hash->{frame}->append($response);
+    while (my $r = $hash->{frame}->next) {
       Log3 $hash, 4, "BindingsIo: >>> WS: ".$r;
       my $resTemp = {
         "response" => $r,

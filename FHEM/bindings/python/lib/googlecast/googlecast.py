@@ -48,6 +48,10 @@ class googlecast:
             hash["CASTNAME"] = args[3]
         self.hash = hash
 
+        # set userattr as long as Define can't be called on startup
+        #await fhem.setDevAttrList(hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5")
+        await fhem.addToDevAttrList(hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5")
+
         if self.browser:
             pychromecast.stop_discovery(self.browser)
         if self.cast:
@@ -56,7 +60,6 @@ class googlecast:
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsBulkUpdateIfChanged(hash, "connection", "disconnected")
-        await fhem.setDevAttrList(hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5")
         await fhem.readingsEndUpdate(hash, 1)
 
         self.startDiscovery()
