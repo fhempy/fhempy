@@ -9,6 +9,7 @@ import functools
 import site
 import sys
 import importlib
+import time
 from . import fhem
 from . import pkg_installer
 
@@ -22,12 +23,17 @@ wsconnection = None
 
 pip_lock = asyncio.Lock()
 
+connection_start = 0
+fct_timeout = 60
+
 def getFhemPyDeviceByName(name):
     if name in loadedModuleInstances:
         return loadedModuleInstances[name]
     return None
 
 async def pybinding(websocket, path):
+        global connection_start
+        connection_start = time.time()
         logger.info("FHEM connection started: " + websocket.remote_address[0])
         pb = PyBinding(websocket)
         fhem.updateConnection(pb)
@@ -103,6 +109,10 @@ class PyBinding:
             logger.error("Websocket JSON couldn't be decoded")
             return
 
+        global fct_timeout
+        if time.time() - connection_start > 120:
+            fct_timeout = 5
+
         try:
             if ("awaitId" in hash and len(self.msg_listeners) > 0):
                 removeElement = None
@@ -174,9 +184,9 @@ class PyBinding:
                                 del moduleLoadingRunning[hash["NAME"]]
                                 if (hash["function"] != "Define"):
                                     func = getattr(loadedModuleInstances[hash["NAME"]], "Define", "nofunction")
-                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), 15)
+                                    await asyncio.wait_for(func(hash, hash['defargs'], hash['defargsh']), fct_timeout)
                             except asyncio.TimeoutError:
-                                errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - Define"
+                                errorMsg = f"Function execution >{fct_timeout}s, cancelled: {hash['NAME']} Define"
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
                                 else:
@@ -206,16 +216,18 @@ class PyBinding:
                                 # call Set/Attr/Define/...
                                 func = getattr(nmInstance, hash["function"], "nofunction")
                                 if (func != "nofunction"):
+                                    logger.info(f"Start function {hash['NAME']}:{hash['function']}")
                                     if hash["function"] == "Undefine":
-                                        ret = await asyncio.wait_for(func(hash), 15)
+                                        ret = await asyncio.wait_for(func(hash), fct_timeout)
                                     else:
-                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), 15)
+                                        ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), fct_timeout)
+                                    logger.info(f"End function {hash['NAME']}:{hash['function']}")
                                     if (ret == None):
                                         ret = ""
                                     if fhem_reply_done:
                                         await self.updateHash(hash)
                         except asyncio.TimeoutError:
-                            errorMsg = "Function execution >1s, cancelled: " + hash["NAME"] + " - " + hash["function"]
+                            errorMsg = f"Function execution >{fct_timeout}s, cancelled: {hash['NAME']} - {hash['function']}"
                             if fhem_reply_done:
                                 await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
                             else:
