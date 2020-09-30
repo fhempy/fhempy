@@ -37,6 +37,10 @@ async def InternalVal(name, internal, default):
     cmd = "InternalVal('" + name + "', '" + internal + "', '" + default + "')"
     return await sendCommandName(name, cmd)
 
+async def addToDevAttrList(name, attr_list):
+    cmd = "addToDevAttrList('" + name + "', '" + attr_list + "')"
+    return await sendCommandName(name, cmd)
+
 async def setDevAttrList(name, attr_list):
     cmd = "setDevAttrList('" + name + "', '" + attr_list + " '.$readingFnAttributes)"
     return await sendCommandName(name, cmd)
