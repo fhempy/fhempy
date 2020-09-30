@@ -186,7 +186,7 @@ class discover_upnp:
 
     async def found_device(self, upnp_device):
         if upnp_device and upnp_device.udn:
-            await fhem.readingsSingleUpdate(self.hash, upnp_device.udn + "::" + upnp_device.device_type, upnp_device.friendly_name, 1)
+            await fhem.readingsSingleUpdate(self.hash, upnp_device.udn.replace(":",".") + "_" + upnp_device.device_type.replace(":","."), upnp_device.friendly_name, 0)
             if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
                 self.create_devs[upnp_device.udn] = {
                     "name": "".join(filter(str.isalnum, upnp_device.friendly_name)) + "_" + upnp_device.device_type.split(":")[-2],
