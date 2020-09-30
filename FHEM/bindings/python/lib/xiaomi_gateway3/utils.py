@@ -338,30 +338,3 @@ def get_device(zigbee_model: str) -> Optional[dict]:
             }
 
     return None
-
-
-def fix_xiaomi_props(params) -> dict:
-    for k, v in params.items():
-        if k in ('temperature', 'humidity', 'pressure'):
-            params[k] = v / 100.0
-        elif k in ('voltage'):
-            params[k] = v / 1000.0
-        elif v in ('on', 'open'):
-            params[k] = 1
-        elif v in ('off', 'close'):
-            params[k] = 0
-        elif k == 'battery' and v and v > 1000:
-            params[k] = round((min(v, 3200) - 2500) / 7)
-        elif k == 'run_state':
-            params[k] = ['offing', 'oning', 'stop',
-                         'hinder_stop'].index(v)
-
-    return params
-
-
-TITLE = "Xiaomi Gateway 3 Debug"
-NOTIFY_TEXT = '<a href="%s" target="_blank">Open Log<a>'
-HTML = (f'<!DOCTYPE html><html><head><title>{TITLE}</title>'
-        '<meta http-equiv="refresh" content="%s"></head>'
-        '<body><pre>%s</pre></body></html>')
-

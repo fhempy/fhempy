@@ -31,10 +31,8 @@ class xiaomi_gateway3:
   # FHEM FUNCTION
   async def Define(self, hash, args, argsh):
     self.hash = hash
-    await fhem.readingsBeginUpdate(hash)
-    await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")
-    await fhem.readingsEndUpdate(hash, 1)
-
+    await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
+    
     hash["HOST"] = args[3]
     hash["TOKEN"] = args[4]
 
@@ -412,6 +410,8 @@ class Gateway:
                 payload['battery'] = "low" if payload['batteryPercentage'] < 25 else "ok"
             elif prop in ('status'):
                 payload['state'] = param['value']
+            elif prop == 'contact':
+                payload['state'] = "open" if param['value'] == 1 else "close"
             elif prop == 'angle':
                 # xiaomi cube 100 points = 360 degrees
                 payload[prop] = param['value'] * 4
