@@ -20,7 +20,7 @@ class xiaomi_gateway3_device:
         self.hash = hash
 
         if len(args) < 5:
-            return "Usage: define devname PythonModule xiaomi_gateway3 <IP> <token>"
+            return "Usage: define devname PythonModule xiaomi_gateway3_device <IP> <DID>"
 
         self.gw_name = args[3]
         self.did = args[4]
@@ -69,19 +69,25 @@ class xiaomi_gateway3_device:
 
         attr_conf = {
             "lumi.sensor_magnet.v2": {
-                "devStateIcon": "open:fts_door_open\@red close:fts_door\@green"
+                "devStateIcon": "open:fts_door_open\@red close:fts_door\@green",
+                "icon": "tuer_fenster_kontakt"
             },
             "lumi.sensor_ht.v1": {
-                "stateFormat": "temperature °C, humidity %"
+                "stateFormat": "temperature °C, humidity %",
+                "icon": "temp_temperature"
             },
             "lumi.sensor_ht.v2": {
-                "stateFormat": "temperature °C, humidity %, pressure kPa"
+                "stateFormat": "temperature °C, humidity %, pressure kPa",
+                "icon": "temp_temperature"
             },
             "lumi.sensor_motion.v1": {
-                "devStateIcon": "motion:motion_detector\@red off:motion_detector\@green no_motion:motion_detector\@green"
+                "devStateIcon": "motion:motion_detector\@red off:motion_detector\@green no_motion:motion_detector\@green",
+                "icon": "people_sensor"
             },
             "lumi.gateway.mgl03": {
-                "stateFormat": "presence"
+                "stateFormat": "presence",
+                "devStateIcon": "online:it_wifi\@red offline:it_wifi\@red",
+                "icon": "tradfri_gateway"
             }
         }
 
