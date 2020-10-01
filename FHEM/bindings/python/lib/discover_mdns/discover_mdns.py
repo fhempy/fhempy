@@ -78,7 +78,7 @@ class discover_mdns:
         await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
         self.loop.create_task(self.runZeroconfScan())
         
-        if await fhem.AttrVal(self.hash, "icon", "") == "":
+        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
             await fhem.CommandAttr(self.hash, "icon rc_SEARCH")
 
         return ""

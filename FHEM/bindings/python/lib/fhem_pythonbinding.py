@@ -216,12 +216,12 @@ class PyBinding:
                                 # call Set/Attr/Define/...
                                 func = getattr(nmInstance, hash["function"], "nofunction")
                                 if (func != "nofunction"):
-                                    logger.info(f"Start function {hash['NAME']}:{hash['function']}")
+                                    logger.debug(f"Start function {hash['NAME']}:{hash['function']}")
                                     if hash["function"] == "Undefine":
                                         ret = await asyncio.wait_for(func(hash), fct_timeout)
                                     else:
                                         ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), fct_timeout)
-                                    logger.info(f"End function {hash['NAME']}:{hash['function']}")
+                                    logger.debug(f"End function {hash['NAME']}:{hash['function']}")
                                     if (ret == None):
                                         ret = ""
                                     if fhem_reply_done:

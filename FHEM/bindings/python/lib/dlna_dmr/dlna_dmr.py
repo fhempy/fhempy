@@ -117,7 +117,7 @@ class dlna_dmr:
         if len(args) < 4:
             return "define device PythonModule dlna_dmr <uuid>"
 
-        if await fhem.AttrVal(self.hash, "icon", "") == "":
+        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
             await fhem.CommandAttr(self.hash, "icon scene_scene")
 
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)

@@ -53,7 +53,7 @@ class eq3bt:
         self.hash["MAC"] = mac
         self.logger.info(f"Define: eq3bt {mac}")
 
-        if await fhem.AttrVal(self.hash, "icon", "") == "":
+        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
             await fhem.CommandAttr(self.hash, "icon sani_heating_temp")
         await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
