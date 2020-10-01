@@ -35,8 +35,8 @@ class discover_ble:
                     else:
                         self.logger.debug("found unhandled device: " + d.name + ", " + d.address + ", rssi: " + str(d.rssi))
             except:
-                self.logger.error("BLE Scan failed, retry in 300s", exc_info=True)
-            await asyncio.sleep(300)
+                self.logger.error("BLE Scan failed, retry in 600s", exc_info=True)
+            await asyncio.sleep(600)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -45,6 +45,9 @@ class discover_ble:
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "active")
         await fhem.readingsEndUpdate(hash, 1)
+
+        if await fhem.AttrVal(self.hash, "icon", "") == "":
+            await fhem.CommandAttr(self.hash, "icon rc_SEARCH")
 
         if self.blescanTask:
             self.blescanTask.cancel()

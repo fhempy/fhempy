@@ -35,6 +35,8 @@ class xiaomi_gateway3:
     if len(args) < 5:
       return "Usage: define devname PythonModule xiaomi_gateway3 <IP> <token>"
 
+    if await fhem.AttrVal(self.hash, "icon", "") == "":
+      await fhem.CommandAttr(self.hash, "icon mqtt")
     await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
     
     hash["HOST"] = args[3]

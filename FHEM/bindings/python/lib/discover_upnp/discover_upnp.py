@@ -208,6 +208,10 @@ class discover_upnp:
         ssdp.getInstance(self.logger).register_listener(self)
         await ssdp.getInstance(self.logger).start_search()
         await fhem.readingsSingleUpdate(hash, "state", "active", 0)
+
+        if await fhem.AttrVal(self.hash, "icon", "") == "":
+            await fhem.CommandAttr(self.hash, "icon rc_SEARCH")
+
         return ""
     
     # FHEM Set
