@@ -31,6 +31,10 @@ class xiaomi_gateway3:
   # FHEM FUNCTION
   async def Define(self, hash, args, argsh):
     self.hash = hash
+
+    if len(args) < 5:
+      return "Usage: define devname PythonModule xiaomi_gateway3 <IP> <token>"
+
     await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
     
     hash["HOST"] = args[3]
@@ -55,11 +59,6 @@ class xiaomi_gateway3:
     # }
     # return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
     return ""
-  
-  async def set_pair(self, params):
-    new_state = params["new_state"]
-    #TODO send pairing request via mqtt
-    return
 
   def register_device(self, did, upd_listener):
     self.gw.register_device(did, upd_listener)
