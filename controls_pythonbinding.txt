@@ -45,7 +45,7 @@ UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3/manifest.jso
 UPD 2020-09-30_23:01:37 1841 FHEM/bindings/python/lib/xiaomi_gateway3/miio_fix.py
 UPD 2020-09-30_23:01:37 2323 FHEM/bindings/python/lib/xiaomi_gateway3/unqlite.py
 UPD 2020-09-30_23:01:37 13546 FHEM/bindings/python/lib/xiaomi_gateway3/utils.py
-UPD 2020-09-30_23:01:37 14668 FHEM/bindings/python/lib/xiaomi_gateway3/xiaomi_gateway3.py
+UPD 2020-10-01_19:22:41 14645 FHEM/bindings/python/lib/xiaomi_gateway3/xiaomi_gateway3.py
 UPD 2020-09-30_23:01:37 30 FHEM/bindings/python/lib/xiaomi_gateway3_device/__init__.py
 UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3_device/manifest.json
-UPD 2020-09-30_23:07:03 3964 FHEM/bindings/python/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
+UPD 2020-10-01_19:22:41 4265 FHEM/bindings/python/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
