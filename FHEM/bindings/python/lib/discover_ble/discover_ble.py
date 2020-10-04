@@ -27,9 +27,9 @@ class discover_ble:
                         else:
                             self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
                     elif d.name == "CC-RT-BLE":
-                        if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "EQ3BT", "MAC", d.address):
+                        if not await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "eq3bt", "MAC", d.address):
                             self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
-                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " EQ3BT '" + d.address + "'")
+                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " PythonModule eq3bt '" + d.address + "'")
                         else:
                             self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
                     else:
