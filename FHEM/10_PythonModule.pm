@@ -91,7 +91,7 @@ PythonModule_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
-  if ($attrName eq "IODev") {
+  if ($attrName eq "IODev" && $init_done) {
     IOWrite($defs{$name}, $defs{$name}, "Undefine");
     readingsSingleUpdate($defs{$name}, "state", "change DevIo...", 1);
     InternalTimer(gettimeofday()+10, "PythonModule_ChangeDevIo", $defs{$name}, 0);
