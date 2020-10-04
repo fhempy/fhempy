@@ -13,7 +13,7 @@ DIR FHEM/bindings/python/lib/xiaomi_gateway3_device
 DIR FHEM/bindings/python/lib/nespresso_ble
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-04_22:39:15 12728 FHEM/10_BindingsIo.pm
-UPD 2020-10-04_22:39:15 3075 FHEM/10_PythonModule.pm
+UPD 2020-10-04_23:18:49 3089 FHEM/10_PythonModule.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-09-19_17:52:13 3934 FHEM/bindings/python/lib/pkg_installer.py
@@ -22,7 +22,7 @@ UPD 2020-09-30_23:01:37 5900 FHEM/bindings/python/lib/fhem.py
 UPD 2020-10-01_23:49:40 12414 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
-UPD 2020-10-04_22:42:54 3276 FHEM/bindings/python/lib/discover_ble/discover_ble.py
+UPD 2020-10-04_22:47:47 3276 FHEM/bindings/python/lib/discover_ble/discover_ble.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
 UPD 2020-09-19_17:52:13 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
 UPD 2020-10-01_23:49:40 3582 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
