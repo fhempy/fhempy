@@ -12,7 +12,7 @@ dlna_dmr|Control DLNA MediaRenderer devices)
 eq3bt|Control EQ3 Bluetooth thermostat
 googlecast|Control Cast devices
 helloworld|Hello World example
-nespresso_ble|Nespresso Bluetooth coffee machine
+[nespresso_ble](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
 xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 
 ## Installation
