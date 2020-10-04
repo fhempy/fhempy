@@ -24,7 +24,7 @@ PythonModule_Initialize($)
   $hash->{GetFn}    = 'PythonModule_Get';
   $hash->{SetFn}    = 'PythonModule_Set';
   $hash->{AttrFn}   = 'PythonModule_Attr';
-  $hash->{AttrList} = $readingFnAttributes;
+  $hash->{AttrList} = 'IODev '.$readingFnAttributes;
 
   return undef;
 }
@@ -91,7 +91,21 @@ PythonModule_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
+  if ($attrName eq "IODev") {
+    IOWrite($defs{$name}, $defs{$name}, "Undefine");
+    readingsSingleUpdate($defs{$name}, "state", "change DevIo...", 1);
+    InternalTimer(gettimeofday()+10, "PythonModule_ChangeDevIo", $defs{$name}, 0);
+    return undef;
+  }
+
   return IOWrite($defs{$name}, $defs{$name}, "Attr", [$cmd, $name, $attrName, $attrVal], {});
+}
+
+sub
+PythonModule_ChangeDevIo($)
+{
+  my ($hash) = $_;
+  IOWrite($hash, $hash, "Define", $hash->{args}, $hash->{argsh});
 }
 
 sub

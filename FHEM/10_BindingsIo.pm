@@ -57,16 +57,20 @@ BindingsIo_Define($$$)
   my $bindingType = ucfirst(@$a[2]);
 
   my $port = 0;
+  my $localServer = 1;
   if ($bindingType eq "Python") {
-    $port = 15733;
+    $hash->{DeviceName} = "ws:127.0.0.1:15733";
+  } else {
+    $hash->{DeviceName} = "ws:".@$a[2];
+    $bindingType = ucfirst(@$a[3]);
+    $localServer = 0;
   }
-  $hash->{DeviceName} = "ws:127.0.0.1:".$port;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
 
-  if ($init_done) {
+  if ($init_done && $localServer == 1) {
     my $foundServer = 0;
     foreach my $fhem_dev (sort keys %main::defs) {
       $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
@@ -75,6 +79,9 @@ BindingsIo_Define($$$)
       CommandDefine(undef, $bindingType."binding_".$port." ".$bindingType."Binding ".$port);
       InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
     }
+  }
+  if ($init_done && $localServer == 0) {
+    InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
   }
 
   # put in hidden room
@@ -110,7 +117,7 @@ BindingsIo_doInit($) {
   my $bindingType = uc($hash->{BindingType})."TYPE";
   foreach my $fhem_dev (sort keys %main::defs) {
     my $devhash = $main::defs{$fhem_dev};
-    if(defined($devhash->{$bindingType})) {
+    if(defined($devhash->{$bindingType}) && $devhash->{IODev}{NAME} eq $hash->{NAME}) {
       BindingsIo_Write($hash, $devhash, "Define", $devhash->{args}, $devhash->{argsh});
     }
   }
