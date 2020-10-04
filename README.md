@@ -5,14 +5,15 @@ FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM
 This repository includes following examples:
 Module | Description
 -------|--------------
-helloworld|Hello World example
-googlecast|Control Cast devices
-dlna_dmr|Control DLNA MediaRenderer devices)
-eq3bt|Control EQ3 Bluetooth thermostat
-xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 discover_mdns|Discover mDNS devices
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
+dlna_dmr|Control DLNA MediaRenderer devices)
+eq3bt|Control EQ3 Bluetooth thermostat
+googlecast|Control Cast devices
+helloworld|Hello World example
+nespresso_ble|Nespresso Bluetooth coffee machine
+xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
