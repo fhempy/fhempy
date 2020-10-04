@@ -12,8 +12,8 @@ DIR FHEM/bindings/python/lib/xiaomi_gateway3
 DIR FHEM/bindings/python/lib/xiaomi_gateway3_device
 DIR FHEM/bindings/python/lib/nespresso_ble
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
-UPD 2020-10-04_22:08:30 12728 FHEM/10_BindingsIo.pm
-UPD 2020-10-04_21:51:44 3075 FHEM/10_PythonModule.pm
+UPD 2020-10-04_22:39:15 12728 FHEM/10_BindingsIo.pm
+UPD 2020-10-04_22:39:15 3075 FHEM/10_PythonModule.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-09-19_17:52:13 3934 FHEM/bindings/python/lib/pkg_installer.py
@@ -22,7 +22,7 @@ UPD 2020-09-30_23:01:37 5900 FHEM/bindings/python/lib/fhem.py
 UPD 2020-10-01_23:49:40 12414 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
-UPD 2020-10-01_23:54:23 2666 FHEM/bindings/python/lib/discover_ble/discover_ble.py
+UPD 2020-10-04_22:42:54 3276 FHEM/bindings/python/lib/discover_ble/discover_ble.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
 UPD 2020-09-19_17:52:13 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
 UPD 2020-10-01_23:49:40 3582 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
@@ -50,7 +50,7 @@ UPD 2020-10-01_23:49:40 14762 FHEM/bindings/python/lib/xiaomi_gateway3/xiaomi_ga
 UPD 2020-09-30_23:01:37 30 FHEM/bindings/python/lib/xiaomi_gateway3_device/__init__.py
 UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3_device/manifest.json
 UPD 2020-10-01_19:22:41 4265 FHEM/bindings/python/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
-UPD 2020-10-04_22:05:23 12674 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
-UPD 2020-10-04_22:32:39 3894 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
-UPD 2020-10-04_00:00:16 36 FHEM/bindings/python/lib/nespresso_ble/__init__.py
-UPD 2020-10-04_18:59:23 53 FHEM/bindings/python/lib/nespresso_ble/manifest.json
+UPD 2020-10-04_22:39:15 36 FHEM/bindings/python/lib/nespresso_ble/__init__.py
+UPD 2020-10-04_22:39:15 53 FHEM/bindings/python/lib/nespresso_ble/manifest.json
+UPD 2020-10-04_22:39:15 12674 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
+UPD 2020-10-04_22:39:15 3894 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
