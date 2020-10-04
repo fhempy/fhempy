@@ -32,6 +32,12 @@ class discover_ble:
                             await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " PythonModule eq3bt '" + d.address + "'")
                         else:
                             self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                    elif d.name[0:7] == "Expert_":
+                        if not await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "nespresso_ble", "MAC", d.address):
+                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " PythonModule nespresso_ble '" + d.address + "'")
+                        else:
+                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
                     else:
                         self.logger.debug("found unhandled device: " + d.name + ", " + d.address + ", rssi: " + str(d.rssi))
             except:
