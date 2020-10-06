@@ -1,0 +1,23 @@
+# Source: https://github.com/dominikkarall/fhem_pythonbinding
+
+# ATTENTION
+# This is an example, please verify your directories and user
+#
+# Copy this file to /etc/systemd/system/fhem_pythonbinding.service
+# Start service with "sudo systemd start fhem_pythonbinding"
+#
+
+[Unit]
+Description=FHEM PythonBinding
+Wants=network.target
+After=network.target
+
+[Service]
+User=pi
+Group=dialout
+WorkingDirectory=/home/pi/fhem_pythonbinding/FHEM
+ExecStart=/usr/bin/python3 bindings/python/pythonbinding.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
