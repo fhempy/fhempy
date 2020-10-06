@@ -14,6 +14,7 @@ class nespresso_ble:
         self.logger = logger
         self.nespressodetect = None
         self.task = None
+        self.auth = None
         logging.getLogger("pygatt.backends.gatttool.gatttool").setLevel(logging.ERROR)
         return
 
@@ -28,9 +29,17 @@ class nespresso_ble:
         return "Usage: define devicename PythonModule nespresso_ble <MAC> [<AUTHKEY>]"
       self.mac = args[3]
       hash["MAC"] = args[3]
+
+      # check if there is already an authkey
       if len(args) > 4:
         self.auth = args[4]
+      else:
+        self.auth = await fhem.ReadingsVal(self.hash['NAME'], "authkey", "")
+
+      if self.auth != "":
+        self.auth = args[4]
         self.nespressodetect = NespressoDetect(self.auth, self.mac)
+        self.nespressodetect.set_keep_connected(True)
         self.task = asyncio.create_task(self.update_status_task())
       return ""
 
@@ -50,19 +59,28 @@ class nespresso_ble:
       set_conf_list = {
         "authkey": { "args": ["authkey"] },
         "brew": {"args": ["coffee_type", "temperature"], "params": {"temperature": {"default":"high", "optional":True}, "coffee_type": {"default":"lungo", "optional":True}}},
+        "easybrew": {"args": ["coffee_type"], "format": "ristretto,espresso,lungo,hotwater,americano"},
         "recipe": {},
         "updateStatus": {}
       }
+      if self.auth:
+        del set_conf_list['authkey']
       return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
 
-    async def set_authkey(self, params):
+    async def set_authkey(self, hash, params):
       self.auth = params["authkey"]
+      await fhem.readingsSingleUpdateIfChanged(self.hash, "authkey", self.auth, 1)
       if self.task:
         self.task.cancel()
       self.nespressodetect = NespressoDetect(self.auth, self.mac)
+      self.nespressodetect.set_keep_connected(True)
       self.task = asyncio.create_task(self.update_status_task())
 
-    async def set_brew(self, params):
+    async def set_easybrew(self, hash, params):
+      params['temperature'] = "medium"
+      await self.set_brew(hash, params)
+
+    async def set_brew(self, hash, params):
       try:
         coffee_type = params["coffee_type"]
         temp = params["temperature"]
@@ -70,11 +88,10 @@ class nespresso_ble:
       except:
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
-    async def set_updateStatus(self):
+    async def set_updateStatus(self, hash):
       asyncio.create_task(self.update_status())
 
     async def update_status(self):
-      await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "update", 1)
       await fpyutils.run_blocking(functools.partial(self.blocking_update_status))
 
       if self.device_info:
@@ -83,7 +100,10 @@ class nespresso_ble:
           await fhem.readingsSingleUpdateIfChanged(self.hash, "serial_nr", dev.serial_nr, 1)
           await fhem.readingsSingleUpdateIfChanged(self.hash, "model_nr", dev.model_nr, 1)
           await fhem.readingsSingleUpdateIfChanged(self.hash, "device_name", dev.device_name, 1)
-          await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
+          if dev.device_name:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
+          else:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
       else:
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
@@ -91,15 +111,15 @@ class nespresso_ble:
         for mac, data in self.sensors_data.items():
           for name, val in data.items():
             await fhem.readingsSingleUpdateIfChanged(self.hash, name, val, 1)
-    
+
     def blocking_update_status(self):
       self.logger.debug("nespresso_ble updatestatus")
       try:
         self.device_info = self.nespressodetect.get_info()
         self.nespressodetect.get_sensors()
         self.sensors_data = self.nespressodetect.get_sensor_data()
-        
+
       except:
-        self.logger.error("Failed to update status")
+        self.logger.exception("Failed to update status")
         self.sensors_data = None
         self.device_info = None

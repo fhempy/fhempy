@@ -122,7 +122,7 @@ class BaseDecode:
             _LOGGER.debug("state_decoder else")
             res = val
         return {self.name:res}
- 
+
 sensor_decoders = {str(CHAR_UUID_STATE):BaseDecode(name="state", format_type='state'),
                    str(CHAR_UUID_NBCAPS):BaseDecode(name="caps_number", format_type='caps_number'),
                    str(CHAR_UUID_SLIDER):BaseDecode(name="slider", format_type='slider'),
@@ -135,36 +135,11 @@ class NespressoDetect:
         self.auth_code = AUTH_CODE
         self.sensors = []
         self.sensordata = {}
-
-    def find_devices(self):
-        # Scan for devices and try to figure out if it is an Nespresso device.
-        self.adapter.start(reset_on_start=False)
-        devices = self.adapter.scan(timeout=3)
-        self.adapter.stop()
-
-        for device in devices:
-            mac = device['address']
-            _LOGGER.debug("connecting to {}".format(mac))
-            try:
-                self.adapter.start(reset_on_start=False)
-                dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20)
-                _LOGGER.debug("Connected")
-                try:
-                    data = dev.char_read(manufacturer_characteristics.uuid)
-                    manufacturer_name = data.decode(manufacturer_characteristics.format)
-                    if "prodigio" in manufacturer_name.lower():
-                        self.nespresso_devices.append(mac)
-                except (BLEError, NotConnectedError, NotificationTimeout):
-                    _LOGGER.debug("connection to {} failed".format(mac))
-                finally:
-                    dev.disconnect()
-            except (BLEError, NotConnectedError, NotificationTimeout):
-                _LOGGER.debug("Faild to connect")
-            finally:
-                self.adapter.stop()
-
-        _LOGGER.debug("Found {} Nespresso devices".format(len(self.nespresso_devices)))
-        return len(self.nespresso_devices)
+        self.keep_connected = False
+        self.dev = None
+    
+    def set_keep_connected(self, keep_connected):
+        self.keep_connected = keep_connected
 
     def get_info(self,tries=0):
         # Try to get some info from the discovered Nespresso devices
@@ -173,24 +148,28 @@ class NespressoDetect:
         for mac in self.nespresso_devices:
             device = NespressoDeviceInfo(serial_nr=mac)
             try:
-                self.adapter.start(reset_on_start=False)
-                dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20)
+                if self.dev is None:
+                    self.adapter.start(reset_on_start=False)
+                    self.dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20, auto_reconnect=self.keep_connected)
                 for characteristic in device_info_characteristics:
                     try:
-                        data = dev.char_read(characteristic.uuid)
+                        data = self.dev.char_read(characteristic.uuid)
                         setattr(device, characteristic.name, data.decode(characteristic.format))
                     except (BLEError, NotConnectedError, NotificationTimeout):
-                        _LOGGER.exception("")
-                dev.disconnect()
+                        _LOGGER.error("Failed to read characteristics")
+                if self.keep_connected is False:
+                    self.dev = None
+                    self.dev.disconnect()
             except (BLEError, NotConnectedError, NotificationTimeout):
-                _LOGGER.exception("")
+                _LOGGER.debug("Failed to connect")
                 time.sleep(5) # wait 5s
                 if tries < 3:
-                    _LOGGER.exception("Failed to get_info, 3 times")
+                    _LOGGER.debug("Failed to get_info, 3 times")
                     self.get_info(tries+1) #retry
                 else:
-                    _LOGGER.exception("Failed to get_info, more than 3 times")
-            self.adapter.stop()
+                    _LOGGER.error("Failed to get_info, more than 3 times")
+            if self.keep_connected is False:
+                self.adapter.stop()
             self.devices[mac] = device
 
         return self.devices
@@ -199,9 +178,10 @@ class NespressoDetect:
         self.sensors = {}
         for mac in self.nespresso_devices:
             try:
-                self.adapter.start(reset_on_start=False)
-                dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20)
-                characteristics = dev.discover_characteristics()
+                if self.dev is None:
+                    self.adapter.start(reset_on_start=False)
+                    self.dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20, auto_reconnect=self.keep_connected)
+                characteristics = self.dev.discover_characteristics()
                 sensor_characteristics =  []
                 for characteristic in characteristics.values():
                     _LOGGER.debug(characteristic)
@@ -209,16 +189,21 @@ class NespressoDetect:
                         sensor_characteristics.append(characteristic)
                 self.sensors[mac] = sensor_characteristics
             except (BLEError, NotConnectedError, NotificationTimeout):
-                _LOGGER.exception("Failed to discover sensors")
+                _LOGGER.error("Failed to discover sensors")
+            if self.keep_connected is False:
+                self.dev = None
+                self.dev.disconnect()
+                self.adapter.stop()
 
         return self.sensors
     
     def make_coffee(self, mac, temp="high", volume="lungo"):
         try:
-            _LOGGER.exception("make flow a coffee")
-            self.adapter.start(reset_on_start=False)
-            dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20)
-            self.connectnespresso(dev)
+            _LOGGER.debug("make flow a coffee")
+            if self.dev is None:
+                self.adapter.start(reset_on_start=False)
+                self.dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20, auto_reconnect=self.keep_connected)
+            self.connectnespresso(self.dev)
             try:
                 characteristic = "06aa3a42-f22a-11e3-9daa-0002a5d5c51b"
                 command = "0305070400000000"
@@ -236,13 +221,15 @@ class NespressoDetect:
                     command += "00"
                 else :
                     command += "00"
-                dev.char_write(characteristic, binascii.unhexlify(command), wait_for_response=True)
+                self.dev.char_write(characteristic, binascii.unhexlify(command), wait_for_response=True)
             except (BLEError, NotConnectedError, NotificationTimeout):
-                _LOGGER.exception("Failed to write characteristic for coffee flow")
-            dev.disconnect()
-            self.adapter.stop()
+                _LOGGER.error("Failed to write characteristic for coffee flow")
+            if self.keep_connected is False:
+                self.dev = None
+                self.dev.disconnect()
         except (BLEError, NotConnectedError, NotificationTimeout):
-            _LOGGER.exception("Failed to connect for coffee flow")
+            _LOGGER.error("Failed to connect for coffee flow")
+        if self.keep_connected is False:
             self.adapter.stop()
 
     def connectnespresso(self,device,tries=0):
@@ -250,24 +237,25 @@ class NespressoDetect:
             #Write the auth code from android or Ios apps to the specific UUID to allow catching value from the machine
             device.char_write(CHAR_UUID_AUTH, binascii.unhexlify(self.auth_code), wait_for_response=True)
         except (BLEError, NotConnectedError, NotificationTimeout):
-            _LOGGER.exception("Failed to send auth code, retrying in 5s")
+            _LOGGER.debug("Failed to send auth code, retrying in 5s")
             time.sleep(5) # wait 5s
             if tries < 3:
-                _LOGGER.exception("Failed to send auth code, 3 times")
+                _LOGGER.debug("Failed to send auth code, 3 times")
                 self.connectnespresso(device, tries+1) #retry
             else:
-                _LOGGER.exception("Failed to send auth code, more than 3 times")
+                _LOGGER.error("Failed to send auth code, more than 3 times")
             
     def get_sensor_data(self):
         for mac, characteristics in self.sensors.items():
             try:
-                self.adapter.start(reset_on_start=False)
-                dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20)
-                self.connectnespresso(dev)
+                if self.dev is None:
+                    self.adapter.start(reset_on_start=False)
+                    self.dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20, auto_reconnect=self.keep_connected)
+                self.connectnespresso(self.dev)
                 for characteristic in characteristics:
                     _LOGGER.debug("characteristic {}".format(characteristic))
                     try:
-                        data = dev.char_read_handle("0x{:04x}".format(characteristic.handle))
+                        data = self.dev.char_read_handle("0x{:04x}".format(characteristic.handle))
                         if characteristic.uuid in sensor_decoders:
                             _LOGGER.debug("{} data {}".format(characteristic.uuid, data))
                             sensor_data = sensor_decoders[characteristic.uuid].decode_data(data)
@@ -278,11 +266,14 @@ class NespressoDetect:
                             else:
                                 self.sensordata[mac].update(sensor_data)
                     except (BLEError, NotConnectedError, NotificationTimeout):
-                        _LOGGER.exception("Failed to read characteristic")
+                        _LOGGER.error("Failed to read characteristic")
 
-                dev.disconnect()
+                if self.keep_connected is False:
+                    self.dev = None
+                    self.dev.disconnect()
             except (BLEError, NotConnectedError, NotificationTimeout):
-                _LOGGER.exception("Failed to connect")
-            self.adapter.stop()
+                _LOGGER.error("Failed to connect")
+            if self.keep_connected is False:
+                self.adapter.stop()
 
         return self.sensordata
