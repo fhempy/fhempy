@@ -28,10 +28,12 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
   if len(args) < 2 or (len(argsh) == 0 and args[1] == "?"): 
     for cmd in set_list_conf:
       if "format" in set_list_conf[cmd]:
-        fhem_format = set_list_conf[cmd]["format"]
+        fhem_format = ":" + set_list_conf[cmd]["format"]
+      elif "args" in set_list_conf[cmd] or "argsh" in set_list_conf[cmd]:
+        fhem_format = ""
       else:
-        fhem_format = "noArg"
-      fhem_set_list.append(cmd + ":" + fhem_format)
+        fhem_format = ":noArg"
+      fhem_set_list.append(cmd + fhem_format)
     return "Unknown argument ?, choose one of " + " ".join(fhem_set_list)
   else:
     # get cmd
@@ -73,8 +75,8 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
       fct_name = "set_" + cmd
       fct_call = getattr(obj, fct_name)
       if len(final_params) > 0:
-        return await fct_call(final_params)
+        return await fct_call(hash, final_params)
       
-      return await fct_call()
+      return await fct_call(hash)
     else:
       return f"Command not available for this device."
