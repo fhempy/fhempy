@@ -109,7 +109,7 @@ class PyBinding:
             logger.error("Websocket JSON couldn't be decoded")
             return
 
-        global fct_timeout
+        global fct_timeout, connection_start
         if time.time() - connection_start > 120:
             fct_timeout = 5
 
