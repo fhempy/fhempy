@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class BTLEConnection(btle.DefaultDelegate):
     """Representation of a BTLE Connection."""
 
-    def __init__(self, mac):
+    def __init__(self, mac, keep_connected=False):
         """Initialize the connection."""
         btle.DefaultDelegate.__init__(self)
 
@@ -26,6 +26,7 @@ class BTLEConnection(btle.DefaultDelegate):
         self._conn = None
         self._mac = mac
         self._callbacks = {}
+        self._keep_connected = keep_connected
     
     def next_iface(self):
         self._nr_conn_errors += 1
@@ -52,30 +53,37 @@ class BTLEConnection(btle.DefaultDelegate):
         :rtype: btle.Peripheral
         :return:
         """
-        self._conn = btle.Peripheral()
-        self._conn.withDelegate(self)
-        self._nr_conn_errors = 0
-        _LOGGER.debug("Trying to connect to %s", self._mac)
-        while True:
-            # try to connect with all ifaces
-          try:
-              self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
-              break
-          except btle.BTLEException as ex:
-              _LOGGER.debug("Unable to connect to the device %s using iface %s, retrying: %s", self._mac, self._ifaces[self._iface_idx], ex)
-              try:
-                  self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
-                  break
-              except Exception as ex2:
-                  _LOGGER.debug("Second connection try to %s using ifaces %s failed: %s", self._mac, self._ifaces[self._iface_idx],ex2)
-                  if self.next_iface() is False:
-                      raise
+        try:
+            conn_state = self._conn.getState()
+        except (btle.BTLEInternalError, btle.BTLEDisconnectError):
+            self._conn = None
+
+        if self._conn is None or conn_state != "conn":
+            self._conn = btle.Peripheral()
+            self._conn.withDelegate(self)
+            self._nr_conn_errors = 0
+            _LOGGER.debug("Trying to connect to %s", self._mac)
+            while True:
+                # try to connect with all ifaces
+                try:
+                    self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
+                    break
+                except btle.BTLEException as ex:
+                    _LOGGER.debug("Unable to connect to the device %s using iface %s, retrying: %s", self._mac, self._ifaces[self._iface_idx], ex)
+                    try:
+                        self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
+                        break
+                    except Exception as ex2:
+                        _LOGGER.debug("Second connection try to %s using ifaces %s failed: %s", self._mac, self._ifaces[self._iface_idx], ex2)
+                        if self.next_iface() is False:
+                            # tried all ifaces, raise exception
+                            raise
 
         _LOGGER.debug("Connected to %s", self._mac)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._conn:
+        if self._conn and self._keep_connected is False:
             self._conn.disconnect()
             self._conn = None
 
