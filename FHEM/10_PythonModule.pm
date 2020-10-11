@@ -37,15 +37,17 @@ PythonModule_Define($$$)
   $hash->{argsh} = $h;
   $hash->{PYTHONTYPE} = @$a[2];
   
-  # check if PythonServer is running
-  my $foundServer = 0;
-  foreach my $fhem_dev (sort keys %main::defs) {
-    if($main::defs{$fhem_dev}{TYPE} eq 'PythonBinding') {
-      $foundServer = 1;
+  # check if BindingsIo exists
+  if ($init_done) {
+    my $foundServer = 0;
+    foreach my $fhem_dev (sort keys %main::defs) {
+      if($main::defs{$fhem_dev}{TYPE} eq 'BindingsIo') {
+        $foundServer = 1;
+      }
     }
-  }
-  if ($foundServer == 0) {
-    return "Before you use PythonModule please define BindingsIo once:\ndefine pyBinding BindingsIo Python";
+    if ($foundServer == 0) {
+      return "Before you use PythonModule please define BindingsIo once:\ndefine pyBinding BindingsIo Python";
+    }
   }
 
   Log3 $hash, 3, "PythonModule v1.0.0 (".$hash->{PYTHONTYPE}.")";
@@ -53,7 +55,7 @@ PythonModule_Define($$$)
   AssignIoPort($hash);
 
   if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 1, "PythonModule: PythonBinding not yet connected! Define after connect...";
+    Log3 $hash, 3, "PythonModule: PythonBinding not yet connected! Define after connect...";
     return undef;
   }
 
