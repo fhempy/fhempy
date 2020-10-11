@@ -18,7 +18,7 @@ def run_blocking_task(function):
 # example config
 # set_list_conf = {
 #    "mode": { "args": ["mode"], "argsh": ["mode"], "params": { "mode": { "default": "eco", "optional": False }}, "format": "eco,comfort" },
-#    "desiredTemp": { "args": ["temperature"], "format": "slider,10,1,30"}},
+#    "desiredTemp": { "args": ["temperature"], "format": "slider,10,1,30"},
 #    "holidayMode": { "args": ["start", "end", "temperature"], "params": { "start": {"default": "Monday"}, "end": {"default": "23:59"}}},
 #    "on": { "args": ["seconds"], "params": { "seconds": {"optional": True}}},
 #    "off": {}
