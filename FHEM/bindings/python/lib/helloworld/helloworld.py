@@ -29,7 +29,7 @@ class helloworld:
            "on": { "args": ["seconds"], "params": { "seconds": {"optional": True}}},
            "off": {}
         }
-        return utils.handle_set(set_list_conf, self, hash, args, argsh)
+        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_on(self, hash, params):
         seconds = params['seconds']

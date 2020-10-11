@@ -34,7 +34,7 @@ class xiaomi_tokens:
            "country": { "args": ["country"], "format": "de,cn,sg" },
            "get_tokens": {}
         }
-        return utils.handle_set(set_list_conf, self, hash, args, argsh)
+        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_username(self, hash, params):
         self._username = params['username']
