@@ -42,6 +42,20 @@ All further requirements are installed automatically via pip as soon as the spec
  - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
  - `define upnp PythonModule discover_upnp`
 
+## Configure remote devices (e.g. extend Bluetooth range)
+- Follow installation steps (only Console) above on remote device
+- `git clone https://github.com/dominikkarall/fhem_pythonbinding.git`
+- Systemd configuration
+  - change fhem_pythonbinding/fhem_pythonbinding.service acording to your system
+  - `sudo cp fhem_pythonbinding/fhem_pythonbinding.service /etc/systemd/system/`
+  - `sudo systemctl daemon-reload`
+  - `sudo systemctl enable fhem_pythonbinding`
+  - `sudo systemctl start fhem_pythonbinding`
+- FHEM configuration
+  - `define bindingsio_remote BindingsIo IP:15733 Python`
+  - `define eq3device PythonModule eq3bt MAC`
+  - `attr eq3device IODev bindingsio_remote`
+
 ## Functionality
 
 ### 10_BindingsIo
