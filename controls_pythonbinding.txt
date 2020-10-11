@@ -11,18 +11,21 @@ DIR FHEM/bindings/python/lib/eq3bt
 DIR FHEM/bindings/python/lib/xiaomi_gateway3
 DIR FHEM/bindings/python/lib/xiaomi_gateway3_device
 DIR FHEM/bindings/python/lib/nespresso_ble
+DIR FHEM/bindings/python/lib/miio
+DIR FHEM/bindings/python/lib/gfprobt
+DIR FHEM/bindings/python/lib/xiaomi_tokens
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
-UPD 2020-10-04_22:39:15 12728 FHEM/10_BindingsIo.pm
-UPD 2020-10-04_23:18:49 3089 FHEM/10_PythonModule.pm
+UPD 2020-10-11_11:50:16 12738 FHEM/10_BindingsIo.pm
+UPD 2020-10-11_11:34:00 3122 FHEM/10_PythonModule.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-09-19_17:52:13 3934 FHEM/bindings/python/lib/pkg_installer.py
-UPD 2020-09-23_21:24:01 3123 FHEM/bindings/python/lib/utils.py
-UPD 2020-09-30_23:01:37 5900 FHEM/bindings/python/lib/fhem.py
-UPD 2020-10-01_23:49:40 12414 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-10-11_11:58:00 3232 FHEM/bindings/python/lib/utils.py
+UPD 2020-10-08_18:31:31 5900 FHEM/bindings/python/lib/fhem.py
+UPD 2020-10-08_18:12:59 12432 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
-UPD 2020-10-04_22:47:47 3276 FHEM/bindings/python/lib/discover_ble/discover_ble.py
+UPD 2020-10-05_21:00:34 3276 FHEM/bindings/python/lib/discover_ble/discover_ble.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
 UPD 2020-09-19_17:52:13 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
 UPD 2020-10-01_23:49:40 3582 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
@@ -36,11 +39,13 @@ UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/googlecast/__init__.py
 UPD 2020-09-26_20:45:52 170 FHEM/bindings/python/lib/googlecast/manifest.json
 UPD 2020-10-01_23:49:40 20385 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/helloworld/__init__.py
-UPD 2020-09-30_23:01:37 970 FHEM/bindings/python/lib/helloworld/helloworld.py
+UPD 2020-10-11_12:00:04 2073 FHEM/bindings/python/lib/helloworld/helloworld.py
 UPD 2020-09-23_21:24:01 21 FHEM/bindings/python/lib/eq3bt/__init__.py
-UPD 2020-09-23_21:24:01 39 FHEM/bindings/python/lib/eq3bt/manifest.json
-UPD 2020-09-24_21:25:39 4080 FHEM/bindings/python/lib/eq3bt/connection.py
-UPD 2020-10-01_23:49:40 11292 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-10-09_20:37:13 48 FHEM/bindings/python/lib/eq3bt/manifest.json
+UPD 2020-10-09_20:34:42 4556 FHEM/bindings/python/lib/eq3bt/connection.py
+UPD 2020-10-10_21:16:42 11850 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-10-10_21:35:56 15632 FHEM/bindings/python/lib/eq3bt/eq3btsmart.py
+UPD 2020-10-06_18:57:49 4833 FHEM/bindings/python/lib/eq3bt/structures.py
 UPD 2020-09-26_20:45:52 30 FHEM/bindings/python/lib/xiaomi_gateway3/__init__.py
 UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3/manifest.json
 UPD 2020-09-30_23:01:37 1841 FHEM/bindings/python/lib/xiaomi_gateway3/miio_fix.py
@@ -52,5 +57,13 @@ UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3_device/manif
 UPD 2020-10-01_19:22:41 4265 FHEM/bindings/python/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
 UPD 2020-10-04_22:39:15 36 FHEM/bindings/python/lib/nespresso_ble/__init__.py
 UPD 2020-10-04_22:39:15 53 FHEM/bindings/python/lib/nespresso_ble/manifest.json
-UPD 2020-10-04_22:39:15 12674 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
-UPD 2020-10-04_22:39:15 3894 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
+UPD 2020-10-05_21:49:08 12323 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
+UPD 2020-10-06_18:51:32 4652 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
+UPD 2020-10-09_21:25:55 38 FHEM/bindings/python/lib/miio/manifest.json
+UPD 2020-10-09_21:26:12 24 FHEM/bindings/python/lib/miio/__init__.py
+UPD 2020-10-11_14:32:24 388 FHEM/bindings/python/lib/miio/miio.py
+UPD 2020-10-10_21:20:43 30 FHEM/bindings/python/lib/gfprobt/__init__.py
+UPD 2020-10-11_14:42:55 2247 FHEM/bindings/python/lib/gfprobt/gfprobt.py
+UPD 2020-10-11_10:30:21 24 FHEM/bindings/python/lib/xiaomi_tokens/__init__.py
+UPD 2020-10-11_10:30:36 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
+UPD 2020-10-11_14:31:11 2187 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
