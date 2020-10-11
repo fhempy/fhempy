@@ -44,6 +44,7 @@ class eq3bt:
             "childlock": {"args": ["target_state"], "format": "on,off"}
         }
         self._last_update = 0
+        self._keep_conn = False
         return
 
     # FHEM FUNCTION
@@ -60,15 +61,15 @@ class eq3bt:
 
         await fhem.addToDevAttrList(self.hash["NAME"], "keep_connected:on,off")
 
-        keep_conn = await fhem.AttrVal(self.hash['NAME'], "keep_connected", "off")
-        if keep_conn == "on":
-            keep_conn = True
+        self._keep_conn = await fhem.AttrVal(self.hash['NAME'], "keep_connected", "off")
+        if self._keep_conn == "on":
+            self._keep_conn = True
         else:
-            keep_conn = False
+            self._keep_conn = False
 
         # handle missing dbus configuration
         try:
-            self.thermostat = FhemThermostat(self.logger, mac, keep_connection=keep_conn)
+            self.thermostat = FhemThermostat(self.logger, mac, keep_connection=self._keep_conn)
         except DBusException:
             dbus_conf_err = 'Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n \
                         <policy user="fhem">\n \
@@ -92,6 +93,9 @@ class eq3bt:
         return
     
     async def check_online(self):
+        waittime = 300
+        if self._keep_conn:
+            waittime = 60
         await asyncio.sleep(int(random.random()*100))
         while True:
             try:
@@ -100,8 +104,8 @@ class eq3bt:
                     await fhem.readingsSingleUpdate(self.hash, "state", "update", 1)
                 await self.update_all()
             except:
-                self.logger.error("Failed to update, retry in 300s")
-            await asyncio.sleep(300)
+                self.logger.error(f"Failed to update, retry in {waittime}s")
+            await asyncio.sleep(waittime)
 
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
