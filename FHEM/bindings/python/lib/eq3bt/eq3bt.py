@@ -82,6 +82,7 @@ class eq3bt:
                         </policy>\n \
                         Restart dbus afterwards: sudo systemctl restart dbus'
             self.logger.error(dbus_conf_err)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", dbus_conf_err, 1)
             return dbus_conf_err
 
         self._presence_task = asyncio.create_task(self.check_online())
