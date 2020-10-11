@@ -1,3 +1,3 @@
 {
-  "requirements": ["bluepy", "dbus-python"]
+  "requirements": ["bluepy", "dbus-python", "construct"]
 }

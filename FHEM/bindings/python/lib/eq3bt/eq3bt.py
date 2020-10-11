@@ -9,7 +9,7 @@ from enum import IntEnum
 
 from bluepy.btle import BTLEException
 from . import eq3btsmart as eq3
-from .eq3bt.connection import BTLEConnection
+from .connection import BTLEConnection
 from dbus import DBusException
 
 from .. import utils
