@@ -19,6 +19,7 @@ class xiaomi_tokens:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
         return ""
 
     # FHEM FUNCTION
