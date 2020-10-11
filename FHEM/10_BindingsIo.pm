@@ -209,11 +209,11 @@ BindingsIo_Write($$$$$) {
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
-      if ($timeouts > 3) {
-        # SimpleRead will close the connection and DevIo reconnect starts
-        Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
-        DevIo_SimpleRead($hash);
-      }
+      # if ($timeouts > 3) {
+      #   # SimpleRead will close the connection and DevIo reconnect starts
+      #   Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
+      #   DevIo_SimpleRead($hash);
+      # }
       last;
     }
     
