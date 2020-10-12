@@ -210,7 +210,7 @@ class discover_upnp:
         await fhem.readingsSingleUpdate(hash, "state", "active", 0)
 
         if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, "icon rc_SEARCH")
+            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon rc_SEARCH")
 
         return ""
     

@@ -444,8 +444,8 @@ class googlecast:
 
         if await fhem.AttrVal(hash['NAME'], "icon", "") == "":
             if await fhem.ReadingsVal(hash['NAME'], "cast_type", "cast") == "cast":
-                await fhem.CommandAttr(hash, "icon scene_scene")
+                await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon scene_scene")
             else:
-                await fhem.CommandAttr(hash, "icon gassistant")
+                await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon gassistant")
             await fhem.CommandAttr(hash, "cmdIcon pause:rc_PAUSE play:rc_PLAY")
             await fhem.CommandAttr(hash, "webCmd volume:play:pause")

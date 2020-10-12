@@ -53,7 +53,7 @@ class discover_ble:
         await fhem.readingsEndUpdate(hash, 1)
 
         if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, "icon rc_SEARCH")
+            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon rc_SEARCH")
 
         if self.blescanTask:
             self.blescanTask.cancel()

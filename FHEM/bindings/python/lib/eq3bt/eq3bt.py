@@ -54,8 +54,9 @@ class eq3bt:
         self.hash["MAC"] = mac
         self.logger.info(f"Define: eq3bt {mac}")
 
-        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, "icon sani_heating_temp")
+        icon = await fhem.AttrVal(self.hash['NAME'], "icon", "noicon")
+        if icon == "noicon":
+            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon sani_heating_temp")
         await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
@@ -89,7 +90,7 @@ class eq3bt:
         return ""
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         self._presence_task.cancel()
         return
     
