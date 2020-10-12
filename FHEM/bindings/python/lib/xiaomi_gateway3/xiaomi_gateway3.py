@@ -50,7 +50,7 @@ class xiaomi_gateway3:
     return ""
 
   # FHEM FUNCTION
-  async def Undefine(self, hash, args, argsh):
+  async def Undefine(self, hash):
     return
 
   # FHEM FUNCTION
