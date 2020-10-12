@@ -67,7 +67,7 @@ class googlecast:
         return ""
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         try:
             pychromecast.stop_discovery(self.browser)
             if self.cast:
