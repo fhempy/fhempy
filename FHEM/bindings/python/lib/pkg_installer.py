@@ -54,7 +54,11 @@ def check_and_install_dependencies(module):
             if "requirements" in manifest:
                 for req in manifest["requirements"]:
                     if is_installed(req) == False:
-                      install_package(req)
+                        inst_tries = 0
+                        while inst_tries < 3:
+                            if install_package(req):
+                                break
+                            inst_tries += 1
     except FileNotFoundError:
         pass
 

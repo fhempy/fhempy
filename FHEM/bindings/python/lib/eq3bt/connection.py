@@ -11,7 +11,7 @@ from bluepy import btle
 
 DEFAULT_TIMEOUT = 1
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("eq3bt")
 
 class BTLEConnection(btle.DefaultDelegate):
     """Representation of a BTLE Connection."""
@@ -53,8 +53,10 @@ class BTLEConnection(btle.DefaultDelegate):
         :rtype: btle.Peripheral
         :return:
         """
+        conn_state = ""
         try:
-            conn_state = self._conn.getState()
+            if self._conn:
+                conn_state = self._conn.getState()
         except (btle.BTLEInternalError, btle.BTLEDisconnectError):
             self._conn = None
 
