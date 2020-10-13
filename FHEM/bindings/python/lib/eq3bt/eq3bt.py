@@ -4,6 +4,7 @@ import functools
 import concurrent.futures
 import time
 import random
+import logging
 
 from enum import IntEnum
 
@@ -32,6 +33,7 @@ class eq3bt:
 
     def __init__(self, logger):
         self.logger = logger
+        #logging.getLogger("eq3bt").setLevel(logging.DEBUG)
         self.set_list_conf = {
             "on": {},
             "off": {},
@@ -45,14 +47,15 @@ class eq3bt:
         }
         self._last_update = 0
         self._keep_conn = False
+        self._mac = None
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
-        mac = args[3]
-        self.hash["MAC"] = mac
-        self.logger.info(f"Define: eq3bt {mac}")
+        self._mac = args[3]
+        self.hash["MAC"] = self._mac
+        self.logger.info(f"Define: eq3bt {self._mac}")
 
         icon = await fhem.AttrVal(self.hash['NAME'], "icon", "noicon")
         if icon == "noicon":
@@ -62,7 +65,7 @@ class eq3bt:
 
         await fhem.addToDevAttrList(self.hash["NAME"], "keep_connected:on,off")
 
-        self._keep_conn = await fhem.AttrVal(self.hash['NAME'], "keep_connected", "off")
+        self._keep_conn = await fhem.AttrVal(self.hash['NAME'], "keep_connected", "on")
         if self._keep_conn == "on":
             self._keep_conn = True
         else:
@@ -70,7 +73,7 @@ class eq3bt:
 
         # handle missing dbus configuration
         try:
-            self.thermostat = FhemThermostat(self.logger, mac, keep_connection=self._keep_conn)
+            self.thermostat = FhemThermostat(self.logger, self._mac, keep_connection=self._keep_conn)
         except DBusException:
             dbus_conf_err = 'Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n \
                         <policy user="fhem">\n \
@@ -92,6 +95,10 @@ class eq3bt:
     # FHEM FUNCTION
     async def Undefine(self, hash):
         self._presence_task.cancel()
+        return
+
+    # FHEM FUNCTION
+    async def Attr(self, cmd, name, attr_name, attr_value):
         return
     
     async def check_online(self):

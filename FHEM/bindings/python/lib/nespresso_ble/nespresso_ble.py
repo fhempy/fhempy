@@ -16,6 +16,7 @@ class nespresso_ble:
         self.task = None
         self.auth = None
         logging.getLogger("pygatt.backends.gatttool.gatttool").setLevel(logging.ERROR)
+        #logging.getLogger("nespresso_ble").setLevel(logging.DEBUG)
         return
 
     # FHEM FUNCTION

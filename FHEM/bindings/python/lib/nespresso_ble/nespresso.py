@@ -10,7 +10,7 @@ from uuid import UUID
 import pygatt
 from pygatt.exceptions import BLEError, NotConnectedError, NotificationTimeout
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("nespresso_ble")
 
 # Use full UUID since we do not use UUID from bluepy.btle
 CHAR_UUID_DEVICE_NAME = UUID('00002a00-0000-1000-8000-00805f9b34fb')

@@ -17,7 +17,7 @@ from enum import IntEnum
 from .connection import BTLEConnection
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("eq3bt")
 
 PROP_WRITE_HANDLE = 0x411
 PROP_NTFY_HANDLE = 0x421
