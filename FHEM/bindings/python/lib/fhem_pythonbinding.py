@@ -43,7 +43,7 @@ async def pybinding(websocket, path):
         except websockets.exceptions.ConnectionClosedError:
             logger.error("Connection closed error", exc_info=True)
             logger.info("Waiting for new FHEM connection...")
-
+            del pb
 
 class PyBinding:
 
@@ -96,8 +96,6 @@ class PyBinding:
             return logging.WARNING
         else:
             return logging.ERROR
-        
-        
 
     async def onMessage(self, payload):
         msg = payload
@@ -247,7 +245,6 @@ class PyBinding:
                     
                     if fhem_reply_done is False:
                         await self.sendBackReturn(hash, ret)
-                        
 
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
