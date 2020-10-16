@@ -3,6 +3,7 @@
 
 package main;
 
+use utf8;
 use strict;
 use warnings;
 
@@ -192,8 +193,9 @@ BindingsIo_Write($$$$$) {
   );
   $msg{$bindingType} =  $devhash->{$bindingType};
 
-  Log3 $hash, 4, "BindingsIo: <<< WS: ".encode_json(\%msg);
-  DevIo_SimpleWrite($hash, encode_json(\%msg), 0);
+  my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
+  Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
+  DevIo_SimpleWrite($hash, $utf8msg, 0);
 
   my $py_timeout = 1500;
   if ($function eq "Define" or $init_done == 0) {
@@ -354,8 +356,9 @@ sub BindingsIo_processMessage($$$$) {
         result => $ret
       );
     }
-    Log3 $hash, 4, "BindingsIo: <<< WS: ".encode_json(\%res);
-    DevIo_SimpleWrite($hash, encode_json(\%res), 0);
+    my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%res)));
+    Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
+    DevIo_SimpleWrite($hash, $utf8msg, 0);
     return "continue";
   }
   return $returnval;
