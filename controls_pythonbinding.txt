@@ -14,6 +14,7 @@ DIR FHEM/bindings/python/lib/nespresso_ble
 DIR FHEM/bindings/python/lib/gfprobt
 DIR FHEM/bindings/python/lib/miio
 DIR FHEM/bindings/python/lib/xiaomi_tokens
+DIR FHEM/bindings/python/lib/ring_doorbell
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-16_19:56:17 12874 FHEM/10_BindingsIo.pm
 UPD 2020-10-16_19:56:17 3048 FHEM/10_PythonModule.pm
@@ -60,11 +61,14 @@ UPD 2020-10-13_19:59:32 55 FHEM/bindings/python/lib/nespresso_ble/manifest.json
 UPD 2020-10-13_19:59:32 4720 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
 UPD 2020-10-16_19:56:17 12329 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
 UPD 2020-10-11_14:46:03 30 FHEM/bindings/python/lib/gfprobt/__init__.py
-UPD 2020-10-15_20:46:04 4217 FHEM/bindings/python/lib/gfprobt/gfprobt.py
 UPD 2020-10-14_10:57:41 48 FHEM/bindings/python/lib/gfprobt/manifest.json
+UPD 2020-10-16_20:51:42 4217 FHEM/bindings/python/lib/gfprobt/gfprobt.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/miio/__init__.py
 UPD 2020-10-11_14:46:03 38 FHEM/bindings/python/lib/miio/manifest.json
 UPD 2020-10-11_14:46:03 388 FHEM/bindings/python/lib/miio/miio.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/xiaomi_tokens/__init__.py
 UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-11_14:58:27 2193 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
+UPD 2020-10-16_20:51:42 22 FHEM/bindings/python/lib/ring_doorbell/__init__.py
+UPD 2020-10-16_20:51:42 40 FHEM/bindings/python/lib/ring_doorbell/manifest.json
+UPD 2020-10-16_20:51:42 2397 FHEM/bindings/python/lib/ring_doorbell/ring_doorbell.py
