@@ -37,7 +37,7 @@ class eq3bt:
         self.set_list_conf = {
             "on": {},
             "off": {},
-            "desiredTemperature": {"args": ["target_temp"], "format": "slider,4.5,0.5,29.5,1"},
+            "desiredTemperature": {"args": ["target_temp"], "format": "slider,4.5,0.5,30,1"},
             "updateStatus": {},
             "boost": {"args": ["target_state"], "format": "on,off"},
             "mode": {"args": ["target_mode"], "format": "manual,automatic"},
@@ -194,7 +194,7 @@ class eq3bt:
 
     # SET Functions BEGIN
     async def set_on(self, hash):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperatur, 30)))
+        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 30)))
     
     async def set_off(self, hash):
         asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 4.5)))
