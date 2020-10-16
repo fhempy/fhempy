@@ -24,6 +24,7 @@ PythonModule_Initialize($)
   $hash->{GetFn}    = 'PythonModule_Get';
   $hash->{SetFn}    = 'PythonModule_Set';
   $hash->{AttrFn}   = 'PythonModule_Attr';
+  $hash->{RenameFn} = 'PythonModule_Rename';
   $hash->{AttrList} = 'IODev '.$readingFnAttributes;
 
   return undef;
@@ -94,6 +95,14 @@ PythonModule_Attr($$$)
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
   return IOWrite($defs{$name}, $defs{$name}, "Attr", [$cmd, $name, $attrName, $attrVal], {});
+}
+
+sub
+PythonModule_Rename($$$)
+{
+  my ($oldname, $newname) = @_;
+
+  return IOWrite($defs{$oldname}, $defs{$oldname}, "Rename", [$oldname, $newname], {});
 }
 
 sub

@@ -128,6 +128,13 @@ class PyBinding:
                     fhem.setFunctionActive(hash)
                     # load module
                     nmInstance = None
+                    if hash['function'] == "Rename":
+                        if hash['NAME'] in loadedModuleInstances:
+                            loadedModuleInstances[hash['args'][1]] = loadedModuleInstances[hash['args'][0]]
+                            del loadedModuleInstances[hash['args'][0]]
+                            self.sendBackReturn(hash, "")
+                            return 0
+
                     if (hash['function'] != "Undefine"):
                         # Load module and execute Define if Define isn't called right now
                         if (not (hash["NAME"] in loadedModuleInstances)):
@@ -216,7 +223,10 @@ class PyBinding:
                                 if (func != "nofunction"):
                                     logger.debug(f"Start function {hash['NAME']}:{hash['function']}")
                                     if hash["function"] == "Undefine":
-                                        ret = await asyncio.wait_for(func(hash), fct_timeout)
+                                        try:
+                                            ret = await asyncio.wait_for(func(hash), fct_timeout)
+                                        except:
+                                            del loadedModuleInstances[hash["NAME"]]
                                     else:
                                         ret = await asyncio.wait_for(func(hash, hash['args'], hash['argsh']), fct_timeout)
                                     logger.debug(f"End function {hash['NAME']}:{hash['function']}")
@@ -231,7 +241,7 @@ class PyBinding:
                             else:
                                 await self.sendBackError(hash, errorMsg)
                             return 0
-                        except Exception:
+                        except:
                             errorMsg = "Failed to execute function " + hash["function"] + ": " + traceback.format_exc()
                             if fhem_reply_done:
                                 await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
