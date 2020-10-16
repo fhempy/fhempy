@@ -48,6 +48,7 @@ class eq3bt:
         self._last_update = 0
         self._keep_conn = False
         self._mac = None
+        self._presence_task = None
         return
 
     # FHEM FUNCTION
@@ -94,7 +95,8 @@ class eq3bt:
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        self._presence_task.cancel()
+        if self._presence_task:
+            self._presence_task.cancel()
         return
 
     # FHEM FUNCTION
