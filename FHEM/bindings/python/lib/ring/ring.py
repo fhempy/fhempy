@@ -18,9 +18,11 @@ class ring:
         self._password = ""
         self._token = ""
         self._2facode = None
-        self._pollsec = 10
-        self._events = []
+        self._poll_ding_interval = 5
+        self._poll_update_interval = 300
+        self._history = []
         self._rdevice = None
+        self._lastrecording_url = ""
         return
 
     async def token_updated(self, token):
@@ -74,24 +76,49 @@ class ring:
 
             await self.update_readings()
 
+            asyncio.create_task(self.update_dings_loop())
+
             while True:
-                await utils.run_blocking(functools.partial(self.poll_device))
-                if self._rdevice.dings_data:
+                try:
+                    await utils.run_blocking(functools.partial(self.poll_device))
                     await self.update_readings()
-                    if len(self._events) > 0:
-                        for event in self._events:
-                            await update_event_readings(event)
-                await asyncio.sleep(self._pollsec)
+                    # handle history
+                    if len(self._history) > 0:
+                        i = 1
+                        for event in self._history:
+                            await self.update_history_readings(event, i)
+                            i += 1
+                except:
+                    self.logger.exception("Failed to poll devices")
+                await asyncio.sleep(self._poll_update_interval)
         except:
             self.logger.exception("Failed to update devices")
-    
-    async def update_event_readings(self, event):
+
+    async def update_dings_loop(self):
+        while True:
+            await utils.run_blocking(functools.partial(self.poll_dings))
+            # handle alerts
+            alerts = self._ring.active_alerts()
+            self.logger.info("Received dings: " + str(alerts))
+            for alert in alerts:
+                await self.update_alert_readings(alert)
+            await asyncio.sleep(self._poll_ding_interval)
+
+    async def update_alert_readings(self, alert):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "event_id", event["id"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "event_kind", event["kind"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "event_answered", event["answered"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "event_created_at", event["created_at"])
-        await fhem.readingsEndUpdate(self.hash, 1)        
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_id", alert["id"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_kind", alert["kind"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_to", alert["sip_to"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_token", alert["sip_token"])
+        await fhem.readingsEndUpdate(self.hash, 1)
+    
+    async def update_history_readings(self, event, idx):
+        await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_id", event["id"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_kind", event["kind"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_answered", event["answered"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_created_at", event["created_at"])
+        await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
@@ -108,29 +135,33 @@ class ring:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_name", self._rdevice.wifi_name)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_signal_strength", self._rdevice.wifi_signal_strength)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_signal_category", self._rdevice.wifi_signal_category)
-        await update_if_available("battery_life")
-        await update_if_available("existing_doorbell_type")
-        await update_if_available("existing_doorbell_type_enabled")
-        await update_if_available("existing_doorbell_type_duration")
-        await update_if_available("last_recording_id")
-        await update_if_available("subscribed")
-        await update_if_available("subscribed_motion")
-        await update_if_available("has_subscription")
-        await update_if_available("volume")
-        await update_if_available("connection_status")
+        await self.update_if_available("battery_life")
+        await self.update_if_available("existing_doorbell_type")
+        await self.update_if_available("existing_doorbell_type_enabled")
+        await self.update_if_available("existing_doorbell_type_duration")
+        await self.update_if_available("last_recording_id")
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "last_recording_url", self._lastrecording_url)
+        await self.update_if_available("subscribed")
+        await self.update_if_available("subscribed_motion")
+        await self.update_if_available("has_subscription")
+        await self.update_if_available("volume")
+        await self.update_if_available("connection_status")
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_if_available(self, reading):
         if hasattr(self._rdevice, reading):
             await fhem.readingsBulkUpdateIfChanged(self.hash, reading, getattr(self._rdevice, reading))
 
+    def poll_dings(self):
+        self._ring.update_dings()
+
     def poll_device(self):
         self._rdevice.update_health_data()
-        self._rdevice.update_dings()
-        self._event = None
+        self._history = []
         if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
-            for event in self._rdevice.history(limit=1):
-                self._events.append(event)
+            for event in self._rdevice.history(limit=5):
+                self._history.append(event)
+        self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
 
     def blocking_login(self):
         def token_updater(token):
