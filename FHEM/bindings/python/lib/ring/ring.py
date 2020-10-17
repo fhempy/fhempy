@@ -41,7 +41,9 @@ class ring:
 
     async def ring_login(self):
         if self._token == "":
-            self._token = json.loads(await fhem.ReadingsVal(self.hash['NAME'], "token", ""))
+            token_reading = await fhem.ReadingsVal(self.hash['NAME'], "token", "")
+            if token_reading != "":
+                self._token = json.loads(token_reading)
         if self._password == "":
             self._password = await fhem.ReadingsVal(self.hash['NAME'], "password", "")
         try:
