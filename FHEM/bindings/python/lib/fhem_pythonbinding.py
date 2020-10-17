@@ -32,18 +32,18 @@ def getFhemPyDeviceByName(name):
     return None
 
 async def pybinding(websocket, path):
-        global connection_start
-        connection_start = time.time()
-        logger.info("FHEM connection started: " + websocket.remote_address[0])
-        pb = PyBinding(websocket)
-        fhem.updateConnection(pb)
-        try:
-            async for message in websocket:
-                asyncio.create_task(pb.onMessage(message))
-        except websockets.exceptions.ConnectionClosedError:
-            logger.error("Connection closed error", exc_info=True)
-            logger.info("Waiting for new FHEM connection...")
-            del pb
+    global connection_start
+    connection_start = time.time()
+    logger.info("FHEM connection started: " + websocket.remote_address[0])
+    pb = PyBinding(websocket)
+    fhem.updateConnection(pb)
+    try:
+        async for message in websocket:
+            asyncio.create_task(pb.onMessage(message))
+    except websockets.exceptions.ConnectionClosedError:
+        logger.error("Connection closed error", exc_info=True)
+        logger.info("Waiting for new FHEM connection...")
+        del pb
 
 class PyBinding:
 

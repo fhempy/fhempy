@@ -2,6 +2,7 @@
 import asyncio
 
 from .. import fhem
+from .. import utils
 
 class helloworld:
 
