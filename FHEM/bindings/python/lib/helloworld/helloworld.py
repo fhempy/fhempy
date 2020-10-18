@@ -32,9 +32,12 @@ class helloworld:
         }
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
-    async def set_on(self, hash, params):
-        seconds = params['seconds']
-        await fhem.readingsSingleUpdate(hash, "state", "on " + seconds, 1)
+    async def set_on(self, hash, params = None):
+        if params is None:
+            seconds = ""
+        else:
+            seconds = " " + params['seconds']
+        await fhem.readingsSingleUpdate(hash, "state", "on" + seconds, 1)
         return ""
 
     async def set_off(self, hash):
