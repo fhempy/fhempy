@@ -168,7 +168,8 @@ class ring:
         self._rdevice.update_health_data()
         self._history = []
         if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
-            self._livestreamjson = self._rdevice.live_streaming_json
+            # disable it, as it creates a lot of history entries
+            #self._livestreamjson = self._rdevice.live_streaming_json
             for event in self._rdevice.history(limit=5):
                 self._history.append(event)
             self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
