@@ -69,7 +69,7 @@ class PyBinding:
         fhem.setFunctionInactive(hash)        
 
     async def sendBackError(self, hash, error):
-        logger.error(error + "(id: " + hash['id'] + ")")
+        logger.error(error + "(id: {})".format(hash['id']))
         retHash = hash.copy()
         retHash['finished'] = 1
         retHash['error'] = error
