@@ -38,7 +38,7 @@ class helloworld:
         return ""
 
     async def set_off(self, hash):
-        await fhem.readingsSingleUpdate(hash "state", "off", 1)
+        await fhem.readingsSingleUpdate(hash, "state", "off", 1)
         return ""
 
     async def set_mode(self, hash, params):
