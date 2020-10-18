@@ -23,11 +23,13 @@ class ring:
         self._history = []
         self._rdevice = None
         self._lastrecording_url = ""
+        self._livestreamjson = ""
         return
 
     async def token_updated(self, token):
         self._token = json.dumps(token)
-        await fhem.readingsSingleUpdate(self.hash, "token", self._token, 1)        
+        encrypted_token = utils.encrypt_string(self._token, self._reading_encryption_key)
+        await fhem.readingsSingleUpdate(self.hash, "token", encrypted_token, 1)        
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -36,6 +38,7 @@ class ring:
             return "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME>"
         self._username = args[3]
         self._rdevname = args[4]
+        self._reading_encryption_key = await fhem.getUniqueId(hash)
         self.hash["USERNAME"] = args[3]
         self.hash["RINGDEVICE"] = args[4]
         asyncio.create_task(self.ring_login())
@@ -45,9 +48,12 @@ class ring:
         if self._token == "":
             token_reading = await fhem.ReadingsVal(self.hash['NAME'], "token", "")
             if token_reading != "":
+                token_reading = utils.decrypt_string(token_reading, self._reading_encryption_key)
                 self._token = json.loads(token_reading)
         if self._password == "":
             self._password = await fhem.ReadingsVal(self.hash['NAME'], "password", "")
+            if self._password != "":
+                self._password = utils.decrypt_string(self._password, self._reading_encryption_key)
         try:
             ret = await utils.run_blocking(functools.partial(self.blocking_login))
             if ret:
@@ -99,7 +105,7 @@ class ring:
             await utils.run_blocking(functools.partial(self.poll_dings))
             # handle alerts
             alerts = self._ring.active_alerts()
-            self.logger.info("Received dings: " + str(alerts))
+            self.logger.debug("Received dings: " + str(alerts))
             for alert in alerts:
                 await self.update_alert_readings(alert)
             await asyncio.sleep(self._poll_ding_interval)
@@ -139,13 +145,16 @@ class ring:
         await self.update_if_available("existing_doorbell_type")
         await self.update_if_available("existing_doorbell_type_enabled")
         await self.update_if_available("existing_doorbell_type_duration")
-        await self.update_if_available("last_recording_id")
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "last_recording_url", self._lastrecording_url)
         await self.update_if_available("subscribed")
         await self.update_if_available("subscribed_motion")
         await self.update_if_available("has_subscription")
         await self.update_if_available("volume")
         await self.update_if_available("connection_status")
+        if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
+            await self.update_if_available("last_recording_id")
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "last_recording_url", self._lastrecording_url)
+            if self._livestreamjson != "":
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "livestream_json", json.dumps(self._livestreamjson))
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_if_available(self, reading):
@@ -159,9 +168,11 @@ class ring:
         self._rdevice.update_health_data()
         self._history = []
         if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
+            # disable it, as it creates a lot of history entries
+            #self._livestreamjson = self._rdevice.live_streaming_json
             for event in self._rdevice.history(limit=5):
                 self._history.append(event)
-        self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
+            self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
 
     def blocking_login(self):
         def token_updater(token):
@@ -198,7 +209,8 @@ class ring:
 
     async def set_password(self, hash, params):
         self._password = params['password']
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "password", self._password, 1)
+        encrypted_password = utils.encrypt_string(self._password, self._reading_encryption_key)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "password", encrypted_password, 1)
         asyncio.create_task(self.ring_login())
 
     async def set_2fa_code(self, hash, params):

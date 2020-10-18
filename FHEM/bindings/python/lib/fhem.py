@@ -12,6 +12,7 @@ logger.setLevel(logging.ERROR)
 
 function_active = []
 update_locks = {}
+wsconnection = None
 
 def updateConnection(ws):
     global wsconnection
@@ -24,6 +25,10 @@ def setFunctionInactive(hash):
     element = function_active.pop()
     if element != hash["NAME"]:
         logger.error(f"Set wrong function inactive, tried {hash['NAME']}, current function_active: {function_active},{element}")
+
+async def getUniqueId(hash):
+    cmd = "getUniqueId()"
+    return await sendCommandHash(hash, cmd)
 
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
@@ -123,6 +128,7 @@ async def send_and_wait(name, cmd):
         except:
             logger.error("Failed to set result, received: " + rmsg)
 
+    global wsconnection
     wsconnection.registerMsgListener(listener, msg['awaitId'])
     msg = json.dumps(msg)
     logger.debug("<<< WS: " + msg)
