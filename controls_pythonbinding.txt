@@ -17,13 +17,13 @@ DIR FHEM/bindings/python/lib/xiaomi_tokens
 DIR FHEM/bindings/python/lib/ring
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-16_19:56:17 3048 FHEM/10_PythonModule.pm
-UPD 2020-10-17_09:59:34 12874 FHEM/10_BindingsIo.pm
+UPD 2020-10-18_20:51:53 13116 FHEM/10_BindingsIo.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
-UPD 2020-10-12_23:51:58 5900 FHEM/bindings/python/lib/fhem.py
-UPD 2020-10-11_14:46:03 3232 FHEM/bindings/python/lib/utils.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
-UPD 2020-10-17_09:59:55 12924 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-10-18_20:26:30 12924 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-10-18_20:51:53 6044 FHEM/bindings/python/lib/fhem.py
+UPD 2020-10-18_20:51:53 3952 FHEM/bindings/python/lib/utils.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-10-13_19:59:32 3297 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -71,4 +71,4 @@ UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-11_14:58:27 2193 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
 UPD 2020-10-17_09:59:55 40 FHEM/bindings/python/lib/ring/manifest.json
 UPD 2020-10-17_09:59:55 22 FHEM/bindings/python/lib/ring/__init__.py
-UPD 2020-10-17_22:51:47 9268 FHEM/bindings/python/lib/ring/ring.py
+UPD 2020-10-18_20:51:53 10205 FHEM/bindings/python/lib/ring/ring.py
