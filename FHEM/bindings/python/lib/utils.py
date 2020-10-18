@@ -2,6 +2,23 @@
 import asyncio
 import logging
 import concurrent.futures
+from cryptography.fernet import Fernet
+from codecs import encode, decode
+from functools import reduce
+import base64
+
+def encrypt_string(plain_text, fhem_unique_id):
+  key = base64.b64encode(fhem_unique_id.encode('utf-8'))
+  cipher_suite = Fernet(key)
+  encrypted_text = cipher_suite.encrypt(plain_text.encode("utf-8"))
+  return reduce(encode, ('zlib', 'base64'),encrypted_text).decode("utf-8")
+
+def decrypt_string(encrypted_text, fhem_unique_id):
+  key = base64.b64encode(fhem_unique_id.encode('utf-8'))
+  encrypted_text = encrypted_text.encode("utf-8")
+  uncompressed_text = reduce(decode, ('base64', 'zlib'),encrypted_text)
+  cipher_suite = Fernet(key)
+  return cipher_suite.decrypt(uncompressed_text).decode("utf-8")
 
 async def run_blocking(function):
   try:
