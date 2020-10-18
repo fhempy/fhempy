@@ -13,6 +13,7 @@ eq3bt|Control EQ3 Bluetooth thermostat
 googlecast|Control Cast devices
 helloworld|Hello World example
 [nespresso_ble](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
+[ring](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/ring/README.md)|Ring doorbell/chime/cam
 xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 [xiaomi_tokens](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud
 
@@ -43,7 +44,7 @@ All further requirements are installed automatically via pip as soon as the spec
  - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
  - `define upnp PythonModule discover_upnp`
 
-## Configure remote devices (e.g. extend Bluetooth range)
+## Configure remote Python peers (e.g. extend Bluetooth range)
 - Follow installation steps (only Console) above on remote device
 - `git clone https://github.com/dominikkarall/fhem_pythonbinding.git`
 - Systemd configuration
