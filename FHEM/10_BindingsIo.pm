@@ -195,7 +195,9 @@ BindingsIo_Write($$$$$) {
 
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
   Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
-  DevIo_SimpleWrite($hash, $utf8msg, 0);
+  if (length $utf8msg > 0) {
+    DevIo_SimpleWrite($hash, $utf8msg, 0);
+  }
 
   my $py_timeout = 1500;
   if ($function eq "Define" or $init_done == 0) {
@@ -205,6 +207,10 @@ BindingsIo_Write($$$$$) {
   my $returnval = "";
   my $t1 = time * 1000;
   while (1) {
+    if (!DevIo_IsOpen($hash)) {
+      Log3 $hash, 1, "BindingsIo: ERROR: Connection closed while waiting for function to finish (id: $waitingForId)";
+      last;
+    }
     my $t2 = time * 1000;
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
@@ -358,7 +364,9 @@ sub BindingsIo_processMessage($$$$) {
     }
     my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%res)));
     Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
-    DevIo_SimpleWrite($hash, $utf8msg, 0);
+    if (length $utf8msg > 0) {
+      DevIo_SimpleWrite($hash, $utf8msg, 0);
+    }
     return "continue";
   }
   return $returnval;
