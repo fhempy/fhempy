@@ -5,9 +5,9 @@ FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM
 This repository includes following working modules:
 Module | Description
 -------|--------------
-ble_presence|Presence detection incl. RSSI
+ble_presence|Presence detection incl. RSSI for Bluetooth Low Energy
 ble_reset|Resets all Bluetooth interfaces every X hours
-discover_mdns|Discover mDNS devices
+[bt_presence](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/bt_presence/README.md)|Nespresso Bluetooth discover_mdns|Presence detection incl. RSSI for Bluetooth
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
