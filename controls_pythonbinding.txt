@@ -17,13 +17,13 @@ DIR FHEM/bindings/python/lib/xiaomi_tokens
 DIR FHEM/bindings/python/lib/ring
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-16_19:56:17 3048 FHEM/10_PythonModule.pm
-UPD 2020-10-18_20:51:53 13116 FHEM/10_BindingsIo.pm
+UPD 2020-10-19_17:50:02 13297 FHEM/10_BindingsIo.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
-UPD 2020-10-18_20:26:30 12924 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-10-18_20:51:53 6044 FHEM/bindings/python/lib/fhem.py
 UPD 2020-10-18_20:51:53 3952 FHEM/bindings/python/lib/utils.py
+UPD 2020-10-19_17:50:02 13097 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-10-13_19:59:32 3297 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -59,7 +59,7 @@ UPD 2020-10-01_19:22:41 4265 FHEM/bindings/python/lib/xiaomi_gateway3_device/xia
 UPD 2020-10-04_22:39:15 36 FHEM/bindings/python/lib/nespresso_ble/__init__.py
 UPD 2020-10-13_19:59:32 55 FHEM/bindings/python/lib/nespresso_ble/manifest.json
 UPD 2020-10-13_19:59:32 4720 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
-UPD 2020-10-16_19:56:17 12329 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
+UPD 2020-10-19_17:50:02 12330 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
 UPD 2020-10-11_14:46:03 30 FHEM/bindings/python/lib/gfprobt/__init__.py
 UPD 2020-10-14_10:57:41 48 FHEM/bindings/python/lib/gfprobt/manifest.json
 UPD 2020-10-16_20:51:42 4217 FHEM/bindings/python/lib/gfprobt/gfprobt.py
