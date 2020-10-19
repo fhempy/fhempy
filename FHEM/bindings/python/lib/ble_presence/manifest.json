@@ -1,0 +1,3 @@
+{
+  "requirements": ["bleak==0.8.0"]
+}
