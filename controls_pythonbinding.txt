@@ -16,6 +16,7 @@ DIR FHEM/bindings/python/lib/miio
 DIR FHEM/bindings/python/lib/xiaomi_tokens
 DIR FHEM/bindings/python/lib/ring
 DIR FHEM/bindings/python/lib/ble_reset
+DIR FHEM/bindings/python/lib/ble_presence
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-19_21:24:09 13308 FHEM/10_BindingsIo.pm
 UPD 2020-10-19_21:24:09 2823 FHEM/10_PythonModule.pm
@@ -76,3 +77,6 @@ UPD 2020-10-19_21:24:09 10854 FHEM/bindings/python/lib/ring/ring.py
 UPD 2020-10-19_21:24:09 32 FHEM/bindings/python/lib/ble_reset/__init__.py
 UPD 2020-10-19_21:24:09 2986 FHEM/bindings/python/lib/ble_reset/ble_reset.py
 UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
+UPD 2020-10-19_23:12:17 22 FHEM/bindings/python/lib/ble_presence/__init__.py
+UPD 2020-10-19_23:12:17 1902 FHEM/bindings/python/lib/ble_presence/ble_presence.py
+UPD 2020-10-19_23:12:17 39 FHEM/bindings/python/lib/ble_presence/manifest.json
