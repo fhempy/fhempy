@@ -119,7 +119,7 @@ BindingsIo_doInit($) {
   foreach my $fhem_dev (sort keys %main::defs) {
     my $devhash = $main::defs{$fhem_dev};
     if(defined($devhash->{$bindingType}) && $devhash->{IODev}{NAME} eq $hash->{NAME}) {
-      BindingsIo_Write($hash, $devhash, "Define", $devhash->{args}, $devhash->{argsh});
+      BindingsIo_Write($hash, $devhash, "InitDefine", $devhash->{args}, $devhash->{argsh});
     }
   }
 
@@ -170,6 +170,12 @@ BindingsIo_Ready($)
 sub
 BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
+  my $initrun = 0;
+
+  if ($function eq "InitDefine") {
+    $initrun = 1;
+    $function = "Define";
+  }
 
   if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
     readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
@@ -200,7 +206,7 @@ BindingsIo_Write($$$$$) {
   }
 
   my $py_timeout = 1500;
-  if ($function eq "Define" or $init_done == 0) {
+  if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
     # wait 10s on Define, this might happen on startup
     $py_timeout = 10000;
   }
@@ -217,11 +223,11 @@ BindingsIo_Write($$$$$) {
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
-      # if ($timeouts > 3) {
-      #   # SimpleRead will close the connection and DevIo reconnect starts
-      #   Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
-      #   DevIo_SimpleRead($hash);
-      # }
+      if ($timeouts > 3) {
+        # SimpleRead will close the connection and DevIo reconnect starts
+        Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
+        DevIo_Disconnected($hash);
+      }
       last;
     }
     
@@ -411,7 +417,8 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     if ($USE_DEVIO_DECODEWS == 0) {
       delete $hash->{WEBSOCKET};
     }
-    $response = DevIo_SimpleRead($hash);
+    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.001);
+    #$response = DevIo_SimpleRead($hash);
     $hash->{WEBSOCKET} = 1;
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
   } else {

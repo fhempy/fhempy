@@ -149,7 +149,7 @@ class NespressoDetect:
             device = NespressoDeviceInfo(serial_nr=mac)
             try:
                 if self.dev is None:
-                    self.adapter.start(reset_on_start=True)
+                    self.adapter.start(reset_on_start=False)
                     self.dev = self.adapter.connect(mac, address_type=pygatt.BLEAddressType.random, timeout=20, auto_reconnect=self.keep_connected)
                 for characteristic in device_info_characteristics:
                     try:

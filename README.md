@@ -2,7 +2,7 @@
 
 FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
-This repository includes following examples:
+This repository includes following working modules:
 Module | Description
 -------|--------------
 discover_mdns|Discover mDNS devices
