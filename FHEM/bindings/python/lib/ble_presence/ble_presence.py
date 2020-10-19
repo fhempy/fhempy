@@ -26,7 +26,7 @@ class ble_presence:
                     new_state = "present"
             except:
                 self.logger.exception("BleakScanner failed")
-            self.update_state(new_state)
+            await self.update_state(new_state)
             if new_state == "absent":
                 await asyncio.sleep(10)
             else:
