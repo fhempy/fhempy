@@ -69,7 +69,7 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
         # arg ... mode
         # all_args[mode] = mode argument
         all_args[cmd_def["args"][i]] = arg
-
+        i+=1
       # get default values for other params
       final_params = all_args
       if "params" in cmd_def:

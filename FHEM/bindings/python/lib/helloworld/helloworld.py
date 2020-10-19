@@ -26,8 +26,8 @@ class helloworld:
         set_list_conf = {
            "mode": { "args": ["mode"], "argsh": ["mode"], "params": { "mode": { "default": "eco", "optional": False }}, "format": "eco,comfort" },
            "desiredTemp": { "args": ["temperature"], "format": "slider,10,1,30"},
-           "holidayMode": { "args": ["start", "end", "temperature"], "params": { "start": {"default": "Monday"}, "end": {"default": "23:59"}}},
-           "on": { "args": ["seconds"], "params": { "seconds": {"optional": True}}},
+           "holidayMode": { "args": ["start", "end", "temperature"], "params": { "start": {"default": "Monday"}, "end": {"default": "23:59"}, "temperature": {"default": ""}}},
+           "on": { "args": ["seconds"], "params": { "seconds": { "default": "", "optional": True}}},
            "off": {}
         }
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
@@ -38,7 +38,7 @@ class helloworld:
         return ""
 
     async def set_off(self, hash):
-        await fhem.readingsSingleUpdate(hash "state", "off", 1)
+        await fhem.readingsSingleUpdate(hash, "state", "off", 1)
         return ""
 
     async def set_mode(self, hash, params):

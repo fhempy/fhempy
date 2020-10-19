@@ -13,6 +13,7 @@ use Encode;
 
 use Protocol::WebSocket::Frame;
 
+use DevIo;
 use CoProcess;
 
 use JSON;

@@ -24,6 +24,7 @@ class ring:
         self._rdevice = None
         self._lastrecording_url = ""
         self._livestreamjson = ""
+        self._snapshot = None
         return
 
     async def token_updated(self, token):
@@ -101,13 +102,19 @@ class ring:
             self.logger.exception("Failed to update devices")
 
     async def update_dings_loop(self):
+        alert_active = 0
         while True:
             await utils.run_blocking(functools.partial(self.poll_dings))
             # handle alerts
             alerts = self._ring.active_alerts()
             self.logger.debug("Received dings: " + str(alerts))
-            for alert in alerts:
-                await self.update_alert_readings(alert)
+            if len(alerts) > 0:
+                alert_active = 1
+                for alert in alerts:
+                    await self.update_alert_readings(alert)
+            elif alert_active == 1:
+                alert_active = 0
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
             await asyncio.sleep(self._poll_ding_interval)
 
     async def update_alert_readings(self, alert):
@@ -116,6 +123,7 @@ class ring:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_kind", alert["kind"])
         await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_to", alert["sip_to"])
         await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_token", alert["sip_token"])
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", alert["kind"])
         await fhem.readingsEndUpdate(self.hash, 1)
     
     async def update_history_readings(self, event, idx):
@@ -155,6 +163,9 @@ class ring:
             await fhem.readingsBulkUpdateIfChanged(self.hash, "last_recording_url", self._lastrecording_url)
             if self._livestreamjson != "":
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "livestream_json", json.dumps(self._livestreamjson))
+            # if self._snapshot:
+            #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
+            #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_if_available(self, reading):
@@ -173,6 +184,7 @@ class ring:
             for event in self._rdevice.history(limit=5):
                 self._history.append(event)
             self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
+            #self._snapshot = self._rdevice.get_snapshot()
 
     def blocking_login(self):
         def token_updater(token):
