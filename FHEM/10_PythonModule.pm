@@ -139,7 +139,7 @@ PythonModule_Shutdown($)
 <h3>PythonModule</h3>
 <ul>
   This module provides the interface for python modules.<br><br>
-  <a href="https://github.com/dominikkarall/fhem_pythonbinding/blob/master/README.md">Click here for online README</a>
+  <a href="https://github.com/dominikkarall/fhem_pythonbinding#readme">Click here for online README</a>
 </ul><br>
 
 =end html
