@@ -23,7 +23,12 @@ class bt_presence:
         while True:
             new_state = "absent"
             try:
-                device_name = await utils.run_blocking(functools.partial(self.lookup_name, self._address))
+                # check max 3 times for device_name
+                for i in range(0,2):
+                    device_name = await utils.run_blocking(functools.partial(self.lookup_name, self._address))
+                    if device_name:
+                        break
+
                 if device_name:
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "name", device_name, 1)
                     self._btrssi = BluetoothRSSI(self._address)
