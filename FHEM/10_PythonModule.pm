@@ -139,24 +139,7 @@ PythonModule_Shutdown($)
 <h3>PythonModule</h3>
 <ul>
   This module provides the interface for python modules.<br><br>
-
-  <a name="PythonModule_Set"></a>
-  <b>Set</b>
-  <ul>
-  Commandref for Python modules not yet supported.
-  </ul>
-
-  <a name="PythonModule_Get"></a>
-  <b>Get</b>
-  <ul>
-  Commandref for Python modules not yet supported.
-  </ul>
-
-  <a name="PythonModule_Attr"></a>
-  <b>Attr</b>
-  <ul>
-  Commandref for Python modules not yet supported.
-  </ul>
+  <a href="https://github.com/dominikkarall/fhem_pythonbinding/blob/master/README.md">Click here for online README</a>
 </ul><br>
 
 =end html
