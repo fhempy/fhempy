@@ -76,16 +76,16 @@ class eq3bt:
         try:
             self.thermostat = FhemThermostat(self.logger, self._mac, keep_connection=self._keep_conn)
         except DBusException:
-            dbus_conf_err = 'Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n \
-                        <policy user="fhem">\n \
-                            <allow own="org.bluez"/>\n \
-                            <allow send_destination="org.bluez"/>\n \
-                            <allow send_interface="org.bluez.GattCharacteristic1"/>\n \
-                            <allow send_interface="org.bluez.GattDescriptor1"/>\n \
-                            <allow send_interface="org.freedesktop.DBus.ObjectManager"/>\n \
-                            <allow send_interface="org.freedesktop.DBus.Properties"/>\n \
-                        </policy>\n \
-                        Restart dbus afterwards: sudo systemctl restart dbus'
+            dbus_conf_err = ('Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n'
+                '<policy user="fhem">\n'
+                '    <allow own="org.bluez"/>\n'
+                '    <allow send_destination="org.bluez"/>\n'
+                '    <allow send_interface="org.bluez.GattCharacteristic1"/>\n'
+                '    <allow send_interface="org.bluez.GattDescriptor1"/>\n'
+                '    <allow send_interface="org.freedesktop.DBus.ObjectManager"/>\n'
+                '    <allow send_interface="org.freedesktop.DBus.Properties"/>\n'
+                '</policy>\n\n'
+                'Restart dbus afterwards: sudo systemctl restart dbus')
             self.logger.error(dbus_conf_err)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", dbus_conf_err, 1)
             return dbus_conf_err
