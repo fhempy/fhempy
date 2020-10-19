@@ -51,6 +51,7 @@ class ble_reset:
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 await asyncio.get_event_loop().run_in_executor(
                     pool, functools.partial(self.do_ble_reset))
+            await fhem.readingsSingleUpdate(hash, "lastreset", "ok", 1)
             if self._hours == 0:
                 return
 
