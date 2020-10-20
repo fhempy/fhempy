@@ -216,13 +216,12 @@ class PyBinding:
                     if (nmInstance != None):
                         try:
                             # handle verbose level of logging
-                            if hash["function"] == "Attr":
-                                if hash["args"][2] == "verbose":
-                                    moduleLogger = logging.getLogger(hash["NAME"])
-                                    if hash["args"][0] == "set":
-                                        moduleLogger.setLevel(self.getLogLevel(hash["args"][3]))
-                                    else:
-                                        moduleLogger.setLevel(logging.ERROR)
+                            if hash["function"] == "Attr" and hash["args"][2] == "verbose":
+                                moduleLogger = logging.getLogger(hash["NAME"])
+                                if hash["args"][0] == "set":
+                                    moduleLogger.setLevel(self.getLogLevel(hash["args"][3]))
+                                else:
+                                    moduleLogger.setLevel(logging.ERROR)
                             else:
                                 # call Set/Attr/Define/...
                                 func = getattr(nmInstance, hash["function"], "nofunction")
