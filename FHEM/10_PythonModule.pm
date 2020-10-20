@@ -106,13 +106,6 @@ PythonModule_Rename($$$)
 }
 
 sub
-PythonModule_ChangeDevIo($)
-{
-  my ($hash) = $_;
-  IOWrite($hash, $hash, "Define", $hash->{args}, $hash->{argsh});
-}
-
-sub
 PythonModule_DelayedShutdownFn($)
 {
   my ($hash) = @_;
