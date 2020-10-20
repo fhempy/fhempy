@@ -20,13 +20,13 @@ DIR FHEM/bindings/python/lib/ble_presence
 DIR FHEM/bindings/python/lib/bt_presence
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-19_21:24:09 13308 FHEM/10_BindingsIo.pm
-UPD 2020-10-19_21:24:09 2823 FHEM/10_PythonModule.pm
+UPD 2020-10-20_20:43:21 2686 FHEM/10_PythonModule.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-10-18_20:51:53 6044 FHEM/bindings/python/lib/fhem.py
-UPD 2020-10-19_21:24:09 13100 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-10-19_21:24:09 3964 FHEM/bindings/python/lib/utils.py
+UPD 2020-10-20_20:43:21 13048 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-10-13_19:59:32 3297 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -76,11 +76,11 @@ UPD 2020-10-17_09:59:55 40 FHEM/bindings/python/lib/ring/manifest.json
 UPD 2020-10-17_09:59:55 22 FHEM/bindings/python/lib/ring/__init__.py
 UPD 2020-10-19_21:24:09 10854 FHEM/bindings/python/lib/ring/ring.py
 UPD 2020-10-19_21:24:09 32 FHEM/bindings/python/lib/ble_reset/__init__.py
-UPD 2020-10-19_21:24:09 2986 FHEM/bindings/python/lib/ble_reset/ble_reset.py
 UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
+UPD 2020-10-20_20:43:21 3088 FHEM/bindings/python/lib/ble_reset/ble_reset.py
 UPD 2020-10-19_23:12:17 22 FHEM/bindings/python/lib/ble_presence/__init__.py
 UPD 2020-10-19_23:12:17 39 FHEM/bindings/python/lib/ble_presence/manifest.json
 UPD 2020-10-19_23:59:32 1908 FHEM/bindings/python/lib/ble_presence/ble_presence.py
 UPD 2020-10-19_23:59:32 28 FHEM/bindings/python/lib/bt_presence/__init__.py
-UPD 2020-10-19_23:59:32 2300 FHEM/bindings/python/lib/bt_presence/bt_presence.py
 UPD 2020-10-19_23:59:32 61 FHEM/bindings/python/lib/bt_presence/manifest.json
+UPD 2020-10-20_20:43:21 4496 FHEM/bindings/python/lib/bt_presence/bt_presence.py
