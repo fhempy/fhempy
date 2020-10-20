@@ -31,6 +31,7 @@ class ble_reset:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self.hash = hash
         hours = await fhem.ReadingsVal(hash['NAME'], "interval", "24h")
         if hours == "manual":
             self._hours = 0
@@ -51,6 +52,7 @@ class ble_reset:
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 await asyncio.get_event_loop().run_in_executor(
                     pool, functools.partial(self.do_ble_reset))
+            await fhem.readingsSingleUpdate(self.hash, "lastreset", "ok", 1)
             if self._hours == 0:
                 return
 
