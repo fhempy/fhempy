@@ -18,13 +18,17 @@ class ring:
         self._password = ""
         self._token = ""
         self._2facode = None
-        self._poll_ding_interval = 5
-        self._poll_update_interval = 300
+        self._attr_dingPollInterval = 5
+        self._attr_deviceUpdateInterval = 300
         self._history = []
         self._rdevice = None
         self._lastrecording_url = ""
         self._livestreamjson = ""
         self._snapshot = None
+        self._attr_list = {
+            "deviceUpdateInterval": { "default": 300, "format": "int" },
+            "dingPollInterval": { "default": 2, "format": "int" }
+        }
         return
 
     async def token_updated(self, token):
@@ -42,6 +46,9 @@ class ring:
         self._reading_encryption_key = await fhem.getUniqueId(hash)
         self.hash["USERNAME"] = args[3]
         self.hash["RINGDEVICE"] = args[4]
+
+        await utils.handle_define_attr(self._attr_list, self, hash)
+
         asyncio.create_task(self.ring_login())
         return ""
 
@@ -97,7 +104,7 @@ class ring:
                             i += 1
                 except:
                     self.logger.exception("Failed to poll devices")
-                await asyncio.sleep(self._poll_update_interval)
+                await asyncio.sleep(self._attr_deviceUpdateInterval)
         except:
             self.logger.exception("Failed to update devices")
 
@@ -115,17 +122,17 @@ class ring:
             elif alert_active == 1:
                 alert_active = 0
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
-            await asyncio.sleep(self._poll_ding_interval)
+            await asyncio.sleep(self._attr_dingPollInterval)
 
     async def update_alert_readings(self, alert):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_id", alert["id"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_kind", alert["kind"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_to", alert["sip_to"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "alert_sip_token", alert["sip_token"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", alert["kind"])
+        await fhem.readingsBulkUpdate(self.hash, "alert_id", alert["id"])
+        await fhem.readingsBulkUpdate(self.hash, "alert_kind", alert["kind"])
+        await fhem.readingsBulkUpdate(self.hash, "alert_sip_to", alert["sip_to"])
+        await fhem.readingsBulkUpdate(self.hash, "alert_sip_token", alert["sip_token"])
+        await fhem.readingsBulkUpdate(self.hash, "state", alert["kind"])
         await fhem.readingsEndUpdate(self.hash, 1)
-    
+
     async def update_history_readings(self, event, idx):
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_id", event["id"])
@@ -204,8 +211,6 @@ class ring:
                         return "please set 2fa_code"
             else:
                 return "please set password"
-        
-
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -228,3 +233,6 @@ class ring:
     async def set_2fa_code(self, hash, params):
         self._2facode = params['2facode']
         asyncio.create_task(self.ring_login())
+
+    async def Attr(self, hash, args, argsh):
+        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
