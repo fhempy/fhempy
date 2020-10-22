@@ -130,7 +130,7 @@ async def send_and_wait(name, cmd):
 
     global wsconnection
     wsconnection.registerMsgListener(listener, msg['awaitId'])
-    msg = json.dumps(msg)
+    msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
     try:
         await wsconnection.send(msg)

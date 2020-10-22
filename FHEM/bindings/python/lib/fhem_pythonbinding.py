@@ -43,7 +43,7 @@ async def pybinding(websocket, path):
     except websockets.exceptions.ConnectionClosedError:
         logger.error("Connection closed error", exc_info=True)
         logger.info("Restart binding")
-        sys.exit()
+        sys.exit(1)
 
 class PyBinding:
 
@@ -56,7 +56,7 @@ class PyBinding:
         self.msg_listeners.append({"func": listener, "awaitId": awaitid})
 
     async def send(self, msg):
-        await self.wsconnection.send(msg)
+        await self.wsconnection.send(msg.encode("utf-8"))
 
     async def sendBackReturn(self, hash, ret):
         retHash = hash.copy()
@@ -64,8 +64,8 @@ class PyBinding:
         retHash['returnval'] = ret
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
-        logger.debug("<<< WS: " + msg)
-        await self.wsconnection.send(msg)
+        logger.debug("<<< WS: " + msg, ensure_ascii=False)
+        await self.wsconnection.send(msg.encode("utf-8"))
         fhem.setFunctionInactive(hash)        
 
     async def sendBackError(self, hash, error):
@@ -74,18 +74,18 @@ class PyBinding:
         retHash['finished'] = 1
         retHash['error'] = error
         retHash['id'] = hash['id']
-        msg = json.dumps(retHash)
+        msg = json.dumps(retHash, ensure_ascii=False)
         logger.debug("<<< WS: " + msg)
-        await self.wsconnection.send(msg)
+        await self.wsconnection.send(msg.encode("utf-8"))
         fhem.setFunctionInactive(hash)
 
     async def updateHash(self, hash):
         retHash = hash.copy()
         retHash['msgtype'] = "update_hash"
         del retHash['id']
-        msg = json.dumps(retHash)
+        msg = json.dumps(retHash, ensure_ascii=False)
         logger.debug("<<< WS: " + msg)
-        await self.wsconnection.send(msg)
+        await self.wsconnection.send(msg.encode("utf-8"))
 
     def getLogLevel(self, verbose_level):
         if verbose_level == "5":
