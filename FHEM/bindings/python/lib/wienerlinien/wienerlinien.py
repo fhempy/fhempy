@@ -58,6 +58,7 @@ class wienerlinien:
             self.logger.debug(data)
             if data is None:
                 return
+            message = data.get("message", {})
             data = data.get("data", {})
         except:
             self.logger.debug("Could not get new state")
@@ -75,6 +76,8 @@ class wienerlinien:
                 del_readings = {}
 
             await fhem.readingsBeginUpdate(self.hash)
+            for msg in message:
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "msg_" + msg, message[msg])
             for data_name in flat_data:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "line_" + data_name, flat_data[data_name])
             for data_name in flat_data_location:
