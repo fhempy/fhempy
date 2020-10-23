@@ -63,6 +63,16 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
         reading + "','" + value.replace("'", "\\'") + "');;"
     return await sendCommandHash(hash, cmd)
 
+async def readingsBulkUpdate(hash, reading, value, changed=None):
+    value = convertValue(value)
+    if changed is None:
+        cmd = "readingsBulkUpdate($defs{'" + hash["NAME"] + "'},'" + \
+            reading + "','" + value.replace("'", "\\'") + "');;"
+    else:
+        cmd = "readingsBulkUpdate($defs{'" + hash["NAME"] + "'},'" + \
+            reading + "','" + value.replace("'", "\\'") + "', " + str(changed) + ");;"
+    return await sendCommandHash(hash, cmd)
+
 async def readingsEndUpdate(hash, do_trigger):
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
     res = await sendCommandHash(hash,cmd)
