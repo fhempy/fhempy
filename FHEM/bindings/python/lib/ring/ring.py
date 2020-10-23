@@ -111,17 +111,20 @@ class ring:
     async def update_dings_loop(self):
         alert_active = 0
         while True:
-            await utils.run_blocking(functools.partial(self.poll_dings))
-            # handle alerts
-            alerts = self._ring.active_alerts()
-            self.logger.debug("Received dings: " + str(alerts))
-            if len(alerts) > 0:
-                alert_active = 1
-                for alert in alerts:
-                    await self.update_alert_readings(alert)
-            elif alert_active == 1:
-                alert_active = 0
-                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
+            try:
+                await utils.run_blocking(functools.partial(self.poll_dings))
+                # handle alerts
+                alerts = self._ring.active_alerts()
+                self.logger.debug("Received dings: " + str(alerts))
+                if len(alerts) > 0:
+                    alert_active = 1
+                    for alert in alerts:
+                        await self.update_alert_readings(alert)
+                elif alert_active == 1:
+                    alert_active = 0
+                    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
+            except:
+                self.logger.exception("Failed to poll dings...")
             await asyncio.sleep(self._attr_dingPollInterval)
 
     async def update_alert_readings(self, alert):
