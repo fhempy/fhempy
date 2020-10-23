@@ -58,6 +58,24 @@ async def handle_define_attr(attr_list, obj, hash):
     setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]['format']))
   return
 
+def flatten_json(y):
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + '_')
+        elif type(x) is list:
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + '_')
+                i += 1
+        else:
+            out[name[:-1]] = x
+
+    flatten(y)
+    return out
+
 def convert2format(attr_val, target_format):
   if target_format == "int":
     return int(attr_val)
