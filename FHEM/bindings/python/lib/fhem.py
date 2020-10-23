@@ -94,6 +94,10 @@ async def CommandAttr(hash, attrdef):
     cmd = "CommandAttr(undef, \"" + attrdef + "\")"
     return await sendCommandHash(hash, cmd)
 
+async def CommandDeleteReading(hash, deldef):
+    cmd = "CommandDeleteReading(undef, \"" + deldef + "\")"
+    return await sendCommandHash(hash, cmd)
+
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
     cmd = "foreach my $fhem_dev (sort keys %main::defs) {" + \
         "  return 1 if(defined($main::defs{$fhem_dev}{" + typeinternal + "}) && $main::defs{$fhem_dev}{" + typeinternal + "} eq '" + typevalue + "' && $main::defs{$fhem_dev}{" + internal + "} eq '" + value + "');;" + \
@@ -130,7 +134,7 @@ async def send_and_wait(name, cmd):
 
     global wsconnection
     wsconnection.registerMsgListener(listener, msg['awaitId'])
-    msg = json.dumps(msg)
+    msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
     try:
         await wsconnection.send(msg)

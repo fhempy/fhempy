@@ -17,6 +17,7 @@ googlecast|Control Cast devices
 helloworld|Hello World example
 [nespresso_ble](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
 [ring](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/ring/README.md)|Ring doorbell/chime/cam
+[wienerlinien](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/wienerlinien/README.md)|Wiener Linien departure times
 xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 [xiaomi_tokens](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud
 

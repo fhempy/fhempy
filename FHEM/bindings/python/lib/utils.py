@@ -6,6 +6,7 @@ from cryptography.fernet import Fernet
 from codecs import encode, decode
 from functools import reduce
 import base64
+from . import fhem
 
 def encrypt_string(plain_text, fhem_unique_id):
   key = base64.b64encode(fhem_unique_id.encode('utf-8'))
@@ -31,6 +32,58 @@ async def run_blocking(function):
 
 def run_blocking_task(function):
   asyncio.create_task(run_blocking(function))
+
+# example config
+# attr_list = {
+#   "attribute1": {"default": "10"}
+# }
+async def handle_attr(attr_list, obj, hash, args, argsh):
+  cmd = args[0]
+  name = args[1]
+  attr_name = args[2]
+  attr_val = args[3]
+  if attr_name in attr_list:
+    if cmd == "set":
+      setattr(obj, "_attr_" + attr_name, convert2format(attr_val, attr_list[attr_name]['format']))
+    else:
+      setattr(obj, "_attr_" + attr_name, attr_list[attr_name]['default'])
+  return
+
+async def handle_define_attr(attr_list, obj, hash):
+  await fhem.addToDevAttrList(hash["NAME"], " ".join(attr_list.keys()))
+  for attr in attr_list:
+    curr_val = await fhem.AttrVal(hash['NAME'], attr, "")
+    if curr_val == "":
+      curr_val = attr_list[attr]['default']
+    setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]['format']))
+  return
+
+def flatten_json(y):
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + '_')
+        elif type(x) is list:
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + '_')
+                i += 1
+        else:
+            out[name[:-1]] = x
+
+    flatten(y)
+    return out
+
+def convert2format(attr_val, target_format):
+  if target_format == "int":
+    return int(attr_val)
+  elif target_format == "float":
+    return float(attr_val)
+  elif target_format == "str":
+    return str(attr_val)
+  return attr_val
 
 # example config
 # set_list_conf = {

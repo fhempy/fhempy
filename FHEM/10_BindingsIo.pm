@@ -3,7 +3,6 @@
 
 package main;
 
-use utf8;
 use strict;
 use warnings;
 
@@ -179,7 +178,9 @@ BindingsIo_Write($$$$$) {
   }
 
   if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
-    readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
+    if ($init_done == 1) {
+      readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
+    }
     return undef;
   }
 
@@ -304,8 +305,9 @@ BindingsIo_Shutdown($)
 
 sub BindingsIo_processMessage($$$$) {
   my ($hash, $devhash, $waitingForId, $response) = @_;
+  $response = Encode::encode("UTF-8", $response);
   Log3 $hash, 5, "processMessage: ".$response;
-  my $json = eval {decode_json($response)};
+  my $json = eval {from_json($response)};
   if ($@) {
     Log3 $hash, 1, "BindingsIo: ERROR JSON: ".$@;
     Log3 $hash, 1, "BindingsIo: received JSON was: ".$response;
@@ -353,7 +355,7 @@ sub BindingsIo_processMessage($$$$) {
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
-    $ret = eval Encode::encode("UTF-8", $json->{command});
+    $ret = eval $json->{command};
     if ($@) {
       Log3 $hash, 1, "BindingsIo: ERROR failed (".$json->{command}."): ".$@;
       %res = (
@@ -418,7 +420,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     if ($USE_DEVIO_DECODEWS == 0) {
       delete $hash->{WEBSOCKET};
     }
-    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.001);
+    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.00001);
     #$response = DevIo_SimpleRead($hash);
     $hash->{WEBSOCKET} = 1;
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
