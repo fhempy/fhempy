@@ -16,6 +16,7 @@ eq3bt|Control EQ3 Bluetooth thermostat
 googlecast|Control Cast devices
 helloworld|Hello World example
 [nespresso_ble](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
+[object_detection](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/object_detection/README.md)|TensorFlow Lite object detection
 [ring](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/ring/README.md)|Ring doorbell/chime/cam
 [wienerlinien](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/wienerlinien/README.md)|Wiener Linien departure times
 xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
