@@ -96,6 +96,9 @@ class Thermostat:
 
         self._conn = connection_cls(_mac, keep_connection)
         self._conn.set_callback(PROP_NTFY_HANDLE, self.handle_notification)
+    
+    def set_keep_connected(self, new_state):
+        self._conn.set_keep_connected(new_state)
 
     def __str__(self):
         away_end = "no"
