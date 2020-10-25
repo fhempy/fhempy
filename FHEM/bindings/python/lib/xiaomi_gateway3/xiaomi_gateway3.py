@@ -55,11 +55,6 @@ class xiaomi_gateway3:
 
   # FHEM FUNCTION
   async def Set(self, hash, args, argsh):
-    # set_conf_list = {
-    #   "pair": { "args": ["new_state"], "format": "on,off" },
-    #   "pairmodel": { "args": ["model"] }
-    # }
-    # return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
     return ""
 
   def register_device(self, did, upd_listener):

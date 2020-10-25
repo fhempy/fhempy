@@ -24,8 +24,8 @@ class helloworld:
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
         set_list_conf = {
-           "mode": { "args": ["mode"], "argsh": ["mode"], "params": { "mode": { "default": "eco", "optional": False }}, "format": "eco,comfort" },
-           "desiredTemp": { "args": ["temperature"], "format": "slider,10,1,30"},
+           "mode": { "args": ["mode"], "argsh": ["mode"], "params": { "mode": { "default": "eco", "optional": False }}, "options": "eco,comfort" },
+           "desiredTemp": { "args": ["temperature"], "options": "slider,10,1,30"},
            "holidayMode": { "args": ["start", "end", "temperature"], "params": { "start": {"default": "Monday"}, "end": {"default": "23:59"}, "temperature": {"default": ""}}},
            "on": { "args": ["seconds"], "params": { "seconds": { "default": "", "optional": True}}},
            "off": {}

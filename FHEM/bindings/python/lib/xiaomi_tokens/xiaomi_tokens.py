@@ -31,7 +31,7 @@ class xiaomi_tokens:
         set_list_conf = {
            "username": { "args": ["username"] },
            "password": { "args": ["password"] },
-           "country": { "args": ["country"], "format": "de,cn,sg" },
+           "country": { "args": ["country"], "options": "de,cn,sg" },
            "get_tokens": {}
         }
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
