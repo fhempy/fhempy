@@ -60,7 +60,7 @@ class nespresso_ble:
       set_conf_list = {
         "authkey": { "args": ["authkey"] },
         "brew": {"args": ["coffee_type", "temperature"], "params": {"temperature": {"default":"high", "optional":True}, "coffee_type": {"default":"lungo", "optional":True}}},
-        "easybrew": {"args": ["coffee_type"], "format": "ristretto,espresso,lungo,hotwater,americano"},
+        "easybrew": {"args": ["coffee_type"], "options": "ristretto,espresso,lungo,hotwater,americano"},
         "recipe": {},
         "updateStatus": {}
       }

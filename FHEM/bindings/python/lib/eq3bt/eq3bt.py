@@ -37,18 +37,20 @@ class eq3bt:
         self.set_list_conf = {
             "on": {},
             "off": {},
-            "desiredTemperature": {"args": ["target_temp"], "format": "slider,4.5,0.5,30,1"},
+            "desiredTemperature": {"args": ["target_temp"], "options": "slider,4.5,0.5,30,1"},
             "updateStatus": {},
-            "boost": {"args": ["target_state"], "format": "on,off"},
-            "mode": {"args": ["target_mode"], "format": "manual,automatic"},
+            "boost": {"args": ["target_state"], "options": "on,off"},
+            "mode": {"args": ["target_mode"], "options": "manual,automatic"},
             "eco": {},
             "comfort": {},
-            "childlock": {"args": ["target_state"], "format": "on,off"}
+            "childlock": {"args": ["target_state"], "options": "on,off"}
         }
         self._last_update = 0
-        self._keep_conn = False
         self._mac = None
         self._presence_task = None
+        self._attr_list = {
+            "keep_connected": { "default": "on", "format": "str", "options": "on,off" }
+        }
         return
 
     # FHEM FUNCTION
@@ -58,23 +60,17 @@ class eq3bt:
         self.hash["MAC"] = self._mac
         self.logger.info(f"Define: eq3bt {self._mac}")
 
+        await utils.handle_define_attr(self._attr_list, self, hash)
+
         icon = await fhem.AttrVal(self.hash['NAME'], "icon", "noicon")
         if icon == "noicon":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon sani_heating_temp")
         await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
-        await fhem.addToDevAttrList(self.hash["NAME"], "keep_connected:on,off")
-
-        self._keep_conn = await fhem.AttrVal(self.hash['NAME'], "keep_connected", "on")
-        if self._keep_conn == "on":
-            self._keep_conn = True
-        else:
-            self._keep_conn = False
-
         # handle missing dbus configuration
         try:
-            self.thermostat = FhemThermostat(self.logger, self._mac, keep_connection=self._keep_conn)
+            self.thermostat = FhemThermostat(self.logger, self._mac, keep_connection=self._attr_keep_connected=="on")
         except DBusException:
             dbus_conf_err = ('Please add following configuration to /etc/dbus-1/system.d/bluetooth.conf:\n'
                 '<policy user="fhem">\n'
@@ -100,12 +96,15 @@ class eq3bt:
         return
 
     # FHEM FUNCTION
-    async def Attr(self, cmd, name, attr_name, attr_value):
-        return
+    async def Attr(self, hash, args, argsh):
+        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+    
+    async def set_attr_keep_connected(self, hash):
+        self.thermostat.set_keep_connected(self._attr_keep_connected == "on")
     
     async def check_online(self):
         waittime = 300
-        if self._keep_conn:
+        if self._attr_keep_connected == "on":
             waittime = 60
         await asyncio.sleep(int(random.random()*100))
         while True:
@@ -231,7 +230,11 @@ class FhemThermostat(eq3.Thermostat):
 
     def __init__(self,logger, mac, keep_connection):
         self.logger = logger
+        self._keep_conection = keep_connection
         super(FhemThermostat, self).__init__(mac, BTLEConnection, keep_connection=True)
+    
+    def set_keep_connection(self, new_state):
+        self.set_keep_connected(new_state)
     
     def update_all(self):
         super().update()

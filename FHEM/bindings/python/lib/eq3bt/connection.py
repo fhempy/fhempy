@@ -28,6 +28,15 @@ class BTLEConnection(btle.DefaultDelegate):
         self._callbacks = {}
         self._keep_connected = keep_connected
     
+    def set_keep_connected(self, new_state):
+        self._keep_connected = new_state
+        if new_state == False:
+            if self._conn:
+                try:
+                    self._conn.disconnect()
+                except:
+                    pass
+    
     def next_iface(self):
         self._nr_conn_errors += 1
         self._iface_idx = (self._iface_idx + 1) % len(self._ifaces)
