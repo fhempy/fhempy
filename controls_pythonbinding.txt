@@ -27,8 +27,8 @@ UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-10-23_19:07:37 13173 FHEM/bindings/python/lib/fhem_pythonbinding.py
-UPD 2020-10-23_20:37:48 6686 FHEM/bindings/python/lib/fhem.py
-UPD 2020-10-25_16:49:01 5817 FHEM/bindings/python/lib/utils.py
+UPD 2020-10-26_20:29:27 6802 FHEM/bindings/python/lib/fhem.py
+UPD 2020-10-26_20:29:27 5824 FHEM/bindings/python/lib/utils.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-10-13_19:59:32 3297 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -93,4 +93,4 @@ UPD 2020-10-24_21:06:01 25 FHEM/bindings/python/lib/object_detection/__init__.py
 UPD 2020-10-24_21:06:01 4183312 FHEM/bindings/python/lib/object_detection/detect.tflite
 UPD 2020-10-24_21:06:01 665 FHEM/bindings/python/lib/object_detection/labelmap.txt
 UPD 2020-10-24_21:06:01 49 FHEM/bindings/python/lib/object_detection/manifest.json
-UPD 2020-10-24_21:06:01 6260 FHEM/bindings/python/lib/object_detection/object_detection.py
+UPD 2020-10-26_20:29:27 16903 FHEM/bindings/python/lib/object_detection/object_detection.py
