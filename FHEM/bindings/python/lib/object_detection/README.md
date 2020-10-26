@@ -16,7 +16,17 @@ for other configuration please find the proper link here:
 https://www.tensorflow.org/lite/guide/python
 
 ## Usage
+Stream
 ```
-define obj_det PythonModule object_detection "FHEM/www/snapshot.jpg"
-set obj_det detectnow
+define obj_det PythonModule object_detection stream "https://rbmn-live.akamaized.net/hls/live/2002825/geoSTVATweb/master.m3u8"
+set obj_det start
 ```
+Image
+```
+define obj_det PythonModule object_detection image "FHEM/www/snapshot.jpg"
+set obj_det start
+```
+
+## Attributes
+ - detection_interval: Defines the detection interval in seconds (default: 2)
+ - detection_threshold: Defines the threshold for detection (default: 0.6)
