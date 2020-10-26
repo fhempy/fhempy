@@ -31,7 +31,7 @@ async def run_blocking(function):
     raise
 
 def run_blocking_task(function):
-  asyncio.create_task(run_blocking(function))
+  return asyncio.create_task(run_blocking(function))
 
 # example config
 # attr_list = {
