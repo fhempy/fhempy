@@ -14,6 +14,9 @@ function_active = []
 update_locks = {}
 wsconnection = None
 
+# TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
+# this would make all functions threadsafe
+
 def updateConnection(ws):
     global wsconnection
     wsconnection = ws
