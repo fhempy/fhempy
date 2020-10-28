@@ -7,6 +7,7 @@ import random
 import logging
 
 from enum import IntEnum
+from datetime import datetime
 
 from bluepy.btle import BTLEException
 from . import eq3btsmart as eq3
@@ -87,12 +88,27 @@ class eq3bt:
             return dbus_conf_err
 
         self._presence_task = asyncio.create_task(self.check_online())
+        self._consumption_task = asyncio.create_task(self.consumption_rotate())
         return ""
+
+    def seconds_till_midnight(self):
+        """Get the number of seconds until midnight."""
+        n = datetime.now()
+        return ((24 - n.hour - 1) * 60 * 60) + ((60 - n.minute - 1) * 60) + (60 - n.second)
+
+    async def consumption_rotate(self):
+        while True:
+            await asyncio.sleep(self.seconds_till_midnight())
+            consumption = int(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionYesterday", consumption, 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionToday", "0", 1)
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
         if self._presence_task:
             self._presence_task.cancel()
+        if self._consumption_task:
+            self._consumption_task.cancel()
         return
 
     # FHEM FUNCTION
@@ -134,7 +150,9 @@ class eq3bt:
         await self.update_schedule_readings()
     
     async def update_readings(self):
-        self._last_update = time.time()
+        old_valve_pos = int(await fhem.ReadingsVal(self.hash['NAME'], "valvePosition", "0"))
+        old_consumption = int(await fhem.ReadingsVal(self.hash['NAME'], "consumption", "0"))
+        old_consumption_today = int(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", self.thermostat.battery)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "boost", self.thermostat.boost)
@@ -152,7 +170,15 @@ class eq3bt:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "windowOpenTemperature", self.thermostat.window_open_temperature)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "windowOpenTime", self.thermostat.window_open_time)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
+        if (time.time() - self._last_update) < 120:
+            consumption_diff = (old_valve_pos + self.thermostat.valve_state) / 2 * (time.time() - self._last_update) / 3600
+        else:
+            consumption_diff = 0
+        new_consumption = int(old_consumption + consumption_diff)
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "consumption", new_consumption)
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "consumptionToday", int(old_consumption_today + consumption_diff))
         await fhem.readingsEndUpdate(self.hash, 1)
+        self._last_update = time.time()
 
     async def update_id_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
