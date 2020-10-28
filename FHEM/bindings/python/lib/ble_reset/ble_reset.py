@@ -65,14 +65,17 @@ class ble_reset:
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "nextreset", f"{next_reset.hour:02}:{next_reset.minute:02}", 1)
                 await asyncio.sleep((next_reset-now).seconds)
             # do reset now
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                await asyncio.get_event_loop().run_in_executor(
-                    pool, functools.partial(self.do_ble_reset))
+            await self.ble_reset_once()
 
             now = datetime.datetime.now()
             await fhem.readingsSingleUpdate(self.hash, "lastreset", f"{now.hour:02}:{now.minute:02}", 1)
             if self._hours == 0:
                 return
+
+    async def ble_reset_once(self):
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            await asyncio.get_event_loop().run_in_executor(
+                pool, functools.partial(self.do_ble_reset))
 
     def do_ble_reset(self):
         try:
@@ -111,7 +114,7 @@ class ble_reset:
         self._resettask = asyncio.create_task(self.ble_reset())
 
     async def set_resetnow(self, hash):
-        asyncio.create_task(self.ble_reset())
+        asyncio.create_task(self.ble_reset_once())
 
     async def Attr(self, hash, args, argsh):
         return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
