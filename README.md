@@ -12,7 +12,7 @@ discover_mdns|Discover mDNS devices
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
-eq3bt|Control EQ3 Bluetooth thermostat
+[eq3bt](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
 googlecast|Control Cast devices
 helloworld|Hello World example
 [nespresso_ble](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
