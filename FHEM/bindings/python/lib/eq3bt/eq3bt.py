@@ -44,7 +44,8 @@ class eq3bt:
             "mode": {"args": ["target_mode"], "options": "manual,automatic"},
             "eco": {},
             "comfort": {},
-            "childlock": {"args": ["target_state"], "options": "on,off"}
+            "childlock": {"args": ["target_state"], "options": "on,off"},
+            "resetConsumption": { "args": ["cons_var"], "options": "all,consumption,consumptionToday,consumptionYesterday"}
         }
         self._last_update = 0
         self._mac = None
@@ -99,7 +100,7 @@ class eq3bt:
     async def consumption_rotate(self):
         while True:
             await asyncio.sleep(self.seconds_till_midnight())
-            consumption = int(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
+            consumption = float(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
             await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionYesterday", consumption, 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionToday", "0", 1)
 
@@ -114,6 +115,15 @@ class eq3bt:
     # FHEM FUNCTION
     async def Attr(self, hash, args, argsh):
         return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+
+    async def set_resetConsumption(self, hash, params):
+        cons_var = params['cons_var']
+        if cons_var == "all":
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumption", 0, 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionYesterday", 0, 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionToday", 0, 1)
+        else:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, cons_var, 0, 1)
     
     async def set_attr_keep_connected(self, hash):
         self.thermostat.set_keep_connected(self._attr_keep_connected == "on")
@@ -150,9 +160,9 @@ class eq3bt:
         await self.update_schedule_readings()
     
     async def update_readings(self):
-        old_valve_pos = int(await fhem.ReadingsVal(self.hash['NAME'], "valvePosition", "0"))
-        old_consumption = int(await fhem.ReadingsVal(self.hash['NAME'], "consumption", "0"))
-        old_consumption_today = int(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
+        old_valve_pos = float(await fhem.ReadingsVal(self.hash['NAME'], "valvePosition", "0"))
+        old_consumption = float(await fhem.ReadingsVal(self.hash['NAME'], "consumption", "0"))
+        old_consumption_today = float(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", self.thermostat.battery)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "boost", self.thermostat.boost)
@@ -170,13 +180,13 @@ class eq3bt:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "windowOpenTemperature", self.thermostat.window_open_temperature)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "windowOpenTime", self.thermostat.window_open_time)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
-        if (time.time() - self._last_update) < 120:
-            consumption_diff = (old_valve_pos + self.thermostat.valve_state) / 2 * (time.time() - self._last_update) / 3600
+        if (time.time() - self._last_update) < 400:
+            consumption_diff = (old_valve_pos + self.thermostat.valve_state) / 2 / 100 * (time.time() - self._last_update) / 60
         else:
             consumption_diff = 0
-        new_consumption = int(old_consumption + consumption_diff)
+        new_consumption = round(old_consumption + consumption_diff, 2)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "consumption", new_consumption)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "consumptionToday", int(old_consumption_today + consumption_diff))
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "consumptionToday", round(old_consumption_today + consumption_diff, 2))
         await fhem.readingsEndUpdate(self.hash, 1)
         self._last_update = time.time()
 
