@@ -159,7 +159,11 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             return f"Required argument {param} missing."
 
       # call function with params
-      fct_name = "set_" + cmd
+      if "function" in set_list_conf[cmd]:
+        fct_name = set_list_conf[cmd]['function']
+        final_params['cmd'] = cmd
+      else:
+        fct_name = "set_" + cmd
       fct_call = getattr(obj, fct_name)
       if len(final_params) > 0:
         return await fct_call(hash, final_params)

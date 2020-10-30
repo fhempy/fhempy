@@ -1,1 +1,1 @@
-# face recognition module
+# object detection module
