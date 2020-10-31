@@ -1,4 +1,4 @@
-# FHEM Python Binding (BETA, might not be stable!)
+# FHEM Python Binding (BETA)
 
 FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
@@ -26,7 +26,7 @@ xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
 ## Installation
 Python >=3.7 is required, Python 2 won't work!
 
-Console
+### Console
 ```
 sudo apt install python3 python3-pip
 
@@ -34,7 +34,7 @@ sudo cpan Protocol::WebSocket
 
 sudo pip3 install asyncio websockets importlib_metadata
 ```
-FHEM
+### FHEM
 ```
 update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/controls_pythonbinding.txt
 

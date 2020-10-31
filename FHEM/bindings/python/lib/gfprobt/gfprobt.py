@@ -65,6 +65,7 @@ class gfprobt:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "max_temperature", self._max_temp)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware", self._firmware)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "devname", self._devname)
+        await fhem.readingsEndUpdate(self.hash, 1)
 
     def blocking_connect(self):
         self._conn.connect()
