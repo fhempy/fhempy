@@ -20,6 +20,8 @@ class miio:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        if len(args) < 6:
+            return "Usage: define miiodev PythonModule miio <TYPE> <IP> <TOKEN>"
         self._miio_devtype = args[3]
         self._miio_ip = args[4]
         self._miio_token = args[5]
