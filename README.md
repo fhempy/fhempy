@@ -50,7 +50,11 @@ All further requirements are installed automatically via pip as soon as the spec
  - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
  - `define upnp PythonModule discover_upnp`
 
-## Configure remote Python peers (e.g. extend Bluetooth range)
+## Run Python modules on remote Python peers (e.g. extend Bluetooth range)
+FHEM Pythonbinding allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
+
+The following steps are only needed if you want to install FHEM Pythonbinding on a remote peer, you should not run them on your FHEM installation.
+
 - Follow installation steps (only Console) above on remote device
 - `git clone https://github.com/dominikkarall/fhem_pythonbinding.git`
 - Systemd configuration
