@@ -225,7 +225,16 @@ class ring:
            "password": { "args": ["password"] },
            "2fa_code": { "args": ["2facode"] }
         }
+        if self._rdevice.has_capability("volume"):
+            set_list_conf['volume'] = { "args": ["volume"], "options": "slider,1,1,100"}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
+
+    async def set_volume(self, hash, params):
+        new_vol = params['volume']
+        utils.run_blocking_task(functools.partial(self.set_volume_blocking, new_vol))
+    
+    async def set_volume_blocking(self, new_volume):
+        self._rdevice.volume = new_volume
 
     async def set_password(self, hash, params):
         self._password = params['password']
