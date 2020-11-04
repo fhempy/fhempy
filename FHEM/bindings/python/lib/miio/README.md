@@ -67,4 +67,4 @@ define cam PythonModule miio <TYPE> <IP> <TOKEN>
 https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/xiaomi_tokens/README.md
 
 ## Set commands
-All set commands without additional arguments are supported.
+All set commands are supported.
