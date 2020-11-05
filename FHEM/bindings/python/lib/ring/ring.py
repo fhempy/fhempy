@@ -230,7 +230,7 @@ class ring:
            "2fa_code": { "args": ["2facode"] }
         }
         if self._rdevice is not None and self._rdevice.has_capability("volume"):
-            set_list_conf['volume'] = { "args": ["volume"], "params": { "volume": {"format": "int"}}, "options": "slider,0,1,11"}
+            set_list_conf['volume'] = { "args": ["volume"], "params": { "volume": {"format": "int"}}, "options": "slider,0,1,10"}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_volume(self, hash, params):
