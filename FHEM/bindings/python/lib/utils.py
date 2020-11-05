@@ -93,14 +93,14 @@ def flatten_json(y):
     flatten(y)
     return out
 
-def convert2format(attr_val, target_format):
+def convert2format(value, target_format):
   if target_format == "int":
-    return int(attr_val)
+    return int(value)
   elif target_format == "float":
-    return float(attr_val)
+    return float(value)
   elif target_format == "str":
-    return str(attr_val)
-  return attr_val
+    return str(value)
+  return value
 
 # example config
 # set_list_conf = {
@@ -132,8 +132,8 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
       cmd_def = set_list_conf[cmd]
       # map arguments to params
       # add args to all_args
-      if "args" in cmd_def and (len(args) - 2) > len(cmd_def["args"]):
-        return f"Too many args provided. Usage: set {hash['NAME']} {cmd} " + " ".join(cmd_def["args"])
+      if ("args" in cmd_def and (len(args) - 2) > len(cmd_def["args"])) or (len(args) > 2 and args[2] == "?"):
+        return f"Usage: set {hash['NAME']} {cmd} " + " ".join(cmd_def["args"])
       i=0
       for arg in args[2:]:
         # arg ... mode
@@ -157,6 +157,8 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
           elif "optional" not in cmd_def["params"][param] or cmd_def["params"][param]["optional"] is False:
             # no value found, check if optional
             return f"Required argument {param} missing."
+          if "format" in cmd_def["params"][param]:
+            final_params[param] = convert2format(final_params[param], cmd_def["params"][param]["format"])
 
       # call function with params
       if "function" in set_list_conf[cmd]:
