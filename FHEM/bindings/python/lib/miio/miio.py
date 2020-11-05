@@ -118,12 +118,17 @@ class miio:
         await self.set_command(self.hash, { "cmd": "status" })
 
     async def status_request(self, fct):
-        reply = await utils.run_blocking(functools.partial(fct))
-        await fhem.readingsBeginUpdate(self.hash)
         try:
-            st = dict((x, getattr(reply, x)) for x in reply.__class__.__dict__ if isinstance(reply.__class__.__dict__[x], property))
-            for prop in st:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
-        except:
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "cmd_reply_val", reply)
-        await fhem.readingsEndUpdate(self.hash, 1)
+            reply = await utils.run_blocking(functools.partial(fct))
+            await fhem.readingsBeginUpdate(self.hash)
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
+            try:
+                st = dict((x, getattr(reply, x)) for x in reply.__class__.__dict__ if isinstance(reply.__class__.__dict__[x], property))
+                for prop in st:
+                    await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
+            except:
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "cmd_reply_val", reply)
+            await fhem.readingsEndUpdate(self.hash, 1)
+        except Exception as ex:
+            self.logger.error("Device might be offline: " + str(ex))
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
