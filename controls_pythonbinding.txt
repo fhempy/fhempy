@@ -76,7 +76,7 @@ UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-25_16:49:01 2194 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
 UPD 2020-10-17_09:59:55 40 FHEM/bindings/python/lib/ring/manifest.json
 UPD 2020-10-17_09:59:55 22 FHEM/bindings/python/lib/ring/__init__.py
-UPD 2020-11-05_21:22:15 12073 FHEM/bindings/python/lib/ring/ring.py
+UPD 2020-11-05_21:34:51 12073 FHEM/bindings/python/lib/ring/ring.py
 UPD 2020-10-19_21:24:09 32 FHEM/bindings/python/lib/ble_reset/__init__.py
 UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
 UPD 2020-10-30_19:57:38 4685 FHEM/bindings/python/lib/ble_reset/ble_reset.py
