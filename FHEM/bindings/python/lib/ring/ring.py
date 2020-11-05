@@ -44,6 +44,10 @@ class ring:
         self._username = args[3]
         self._rdevname = args[4]
         self._reading_encryption_key = await fhem.getUniqueId(hash)
+        # ring service
+        self._ring = None
+        # ring doorbell/chime/... device
+        self._rdevice = None
         self.hash["USERNAME"] = args[3]
         self.hash["RINGDEVICE"] = args[4]
 
@@ -225,15 +229,19 @@ class ring:
            "password": { "args": ["password"] },
            "2fa_code": { "args": ["2facode"] }
         }
-        if self._rdevice.has_capability("volume"):
-            set_list_conf['volume'] = { "args": ["volume"], "options": "slider,1,1,100"}
+        if self._rdevice is not None and self._rdevice.has_capability("volume"):
+            set_list_conf['volume'] = { "args": ["volume"], "params": { "volume": {"format": "int"}}, "options": "slider,0,1,11"}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_volume(self, hash, params):
         new_vol = params['volume']
-        utils.run_blocking_task(functools.partial(self.set_volume_blocking, new_vol))
+        asyncio.create_task(self.set_volume_task(new_vol))
     
-    async def set_volume_blocking(self, new_volume):
+    async def set_volume_task(self, new_volume):
+        await utils.run_blocking(functools.partial(self.set_volume_blocking, new_volume))
+        await self.update_readings()
+
+    def set_volume_blocking(self, new_volume):
         self._rdevice.volume = new_volume
 
     async def set_password(self, hash, params):
