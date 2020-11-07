@@ -46,7 +46,8 @@ UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/googlecast/__init__.py
 UPD 2020-10-16_18:34:10 20424 FHEM/bindings/python/lib/googlecast/googlecast.py
 UPD 2020-10-16_19:56:17 178 FHEM/bindings/python/lib/googlecast/manifest.json
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/helloworld/__init__.py
-UPD 2020-10-25_16:49:01 2152 FHEM/bindings/python/lib/helloworld/helloworld.py
+UPD 2020-11-07_21:31:19 3123 FHEM/bindings/python/lib/helloworld/helloworld.py
+UPD 2020-11-07_21:31:19 25 FHEM/bindings/python/lib/helloworld/manifest.json
 UPD 2020-09-23_21:24:01 21 FHEM/bindings/python/lib/eq3bt/__init__.py
 UPD 2020-10-11_14:46:03 4833 FHEM/bindings/python/lib/eq3bt/structures.py
 UPD 2020-10-11_15:43:01 61 FHEM/bindings/python/lib/eq3bt/manifest.json
@@ -77,7 +78,7 @@ UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-25_16:49:01 2194 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
 UPD 2020-10-17_09:59:55 40 FHEM/bindings/python/lib/ring/manifest.json
 UPD 2020-10-17_09:59:55 22 FHEM/bindings/python/lib/ring/__init__.py
-UPD 2020-11-05_21:34:51 12073 FHEM/bindings/python/lib/ring/ring.py
+UPD 2020-11-07_21:31:19 12204 FHEM/bindings/python/lib/ring/ring.py
 UPD 2020-10-19_21:24:09 32 FHEM/bindings/python/lib/ble_reset/__init__.py
 UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
 UPD 2020-10-30_19:57:38 4685 FHEM/bindings/python/lib/ble_reset/ble_reset.py
@@ -97,4 +98,4 @@ UPD 2020-10-26_20:29:27 16903 FHEM/bindings/python/lib/object_detection/object_d
 UPD 2020-10-30_19:57:38 25 FHEM/bindings/python/lib/object_detection/__init__.py
 UPD 2020-11-07_19:06:47 31 FHEM/bindings/python/lib/miflora/__init__.py
 UPD 2020-11-07_19:06:47 44 FHEM/bindings/python/lib/miflora/manifest.json
-UPD 2020-11-07_20:57:04 2048 FHEM/bindings/python/lib/miflora/miflora.py
+UPD 2020-11-07_21:31:19 2734 FHEM/bindings/python/lib/miflora/miflora.py
