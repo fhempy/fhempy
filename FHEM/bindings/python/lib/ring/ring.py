@@ -127,6 +127,8 @@ class ring:
                 elif alert_active == 1:
                     alert_active = 0
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
+                    await utils.run_blocking(functools.partial(self.poll_device))
+                    await self.update_readings()
             except:
                 self.logger.exception("Failed to poll dings...")
             await asyncio.sleep(self._attr_dingPollInterval)
