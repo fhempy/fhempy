@@ -20,6 +20,7 @@ DIR FHEM/bindings/python/lib/ble_presence
 DIR FHEM/bindings/python/lib/bt_presence
 DIR FHEM/bindings/python/lib/wienerlinien
 DIR FHEM/bindings/python/lib/object_detection
+DIR FHEM/bindings/python/lib/miflora
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
 UPD 2020-10-20_20:43:21 2686 FHEM/10_PythonModule.pm
 UPD 2020-10-23_19:07:37 13358 FHEM/10_BindingsIo.pm
@@ -94,3 +95,6 @@ UPD 2020-10-24_21:06:01 665 FHEM/bindings/python/lib/object_detection/labelmap.t
 UPD 2020-10-24_21:06:01 49 FHEM/bindings/python/lib/object_detection/manifest.json
 UPD 2020-10-26_20:29:27 16903 FHEM/bindings/python/lib/object_detection/object_detection.py
 UPD 2020-10-30_19:57:38 25 FHEM/bindings/python/lib/object_detection/__init__.py
+UPD 2020-11-07_19:06:47 31 FHEM/bindings/python/lib/miflora/__init__.py
+UPD 2020-11-07_19:06:47 44 FHEM/bindings/python/lib/miflora/manifest.json
+UPD 2020-11-07_19:06:47 2061 FHEM/bindings/python/lib/miflora/miflora.py
