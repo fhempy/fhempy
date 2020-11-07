@@ -88,7 +88,7 @@ class discover_mdns:
         return ""
 
     # FHEM
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         if self.browser:
             self.browser.cancel()
         self.zeroconf.close()

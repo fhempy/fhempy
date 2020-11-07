@@ -19,7 +19,7 @@ class ble_presence:
         while True:
             new_state = "absent"
             try:
-                device = await BleakScanner.find_device_by_address(self._address)
+                device = await BleakScanner.find_device_by_address(self._address, timeout=10)
                 if device:
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "name", device.name, 1)
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "rssi", device.rssi, 1)
@@ -52,7 +52,7 @@ class ble_presence:
         return ""
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         if self.blescanTask:
             self.blescanTask.cancel()
         return

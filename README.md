@@ -40,7 +40,7 @@ update add https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/ma
 
 update
 
-define pythonbinding BindingsIo Python
+define local_pybinding BindingsIo Python
 ```
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
@@ -64,9 +64,9 @@ The following steps are only needed if you want to install FHEM Pythonbinding on
   - `sudo systemctl enable fhem_pythonbinding`
   - `sudo systemctl start fhem_pythonbinding`
 - FHEM configuration
-  - `define bindingsio_remote BindingsIo IP:15733 Python`
+  - `define remote_pybinding BindingsIo IP:15733 Python`
   - `define eq3device PythonModule eq3bt MAC`
-  - `attr eq3device IODev bindingsio_remote`
+  - `attr eq3device IODev remote_pybinding`
 
 ## Functionality
 

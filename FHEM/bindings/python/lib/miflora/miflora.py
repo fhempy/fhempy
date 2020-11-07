@@ -59,7 +59,7 @@ class miflora:
             await asyncio.sleep(self._update_interval)
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         if self.updateTask:
             self.updateTask.cancel()
         return
