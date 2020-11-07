@@ -94,7 +94,7 @@ class bt_presence:
         return ""
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         if self.btscan_task:
             self.btscan_task.cancel()
 

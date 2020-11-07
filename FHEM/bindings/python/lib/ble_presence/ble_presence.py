@@ -52,7 +52,7 @@ class ble_presence:
         return ""
 
     # FHEM FUNCTION
-    async def Undefine(self, hash, args, argsh):
+    async def Undefine(self, hash):
         if self.blescanTask:
             self.blescanTask.cancel()
         return
