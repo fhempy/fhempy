@@ -77,6 +77,12 @@ class miflora:
     async def Attr(self, hash, args, argsh):
         return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
+    async def set_attr_update_interval(self, hash):
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "update_interval", str(self._attr_update_interval), 1)
+        if self.updateTask:
+            self.updateTask.cancel()
+        self.updateTask = asyncio.create_task(self.update_task())
+
     async def set_attr_hci_device(self, hash):
         self.logger.debug(f"attr change of hci device")
         self._poller = miflora_poller.MiFloraPoller(
