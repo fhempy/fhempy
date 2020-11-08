@@ -92,12 +92,15 @@ async def readingsSingleUpdate(hash, reading, value, do_trigger):
         return await sendCommandHash(hash, cmd)
 
 async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
-    value = convertValue(value)
-    cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;readingsBulkUpdateIfChanged($defs{'" + hash["NAME"] + "'},'" + \
-        reading + "','" + value.replace("'", "\\'") + \
-        "');;readingsEndUpdate($defs{'" + \
-        hash["NAME"] + "'}," + str(do_trigger) + ");;"
-    return await sendCommandHash(hash, cmd)
+    if hash["NAME"] not in update_locks:
+        update_locks[hash["NAME"]] = asyncio.Lock()
+    async with update_locks[hash["NAME"]]:
+        value = convertValue(value)
+        cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;readingsBulkUpdateIfChanged($defs{'" + hash["NAME"] + "'},'" + \
+            reading + "','" + value.replace("'", "\\'") + \
+            "');;readingsEndUpdate($defs{'" + \
+            hash["NAME"] + "'}," + str(do_trigger) + ");;"
+        return await sendCommandHash(hash, cmd)
 
 async def CommandDefine(hash, definition):
     cmd = "CommandDefine(undef, \"" + definition + "\")"
