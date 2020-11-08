@@ -27,9 +27,9 @@ UPD 2020-10-23_19:07:37 13358 FHEM/10_BindingsIo.pm
 UPD 2020-09-19_17:52:13 73 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
-UPD 2020-10-23_19:07:37 13173 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-10-30_19:57:38 6803 FHEM/bindings/python/lib/fhem.py
-UPD 2020-11-05_21:22:15 6123 FHEM/bindings/python/lib/utils.py
+UPD 2020-11-08_14:30:07 13707 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-11-08_14:30:07 6189 FHEM/bindings/python/lib/utils.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-11-07_20:57:04 3284 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -72,7 +72,7 @@ UPD 2020-10-14_10:57:41 48 FHEM/bindings/python/lib/gfprobt/manifest.json
 UPD 2020-10-31_20:10:08 4268 FHEM/bindings/python/lib/gfprobt/gfprobt.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/miio/__init__.py
 UPD 2020-10-11_14:46:03 38 FHEM/bindings/python/lib/miio/manifest.json
-UPD 2020-11-05_21:22:15 5697 FHEM/bindings/python/lib/miio/miio.py
+UPD 2020-11-08_14:30:07 5888 FHEM/bindings/python/lib/miio/miio.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/xiaomi_tokens/__init__.py
 UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-25_16:49:01 2194 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
@@ -98,4 +98,4 @@ UPD 2020-10-26_20:29:27 16903 FHEM/bindings/python/lib/object_detection/object_d
 UPD 2020-10-30_19:57:38 25 FHEM/bindings/python/lib/object_detection/__init__.py
 UPD 2020-11-07_19:06:47 31 FHEM/bindings/python/lib/miflora/__init__.py
 UPD 2020-11-07_19:06:47 44 FHEM/bindings/python/lib/miflora/manifest.json
-UPD 2020-11-07_21:31:19 2734 FHEM/bindings/python/lib/miflora/miflora.py
+UPD 2020-11-08_14:30:07 3489 FHEM/bindings/python/lib/miflora/miflora.py
