@@ -7,12 +7,12 @@ import bluepy.btle
 import btlewrap
 from btlewrap import BluetoothBackendException
 
-from miflora import miflora_poller
+from mitemp import mitemp_bt_poller
 
 from .. import fhem, utils
 
 
-class miflora:
+class mitemp:
 
     def __init__(self, logger):
         self.logger = logger
@@ -31,14 +31,14 @@ class miflora:
     async def Define(self, hash, args, argsh):
         self.hash = hash
         if len(args) < 4:
-            return "Usage: define mi_plant PythonModule miflora <MAC>"
+            return "Usage: define mi_temphum PythonModule mitemp <MAC>"
 
         await utils.handle_define_attr(self._attr_list, self, hash)
         self._address = args[3]
         hash["MAC"] = args[3]
-        self.logger.debug(f"Define miflora: {self._address}")
+        self.logger.debug(f"Define mitemp: {self._address}")
         
-        self._poller = miflora_poller.MiFloraPoller(
+        self._poller = mitemp_bt_poller.MiTempBtPoller(
                 self._address,
                 cache_timeout=60,
                 adapter=self._attr_hci_device,
@@ -60,7 +60,7 @@ class miflora:
                 # firmware_version
                 firmware_version = await utils.run_blocking(functools.partial(self._poller.firmware_version))
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware", firmware_version)
-                for param in ("temperature", "light", "moisture", "conductivity", "battery"):
+                for param in ("temperature", "humidity", "battery"):
                     # param
                     param_val = await utils.run_blocking(functools.partial(self._poller.parameter_value, param))
                     await fhem.readingsBulkUpdateIfChanged(self.hash, param, param_val)
@@ -68,7 +68,7 @@ class miflora:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
                 await fhem.readingsEndUpdate(self.hash, 1)
             except:
-                self.logger.error(f"Failed to get updates from miflora {self._address}")
+                self.logger.error(f"Failed to get updates from mitemp {self._address}")
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
             await asyncio.sleep(self._attr_update_interval)
@@ -85,7 +85,7 @@ class miflora:
 
     async def set_attr_hci_device(self, hash):
         self.logger.debug(f"attr change of hci device")
-        self._poller = miflora_poller.MiFloraPoller(
+        self._poller = mitemp_bt_poller.MiTempBtPoller(
                 self._address,
                 cache_timeout=60,
                 adapter=self._attr_hci_device,
