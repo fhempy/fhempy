@@ -1,5 +1,6 @@
 
 import asyncio
+import functools
 import logging
 
 import bluepy.btle
@@ -34,8 +35,9 @@ class miflora:
 
         await utils.handle_define_attr(self._attr_list, self, hash)
         self._address = args[3]
-        self.hash["MAC"] = args[3]
-
+        hash["MAC"] = args[3]
+        self.logger.debug(f"Define miflora: {self._address}")
+        
         self._poller = miflora_poller.MiFloraPoller(
                 self._address,
                 cache_timeout=60,
@@ -46,22 +48,29 @@ class miflora:
         if self.updateTask:
             self.updateTask.cancel()
         self.updateTask = asyncio.create_task(self.update_task())
-        return ""
 
     async def update_task(self):
         while True:
-            await fhem.readingsBeginUpdate(self.hash)
-            # name
-            name = await utils.run_blocking(self._poller.name())
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "name", name)
-            # firmware_version
-            firmware_version = await utils.run_blocking(self._poller.firmware_version())
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware", firmware_version)
-            for param in ("temperature", "light", "moisture", "conductivity", "battery"):
-                # param
-                param_val = await utils.run_blocking(self._poller.parameter_value(param))
-                await fhem.readingsBulkUpdateIfChanged(self.hash, param, param_val)
-            await fhem.readingsEndUpdate(self.hash, 1)
+            self.logger.debug(f"Run update task")
+            try:
+                await fhem.readingsBeginUpdate(self.hash)
+                # name
+                name = await utils.run_blocking(functools.partial(self._poller.name))
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "name", name)
+                # firmware_version
+                firmware_version = await utils.run_blocking(functools.partial(self._poller.firmware_version))
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware", firmware_version)
+                for param in ("temperature", "light", "moisture", "conductivity", "battery"):
+                    # param
+                    param_val = await utils.run_blocking(functools.partial(self._poller.parameter_value, param))
+                    await fhem.readingsBulkUpdateIfChanged(self.hash, param, param_val)
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
+                await fhem.readingsEndUpdate(self.hash, 1)
+            except:
+                self.logger.error(f"Failed to get updates from miflora {self._address}")
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
             await asyncio.sleep(self._attr_update_interval)
 
     # FHEM FUNCTION
@@ -69,6 +78,7 @@ class miflora:
         return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
     async def set_attr_hci_device(self, hash):
+        self.logger.debug(f"attr change of hci device")
         self._poller = miflora_poller.MiFloraPoller(
                 self._address,
                 cache_timeout=60,

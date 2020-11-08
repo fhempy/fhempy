@@ -203,6 +203,13 @@ class PyBinding:
                                 else:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
+                            except (ModuleNotFoundError, ImportError):
+                                errorMsg = f"Module failed to load: {hash['PYTHONTYPE']}\nMaybe you need to update fhem_pythonbinding on this or remote peer."
+                                if fhem_reply_done:
+                                    await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                                else:
+                                    await self.sendBackError(hash, errorMsg)
+                                return 0
                             except Exception:
                                 errorMsg = "Failed to load module " + hash["PYTHONTYPE"] + ": " + traceback.format_exc()
                                 if fhem_reply_done:
