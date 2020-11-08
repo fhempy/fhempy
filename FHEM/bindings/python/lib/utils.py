@@ -44,7 +44,7 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
   attr_val = args[3]
   if attr_name in attr_list:
     if cmd == "set":
-      setattr(obj, "_attr_" + attr_name, convert2format(attr_val, attr_list[attr_name]['format']))
+      setattr(obj, "_attr_" + attr_name, convert2format(attr_val, attr_list[attr_name]))
     else:
       setattr(obj, "_attr_" + attr_name, attr_list[attr_name]['default'])
 
@@ -72,7 +72,7 @@ async def handle_define_attr(attr_list, obj, hash):
     curr_val = await fhem.AttrVal(hash['NAME'], attr, "")
     if curr_val == "":
       curr_val = attr_list[attr]['default']
-    setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]['format']))
+    setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
   return
 
 def flatten_json(y):
@@ -93,7 +93,12 @@ def flatten_json(y):
     flatten(y)
     return out
 
-def convert2format(value, target_format):
+def convert2format(value, list_def):
+  if "format" in list_def:
+    target_format = list_def['format']
+  else:
+    target_format = "str"
+
   if target_format == "int":
     return int(value)
   elif target_format == "float":
@@ -158,7 +163,7 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             # no value found, check if optional
             return f"Required argument {param} missing."
           if "format" in cmd_def["params"][param]:
-            final_params[param] = convert2format(final_params[param], cmd_def["params"][param]["format"])
+            final_params[param] = convert2format(final_params[param], cmd_def["params"][param])
 
       # call function with params
       if "function" in set_list_conf[cmd]:
