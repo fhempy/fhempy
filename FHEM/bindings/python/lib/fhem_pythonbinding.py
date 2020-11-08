@@ -64,7 +64,7 @@ class PyBinding:
         retHash['returnval'] = ret
         retHash['id'] = hash['id']
         msg = json.dumps(retHash)
-        logger.debug("<<< WS: " + msg, ensure_ascii=False)
+        logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg.encode("utf-8"))
         fhem.setFunctionInactive(hash)        
 
