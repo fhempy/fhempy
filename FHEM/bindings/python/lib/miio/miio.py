@@ -15,6 +15,7 @@ class miio:
         self.logger = logger
         self._set_list = {}
         self._device = None
+        self._status_task = None
         return
 
     # FHEM FUNCTION
@@ -52,7 +53,9 @@ class miio:
 
         self._device = self._miio_device_class(ip=self._miio_ip, token=self._miio_token)
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
-        asyncio.create_task(self.status_request_loop())
+        if self._status_task:
+            self._status_task.cancel()
+        self._status_task = asyncio.create_task(self.status_request_loop())
 
     async def status_request_loop(self):
         while True:
@@ -61,6 +64,8 @@ class miio:
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
+        if self._status_task:
+            self._status_task.cancel()
         return
 
     # FHEM FUNCTION
