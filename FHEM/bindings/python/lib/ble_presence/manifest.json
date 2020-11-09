@@ -1,3 +1,3 @@
 {
-  "requirements": ["aioblescan"]
+  "requirements": ["bluepy"]
 }

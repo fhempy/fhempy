@@ -1,100 +1,49 @@
 
 import asyncio
+import functools
 import logging
 import time
 
-import aioblescan as aiobs
+from bluepy.btle import Scanner, DefaultDelegate, BTLEException, ScanEntry
 
-from .. import fhem
+from .. import fhem,utils
 
 class ble_presence:
-
-    btctrl = None
-    conn = None
-    mac_listener = {}
-    found_devices = {}
 
     def __init__(self, logger):
         self.logger = logger
         self.hash = None
-        self.blescanTask = None
+        self.loop = asyncio.get_event_loop()
+
+        self._scan_task = None
 
         self._name = ""
         self._rssi = 0
         self._address = ""
         self._presence = ""
+        self._found = False
         return
 
-    @staticmethod
-    def add_mac_listener(mac, listener):
-        ble_presence.mac_listener[mac.lower()] = listener
-        if len(ble_presence.mac_listener) == 1:
-            ble_presence.start_ble_scan()
+    def handleDiscovery(self, dev, isNewDev, isNewData):
+        if dev.addr.lower() == self._address.lower() and self._found is False:
+            self._found = True
+            if dev.getValueText(ScanEntry.SHORT_LOCAL_NAME):
+                name = dev.getValueText(ScanEntry.SHORT_LOCAL_NAME)
+            else:
+                name = dev.getValueText(ScanEntry.COMPLETE_LOCAL_NAME)
+            asyncio.run_coroutine_threadsafe(self.task_update_reading(dev.addr, name, dev.rssi), self.loop)
 
-    @staticmethod
-    def remove_mac_listener(mac):
-        del ble_presence.mac_listener[mac.lower()]
-        if len(ble_presence.mac_listener) == 0:
-            ble_presence.stop_ble_scan()
+    def thread_do_scan(self):
+        self._found = False
+        scanner = Scanner().withDelegate(self)
+        try:
+            scanner.scan(3.0)
+        except Exception as ex:
+            self.logger.error(f"Failed to scan: {ex}")
+        if self._found is False:
+            asyncio.run_coroutine_threadsafe(self.task_update_reading(self._address, "", 0))
 
-    @staticmethod
-    def process_ble_data(data):
-        if len(ble_presence.mac_listener) == 0:
-            return
-        
-        # check for removed devices
-        for mac in list(ble_presence.found_devices):
-            if time.time() - ble_presence.found_devices[mac] > 5:
-                if mac in ble_presence.mac_listener:
-                    ble_presence.mac_listener[mac](mac, "", 0)
-                del ble_presence.found_devices[mac]
-
-        ev = aiobs.HCI_Event()
-        ev.decode(data)
-        mac = ev.retrieve("peer")
-        name = ev.retrieve("Short Name")
-        name_val = None
-        for n in name:
-            name_val = str(n.val.decode("ascii"))
-        name = ev.retrieve("Complete Name")
-        for n in name:
-            name_val = str(n.val.decode("ascii"))
-        rssi = ev.retrieve("rssi")
-        rssi_val = None
-        for n in rssi:
-            rssi_val = str(n.val)
-        for mac_entry in mac:
-            ble_presence.found_devices[mac_entry.val.lower()] = time.time()
-            if mac_entry.val.lower() in ble_presence.mac_listener:
-                ble_presence.mac_listener[mac_entry.val.lower()](mac_entry.val.lower(), name_val, rssi_val)
-
-    @staticmethod
-    def start_ble_scan():
-        iface = 0
-        event_loop = asyncio.get_event_loop()
-        mysocket = aiobs.create_bt_socket(iface)
-        fac = event_loop._create_connection_transport(mysocket,aiobs.BLEScanRequester,None,None)
-        asyncio.create_task(ble_presence._start_ble_scan(fac))
-    
-    @staticmethod
-    async def _start_ble_scan(fac):
-        ble_presence.conn,ble_presence.btctrl = await fac
-        ble_presence.btctrl.process = ble_presence.process_ble_data
-        # activate active scan
-        cmd = aiobs.HCI_Cmd_LE_Set_Scan_Params(scan_type=1)
-        ble_presence.btctrl.transport.write(cmd.encode())
-        # start scan
-        ble_presence.btctrl.send_scan_request()
-
-    @staticmethod
-    def stop_ble_scan():
-        ble_presence.btctrl.stop_scan_request()
-        ble_presence.conn.close()
-
-    def update_reading(self, address, name, rssi):
-        asyncio.create_task(self.update_reading_task(address, name, rssi))
-
-    async def update_reading_task(self, address, name, rssi):
+    async def task_update_reading(self, address, name, rssi):
         if rssi == 0 and name == "":
             presence = "offline"
         else:
@@ -126,8 +75,14 @@ class ble_presence:
         self._address = args[3]
         self.hash["MAC"] = args[3]
 
-        ble_presence.add_mac_listener(self._address, self.update_reading)
+        self._scan_task = asyncio.create_task(self.scan_loop())
+
+    async def scan_loop(self):
+        while True:
+            await utils.run_blocking(functools.partial(self.thread_do_scan))
+            await asyncio.sleep(10)
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        ble_presence.remove_mac_listener(self._address)
+        if self._scan_task:
+            self._scan_task.cancel()
