@@ -60,9 +60,11 @@ class scanner:
 
     async def loop_scan(self):
         while True:
+            for mac in self._mac_lastfound:
+                self._mac_lastfound[mac] = 0
             await utils.run_blocking(functools.partial(self._do_scan))
             for mac in self._mac_lastfound:
-                if time.time() - self._mac_lastfound[mac] > 1.2*self._scan_interval:
+                if self._mac_lastfound[mac] == 0:
                     if mac in self._mac_listener:
                         await self._mac_listener[mac]("absent", mac, "", 0)
             await asyncio.sleep(self._scan_interval)
