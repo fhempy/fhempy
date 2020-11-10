@@ -17,6 +17,11 @@ Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 Set the user to the one which runs fhem_pythonbinding. On FHEM installations it's fhem, on remote peers it's normally pi.
 Restart dbus afterwards: `sudo systemctl restart dbus`
 
+After that enable python3 to execute BLE commands
+```
+sudo setcap 'cap_net_raw,cap_net_admin+eip' "$(readlink -f "$(which python3)")"
+```
+
 ## Usage
 ```
 define ble_tag PythonModule ble_presence <MAC>
