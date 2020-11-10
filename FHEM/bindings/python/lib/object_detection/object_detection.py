@@ -50,6 +50,7 @@ class object_detection:
         await utils.handle_define_attr(self._attr_list, self, hash)
 
         self.logger.debug(f"Source URI: {self._source_uri}")
+        await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
         return ""
     
     async def Attr(self, hash, args, argsh):
