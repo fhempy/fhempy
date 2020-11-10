@@ -67,8 +67,14 @@ class wienerlinien:
         if data is None:
             return
         try:
-            flat_data = utils.flatten_json(data['monitors'][0]['lines'][0])
-            flat_data_location = utils.flatten_json(data['monitors'][0]['locationStop'])
+            if len(data['monitors']) == 0:
+                flat_data = {}
+                flat_data_location = {}
+                state_text = "no departures"
+            else:
+                flat_data = utils.flatten_json(data['monitors'][0]['lines'][0])
+                flat_data_location = utils.flatten_json(data['monitors'][0]['locationStop'])
+                state_text = flat_data['towards'] + ": " + str(flat_data['departures_departure_0_departureTime_countdown'])
 
             if self._last_data:
                 del_readings = set(self._last_data) - set(flat_data)
@@ -82,8 +88,8 @@ class wienerlinien:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "line_" + data_name, flat_data[data_name])
             for data_name in flat_data_location:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "loc_" + data_name, flat_data_location[data_name])
-            state_text = flat_data['towards'] + ": " + str(flat_data['departures_departure_0_departureTime_countdown'])
-            if flat_data['trafficjam'] == 1:
+            
+            if 'trafficjam' in flat_data and flat_data['trafficjam'] == 1:
                 state_text += " (traffic jam)"
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_text)
             await fhem.readingsEndUpdate(self.hash, 1)
