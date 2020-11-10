@@ -18,9 +18,9 @@ Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 Set the user to the one which runs fhem_pythonbinding. On FHEM installations it's fhem, on remote peers it's normally pi.
 Restart dbus afterwards: `sudo systemctl restart dbus`
 
+### BLE permissions
 You need to set special permissions to bluepy-helper to allow BLE commands to be sent. bluepy-helper installation path depends on your system.
 
-### BLE permissions
 #### FHEM installations
 ```
 sudo find /opt/fhem -name bluepy-helper
