@@ -104,7 +104,7 @@ class ble_presence:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "rssi", str(rssi), 1)
             self._rssi = rssi
 
-        if self._name != name and presence != "absent" and name != "":
+        if name is not None and self._name != name and presence != "absent" and name != "":
             await fhem.readingsSingleUpdateIfChanged(self.hash, "name", name, 1)
             self._name = name
 

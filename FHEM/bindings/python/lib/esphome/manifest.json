@@ -1,0 +1,3 @@
+{
+  "requirements": ["esphome>=1.15.3"]
+}

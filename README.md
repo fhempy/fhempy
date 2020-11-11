@@ -13,6 +13,7 @@ discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
 [eq3bt](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
+[esphome](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
 googlecast|Control Cast devices
 helloworld|Hello World example
 [miflora](https://github.com/dominikkarall/fhem_pythonbinding/tree/master/FHEM/bindings/python/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
