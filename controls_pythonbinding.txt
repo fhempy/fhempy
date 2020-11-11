@@ -86,7 +86,7 @@ UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
 UPD 2020-10-30_19:57:38 4685 FHEM/bindings/python/lib/ble_reset/ble_reset.py
 UPD 2020-10-19_23:12:17 22 FHEM/bindings/python/lib/ble_presence/__init__.py
 UPD 2020-11-10_20:52:53 33 FHEM/bindings/python/lib/ble_presence/manifest.json
-UPD 2020-11-11_22:28:46 4824 FHEM/bindings/python/lib/ble_presence/ble_presence.py
+UPD 2020-11-11_23:03:24 5166 FHEM/bindings/python/lib/ble_presence/ble_presence.py
 UPD 2020-10-19_23:59:32 28 FHEM/bindings/python/lib/bt_presence/__init__.py
 UPD 2020-10-19_23:59:32 61 FHEM/bindings/python/lib/bt_presence/manifest.json
 UPD 2020-11-07_20:57:04 4483 FHEM/bindings/python/lib/bt_presence/bt_presence.py
