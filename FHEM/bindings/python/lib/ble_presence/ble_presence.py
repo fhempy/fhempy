@@ -20,6 +20,7 @@ class scanner:
         self._mac_lastfound = {}
         self._scan_task = None
         self._scan_interval = 10
+        self._scan_duration = 10
         self._iface = 0
 
     def get_instance(logger):
@@ -55,6 +56,9 @@ class scanner:
     def set_scan_interval(self, scan_interval):
         self._scan_interval = scan_interval
 
+    def set_scan_duration(self, scan_duration):
+        self._scan_duration = scan_duration
+
     def set_hci_device(self, hci_nr):
         self._iface = hci_nr
 
@@ -72,7 +76,7 @@ class scanner:
     def _do_scan(self):
         self.scanner = Scanner(self._iface).withDelegate(self)
         try:
-            self.scanner.scan(3.0)
+            self.scanner.scan(self._scan_duration)
         except BTLEDisconnectError:
             pass
         except Exception as ex:
@@ -95,7 +99,8 @@ class ble_presence:
 
         self._attr_list = {
             "scan_interval": {"default": 10, "format": "int"},
-            "hci_device": {"default": "hci0"}
+            "hci_device": {"default": "hci0"},
+            "scan_duration": {"default": 10, "format": "int"}
         }
         return
 
@@ -131,6 +136,9 @@ class ble_presence:
 
     async def set_attr_scan_interval(self, hash):
         scanner.get_instance(self.logger).set_scan_interval(self._attr_scan_interval)
+
+    async def set_attr_scan_duration(self, hash):
+        scanner.get_instance(self.logger).set_scan_duration(self._attr_scan_duration)
 
     async def set_attr_hci_device(self, hash):
         hci_nr = re.search(r'\d+$', self._attr_hci_device)[0]
