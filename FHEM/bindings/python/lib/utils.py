@@ -67,12 +67,21 @@ async def handle_define_attr(attr_list, obj, hash):
       attr_opt = attr
     add_to_list.append(attr_opt)
   await fhem.addToDevAttrList(hash["NAME"], " ".join(add_to_list))
-  
+
   for attr in attr_list:
     curr_val = await fhem.AttrVal(hash['NAME'], attr, "")
     if curr_val == "":
       curr_val = attr_list[attr]['default']
     setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
+
+    # call set_attr_....
+    fct_name = "set_attr_" + attr
+    try:
+      fct_call = getattr(obj, fct_name)
+      return await fct_call(hash)
+    except AttributeError:
+      pass
+
   return
 
 def flatten_json(y):

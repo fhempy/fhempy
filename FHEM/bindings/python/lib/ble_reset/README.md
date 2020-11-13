@@ -10,6 +10,7 @@ add the following entries in the "User privilege specification" section
 ```
 fhem    ALL=NOPASSWD: /bin/systemctl restart bluetooth
 fhem    ALL=NOPASSWD: /bin/hciconfig hci? reset
+fhem    ALL=NOPASSWD: /bin/hciconfig hci? up
 ```
 
 ## Usage
