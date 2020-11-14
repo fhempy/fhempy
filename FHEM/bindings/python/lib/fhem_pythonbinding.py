@@ -13,7 +13,6 @@ import time
 from . import fhem
 from . import pkg_installer
 
-logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(name)s: %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,7 @@ class PyBinding:
 
         global fct_timeout, connection_start
         if time.time() - connection_start > 120:
-            fct_timeout = 5
+            fct_timeout = 10
 
         try:
             if ("awaitId" in hash and len(self.msg_listeners) > 0):
