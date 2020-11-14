@@ -136,7 +136,7 @@ class eq3bt:
         await asyncio.sleep(int(random.random()*100))
         while True:
             try:
-                if time.time() - self._last_update > (60 * 30):
+                if time.time() - self._last_update > (waittime * 4):
                     await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
                     await fhem.readingsSingleUpdate(self.hash, "state", "update", 1)
                 await self.update_all()

@@ -94,6 +94,10 @@ PythonModule_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
+  if ($attrName eq "IODev") {
+    return IOWrite($defs{$name}, $defs{$name}, "Undefine", [], {});
+  }
+
   return IOWrite($defs{$name}, $defs{$name}, "Attr", [$cmd, $name, $attrName, $attrVal], {});
 }
 

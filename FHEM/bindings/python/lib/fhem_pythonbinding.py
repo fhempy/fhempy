@@ -13,7 +13,6 @@ import time
 from . import fhem
 from . import pkg_installer
 
-logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(name)s: %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,7 @@ class PyBinding:
 
         global fct_timeout, connection_start
         if time.time() - connection_start > 120:
-            fct_timeout = 5
+            fct_timeout = 10
 
         try:
             if ("awaitId" in hash and len(self.msg_listeners) > 0):
@@ -203,7 +202,7 @@ class PyBinding:
                                 else:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
-                            except (ModuleNotFoundError, ImportError):
+                            except ModuleNotFoundError:
                                 errorMsg = f"Module failed to load: {hash['PYTHONTYPE']}\nMaybe you need to update fhem_pythonbinding on this or remote peer."
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
