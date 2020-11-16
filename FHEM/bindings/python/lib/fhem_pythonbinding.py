@@ -204,6 +204,7 @@ class PyBinding:
                                 return 0
                             except ModuleNotFoundError:
                                 errorMsg = f"Module failed to load: {hash['PYTHONTYPE']}\nMaybe you need to update fhem_pythonbinding on this or remote peer."
+                                errorMsg += "\n\nStacktrace:\n" + traceback.format_exc()
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
                                 else:

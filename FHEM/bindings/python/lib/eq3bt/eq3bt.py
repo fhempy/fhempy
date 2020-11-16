@@ -67,8 +67,8 @@ class eq3bt:
         icon = await fhem.AttrVal(self.hash['NAME'], "icon", "noicon")
         if icon == "noicon":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon sani_heating_temp")
-        await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
-        await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting", 1)
 
         # handle missing dbus configuration
         try:
@@ -137,8 +137,8 @@ class eq3bt:
         while True:
             try:
                 if time.time() - self._last_update > (waittime * 4):
-                    await fhem.readingsSingleUpdate(self.hash, "presence", "offline", 1)
-                    await fhem.readingsSingleUpdate(self.hash, "state", "update", 1)
+                    await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
+                    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "update", 1)
                 await self.update_all()
             except:
                 self.logger.error(f"Failed to update, retry in {waittime}s")

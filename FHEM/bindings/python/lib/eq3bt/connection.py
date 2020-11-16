@@ -13,6 +13,47 @@ DEFAULT_TIMEOUT = 1
 
 _LOGGER = logging.getLogger("eq3bt")
 
+class PeripheralTimeout(btle.Peripheral):
+
+    def __init__(self, deviceAddr=None, addrType=btle.ADDR_TYPE_PUBLIC, iface=None, timeout=None):
+        btle.BluepyHelper.__init__(self)
+        self._serviceMap = None # Indexed by UUID
+        (self.deviceAddr, self.addrType, self.iface) = (None, None, None)
+
+        if isinstance(deviceAddr, btle.ScanEntry):
+            self._connect(deviceAddr.addr, deviceAddr.addrType, deviceAddr.iface, timeout)
+        elif deviceAddr is not None:
+            self._connect(deviceAddr, addrType, iface, timeout)
+
+    def _connect(self, addr, addrType=btle.ADDR_TYPE_PUBLIC, iface=None, timeout=None):
+        if len(addr.split(":")) != 6:
+            raise ValueError("Expected MAC address, got %s" % repr(addr))
+        if addrType not in (btle.ADDR_TYPE_PUBLIC, btle.ADDR_TYPE_RANDOM):
+            raise ValueError("Expected address type public or random, got {}".format(addrType))
+        self._startHelper(iface)
+        self.addr = addr
+        self.addrType = addrType
+        self.iface = iface
+        if iface is not None:
+            self._writeCmd("conn %s %s %s\n" % (addr, addrType, "hci"+str(iface)))
+        else:
+            self._writeCmd("conn %s %s\n" % (addr, addrType))
+        rsp = self._getResp('stat', timeout)
+        if rsp is None:
+            raise btle.BTLEDisconnectError("Timed out while trying to connect to peripheral %s, addr type: %s" %
+                                      (addr, addrType), rsp)
+        while rsp['state'][0] == 'tryconn':
+            rsp = self._getResp('stat', timeout)
+        if rsp['state'][0] != 'conn':
+            self._stopHelper()
+            raise btle.BTLEDisconnectError("Failed to connect to peripheral %s, addr type: %s" % (addr, addrType), rsp)
+
+    def connect(self, addr, addrType=btle.ADDR_TYPE_PUBLIC, iface=None, timeout=None):
+        if isinstance(addr, btle.ScanEntry):
+            self._connect(addr.addr, addr.addrType, addr.iface, timeout)
+        elif addr is not None:
+            self._connect(addr, addrType, iface, timeout)
+
 class BTLEConnection(btle.DefaultDelegate):
     """Representation of a BTLE Connection."""
 
@@ -40,7 +81,7 @@ class BTLEConnection(btle.DefaultDelegate):
     def next_iface(self):
         self._nr_conn_errors += 1
         self._iface_idx = (self._iface_idx + 1) % len(self._ifaces)
-        if self._nr_conn_errors >= len(self._ifaces)*2:
+        if self._nr_conn_errors >= len(self._ifaces)*5:
             return False
         return True
 
@@ -70,19 +111,19 @@ class BTLEConnection(btle.DefaultDelegate):
             self._conn = None
 
         if self._conn is None or conn_state != "conn":
-            self._conn = btle.Peripheral()
+            self._conn = PeripheralTimeout()
             self._conn.withDelegate(self)
             self._nr_conn_errors = 0
             _LOGGER.debug("Trying to connect to %s", self._mac)
             while True:
                 # try to connect with all ifaces
                 try:
-                    self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
+                    self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx], timeout=10)
                     break
                 except btle.BTLEException as ex:
                     _LOGGER.debug("Unable to connect to the device %s using iface %s, retrying: %s", self._mac, self._ifaces[self._iface_idx], ex)
                     try:
-                        self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx])
+                        self._conn.connect(self._mac, iface=self._ifaces[self._iface_idx], timeout=10)
                         break
                     except Exception as ex2:
                         _LOGGER.debug("Second connection try to %s using ifaces %s failed: %s", self._mac, self._ifaces[self._iface_idx], ex2)
