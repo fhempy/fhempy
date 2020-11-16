@@ -31,7 +31,7 @@ UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-11-11_21:53:21 6963 FHEM/bindings/python/lib/fhem.py
 UPD 2020-11-13_21:21:09 6369 FHEM/bindings/python/lib/utils.py
-UPD 2020-11-14_18:52:53 13569 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-11-16_20:10:29 13658 FHEM/bindings/python/lib/fhem_pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-11-07_20:57:04 3284 FHEM/bindings/python/lib/discover_ble/discover_ble.py
@@ -53,9 +53,9 @@ UPD 2020-11-07_21:31:19 25 FHEM/bindings/python/lib/helloworld/manifest.json
 UPD 2020-09-23_21:24:01 21 FHEM/bindings/python/lib/eq3bt/__init__.py
 UPD 2020-10-11_14:46:03 4833 FHEM/bindings/python/lib/eq3bt/structures.py
 UPD 2020-10-11_15:43:01 61 FHEM/bindings/python/lib/eq3bt/manifest.json
-UPD 2020-10-25_16:49:01 4873 FHEM/bindings/python/lib/eq3bt/connection.py
 UPD 2020-10-25_16:49:01 15730 FHEM/bindings/python/lib/eq3bt/eq3btsmart.py
-UPD 2020-11-14_18:52:53 14816 FHEM/bindings/python/lib/eq3bt/eq3bt.py
+UPD 2020-11-16_20:10:29 6950 FHEM/bindings/python/lib/eq3bt/connection.py
+UPD 2020-11-16_20:10:29 14852 FHEM/bindings/python/lib/eq3bt/eq3bt.py
 UPD 2020-09-26_20:45:52 30 FHEM/bindings/python/lib/xiaomi_gateway3/__init__.py
 UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3/manifest.json
 UPD 2020-09-30_23:01:37 1841 FHEM/bindings/python/lib/xiaomi_gateway3/miio_fix.py
