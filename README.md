@@ -8,13 +8,13 @@ Module | Description
 [ble_presence](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy
 [ble_reset](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours
 [bt_presence](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth
-discover_mdns|Discover mDNS devices
+discover_mdns|Discover mDNS (e.g. googlecast) devices
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
 [eq3bt](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
 [esphome](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
-googlecast|Control Cast devices
+[googlecast](https://github.com/dominikkarall/fhem_pythonbinding/blob/master/FHEM/bindings/python/lib/googlecast/README.md)|Control Cast devices
 helloworld|Hello World example
 [miflora](https://github.com/dominikkarall/fhem_pythonbinding/tree/master/FHEM/bindings/python/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
 [miio](https://github.com/dominikkarall/fhem_pythonbinding/tree/master/FHEM/bindings/python/lib/miio/README.md)|Control Xiaomi WiFi devices
