@@ -56,10 +56,10 @@ FHEM Pythonbinding allows to run modules locally (same device as FHEM runs on) o
 
 The following steps are only needed if you want to install FHEM Pythonbinding on a remote peer, you should not run them on your FHEM installation.
 
-- Follow installation steps (only Console) above on remote device
+- `sudo apt install python3 python3-pip`
 - `git clone https://github.com/dominikkarall/fhem_pythonbinding.git`
 - Systemd configuration
-  - change fhem_pythonbinding/fhem_pythonbinding.service acording to your system
+  - change fhem_pythonbinding/fhem_pythonbinding.service acording to your system (especially user might be "pi", "fhem", ...)
   - `sudo cp fhem_pythonbinding/fhem_pythonbinding.service /etc/systemd/system/`
   - `sudo systemctl daemon-reload`
   - `sudo systemctl enable fhem_pythonbinding`
