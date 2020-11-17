@@ -114,14 +114,12 @@ class scanner:
                 await utils.run_blocking(functools.partial(self._do_scan))
             except:
                 self.logger.error("Failed to do scan")
-            for mac in self._mac_lastfound:
+            for mac in self._mac_listener:
                 try:
-                    if self._mac_lastfound[mac] == 0:
-                        if mac in self._mac_listener:
-                            await getattr(self._mac_listener[mac], "update_readings")("absent", mac, "", 0)
+                    if mac not in self._mac_lastfound or self._mac_lastfound[mac] == 0:
+                        await getattr(self._mac_listener[mac], "update_readings")("absent", mac, "", 0)
                     else:
-                        if mac in self._mac_listener:
-                            await getattr(self._mac_listener[mac], "check_update_characteristics")()
+                        await getattr(self._mac_listener[mac], "check_update_characteristics")()
                 except:
                     self.logger.exception("Failed to handle updates after scan")
             await asyncio.sleep(self._scan_interval)

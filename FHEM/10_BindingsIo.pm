@@ -207,7 +207,7 @@ BindingsIo_Write($$$$$) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
   }
 
-  my $py_timeout = 1500;
+  my $py_timeout = 2500;
   if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
     # wait 10s on Define, this might happen on startup
     $py_timeout = 10000;
