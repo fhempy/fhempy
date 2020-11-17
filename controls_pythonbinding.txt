@@ -24,8 +24,8 @@ DIR FHEM/bindings/python/lib/miflora
 DIR FHEM/bindings/python/lib/mitemp
 DIR FHEM/bindings/python/lib/esphome
 UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
-UPD 2020-10-23_19:07:37 13358 FHEM/10_BindingsIo.pm
 UPD 2020-11-14_18:52:53 2789 FHEM/10_PythonModule.pm
+UPD 2020-11-17_21:39:45 13358 FHEM/10_BindingsIo.pm
 UPD 2020-11-17_20:54:39 2230 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
 UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
@@ -86,7 +86,7 @@ UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
 UPD 2020-11-13_21:21:09 4929 FHEM/bindings/python/lib/ble_reset/ble_reset.py
 UPD 2020-10-19_23:12:17 22 FHEM/bindings/python/lib/ble_presence/__init__.py
 UPD 2020-11-10_20:52:53 33 FHEM/bindings/python/lib/ble_presence/manifest.json
-UPD 2020-11-13_21:21:09 10572 FHEM/bindings/python/lib/ble_presence/ble_presence.py
+UPD 2020-11-17_21:39:45 10489 FHEM/bindings/python/lib/ble_presence/ble_presence.py
 UPD 2020-10-19_23:59:32 28 FHEM/bindings/python/lib/bt_presence/__init__.py
 UPD 2020-10-19_23:59:32 61 FHEM/bindings/python/lib/bt_presence/manifest.json
 UPD 2020-11-07_20:57:04 4483 FHEM/bindings/python/lib/bt_presence/bt_presence.py
