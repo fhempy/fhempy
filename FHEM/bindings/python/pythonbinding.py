@@ -54,17 +54,26 @@ def install_package(
 try:
   import asyncio
 except:
-  install_package("asyncio")
+  if install_package("asyncio") == False:
+    sys.exit(1)
 
 try:
   import websockets
 except:
-  install_package("websockets")
+  if install_package("websockets") == False:
+    sys.exit(1)
 
 try:
   import importlib
 except:
-  install_package("importlib_metadata")
+  if install_package("importlib_metadata") == False:
+    sys.exit(1)
+
+try:
+  import cryptography
+except:
+  if install_package("cryptography") == False:
+    sys.exit(1)
 
 
 import lib.fhem_pythonbinding as fpb
