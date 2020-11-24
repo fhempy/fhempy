@@ -204,7 +204,7 @@ class ring:
 
     def blocking_login(self):
         def token_updater(token):
-            asyncio.run_coroutine_threadsafe(self.token_updated(token), self.loop)
+            asyncio.run_coroutine_threadsafe(self.token_updated(token), self.loop).result()
 
         if self._token != "":
             self._auth = Auth("MyProject/1.0", self._token, token_updater)
