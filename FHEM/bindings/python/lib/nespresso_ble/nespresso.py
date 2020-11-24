@@ -213,13 +213,18 @@ class NespressoDetect:
                     command += "01"
                 else:
                     command += "00"
-                if volume == "espresso":
+
+                if volume == "ristretto":
+                    command += "00"
+                elif volume == "espresso":
                     command += "01"
                 elif volume == "lungo":
                     command += "02"
-                elif volume == "ristretto":
-                    command += "00"
-                else :
+                elif volume == "hotwater":
+                    command += "04"
+                elif volume == "americano":
+                    command += "05"
+                else:
                     command += "00"
                 self.dev.char_write(characteristic, binascii.unhexlify(command), wait_for_response=True)
             except (BLEError, NotConnectedError, NotificationTimeout):
