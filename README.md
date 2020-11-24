@@ -31,7 +31,7 @@ Python >=3.7 is required, Python 2 won't work!
 
 ### Console
 ```
-sudo apt install python3 python3-pip
+sudo apt install python3 python3-pip libssl-dev libffi-dev
 
 sudo cpan Protocol::WebSocket
 ```
@@ -46,7 +46,8 @@ define local_pybinding BindingsIo Python
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
-## Usage in FHEM
+## Usage in FHEM (examples)
+This are just a few examples for some modules, please see the modules readme linked in the table above for more details
  - `define castdevice PythonModule googlecast "Living Room"`
  - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
  - `define upnp PythonModule discover_upnp`
