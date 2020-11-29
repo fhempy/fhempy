@@ -77,7 +77,7 @@ class esphome:
         if self._attr_disable == "0":
             await self.start_process()
         else:
-            self.stop_process()
+            await self.stop_process()
 
     async def Set(self, hash, args, argsh):
         return await utils.handle_set(self._set_list, self, hash, args, argsh)
