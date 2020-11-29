@@ -78,7 +78,7 @@ class miio:
 
     async def set_attr_update_functions(self, hash):
         for task in self._fct_update_tasks.copy():
-            task.cancel()
+            self._fct_update_tasks[task].cancel()
             del self._fct_update_tasks[task]
 
         if self._attr_update_functions != "":
@@ -153,7 +153,13 @@ class miio:
             try:
                 st = dict((x, getattr(reply, x)) for x in reply.__class__.__dict__ if isinstance(reply.__class__.__dict__[x], property))
                 for prop in st:
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
+                    if prop == "raw":
+                        continue
+                    try:
+                        for data_name in st[prop]:
+                            await fhem.readingsBulkUpdateIfChanged(self.hash, prop + "_" + data_name, st[prop][data_name])
+                    except:
+                        await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
             except:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
