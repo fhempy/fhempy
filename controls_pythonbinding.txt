@@ -23,21 +23,22 @@ DIR FHEM/bindings/python/lib/object_detection
 DIR FHEM/bindings/python/lib/miflora
 DIR FHEM/bindings/python/lib/mitemp
 DIR FHEM/bindings/python/lib/esphome
-UPD 2020-09-30_21:26:13 3186 FHEM/10_PythonBinding.pm
-UPD 2020-11-14_18:52:53 2789 FHEM/10_PythonModule.pm
-UPD 2020-11-17_21:39:45 13358 FHEM/10_BindingsIo.pm
-UPD 2020-11-17_20:54:39 2230 FHEM/bindings/python/pythonbinding.py
+UPD 2020-11-29_21:21:06 13398 FHEM/10_BindingsIo.pm
+UPD 2020-11-29_21:21:06 4539 FHEM/10_PythonBinding.pm
+UPD 2020-11-29_21:21:06 2862 FHEM/10_PythonModule.pm
+UPD 2020-11-29_21:21:06 20 FHEM/bindings/python/__init__.py
+UPD 2020-11-29_21:21:06 3479 FHEM/bindings/python/pythonbinding.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/__init__.py
-UPD 2020-10-13_19:59:32 4111 FHEM/bindings/python/lib/pkg_installer.py
 UPD 2020-11-11_21:53:21 6963 FHEM/bindings/python/lib/fhem.py
-UPD 2020-11-13_21:21:09 6369 FHEM/bindings/python/lib/utils.py
-UPD 2020-11-16_20:10:29 13658 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-11-29_21:21:06 13311 FHEM/bindings/python/lib/fhem_pythonbinding.py
+UPD 2020-11-29_21:21:06 5533 FHEM/bindings/python/lib/pkg_installer.py
+UPD 2020-11-29_21:21:06 6367 FHEM/bindings/python/lib/utils.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_ble/__init__.py
 UPD 2020-09-19_17:52:13 39 FHEM/bindings/python/lib/discover_ble/manifest.json
 UPD 2020-11-07_20:57:04 3284 FHEM/bindings/python/lib/discover_ble/discover_ble.py
 UPD 2020-09-19_17:52:13 30 FHEM/bindings/python/lib/discover_mdns/__init__.py
 UPD 2020-09-19_17:52:13 35 FHEM/bindings/python/lib/discover_mdns/manifest.json
-UPD 2020-11-07_20:57:04 3590 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
+UPD 2020-11-18_19:14:19 3590 FHEM/bindings/python/lib/discover_mdns/discover_mdns.py
 UPD 2020-09-19_17:52:13 23 FHEM/bindings/python/lib/discover_upnp/__init__.py
 UPD 2020-09-19_17:52:13 83 FHEM/bindings/python/lib/discover_upnp/manifest.json
 UPD 2020-10-13_19:59:32 9364 FHEM/bindings/python/lib/discover_upnp/discover_upnp.py
@@ -67,20 +68,20 @@ UPD 2020-09-30_23:01:37 61 FHEM/bindings/python/lib/xiaomi_gateway3_device/manif
 UPD 2020-10-01_19:22:41 4265 FHEM/bindings/python/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
 UPD 2020-10-04_22:39:15 36 FHEM/bindings/python/lib/nespresso_ble/__init__.py
 UPD 2020-10-13_19:59:32 55 FHEM/bindings/python/lib/nespresso_ble/manifest.json
-UPD 2020-10-19_17:50:02 12330 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
 UPD 2020-10-25_16:49:01 4721 FHEM/bindings/python/lib/nespresso_ble/nespresso_ble.py
+UPD 2020-11-29_21:21:06 12753 FHEM/bindings/python/lib/nespresso_ble/nespresso.py
 UPD 2020-10-11_14:46:03 30 FHEM/bindings/python/lib/gfprobt/__init__.py
 UPD 2020-10-14_10:57:41 48 FHEM/bindings/python/lib/gfprobt/manifest.json
 UPD 2020-10-31_20:10:08 4268 FHEM/bindings/python/lib/gfprobt/gfprobt.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/miio/__init__.py
 UPD 2020-10-11_14:46:03 38 FHEM/bindings/python/lib/miio/manifest.json
-UPD 2020-11-08_14:30:07 5888 FHEM/bindings/python/lib/miio/miio.py
+UPD 2020-11-29_21:21:06 7333 FHEM/bindings/python/lib/miio/miio.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/xiaomi_tokens/__init__.py
 UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-25_16:49:01 2194 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
 UPD 2020-10-17_09:59:55 40 FHEM/bindings/python/lib/ring/manifest.json
 UPD 2020-10-17_09:59:55 22 FHEM/bindings/python/lib/ring/__init__.py
-UPD 2020-11-07_21:31:19 12204 FHEM/bindings/python/lib/ring/ring.py
+UPD 2020-11-29_21:21:06 12375 FHEM/bindings/python/lib/ring/ring.py
 UPD 2020-10-19_21:24:09 32 FHEM/bindings/python/lib/ble_reset/__init__.py
 UPD 2020-10-19_21:24:09 38 FHEM/bindings/python/lib/ble_reset/manifest.json
 UPD 2020-11-13_21:21:09 4929 FHEM/bindings/python/lib/ble_reset/ble_reset.py
@@ -97,7 +98,7 @@ UPD 2020-10-24_21:06:01 4183312 FHEM/bindings/python/lib/object_detection/detect
 UPD 2020-10-24_21:06:01 665 FHEM/bindings/python/lib/object_detection/labelmap.txt
 UPD 2020-10-24_21:06:01 49 FHEM/bindings/python/lib/object_detection/manifest.json
 UPD 2020-10-30_19:57:38 25 FHEM/bindings/python/lib/object_detection/__init__.py
-UPD 2020-11-10_20:52:53 16977 FHEM/bindings/python/lib/object_detection/object_detection.py
+UPD 2020-11-29_21:21:06 16995 FHEM/bindings/python/lib/object_detection/object_detection.py
 UPD 2020-11-07_19:06:47 31 FHEM/bindings/python/lib/miflora/__init__.py
 UPD 2020-11-07_19:06:47 44 FHEM/bindings/python/lib/miflora/manifest.json
 UPD 2020-11-12_20:43:51 4528 FHEM/bindings/python/lib/miflora/miflora.py
@@ -105,5 +106,5 @@ UPD 2020-11-08_22:29:47 36 FHEM/bindings/python/lib/mitemp/__init__.py
 UPD 2020-11-08_22:29:47 43 FHEM/bindings/python/lib/mitemp/manifest.json
 UPD 2020-11-08_22:29:47 3768 FHEM/bindings/python/lib/mitemp/mitemp.py
 UPD 2020-11-11_22:28:46 10 FHEM/bindings/python/lib/esphome/__init__.py
-UPD 2020-11-11_22:28:46 2892 FHEM/bindings/python/lib/esphome/esphome.py
 UPD 2020-11-11_22:28:46 42 FHEM/bindings/python/lib/esphome/manifest.json
+UPD 2020-11-29_21:21:06 2898 FHEM/bindings/python/lib/esphome/esphome.py
