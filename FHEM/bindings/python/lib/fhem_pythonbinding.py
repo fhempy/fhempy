@@ -167,11 +167,7 @@ class PyBinding:
                                         deps_ok = pkg_installer.check_dependencies(hash["PYTHONTYPE"])
                                         if deps_ok == False:
                                             # start installation in a separate asyncio thread
-                                            with concurrent.futures.ThreadPoolExecutor() as pool:
-                                                await asyncio.get_event_loop().run_in_executor(
-                                                        pool, functools.partial(
-                                                            pkg_installer.check_and_install_dependencies,
-                                                            hash["PYTHONTYPE"]))
+                                            await pkg_installer.check_and_install_dependencies(hash["PYTHONTYPE"])
                                             # update cache again after install
                                             if not site.getusersitepackages() in sys.path:
                                                 logger.debug("add pip path: " + site.getusersitepackages())

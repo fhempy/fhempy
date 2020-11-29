@@ -1,15 +1,22 @@
 # lot of parts copied from HomeAssistant, many thanks!
 
+import functools
 import logging
 import pkg_resources
 import json
 import sys
 import os
 import importlib
+import asyncio
 from subprocess import PIPE, Popen
+from pathlib import Path
+import concurrent
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+pip_lock = asyncio.Lock()
 
 if sys.version_info[:2] >= (3, 8):
     from importlib.metadata import (  # pylint: disable=no-name-in-module,import-error
@@ -21,6 +28,31 @@ else:
         PackageNotFoundError,
         version,
     )
+
+
+def is_virtual_env() -> bool:
+    """Return if we run in a virtual environment."""
+    # Check supports venv && virtualenv
+    return getattr(sys, "base_prefix", sys.prefix) != sys.prefix or hasattr(
+        sys, "real_prefix"
+    )
+
+def is_docker_env() -> bool:
+    """Return True if we run in a docker env."""
+    return Path("/.dockerenv").exists()
+
+def pip_kwargs(config_dir):
+    """Return keyword arguments for PIP install."""
+    is_docker = is_docker_env()
+    kwargs = {
+        #"constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
+        "no_cache_dir": is_docker,
+    }
+    if "WHEELS_LINKS" in os.environ:
+        kwargs["find_links"] = os.environ["WHEELS_LINKS"]
+    if not (config_dir is None or is_virtual_env()) and not is_docker:
+        kwargs["target"] = os.path.join(config_dir, "deps")
+    return kwargs
 
 def check_dependencies(module):
     """Checks the manifest of a specific module and check installation
@@ -43,22 +75,29 @@ def check_dependencies(module):
 
     return True
 
-def check_and_install_dependencies(module):
+async def check_and_install_dependencies(module):
     """Checks the manifest of a specific module and starts installation
     of dependencies
     """
     try:
-        with open('FHEM/bindings/python/lib/' + module + '/manifest.json', 'r') as f:
-            manifest = json.load(f)
+        async with pip_lock:
+            kwargs = pip_kwargs(None)
+            with open('FHEM/bindings/python/lib/' + module + '/manifest.json', 'r') as f:
+                manifest = json.load(f)
 
-            if "requirements" in manifest:
-                for req in manifest["requirements"]:
-                    if is_installed(req) == False:
-                        inst_tries = 0
-                        while inst_tries < 3:
-                            if install_package(req):
-                                break
-                            inst_tries += 1
+                if "requirements" in manifest:
+                    for req in manifest["requirements"]:
+                        if is_installed(req) == False:
+                            inst_tries = 0
+                            while inst_tries < 3:
+                                with concurrent.futures.ThreadPoolExecutor() as pool:
+                                    ret = await asyncio.get_event_loop().run_in_executor(
+                                            pool, functools.partial(
+                                                install_package,
+                                                req, **kwargs))
+                                if ret:
+                                    break
+                                inst_tries += 1
     except FileNotFoundError:
         pass
 

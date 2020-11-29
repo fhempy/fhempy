@@ -4,15 +4,41 @@ import sys
 import os
 import logging
 from subprocess import Popen, PIPE
+from pathlib import Path
 
 logging.basicConfig(format='%(asctime)s - %(levelname)-8s - %(name)s: %(message)s', level=logging.INFO)
 
 MIN_PYTHON_VERSION = (3,7,0)
 
 if sys.version_info < MIN_PYTHON_VERSION:
-  logging.getLogger(__name__).error(f"FHEM_PythonBinding requires Python {MIN_PYTHON_VERSION[0]}.{MIN_PYTHON_VERSION[1]}.{MIN_PYTHON_VERSION[2]}")
-  logging.getLogger(__name__).error(f"You are running: {sys.version}")
+  logging.getLogger(__name__).error("FHEM_PythonBinding requires Python " + MIN_PYTHON_VERSION[0] + "." + MIN_PYTHON_VERSION[1] + "." + MIN_PYTHON_VERSION[2])
+  logging.getLogger(__name__).error("You are running: " + sys.version)
   sys.exit(1)
+
+def is_virtual_env() -> bool:
+    """Return if we run in a virtual environment."""
+    # Check supports venv && virtualenv
+    return getattr(sys, "base_prefix", sys.prefix) != sys.prefix or hasattr(
+        sys, "real_prefix"
+    )
+
+
+def is_docker_env() -> bool:
+    """Return True if we run in a docker env."""
+    return Path("/.dockerenv").exists()
+
+def pip_kwargs(config_dir):
+    """Return keyword arguments for PIP install."""
+    is_docker = is_docker_env()
+    kwargs = {
+        #"constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
+        "no_cache_dir": is_docker,
+    }
+    if "WHEELS_LINKS" in os.environ:
+        kwargs["find_links"] = os.environ["WHEELS_LINKS"]
+    if not (config_dir is None or is_virtual_env()) and not is_docker:
+        kwargs["target"] = os.path.join(config_dir, "deps")
+    return kwargs
 
 def install_package(
     package: str,
@@ -51,28 +77,39 @@ def install_package(
 
     return True
 
+kwargs = pip_kwargs(None)
+
 try:
   import asyncio
 except:
-  if install_package("asyncio") == False:
+  if install_package("asyncio", **kwargs) == False:
     sys.exit(1)
 
 try:
   import websockets
 except:
-  if install_package("websockets") == False:
+  if install_package("websockets", **kwargs) == False:
     sys.exit(1)
 
 try:
-  import importlib
+  if sys.version_info[:2] >= (3, 8):
+    from importlib.metadata import (  # pylint: disable=no-name-in-module,import-error
+        PackageNotFoundError,
+        version,
+    )
+  else:
+      from importlib_metadata import (  # pylint: disable=import-error
+          PackageNotFoundError,
+          version,
+      )
 except:
-  if install_package("importlib_metadata") == False:
+  if install_package("importlib_metadata", **kwargs) == False:
     sys.exit(1)
 
 try:
   import cryptography
 except:
-  if install_package("cryptography") == False:
+  if install_package("cryptography", **kwargs) == False:
     sys.exit(1)
 
 
