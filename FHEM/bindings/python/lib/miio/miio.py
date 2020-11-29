@@ -84,14 +84,15 @@ class miio:
         if self._attr_update_functions != "":
             fct_upd_list = self._attr_update_functions.split(",")
             for fct_upd in fct_upd_list:
-                sec = fct_upd.split(":")[0]
+                sec = int(fct_upd.split(":")[0])
                 fct = fct_upd.split(":")[1]
                 self._fct_update_tasks[fct] = asyncio.create_task(self.fct_update_loop(fct, sec))
 
     async def fct_update_loop(self, fct, sec):
+        fct_cmd = getattr(self._device, fct)
         while True:
             try:
-                await self.send_command(fct, None)
+                await self.send_command(fct_cmd, None)
             except:
                 pass
             await asyncio.sleep(sec)
@@ -157,7 +158,7 @@ class miio:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
         else:
-            if reply != "['ok']":
+            if reply.lower() != "['ok']":
                 await fhem.readingsSingleUpdateIfChanged(self.hash, fct.__name__, reply, 1)
         await self.set_command(self.hash, { "cmd": "status" })
 
