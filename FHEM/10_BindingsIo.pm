@@ -164,7 +164,7 @@ BindingsIo_Ready($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
+  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback") if ( $hash->{STATE} eq "disconnected" );
 }
 
 sub

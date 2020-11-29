@@ -32,8 +32,8 @@ class ring:
         return
 
     async def token_updated(self, token):
-        self._token = json.dumps(token)
-        encrypted_token = utils.encrypt_string(self._token, self._reading_encryption_key)
+        self._token = token
+        encrypted_token = utils.encrypt_string(json.dumps(token), self._reading_encryption_key)
         await fhem.readingsSingleUpdate(self.hash, "token", encrypted_token, 1)        
 
     # FHEM FUNCTION
@@ -79,7 +79,6 @@ class ring:
             self.logger.error("Login failed")
 
     async def update_loop(self):
-        self._ring = Ring(self._auth)
         try:
             await utils.run_blocking(functools.partial(self._ring.update_data))
             devices = await utils.run_blocking(functools.partial(self._ring.devices))
@@ -131,6 +130,7 @@ class ring:
                     await self.update_readings()
             except:
                 self.logger.exception("Failed to poll dings...")
+                await utils.run_blocking(functools.partial(self.blocking_login))
             await asyncio.sleep(self._attr_dingPollInterval)
 
     async def update_alert_readings(self, alert):
@@ -200,11 +200,13 @@ class ring:
             for event in self._rdevice.history(limit=5):
                 self._history.append(event)
             self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
+            if self._lastrecording_url is False:
+                self.blocking_login()
             #self._snapshot = self._rdevice.get_snapshot()
 
     def blocking_login(self):
         def token_updater(token):
-            asyncio.run_coroutine_threadsafe(self.token_updated(token), self.loop)
+            asyncio.run_coroutine_threadsafe(self.token_updated(token), self.loop).result()
 
         if self._token != "":
             self._auth = Auth("MyProject/1.0", self._token, token_updater)
@@ -220,6 +222,7 @@ class ring:
                         return "please set 2fa_code"
             else:
                 return "please set password"
+        self._ring = Ring(self._auth)
 
     # FHEM FUNCTION
     async def Undefine(self, hash):

@@ -156,11 +156,13 @@ class NespressoDetect:
                         data = self.dev.char_read(characteristic.uuid)
                         setattr(device, characteristic.name, data.decode(characteristic.format))
                     except (BLEError, NotConnectedError, NotificationTimeout):
+                        self.dev = None
                         _LOGGER.error("Failed to read characteristics")
                 if self.keep_connected is False:
                     self.dev = None
                     self.dev.disconnect()
             except (BLEError, NotConnectedError, NotificationTimeout):
+                self.dev = None
                 _LOGGER.debug("Failed to connect")
                 time.sleep(5) # wait 5s
                 if tries < 3:
@@ -189,6 +191,7 @@ class NespressoDetect:
                         sensor_characteristics.append(characteristic)
                 self.sensors[mac] = sensor_characteristics
             except (BLEError, NotConnectedError, NotificationTimeout):
+                self.dev = None
                 _LOGGER.error("Failed to discover sensors")
             if self.keep_connected is False:
                 self.dev = None
@@ -213,21 +216,28 @@ class NespressoDetect:
                     command += "01"
                 else:
                     command += "00"
-                if volume == "espresso":
+
+                if volume == "ristretto":
+                    command += "00"
+                elif volume == "espresso":
                     command += "01"
                 elif volume == "lungo":
                     command += "02"
-                elif volume == "ristretto":
-                    command += "00"
-                else :
+                elif volume == "hotwater":
+                    command += "04"
+                elif volume == "americano":
+                    command += "05"
+                else:
                     command += "00"
                 self.dev.char_write(characteristic, binascii.unhexlify(command), wait_for_response=True)
             except (BLEError, NotConnectedError, NotificationTimeout):
+                self.dev = None
                 _LOGGER.error("Failed to write characteristic for coffee flow")
             if self.keep_connected is False:
                 self.dev = None
                 self.dev.disconnect()
         except (BLEError, NotConnectedError, NotificationTimeout):
+            self.dev = None
             _LOGGER.error("Failed to connect for coffee flow")
         if self.keep_connected is False:
             self.adapter.stop()
@@ -237,6 +247,7 @@ class NespressoDetect:
             #Write the auth code from android or Ios apps to the specific UUID to allow catching value from the machine
             device.char_write(CHAR_UUID_AUTH, binascii.unhexlify(self.auth_code), wait_for_response=True)
         except (BLEError, NotConnectedError, NotificationTimeout):
+            self.dev = None
             _LOGGER.debug("Failed to send auth code, retrying in 5s")
             time.sleep(5) # wait 5s
             if tries < 3:
@@ -266,12 +277,14 @@ class NespressoDetect:
                             else:
                                 self.sensordata[mac].update(sensor_data)
                     except (BLEError, NotConnectedError, NotificationTimeout):
+                        self.dev = None
                         _LOGGER.error("Failed to read characteristic")
 
                 if self.keep_connected is False:
                     self.dev = None
                     self.dev.disconnect()
             except (BLEError, NotConnectedError, NotificationTimeout):
+                self.dev = None
                 _LOGGER.error("Failed to connect")
             if self.keep_connected is False:
                 self.adapter.stop()

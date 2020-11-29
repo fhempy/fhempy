@@ -66,7 +66,7 @@ async def handle_define_attr(attr_list, obj, hash):
     else:
       attr_opt = attr
     add_to_list.append(attr_opt)
-  await fhem.addToDevAttrList(hash["NAME"], " ".join(add_to_list))
+  await fhem.setDevAttrList(hash["NAME"], " ".join(add_to_list))
 
   for attr in attr_list:
     curr_val = await fhem.AttrVal(hash['NAME'], attr, "")

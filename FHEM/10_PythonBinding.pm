@@ -22,10 +22,30 @@ PythonBinding_Initialize($)
   $hash->{GetFn}    = 'PythonBinding_Get';
   $hash->{SetFn}    = 'PythonBinding_Set';
   $hash->{AttrFn}   = 'PythonBinding_Attr';
-
   $hash->{ReadFn}   = 'PythonBinding_Read';
+  $hash->{AttrList} = 'nrarchive logfile '.$readingFnAttributes;
+  $hash->{FW_detailFn} = "PythonBinding_detailFn";
+  $hash->{FW_deviceOverview} = 1;
 
   return undef;
+}
+
+sub
+PythonBinding_detailFn($$$$)
+{
+  my ($FW_wname, $d, $room, $pageHash) = @_; # pageHash is set for summaryFn.
+  my $hash = $defs{$d};
+  my $name = $hash->{NAME};
+
+  my $ret;
+
+  my $logfile = AttrVal($name, 'logfile', 'FHEM' );
+  if( $logfile && $logfile ne "FHEM" ) {
+    my $name = 'PythonBindingLog';
+    $ret .= "<a href=\"$FW_ME?detail=$name\">Python Binding Logfile Viewer</a><br>";
+  }
+
+  return $ret;
 }
 
 sub
@@ -57,6 +77,13 @@ PythonBinding_Define($$$)
 
   # put in hidden room
   CommandAttr(undef, "$name room hidden");
+  CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
+
+  if( $attr{global}{logdir} ) {
+    CommandAttr(undef, "$name logfile %L/PythonBinding-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
+  } else {
+    CommandAttr(undef, "$name logfile ./log/PythonBinding-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
+  }
 
   return undef;
 }
@@ -126,6 +153,21 @@ sub
 PythonBinding_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
+  my $hash = $defs{$name};
+
+  if( $attrName eq 'logfile' ) {
+    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
+      fhem( "defmod -temporary PythonBindingLog FileLog $attrVal fakelog" );
+      CommandAttr( undef, 'PythonBindingLog room hidden' );
+      $hash->{logfile} = $attrVal;
+    } else {
+      fhem( "delete PythonBindingLog" );
+    }
+
+    $attr{$name}{$attrName} = $attrVal;
+
+    CoProcess::start($hash);
+  }
 
   return undef;
 }

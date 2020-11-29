@@ -16,6 +16,11 @@ class miio:
         self._set_list = {}
         self._device = None
         self._status_task = None
+        self._fct_update_tasks = {}
+        self._attr_update_functions = ""
+        self._attr_list = {
+            "update_functions": {"default": ""}
+        }
         return
 
     # FHEM FUNCTION
@@ -23,14 +28,19 @@ class miio:
         self.hash = hash
         if len(args) < 6:
             return "Usage: define miiodev PythonModule miio <TYPE> <IP> <TOKEN>"
+        await utils.handle_define_attr(self._attr_list, self, hash)
         self._miio_devtype = args[3]
         self._miio_ip = args[4]
         self._miio_token = args[5]
 
+        self._miio_device_class = None
         for device_class in DeviceGroupMeta.device_classes:
             if device_class.get_device_group().name == self._miio_devtype:
                 self._miio_device_class = device_class
                 break
+        if self._miio_device_class is None:
+            return f"Device {self._miio_devtype} not found."
+
         for dev_cmd in self._miio_device_class.get_device_group().commands.keys():
             self._set_list[dev_cmd] = { "function": "set_command" }
             fct = getattr(self._miio_device_class, dev_cmd)
@@ -63,9 +73,38 @@ class miio:
             await asyncio.sleep(300)
 
     # FHEM FUNCTION
+    async def Attr(self, hash, args, argsh):
+        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+
+    async def set_attr_update_functions(self, hash):
+        for task in self._fct_update_tasks.copy():
+            task.cancel()
+            del self._fct_update_tasks[task]
+
+        if self._attr_update_functions != "":
+            fct_upd_list = self._attr_update_functions.split(",")
+            for fct_upd in fct_upd_list:
+                sec = fct_upd.split(":")[0]
+                fct = fct_upd.split(":")[1]
+                self._fct_update_tasks[fct] = asyncio.create_task(self.fct_update_loop(fct, sec))
+
+    async def fct_update_loop(self, fct, sec):
+        while True:
+            try:
+                await self.send_command(fct, None)
+            except:
+                pass
+            await asyncio.sleep(sec)
+
+    # FHEM FUNCTION
     async def Undefine(self, hash):
+        # cancel status update task
         if self._status_task:
             self._status_task.cancel()
+        # cancel fct update tasks
+        for task in self._fct_update_tasks.copy():
+            task.cancel()
+            del self._fct_update_tasks[task]
         return
 
     # FHEM FUNCTION

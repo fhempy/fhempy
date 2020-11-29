@@ -146,10 +146,10 @@ class object_detection:
 
                         detected_objects.append({"object": object_name, "score": int(scores[i]*100)})
 
-                asyncio.run_coroutine_threadsafe(self.update_readings(detected_objects), self.loop)
+                asyncio.run_coroutine_threadsafe(self.update_readings(detected_objects), self.loop).result()
 
                 if self._stop_detection:
-                    asyncio.run_coroutine_threadsafe(fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1), self.loop)
+                    asyncio.run_coroutine_threadsafe(fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1), self.loop).result()
                     videostream.stop()
                     return
 

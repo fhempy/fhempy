@@ -37,6 +37,8 @@ PythonModule_Define($$$)
   $hash->{args} = $a;
   $hash->{argsh} = $h;
   $hash->{PYTHONTYPE} = @$a[2];
+
+  setDevAttrList($hash->{NAME}, ".*");
   
   # check if BindingsIo exists
   if ($init_done) {
@@ -53,10 +55,10 @@ PythonModule_Define($$$)
 
   Log3 $hash, 3, "PythonModule v1.0.0 (".$hash->{PYTHONTYPE}.")";
 
-  AssignIoPort($hash);
+  AssignIoPort($hash, "local_pybinding");
 
   if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 3, "PythonModule: PythonBinding not yet connected! Define after connect...";
+    Log3 $hash, 4, "PythonModule: PythonBinding not yet connected! Define will continue after connect...";
     return undef;
   }
 
