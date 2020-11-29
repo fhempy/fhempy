@@ -75,7 +75,7 @@ UPD 2020-10-14_10:57:41 48 FHEM/bindings/python/lib/gfprobt/manifest.json
 UPD 2020-10-31_20:10:08 4268 FHEM/bindings/python/lib/gfprobt/gfprobt.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/miio/__init__.py
 UPD 2020-10-11_14:46:03 38 FHEM/bindings/python/lib/miio/manifest.json
-UPD 2020-11-29_21:56:20 7395 FHEM/bindings/python/lib/miio/miio.py
+UPD 2020-11-29_22:19:27 7721 FHEM/bindings/python/lib/miio/miio.py
 UPD 2020-10-11_14:46:03 24 FHEM/bindings/python/lib/xiaomi_tokens/__init__.py
 UPD 2020-10-11_14:46:03 34 FHEM/bindings/python/lib/xiaomi_tokens/manifest.json
 UPD 2020-10-25_16:49:01 2194 FHEM/bindings/python/lib/xiaomi_tokens/xiaomi_tokens.py
