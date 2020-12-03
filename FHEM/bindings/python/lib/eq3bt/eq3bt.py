@@ -16,6 +16,7 @@ from dbus import DBusException
 
 from .. import utils
 from .. import fhem
+from ..generic import FhemModule
 
 class Mode(IntEnum):
     """ Thermostat modes. """
@@ -30,39 +31,41 @@ class Mode(IntEnum):
 # TODO set schedules
 # TODO set windowOpen, windowOpenTime, eco/comfortTemperature
 
-class eq3bt:
+class eq3bt(FhemModule):
 
     def __init__(self, logger):
-        self.logger = logger
-        #logging.getLogger("eq3bt").setLevel(logging.DEBUG)
-        self.set_list_conf = {
+        super().__init__(logger)
+
+        attr_list = {
+            "keep_connected": { "default": "on", "format": "str", "options": "on,off",
+                "help": "On...keeps bluetooth low energy connection active which makes commands to be executed immediately" }
+        }
+        self.set_attr_config(attr_list)
+
+        set_list_conf = {
             "on": {},
             "off": {},
             "desiredTemperature": {"args": ["target_temp"], "options": "slider,4.5,0.5,30,1"},
             "updateStatus": {},
-            "boost": {"args": ["target_state"], "options": "on,off"},
+            "boost": {"args": ["target_state"], "options": "on,off", "help": "Activate boost for 300s"},
             "mode": {"args": ["target_mode"], "options": "manual,automatic"},
             "eco": {},
             "comfort": {},
             "childlock": {"args": ["target_state"], "options": "on,off"},
             "resetConsumption": { "args": ["cons_var"], "options": "all,consumption,consumptionToday,consumptionYesterday"}
         }
+        self.set_set_config(set_list_conf)
+
         self._last_update = 0
         self._mac = None
-        self._presence_task = None
-        self._attr_list = {
-            "keep_connected": { "default": "on", "format": "str", "options": "on,off" }
-        }
-        return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         self.hash = hash
         self._mac = args[3]
         self.hash["MAC"] = self._mac
         self.logger.info(f"Define: eq3bt {self._mac}")
-
-        await utils.handle_define_attr(self._attr_list, self, hash)
 
         icon = await fhem.AttrVal(self.hash['NAME'], "icon", "noicon")
         if icon == "noicon":
@@ -89,8 +92,8 @@ class eq3bt:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", dbus_conf_err, 1)
             return dbus_conf_err
 
-        self._presence_task = asyncio.create_task(self.check_online())
-        self._consumption_task = asyncio.create_task(self.consumption_rotate())
+        self.create_async_task(self.check_online())
+        self.create_async_task(self.consumption_rotate())
         return ""
 
     def seconds_till_midnight(self):
@@ -104,18 +107,6 @@ class eq3bt:
             consumption = float(await fhem.ReadingsVal(self.hash['NAME'], "consumptionToday", "0"))
             await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionYesterday", consumption, 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "consumptionToday", "0", 1)
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self._presence_task:
-            self._presence_task.cancel()
-        if self._consumption_task:
-            self._consumption_task.cancel()
-        return
-
-    # FHEM FUNCTION
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
     async def set_resetConsumption(self, hash, params):
         cons_var = params['cons_var']
@@ -143,10 +134,6 @@ class eq3bt:
             except:
                 self.logger.error(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return await utils.handle_set(self.set_list_conf, self, hash, args, argsh)
 
     async def update_all(self):
         self.logger.debug("start update_all")
@@ -227,23 +214,22 @@ class eq3bt:
         await utils.run_blocking(fct)
         await self.update_readings()
 
-
     # SET Functions BEGIN
     async def set_on(self, hash):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 30)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 30)))
     
     async def set_off(self, hash):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 4.5)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, 4.5)))
     
     async def set_desiredTemperature(self, hash, params):
         temp = float(params["target_temp"])
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, temp)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_target_temperature, temp)))
     
     async def set_updateStatus(self, hash):
-        asyncio.create_task(self.update_all())
+        self.create_async_task(self.update_all())
     
     async def set_boost(self, hash, params):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_boost, params["target_state"] == "on")))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_boost, params["target_state"] == "on")))
     
     async def set_mode(self, hash, params):
         target_mode = params["target_mode"]
@@ -251,16 +237,16 @@ class eq3bt:
             target_mode = eq3.Mode.Auto
         else:
             target_mode = eq3.Mode.Manual
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_fhem_mode, target_mode)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_fhem_mode, target_mode)))
     
     async def set_eco(self, hash):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_eco)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.activate_eco)))
     
     async def set_comfort(self, hash):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.activate_comfort)))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.activate_comfort)))
     
     async def set_childlock(self, hash, params):
-        asyncio.create_task(self.set_and_update(functools.partial(self.thermostat.set_locked, params["target_state"] == "on")))
+        self.create_async_task(self.set_and_update(functools.partial(self.thermostat.set_locked, params["target_state"] == "on")))
     # SET Functions END
 
 class FhemThermostat(eq3.Thermostat):
