@@ -52,7 +52,7 @@ sub
 PythonBinding_getCmd($)
 {
   my ($hash) = @_;
-  return "FHEM/bindings/python/pythonbinding.py";
+  return "FHEM/bindings/python/fhempy";
 }
 
 sub
