@@ -16,7 +16,7 @@ After=network.target
 User=pi
 Group=dialout
 WorkingDirectory=/home/pi/fhem_pythonbinding
-ExecStart=/usr/bin/python3 FHEM/bindings/python/pythonbinding.py
+ExecStart=/usr/bin/python3 FHEM/bindings/python/fhempy
 Restart=always
 
 [Install]
