@@ -4,31 +4,32 @@ import functools
 from miio.click_common import DeviceGroupMeta
 
 from .. import fhem,utils
+from ..generic import FhemModule
 import inspect
 import enum
 import typing
 import json
 
-class miio:
+class miio(FhemModule):
 
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self._set_list = {}
         self._device = None
-        self._status_task = None
         self._fct_update_tasks = {}
         self._attr_update_functions = ""
         self._attr_list = {
-            "update_functions": {"default": ""}
+            "update_functions": {"default": "status:60,info:600", "help": "Define command which should be executed every X seconds.<br>info:600 executes info every 600s"}
         }
+        self.set_attr_config(self._attr_list)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 6:
             return "Usage: define miiodev PythonModule miio <TYPE> <IP> <TOKEN>"
-        await utils.handle_define_attr(self._attr_list, self, hash)
         self._miio_devtype = args[3]
         self._miio_ip = args[4]
         self._miio_token = args[5]
@@ -60,21 +61,11 @@ class miio:
                             self._set_list[dev_cmd]["options"] = ",".join(list(map(lambda x:x.name, annot)))
                         elif inspect.isclass(annot) and issubclass(annot, bool):
                             self._set_list[dev_cmd]["options"] = "on,off"
+                self._set_list[dev_cmd]["help"] = "Arguments: " + " ".join(self._set_list[dev_cmd]["args"])
 
+        self.set_set_config(self._set_list)
         self._device = self._miio_device_class(ip=self._miio_ip, token=self._miio_token)
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
-        if self._status_task:
-            self._status_task.cancel()
-        self._status_task = asyncio.create_task(self.status_request_loop())
-
-    async def status_request_loop(self):
-        while True:
-            await self.set_command(self.hash, {"cmd": "status"})
-            await asyncio.sleep(300)
-
-    # FHEM FUNCTION
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
     async def set_attr_update_functions(self, hash):
         for task in self._fct_update_tasks.copy():
@@ -84,8 +75,8 @@ class miio:
         if self._attr_update_functions != "":
             fct_upd_list = self._attr_update_functions.split(",")
             for fct_upd in fct_upd_list:
-                sec = int(fct_upd.split(":")[0])
-                fct = fct_upd.split(":")[1]
+                sec = int(fct_upd.split(":")[1])
+                fct = fct_upd.split(":")[0]
                 self._fct_update_tasks[fct] = asyncio.create_task(self.fct_update_loop(fct, sec))
 
     async def fct_update_loop(self, fct, sec):
@@ -99,26 +90,16 @@ class miio:
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        # cancel status update task
-        if self._status_task:
-            self._status_task.cancel()
         # cancel fct update tasks
         for task in self._fct_update_tasks.copy():
             task.cancel()
             del self._fct_update_tasks[task]
         return
 
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return await utils.handle_set(self._set_list, self, hash, args, argsh)
-
     async def set_command(self, hash, params):
         cmd = params['cmd']
         fct_cmd = getattr(self._device, cmd)
-        if cmd == "status":
-            asyncio.create_task(self.status_request(fct_cmd))
-        else:
-            asyncio.create_task(self.send_command(fct_cmd, params))
+        asyncio.create_task(self.send_command(fct_cmd, params))
     
     def is_number(self, string):
         try:
@@ -167,19 +148,3 @@ class miio:
             if reply.lower() != "['ok']":
                 await fhem.readingsSingleUpdateIfChanged(self.hash, fct.__name__, reply, 1)
         await self.set_command(self.hash, { "cmd": "status" })
-
-    async def status_request(self, fct):
-        try:
-            reply = await utils.run_blocking(functools.partial(fct))
-            await fhem.readingsBeginUpdate(self.hash)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
-            try:
-                st = dict((x, getattr(reply, x)) for x in reply.__class__.__dict__ if isinstance(reply.__class__.__dict__[x], property))
-                for prop in st:
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
-            except:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "cmd_reply_val", reply)
-            await fhem.readingsEndUpdate(self.hash, 1)
-        except Exception as ex:
-            self.logger.error("Device might be offline: " + str(ex))
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
