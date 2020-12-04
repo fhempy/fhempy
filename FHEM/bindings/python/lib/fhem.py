@@ -7,6 +7,8 @@ import traceback
 import concurrent.futures
 import websockets
 
+from .version import __version__
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
@@ -133,6 +135,15 @@ def convertValue(value):
 
     return str(value)
 
+async def send_version():
+    msg = {
+        "msgtype": "version",
+        "version": __version__,
+    }
+    msg = json.dumps(msg, ensure_ascii=False)
+    logger.debug("<<< WS: " + msg)
+    global wsconnection
+    await wsconnection.send(msg)
 
 async def send_and_wait(name, cmd):
     fut = asyncio.get_running_loop().create_future()

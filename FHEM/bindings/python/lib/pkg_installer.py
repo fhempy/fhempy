@@ -75,6 +75,17 @@ def check_dependencies(module):
 
     return True
 
+async def force_update_package(package):
+    kwargs = pip_kwargs(None)
+    ret = False
+    async with pip_lock:
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            ret = await asyncio.get_event_loop().run_in_executor(
+                    pool, functools.partial(
+                        install_package,
+                        package, **kwargs))
+    return ret
+
 async def check_and_install_dependencies(module):
     """Checks the manifest of a specific module and starts installation
     of dependencies

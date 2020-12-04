@@ -36,6 +36,7 @@ async def pybinding(websocket, path):
     logger.info("FHEM connection started: " + websocket.remote_address[0])
     pb = PyBinding(websocket)
     fhem.updateConnection(pb)
+    await fhem.send_version()
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -127,6 +128,9 @@ class PyBinding:
                     self.msg_listeners.remove(removeElement)
             else:
                 ret = ''
+                if hash['msgtype'] == "update":
+                    await pkg_installer.force_update_package("fhempy")
+                    sys.exit(1)
                 if (hash['msgtype'] == "function"):
                     # this is needed to avoid 2 replies on dep installation
                     fhem_reply_done = False

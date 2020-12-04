@@ -9,8 +9,7 @@ use warnings;
 sub Log($$);
 sub Log3($$$);
 
-sub
-PythonBinding_Initialize($)
+sub PythonBinding_Initialize($)
 {
   my ($hash) = @_;
 
@@ -30,8 +29,7 @@ PythonBinding_Initialize($)
   return undef;
 }
 
-sub
-PythonBinding_detailFn($$$$)
+sub PythonBinding_detailFn($$$$)
 {
   my ($FW_wname, $d, $room, $pageHash) = @_; # pageHash is set for summaryFn.
   my $hash = $defs{$d};
@@ -48,15 +46,13 @@ PythonBinding_detailFn($$$$)
   return $ret;
 }
 
-sub
-PythonBinding_getCmd($)
+sub PythonBinding_getCmd($)
 {
   my ($hash) = @_;
   return "FHEM/bindings/python/fhempy";
 }
 
-sub
-PythonBinding_Define($$$)
+sub PythonBinding_Define($$$)
 {
   my ($hash, $a, $h) = @_;
   my $name = $hash->{NAME};
@@ -88,8 +84,7 @@ PythonBinding_Define($$$)
   return undef;
 }
 
-sub
-PythonBinding_Notify($$)
+sub PythonBinding_Notify($$)
 {
   my ($hash,$dev) = @_;
    
@@ -103,8 +98,7 @@ PythonBinding_Notify($$)
   return undef;
 }
 
-sub
-PythonBinding_Read($)
+sub PythonBinding_Read($)
 {
   my ($hash) = @_;
   my $name = $hash->{NAME};
@@ -113,8 +107,7 @@ PythonBinding_Read($)
   return undef;
 }
 
-sub
-PythonBinding_Undefine($$)
+sub PythonBinding_Undefine($$)
 {
   my ($hash, $name) = @_;
 
@@ -133,24 +126,21 @@ PythonBinding_Undefine($$)
   return undef;
 }
 
-sub
-PythonBinding_Get($$$)
+sub PythonBinding_Get($$$)
 {
   my ($hash, $a, $h) = @_;
 
   return undef;
 }
 
-sub
-PythonBinding_Set($$$)
+sub PythonBinding_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
-  return undef;
+  return CoProcess::setCommands($hash, "", @$a[1], @$a);
 }
 
-sub
-PythonBinding_Attr($$$)
+sub PythonBinding_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
   my $hash = $defs{$name};
@@ -172,8 +162,7 @@ PythonBinding_Attr($$$)
   return undef;
 }
 
-sub
-PythonBinding_DelayedShutdownFn($)
+sub PythonBinding_DelayedShutdownFn($)
 {
   my ($hash) = @_;
 
@@ -190,8 +179,7 @@ PythonBinding_DelayedShutdownFn($)
   return undef;
 }
 
-sub
-PythonBinding_Shutdown($)
+sub PythonBinding_Shutdown($)
 {
   my ($hash) = @_;
 
