@@ -1,4 +1,5 @@
 
+from ..generic import FhemModule
 import asyncio
 import functools
 import logging
@@ -8,20 +9,29 @@ from .. import utils as fpyutils
 
 from .nespresso import NespressoDetect
 
-class nespresso_ble:
+class nespresso_ble(FhemModule):
 
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.nespressodetect = None
         self.task = None
         self.auth = None
         logging.getLogger("pygatt.backends.gatttool.gatttool").setLevel(logging.ERROR)
         #logging.getLogger("nespresso_ble").setLevel(logging.DEBUG)
+        self.set_conf_list = {
+          "authkey": { "args": ["authkey"] },
+          "brew": {"args": ["coffee_type", "temperature"], "params": {"temperature": {"default":"high", "optional":True}, "coffee_type": {"default":"lungo", "optional":True}},
+            "help": "1. parameter: ristretto, espresso, lung, hotwater, americano<br>2. parameter: Temperature with values low, mid, high"},
+          "easybrew": {"args": ["coffee_type"], "options": "ristretto,espresso,lungo,hotwater,americano"},
+          "recipe": { "help": "Not yet supported" },
+          "updateStatus": {}
+        }
+        self.set_set_config(self.set_conf_list)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-      self.logger.debug("nespresso_ble defined")
+      await super().Define(hash, args, argsh)
       await fhem.readingsBeginUpdate(hash)
       await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
       await fhem.readingsEndUpdate(hash, 1)
@@ -41,7 +51,7 @@ class nespresso_ble:
         self.auth = args[4]
         self.nespressodetect = NespressoDetect(self.auth, self.mac)
         self.nespressodetect.set_keep_connected(True)
-        self.task = asyncio.create_task(self.update_status_task())
+        self.task = self.create_async_task(self.update_status_task())
       return ""
 
     async def update_status_task(self):
@@ -51,31 +61,21 @@ class nespresso_ble:
         await asyncio.sleep(300)
 
     # FHEM FUNCTION
-    async def Undefine(self, hash):
-      self.task.cancel()
-      return
-
-    # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
-      set_conf_list = {
-        "authkey": { "args": ["authkey"] },
-        "brew": {"args": ["coffee_type", "temperature"], "params": {"temperature": {"default":"high", "optional":True}, "coffee_type": {"default":"lungo", "optional":True}}},
-        "easybrew": {"args": ["coffee_type"], "options": "ristretto,espresso,lungo,hotwater,americano"},
-        "recipe": {},
-        "updateStatus": {}
-      }
-      if self.auth:
-        del set_conf_list['authkey']
-      return await fpyutils.handle_set(set_conf_list, self, hash, args, argsh)
+      if self.auth and "authkey" in self.set_conf_list:
+        del self.set_conf_list['authkey']
+        self.set_set_config(self.set_conf_list)
+      return await super().Set(hash, args, argsh)
 
     async def set_authkey(self, hash, params):
       self.auth = params["authkey"]
+      self.set_set_config(self.set_conf_list)
       await fhem.readingsSingleUpdateIfChanged(self.hash, "authkey", self.auth, 1)
       if self.task:
         self.task.cancel()
       self.nespressodetect = NespressoDetect(self.auth, self.mac)
       self.nespressodetect.set_keep_connected(True)
-      self.task = asyncio.create_task(self.update_status_task())
+      self.task = self.create_async_task(self.update_status_task())
 
     async def set_easybrew(self, hash, params):
       params['temperature'] = "medium"
@@ -90,7 +90,7 @@ class nespresso_ble:
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
     async def set_updateStatus(self, hash):
-      asyncio.create_task(self.update_status())
+      self.create_async_task(self.update_status())
 
     async def update_status(self):
       await fpyutils.run_blocking(functools.partial(self.blocking_update_status))

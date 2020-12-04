@@ -26,6 +26,8 @@ PythonModule_Initialize($)
   $hash->{AttrFn}   = 'PythonModule_Attr';
   $hash->{RenameFn} = 'PythonModule_Rename';
   $hash->{AttrList} = 'IODev '.$readingFnAttributes;
+  $hash->{FW_detailFn} = "PythonModule_detailFn";
+  $hash->{FW_deviceOverview} = 1;
 
   return undef;
 }
@@ -125,6 +127,14 @@ PythonModule_Shutdown($)
   my ($hash) = @_;
 
   return IOWrite($hash, $hash, "Shutdown", [], {});
+}
+
+sub
+PythonModule_detailFn($$$)
+{
+  my ($FW_wname, $d, $room, $pageHash) = @_; # pageHash is set for summaryFn.
+  my $hash = $defs{$d};
+  return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
 }
 
 1;

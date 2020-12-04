@@ -1,4 +1,4 @@
-# FHEM Python Binding (BETA)
+# fhempy (FHEM Python Binding, BETA)
 
 FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
@@ -55,20 +55,23 @@ This are just a few examples for some modules, please see the modules readme lin
 ## Run Python modules on remote Python peers (e.g. extend Bluetooth range)
 FHEM Pythonbinding allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
 
+### Installation
 The following steps are only needed if you want to install FHEM Pythonbinding on a remote peer, you should not run them on your FHEM installation.
 
-- `sudo apt install python3 python3-pip`
-- `git clone https://github.com/dominikkarall/fhem_pythonbinding.git`
-- Systemd configuration
-  - change fhem_pythonbinding/fhem_pythonbinding.service acording to your system (especially user might be "pi", "fhem", ...)
-  - `sudo cp fhem_pythonbinding/fhem_pythonbinding.service /etc/systemd/system/`
-  - `sudo systemctl daemon-reload`
-  - `sudo systemctl enable fhem_pythonbinding`
-  - `sudo systemctl start fhem_pythonbinding`
+- `sudo pip3 install fhempy`
+- Systemd configuration for autostart
+  - `curl -sL https://raw.githubusercontent.com/dominikkarall/fhem_pythonbinding/master/install_systemd_fhempy.sh | sudo -E bash -`
+  - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
 - FHEM configuration
   - `define remote_pybinding BindingsIo IP:15733 Python`
   - `define eq3device PythonModule eq3bt MAC`
   - `attr eq3device IODev remote_pybinding`
+
+### Log file
+`journalctl -u fhempy.service -f`
+
+### Update
+Just do `set remote_pybinding update` and the remote peer will install the new package via pip and restart afterwads.
 
 ## Functionality
 

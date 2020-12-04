@@ -57,14 +57,19 @@ BindingsIo_Define($$$)
 
   my $bindingType = ucfirst(@$a[2]);
 
+  $hash->{args} = $a;
+  $hash->{argsh} = $h;
+
   my $port = 0;
   my $localServer = 1;
   if ($bindingType eq "Python") {
     $hash->{DeviceName} = "ws:127.0.0.1:15733";
+    $hash->{localBinding} = 1;
   } else {
     $hash->{DeviceName} = "ws:".@$a[2];
     $bindingType = ucfirst(@$a[3]);
     $localServer = 0;
+    $hash->{localBinding} = 0;
   }
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
@@ -171,6 +176,7 @@ sub
 BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
   my $initrun = 0;
+  my $waitforresponse = 1;
 
   if ($function eq "InitDefine") {
     $initrun = 1;
@@ -201,10 +207,18 @@ BindingsIo_Write($$$$$) {
   );
   $msg{$bindingType} =  $devhash->{$bindingType};
 
+  if ($function eq "update") {
+    $msg{"msgtype"} = "update";
+    $waitforresponse = 0;
+  }
+
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
   Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
+    if ($waitforresponse == 0) {
+      return undef;
+    }
   }
 
   my $py_timeout = 2500;
@@ -271,8 +285,14 @@ sub
 BindingsIo_Set($$$)
 {
   my ($hash, $a, $h) = @_;
+  my $cmd = @$a[1];
+  my $list = "update:noArg";
 
-  return undef;
+  if ($hash->{localBinding} == 0 && $cmd eq 'update') {
+    return BindingsIo_Write($hash, $hash, "update", [], {});
+  }
+
+  return "Unknown argument $cmd, choose one of $list";
 }
 
 sub
@@ -352,6 +372,8 @@ sub BindingsIo_processMessage($$$$) {
         eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh" or $key eq "id");
       $devhash->{$key} = $json->{$key};
     }
+  } elsif ($json->{msgtype} eq "version") {
+    readingsSingleUpdate($hash, "version", $json->{version}, 1);
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
