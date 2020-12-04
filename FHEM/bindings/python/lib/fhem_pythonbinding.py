@@ -100,6 +100,8 @@ class PyBinding:
     async def onMessage(self, payload):
         try:
             await self._onMessage(payload)
+        except SystemExit as se:
+            sys.exit(1)
         except:
             logger.exception("Failed to handle message: " + str(payload))
 
@@ -268,6 +270,8 @@ class PyBinding:
                     if fhem_reply_done is False:
                         await self.sendBackReturn(hash, ret)
 
+        except SystemExit as se:
+            raise se
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
 
