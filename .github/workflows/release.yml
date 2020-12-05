@@ -4,6 +4,8 @@ name: release
 
 # Controls when the action will run. 
 on:
+  release:
+    types: [created]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -17,6 +19,9 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1.8.3
         with:
@@ -26,7 +31,30 @@ jobs:
       - name: Update controls file
         run: perl prepare_update.pl > controls_pythonbinding.txt
 
-      - name: Update controls file in master
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v5
+        with:
+          author_name: Dominik
+          author_email: dominik.karall@gmail.com
+          message: "action: auto update controls"
+          push: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          
+      - name: Install dependencies
         run: |
-          git commit -m "auto update controls" controls_pythonbinding.txt
-          git push
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+
+      - name: Build and publish
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
