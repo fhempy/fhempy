@@ -1,10 +1,10 @@
-# Source: https://github.com/dominikkarall/fhem_pythonbinding
+# Source: https://github.com/dominikkarall/fhempy
 
 # ATTENTION
 # This is an example, please verify your directories and user
 #
-# Copy this file to /etc/systemd/system/fhem_pythonbinding.service
-# Start service with "sudo systemd start fhem_pythonbinding"
+# Copy this file to /etc/systemd/system/fhempy.service
+# Start service with "sudo systemd start fhempy"
 #
 
 [Unit]

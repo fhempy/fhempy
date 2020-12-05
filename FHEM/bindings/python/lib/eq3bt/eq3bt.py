@@ -86,7 +86,7 @@ class eq3bt(FhemModule):
                 '    <allow send_interface="org.freedesktop.DBus.ObjectManager"/>\n'
                 '    <allow send_interface="org.freedesktop.DBus.Properties"/>\n'
                 '</policy>\n\n'
-                'ATTENTION: On remote device change the user account above to the one which runs fhem_pythonbinding (e.g. pi)\n\n'
+                'ATTENTION: On remote device change the user account above to the one which runs fhempy (e.g. pi)\n\n'
                 'Restart dbus afterwards: sudo systemctl restart dbus')
             self.logger.error(dbus_conf_err)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", dbus_conf_err, 1)

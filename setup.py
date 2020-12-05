@@ -17,7 +17,7 @@ setuptools.setup(
     description="Python binding for FHEM to support Python modules",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dominikkarall/fhem_pythonbinding/",
+    url="https://github.com/dominikkarall/fhempy/",
     package_dir={'':'FHEM/bindings/python'},
     packages=setuptools.find_packages(where="FHEM/bindings/python"),
     scripts=['FHEM/bindings/python/fhempy'],
