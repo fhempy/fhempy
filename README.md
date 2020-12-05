@@ -2,9 +2,9 @@
 ![Version](https://img.shields.io/pypi/v/fhempy)
 ![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhem_pythonbinding)
 
-# fhempy (FHEM Python Binding, BETA)
+# fhempy (BETA)
 
-FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
+fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 
 This repository includes following working modules:
 Module | Description
