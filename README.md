@@ -1,6 +1,6 @@
-[![Download](https://img.shields.io/pypi/dw/fhempy)]
-[![Version](https://img.shields.io/pypi/v/fhempy)]
-[![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhem_pythonbinding)]
+![Download](https://img.shields.io/pypi/dw/fhempy)
+![Version](https://img.shields.io/pypi/v/fhempy)
+![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhem_pythonbinding)
 
 # fhempy (FHEM Python Binding, BETA)
 
