@@ -12,18 +12,18 @@ class Unqlite:
 
     def read(self, length: int):
         self.pos += length
-        return self.raw[self.pos - length:self.pos]
+        return self.raw[self.pos - length : self.pos]
 
     def read_int(self, length: int):
-        return int.from_bytes(self.read(length), 'big')
+        return int.from_bytes(self.read(length), "big")
 
     def read_db_header(self):
-        assert self.read(7) == b'unqlite', "Wrong file signature"
-        assert self.read(4) == b'\xDB\x7C\x27\x12', "Wrong DB magic"
+        assert self.read(7) == b"unqlite", "Wrong file signature"
+        assert self.read(4) == b"\xDB\x7C\x27\x12", "Wrong DB magic"
         creation_time = self.read_int(4)
         sector_size = self.read_int(4)
         self.page_size = self.read_int(4)
-        assert self.read(6) == b'\x00\x04hash', "Unsupported hash"
+        assert self.read(6) == b"\x00\x04hash", "Unsupported hash"
 
     # def read_header2(self):
     #     self.pos = self.page_size

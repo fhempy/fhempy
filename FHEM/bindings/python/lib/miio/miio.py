@@ -1,17 +1,16 @@
-
 import asyncio
 import functools
 from miio.click_common import DeviceGroupMeta
 
-from .. import fhem,utils
+from .. import fhem, utils
 from ..generic import FhemModule
 import inspect
 import enum
 import typing
 import json
 
-class miio(FhemModule):
 
+class miio(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._set_list = {}
@@ -19,7 +18,10 @@ class miio(FhemModule):
         self._fct_update_tasks = {}
         self._attr_update_functions = ""
         self._attr_list = {
-            "update_functions": {"default": "status:60,info:600", "help": "Define command which should be executed every X seconds.<br>info:600 executes info every 600s"}
+            "update_functions": {
+                "default": "status:60,info:600",
+                "help": "Define command which should be executed every X seconds.<br>info:600 executes info every 600s",
+            }
         }
         self.set_attr_config(self._attr_list)
         return
@@ -43,7 +45,7 @@ class miio(FhemModule):
             return f"Device {self._miio_devtype} not found."
 
         for dev_cmd in self._miio_device_class.get_device_group().commands.keys():
-            self._set_list[dev_cmd] = { "function": "set_command" }
+            self._set_list[dev_cmd] = {"function": "set_command"}
             fct = getattr(self._miio_device_class, dev_cmd)
             sig = inspect.signature(fct)
             if len(list(sig.parameters)) > 1:
@@ -58,10 +60,14 @@ class miio(FhemModule):
                         if not inspect.isclass(annot):
                             self.logger.error("Annotation is not class: " + str(annot))
                         if inspect.isclass(annot) and issubclass(annot, enum.Enum):
-                            self._set_list[dev_cmd]["options"] = ",".join(list(map(lambda x:x.name, annot)))
+                            self._set_list[dev_cmd]["options"] = ",".join(
+                                list(map(lambda x: x.name, annot))
+                            )
                         elif inspect.isclass(annot) and issubclass(annot, bool):
                             self._set_list[dev_cmd]["options"] = "on,off"
-                self._set_list[dev_cmd]["help"] = "Arguments: " + " ".join(self._set_list[dev_cmd]["args"])
+                self._set_list[dev_cmd]["help"] = "Arguments: " + " ".join(
+                    self._set_list[dev_cmd]["args"]
+                )
 
         self.set_set_config(self._set_list)
         self._device = self._miio_device_class(ip=self._miio_ip, token=self._miio_token)
@@ -77,7 +83,9 @@ class miio(FhemModule):
             for fct_upd in fct_upd_list:
                 sec = int(fct_upd.split(":")[1])
                 fct = fct_upd.split(":")[0]
-                self._fct_update_tasks[fct] = asyncio.create_task(self.fct_update_loop(fct, sec))
+                self._fct_update_tasks[fct] = asyncio.create_task(
+                    self.fct_update_loop(fct, sec)
+                )
 
     async def fct_update_loop(self, fct, sec):
         fct_cmd = getattr(self._device, fct)
@@ -97,10 +105,10 @@ class miio(FhemModule):
         return
 
     async def set_command(self, hash, params):
-        cmd = params['cmd']
+        cmd = params["cmd"]
         fct_cmd = getattr(self._device, cmd)
         asyncio.create_task(self.send_command(fct_cmd, params))
-    
+
     def is_number(self, string):
         try:
             float(string)
@@ -132,19 +140,29 @@ class miio(FhemModule):
         if hasattr(reply, "__dict__"):
             await fhem.readingsBeginUpdate(self.hash)
             try:
-                st = dict((x, getattr(reply, x)) for x in reply.__class__.__dict__ if isinstance(reply.__class__.__dict__[x], property))
+                st = dict(
+                    (x, getattr(reply, x))
+                    for x in reply.__class__.__dict__
+                    if isinstance(reply.__class__.__dict__[x], property)
+                )
                 for prop in st:
                     if prop == "raw":
                         continue
                     try:
                         for data_name in st[prop]:
-                            await fhem.readingsBulkUpdateIfChanged(self.hash, prop + "_" + data_name, st[prop][data_name])
+                            await fhem.readingsBulkUpdateIfChanged(
+                                self.hash, prop + "_" + data_name, st[prop][data_name]
+                            )
                     except:
-                        await fhem.readingsBulkUpdateIfChanged(self.hash, prop, st[prop])
+                        await fhem.readingsBulkUpdateIfChanged(
+                            self.hash, prop, st[prop]
+                        )
             except:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
         else:
             if reply.lower() != "['ok']":
-                await fhem.readingsSingleUpdateIfChanged(self.hash, fct.__name__, reply, 1)
-        await self.set_command(self.hash, { "cmd": "status" })
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, fct.__name__, reply, 1
+                )
+        await self.set_command(self.hash, {"cmd": "status"})

@@ -1,12 +1,11 @@
-
 import asyncio
 import logging
 from bleak import discover
 
 from .. import fhem
 
-class discover_ble:
 
+class discover_ble:
     def __init__(self, logger):
         self.logger = logger
         # disable bleak discovery messages
@@ -21,25 +20,104 @@ class discover_ble:
                 devices = await discover()
                 for d in devices:
                     if d.name == "GfBT Project":
-                        if not await fhem.checkIfDeviceExists(self.hash, "TYPE", "GFPROBT", "MAC", d.address):
-                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
-                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " GFPROBT '" + d.address + "'")
+                        if not await fhem.checkIfDeviceExists(
+                            self.hash, "TYPE", "GFPROBT", "MAC", d.address
+                        ):
+                            self.logger.debug(
+                                "create device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
+                            await fhem.CommandDefine(
+                                self.hash,
+                                d.name
+                                + "_"
+                                + d.address.replace(":", "")
+                                + " GFPROBT '"
+                                + d.address
+                                + "'",
+                            )
                         else:
-                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            self.logger.debug(
+                                "existing device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
                     elif d.name == "CC-RT-BLE":
-                        if not await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "eq3bt", "MAC", d.address):
-                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
-                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " PythonModule eq3bt '" + d.address + "'")
+                        if not await fhem.checkIfDeviceExists(
+                            self.hash, "PYTHONTYPE", "eq3bt", "MAC", d.address
+                        ):
+                            self.logger.debug(
+                                "create device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
+                            await fhem.CommandDefine(
+                                self.hash,
+                                d.name
+                                + "_"
+                                + d.address.replace(":", "")
+                                + " PythonModule eq3bt '"
+                                + d.address
+                                + "'",
+                            )
                         else:
-                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            self.logger.debug(
+                                "existing device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
                     elif d.name[0:7] == "Expert_":
-                        if not await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "nespresso_ble", "MAC", d.address):
-                            self.logger.debug("create device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
-                            await fhem.CommandDefine(self.hash, d.name + "_" + d.address.replace(":", "") +  " PythonModule nespresso_ble '" + d.address + "'")
+                        if not await fhem.checkIfDeviceExists(
+                            self.hash, "PYTHONTYPE", "nespresso_ble", "MAC", d.address
+                        ):
+                            self.logger.debug(
+                                "create device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
+                            await fhem.CommandDefine(
+                                self.hash,
+                                d.name
+                                + "_"
+                                + d.address.replace(":", "")
+                                + " PythonModule nespresso_ble '"
+                                + d.address
+                                + "'",
+                            )
                         else:
-                            self.logger.debug("existing device: " + d.name + " / " + d.address + " / rssi: " + str(d.rssi))
+                            self.logger.debug(
+                                "existing device: "
+                                + d.name
+                                + " / "
+                                + d.address
+                                + " / rssi: "
+                                + str(d.rssi)
+                            )
                     else:
-                        self.logger.debug("found unhandled device: " + d.name + ", " + d.address + ", rssi: " + str(d.rssi))
+                        self.logger.debug(
+                            "found unhandled device: "
+                            + d.name
+                            + ", "
+                            + d.address
+                            + ", rssi: "
+                            + str(d.rssi)
+                        )
             except:
                 self.logger.error("BLE Scan failed, retry in 600s", exc_info=True)
             await asyncio.sleep(600)
@@ -52,7 +130,7 @@ class discover_ble:
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "active")
         await fhem.readingsEndUpdate(hash, 1)
 
-        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
+        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon rc_SEARCH")
 
         if self.blescanTask:
