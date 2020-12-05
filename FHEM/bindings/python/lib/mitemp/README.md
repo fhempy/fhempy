@@ -14,7 +14,7 @@ Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
     <allow send_interface="org.freedesktop.DBus.Properties"/>
   </policy>
 ```
-Set the user to the one which runs fhem_pythonbinding. On FHEM installations it's fhem, on remote peers it's normally pi.
+Set the user to the one which runs fhempy. On FHEM installations it's fhem, on remote peers it's normally pi.
 Restart dbus afterwards: `sudo systemctl restart dbus`
 
 ## Usage
