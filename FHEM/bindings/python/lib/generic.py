@@ -67,6 +67,7 @@ class FhemModule:
   # FHEM FUNCTION
   async def Define(self, hash, args, argsh):
     await utils.handle_define_attr(self._conf_attr, self, hash)
+    self.hash = hash
 
   # FHEM FUNCTION
   async def Attr(self, hash, args, argsh):
