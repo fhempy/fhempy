@@ -16,6 +16,12 @@ foreach(@dirs) {
   if ($dir eq "") {
     next;
   }
+  if (substr($dir,-11) eq "__pycache__") {
+    next;
+  }
+  if (substr($dir,-8) eq "egg-info") {
+    next;
+  }
   print "DIR $location/$dir\n";
 }
 
