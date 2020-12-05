@@ -29,7 +29,12 @@ jobs:
       - name: Update controls file
         run: perl prepare_update.pl > controls_pythonbinding.txt
 
-      - name: Update controls file in master
-        run: |
-          git commit -m "auto update controls" controls_pythonbinding.txt
-          git push
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v5
+        with:
+          author_name: Dominik
+          author_email: dominik.karall@gmail.com
+          message: "action: auto update controls"
+          push: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
