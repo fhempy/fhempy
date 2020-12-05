@@ -37,15 +37,17 @@ def is_virtual_env() -> bool:
         sys, "real_prefix"
     )
 
+
 def is_docker_env() -> bool:
     """Return True if we run in a docker env."""
     return Path("/.dockerenv").exists()
+
 
 def pip_kwargs(config_dir):
     """Return keyword arguments for PIP install."""
     is_docker = is_docker_env()
     kwargs = {
-        #"constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
+        # "constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
         "no_cache_dir": is_docker,
     }
     if "WHEELS_LINKS" in os.environ:
@@ -54,26 +56,28 @@ def pip_kwargs(config_dir):
         kwargs["target"] = os.path.join(config_dir, "deps")
     return kwargs
 
+
 def check_dependencies(module):
     """Checks the manifest of a specific module and check installation
     of dependencies
     """
     try:
-        with open('FHEM/bindings/python/lib/' + module + '/manifest.json', 'r') as f:
+        with open("FHEM/bindings/python/lib/" + module + "/manifest.json", "r") as f:
             manifest = json.load(f)
 
             if "requirements" in manifest:
                 for req in manifest["requirements"]:
-                    logger.debug("Check requirement: " + req);
+                    logger.debug("Check requirement: " + req)
                     if is_installed(req) == False:
-                      logger.debug("  NOK")
-                      return False
+                        logger.debug("  NOK")
+                        return False
                     else:
-                      logger.debug("  OK")
+                        logger.debug("  OK")
     except FileNotFoundError:
         pass
 
     return True
+
 
 async def force_update_package(package):
     kwargs = pip_kwargs(None)
@@ -81,10 +85,10 @@ async def force_update_package(package):
     async with pip_lock:
         with concurrent.futures.ThreadPoolExecutor() as pool:
             ret = await asyncio.get_event_loop().run_in_executor(
-                    pool, functools.partial(
-                        install_package,
-                        package, **kwargs))
+                pool, functools.partial(install_package, package, **kwargs)
+            )
     return ret
+
 
 async def check_and_install_dependencies(module):
     """Checks the manifest of a specific module and starts installation
@@ -93,7 +97,9 @@ async def check_and_install_dependencies(module):
     try:
         async with pip_lock:
             kwargs = pip_kwargs(None)
-            with open('FHEM/bindings/python/lib/' + module + '/manifest.json', 'r') as f:
+            with open(
+                "FHEM/bindings/python/lib/" + module + "/manifest.json", "r"
+            ) as f:
                 manifest = json.load(f)
 
                 if "requirements" in manifest:
@@ -102,10 +108,14 @@ async def check_and_install_dependencies(module):
                             inst_tries = 0
                             while inst_tries < 3:
                                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                                    ret = await asyncio.get_event_loop().run_in_executor(
-                                            pool, functools.partial(
-                                                install_package,
-                                                req, **kwargs))
+                                    ret = (
+                                        await asyncio.get_event_loop().run_in_executor(
+                                            pool,
+                                            functools.partial(
+                                                install_package, req, **kwargs
+                                            ),
+                                        )
+                                    )
                                 if ret:
                                     break
                                 inst_tries += 1
@@ -113,6 +123,7 @@ async def check_and_install_dependencies(module):
         pass
 
     return
+
 
 def is_installed(package: str) -> bool:
     """Check if a package is installed and will be loaded when we import it.

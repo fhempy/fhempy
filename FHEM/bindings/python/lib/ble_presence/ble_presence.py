@@ -1,23 +1,34 @@
-
 import asyncio
 import functools
 import time
 import re
 
-from bluepy.btle import BTLEDisconnectError, ScanEntry, Scanner, Peripheral, ADDR_TYPE_PUBLIC, ADDR_TYPE_RANDOM, BluepyHelper, AssignedNumbers
+from bluepy.btle import (
+    BTLEDisconnectError,
+    ScanEntry,
+    Scanner,
+    Peripheral,
+    ADDR_TYPE_PUBLIC,
+    ADDR_TYPE_RANDOM,
+    BluepyHelper,
+    AssignedNumbers,
+)
 
 from .. import fhem, utils
 
 
 class PeripheralTimeout(Peripheral):
-
-    def __init__(self, deviceAddr=None, addrType=ADDR_TYPE_PUBLIC, iface=None, timeout=None):
+    def __init__(
+        self, deviceAddr=None, addrType=ADDR_TYPE_PUBLIC, iface=None, timeout=None
+    ):
         BluepyHelper.__init__(self)
-        self._serviceMap = None # Indexed by UUID
+        self._serviceMap = None  # Indexed by UUID
         (self.deviceAddr, self.addrType, self.iface) = (None, None, None)
 
         if isinstance(deviceAddr, ScanEntry):
-            self._connect(deviceAddr.addr, deviceAddr.addrType, deviceAddr.iface, timeout)
+            self._connect(
+                deviceAddr.addr, deviceAddr.addrType, deviceAddr.iface, timeout
+            )
         elif deviceAddr is not None:
             self._connect(deviceAddr, addrType, iface, timeout)
 
@@ -25,24 +36,32 @@ class PeripheralTimeout(Peripheral):
         if len(addr.split(":")) != 6:
             raise ValueError("Expected MAC address, got %s" % repr(addr))
         if addrType not in (ADDR_TYPE_PUBLIC, ADDR_TYPE_RANDOM):
-            raise ValueError("Expected address type public or random, got {}".format(addrType))
+            raise ValueError(
+                "Expected address type public or random, got {}".format(addrType)
+            )
         self._startHelper(iface)
         self.addr = addr
         self.addrType = addrType
         self.iface = iface
         if iface is not None:
-            self._writeCmd("conn %s %s %s\n" % (addr, addrType, "hci"+str(iface)))
+            self._writeCmd("conn %s %s %s\n" % (addr, addrType, "hci" + str(iface)))
         else:
             self._writeCmd("conn %s %s\n" % (addr, addrType))
-        rsp = self._getResp('stat', timeout)
+        rsp = self._getResp("stat", timeout)
         if rsp is None:
-            raise BTLEDisconnectError("Timed out while trying to connect to peripheral %s, addr type: %s" %
-                                      (addr, addrType), rsp)
-        while rsp['state'][0] == 'tryconn':
-            rsp = self._getResp('stat', timeout)
-        if rsp['state'][0] != 'conn':
+            raise BTLEDisconnectError(
+                "Timed out while trying to connect to peripheral %s, addr type: %s"
+                % (addr, addrType),
+                rsp,
+            )
+        while rsp["state"][0] == "tryconn":
+            rsp = self._getResp("stat", timeout)
+        if rsp["state"][0] != "conn":
             self._stopHelper()
-            raise BTLEDisconnectError("Failed to connect to peripheral %s, addr type: %s" % (addr, addrType), rsp)
+            raise BTLEDisconnectError(
+                "Failed to connect to peripheral %s, addr type: %s" % (addr, addrType),
+                rsp,
+            )
 
     def connect(self, addr, addrType=ADDR_TYPE_PUBLIC, iface=None, timeout=None):
         if isinstance(addr, ScanEntry):
@@ -83,7 +102,9 @@ class scanner:
             self._scan_task = None
 
     def handleDiscovery(self, dev, isNewDev, isNewData):
-        asyncio.run_coroutine_threadsafe(self.handle_discovery(dev, isNewDev, isNewData), self.loop).result()
+        asyncio.run_coroutine_threadsafe(
+            self.handle_discovery(dev, isNewDev, isNewData), self.loop
+        ).result()
 
     async def handle_discovery(self, dev, isNewDev, isNewData):
         if dev.addr.lower() in self._mac_listener:
@@ -95,7 +116,9 @@ class scanner:
                     name = dev.getValueText(ScanEntry.SHORT_LOCAL_NAME)
                 else:
                     name = dev.getValueText(ScanEntry.COMPLETE_LOCAL_NAME)
-                await getattr(self._mac_listener[dev.addr.lower()], "update_readings")("present", dev.addr.lower(), name, dev.rssi)
+                await getattr(self._mac_listener[dev.addr.lower()], "update_readings")(
+                    "present", dev.addr.lower(), name, dev.rssi
+                )
 
     def set_scan_interval(self, scan_interval):
         self._scan_interval = scan_interval
@@ -117,9 +140,13 @@ class scanner:
             for mac in self._mac_listener:
                 try:
                     if mac not in self._mac_lastfound or self._mac_lastfound[mac] == 0:
-                        await getattr(self._mac_listener[mac], "update_readings")("absent", mac, "", 0)
+                        await getattr(self._mac_listener[mac], "update_readings")(
+                            "absent", mac, "", 0
+                        )
                     else:
-                        await getattr(self._mac_listener[mac], "check_update_characteristics")()
+                        await getattr(
+                            self._mac_listener[mac], "check_update_characteristics"
+                        )()
                 except:
                     self.logger.exception("Failed to handle updates after scan")
             await asyncio.sleep(self._scan_interval)
@@ -135,7 +162,6 @@ class scanner:
 
 
 class ble_presence:
-
     def __init__(self, logger):
         self.logger = logger
         self.hash = None
@@ -158,7 +184,10 @@ class ble_presence:
             "scan_interval": {"default": 10, "format": "int"},
             "hci_device": {"default": "hci0"},
             "scan_duration": {"default": 10, "format": "int"},
-            "read_characteristics": {"default": "battery", "options": "all,off,battery"}
+            "read_characteristics": {
+                "default": "battery",
+                "options": "all,off,battery",
+            },
         }
         return
 
@@ -167,7 +196,12 @@ class ble_presence:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "rssi", str(rssi), 1)
             self._rssi = rssi
 
-        if name is not None and self._name != name and presence != "absent" and name != "":
+        if (
+            name is not None
+            and self._name != name
+            and presence != "absent"
+            and name != ""
+        ):
             await fhem.readingsSingleUpdateIfChanged(self.hash, "name", name, 1)
             self._name = name
 
@@ -175,7 +209,7 @@ class ble_presence:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", presence, 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", presence, 1)
             self._presence = presence
-    
+
     async def check_update_characteristics(self):
         if self._attr_read_characteristics == "off":
             return
@@ -188,34 +222,54 @@ class ble_presence:
 
     async def update_characteristics(self):
         try:
-            await utils.run_blocking(functools.partial(self._peripheral.connect, self._address, ADDR_TYPE_PUBLIC, self._hci_nr, 5))
+            await utils.run_blocking(
+                functools.partial(
+                    self._peripheral.connect,
+                    self._address,
+                    ADDR_TYPE_PUBLIC,
+                    self._hci_nr,
+                    5,
+                )
+            )
         except:
             return
-        services = await utils.run_blocking(functools.partial(self._peripheral.getServices))
+        services = await utils.run_blocking(
+            functools.partial(self._peripheral.getServices)
+        )
         await fhem.readingsBeginUpdate(self.hash)
         try:
             if self._attr_read_characteristics == "all":
                 for service in services:
                     for char in service.getCharacteristics():
                         if char.supportsRead():
-                            reading = service.uuid.getCommonName().replace(" ", "") + "_" + char.uuid.getCommonName().replace(" ", "")
+                            reading = (
+                                service.uuid.getCommonName().replace(" ", "")
+                                + "_"
+                                + char.uuid.getCommonName().replace(" ", "")
+                            )
                             if char.uuid.getCommonName() == "Battery Level":
                                 reading = "battery"
                             try:
-                                val = await utils.run_blocking(functools.partial(char.read))
+                                val = await utils.run_blocking(
+                                    functools.partial(char.read)
+                                )
                             except:
                                 val = "failed"
                             try:
                                 if len(val) == 1:
                                     val = ord(val)
                                 else:
-                                    val = val.decode('ascii')
+                                    val = val.decode("ascii")
                             except:
                                 val = val.hex()
                                 pass
-                            await fhem.readingsBulkUpdateIfChanged(self.hash, reading, val)
+                            await fhem.readingsBulkUpdateIfChanged(
+                                self.hash, reading, val
+                            )
             else:
-                service = self._peripheral.getServiceByUUID(AssignedNumbers.batteryService)
+                service = self._peripheral.getServiceByUUID(
+                    AssignedNumbers.batteryService
+                )
                 char = service.getCharacteristics(AssignedNumbers.batteryLevel)
                 batt = ord(char[0].read())
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", batt)
@@ -248,7 +302,7 @@ class ble_presence:
         scanner.get_instance(self.logger).set_scan_duration(self._attr_scan_duration)
 
     async def set_attr_hci_device(self, hash):
-        self._hci_nr = re.search(r'\d+$', self._attr_hci_device)[0]
+        self._hci_nr = re.search(r"\d+$", self._attr_hci_device)[0]
         scanner.get_instance(self.logger).set_hci_device(self._hci_nr)
 
     # FHEM FUNCTION

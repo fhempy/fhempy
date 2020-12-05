@@ -137,7 +137,7 @@ BindingsIo_Notify($)
   my ($hash, $dev) = @_;
   return if($dev->{NAME} ne "global");
 
-  return "" if(IsDisabled($ownName)); # Return without any further action if the module is disabled
+  return "" if(IsDisabled($hash->{NAME})); # Return without any further action if the module is disabled
 
   my $devName = $dev->{NAME}; # Device that created the events
 

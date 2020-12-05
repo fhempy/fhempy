@@ -1,4 +1,3 @@
-
 import asyncio
 import aiohttp
 
@@ -12,8 +11,8 @@ DEPARTURES = {
     "next": {"key": 1, "name": "{} next departure"},
 }
 
-class wienerlinien:
 
+class wienerlinien:
     def __init__(self, logger):
         self.logger = logger
         self.firstnext = "first"
@@ -28,7 +27,7 @@ class wienerlinien:
         self.api = WienerlinienAPI(self._stopid)
         self._updateloop = asyncio.create_task(self.update_loop())
         # delete all readings on define
-        asyncio.create_task(fhem.CommandDeleteReading(hash, hash['NAME'] + " .*"))
+        asyncio.create_task(fhem.CommandDeleteReading(hash, hash["NAME"] + " .*"))
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -38,9 +37,7 @@ class wienerlinien:
 
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
-        set_list_conf = {
-           "update": {}
-        }
+        set_list_conf = {"update": {}}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_update(self, hash):
@@ -67,14 +64,20 @@ class wienerlinien:
         if data is None:
             return
         try:
-            if len(data['monitors']) == 0:
+            if len(data["monitors"]) == 0:
                 flat_data = {}
                 flat_data_location = {}
                 state_text = "no departures"
             else:
-                flat_data = utils.flatten_json(data['monitors'][0]['lines'][0])
-                flat_data_location = utils.flatten_json(data['monitors'][0]['locationStop'])
-                state_text = flat_data['towards'] + ": " + str(flat_data['departures_departure_0_departureTime_countdown'])
+                flat_data = utils.flatten_json(data["monitors"][0]["lines"][0])
+                flat_data_location = utils.flatten_json(
+                    data["monitors"][0]["locationStop"]
+                )
+                state_text = (
+                    flat_data["towards"]
+                    + ": "
+                    + str(flat_data["departures_departure_0_departureTime_countdown"])
+                )
 
             if self._last_data:
                 del_readings = set(self._last_data) - set(flat_data)
@@ -83,26 +86,35 @@ class wienerlinien:
 
             await fhem.readingsBeginUpdate(self.hash)
             for msg in message:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "msg_" + msg, message[msg])
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "msg_" + msg, message[msg]
+                )
             for data_name in flat_data:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "line_" + data_name, flat_data[data_name])
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "line_" + data_name, flat_data[data_name]
+                )
             for data_name in flat_data_location:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "loc_" + data_name, flat_data_location[data_name])
-            
-            if 'trafficjam' in flat_data and flat_data['trafficjam'] == 1:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "loc_" + data_name, flat_data_location[data_name]
+                )
+
+            if "trafficjam" in flat_data and flat_data["trafficjam"] == 1:
                 state_text += " (traffic jam)"
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_text)
             await fhem.readingsEndUpdate(self.hash, 1)
 
             # delete old readings which were not updated
             for del_reading in del_readings:
-                await fhem.CommandDeleteReading(self.hash, self.hash["NAME"] + " line_" + del_reading)
+                await fhem.CommandDeleteReading(
+                    self.hash, self.hash["NAME"] + " line_" + del_reading
+                )
 
             self._last_data = flat_data
-            
+
         except Exception:
             self.logger.exception("Failed...")
             pass
+
 
 class WienerlinienAPI:
     """Call API."""

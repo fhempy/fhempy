@@ -16,6 +16,7 @@ from ..discover_upnp.discover_upnp import ssdp
 
 DEFAULT_LISTEN_PORT = 8301
 
+
 def catch_request_errors():
     """Catch asyncio.TimeoutError, aiohttp.ClientError errors."""
 
@@ -33,6 +34,7 @@ def catch_request_errors():
         return wrapper
 
     return call_wrapper
+
 
 class dlna_dmr:
 
@@ -79,10 +81,7 @@ class dlna_dmr:
         self.device = None
 
     async def async_start_event_handler(
-        self,
-        server_host: str,
-        server_port: int,
-        requester
+        self, server_host: str, server_port: int, requester
     ):
         """Register notify view."""
         if dlna_dmr.event_handler:
@@ -94,8 +93,9 @@ class dlna_dmr:
             listen_host=server_host,
         )
         await self.server.start_server()
-        self.logger.info("UPNP/DLNA event handler listening, url: %s",
-                         self.server.callback_url)
+        self.logger.info(
+            "UPNP/DLNA event handler listening, url: %s", self.server.callback_url
+        )
         dlna_dmr.event_handler = self.server.event_handler
         return dlna_dmr.event_handler
 
@@ -117,7 +117,7 @@ class dlna_dmr:
         if len(args) < 4:
             return "define device PythonModule dlna_dmr <uuid>"
 
-        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
+        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon scene_scene")
 
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
@@ -125,17 +125,19 @@ class dlna_dmr:
         self.hash["UDN"] = udn
         ssdp_filter = {
             "udn": udn,
-            "service_type": "urn:schemas-upnp-org:device:MediaRenderer:1"
+            "service_type": "urn:schemas-upnp-org:device:MediaRenderer:1",
         }
         ssdp.getInstance(self.logger).register_listener(self, ssdp_filter)
         await ssdp.getInstance(self.logger).start_search()
 
     # FHEM Function
     async def Set(self, hash, args, argsh):
-        if (len(args) < 2 or args[1] == "?"):
-            return ("Unknown argument ?, choose one of "
-                    "play volume:slider,0,1,100 mute:on,off,toggle pause:noArg next:noArg previous:noArg "
-                    "off:noArg stop:noArg seek speak")
+        if len(args) < 2 or args[1] == "?":
+            return (
+                "Unknown argument ?, choose one of "
+                "play volume:slider,0,1,100 mute:on,off,toggle pause:noArg next:noArg previous:noArg "
+                "off:noArg stop:noArg seek speak"
+            )
         else:
             cmd = args[1]
             if cmd == "play":
@@ -145,12 +147,16 @@ class dlna_dmr:
                 else:
                     asyncio.create_task(self.device.async_play_media(url))
             elif cmd == "speak":
-                tts_url = "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q=" + "%20".join(args[2:])
+                tts_url = (
+                    "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
+                    + "%20".join(args[2:])
+                )
                 asyncio.create_task(self.device.async_play_media(tts_url))
             elif cmd == "volume":
                 new_vol = int(args[2])
                 asyncio.create_task(
-                    self.device.dlna_dmrdevice.async_set_volume_level(new_vol/100))
+                    self.device.dlna_dmrdevice.async_set_volume_level(new_vol / 100)
+                )
             elif cmd == "mute":
                 onoff = args[2]
                 if onoff == "on":
@@ -195,28 +201,60 @@ class dlna_dmr:
         await fhem.readingsBeginUpdate(self.hash)
         try:
             if self.device.dlna_dmrdevice.volume_level:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "volume", round(self.device.dlna_dmrdevice.volume_level*100))
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "media_position", self.device.dlna_dmrdevice.media_position)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "media_duration", self.device.dlna_dmrdevice.media_duration)
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash,
+                    "volume",
+                    round(self.device.dlna_dmrdevice.volume_level * 100),
+                )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "media_position", self.device.dlna_dmrdevice.media_position
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "media_duration", self.device.dlna_dmrdevice.media_duration
+            )
             # await fhem.readingsBulkUpdateIfChanged(self.hash, "media_image_url", self.device.dlna_dmrdevice.media_image_url)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "media_title", self.device.dlna_dmrdevice.media_title)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "is_volume_muted", self.device.dlna_dmrdevice.is_volume_muted)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", self.device.state)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "media_title", self.device.dlna_dmrdevice.media_title
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "is_volume_muted", self.device.dlna_dmrdevice.is_volume_muted
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "state", self.device.state
+            )
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
 
     async def updateDeviceReadings(self):
         await fhem.readingsBeginUpdate(self.hash)
         try:
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "name", self.upnp_device.name)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "friendly_name", self.upnp_device.friendly_name)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "manufacturer", self.upnp_device.manufacturer)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "model_description", self.upnp_device.model_description)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "model_name", self.upnp_device.model_name)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "model_number", self.upnp_device.model_number)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "udn", self.upnp_device.udn)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "device_url", self.upnp_device.device_url)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "device_type", self.upnp_device.device_type)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "name", self.upnp_device.name
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "friendly_name", self.upnp_device.friendly_name
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "manufacturer", self.upnp_device.manufacturer
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "model_description", self.upnp_device.model_description
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "model_name", self.upnp_device.model_name
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "model_number", self.upnp_device.model_number
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "udn", self.upnp_device.udn
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "device_url", self.upnp_device.device_url
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "device_type", self.upnp_device.device_type
+            )
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
 
@@ -266,8 +304,7 @@ class DlnaDmrDevice:
         if should_renew or not was_available and self._available:
             try:
                 timeout = await self._device.async_subscribe_services()
-                self.logger.debug(
-                    "Subscription done, resubscribe in: " + str(timeout))
+                self.logger.debug("Subscription done, resubscribe in: " + str(timeout))
                 self._subscription_renew_time = dt.datetime.now() + timeout / 2
             except (asyncio.TimeoutError, aiohttp.ClientError):
                 self._available = False

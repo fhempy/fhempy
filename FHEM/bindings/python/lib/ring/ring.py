@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import time
@@ -9,8 +8,8 @@ from oauthlib.oauth2 import MissingTokenError
 from .. import fhem
 from .. import utils
 
-class ring:
 
+class ring:
     def __init__(self, logger):
         self.logger = logger
         self.loop = asyncio.get_event_loop()
@@ -26,21 +25,25 @@ class ring:
         self._livestreamjson = ""
         self._snapshot = None
         self._attr_list = {
-            "deviceUpdateInterval": { "default": 300, "format": "int" },
-            "dingPollInterval": { "default": 2, "format": "int" }
+            "deviceUpdateInterval": {"default": 300, "format": "int"},
+            "dingPollInterval": {"default": 2, "format": "int"},
         }
         return
 
     async def token_updated(self, token):
         self._token = token
-        encrypted_token = utils.encrypt_string(json.dumps(token), self._reading_encryption_key)
-        await fhem.readingsSingleUpdate(self.hash, "token", encrypted_token, 1)        
+        encrypted_token = utils.encrypt_string(
+            json.dumps(token), self._reading_encryption_key
+        )
+        await fhem.readingsSingleUpdate(self.hash, "token", encrypted_token, 1)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
         if len(args) < 5:
-            return "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME>"
+            return (
+                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME>"
+            )
         self._username = args[3]
         self._rdevname = args[4]
         self._reading_encryption_key = await fhem.getUniqueId(hash)
@@ -58,14 +61,18 @@ class ring:
 
     async def ring_login(self):
         if self._token == "":
-            token_reading = await fhem.ReadingsVal(self.hash['NAME'], "token", "")
+            token_reading = await fhem.ReadingsVal(self.hash["NAME"], "token", "")
             if token_reading != "":
-                token_reading = utils.decrypt_string(token_reading, self._reading_encryption_key)
+                token_reading = utils.decrypt_string(
+                    token_reading, self._reading_encryption_key
+                )
                 self._token = json.loads(token_reading)
         if self._password == "":
-            self._password = await fhem.ReadingsVal(self.hash['NAME'], "password", "")
+            self._password = await fhem.ReadingsVal(self.hash["NAME"], "password", "")
             if self._password != "":
-                self._password = utils.decrypt_string(self._password, self._reading_encryption_key)
+                self._password = utils.decrypt_string(
+                    self._password, self._reading_encryption_key
+                )
         try:
             ret = await utils.run_blocking(functools.partial(self.blocking_login))
             if ret:
@@ -88,7 +95,9 @@ class ring:
                         self._rdevice = dev
 
             if self._rdevice is None:
-                await fhem.readingsSingleUpdate(self.hash, "state", "device not found", 1)
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "device not found", 1
+                )
                 return
 
             await self.update_readings()
@@ -125,7 +134,9 @@ class ring:
                         await self.update_alert_readings(alert)
                 elif alert_active == 1:
                     alert_active = 0
-                    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "connected", 1
+                    )
                     await utils.run_blocking(functools.partial(self.poll_device))
                     await self.update_readings()
             except:
@@ -144,27 +155,53 @@ class ring:
 
     async def update_history_readings(self, event, idx):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_id", event["id"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_kind", event["kind"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_answered", event["answered"])
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "history_" + str(idx) + "_created_at", event["created_at"])
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "history_" + str(idx) + "_id", event["id"]
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "history_" + str(idx) + "_kind", event["kind"]
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "history_" + str(idx) + "_answered", event["answered"]
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "history_" + str(idx) + "_created_at", event["created_at"]
+        )
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "address", self._rdevice.address)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "family", self._rdevice.family)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "address", self._rdevice.address
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "family", self._rdevice.family
+        )
         await fhem.readingsBulkUpdateIfChanged(self.hash, "id", self._rdevice.device_id)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "model", self._rdevice.model)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware", self._rdevice.firmware)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "latitude", self._rdevice.latitude)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "longitude", self._rdevice.longitude)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "firmware", self._rdevice.firmware
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "latitude", self._rdevice.latitude
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "longitude", self._rdevice.longitude
+        )
         await fhem.readingsBulkUpdateIfChanged(self.hash, "kind", self._rdevice.kind)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "name", self._rdevice.name)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "timezone", self._rdevice.timezone)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_name", self._rdevice.wifi_name)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_signal_strength", self._rdevice.wifi_signal_strength)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "wifi_signal_category", self._rdevice.wifi_signal_category)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "timezone", self._rdevice.timezone
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "wifi_name", self._rdevice.wifi_name
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "wifi_signal_strength", self._rdevice.wifi_signal_strength
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "wifi_signal_category", self._rdevice.wifi_signal_category
+        )
         await self.update_if_available("battery_life")
         await self.update_if_available("existing_doorbell_type")
         await self.update_if_available("existing_doorbell_type_enabled")
@@ -174,11 +211,18 @@ class ring:
         await self.update_if_available("has_subscription")
         await self.update_if_available("volume")
         await self.update_if_available("connection_status")
-        if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
+        if (
+            self._rdevice.family == "doorbots"
+            or self._rdevice.family == "authorized_doorbots"
+        ):
             await self.update_if_available("last_recording_id")
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "last_recording_url", self._lastrecording_url)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "last_recording_url", self._lastrecording_url
+            )
             if self._livestreamjson != "":
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "livestream_json", json.dumps(self._livestreamjson))
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "livestream_json", json.dumps(self._livestreamjson)
+                )
             # if self._snapshot:
             #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
             #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
@@ -186,7 +230,9 @@ class ring:
 
     async def update_if_available(self, reading):
         if hasattr(self._rdevice, reading):
-            await fhem.readingsBulkUpdateIfChanged(self.hash, reading, getattr(self._rdevice, reading))
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, reading, getattr(self._rdevice, reading)
+            )
 
     def poll_dings(self):
         self._ring.update_dings()
@@ -194,19 +240,26 @@ class ring:
     def poll_device(self):
         self._rdevice.update_health_data()
         self._history = []
-        if self._rdevice.family == "doorbots" or self._rdevice.family == "authorized_doorbots":
+        if (
+            self._rdevice.family == "doorbots"
+            or self._rdevice.family == "authorized_doorbots"
+        ):
             # disable it, as it creates a lot of history entries
-            #self._livestreamjson = self._rdevice.live_streaming_json
+            # self._livestreamjson = self._rdevice.live_streaming_json
             for event in self._rdevice.history(limit=5):
                 self._history.append(event)
-            self._lastrecording_url = self._rdevice.recording_url(self._rdevice.last_recording_id)
+            self._lastrecording_url = self._rdevice.recording_url(
+                self._rdevice.last_recording_id
+            )
             if self._lastrecording_url is False:
                 self.blocking_login()
-            #self._snapshot = self._rdevice.get_snapshot()
+            # self._snapshot = self._rdevice.get_snapshot()
 
     def blocking_login(self):
         def token_updater(token):
-            asyncio.run_coroutine_threadsafe(self.token_updated(token), self.loop).result()
+            asyncio.run_coroutine_threadsafe(
+                self.token_updated(token), self.loop
+            ).result()
 
         if self._token != "":
             self._auth = Auth("MyProject/1.0", self._token, token_updater)
@@ -214,7 +267,9 @@ class ring:
             if self._password != "":
                 self._auth = Auth("MyProject/1.0", None, token_updater)
                 if self._2facode:
-                    self._auth.fetch_token(self._username, self._password, self._2facode)
+                    self._auth.fetch_token(
+                        self._username, self._password, self._2facode
+                    )
                 else:
                     try:
                         self._auth.fetch_token(self._username, self._password)
@@ -231,32 +286,42 @@ class ring:
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
         set_list_conf = {
-           "password": { "args": ["password"] },
-           "2fa_code": { "args": ["2facode"] }
+            "password": {"args": ["password"]},
+            "2fa_code": {"args": ["2facode"]},
         }
         if self._rdevice is not None and self._rdevice.has_capability("volume"):
-            set_list_conf['volume'] = { "args": ["volume"], "params": { "volume": {"format": "int"}}, "options": "slider,0,1,10"}
+            set_list_conf["volume"] = {
+                "args": ["volume"],
+                "params": {"volume": {"format": "int"}},
+                "options": "slider,0,1,10",
+            }
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_volume(self, hash, params):
-        new_vol = params['volume']
+        new_vol = params["volume"]
         asyncio.create_task(self.set_volume_task(new_vol))
-    
+
     async def set_volume_task(self, new_volume):
-        await utils.run_blocking(functools.partial(self.set_volume_blocking, new_volume))
+        await utils.run_blocking(
+            functools.partial(self.set_volume_blocking, new_volume)
+        )
         await self.update_readings()
 
     def set_volume_blocking(self, new_volume):
         self._rdevice.volume = new_volume
 
     async def set_password(self, hash, params):
-        self._password = params['password']
-        encrypted_password = utils.encrypt_string(self._password, self._reading_encryption_key)
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "password", encrypted_password, 1)
+        self._password = params["password"]
+        encrypted_password = utils.encrypt_string(
+            self._password, self._reading_encryption_key
+        )
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "password", encrypted_password, 1
+        )
         asyncio.create_task(self.ring_login())
 
     async def set_2fa_code(self, hash, params):
-        self._2facode = params['2facode']
+        self._2facode = params["2facode"]
         asyncio.create_task(self.ring_login())
 
     async def Attr(self, hash, args, argsh):

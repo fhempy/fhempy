@@ -1,4 +1,3 @@
-
 import asyncio
 import site
 import subprocess
@@ -6,19 +5,13 @@ import socket
 
 from .. import fhem, utils
 
-class esphome:
 
+class esphome:
     def __init__(self, logger):
         self.logger = logger
         self.proc = None
-        self._set_list = {
-            "start": {},
-            "stop": {},
-            "restart": {}
-        }
-        self._attr_list = {
-            "disable": { "default": "0", "options": "0,1"}
-        }
+        self._set_list = {"start": {}, "stop": {}, "restart": {}}
+        self._attr_list = {"disable": {"default": "0", "options": "0,1"}}
         return
 
     # FHEM FUNCTION
@@ -39,7 +32,11 @@ class esphome:
         return ""
 
     async def start_process(self):
-        self._esphomeargs = [site.getuserbase() + "/bin/esphome", "esphome_config/", "dashboard"]
+        self._esphomeargs = [
+            site.getuserbase() + "/bin/esphome",
+            "esphome_config/",
+            "dashboard",
+        ]
 
         try:
             self.proc = subprocess.Popen(self._esphomeargs)
@@ -61,8 +58,13 @@ class esphome:
     async def create_weblink(self):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
-        await fhem.CommandDefine(self.hash, "esphome_dashboard weblink iframe http://" + local_ip + ":6052/")
-        await fhem.CommandAttr(self.hash, "esphome_dashboard htmlattr width='900' height='700' frameborder='0' marginheight='0' marginwidth='0'")
+        await fhem.CommandDefine(
+            self.hash, "esphome_dashboard weblink iframe http://" + local_ip + ":6052/"
+        )
+        await fhem.CommandAttr(
+            self.hash,
+            "esphome_dashboard htmlattr width='900' height='700' frameborder='0' marginheight='0' marginwidth='0'",
+        )
         await fhem.CommandAttr(self.hash, "esphome_dashboard room ESPHome")
 
     # FHEM FUNCTION

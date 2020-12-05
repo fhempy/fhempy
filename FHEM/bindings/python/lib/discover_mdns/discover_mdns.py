@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import traceback
@@ -8,8 +7,8 @@ import threading
 
 from .. import fhem
 
-class discover_mdns:
 
+class discover_mdns:
     def __init__(self, logger):
         self.logger = logger
         self.loop = asyncio.get_event_loop()
@@ -20,7 +19,7 @@ class discover_mdns:
     # zeroconf callback
     def update_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s updated, service info %s" % (name,info))
+        self.logger.debug("Service %s updated, service info %s" % (name, info))
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -35,6 +34,7 @@ class discover_mdns:
 
     async def foundDevice(self, name, info):
         try:
+
             def get_value(key):
                 """Retrieve value and decode to UTF-8."""
                 value = info.properties.get(key.encode("utf-8"))
@@ -43,15 +43,37 @@ class discover_mdns:
                     return value
                 return value.decode("utf-8")
 
-            if (info.type == "_googlecast._tcp.local."):
+            if info.type == "_googlecast._tcp.local.":
                 # check if device exists already, if not commanddefine
-                if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "googlecast", "CASTNAME", get_value('fn'))):
-                    self.logger.debug("create device: " + get_value('fn'))
-                    await fhem.CommandDefine(self.hash, get_value('md').replace(" ", "_") + "_" + get_value('fn').replace(" ", "_") +  " PythonModule googlecast '" + get_value('fn') + "'")
+                if not (
+                    await fhem.checkIfDeviceExists(
+                        self.hash,
+                        "PYTHONTYPE",
+                        "googlecast",
+                        "CASTNAME",
+                        get_value("fn"),
+                    )
+                ):
+                    self.logger.debug("create device: " + get_value("fn"))
+                    await fhem.CommandDefine(
+                        self.hash,
+                        get_value("md").replace(" ", "_")
+                        + "_"
+                        + get_value("fn").replace(" ", "_")
+                        + " PythonModule googlecast '"
+                        + get_value("fn")
+                        + "'",
+                    )
                 else:
-                    self.logger.debug("device " + get_value('fn') + " exists already, do not create")
-            elif (info.type == "_soundtouch._tcp.local."):
-                if not (await fhem.checkIfDeviceExists(self.hash, "TYPE", "BOSEST", "DEVICEID", "0")):
+                    self.logger.debug(
+                        "device " + get_value("fn") + " exists already, do not create"
+                    )
+            elif info.type == "_soundtouch._tcp.local.":
+                if not (
+                    await fhem.checkIfDeviceExists(
+                        self.hash, "TYPE", "BOSEST", "DEVICEID", "0"
+                    )
+                ):
                     self.logger.debug("create bosest")
                     await fhem.CommandDefine(self.hash, "bosesystem BOSEST")
                 else:
@@ -63,7 +85,7 @@ class discover_mdns:
             await asyncio.sleep(10)
         except Exception as err:
             self.logger.error(traceback.print_exc())
-    
+
     async def runZeroconfScan(self):
         # await here to finish define before zeroconf object is created
         await asyncio.sleep(1)
@@ -77,8 +99,8 @@ class discover_mdns:
         self.hash = hash
         await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
         self.loop.create_task(self.runZeroconfScan())
-        
-        if await fhem.AttrVal(self.hash['NAME'], "icon", "") == "":
+
+        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon rc_SEARCH")
 
         return ""
