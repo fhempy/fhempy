@@ -300,11 +300,14 @@ BindingsIo_Set($$$)
   my $cmd = @$a[1];
   my $list = "update:noArg";
 
-  if ($hash->{localBinding} == 0 && $cmd eq 'update') {
-    return BindingsIo_Write($hash, $hash, "update", [], {});
+  if ($hash->{localBinding} == 0) {
+    if ($cmd eq 'update') {
+      return BindingsIo_Write($hash, $hash, "update", [], {});
+    }
+    return "Unknown argument $cmd, choose one of $list";
   }
 
-  return "Unknown argument $cmd, choose one of $list";
+  return undef;
 }
 
 sub
