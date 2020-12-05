@@ -137,9 +137,21 @@ BindingsIo_Notify($)
   my ($hash, $dev) = @_;
   return if($dev->{NAME} ne "global");
 
-  if( grep(m/^INITIALIZED$/, @{$dev->{CHANGED}}) ) {
-    InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
-    return undef;
+  return "" if(IsDisabled($ownName)); # Return without any further action if the module is disabled
+
+  my $devName = $dev->{NAME}; # Device that created the events
+
+  my $events = deviceEvents($dev,1);
+  return if( !$events );
+
+  foreach my $event (@{$events}) {
+    $event = "" if(!defined($event));
+
+    if ($event eq "INITIALIZED") {
+      InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
+    } elsif ($event eq "UPDATE") {
+      BindingsIo_Write($hash, $hash, "update", [], {});
+    }
   }
 
   return undef;
