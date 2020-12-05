@@ -1,3 +1,5 @@
+[![Download](https://img.shields.io/pypi/dw/fhempy)](https://img.shields.io/pypi/dw/fhempy)
+
 # fhempy (FHEM Python Binding, BETA)
 
 FHEM Python binding allows the usage of Python 3 (NOT 2!) language to write FHEM modules
