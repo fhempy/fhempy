@@ -1,4 +1,5 @@
 import asyncio
+import socket
 import websockets
 import json
 import traceback
@@ -11,6 +12,7 @@ import importlib
 import time
 from . import fhem
 from . import pkg_installer
+from .core.zeroconf import zeroconf
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,10 @@ def getFhemPyDeviceByName(name):
 
 
 async def pybinding(websocket, path):
+    if len(sys.argv) == 1:
+        # FHEM discovered us, stop zeroconf
+        zeroconf.get_instance(logger).stop()
+
     global connection_start
     connection_start = time.time()
     logger.info("FHEM connection started: " + websocket.remote_address[0])
@@ -359,6 +365,22 @@ class PyBinding:
 
 def run():
     logger.info("Starting pythonbinding...")
+
+    asyncio.get_event_loop().run_until_complete(
+        pkg_installer.check_and_install_dependencies("core")
+    )
+
+    if len(sys.argv) == 1:
+        # running on remote peer, start zeroconf for autodiscovery
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        zc = zeroconf.get_instance(logger)
+        asyncio.get_event_loop().run_until_complete(
+            zc.create_service(
+                "_http", "_fhempy", 15733, {"port": 15733, "ip": local_ip}
+            )
+        )
+
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(
             pybinding, "0.0.0.0", 15733, ping_timeout=None, ping_interval=None

@@ -49,7 +49,7 @@ sub PythonBinding_detailFn($$$$)
 sub PythonBinding_getCmd($)
 {
   my ($hash) = @_;
-  return "FHEM/bindings/python/fhempy";
+  return "FHEM/bindings/python/fhempy --local";
 }
 
 sub PythonBinding_Define($$$)
@@ -64,7 +64,7 @@ sub PythonBinding_Define($$$)
                           cmdFn => 'PythonBinding_getCmd',
                        };
 
-  chmod(0744, PythonBinding_getCmd($hash));
+  chmod(0744, "FHEM/bindings/python/fhempy");
 
   readingsSingleUpdate($hash, "state", "active", 1);
   if ($init_done) {

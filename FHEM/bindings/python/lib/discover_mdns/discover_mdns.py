@@ -78,6 +78,18 @@ class discover_mdns:
                     await fhem.CommandDefine(self.hash, "bosesystem BOSEST")
                 else:
                     self.logger.debug("device BOSEST exists already, do not create")
+            elif info.type == "_fhempy._http._tcp.local.":
+                if not (
+                    await fhem.fhem.checkIfDeviceExists(
+                        self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
+                    )
+                ):
+                    ip = get_value("ip")
+                    port = get_value("port")
+                    ipstr = ip.replace(".", "_")
+                    await fhem.CommandDefine(
+                        self.hash, f"remote_{ipstr} BindingsIo {ip}:{port}"
+                    )
             else:
                 return
 
@@ -91,7 +103,11 @@ class discover_mdns:
         await asyncio.sleep(1)
         self.zeroconf = Zeroconf()
         listener = self
-        services = ["_googlecast._tcp.local.", "_soundtouch._tcp.local."]
+        services = [
+            "_googlecast._tcp.local.",
+            "_soundtouch._tcp.local.",
+            "_fhempy._http._tcp.local.",
+        ]
         self.browser = ServiceBrowser(self.zeroconf, services, listener)
 
     # FHEM

@@ -64,9 +64,13 @@ BindingsIo_Define($$$)
   my $localServer = 1;
   if ($bindingType eq "Python") {
     $hash->{DeviceName} = "ws:127.0.0.1:15733";
+    $hash->{IP} = "127.0.0.1";
+    $hash->{PORT} = "15733";
     $hash->{localBinding} = 1;
   } else {
     $hash->{DeviceName} = "ws:".@$a[2];
+    $hash->{IP} = substr($hash->{DeviceName}, 0, index($hash->{DeviceName}, ":"));
+    $hash->{PORT} = substr($hash->{DeviceName}, index($hash->{DeviceName}, ":")+1);
     $bindingType = ucfirst(@$a[3]);
     $localServer = 0;
     $hash->{localBinding} = 0;
@@ -79,10 +83,10 @@ BindingsIo_Define($$$)
   if ($init_done && $localServer == 1) {
     my $foundServer = 0;
     foreach my $fhem_dev (sort keys %main::defs) {
-      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
+      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Binding");
     }
     if ($foundServer == 0) {
-      CommandDefine(undef, $bindingType."binding_".$port." ".$bindingType."Binding ".$port);
+      CommandDefine(undef, $bindingType."binding_".$hash->{PORT}." ".$bindingType."Binding ".$port);
       InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
     }
   }
