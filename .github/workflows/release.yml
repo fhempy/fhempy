@@ -39,6 +39,7 @@ jobs:
           author_name: Dominik
           author_email: dominik.karall@gmail.com
           message: "action: auto update controls"
+          branch: master
           push: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
