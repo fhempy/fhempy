@@ -20,7 +20,7 @@ class zeroconf:
         info = ServiceInfo(
             type + "._tcp.local.",
             name + "." + type + "._tcp.local.",
-            port,
+            port=port,
             properties=properties,
         )
         self.zeroconf.register_service(info)
