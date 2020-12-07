@@ -87,11 +87,10 @@ class miio(FhemModule):
                     self.fct_update_loop(fct, sec)
                 )
 
-    async def fct_update_loop(self, fct, sec):
-        fct_cmd = getattr(self._device, fct)
+    async def fct_update_loop(self, fct_name, sec):
         while True:
             try:
-                await self.send_command(fct_cmd, None)
+                await self.send_command(fct_name, None)
             except:
                 pass
             await asyncio.sleep(sec)
@@ -106,8 +105,7 @@ class miio(FhemModule):
 
     async def set_command(self, hash, params):
         cmd = params["cmd"]
-        fct_cmd = getattr(self._device, cmd)
-        asyncio.create_task(self.send_command(fct_cmd, params))
+        asyncio.create_task(self.send_command(cmd, params))
 
     def is_number(self, string):
         try:
@@ -116,7 +114,8 @@ class miio(FhemModule):
         except ValueError:
             return False
 
-    async def send_command(self, fct, params):
+    async def send_command(self, fct_name, params):
+        fct = getattr(self._device, fct_name)
         sig = inspect.signature(fct)
         args = []
         for par_name in sig.parameters:
@@ -161,8 +160,9 @@ class miio(FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
         else:
-            if reply.lower() != "['ok']":
+            if reply is not None and reply.lower() != "['ok']":
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, fct.__name__, reply, 1
                 )
-        await self.set_command(self.hash, {"cmd": "status"})
+        if fct_name != "status":
+            await self.send_command("status", None)

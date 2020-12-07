@@ -51,8 +51,7 @@ class googlecast:
         self.hash = hash
 
         # set userattr as long as Define can't be called on startup
-        # await fhem.setDevAttrList(hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5")
-        await fhem.addToDevAttrList(
+        await fhem.setDevAttrList(
             hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5"
         )
 
