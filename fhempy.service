@@ -16,7 +16,7 @@ After=network.target
 User=pi
 Group=dialout
 WorkingDirectory=/home/pi/
-ExecStart=/usr/local/bin/fhempy
+ExecStart=/home/pi/.local/bin/fhempy
 Restart=always
 
 [Install]
