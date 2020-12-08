@@ -25,7 +25,7 @@ class nespresso_ble(FhemModule):
                     "temperature": {"default": "high", "optional": True},
                     "coffee_type": {"default": "lungo", "optional": True},
                 },
-                "help": "1. parameter: ristretto, espresso, lung, hotwater, americano<br>2. parameter: Temperature with values low, mid, high",
+                "help": "1. parameter: ristretto, espresso, lungo, hotwater, americano<br>2. parameter: Temperature with values low, mid, high",
             },
             "easybrew": {
                 "args": ["coffee_type"],
