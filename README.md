@@ -62,7 +62,7 @@ FHEM Pythonbinding allows to run modules locally (same device as FHEM runs on) o
 ### Installation
 The following steps are only needed if you want to install FHEM Pythonbinding on a remote peer, you should not run them on your FHEM installation.
 
-- Install fhempy with user pi: `pip3 install fhempy`
+- Install fhempy with user pi: `pip3 install --upgrade fhempy`
 - Systemd configuration for autostart
   - `curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
   - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
