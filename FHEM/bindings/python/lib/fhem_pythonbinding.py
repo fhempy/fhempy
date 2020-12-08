@@ -376,9 +376,7 @@ def run():
         local_ip = socket.gethostbyname(hostname)
         zc = zeroconf.get_instance(logger)
         asyncio.get_event_loop().run_until_complete(
-            zc.create_service(
-                "_http", "_fhempy", 15733, {"port": 15733, "ip": local_ip}
-            )
+            zc.create_service("_http", "fhempy", 15733, {"port": 15733, "ip": local_ip})
         )
 
     asyncio.get_event_loop().run_until_complete(

@@ -1,4 +1,5 @@
 import asyncio
+import socket
 from zeroconf import Zeroconf, ServiceInfo
 
 
@@ -17,11 +18,15 @@ class zeroconf:
         self.zeroconf = Zeroconf()
 
     async def create_service(self, type, name, port, properties):
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
         info = ServiceInfo(
             type + "._tcp.local.",
             name + "." + type + "._tcp.local.",
+            addresses=[socket.inet_aton(local_ip)],
             port=port,
             properties=properties,
+            server=hostname + ".local.",
         )
         self.zeroconf.register_service(info)
 

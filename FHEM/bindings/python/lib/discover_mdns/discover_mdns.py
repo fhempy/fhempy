@@ -19,7 +19,9 @@ class discover_mdns:
     # zeroconf callback
     def update_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s updated, service info %s" % (name, info))
+        self.logger.debug("Service %s updated, service info: %s" % (name, info))
+        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
+        res.result()
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -33,6 +35,8 @@ class discover_mdns:
         res.result()
 
     async def foundDevice(self, name, info):
+        if info is None:
+            return
         try:
 
             def get_value(key):
@@ -78,9 +82,12 @@ class discover_mdns:
                     await fhem.CommandDefine(self.hash, "bosesystem BOSEST")
                 else:
                     self.logger.debug("device BOSEST exists already, do not create")
-            elif info.type == "_fhempy._http._tcp.local.":
+            elif (
+                info.type == "_http._tcp.local."
+                and info.name == "fhempy._http._tcp.local."
+            ):
                 if not (
-                    await fhem.fhem.checkIfDeviceExists(
+                    await fhem.checkIfDeviceExists(
                         self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
                     )
                 ):
@@ -88,7 +95,7 @@ class discover_mdns:
                     port = get_value("port")
                     ipstr = ip.replace(".", "_")
                     await fhem.CommandDefine(
-                        self.hash, f"remote_{ipstr} BindingsIo {ip}:{port}"
+                        self.hash, f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python"
                     )
             else:
                 return
@@ -106,7 +113,7 @@ class discover_mdns:
         services = [
             "_googlecast._tcp.local.",
             "_soundtouch._tcp.local.",
-            "_fhempy._http._tcp.local.",
+            "_http._tcp.local.",
         ]
         self.browser = ServiceBrowser(self.zeroconf, services, listener)
 
