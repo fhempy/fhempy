@@ -165,4 +165,7 @@ class miio(FhemModule):
                     self.hash, fct.__name__, reply, 1
                 )
         if fct_name != "status":
+            # wait before status request as it takes some time for the miio device
+            # to change the state
+            await asyncio.sleep(2)
             await self.send_command("status", None)
