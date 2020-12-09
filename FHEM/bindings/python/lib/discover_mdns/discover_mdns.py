@@ -6,6 +6,7 @@ from zeroconf import ServiceBrowser, Zeroconf
 import threading
 
 from .. import fhem
+from ..core.zeroconf import zeroconf
 
 
 class discover_mdns:
@@ -108,7 +109,7 @@ class discover_mdns:
     async def runZeroconfScan(self):
         # await here to finish define before zeroconf object is created
         await asyncio.sleep(1)
-        self.zeroconf = Zeroconf()
+        self.zeroconf = zeroconf.get_instance(self.logger).get_zeroconf()
         listener = self
         services = [
             "_googlecast._tcp.local.",
@@ -136,4 +137,3 @@ class discover_mdns:
     async def Undefine(self, hash):
         if self.browser:
             self.browser.cancel()
-        self.zeroconf.close()
