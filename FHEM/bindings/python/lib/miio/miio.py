@@ -160,7 +160,11 @@ class miio(FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
         else:
-            if reply is not None and reply.lower() != "['ok']":
+            if (
+                reply is not None
+                and isinstance(reply, str)
+                and reply.lower() != "['ok']"
+            ):
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, fct.__name__, reply, 1
                 )
