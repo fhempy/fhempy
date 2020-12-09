@@ -1,6 +1,6 @@
 import asyncio
 import socket
-from zeroconf import Zeroconf, ServiceInfo
+from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser
 
 
 class zeroconf:
@@ -17,7 +17,7 @@ class zeroconf:
         self.loop = asyncio.get_event_loop()
         self.zeroconf = Zeroconf()
 
-    async def create_service(self, type, name, port, properties):
+    async def register_service(self, type, name, port, properties):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         info = ServiceInfo(
@@ -29,6 +29,10 @@ class zeroconf:
             server=hostname + ".local.",
         )
         self.zeroconf.register_service(info)
+        return info
+
+    async def unregister_service(self, info):
+        self.zeroconf.unregister_service(info)
 
     def get_zeroconf(self):
         return self.zeroconf

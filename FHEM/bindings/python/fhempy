@@ -125,6 +125,12 @@ except:
     if install_package("cryptography", **kwargs) == False:
         sys.exit(1)
 
+try:
+    import zeroconf
+except:
+    if install_package("zeroconf>=0.28.6", **kwargs) == False:
+        sys.exit(1)
+
 import lib.fhem_pythonbinding as fpb
 
 fpb.run()

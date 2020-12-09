@@ -20,11 +20,16 @@ logger = logging.getLogger(__name__)
 loadedModuleInstances = {}
 moduleLoadingRunning = {}
 wsconnection = None
+zc_info = None
 
 pip_lock = asyncio.Lock()
 
 connection_start = 0
 fct_timeout = 60
+
+# internal modules
+active_internal_modules = []
+conf = {"internal_modules": ["discover_fhempy"]}
 
 
 def getFhemPyDeviceByName(name):
@@ -33,14 +38,26 @@ def getFhemPyDeviceByName(name):
     return None
 
 
+async def activate_internal_modules():
+    for im in conf["internal_modules"]:
+        await pkg_installer.check_and_install_dependencies("core/" + im)
+        module_object = importlib.import_module("lib.core." + im + "." + im)
+        # create instance of class with logger
+        module_class = getattr(module_object, im)
+        instance = module_class()
+        await instance.activate()
+        active_internal_modules.append(instance)
+
+
 async def pybinding(websocket, path):
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 1 and zc_info is not None:
         # FHEM discovered us, stop zeroconf
-        zeroconf.get_instance(logger).stop()
+        zeroconf.get_instance(logger).unregister_service(zc_info)
 
     global connection_start
     connection_start = time.time()
     logger.info("FHEM connection started: " + websocket.remote_address[0])
+    await activate_internal_modules()
     pb = PyBinding(websocket)
     fhem.updateConnection(pb)
     await fhem.send_version()
@@ -375,8 +392,10 @@ def run():
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         zc = zeroconf.get_instance(logger)
-        asyncio.get_event_loop().run_until_complete(
-            zc.create_service("_http", "fhempy", 15733, {"port": 15733, "ip": local_ip})
+        zc_info = asyncio.get_event_loop().run_until_complete(
+            zc.register_service(
+                "_http", "fhempy", 15733, {"port": 15733, "ip": local_ip}
+            )
         )
 
     asyncio.get_event_loop().run_until_complete(
