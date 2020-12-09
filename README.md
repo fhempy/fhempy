@@ -57,19 +57,31 @@ This are just a few examples for some modules, please see the modules readme lin
  - `define upnp PythonModule discover_upnp`
 
 ## Run Python modules on remote Python peers (e.g. extend Bluetooth range)
-FHEM Pythonbinding allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
+fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
 
-### Installation
-The following steps are only needed if you want to install FHEM Pythonbinding on a remote peer, you should not run them on your FHEM installation.
+
+### Installation (short)
+Only on remote peers, do not run this commands on the your FHEM instance.
+
+```
+pip3 install --upgrade fhempy
+# systemd service installation
+curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
+```
+
+### Installation (long)
+The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
 
 - Install fhempy with user pi: `pip3 install --upgrade fhempy`
+- Make sure your main fhempy instance (within FHEM) is running
+- Test fhempy by just running it with user pi, type `fhempy` and enter. Wait a few seconds until it gets discovered and you see the incoming FHEM connection.
 - Systemd configuration for autostart
   - `curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
   - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
 - FHEM configuration
-  - `define remote_pybinding BindingsIo IP:15733 Python`
-  - `define eq3device PythonModule eq3bt MAC`
-  - `attr eq3device IODev remote_pybinding`
+  - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_remote_192_168_1_50
+  - You can move any device to the remote peer by changing the IODev of the device.
+  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_remote_IP BindingsIo IP:15733 Python`
 
 ### Log file
 `journalctl -u fhempy.service -f`
