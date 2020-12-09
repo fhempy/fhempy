@@ -9,26 +9,26 @@ fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules
 This repository includes following working modules:
 Module | Description
 -------|--------------
-[ble_presence](FHEM/bindings/python/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy
-[ble_reset](FHEM/bindings/python/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours
-[bt_presence](FHEM/bindings/python/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth
+[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy
+[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours
+[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth
 discover_mdns|Discover mDNS (e.g. googlecast) devices
 discover_ble|Discover Bluetooth LE devices
 discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
-[eq3bt](FHEM/bindings/python/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
-[esphome](FHEM/bindings/python/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
-[googlecast](FHEM/bindings/python/lib/googlecast/README.md)|Control Cast devices
+[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
+[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
+[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices
 helloworld|Hello World example
-[miflora](FHEM/bindings/python/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
-[miio](FHEM/bindings/python/lib/miio/README.md)|Control Xiaomi WiFi devices
-[mitemp](FHEM/bindings/python/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor
-[nespresso_ble](FHEM/bindings/python/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
-[object_detection](FHEM/bindings/python/lib/object_detection/README.md)|TensorFlow Lite object detection
-[ring](FHEM/bindings/python/lib/ring/README.md)|Ring doorbell/chime/cam
-[wienerlinien](FHEM/bindings/python/lib/wienerlinien/README.md)|Wiener Linien departure times
+[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
+[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices
+[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor
+[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine
+[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection
+[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam
+[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times
 xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
-[xiaomi_tokens](FHEM/bindings/python/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud
+[xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud
 
 ## Installation
 Python >=3.7 is required, Python 2 won't work!

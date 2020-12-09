@@ -64,7 +64,7 @@ define cam PythonModule miio <TYPE> <IP> <TOKEN>
     - yeelight
 
  - Token can be easily extracted via xiaomi_tokens module:
-https://github.com/dominikkarall/fhempy/blob/master/FHEM/bindings/python/lib/xiaomi_tokens/README.md
+https://github.com/dominikkarall/fhempy/blob/master/FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md
 
 ## Set commands
 All set commands are supported.
