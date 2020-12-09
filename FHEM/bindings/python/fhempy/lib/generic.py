@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from . import utils
+from fhempy.lib import utils
 
 
 class FhemModule:

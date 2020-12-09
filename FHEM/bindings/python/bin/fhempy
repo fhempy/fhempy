@@ -131,6 +131,13 @@ except:
     if install_package("zeroconf>=0.28.6", **kwargs) == False:
         sys.exit(1)
 
-import lib.fhem_pythonbinding as fpb
+try:
+    # remote peer
+    import fhempy.lib.fhem_pythonbinding as fpb
+except:
+    # local FHEM installation
+    sys.path.insert(0, os.getcwd() + "/FHEM/bindings/python")
+    import fhempy.lib.fhem_pythonbinding as fpb
+
 
 fpb.run()

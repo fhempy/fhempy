@@ -5,8 +5,8 @@ import concurrent.futures
 from zeroconf import ServiceBrowser, Zeroconf
 import threading
 
-from ... import fhem
-from ..zeroconf import zeroconf
+from fhempy.lib import fhem
+from fhempy.lib.core.zeroconf import zeroconf
 
 
 class discover_fhempy:
@@ -48,10 +48,7 @@ class discover_fhempy:
                     return value
                 return value.decode("utf-8")
 
-            if (
-                info.type == "_http._tcp.local."
-                and info.name == "fhempy._http._tcp.local."
-            ):
+            if info.type == "_http._tcp.local." and info.name[0:6] == "fhempy":
                 if not (
                     await fhem.checkIfDeviceExists(
                         self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
