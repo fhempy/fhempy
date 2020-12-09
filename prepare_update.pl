@@ -27,7 +27,7 @@ foreach(@dirs) {
 
 sub find_files {
   my $F = $File::Find::name;
-  if ($F =~ /pm$\|tflite$\|labelmap.txt$\|json$\|py$/ ) {
+  if ($F =~ /pm$\|tflite$\|labelmap.txt$\|json$\|\.py|bin\/fhempy$/ ) {
     my $filename = $F;
     my @statOutput = stat($filename);
     my $mtime = $statOutput[9];
