@@ -160,9 +160,16 @@ class miio(FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, fct.__name__, reply)
             await fhem.readingsEndUpdate(self.hash, 1)
         else:
-            if reply is not None and reply.lower() != "['ok']":
+            if (
+                reply is not None
+                and isinstance(reply, str)
+                and reply.lower() != "['ok']"
+            ):
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, fct.__name__, reply, 1
                 )
         if fct_name != "status":
+            # wait before status request as it takes some time for the miio device
+            # to change the state
+            await asyncio.sleep(2)
             await self.send_command("status", None)

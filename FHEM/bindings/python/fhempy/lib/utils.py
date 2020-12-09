@@ -5,7 +5,7 @@ from cryptography.fernet import Fernet
 from codecs import encode, decode
 from functools import reduce
 import base64
-from . import fhem
+from fhempy.lib import fhem
 
 
 def encrypt_string(plain_text, fhem_unique_id):

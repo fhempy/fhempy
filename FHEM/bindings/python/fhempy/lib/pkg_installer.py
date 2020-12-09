@@ -62,7 +62,9 @@ def check_dependencies(module):
     of dependencies
     """
     try:
-        with open("FHEM/bindings/python/lib/" + module + "/manifest.json", "r") as f:
+        with open(
+            "FHEM/bindings/python/fhempy/lib/" + module + "/manifest.json", "r"
+        ) as f:
             manifest = json.load(f)
 
             if "requirements" in manifest:
@@ -98,7 +100,7 @@ async def check_and_install_dependencies(module):
         async with pip_lock:
             kwargs = pip_kwargs(None)
             with open(
-                "FHEM/bindings/python/lib/" + module + "/manifest.json", "r"
+                "FHEM/bindings/python/fhempy/lib/" + module + "/manifest.json", "r"
             ) as f:
                 manifest = json.load(f)
 
