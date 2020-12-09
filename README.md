@@ -56,12 +56,12 @@ This are just a few examples for some modules, please see the modules readme lin
  - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
  - `define upnp PythonModule discover_upnp`
 
-## Run Python modules on remote Python peers (e.g. extend Bluetooth range)
+## fhempy peers (e.g. extend Bluetooth range)
 fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
 
 
 ### Installation (short)
-Only on remote peers, do not run this commands on the your FHEM instance.
+Only on remote peers, do not run this commands on the FHEM instance.
 
 ```
 pip3 install --upgrade fhempy
