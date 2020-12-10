@@ -92,7 +92,7 @@ class miio(FhemModule):
             try:
                 await self.send_command(fct_name, None)
             except:
-                pass
+                self.logger.exception(f"Failed to send_command: {fct_name}")
             await asyncio.sleep(sec)
 
     # FHEM FUNCTION
