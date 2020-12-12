@@ -13,4 +13,6 @@ set xiaomi_tokens password PASSWORD
 set xiaomi_tokens get_tokens
 ```
 
+Reload the page with F5 to display the newly created readings with tokens.
+
 Username and password are NOT saved. They are just used once in memory to retrieve the tokens. Tokens are displayed in the readings.
