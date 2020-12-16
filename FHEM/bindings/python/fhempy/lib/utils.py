@@ -165,7 +165,10 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             for arg in args[2:]:
                 # arg ... mode
                 # all_args[mode] = mode argument
-                all_args[cmd_def["args"][i]] = arg
+                if "args" in cmd_def and i in cmd_def["args"]:
+                    all_args[cmd_def["args"][i]] = arg
+                else:
+                    return f"Too many parameters provided: {arg}"
                 i += 1
             # get default values for other params
             final_params = all_args
