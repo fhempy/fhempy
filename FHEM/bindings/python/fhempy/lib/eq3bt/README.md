@@ -2,6 +2,8 @@
 # EQ3 Bluetooth Thermostat
 This module is used to control EQ3 Bluetooth thermostats.
 
+Attention: Firmware version 120 is recommended, do not install the newest calor BT firmware! Newer firmwares won't work with this module.
+
 ## Installation
 Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 ```
