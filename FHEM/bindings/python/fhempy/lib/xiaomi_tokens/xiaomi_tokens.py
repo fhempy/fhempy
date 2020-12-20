@@ -66,6 +66,9 @@ class xiaomi_tokens:
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, dev["did"] + "_model", dev["model"]
             )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, dev["did"] + "_ip", dev["localip"]
+            )
         await fhem.readingsEndUpdate(self.hash, 1)
 
     def thread_get_tokens(self):
