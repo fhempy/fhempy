@@ -4,6 +4,7 @@
 from ..generic import FhemModule
 from .core.gateway3 import Gateway3
 import asyncio
+import logging
 
 from .. import fhem
 from .. import utils as fpyutils
@@ -31,6 +32,10 @@ class xiaomi_gateway3(FhemModule):
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon mqtt")
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
 
+        logging.getLogger("fhempy.lib.xiaomi_gateway3.core.gateway3").setLevel(
+            logging.ERROR
+        )
+
         hash["HOST"] = args[3]
         hash["TOKEN"] = args[4]
 
@@ -52,6 +57,8 @@ class xiaomi_gateway3(FhemModule):
         while self.gw is None:
             await asyncio.sleep(3)
         self.gw.add_update(did, handler)
+        if did == "lumi.0":
+            self.gw.add_stats(did, handler)
         if did in self.devices:
             if "init" in self.devices[did]:
                 await fhempy_device.initialize(self.devices[did])
@@ -99,6 +106,8 @@ class xiaomi_gateway3(FhemModule):
             )
         else:
             if "init" in device and did in self.fhempy_devices:
+                if did == "lumi.0":
+                    device["version"] = self.gw.version()
                 await self.fhempy_devices[did].initialize(device)
 
 
@@ -120,6 +129,15 @@ class FhempyGateway:
             asyncio.run_coroutine_threadsafe(handler(data), self.loop).result()
 
         self.gw.add_update(did, update)
+
+    def add_stats(self, ieee, handler):
+        def stats(data):
+            asyncio.run_coroutine_threadsafe(handler(data), self.loop).result()
+
+        self.gw.add_stats(ieee, stats)
+
+    def version(self):
+        return self.gw.ver
 
     def start(self):
         self.gw.start()

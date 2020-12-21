@@ -6,7 +6,7 @@ from .. import fhem
 from ..xiaomi_gateway3 import xiaomi_gateway3
 from .. import fhem_pythonbinding as fhepy
 
-attr_conf = {
+attr_settings = {
     "lumi.sensor_magnet.v2": {
         "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
         "stateFormat": "contact",
@@ -96,12 +96,12 @@ class xiaomi_gateway3_device(FhemModule):
         # first update, set attributes and device readings like model, sid, ...
         if self.device_details is None:
             self.device_details = device
-            if self.device_details["model"] in attr_conf:
-                for attr in attr_conf[self.device_details["model"]]:
+            if self.device_details["model"] in attr_settings:
+                for attr in attr_settings[self.device_details["model"]]:
                     if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
                         await fhem.CommandAttr(
                             self.hash,
-                            f"{self.hash['NAME']} {attr} {attr_conf[self.device_details['model']][attr]}",
+                            f"{self.hash['NAME']} {attr} {attr_settings[self.device_details['model']][attr]}",
                         )
             for reading in self.device_details:
                 if reading == "init":
