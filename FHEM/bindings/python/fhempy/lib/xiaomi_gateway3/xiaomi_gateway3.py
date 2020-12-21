@@ -87,7 +87,7 @@ class xiaomi_gateway3(FhemModule):
             await asyncio.sleep(60)
 
     async def create_device(self, gw, device, type):
-        self.logger.error(f"Check if device {device['did']} exists")
+        self.logger.debug(f"Check if device {device['did']} exists")
         did = device["did"]
         self.devices[did] = device
         if not await fhem.checkIfDeviceExists(
