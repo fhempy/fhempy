@@ -55,7 +55,7 @@ class xiaomi_gateway3_device(FhemModule):
         hash["GATEWAY"] = self.gw_name
         hash["DID"] = self.did
 
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
         self.create_async_task(self.connect_gw())
         self.offline_check_task = self.create_async_task(self.offline_check())
@@ -66,7 +66,7 @@ class xiaomi_gateway3_device(FhemModule):
         while True:
             if time.time() - self.last_update > 3700:
                 await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, "presence", "offline", 1
+                    self.hash, "state", "offline", 1
                 )
             await asyncio.sleep(300)
 
@@ -77,7 +77,7 @@ class xiaomi_gateway3_device(FhemModule):
                 try:
                     await self.gateway.register_device(self, self.update)
                     await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "presence", "online", 1
+                        self.hash, "state", "online", 1
                     )
                 except:
                     self.gateway = None
@@ -115,17 +115,17 @@ class xiaomi_gateway3_device(FhemModule):
                     )
 
     async def update(self, data):
-        self.logger.error(f"update call {str(data)}")
+        self.logger.debug(f"update call {str(data)}")
         self.last_update = time.time()
+        if data is None:
+            return
 
         await fhem.readingsBeginUpdate(self.hash)
         # device is online
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
-
         # update data
         for reading in data:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, reading.replace(" ", "_"), data[reading]
+                self.hash, reading.replace(" ", "_"), str(data[reading])
             )
         await fhem.readingsEndUpdate(self.hash, 1)
