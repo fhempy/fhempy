@@ -24,12 +24,8 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 async def run_blocking(function):
-    try:
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            return await asyncio.get_event_loop().run_in_executor(pool, function)
-    except:
-        logging.getLogger(__name__).exception("Error in asyncio thread")
-        raise
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        return await asyncio.get_event_loop().run_in_executor(pool, function)
 
 
 def run_blocking_task(function):
