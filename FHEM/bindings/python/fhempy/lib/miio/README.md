@@ -7,7 +7,7 @@ https://github.com/rytilahti/python-miio
 ```
 define cam PythonModule miio <TYPE> <IP> <TOKEN>
 ```
- - Type can be one of the following
+ - TYPE: Choose one of the following types
     - airconditioningcompanion
     - airconditioningcompanionv3
     - airdehumidifier
@@ -63,8 +63,10 @@ define cam PythonModule miio <TYPE> <IP> <TOKEN>
     - wifispeaker
     - yeelight
 
- - Token can be easily extracted via xiaomi_tokens module:
+ - IP: IP address of the device. It's recommended to set the device to a static IP address to prevent IP changes via DHCP.
+
+ - TOKEN: Token can be easily extracted via xiaomi_tokens module:
 https://github.com/dominikkarall/fhempy/blob/master/FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md
 
 ## Set commands
-All set commands are supported.
+Set commands are automtically generated based on the type, therefore it's recommended to first of all define a device to see the possible commands.

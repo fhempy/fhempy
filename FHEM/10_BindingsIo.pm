@@ -356,7 +356,7 @@ sub BindingsIo_processMessage($$$$) {
   if ($waitingForId != 0) {
     # function running
     # skip messages which aren't part of the function
-    if (defined($devhash) && $devhash->{NAME} ne $json->{NAME}) {
+    if (defined($devhash) && defined($json->{NAME}) && $devhash->{NAME} ne $json->{NAME}) {
       return "nothandled";
     }
   }

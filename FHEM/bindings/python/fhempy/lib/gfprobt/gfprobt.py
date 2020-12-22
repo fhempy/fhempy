@@ -1,3 +1,4 @@
+from ..generic import FhemModule
 import asyncio
 import codecs
 import functools
@@ -5,15 +6,15 @@ import binascii
 import time
 import struct
 
-from bluepy import btle
-
 from .. import fhem
 from .. import utils
+from ..core.ble import BTLEConnection
 
 DEFAULT_TIMEOUT = 1
 
 HANDLE_RW_PASSWORD = 0x0048
-HANDLE_RW_WATERING = 0x0015
+HANDLE_R_WATERING = 0x0015
+HANDLE_W_WATERING = 0x0013
 HANDLE_R_BATTERY = 0x0039
 HANDLE_R_TEMPERATURE = 0x003B
 HANDLE_R_MIN_TEMP = 0x003D
@@ -27,28 +28,47 @@ HANDLE_R_MAC = 0x004A
 HANDLE_RW_INCREASEREDUCE = 0x0043
 HANDLE_W_COMMITCODE = 0x0037
 HANDLE_RW_TIMERS = [
-    "0x0017",
-    "0x0019",
-    "0x001b",
-    "0x001d",
-    "0x001f",
-    "0x0021",
-    "0x0023",
-    "0x0031",
-    "0x0025",
-    "0x0027",
-    "0x0029",
-    "0x002b",
-    "0x002d",
-    "0x002f",
+    0x0017,
+    0x0019,
+    0x001B,
+    0x001D,
+    0x001F,
+    0x0021,
+    0x0023,
+    0x0031,
+    0x0025,
+    0x0027,
+    0x0029,
+    0x002B,
+    0x002D,
+    0x002F,
 ]
 
 
-class gfprobt:
+class gfprobt(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
-        self._conn = btle.Peripheral()
-        self._conn.withDelegate(self)
+        super().__init__(logger)
+        set_conf = {
+            "update": {"help": "Retrieve values from GF Pro BT"},
+            "off": {"help": "Turn off watering"},
+            "toggle": {"help": "Toggle on/off"},
+            "on": {
+                "args": ["onseconds"],
+                "params": {
+                    "onseconds": {"default": 0, "format": "int", "optional": True}
+                },
+                "help": (
+                    "Turn on watering. You can use seconds as parameter to define the duration.<br>"
+                    "Duration will be set directly on the device to have a safe switch off even if connectivity is broken"
+                ),
+            },
+            "devicename": {"help": "Set the devicename of the irrigation control"},
+            "adjust": {
+                "help": "Adjust the timings with parameters:<br>percent<br>duration in minutes"
+            },
+            "eco": {"help": "Activate/decactivate eco mode"},
+        }
+        self.set_set_config(set_conf)
         return
 
     # FHEM FUNCTION
@@ -56,23 +76,53 @@ class gfprobt:
         self.hash = hash
         self._mac = args[3]
         self.hash["MAC"] = self._mac
+        self._conn = BTLEConnection(
+            self._mac,
+            keep_connected=True,
+            connection_established_callback=self.write_password,
+        )
         asyncio.create_task(self.update())
-        return "Module not ready yet"
+        return ""
 
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        return
+    # write_password is running in another thread
+    def write_password(self, mac):
+        self._conn.write_characteristic(HANDLE_RW_PASSWORD, b"123456")
 
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return
+    async def set_update(self, hash):
+        asyncio.create_task(self.update())
+
+    async def set_on(self, hash, params):
+        onseconds = params["onseconds"]
+        utils.run_blocking_task(functools.partial(self.blocking_on, onseconds))
+
+    async def set_off(self, hash):
+        utils.run_blocking_task(functools.partial(self.blocking_off))
+
+    async def set_toggle(self, hash):
+        utils.run_blocking_task(functools.partial(self.blocking_toggle))
+
+    def blocking_on(self, onseconds):
+        self.blocking_update_watering()
+        if self._watering == 0:
+            self.blocking_toggle()
+
+    def blocking_off(self):
+        self.blocking_update_watering()
+        if self._watering == 1:
+            self.blocking_toggle()
+
+    def blocking_toggle(self):
+        self._conn.write_characteristic(HANDLE_W_WATERING, b"\x00")
+        self._conn.write_characteristic(HANDLE_W_WATERING, b"\x01")
 
     async def update(self):
         await utils.run_blocking(functools.partial(self.blocking_update))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", self._watering)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "watering", self._watering)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", self._battery)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "batteryVoltage", self._battery
+        )
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "temperature", self._temperature
         )
@@ -86,42 +136,43 @@ class gfprobt:
         await fhem.readingsBulkUpdateIfChanged(self.hash, "devname", self._devname)
         await fhem.readingsEndUpdate(self.hash, 1)
 
-    def blocking_connect(self):
-        self._conn.connect()
+    def blocking_update_watering(self):
+        self._watering = struct.unpack(
+            "<b", self._conn.read_characteristic(HANDLE_R_WATERING)
+        )[0]
 
     def blocking_update(self):
-        self._conn.connect(self._mac)
-        self._conn.writeCharacteristic(HANDLE_RW_PASSWORD, b"123456")
-        self._watering = struct.unpack(
-            "<b", self._conn.readCharacteristic(HANDLE_RW_WATERING)
-        )[0]
+        self.blocking_update_watering()
         self._battery = struct.unpack(
-            "<h", self._conn.readCharacteristic(HANDLE_R_BATTERY)
+            "<h", self._conn.read_characteristic(HANDLE_R_BATTERY)
         )[0]
         self._temperature = struct.unpack(
-            "<h", self._conn.readCharacteristic(HANDLE_R_TEMPERATURE)
+            "<h", self._conn.read_characteristic(HANDLE_R_TEMPERATURE)
         )[0]
         self._min_temp = struct.unpack(
-            "<h", self._conn.readCharacteristic(HANDLE_R_MIN_TEMP)
+            "<h", self._conn.read_characteristic(HANDLE_R_MIN_TEMP)
         )[0]
         self._max_temp = struct.unpack(
-            "<h", self._conn.readCharacteristic(HANDLE_R_MAX_TEMP)
+            "<h", self._conn.read_characteristic(HANDLE_R_MAX_TEMP)
         )[0]
-        self._firmware = self._conn.readCharacteristic(HANDLE_R_FIRMWARE)
-        self._firmware = self._firmware[1] + "." + self._firmware[0]
-        self._devname = self._conn.readCharacteristic(HANDLE_RW_DEVNAME).decode("utf-8")
-        self._eco = self._conn.readCharacteristic(HANDLE_RW_ECO_PART1)
-        self._eco += " " + self._conn.readCharacteristic(HANDLE_RW_ECO_PART2)
+        self._firmware = self._conn.read_characteristic(HANDLE_R_FIRMWARE)
+        self._firmware = str(self._firmware[1]) + "." + str(self._firmware[0])
+        self._devname = self._conn.read_characteristic(HANDLE_RW_DEVNAME).decode(
+            "utf-8"
+        )
+        self._eco = str(self._conn.read_characteristic(HANDLE_RW_ECO_PART1))
+        self._eco += " " + str(self._conn.read_characteristic(HANDLE_RW_ECO_PART2))
         self._timeoffset = struct.unpack(
-            "<I", self._conn.readCharacteristic(HANDLE_RW_TIME_OFFSET)
+            "<I", self._conn.read_characteristic(HANDLE_RW_TIME_OFFSET)
         )[0]
-        self._devmac = self._conn.readCharacteristic(HANDLE_R_MAC)
-        self._increasereduce = self._conn.readCharacteristic(HANDLE_RW_INCREASEREDUCE)
+        self._devmac = str(self._conn.read_characteristic(HANDLE_R_MAC))
+        self._increasereduce = self._conn.read_characteristic(HANDLE_RW_INCREASEREDUCE)
         self._raw_timers = {}
         for handle_timer in HANDLE_RW_TIMERS:
-            self._raw_timers[handle_timer] = self._conn.readCharacteristic(handle_timer)
+            self._raw_timers[handle_timer] = self._conn.read_characteristic(
+                handle_timer
+            )
             self.logger.debug(self._raw_timers[handle_timer])
-        self._conn.disconnect()
 
     def write_offset(self):
         now = time.localtime()

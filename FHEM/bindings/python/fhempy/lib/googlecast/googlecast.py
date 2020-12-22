@@ -531,5 +531,9 @@ class googlecast:
                 await fhem.CommandAttr(
                     self.hash, self.hash["NAME"] + " icon gassistant"
                 )
-            await fhem.CommandAttr(hash, "cmdIcon pause:rc_PAUSE play:rc_PLAY")
-            await fhem.CommandAttr(hash, "webCmd volume:play:pause")
+            await fhem.CommandAttr(
+                hash, self.hash["NAME"] + " cmdIcon pause:rc_PAUSE play:rc_PLAY"
+            )
+            await fhem.CommandAttr(
+                hash, self.hash["NAME"] + " webCmd volume:play:pause"
+            )

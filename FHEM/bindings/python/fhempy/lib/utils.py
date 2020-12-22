@@ -5,7 +5,7 @@ from cryptography.fernet import Fernet
 from codecs import encode, decode
 from functools import reduce
 import base64
-from fhempy.lib import fhem
+from . import fhem
 
 
 def encrypt_string(plain_text, fhem_unique_id):
@@ -24,12 +24,8 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 async def run_blocking(function):
-    try:
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            return await asyncio.get_event_loop().run_in_executor(pool, function)
-    except:
-        logging.getLogger(__name__).exception("Error in asyncio thread")
-        raise
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        return await asyncio.get_event_loop().run_in_executor(pool, function)
 
 
 def run_blocking_task(function):
@@ -38,7 +34,7 @@ def run_blocking_task(function):
 
 # example config
 # attr_list = {
-#   "attribute1": {"default": 10, "format": "int"}
+#   "attribute1": {"default": 10, "format": "int", "options":"1,2,3"}
 # }
 async def handle_attr(attr_list, obj, hash, args, argsh):
     cmd = args[0]
@@ -53,7 +49,10 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
                 convert2format(attr_val, attr_list[attr_name]),
             )
         else:
-            setattr(obj, "_attr_" + attr_name, attr_list[attr_name]["default"])
+            if "default" in attr_list[attr_name]:
+                setattr(obj, "_attr_" + attr_name, attr_list[attr_name]["default"])
+            else:
+                setattr(obj, "_attr_" + attr_name, "")
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
@@ -165,7 +164,10 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             for arg in args[2:]:
                 # arg ... mode
                 # all_args[mode] = mode argument
-                all_args[cmd_def["args"][i]] = arg
+                if "args" in cmd_def and i < len(cmd_def["args"]):
+                    all_args[cmd_def["args"][i]] = arg
+                else:
+                    return f"Too many parameters provided: {arg}"
                 i += 1
             # get default values for other params
             final_params = all_args
