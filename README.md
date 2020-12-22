@@ -1,6 +1,6 @@
-![Download](https://img.shields.io/pypi/dw/fhempy)
-![Version](https://img.shields.io/pypi/v/fhempy)
-![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)
+[![Download](https://img.shields.io/pypi/dw/fhempy)](https://pypistats.org/packages/fhempy)
+[![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
+[![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
 
 # fhempy (BETA)
 
