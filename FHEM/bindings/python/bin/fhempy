@@ -11,16 +11,13 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)-8s - %(name)s: %(message)s", level=logging.INFO
 )
 
-MIN_PYTHON_VERSION = (3, 7, 3)
+# 0x030703F0 = Python 3.7.3 releaselevel=final, serial=0
+MIN_PYTHON_VERSION_HEX = 0x030703F0
+MIN_PYTHON_VERSION_STR = "3.7.3"
 
-if sys.version_info < MIN_PYTHON_VERSION:
+if sys.hexversion < MIN_PYTHON_VERSION_HEX:
     logging.getLogger(__name__).error(
-        "FHEM_PythonBinding requires Python "
-        + str(MIN_PYTHON_VERSION[0])
-        + "."
-        + str(MIN_PYTHON_VERSION[1])
-        + "."
-        + str(MIN_PYTHON_VERSION[2])
+        "FHEM_PythonBinding requires Python " + MIN_PYTHON_VERSION_STR
     )
     logging.getLogger(__name__).error("You are running: " + sys.version)
     time.sleep(60)
