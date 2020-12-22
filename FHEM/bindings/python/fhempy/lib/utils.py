@@ -34,7 +34,7 @@ def run_blocking_task(function):
 
 # example config
 # attr_list = {
-#   "attribute1": {"default": 10, "format": "int"}
+#   "attribute1": {"default": 10, "format": "int", "options":"1,2,3"}
 # }
 async def handle_attr(attr_list, obj, hash, args, argsh):
     cmd = args[0]
@@ -49,7 +49,10 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
                 convert2format(attr_val, attr_list[attr_name]),
             )
         else:
-            setattr(obj, "_attr_" + attr_name, attr_list[attr_name]["default"])
+            if "default" in attr_list[attr_name]:
+                setattr(obj, "_attr_" + attr_name, attr_list[attr_name]["default"])
+            else:
+                setattr(obj, "_attr_" + attr_name, "")
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
