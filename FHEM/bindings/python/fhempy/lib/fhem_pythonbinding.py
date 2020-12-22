@@ -10,8 +10,7 @@ import site
 import sys
 import importlib
 import time
-from . import fhem
-from . import pkg_installer
+from . import fhem, pkg_installer
 from .core.zeroconf import zeroconf
 
 
