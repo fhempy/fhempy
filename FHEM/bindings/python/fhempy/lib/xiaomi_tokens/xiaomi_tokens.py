@@ -1,3 +1,4 @@
+from ..generic import FhemModule
 import asyncio
 import functools
 
@@ -7,54 +8,69 @@ from .. import utils
 from .. import fhem
 
 
-class xiaomi_tokens:
+class xiaomi_tokens(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self._username = None
         self._password = None
-        self._country = "de"
+        self._country = ["de", "cn", "sg"]
+
+        set_list_conf = {
+            "username": {"args": ["username"]},
+            "password": {"args": ["password"]},
+            "get_tokens": {},
+        }
+        self.set_set_config(set_list_conf)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
+
+        self._uniqueid = await fhem.getUniqueId(self.hash)
+        self._enc_username = await fhem.ReadingsVal(
+            self.hash["NAME"], "xiaomi_username", ""
+        )
+        if self._enc_username != "":
+            self._username = utils.decrypt_string(self._enc_username, self._uniqueid)
+
+        self._enc_password = await fhem.ReadingsVal(
+            self.hash["NAME"], "xiaomi_password", ""
+        )
+        if self._enc_password != "":
+            self._password = utils.decrypt_string(self._enc_password, self._uniqueid)
         return ""
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        return
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        set_list_conf = {
-            "username": {"args": ["username"]},
-            "password": {"args": ["password"]},
-            "country": {"args": ["country"], "options": "de,cn,sg"},
-            "get_tokens": {},
-        }
-        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
     async def set_username(self, hash, params):
         self._username = params["username"]
+        self._enc_username = utils.encrypt_string(self._username, self._uniqueid)
+        await fhem.readingsSingleUpdateIfChanged(
+            hash, "xiaomi_username", self._enc_username, 1
+        )
         return ""
 
     async def set_password(self, hash, params):
         self._password = params["password"]
-        return ""
-
-    async def set_country(self, hash, params):
-        self._country = params["country"]
+        self._enc_password = utils.encrypt_string(self._password, self._uniqueid)
+        await fhem.readingsSingleUpdateIfChanged(
+            hash, "xiaomi_password", self._enc_password, 1
+        )
         return ""
 
     async def set_get_tokens(self, hash):
         if self._username and self._password:
-            asyncio.create_task(self.obtain_tokens())
+            self.create_async_task(self.obtain_tokens())
         else:
             return "Please set username & password first!"
 
     async def obtain_tokens(self):
-        await utils.run_blocking(functools.partial(self.thread_get_tokens))
+        try:
+            await utils.run_blocking(functools.partial(self.thread_get_tokens))
+        except Exception as ex:
+            await fhem.readingsSingleUpdateIfChanged(f"Failed to get tokens: {e}")
+            return
+
         await fhem.readingsBeginUpdate(self.hash)
         for dev in self._device_list:
             await fhem.readingsBulkUpdateIfChanged(
@@ -72,6 +88,10 @@ class xiaomi_tokens:
         await fhem.readingsEndUpdate(self.hash, 1)
 
     def thread_get_tokens(self):
+        self._device_list = []
         mc = MiCloud(self._username, self._password)
-        mc.login()
-        self._device_list = mc.get_devices(country=self._country)
+        if mc.login():
+            for country in self._country:
+                self._device_list.extend(mc.get_devices(country=country))
+        else:
+            raise Exception("Login failed, please check username/password!")
