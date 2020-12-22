@@ -7,6 +7,9 @@ use strict;
 
 my $location = "FHEM";
 
+# keep this till 03/2021 (written on 22.12.2020)
+print "MOV FHEM/bindings/python/fhempy FHEM/bindings/python/delete_fhempy\n";
+
 my @dirs = split(/\n/,`find $location -type d`);
 foreach(@dirs) {
   my $dir = substr($_,5);
