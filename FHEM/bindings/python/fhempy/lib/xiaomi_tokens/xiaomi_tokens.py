@@ -153,7 +153,7 @@ class xiaomi_tokens(FhemModule):
 
         self._set_list_conf["create_miio_device"] = {
             "args": ["dev"],
-            "help": "NOT YET SUPPORTED<br>Creates a fhempy miio device to control your Xiaomi device.",
+            "help": "Creates a fhempy miio device to control your Xiaomi device.",
             "options": ",".join(self._miio_devices),
         }
         self._set_list_conf["create_gateway3_device"] = {
