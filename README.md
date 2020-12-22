@@ -18,6 +18,7 @@ discover_upnp|Discover UPnP devices
 dlna_dmr|Control DLNA MediaRenderer devices)
 [eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
 [esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
+gfprobt|Control GF Pro Bluetooth irrigation control
 [googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices
 helloworld|Hello World example
 [miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
@@ -27,7 +28,7 @@ helloworld|Hello World example
 [object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection
 [ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam
 [wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times
-xiaomi_gateway3|Xiaomi Gateway V3 (only V3!)
+[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3!)
 [xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud
 
 ## Installation
