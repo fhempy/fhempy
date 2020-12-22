@@ -7,6 +7,7 @@ DIR FHEM/bindings/python/fhempy/lib
 DIR FHEM/bindings/python/fhempy/lib/xiaomi_tokens
 DIR FHEM/bindings/python/fhempy/lib/xiaomi_gateway3_device
 DIR FHEM/bindings/python/fhempy/lib/xiaomi_gateway3
+DIR FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core
 DIR FHEM/bindings/python/fhempy/lib/wienerlinien
 DIR FHEM/bindings/python/fhempy/lib/ring
 DIR FHEM/bindings/python/fhempy/lib/object_detection
@@ -29,29 +30,35 @@ DIR FHEM/bindings/python/fhempy/lib/bt_presence
 DIR FHEM/bindings/python/fhempy/lib/ble_reset
 DIR FHEM/bindings/python/fhempy/lib/ble_presence
 UPD 2020-12-05_20:16:34 3158 FHEM/10_PythonModule.pm
-UPD 2020-12-09_21:57:29 14666 FHEM/10_BindingsIo.pm
 UPD 2020-12-09_21:57:29 4581 FHEM/10_PythonBinding.pm
-UPD 2020-12-09_21:57:30 3912 FHEM/bindings/python/bin/fhempy
+UPD 2020-12-22_23:51:37 14692 FHEM/10_BindingsIo.pm
+UPD 2020-12-22_23:51:37 4207 FHEM/bindings/python/bin/fhempy
 UPD 2020-12-09_21:57:30 21 FHEM/bindings/python/fhempy/__init__.py
-UPD 2020-12-09_21:57:30 7308 FHEM/bindings/python/fhempy/lib/utils.py
 UPD 2020-12-09_21:57:30 6120 FHEM/bindings/python/fhempy/lib/pkg_installer.py
-UPD 2020-12-09_21:57:30 3068 FHEM/bindings/python/fhempy/lib/generic.py
-UPD 2020-12-09_21:57:30 18011 FHEM/bindings/python/fhempy/lib/fhem_pythonbinding.py
-UPD 2020-12-09_21:57:30 7857 FHEM/bindings/python/fhempy/lib/fhem.py
+UPD 2020-12-21_20:47:54 7857 FHEM/bindings/python/fhempy/lib/fhem.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/__init__.py
 UPD 2020-12-09_21:59:55 22 FHEM/bindings/python/fhempy/lib/version.py
-UPD 2020-12-09_21:57:30 2279 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/xiaomi_tokens.py
+UPD 2020-12-22_23:51:37 17998 FHEM/bindings/python/fhempy/lib/fhem_pythonbinding.py
+UPD 2020-12-22_23:51:37 3059 FHEM/bindings/python/fhempy/lib/generic.py
+UPD 2020-12-22_23:51:37 7488 FHEM/bindings/python/fhempy/lib/utils.py
 UPD 2020-12-09_21:57:30 34 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/manifest.json
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/__init__.py
-UPD 2020-12-09_21:57:30 4650 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
+UPD 2020-12-22_23:51:37 6430 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/xiaomi_tokens.py
 UPD 2020-12-09_21:57:30 61 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3_device/manifest.json
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3_device/__init__.py
-UPD 2020-12-09_21:57:30 16361 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/xiaomi_gateway3.py
-UPD 2020-12-09_21:57:30 14808 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/utils.py
-UPD 2020-12-09_21:57:30 2326 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/unqlite.py
+UPD 2020-12-22_23:51:37 4582 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3_device/xiaomi_gateway3_device.py
 UPD 2020-12-09_21:57:30 1855 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/miio_fix.py
-UPD 2020-12-09_21:57:30 61 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/manifest.json
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/__init__.py
+UPD 2020-12-22_23:51:37 91 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/manifest.json
+UPD 2020-12-22_23:51:37 4638 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/xiaomi_gateway3.py
+UPD 2020-12-22_23:51:37 0 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/__init__.py
+UPD 2020-12-22_23:51:37 10330 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/bluetooth.py
+UPD 2020-12-22_23:51:37 31908 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/gateway3.py
+UPD 2020-12-22_23:51:37 7545 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/mini_miio.py
+UPD 2020-12-22_23:51:37 4667 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/shell.py
+UPD 2020-12-22_23:51:37 6239 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/unqlite.py
+UPD 2020-12-22_23:51:37 6362 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/xiaomi_cloud.py
+UPD 2020-12-22_23:51:37 19107 FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/utils.py
 UPD 2020-12-09_21:57:30 4306 FHEM/bindings/python/fhempy/lib/wienerlinien/wienerlinien.py
 UPD 2020-12-09_21:57:30 34 FHEM/bindings/python/fhempy/lib/wienerlinien/manifest.json
 UPD 2020-12-09_21:57:30 32 FHEM/bindings/python/fhempy/lib/wienerlinien/__init__.py
@@ -70,21 +77,23 @@ UPD 2020-12-09_21:57:30 37 FHEM/bindings/python/fhempy/lib/nespresso_ble/__init_
 UPD 2020-12-09_21:57:30 3939 FHEM/bindings/python/fhempy/lib/mitemp/mitemp.py
 UPD 2020-12-09_21:57:30 43 FHEM/bindings/python/fhempy/lib/mitemp/manifest.json
 UPD 2020-12-09_21:57:30 37 FHEM/bindings/python/fhempy/lib/mitemp/__init__.py
-UPD 2020-12-09_21:57:30 7004 FHEM/bindings/python/fhempy/lib/miio/miio.py
 UPD 2020-12-09_21:57:30 38 FHEM/bindings/python/fhempy/lib/miio/manifest.json
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/miio/__init__.py
+UPD 2020-12-22_23:51:37 7062 FHEM/bindings/python/fhempy/lib/miio/miio.py
 UPD 2020-12-09_21:57:30 4702 FHEM/bindings/python/fhempy/lib/miflora/miflora.py
 UPD 2020-12-09_21:57:30 44 FHEM/bindings/python/fhempy/lib/miflora/manifest.json
 UPD 2020-12-09_21:57:30 32 FHEM/bindings/python/fhempy/lib/miflora/__init__.py
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/helloworld/manifest.json
 UPD 2020-12-09_21:57:30 3662 FHEM/bindings/python/fhempy/lib/helloworld/helloworld.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/helloworld/__init__.py
+UPD 2020-12-18_19:33:26 191 FHEM/bindings/python/fhempy/lib/helloworld/__pycache__/__init__.cpython-37.pyc
+UPD 2020-12-18_19:33:26 3088 FHEM/bindings/python/fhempy/lib/helloworld/__pycache__/helloworld.cpython-37.pyc
 UPD 2020-12-09_21:57:30 178 FHEM/bindings/python/fhempy/lib/googlecast/manifest.json
-UPD 2020-12-09_21:57:30 21350 FHEM/bindings/python/fhempy/lib/googlecast/googlecast.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/googlecast/__init__.py
+UPD 2020-12-22_23:51:37 21452 FHEM/bindings/python/fhempy/lib/googlecast/googlecast.py
 UPD 2020-12-09_21:57:30 48 FHEM/bindings/python/fhempy/lib/gfprobt/manifest.json
-UPD 2020-12-09_21:57:30 4529 FHEM/bindings/python/fhempy/lib/gfprobt/gfprobt.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/gfprobt/__init__.py
+UPD 2020-12-22_23:51:37 6563 FHEM/bindings/python/fhempy/lib/gfprobt/gfprobt.py
 UPD 2020-12-09_21:57:30 42 FHEM/bindings/python/fhempy/lib/esphome/manifest.json
 UPD 2020-12-09_21:57:30 2933 FHEM/bindings/python/fhempy/lib/esphome/esphome.py
 UPD 2020-12-09_21:57:30 11 FHEM/bindings/python/fhempy/lib/esphome/__init__.py
@@ -94,6 +103,8 @@ UPD 2020-12-09_21:57:30 15701 FHEM/bindings/python/fhempy/lib/eq3bt/eq3btsmart.p
 UPD 2020-12-09_21:57:30 16537 FHEM/bindings/python/fhempy/lib/eq3bt/eq3bt.py
 UPD 2020-12-09_21:57:30 7634 FHEM/bindings/python/fhempy/lib/eq3bt/connection.py
 UPD 2020-12-09_21:57:30 22 FHEM/bindings/python/fhempy/lib/eq3bt/__init__.py
+UPD 2020-12-18_19:33:05 186 FHEM/bindings/python/fhempy/lib/eq3bt/__pycache__/__init__.cpython-37.pyc
+UPD 2020-12-18_19:33:05 12561 FHEM/bindings/python/fhempy/lib/eq3bt/__pycache__/eq3bt.cpython-37.pyc
 UPD 2020-12-09_21:57:30 83 FHEM/bindings/python/fhempy/lib/dlna_dmr/manifest.json
 UPD 2020-12-09_21:57:30 13034 FHEM/bindings/python/fhempy/lib/dlna_dmr/dlna_dmr.py
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/dlna_dmr/__init__.py
@@ -109,6 +120,7 @@ UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/discover_ble/__init__
 UPD 2020-12-09_21:57:30 1118 FHEM/bindings/python/fhempy/lib/core/zeroconf.py
 UPD 2020-12-09_21:57:30 35 FHEM/bindings/python/fhempy/lib/core/manifest.json
 UPD 2020-12-09_21:57:30 16 FHEM/bindings/python/fhempy/lib/core/__init__.py
+UPD 2020-12-22_23:51:37 8180 FHEM/bindings/python/fhempy/lib/core/ble.py
 UPD 2020-12-09_21:57:30 50 FHEM/bindings/python/fhempy/lib/core/discover_fhempy/manifest.json
 UPD 2020-12-09_21:57:30 2860 FHEM/bindings/python/fhempy/lib/core/discover_fhempy/discover_fhempy.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/core/discover_fhempy/__init__.py
@@ -121,3 +133,6 @@ UPD 2020-12-09_21:57:30 33 FHEM/bindings/python/fhempy/lib/ble_reset/__init__.py
 UPD 2020-12-09_21:57:30 33 FHEM/bindings/python/fhempy/lib/ble_presence/manifest.json
 UPD 2020-12-09_21:57:30 11414 FHEM/bindings/python/fhempy/lib/ble_presence/ble_presence.py
 UPD 2020-12-09_21:57:30 23 FHEM/bindings/python/fhempy/lib/ble_presence/__init__.py
+UPD 2020-12-18_19:33:05 180 FHEM/bindings/python/fhempy/lib/__pycache__/__init__.cpython-37.pyc
+UPD 2020-12-18_19:33:26 7391 FHEM/bindings/python/fhempy/lib/__pycache__/fhem.cpython-37.pyc
+UPD 2020-12-18_19:33:05 176 FHEM/bindings/python/fhempy/__pycache__/__init__.cpython-37.pyc
