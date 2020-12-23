@@ -86,8 +86,6 @@ UPD 2020-12-09_21:57:30 32 FHEM/bindings/python/fhempy/lib/miflora/__init__.py
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/helloworld/manifest.json
 UPD 2020-12-09_21:57:30 3662 FHEM/bindings/python/fhempy/lib/helloworld/helloworld.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/helloworld/__init__.py
-UPD 2020-12-18_19:33:26 191 FHEM/bindings/python/fhempy/lib/helloworld/__pycache__/__init__.cpython-37.pyc
-UPD 2020-12-18_19:33:26 3088 FHEM/bindings/python/fhempy/lib/helloworld/__pycache__/helloworld.cpython-37.pyc
 UPD 2020-12-09_21:57:30 178 FHEM/bindings/python/fhempy/lib/googlecast/manifest.json
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/googlecast/__init__.py
 UPD 2020-12-22_23:51:37 21452 FHEM/bindings/python/fhempy/lib/googlecast/googlecast.py
@@ -103,8 +101,6 @@ UPD 2020-12-09_21:57:30 15701 FHEM/bindings/python/fhempy/lib/eq3bt/eq3btsmart.p
 UPD 2020-12-09_21:57:30 16537 FHEM/bindings/python/fhempy/lib/eq3bt/eq3bt.py
 UPD 2020-12-09_21:57:30 7634 FHEM/bindings/python/fhempy/lib/eq3bt/connection.py
 UPD 2020-12-09_21:57:30 22 FHEM/bindings/python/fhempy/lib/eq3bt/__init__.py
-UPD 2020-12-18_19:33:05 186 FHEM/bindings/python/fhempy/lib/eq3bt/__pycache__/__init__.cpython-37.pyc
-UPD 2020-12-18_19:33:05 12561 FHEM/bindings/python/fhempy/lib/eq3bt/__pycache__/eq3bt.cpython-37.pyc
 UPD 2020-12-09_21:57:30 83 FHEM/bindings/python/fhempy/lib/dlna_dmr/manifest.json
 UPD 2020-12-09_21:57:30 13034 FHEM/bindings/python/fhempy/lib/dlna_dmr/dlna_dmr.py
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/dlna_dmr/__init__.py
@@ -133,6 +129,3 @@ UPD 2020-12-09_21:57:30 33 FHEM/bindings/python/fhempy/lib/ble_reset/__init__.py
 UPD 2020-12-09_21:57:30 33 FHEM/bindings/python/fhempy/lib/ble_presence/manifest.json
 UPD 2020-12-09_21:57:30 11414 FHEM/bindings/python/fhempy/lib/ble_presence/ble_presence.py
 UPD 2020-12-09_21:57:30 23 FHEM/bindings/python/fhempy/lib/ble_presence/__init__.py
-UPD 2020-12-18_19:33:05 180 FHEM/bindings/python/fhempy/lib/__pycache__/__init__.cpython-37.pyc
-UPD 2020-12-18_19:33:26 7391 FHEM/bindings/python/fhempy/lib/__pycache__/fhem.cpython-37.pyc
-UPD 2020-12-18_19:33:05 176 FHEM/bindings/python/fhempy/__pycache__/__init__.cpython-37.pyc
