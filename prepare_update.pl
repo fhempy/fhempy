@@ -32,6 +32,9 @@ sub find_files {
   my $F = $File::Find::name;
   if ($F =~ /pm$\|json$\|\.py|bin\/fhempy$/ ) {
     my $filename = $F;
+    if (index($filename, "__pycache__") != -1) {
+      next;
+    }
     my @statOutput = stat($filename);
     my $mtime = $statOutput[9];
     my $date = POSIX::strftime("%Y-%m-%d", localtime($mtime));
