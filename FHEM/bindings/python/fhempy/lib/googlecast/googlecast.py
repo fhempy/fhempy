@@ -297,7 +297,7 @@ class googlecast(FhemModule):
                 )
         else:
             await fhem.readingsSingleUpdate(
-                self.hash, "spotify_user", "attr spotify_sp... required"
+                self.hash, "spotify_user", "attr spotify_sp... required", 1
             )
 
     async def playSpotify(self, uri):
