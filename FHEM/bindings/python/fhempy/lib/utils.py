@@ -83,6 +83,8 @@ async def handle_define_attr(attr_list, obj, hash):
 
         # call set_attr_....
         fct_name = "set_attr_" + attr
+        if "function" in attr_list[attr]:
+            fct_name = attr_list[attr]["function"]
         try:
             fct_call = getattr(obj, fct_name)
             return await fct_call(hash)
@@ -152,7 +154,7 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
         if cmd in set_list_conf:
             all_args = {}
             if "argsh" in set_list_conf[cmd]:
-                all_args = set_list_conf[cmd]["argsh"]
+                all_args = argsh
             cmd_def = set_list_conf[cmd]
             # map arguments to params
             # add args to all_args
