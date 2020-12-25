@@ -1,7 +1,10 @@
 {
-  "requirements": ["pychromecast>=7.3.0",
-                   "youtube_dl",
-                   "spotipy",
-                   "zeroconf==0.28.6",
-                   "aiohttp"]
+  "requirements": [
+    "pychromecast>=7.3.0",
+    "youtube_dl>=2020.12.22",
+    "spotipy>=2.16.1",
+    "zeroconf==0.28.6",
+    "spotify-token>=1.0.0",
+    "aiohttp"
+  ]
 }
