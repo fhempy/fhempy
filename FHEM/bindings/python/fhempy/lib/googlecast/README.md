@@ -11,6 +11,10 @@ define cast PythonModule googlecast <NAME>
 
 As soon as the device is online you can connect your Spotify account. See the attributes section below.
 
+```
+set cast play https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
+```
+
 ## Commands
  - addToQueue
  - displayWebsite: Uses dashcast to display a website on Chromecast, NestHub or other cast devices
