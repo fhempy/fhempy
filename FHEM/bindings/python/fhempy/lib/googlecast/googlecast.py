@@ -482,19 +482,18 @@ class googlecast(FhemModule):
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_media_status(self, status):
+        asyncio.run_coroutine_threadsafe(
+            self.stop_updateCurrentPosition(), self.loop
+        ).result()
         if (
             status.player_state == "PLAYING"
             and self.currPosTask == None
             and status.duration
             and status.duration > 0
         ):
-            self.currPosTask = asyncio.run_coroutine_threadsafe(
+            asyncio.run_coroutine_threadsafe(
                 self.run_updateCurrentPosition(), self.loop
             ).result()
-        elif status.player_state != "PLAYING":
-            if self.currPosTask:
-                self.currPosTask.cancel()
-                self.currPosTask = None
         self.logger.debug("new_media_status")
         # run reading updates in main thread
         res = asyncio.run_coroutine_threadsafe(
@@ -503,7 +502,12 @@ class googlecast(FhemModule):
         res.result()
 
     async def run_updateCurrentPosition(self):
-        self.create_async_task(self.updateCurrentPosition())
+        self.currPosTask = self.create_async_task(self.updateCurrentPosition())
+
+    async def stop_updateCurrentPosition(self):
+        if self.currPosTask:
+            self.cancel_async_task(self.currPosTask)
+            self.currPosTask = None
 
     async def updateCurrentPosition(self):
         try:
