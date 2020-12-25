@@ -1,10 +1,11 @@
 [![Download](https://img.shields.io/pypi/dw/fhempy)](https://pypistats.org/packages/fhempy)
 [![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
 [![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
+[![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
 # fhempy (BETA)
 
-fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules
+fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.7 or higher is required, therefore I recommend using buster.
 
 This repository includes following working modules:
 Module | Description
@@ -19,7 +20,7 @@ dlna_dmr|Control DLNA MediaRenderer devices)
 [eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat
 [esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management
 gfprobt|Control GF Pro Bluetooth irrigation control
-[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices
+[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify
 helloworld|Hello World example
 [miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor
 [miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices

@@ -9,6 +9,12 @@ define cast PythonModule googlecast <NAME>
 
  - NAME: Name of the cast device (e.g. "Living Room"). You need to use quotes if the name contains spaces.
 
+As soon as the device is online you can connect your Spotify account. See the attributes section below.
+
+```
+set cast play https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
+```
+
 ## Commands
  - addToQueue
  - displayWebsite: Uses dashcast to display a website on Chromecast, NestHub or other cast devices
@@ -28,6 +34,10 @@ define cast PythonModule googlecast <NAME>
  - volDown
  - volUp
  - volume
+
+ ## Attributes
+  - spotify_sp_dn: Set this attributes to the cookie content of sp_dn found here chrome://settings/cookies/detail?site=spotify.com. You need to login to Spotify webclient first https://open.spotify.com/.
+  - spotify_sp_key: Set this attributes to the cookie content of sp_key found here chrome://settings/cookies/detail?site=spotify.com. You need to login to Spotify webclient first https://open.spotify.com/.
 
 ## Screenshot
 ![Screenshot](screenshot.png)

@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import time
 import functools
 import concurrent.futures
 import logging
@@ -24,17 +25,19 @@ import pychromecast.controllers.dashcast as dashcast
 # Spotify
 from pychromecast.controllers.spotify import SpotifyController
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+import spotify_token as st
 
 # youtube_dl
 import youtube_dl
 
+from ..generic import FhemModule
+
 connection_update_lock = threading.Lock()
 
 
-class googlecast:
+class googlecast(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         # do only error logging for pychromecast library
         logging.getLogger("pychromecast").setLevel(logging.ERROR)
         self.cast = None
@@ -43,17 +46,72 @@ class googlecast:
         self.currPosTask = None
         self.connectionStateCache = ""
         self.browser = None
+        attr_conf = {
+            "favorite_1": {"default": ""},
+            "favorite_2": {"default": ""},
+            "favorite_3": {"default": ""},
+            "favorite_4": {"default": ""},
+            "favorite_5": {"default": ""},
+            "spotify_sp_dc": {
+                "default": "",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com and copy the content of sp_dc",
+                "function": "set_attr_spotify_cookie",
+            },
+            "spotify_sp_key": {
+                "default": "",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com and copy the content of sp_key",
+                "function": "set_attr_spotify_cookie",
+            },
+        }
+        self.set_attr_config(attr_conf)
+
+        set_conf = {
+            "stop": {},
+            "pause": {},
+            "rewind": {},
+            "skip": {},
+            "quitApp": {},
+            "play": {
+                "args": ["url"],
+                "argsh": ["url"],
+                "params": {"url": {"optional": True, "default": ""}},
+            },
+            "addToQueue": {
+                "args": ["url"],
+                "argsh": ["url"],
+                "params": {"url": {"default": ""}},
+            },
+            "playFavorite": {"args": ["id"], "options": "1,2,3,4,5"},
+            "volume": {
+                "args": ["vol"],
+                "params": {"vol": {"format": "int"}},
+                "options": "slider,0,1,100",
+            },
+            "seek": {"args": ["pos"]},
+            "next": {},
+            "prev": {},
+            "subtitles": {"args": ["onoff"], "options": "on,off"},
+            "displayWebsite": {
+                "args": ["url"],
+                "argsh": ["url"],
+                "params": {"url": {"optional": True, "default": "https://www.fhem.de"}},
+            },
+            "speak": {
+                "args": ["text"],
+                "help": "Please provide text with quotes.",
+            },
+            "startApp": {"args": ["appid"]},
+            "volUp": {},
+            "volDown": {},
+        }
+        self.set_set_config(set_conf)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         if len(args) > 3:
             hash["CASTNAME"] = args[3]
         self.hash = hash
-
-        # set userattr as long as Define can't be called on startup
-        await fhem.setDevAttrList(
-            hash["NAME"], "favorite_1 favorite_2 favorite_3 favorite_4 favorite_5"
-        )
 
         if self.browser:
             pychromecast.stop_discovery(self.browser)
@@ -71,6 +129,7 @@ class googlecast:
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
+        await super().Undefine(hash)
         try:
             pychromecast.stop_discovery(self.browser)
             if self.cast:
@@ -80,116 +139,103 @@ class googlecast:
 
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
-        if len(args) < 2 or args[1] == "?":
-            return (
-                "Unknown argument ?, choose one of "
-                "stop:noArg pause:noArg rewind:noArg skip:noArg quitApp:noArg "
-                "play addToQueue playFavorite:1,2,3,4,5 volume:slider,0,1,100 seek "
-                "next:noArg prev:noArg subtitles:on,off "
-                "displayWebsite speak startApp "
-                "volUp:noArg volDown:noArg"
-            )
+        if self.connectionStateCache != "CONNECTED":
+            return "Please wait until connected..."
+        return await super().Set(hash, args, argsh)
+
+    async def set_play(self, hash, params):
+        url = params["url"]
+        if url != "":
+            self.playUrl(url)
         else:
-            if self.connectionStateCache != "CONNECTED":
-                return "Please wait until connected..."
+            self.cast.media_controller.play()
 
-            action = args[1]
-            if action == "play":
-                url = ""
-                if "url" in argsh:
-                    url = argsh["url"]
-                elif len(args) > 2:
-                    url = args[2]
+    async def set_addToQueue(self, hash, params):
+        url = params["url"]
+        if url != "":
+            self.queueUrl(url)
 
-                if len(url) > 0:
-                    self.playUrl(url)
-                else:
-                    self.cast.media_controller.play()
-            elif action == "addToQueue":
-                url = ""
-                if "url" in argsh:
-                    url = argsh["url"]
-                elif len(args) > 2:
-                    url = args[2]
+    async def set_playFavorite(self, hash, params):
+        fav = params["id"]
+        url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + id, "")
+        if len(url) == 0:
+            return "Please set favorite before usage"
+        self.playUrl(url)
 
-                if len(url) > 0:
-                    self.queueUrl(url)
-            elif action == "playFavorite":
-                url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + args[2], "")
-                if len(url) == 0:
-                    return "Please set favorite before usage"
-                self.playUrl(url)
-            elif action == "stop":
-                self.cast.media_controller.stop()
-            elif action == "pause":
-                self.cast.media_controller.pause()
-            elif action == "quitApp":
-                self.cast.quit_app()
-            elif action == "startApp":
-                if len(args) > 2:
-                    appId = args[2]
-                    self.cast.start_app(appId)
-                else:
-                    return "Please specify app_id as parameter."
-            elif action == "skip":
-                self.cast.media_controller.skip()
-            elif action == "rewind":
-                self.cast.media_controller.rewind()
-            elif action == "seek":
-                position = 0
-                if len(args) > 2:
-                    position = args[2]
-                self.cast.media_controller.seek(position)
-            elif action == "next":
-                self.cast.media_controller.queue_next()
-            elif action == "prev":
-                self.cast.media_controller.queue_prev()
-            elif action == "volUp":
-                self.cast.volume_up()
-            elif action == "volDown":
-                self.cast.volume_down()
-            elif action == "subtitles":
-                onoff = "on"
-                if len(args) > 3:
-                    onoff = args[2]
-                if onoff == "on":
-                    self.cast.media_controller.enable_subtitle(1)
-                else:
-                    self.cast.media_controller.disable_subtitle()
-            elif action == "volume":
-                vol = int(args[2])
-                self.cast.set_volume(vol / 100)
-            elif action == "speak":
-                txt = args[2]
-                ttsUrl = (
-                    "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
-                    + urllib.parse.quote(txt)
-                )
-                self.cast.play_media(ttsUrl, "audio/mpeg")
-            elif action == "displayWebsite":
-                dashUrl = "https://fhem.de/"
-                if "url" in argsh:
-                    dashUrl = argsh["url"]
-                elif len(args) > 2:
-                    dashUrl = args[2]
-                self.loop.create_task(self.displayWebsite(dashUrl))
+    async def set_stop(self, hash):
+        self.cast.media_controller.stop()
+
+    async def set_pause(self, hash):
+        self.cast.media_controller.pause()
+
+    async def set_quitApp(self, hash):
+        self.cast.quit_app()
+
+    async def set_startApp(self, hash, params):
+        appId = params["appid"]
+        self.cast.start_app(appId)
+
+    async def set_skip(self, hash):
+        self.cast.media_controller.skip()
+
+    async def set_rewind(self, hash):
+        self.cast.media_controller.rewind()
+
+    async def set_seek(self, hash, params):
+        position = params["pos"]
+        self.cast.media_controller.seek(position)
+
+    async def set_next(self, hash):
+        self.cast.media_controller.queue_next()
+
+    async def set_prev(self, hash):
+        self.cast.media_controller.queue_prev()
+
+    async def set_volUp(self, hash):
+        self.cast.volume_up()
+
+    async def set_volDown(self, hash):
+        self.cast.volume_down()
+
+    async def set_subtitles(self, hash, params):
+        onoff = params["onoff"]
+        if onoff == "on":
+            self.cast.media_controller.enable_subtitle(1)
+        else:
+            self.cast.media_controller.disable_subtitle()
+
+    async def set_volume(self, hash, params):
+        vol = params["vol"]
+        self.cast.set_volume(vol / 100)
+
+    async def set_speak(self, hash, params):
+        txt = params["text"]
+        ttsUrl = (
+            "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
+            + urllib.parse.quote(txt)
+        )
+        self.cast.play_media(ttsUrl, "audio/mpeg")
+
+    async def set_displayWebsite(self, hash, params):
+        dashUrl = params["url"]
+        self.create_async_task(self.displayWebsite(dashUrl))
 
     def playUrl(self, url):
         videoid = self.extract_video_id(url)
         if videoid == None:
             if url.find("spotify") >= 0:
-                self.loop.create_task(self.playSpotifyThread(url))
+                self.create_async_task(self.playSpotify(url))
             else:
-                self.loop.create_task(self.playDefaultMedia(url))
+                self.create_async_task(self.playDefaultMedia(url))
         else:
             if self.cast.cast_type == "audio":
-                self.loop.create_task(self.playYoutubeAudio(url))
+                self.create_async_task(self.playYoutubeAudio(url))
             else:
                 playlistid = self.extract_playlist_id(url)
-                self.loop.create_task(self.playYoutube(videoid, playlistid))
+                self.create_async_task(self.playYoutube(videoid, playlistid))
 
     def queueUrl(self, url):
-        self.loop.create_task(self.playDefaultMedia(url, enqueue=True))
+        self.create_async_task(self.playDefaultMedia(url, enqueue=True))
 
     async def playDefaultMedia(self, uri, enqueue=False):
         try:
@@ -200,59 +246,122 @@ class googlecast:
         except:
             self.logger.exception(f"Failed to play: {uri}")
 
-    async def playSpotifyThread(self, uri):
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            await self.loop.run_in_executor(
-                pool, functools.partial(self.playSpotify, uri)
+    # THIS CODE IS ONLY WORKING IF SPOTIFY AUTH WOULD PROVIDE A TOKEN WITH MORE SCOPES
+    # TO ACTIVATE SPOTIFY ON A CHROMECAST DEVICE
+    # async def set_spotify_auth_url(self):
+    #     self.spotipy_auth = spotipy.oauth2.SpotifyPKCE(
+    #         "e92855a009e74eb69ba6609d3bfd7d96",
+    #         "https://oskar.pw/",
+    #         scope=self.spotipy_scope,
+    #         cache_path=f".{self.hash['NAME']}_spotify_token",
+    #     )
+    #     url = self.spotipy_auth.get_authorize_url()
+    #     url = (
+    #         '<html><a href="'
+    #         + url
+    #         + '" target="_blank">Connect Spotify account (new window/tab)</a><br></html>'
+    #     )
+    #     await fhem.readingsSingleUpdate(self.hash, "spotify_login", url, 1)
+
+    # async def set_spotify_authcode(self, hash, params):
+    #     code = params["code"]
+    #     self.create_async_task(self.handle_spotify_authcode(code))
+
+    # async def handle_spotify_authcode(self, code):
+    #     access_token = await utils.run_blocking(
+    #         functools.partial(
+    #             self.spotipy_auth.get_access_token, code=code, check_cache=False
+    #         )
+    #     )
+
+    async def set_attr_spotify_cookie(self, hash):
+        if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
+            data = st.start_session(self._attr_spotify_sp_dc, self._attr_spotify_sp_key)
+            self.spotify_access_token = data[0]
+            self.spotify_expires = data[1] - int(time.time())
+            self.spotify = spotipy.Spotify(auth=self.spotify_access_token)
+
+            user = await utils.run_blocking(
+                functools.partial(self.spotify.current_user)
+            )
+            if user is not None:
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "spotify_user",
+                    user["display_name"] + " (" + user["email"] + ")",
+                    1,
+                )
+            else:
+                await fhem.readingsSingleUpdate(
+                    self.hash, "spotify_user", "login failed", 1
+                )
+        else:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "attr spotify_sp... required", 1
             )
 
     async def playSpotify(self, uri):
-        # FIXME user needs to enter CLIENT_ID and CLIENT_SECRET from Spotify Dashboard
-        client_credentials_manager = SpotifyClientCredentials(
-            "CLIENT_ID", "CLIENT_SECRET"
-        )
-        data = client_credentials_manager.get_access_token()
-        access_token = data["access_token"]
-        expires = data["expires_in"]
-
-        # Create a spotify client
-        client = spotipy.Spotify(auth=access_token)
-
-        # Launch the spotify app on the cast we want to cast to
-        sp = SpotifyController(access_token, expires)
-        self.cast.register_handler(sp)
-        sp.launch_app()
-
-        if not sp.is_launched and not sp.credential_error:
-            self.logger.error("Failed to launch spotify controller due to timeout")
-            return
-        if not sp.is_launched and sp.credential_error:
-            self.logger.error(
-                "Failed to launch spotify controller due to credential error"
+        if self.spotify_access_token is None:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "attr spotify sp... required", 1
             )
             return
 
-        # Query spotify for active devices
-        devices_available = client.devices()
+        try:
+            # Launch the spotify app on the cast we want to cast to
+            sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
+            self.cast.register_handler(sp)
+            await utils.run_blocking(functools.partial(sp.launch_app))
 
-        # Match active spotify devices with the spotify controller's device id
-        for device in devices_available["devices"]:
-            if device["id"] == sp.device:
-                spotify_device_id = device["id"]
-                break
+            if not sp.is_launched and not sp.credential_error:
+                self.logger.error("Failed to launch spotify controller due to timeout")
+                return
+            if not sp.is_launched and sp.credential_error:
+                self.logger.error(
+                    "Failed to launch spotify controller due to credential error"
+                )
+                return
 
-        if not spotify_device_id:
-            self.logger.error(
-                'No device with id "{}" known by Spotify'.format(sp.device)
+            # Query spotify for active devices
+            devices_available = await utils.run_blocking(
+                functools.partial(self.spotify.devices)
             )
-            self.logger.error("Known devices: {}".format(devices_available["devices"]))
-            return
 
-        # Start playback
-        if uri.find("track") > 0:
-            client.start_playback(device_id=spotify_device_id, uris=uri)
-        else:
-            client.start_playback(device_id=spotify_device_id, context_uri=uri[0])
+            # Match active spotify devices with the spotify controller's device id
+            spotify_device_id = None
+            for device in devices_available["devices"]:
+                if device["id"] == sp.device:
+                    spotify_device_id = device["id"]
+                    break
+
+            if not spotify_device_id:
+                self.logger.error(
+                    'No device with id "{}" known by Spotify'.format(sp.device)
+                )
+                self.logger.error(
+                    "Known devices: {}".format(devices_available["devices"])
+                )
+                return
+
+            # Start playback
+            if uri.find("track") > 0:
+                await utils.run_blocking(
+                    functools.partial(
+                        self.spotify.start_playback,
+                        device_id=spotify_device_id,
+                        uris=[uri],
+                    )
+                )
+            else:
+                await utils.run_blocking(
+                    functools.partial(
+                        self.spotify.start_playback,
+                        device_id=spotify_device_id,
+                        context_uri=uri,
+                    )
+                )
+        except:
+            self.logger.exception("Failed to play spotify track")
 
     async def displayWebsite(self, url):
         d = dashcast.DashCastController()
@@ -373,23 +482,32 @@ class googlecast:
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_media_status(self, status):
+        asyncio.run_coroutine_threadsafe(
+            self.stop_updateCurrentPosition(), self.loop
+        ).result()
         if (
             status.player_state == "PLAYING"
             and self.currPosTask == None
             and status.duration
             and status.duration > 0
         ):
-            self.currPosTask = self.loop.create_task(self.updateCurrentPosition())
-        elif status.player_state != "PLAYING":
-            if self.currPosTask:
-                self.currPosTask.cancel()
-                self.currPosTask = None
+            asyncio.run_coroutine_threadsafe(
+                self.run_updateCurrentPosition(), self.loop
+            ).result()
         self.logger.debug("new_media_status")
         # run reading updates in main thread
         res = asyncio.run_coroutine_threadsafe(
             self.updateMediaStatusReadings(self.hash, status), self.loop
         )
         res.result()
+
+    async def run_updateCurrentPosition(self):
+        self.currPosTask = self.create_async_task(self.updateCurrentPosition())
+
+    async def stop_updateCurrentPosition(self):
+        if self.currPosTask:
+            self.cancel_async_task(self.currPosTask)
+            self.currPosTask = None
 
     async def updateCurrentPosition(self):
         try:

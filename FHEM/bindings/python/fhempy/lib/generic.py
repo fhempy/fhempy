@@ -7,6 +7,7 @@ from . import utils
 class FhemModule:
     def __init__(self, logger):
         self.logger = logger
+        self.loop = asyncio.get_event_loop()
         self._tasks = []
         self._conf_set = {}
         self._conf_attr = {}
@@ -65,8 +66,8 @@ class FhemModule:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        await utils.handle_define_attr(self._conf_attr, self, hash)
         self.hash = hash
+        await utils.handle_define_attr(self._conf_attr, self, hash)
 
     # FHEM FUNCTION
     async def Attr(self, hash, args, argsh):
