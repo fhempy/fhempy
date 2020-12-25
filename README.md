@@ -1,6 +1,7 @@
 [![Download](https://img.shields.io/pypi/dw/fhempy)](https://pypistats.org/packages/fhempy)
 [![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
 [![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
+[![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
 # fhempy (BETA)
 
