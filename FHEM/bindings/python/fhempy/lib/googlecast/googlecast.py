@@ -101,6 +101,7 @@ class googlecast(FhemModule):
                 "help": "Please provide text with quotes.",
             },
             "startApp": {"args": ["appid"]},
+            "startSpotify": {},
             "volUp": {},
             "volDown": {},
         }
@@ -220,6 +221,9 @@ class googlecast(FhemModule):
         dashUrl = params["url"]
         self.create_async_task(self.displayWebsite(dashUrl))
 
+    async def set_startSpotify(self, hash):
+        self.create_async_task(self.launchSpotify())
+
     def playUrl(self, url):
         videoid = self.extract_video_id(url)
         if videoid == None:
@@ -246,34 +250,6 @@ class googlecast(FhemModule):
         except:
             self.logger.exception(f"Failed to play: {uri}")
 
-    # THIS CODE IS ONLY WORKING IF SPOTIFY AUTH WOULD PROVIDE A TOKEN WITH MORE SCOPES
-    # TO ACTIVATE SPOTIFY ON A CHROMECAST DEVICE
-    # async def set_spotify_auth_url(self):
-    #     self.spotipy_auth = spotipy.oauth2.SpotifyPKCE(
-    #         "e92855a009e74eb69ba6609d3bfd7d96",
-    #         "https://oskar.pw/",
-    #         scope=self.spotipy_scope,
-    #         cache_path=f".{self.hash['NAME']}_spotify_token",
-    #     )
-    #     url = self.spotipy_auth.get_authorize_url()
-    #     url = (
-    #         '<html><a href="'
-    #         + url
-    #         + '" target="_blank">Connect Spotify account (new window/tab)</a><br></html>'
-    #     )
-    #     await fhem.readingsSingleUpdate(self.hash, "spotify_login", url, 1)
-
-    # async def set_spotify_authcode(self, hash, params):
-    #     code = params["code"]
-    #     self.create_async_task(self.handle_spotify_authcode(code))
-
-    # async def handle_spotify_authcode(self, code):
-    #     access_token = await utils.run_blocking(
-    #         functools.partial(
-    #             self.spotipy_auth.get_access_token, code=code, check_cache=False
-    #         )
-    #     )
-
     async def set_attr_spotify_cookie(self, hash):
         if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
             data = st.start_session(self._attr_spotify_sp_dc, self._attr_spotify_sp_key)
@@ -299,6 +275,18 @@ class googlecast(FhemModule):
             await fhem.readingsSingleUpdate(
                 self.hash, "spotify_user", "attr spotify_sp... required", 1
             )
+
+    async def launchSpotify(self):
+        if self.spotify_access_token is None:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "attr spotify sp... required", 1
+            )
+            return
+
+        # Launch the spotify app on the cast we want to cast to
+        sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
+        self.cast.register_handler(sp)
+        await utils.run_blocking(functools.partial(sp.launch_app))
 
     async def playSpotify(self, uri):
         if self.spotify_access_token is None:
