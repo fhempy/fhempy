@@ -143,7 +143,7 @@ class dlna_dmr:
             if cmd == "play":
                 url = args[2]
                 if url is None:
-                    await self.device.dlna_dmrdevice.async_media_play()
+                    await self.device.dlna_dmrdevice.async_play()
                 else:
                     asyncio.create_task(self.device.async_play_media(url))
             elif cmd == "speak":
@@ -329,7 +329,7 @@ class DlnaDmrDevice:
 
         # Stop current playing media
         if self._device.can_stop:
-            await self._device.async_media_stop()
+            await self._device.async_stop()
 
         # Queue media
         await self._device.async_set_transport_uri(
@@ -342,7 +342,7 @@ class DlnaDmrDevice:
             return
 
         # Play it
-        await self._device.async_media_play()
+        await self._device.async_play()
 
     @property
     def state(self):
