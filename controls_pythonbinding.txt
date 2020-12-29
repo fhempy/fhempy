@@ -42,7 +42,7 @@ UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/__init__.py
 UPD 2020-12-22_23:51:37 17998 FHEM/bindings/python/fhempy/lib/fhem_pythonbinding.py
 UPD 2020-12-26_13:53:44 3104 FHEM/bindings/python/fhempy/lib/generic.py
 UPD 2020-12-25_20:00:51 7559 FHEM/bindings/python/fhempy/lib/utils.py
-UPD 2020-12-28_20:13:27 22 FHEM/bindings/python/fhempy/lib/version.py
+UPD 2020-12-29_21:44:58 23 FHEM/bindings/python/fhempy/lib/version.py
 UPD 2020-12-09_21:57:30 34 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/manifest.json
 UPD 2020-12-09_21:57:30 25 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/__init__.py
 UPD 2020-12-22_23:51:37 6430 FHEM/bindings/python/fhempy/lib/xiaomi_tokens/xiaomi_tokens.py
