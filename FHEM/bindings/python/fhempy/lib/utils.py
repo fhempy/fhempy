@@ -77,7 +77,7 @@ async def handle_define_attr(attr_list, obj, hash):
 
     for attr in attr_list:
         curr_val = await fhem.AttrVal(hash["NAME"], attr, "")
-        if curr_val == "":
+        if curr_val == "" and "default" in attr_list[attr]:
             curr_val = attr_list[attr]["default"]
         setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
 
@@ -87,7 +87,7 @@ async def handle_define_attr(attr_list, obj, hash):
             fct_name = attr_list[attr]["function"]
         try:
             fct_call = getattr(obj, fct_name)
-            return await fct_call(hash)
+            await fct_call(hash)
         except AttributeError:
             pass
 
@@ -114,10 +114,9 @@ def flatten_json(y):
 
 
 def convert2format(value, list_def):
+    target_format = "none"
     if "format" in list_def:
         target_format = list_def["format"]
-    else:
-        target_format = "str"
 
     if target_format == "int":
         return int(value)
