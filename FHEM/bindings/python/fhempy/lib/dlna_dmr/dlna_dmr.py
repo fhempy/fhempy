@@ -165,19 +165,19 @@ class dlna_dmr:
                     onoff = False
                 else:
                     onoff = not (self.device.dlna_dmrdevice.is_volume_muted())
-                self.device.dlna_dmrdevice.async_mute_volume(onoff)
+                await self.device.dlna_dmrdevice.async_mute_volume(onoff)
             elif cmd == "pause":
-                self.device.dlna_dmrdevice.async_pause()
+                await self.device.dlna_dmrdevice.async_pause()
             elif cmd == "next":
-                self.device.dlna_dmrdevice.async_next()
+                await self.device.dlna_dmrdevice.async_next()
             elif cmd == "previous":
-                self.device.dlna_dmrdevice.async_previous()
+                await self.device.dlna_dmrdevice.async_previous()
             elif cmd == "off" or cmd == "stop":
-                self.device.dlna_dmrdevice.async_stop()
+                await self.device.dlna_dmrdevice.async_stop()
             elif cmd == "seek":
                 t = args[2]
                 tdiff = time.gmtime(t)
-                self.device.dlna_dmrdevice.async_seek_rel_time(tdiff)
+                await self.device.dlna_dmrdevice.async_seek_rel_time(tdiff)
 
     async def update(self):
         # get volume

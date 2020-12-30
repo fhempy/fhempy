@@ -74,21 +74,42 @@ class spotify(FhemModule):
             "pause": {
                 "args": ["deviceid"],
                 "function": "set_command",
-                "params": {"deviceid": {"default": None, "optinoal": True}},
+                "params": {"deviceid": {"default": None, "optional": True}},
             },
             "next_track": {
                 "args": ["deviceid"],
                 "function": "set_command",
-                "params": {"deviceid": {"default": None, "optinoal": True}},
+                "params": {"deviceid": {"default": None, "optional": True}},
             },
             "previous_track": {
                 "args": ["deviceid"],
                 "function": "set_command",
-                "params": {"deviceid": {"default": None, "optinoal": True}},
+                "params": {"deviceid": {"default": None, "optional": True}},
             },
             "authcode": {"args": ["code"]},
             "update_devices": {},
             "status": {"function": "set_command"},
+            "shuffle": {
+                "args": ["onoff", "deviceid"],
+                "params": {
+                    "onoff": {"default": True, "optional": True},
+                    "deviceid": {"default": None, "optional": True},
+                },
+                "function": "set_command",
+            },
+            "volume": {
+                "args": ["vol", "deviceid"],
+                "params": {
+                    "vol": {"optional": False},
+                    "deviceid": {"default": None, "optional": True},
+                },
+                "options": "slider,0,1,100",
+                "function": "set_command",
+            },
+            "transfer_playback": {
+                "args": ["deviceid"],
+                "function": "set_command",
+            },
         }
         self.set_set_config(self.set_config)
         return
@@ -299,6 +320,22 @@ class spotify(FhemModule):
             )
         elif params["cmd"] == "status":
             self.create_async_task(self.update_playback())
+        elif params["cmd"] == "shuffle":
+            utils.run_blocking_task(
+                functools.partial(
+                    self.spotipy.shuffle, params["onoff"], params["deviceid"]
+                )
+            )
+        elif params["cmd"] == "volume":
+            utils.run_blocking_task(
+                functools.partial(
+                    self.spotipy.volume, params["vol"], params["deviceid"]
+                )
+            )
+        elif params["cmd"] == "transfer_playback":
+            utils.run_blocking_task(
+                functools.partial(self.spotipy.transfer_playback, params["deviceid"])
+            )
 
     async def update_playback(self):
         try:

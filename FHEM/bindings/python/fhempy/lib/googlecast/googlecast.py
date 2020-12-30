@@ -158,7 +158,7 @@ class googlecast(FhemModule):
 
     async def set_playFavorite(self, hash, params):
         fav = params["id"]
-        url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + id, "")
+        url = await fhem.AttrVal(self.hash["NAME"], "favorite_" + str(id), "")
         if len(url) == 0:
             return "Please set favorite before usage"
         self.playUrl(url)

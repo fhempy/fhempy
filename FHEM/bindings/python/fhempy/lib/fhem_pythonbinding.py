@@ -379,7 +379,7 @@ class PyBinding:
 
 
 def run():
-    logger.info("Starting pythonbinding...")
+    logger.info("Starting fhempy...")
 
     asyncio.get_event_loop().run_until_complete(
         pkg_installer.check_and_install_dependencies("core")
