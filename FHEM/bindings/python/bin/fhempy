@@ -17,7 +17,7 @@ MIN_PYTHON_VERSION_STR = "3.7.3"
 
 if sys.hexversion < MIN_PYTHON_VERSION_HEX:
     logging.getLogger(__name__).error(
-        "FHEM_PythonBinding requires Python " + MIN_PYTHON_VERSION_STR
+        "fhempy requires Python " + MIN_PYTHON_VERSION_STR
     )
     logging.getLogger(__name__).error("You are running: " + sys.version)
     time.sleep(60)
