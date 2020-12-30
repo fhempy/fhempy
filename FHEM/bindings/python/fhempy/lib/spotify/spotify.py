@@ -356,7 +356,7 @@ class spotify(FhemModule):
                 reading = "current_" + status_name
                 if "available_markets" in status_name:
                     continue
-                if "current_device_volume_percent" == status_name:
+                if "device_volume_percent" == status_name:
                     reading = "volume"
                 await fhem.readingsBulkUpdateIfChanged(
                     self.hash, reading, flat_status[status_name]
