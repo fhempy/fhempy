@@ -49,17 +49,19 @@ class discover_fhempy:
                 return value.decode("utf-8")
 
             if info.type == "_http._tcp.local." and info.name[0:6] == "fhempy":
-                if not (
-                    await fhem.checkIfDeviceExists(
-                        self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
-                    )
-                ):
-                    ip = get_value("ip")
-                    port = get_value("port")
-                    ipstr = ip.replace(".", "_")
-                    await fhem.CommandDefine(
-                        self.hash, f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python"
-                    )
+                if get_value("ip") is not None:
+                    if not (
+                        await fhem.checkIfDeviceExists(
+                            self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
+                        )
+                    ):
+                        ip = get_value("ip")
+                        port = get_value("port")
+                        ipstr = ip.replace(".", "_")
+                        await fhem.CommandDefine(
+                            self.hash,
+                            f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python",
+                        )
             else:
                 return
 
