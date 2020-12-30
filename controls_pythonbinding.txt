@@ -90,7 +90,7 @@ UPD 2020-12-09_21:57:30 3662 FHEM/bindings/python/fhempy/lib/helloworld/hellowor
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/helloworld/__init__.py
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/googlecast/__init__.py
 UPD 2020-12-25_20:00:51 173 FHEM/bindings/python/fhempy/lib/googlecast/manifest.json
-UPD 2020-12-30_16:56:20 24566 FHEM/bindings/python/fhempy/lib/googlecast/googlecast.py
+UPD 2020-12-30_19:52:21 24567 FHEM/bindings/python/fhempy/lib/googlecast/googlecast.py
 UPD 2020-12-09_21:57:30 48 FHEM/bindings/python/fhempy/lib/gfprobt/manifest.json
 UPD 2020-12-09_21:57:30 31 FHEM/bindings/python/fhempy/lib/gfprobt/__init__.py
 UPD 2020-12-22_23:51:37 6563 FHEM/bindings/python/fhempy/lib/gfprobt/gfprobt.py
@@ -136,4 +136,4 @@ UPD 2020-12-29_10:55:59 88 FHEM/bindings/python/fhempy/lib/spotify_connect_playe
 UPD 2020-12-29_21:48:12 6917 FHEM/bindings/python/fhempy/lib/spotify_connect_player/spotify_connect_player.py
 UPD 2020-12-29_21:40:38 31 FHEM/bindings/python/fhempy/lib/spotify/__init__.py
 UPD 2020-12-29_21:40:38 49 FHEM/bindings/python/fhempy/lib/spotify/manifest.json
-UPD 2020-12-30_16:56:20 14301 FHEM/bindings/python/fhempy/lib/spotify/spotify.py
+UPD 2020-12-30_19:52:00 14301 FHEM/bindings/python/fhempy/lib/spotify/spotify.py
