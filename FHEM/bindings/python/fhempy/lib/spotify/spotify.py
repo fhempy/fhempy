@@ -90,18 +90,17 @@ class spotify(FhemModule):
             "update_devices": {},
             "status": {"function": "set_command"},
             "shuffle": {
-                "args": ["onoff", "deviceid"],
+                "args": ["onoff"],
                 "params": {
                     "onoff": {"default": True, "optional": True},
-                    "deviceid": {"default": None, "optional": True},
                 },
+                "options": "on,off",
                 "function": "set_command",
             },
             "volume": {
-                "args": ["vol", "deviceid"],
+                "args": ["vol"],
                 "params": {
                     "vol": {"optional": False},
-                    "deviceid": {"default": None, "optional": True},
                 },
                 "options": "slider,0,1,100",
                 "function": "set_command",
@@ -322,15 +321,11 @@ class spotify(FhemModule):
             self.create_async_task(self.update_playback())
         elif params["cmd"] == "shuffle":
             utils.run_blocking_task(
-                functools.partial(
-                    self.spotipy.shuffle, params["onoff"], params["deviceid"]
-                )
+                functools.partial(self.spotipy.shuffle, params["onoff"] == "on")
             )
         elif params["cmd"] == "volume":
             utils.run_blocking_task(
-                functools.partial(
-                    self.spotipy.volume, params["vol"], params["deviceid"]
-                )
+                functools.partial(self.spotipy.volume, params["vol"])
             )
         elif params["cmd"] == "transfer_playback":
             utils.run_blocking_task(
