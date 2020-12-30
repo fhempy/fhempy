@@ -347,13 +347,19 @@ class spotify(FhemModule):
                 del_readings = set(self._last_data) - set(flat_status)
             else:
                 del_readings = {}
+                await fhem.CommandDeleteReading(
+                    self.hash, self.hash["NAME"] + " current_.*"
+                )
 
             await fhem.readingsBeginUpdate(self.hash)
             for status_name in flat_status:
+                reading = "current_" + status_name
                 if "available_markets" in status_name:
                     continue
+                if "current_device_volume_percent" == status_name:
+                    reading = "volume"
                 await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "current_" + status_name, flat_status[status_name]
+                    self.hash, reading, flat_status[status_name]
                 )
             await fhem.readingsEndUpdate(self.hash, 1)
 
