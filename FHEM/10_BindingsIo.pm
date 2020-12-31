@@ -308,7 +308,7 @@ BindingsIo_Set($$$)
     return BindingsIo_Write($hash, $hash, "update", [], {});
   }
 
-  return "Unknown argument $cmd, choose one of $list";;
+  return "Unknown argument $cmd, choose one of $list";
 }
 
 sub
