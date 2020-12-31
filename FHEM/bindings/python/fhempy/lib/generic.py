@@ -59,9 +59,25 @@ class FhemModule:
           }
           helpAttrAction();
         });
-    </script>"""
-        ret = ret.replace("###SET_CMD_CONFIG_STRING###", json.dumps(self._conf_set))
-        ret = ret.replace("###ATTR_CONFIG_STRING###", json.dumps(self._conf_attr))
+        </script>"""
+        js_set_conf = {}
+        for key in self._conf_set:
+            if "help" in self._conf_set[key]:
+                js_set_conf[key] = {}
+                js_set_conf[key]["help"] = self._conf_set[key]["help"]
+        ret = ret.replace(
+            "###SET_CMD_CONFIG_STRING###",
+            json.dumps(js_set_conf),
+        )
+        js_attr_conf = {}
+        for key in self._conf_attr:
+            if "help" in self._conf_attr[key]:
+                js_attr_conf[key] = {}
+                js_attr_conf[key]["help"] = self._conf_attr[key]["help"]
+        ret = ret.replace(
+            "###ATTR_CONFIG_STRING###",
+            json.dumps(js_attr_conf),
+        )
         return ret
 
     # FHEM FUNCTION

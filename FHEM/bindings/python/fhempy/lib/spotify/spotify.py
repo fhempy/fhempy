@@ -90,18 +90,17 @@ class spotify(FhemModule):
             "update_devices": {},
             "status": {"function": "set_command"},
             "shuffle": {
-                "args": ["onoff", "deviceid"],
+                "args": ["onoff"],
                 "params": {
                     "onoff": {"default": True, "optional": True},
-                    "deviceid": {"default": None, "optional": True},
                 },
+                "options": "on,off",
                 "function": "set_command",
             },
             "volume": {
-                "args": ["vol", "deviceid"],
+                "args": ["vol"],
                 "params": {
                     "vol": {"optional": False},
-                    "deviceid": {"default": None, "optional": True},
                 },
                 "options": "slider,0,1,100",
                 "function": "set_command",
@@ -322,15 +321,11 @@ class spotify(FhemModule):
             self.create_async_task(self.update_playback())
         elif params["cmd"] == "shuffle":
             utils.run_blocking_task(
-                functools.partial(
-                    self.spotipy.shuffle, params["onoff"], params["deviceid"]
-                )
+                functools.partial(self.spotipy.shuffle, params["onoff"] == "on")
             )
         elif params["cmd"] == "volume":
             utils.run_blocking_task(
-                functools.partial(
-                    self.spotipy.volume, params["vol"], params["deviceid"]
-                )
+                functools.partial(self.spotipy.volume, params["vol"])
             )
         elif params["cmd"] == "transfer_playback":
             utils.run_blocking_task(
@@ -347,13 +342,19 @@ class spotify(FhemModule):
                 del_readings = set(self._last_data) - set(flat_status)
             else:
                 del_readings = {}
+                await fhem.CommandDeleteReading(
+                    self.hash, self.hash["NAME"] + " current_.*"
+                )
 
             await fhem.readingsBeginUpdate(self.hash)
             for status_name in flat_status:
+                reading = "current_" + status_name
                 if "available_markets" in status_name:
                     continue
+                if "device_volume_percent" == status_name:
+                    reading = "volume"
                 await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "current_" + status_name, flat_status[status_name]
+                    self.hash, reading, flat_status[status_name]
                 )
             await fhem.readingsEndUpdate(self.hash, 1)
 

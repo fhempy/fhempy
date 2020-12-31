@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import socket
 import concurrent.futures
 from cryptography.fernet import Fernet
 from codecs import encode, decode
@@ -63,6 +64,23 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
         pass
 
     return
+
+
+def get_local_ip():
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Use Google Public DNS server to determine own IP
+        sock.connect(("8.8.8.8", 80))
+
+        return sock.getsockname()[0]  # type: ignore
+    except OSError:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            return "127.0.0.1"
+    finally:
+        sock.close()
 
 
 async def handle_define_attr(attr_list, obj, hash):
