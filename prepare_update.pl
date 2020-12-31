@@ -10,27 +10,13 @@ my $location = "FHEM";
 # keep this till 03/2021 (written on 22.12.2020)
 print "MOV FHEM/bindings/python/fhempy FHEM/bindings/python/delete_fhempy\n";
 
-my @dirs = split(/\n/,`find $location -type d`);
-foreach(@dirs) {
-  my $dir = substr($_,5);
-  if (substr($dir,0,4) eq ".git") {
-    next;
-  }
-  if ($dir eq "") {
-    next;
-  }
-  if (substr($dir,-11) eq "__pycache__") {
-    next;
-  }
-  if (substr($dir,-8) eq "egg-info") {
-    next;
-  }
-  print "DIR $location/$dir\n";
-}
+print "DIR FHEM/bindings\n";
+print "DIR FHEM/bindings/python\n";
+print "DIR FHEM/bindings/python/bin\n";
 
 sub find_files {
   my $F = $File::Find::name;
-  if ($F =~ /pm$\|json$\|\.py|bin\/fhempy$/ ) {
+  if ($F =~ /bin\/fhempy$/ ) {
     my $filename = $F;
     if (index($filename, "__pycache__") != -1) {
       next;
