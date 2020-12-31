@@ -9,6 +9,9 @@ with open(ver_path) as ver_file:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open("requirements.txt") as f:
+    required = f.read().splitlines()
+
 setuptools.setup(
     name="fhempy",
     version=main_ns["__version__"],
@@ -20,6 +23,7 @@ setuptools.setup(
     url="https://github.com/dominikkarall/fhempy/",
     package_dir={"": "FHEM/bindings/python"},
     packages=setuptools.find_packages(where="FHEM/bindings/python"),
+    install_requires=required,
     scripts=["FHEM/bindings/python/bin/fhempy"],
     classifiers=[
         "Programming Language :: Python :: 3",
