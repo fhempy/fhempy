@@ -1,3 +1,6 @@
+2020-12-31: Further updates are done via pip
+            No need to change anything, everything is done for you :)
+            Happy New Year!
 2020-12-23: Save xiaomi_tokens credentials
             Add ip address to xiaomi_tokens
             Create miio/gateway3 device out of xiaomi_tokens
