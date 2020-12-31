@@ -10,7 +10,7 @@ import site
 import sys
 import importlib
 import time
-from . import fhem, pkg_installer
+from . import fhem, pkg_installer, utils
 from .core.zeroconf import zeroconf
 
 
@@ -54,7 +54,7 @@ async def pybinding(websocket, path):
 
     global connection_start
     connection_start = time.time()
-    logger.info("FHEM connection started: " + websocket.remote_address[0])
+    logger.info("Incoming FHEM connection: " + websocket.remote_address[0])
     pb = PyBinding(websocket)
     fhem.updateConnection(pb)
     await activate_internal_modules()
@@ -386,9 +386,9 @@ def run():
     )
 
     if len(sys.argv) == 1:
+        logger.info("Advertise fhempy on local network")
         # running on remote peer, start zeroconf for autodiscovery
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
+        local_ip = utils.get_local_ip()
         zc = zeroconf.get_instance(logger)
         zc_info = asyncio.get_event_loop().run_until_complete(
             zc.register_service(
@@ -399,6 +399,7 @@ def run():
             )
         )
 
+    logger.info("Waiting for FHEM connection")
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(
             pybinding, "0.0.0.0", 15733, ping_timeout=None, ping_interval=None
