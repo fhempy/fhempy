@@ -63,7 +63,7 @@ class xiaomi_tokens(FhemModule):
         )
         return ""
 
-    async def set_get_tokens(self, hash):
+    async def set_get_tokens(self, hash, params):
         if self._username and self._password:
             self.create_async_task(self.obtain_tokens())
         else:

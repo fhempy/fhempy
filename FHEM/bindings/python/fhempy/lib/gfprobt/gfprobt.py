@@ -88,17 +88,17 @@ class gfprobt(FhemModule):
     def write_password(self, mac):
         self._conn.write_characteristic(HANDLE_RW_PASSWORD, b"123456")
 
-    async def set_update(self, hash):
+    async def set_update(self, hash, params):
         asyncio.create_task(self.update())
 
     async def set_on(self, hash, params):
         onseconds = params["onseconds"]
         utils.run_blocking_task(functools.partial(self.blocking_on, onseconds))
 
-    async def set_off(self, hash):
+    async def set_off(self, hash, params):
         utils.run_blocking_task(functools.partial(self.blocking_off))
 
-    async def set_toggle(self, hash):
+    async def set_toggle(self, hash, params):
         utils.run_blocking_task(functools.partial(self.blocking_toggle))
 
     def blocking_on(self, onseconds):

@@ -107,7 +107,7 @@ class spotify_connect_player(FhemModule):
                 self.create_async_task(self.update_playback_loop())
                 self.create_async_task(self.update_devices_loop())
 
-    async def set_start(self, hash):
+    async def set_start(self, hash, params):
         self.create_async_task(self.run_spotify())
 
     async def run_spotify(self):
@@ -174,7 +174,7 @@ class spotify_connect_player(FhemModule):
         page = await self.browser.newPage()
         await page.goto("http://localhost:8080/")
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         self.create_async_task(self.stop_spotify())
 
     async def stop_spotify(self):

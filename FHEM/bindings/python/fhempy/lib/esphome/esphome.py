@@ -84,14 +84,14 @@ class esphome:
     async def Set(self, hash, args, argsh):
         return await utils.handle_set(self._set_list, self, hash, args, argsh)
 
-    async def set_start(self, hash):
+    async def set_start(self, hash, params):
         await self.stop_process()
         await self.start_process()
         return ""
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         await self.stop_process()
         return ""
 
-    async def set_restart(self, hash):
+    async def set_restart(self, hash, params):
         return await self.set_start(hash)

@@ -198,20 +198,20 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
                 for param in cmd_def["params"]:
                     # check if value is available or default value
                     # check if all required params are availble
-                    if (
+                    if "value" in cmd_def["params"][param]:
+                        final_params[param] = cmd_def["params"][param]["value"]
+                    elif "default" not in cmd_def["params"][param] and (
+                        "optional" not in cmd_def["params"][param]
+                        or cmd_def["params"][param]["optional"] == False
+                    ):
+                        # no value found, check if optional
+                        return f"Required argument {param} missing."
+                    elif (
                         "default" in cmd_def["params"][param]
                         and "value" not in cmd_def["params"][param]
                     ):
                         final_params[param] = cmd_def["params"][param]["default"]
-                    elif "value" in cmd_def["params"][param]:
-                        final_params[param] = cmd_def["params"][param]["value"]
-                    elif (
-                        "optional" not in cmd_def["params"][param]
-                        or cmd_def["params"][param]["optional"] is False
-                    ):
-                        # no value found, check if optional
-                        return f"Required argument {param} missing."
-                    if "format" in cmd_def["params"][param]:
+                    if "format" in cmd_def["params"][param] and param in final_params:
                         final_params[param] = convert2format(
                             final_params[param], cmd_def["params"][param]
                         )
@@ -223,9 +223,6 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             else:
                 fct_name = "set_" + cmd
             fct_call = getattr(obj, fct_name)
-            if len(final_params) > 0:
-                return await fct_call(hash, final_params)
-
-            return await fct_call(hash)
+            return await fct_call(hash, final_params)
         else:
             return f"Command not available for this device."

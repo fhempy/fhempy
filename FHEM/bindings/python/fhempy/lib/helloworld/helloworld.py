@@ -67,7 +67,7 @@ class helloworld(FhemModule):
         await fhem.readingsSingleUpdate(hash, "state", "on " + seconds, 1)
         return ""
 
-    async def set_off(self, hash):
+    async def set_off(self, hash, params):
         # no params argument here, as set_off doesn't have arguments defined in set_list_conf
         await fhem.readingsSingleUpdate(hash, "state", "off", 1)
         self.create_async_task(self.long_running_task())

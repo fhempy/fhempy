@@ -40,7 +40,7 @@ class wienerlinien:
         set_list_conf = {"update": {}}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
-    async def set_update(self, hash):
+    async def set_update(self, hash, params):
         asyncio.create_task(self.update())
         return ""
 

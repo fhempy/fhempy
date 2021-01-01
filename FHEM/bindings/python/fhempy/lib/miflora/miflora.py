@@ -94,7 +94,7 @@ class miflora:
     async def Set(self, hash, args, argsh):
         return await utils.handle_set(self._set_list, self, hash, args, argsh)
 
-    async def set_update(self, hash):
+    async def set_update(self, hash, params):
         asyncio.create_task(self.do_update())
 
     # FHEM FUNCTION

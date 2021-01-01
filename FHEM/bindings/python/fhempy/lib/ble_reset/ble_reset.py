@@ -134,7 +134,7 @@ class ble_reset:
 
         self._resettask = asyncio.create_task(self.ble_reset())
 
-    async def set_resetnow(self, hash):
+    async def set_resetnow(self, hash, params):
         asyncio.create_task(self.ble_reset_once())
 
     async def Attr(self, hash, args, argsh):

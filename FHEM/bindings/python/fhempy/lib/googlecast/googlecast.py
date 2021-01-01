@@ -163,39 +163,39 @@ class googlecast(FhemModule):
             return "Please set favorite before usage"
         self.playUrl(url)
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         self.cast.media_controller.stop()
 
-    async def set_pause(self, hash):
+    async def set_pause(self, hash, params):
         self.cast.media_controller.pause()
 
-    async def set_quitApp(self, hash):
+    async def set_quitApp(self, hash, params):
         self.cast.quit_app()
 
     async def set_startApp(self, hash, params):
         appId = params["appid"]
         self.cast.start_app(appId)
 
-    async def set_skip(self, hash):
+    async def set_skip(self, hash, params):
         self.cast.media_controller.skip()
 
-    async def set_rewind(self, hash):
+    async def set_rewind(self, hash, params):
         self.cast.media_controller.rewind()
 
     async def set_seek(self, hash, params):
         position = params["pos"]
         self.cast.media_controller.seek(position)
 
-    async def set_next(self, hash):
+    async def set_next(self, hash, params):
         self.cast.media_controller.queue_next()
 
-    async def set_prev(self, hash):
+    async def set_prev(self, hash, params):
         self.cast.media_controller.queue_prev()
 
-    async def set_volUp(self, hash):
+    async def set_volUp(self, hash, params):
         self.cast.volume_up()
 
-    async def set_volDown(self, hash):
+    async def set_volDown(self, hash, params):
         self.cast.volume_down()
 
     async def set_subtitles(self, hash, params):
@@ -221,7 +221,7 @@ class googlecast(FhemModule):
         dashUrl = params["url"]
         self.create_async_task(self.displayWebsite(dashUrl))
 
-    async def set_startSpotify(self, hash):
+    async def set_startSpotify(self, hash, params):
         self.create_async_task(self.launchSpotify())
 
     def playUrl(self, url):

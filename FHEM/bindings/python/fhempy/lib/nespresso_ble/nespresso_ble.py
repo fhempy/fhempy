@@ -103,7 +103,7 @@ class nespresso_ble(FhemModule):
         except:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
-    async def set_updateStatus(self, hash):
+    async def set_updateStatus(self, hash, params):
         self.create_async_task(self.update_status())
 
     async def update_status(self):

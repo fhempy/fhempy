@@ -303,11 +303,11 @@ class object_detection:
         set_list_conf = {"start": {}, "detect_once": {}, "stop": {}}
         return await utils.handle_set(set_list_conf, self, hash, args, argsh)
 
-    async def set_start(self, hash):
+    async def set_start(self, hash, params):
         self._stop_detection = False
         await self.start_detection()
 
-    async def set_detect_once(self, hash):
+    async def set_detect_once(self, hash, params):
         self._stop_detection = True
         await self.start_detection()
 
@@ -321,7 +321,7 @@ class object_detection:
             )
         return ""
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         self._stop_detection = True
 
     async def image_detect_objects_loop(self):

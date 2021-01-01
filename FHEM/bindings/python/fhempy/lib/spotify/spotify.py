@@ -243,7 +243,7 @@ class spotify(FhemModule):
                 self.logger.exception("Failed to update devices")
             await asyncio.sleep(self._attr_update_devices_interval)
 
-    async def set_update_devices(self, hash):
+    async def set_update_devices(self, hash, params):
         self.create_async_task(self.update_devices())
 
     async def update_devices(self):
