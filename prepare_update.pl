@@ -16,7 +16,7 @@ print "DIR FHEM/bindings/python/bin\n";
 
 sub find_files {
   my $F = $File::Find::name;
-  if ($F =~ /bin\/fhempy$/ ) {
+  if ($F =~ /pm$|bin\/fhempy$/ ) {
     my $filename = $F;
     if (index($filename, "__pycache__") != -1) {
       next;
