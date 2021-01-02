@@ -129,9 +129,10 @@ class ring:
                 alerts = self._ring.active_alerts()
                 self.logger.debug("Received dings: " + str(alerts))
                 if len(alerts) > 0:
-                    alert_active = 1
                     for alert in alerts:
-                        await self.update_alert_readings(alert)
+                        if alert["doorbot_id"] == self._rdevice.device_id:
+                            alert_active = 1
+                            await self.update_alert_readings(alert)
                 elif alert_active == 1:
                     alert_active = 0
                     await fhem.readingsSingleUpdateIfChanged(
@@ -150,6 +151,9 @@ class ring:
         await fhem.readingsBulkUpdate(self.hash, "alert_kind", alert["kind"])
         await fhem.readingsBulkUpdate(self.hash, "alert_sip_to", alert["sip_to"])
         await fhem.readingsBulkUpdate(self.hash, "alert_sip_token", alert["sip_token"])
+        await fhem.readingsBulkUpdate(
+            self.hash, "alert_doorbot_id", alert["doorbot_id"]
+        )
         await fhem.readingsBulkUpdate(self.hash, "state", alert["kind"])
         await fhem.readingsEndUpdate(self.hash, 1)
 
