@@ -3,6 +3,8 @@ import functools
 import time
 import re
 
+from fhempy.lib.generic import FhemModule
+
 from bluepy.btle import (
     BTLEDisconnectError,
     ScanEntry,
@@ -92,14 +94,15 @@ class scanner:
     def register_mac_listener(self, mac, listener):
         self._mac_listener[mac.lower()] = listener
         if self._scan_task is None:
-            self._scan_task = asyncio.create_task(self.loop_scan())
+            self._scan_task = self.create_async_task(self.loop_scan())
 
     def unregister_mac_listener(self, mac):
         if mac in self._mac_listener:
             del self._mac_listener[mac]
         if len(self._mac_listener) == 0:
-            self._scan_task.cancel()
-            self._scan_task = None
+            if self._scan_task:
+                self._scan_task.cancel()
+                self._scan_task = None
 
     def handleDiscovery(self, dev, isNewDev, isNewData):
         asyncio.run_coroutine_threadsafe(
@@ -161,9 +164,9 @@ class scanner:
             self.logger.error(f"Failed to scan: {ex}")
 
 
-class ble_presence:
+class ble_presence(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.hash = None
 
         self._name = ""
@@ -189,7 +192,7 @@ class ble_presence:
                 "options": "all,off,battery",
             },
         }
-        return
+        self.set_attr_config(self._attr_list)
 
     async def update_readings(self, presence, address, name, rssi):
         if self._rssi != rssi:
@@ -281,19 +284,14 @@ class ble_presence:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define p_mysmartphone PythonModule ble_presence <MAC>"
 
-        await utils.handle_define_attr(self._attr_list, self, hash)
         self._address = args[3]
         self.hash["MAC"] = args[3]
 
         scanner.get_instance(self.logger).register_mac_listener(self._address, self)
-
-    # FHEM FUNCTION
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
     async def set_attr_scan_interval(self, hash):
         scanner.get_instance(self.logger).set_scan_interval(self._attr_scan_interval)
@@ -308,3 +306,4 @@ class ble_presence:
     # FHEM FUNCTION
     async def Undefine(self, hash):
         scanner.get_instance(self.logger).unregister_mac_listener(self._address)
+        await super().Undefine(hash)

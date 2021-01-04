@@ -7,16 +7,22 @@ from bt_proximity import BluetoothRSSI
 from .. import fhem
 from .. import utils
 
+from fhempy.lib.generic import FhemModule
 
-class bt_presence:
+
+class bt_presence(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
-        self.hash = None
+        super().__init__(logger)
         self.btscan_task = None
-        self._interval = {"absent": 10, "present": 60}
-        self._threshold = {"absent": 0, "present": 0}
         self._curr_state = ""
         self._count_diff_state = 0
+        attr_config = {
+            "absentInterval": {"default": 10, "format": "int"},
+            "presentInterval": {"default": 60, "format": "int"},
+            "absentThreshold": {"default": 0, "format": "int"},
+            "presentThreshold": {"default": 0, "format": "int"},
+        }
+        self.set_attr_config(attr_config)
 
     def lookup_name(self, mac):
         return bluetooth.lookup_name(mac, timeout=5)
@@ -28,6 +34,7 @@ class bt_presence:
             new_state = "absent"
             try:
                 # check max 3 times for device_name
+                device_name = None
                 for i in range(0, 2):
                     device_name = await utils.run_blocking(
                         functools.partial(self.lookup_name, self._address)
@@ -58,12 +65,20 @@ class bt_presence:
 
             if self._curr_state != new_state:
                 self._count_diff_state += 1
-                if self._count_diff_state >= self._threshold[new_state]:
+                if new_state == "present":
+                    threshold = self._attr_presentThreshold
+                else:
+                    threshold = self._attr_absentThreshold
+                if self._count_diff_state >= threshold:
                     self._curr_state = new_state
                     self._count_diff_state = 0
                     await self.update_state(self._curr_state)
 
-            await asyncio.sleep(self._interval[self._curr_state])
+            if self._curr_state == "present":
+                interval = self._attr_presentInterval
+            else:
+                interval = self._attr_absentInterval
+            await asyncio.sleep(interval)
 
     async def update_state(self, new_state):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", new_state, 1)
@@ -71,58 +86,13 @@ class bt_presence:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define p_mysmartphone PythonModule bt_presence <MAC>"
 
         self._address = args[3]
         self.hash["MAC"] = args[3]
 
-        await fhem.addToDevAttrList(
-            hash["NAME"],
-            "absentInterval presentInterval absentThreshold presentThreshold",
-        )
-
-        self._interval = {
-            "absent": int(await fhem.AttrVal(hash["NAME"], "absentInterval", "60")),
-            "present": int(await fhem.AttrVal(hash["NAME"], "presentInterval", "60")),
-        }
-        self._threshold = {
-            "absent": int(await fhem.AttrVal(hash["NAME"], "absentThreshold", "0")),
-            "present": int(await fhem.AttrVal(hash["NAME"], "presentThreshold", "0")),
-        }
-
         if self.btscan_task:
             self.btscan_task.cancel()
-        self.btscan_task = asyncio.create_task(self.run_bt_scan())
-        return ""
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self.btscan_task:
-            self.btscan_task.cancel()
-
-    async def Attr(self, hash, args, argsh):
-        cmd = args[0]
-        name = args[1]
-        attr_name = args[2]
-        attr_val = args[3]
-
-        if cmd == "set":
-            if attr_name == "absentInterval":
-                self._interval["absent"] = int(attr_val)
-            elif attr_name == "presentInterval":
-                self._interval["present"] = int(attr_val)
-            elif attr_name == "absentThreshold":
-                self._threshold["absent"] = int(attr_val)
-            elif attr_name == "presentThreshold":
-                self._threshold["present"] = int(attr_val)
-        else:
-            if attr_name == "absentInterval":
-                self._interval["absent"] = 10
-            elif attr_name == "presentInterval":
-                self._interval["present"] = 60
-            elif attr_name == "absentThreshold":
-                self._threshold["absent"] = 0
-            elif attr_name == "presentThreshold":
-                self._threshold["present"] = 0
+        self.btscan_task = self.create_async_task(self.run_bt_scan())

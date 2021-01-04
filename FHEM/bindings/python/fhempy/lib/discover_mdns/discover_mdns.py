@@ -7,11 +7,12 @@ import threading
 
 from .. import fhem
 from ..core.zeroconf import zeroconf
+from fhempy.lib.generic import FhemModule
 
 
-class discover_mdns:
+class discover_mdns(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.loop = asyncio.get_event_loop()
         self.zeroconf = None
         self.hash = None
@@ -98,6 +99,18 @@ class discover_mdns:
                     await fhem.CommandDefine(
                         self.hash, f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python"
                     )
+            elif info.type == "_spotify-connect":
+                if not (
+                    await fhem.checkIfDeviceExists(
+                        self.hash, "PYTHONTYPE", "spotify", "PYTHONTYPE", "spotify"
+                    )
+                ):
+                    self.logger.debug("create spotify")
+                    await fhem.CommandDefine(
+                        self.hash, "spotify_connect PythonModule spotify"
+                    )
+                else:
+                    self.logger.debug("device spotify exists already, do not create")
             else:
                 return
 
@@ -120,20 +133,15 @@ class discover_mdns:
 
     # FHEM
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
-        self.loop.create_task(self.runZeroconfScan())
+        self.create_async_task(self.runZeroconfScan())
 
         if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon rc_SEARCH")
-
-        return ""
-
-    # FHEM
-    async def Set(self, hash, args, argsh):
-        return ""
 
     # FHEM
     async def Undefine(self, hash):
         if self.browser:
             self.browser.cancel()
+        await super().Undefine(hash)

@@ -1,8 +1,6 @@
 from ..generic import FhemModule
 import asyncio
-import codecs
 import functools
-import binascii
 import time
 import struct
 
@@ -73,7 +71,9 @@ class gfprobt(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
+        if len(args) < 4:
+            return "Usage: define irrigation_control PythonModule gfprobt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
         self._conn = BTLEConnection(
@@ -81,15 +81,14 @@ class gfprobt(FhemModule):
             keep_connected=True,
             connection_established_callback=self.write_password,
         )
-        asyncio.create_task(self.update())
-        return ""
+        self.create_async_task(self.update())
 
     # write_password is running in another thread
     def write_password(self, mac):
         self._conn.write_characteristic(HANDLE_RW_PASSWORD, b"123456")
 
     async def set_update(self, hash, params):
-        asyncio.create_task(self.update())
+        self.create_async_task(self.update())
 
     async def set_on(self, hash, params):
         onseconds = params["onseconds"]

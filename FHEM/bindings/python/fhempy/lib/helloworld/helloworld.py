@@ -27,30 +27,32 @@ class helloworld(FhemModule):
             },
             "desiredTemp": {"args": ["temperature"], "options": "slider,10,1,30"},
             "holidayMode": {
-                "args": ["start", "end", "temperature"],
+                "args": ["endday", "endtime", "temperature"],
                 "params": {
-                    "start": {"default": "Monday"},
-                    "end": {"default": "23:59"},
-                    "temperature": {"default": ""},
+                    "endday": {"default": "31.12.2030"},
+                    "endtime": {"default": "23:59"},
+                    "temperature": {"default": 21, "format": "int"},
                 },
             },
             "on": {
                 "args": ["seconds"],
-                "params": {"seconds": {"default": "", "optional": True}},
+                "params": {
+                    "seconds": {"default": 0, "optional": True, "format": "int"}
+                },
                 "help": "Specify seconds as parameter to change to off after X seconds.",
             },
             "off": {},
         }
         self.set_set_config(set_config)
-        return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        if len(args) > 3:
+            return "Usage: define hello_fhempy PythonModule helloworld"
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "on")
         await fhem.readingsEndUpdate(hash, 1)
-        return ""
 
     # Attribute function format: set_attr_NAMEOFATTRIBUTE(self, hash)
     # self._attr_NAMEOFATTRIBUTE contains the new state
@@ -64,8 +66,10 @@ class helloworld(FhemModule):
         # params contains the keyword which was defined in set_list_conf for "on"
         # if not provided by the user it will be "" as defined in set_list_conf (default = "" and optional = True)
         seconds = params["seconds"]
-        await fhem.readingsSingleUpdate(hash, "state", "on " + seconds, 1)
-        return ""
+        if seconds != 0:
+            await fhem.readingsSingleUpdate(hash, "state", "on " + str(seconds), 1)
+        else:
+            await fhem.readingsSingleUpdate(hash, "state", "on", 1)
 
     async def set_off(self, hash, params):
         # no params argument here, as set_off doesn't have arguments defined in set_list_conf
@@ -82,12 +86,10 @@ class helloworld(FhemModule):
         # params['mode'] contains the mode provided by user
         mode = params["mode"]
         await fhem.readingsSingleUpdate(hash, "mode", mode, 1)
-        return ""
 
     async def set_desiredTemp(self, hash, params):
         temp = params["temperature"]
         await fhem.readingsSingleUpdate(hash, "mode", temp, 1)
-        return ""
 
     async def set_holidayMode(self, hash, params):
         start = params["start"]
@@ -96,4 +98,3 @@ class helloworld(FhemModule):
         await fhem.readingsSingleUpdate(hash, "start", start, 1)
         await fhem.readingsSingleUpdate(hash, "end", end, 1)
         await fhem.readingsSingleUpdate(hash, "temp", temp, 1)
-        return ""

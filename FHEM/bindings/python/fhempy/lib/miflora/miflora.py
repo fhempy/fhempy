@@ -9,11 +9,12 @@ from btlewrap import BluetoothBackendException
 from miflora import miflora_poller
 
 from .. import fhem, utils
+from fhempy.lib.generic import FhemModule
 
 
-class miflora:
+class miflora(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.hash = None
         self.updateTask = None
         self._poller = None
@@ -24,16 +25,16 @@ class miflora:
             "hci_device": {"default": "hci0"},
             "poll_type": {"default": "interval", "options": "interval,manual"},
         }
+        self.set_attr_config(self._attr_list)
         self._set_list = {"update": {}}
-        return
+        self.set_set_config(self._set_list)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define mi_plant PythonModule miflora <MAC>"
 
-        await utils.handle_define_attr(self._attr_list, self, hash)
         self._address = args[3]
         hash["MAC"] = args[3]
         self.logger.debug(f"Define miflora: {self._address}")
@@ -47,7 +48,7 @@ class miflora:
 
         if self.updateTask:
             self.updateTask.cancel()
-        self.updateTask = asyncio.create_task(self.update_task())
+        self.updateTask = self.create_async_task(self.update_task())
 
     async def update_task(self):
         while True:
@@ -90,16 +91,8 @@ class miflora:
             )
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return await utils.handle_set(self._set_list, self, hash, args, argsh)
-
     async def set_update(self, hash, params):
-        asyncio.create_task(self.do_update())
-
-    # FHEM FUNCTION
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+        self.create_async_task(self.do_update())
 
     async def set_attr_update_interval(self, hash):
         await fhem.readingsSingleUpdateIfChanged(
@@ -107,7 +100,7 @@ class miflora:
         )
         if self.updateTask:
             self.updateTask.cancel()
-        self.updateTask = asyncio.create_task(self.update_task())
+        self.updateTask = self.create_async_task(self.update_task())
 
     async def set_attr_poll_type(self, hash):
         if self._attr_poll_type == "manual":
@@ -116,7 +109,7 @@ class miflora:
                 self.updateTask = None
         elif self._attr_poll_type == "interval":
             if self.updateTask is None:
-                self.updateTask = asyncio.create_task(self.update_task())
+                self.updateTask = self.create_async_task(self.update_task())
         return
 
     async def set_attr_hci_device(self, hash):
@@ -127,9 +120,3 @@ class miflora:
             adapter=self._attr_hci_device,
             backend=btlewrap.BluepyBackend,
         )
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self.updateTask:
-            self.updateTask.cancel()
-        return

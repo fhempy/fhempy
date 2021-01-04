@@ -46,10 +46,6 @@ class xiaomi_gateway3(FhemModule):
 
         return ""
 
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return ""
-
     async def register_device(self, fhempy_device, handler):
         did = fhempy_device.did
         self.fhempy_devices[did] = fhempy_device

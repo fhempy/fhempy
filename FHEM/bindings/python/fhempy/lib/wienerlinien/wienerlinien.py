@@ -3,6 +3,7 @@ import aiohttp
 
 from .. import fhem
 from .. import utils
+from fhempy.lib.generic import FhemModule
 
 BASE_URL = "http://www.wienerlinien.at/ogd_realtime/monitor?rbl={}"
 
@@ -12,9 +13,9 @@ DEPARTURES = {
 }
 
 
-class wienerlinien:
+class wienerlinien(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.firstnext = "first"
         self._updateloop = None
         self._last_data = None
@@ -22,26 +23,19 @@ class wienerlinien:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
+        set_list_conf = {"update": {}}
+        self.set_set_config(set_list_conf)
+        if len(args) < 4:
+            return "Usage: define devname PythonModule wienerlinien <STOPID>"
         self._stopid = args[3]
         self.api = WienerlinienAPI(self._stopid)
-        self._updateloop = asyncio.create_task(self.update_loop())
+        self._updateloop = self.create_async_task(self.update_loop())
         # delete all readings on define
-        asyncio.create_task(fhem.CommandDeleteReading(hash, hash["NAME"] + " .*"))
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self._updateloop:
-            self._updateloop.cancel()
-        return
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        set_list_conf = {"update": {}}
-        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
+        self.create_async_task(fhem.CommandDeleteReading(hash, hash["NAME"] + " .*"))
 
     async def set_update(self, hash, params):
-        asyncio.create_task(self.update())
+        self.create_async_task(self.update())
         return ""
 
     async def update_loop(self):
