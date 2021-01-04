@@ -36,6 +36,7 @@ BindingsIo_Initialize($)
   $hash->{GetFn}    = 'BindingsIo_Get';
   $hash->{SetFn}    = 'BindingsIo_Set';
   $hash->{AttrFn}   = 'BindingsIo_Attr';
+  $hash->{AttrList} = $readingFnAttributes;
   $hash->{NotifyFn}   = 'BindingsIo_Notify';
 
   $hash->{ReadFn}   = 'BindingsIo_Read';
