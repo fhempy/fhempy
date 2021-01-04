@@ -79,6 +79,8 @@ class eq3bt(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
+        if len(args) < 4:
+            return "Usage: define eq3_livingroom PythonModule eq3bt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
         self.logger.info(f"Define: eq3bt {self._mac}")
