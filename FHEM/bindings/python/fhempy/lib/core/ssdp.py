@@ -25,13 +25,14 @@ class ssdp:
             raise Exception("ssdp already defined, use getInstance")
         self.logger = logger
         self.listeners = []
+        self.listener = None
         self.search_task = None
         self.advertisement_task = None
         self.nr_started_searches = 0
 
         # build upnp/aiohttp requester
-        session = aiohttp.ClientSession()
-        self.requester = AiohttpSessionRequester(session, True)
+        self.session = aiohttp.ClientSession()
+        self.requester = AiohttpSessionRequester(self.session, True)
         # create upnp device
         self.factory = UpnpFactory(self.requester)
 
@@ -46,11 +47,13 @@ class ssdp:
         self.nr_started_searches -= 1
         # stop search only when last client stops it
         if self.nr_started_searches == 0:
-            await self.listener.async_stop()
-            if self.search_task:
+            await self.session.close()
+            if self.search_task is not None:
                 self.search_task.cancel()
-            if self.advertisement_task:
+            if self.advertisement_task is not None:
                 self.advertisement_task.cancel()
+            if self.listener is not None:
+                await self.listener.async_stop()
 
     def register_listener(self, listener, ssdp_filter={"service_type": "ssdp:all"}):
         listenerFilter = {
@@ -117,7 +120,10 @@ class ssdp:
             self.logger.exception("Error in handle_msg")
 
     async def search(self):
-        await self.search_once()
+        try:
+            await self.search_once()
+        except asyncio.CancelledError:
+            pass
 
     async def search_once(self):
         timeout = 30
@@ -177,4 +183,4 @@ class ssdp:
             )
             await self.listener.async_start()
         except:
-            self.logger.exception("Error in advertisements listener")
+            self.logger.error("Error in advertisements listener")

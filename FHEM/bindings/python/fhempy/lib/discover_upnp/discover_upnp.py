@@ -72,5 +72,5 @@ class discover_upnp(FhemModule):
 
     # FHEM Undefine
     async def Undefine(self, hash):
-        ssdp.getInstance(self.logger).stop_search()
+        await ssdp.getInstance(self.logger).stop_search()
         await super().Undefine(hash)

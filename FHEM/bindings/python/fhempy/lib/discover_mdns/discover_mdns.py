@@ -128,6 +128,7 @@ class discover_mdns(FhemModule):
             "_googlecast._tcp.local.",
             "_soundtouch._tcp.local.",
             "_http._tcp.local.",
+            "_spotify-connect",
         ]
         self.browser = ServiceBrowser(self.zeroconf, services, listener)
 
