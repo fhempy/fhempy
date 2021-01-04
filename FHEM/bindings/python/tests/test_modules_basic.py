@@ -101,8 +101,13 @@ async def test_super_define(module_name, mocker):
     mock_fhem.mock_module(mocker)
     testinstance = MagicMock()
 
+    called = 0
+
     async def definecall(classinstance, hash, args, argsh):
-        raise Exception("OK")
+        classinstance.hash = hash
+        await utils.handle_define_attr(classinstance._conf_attr, classinstance, hash)
+        nonlocal called
+        called = 1
 
     mocker.patch("fhempy.lib.generic.FhemModule.Define", definecall)
 
@@ -112,8 +117,11 @@ async def test_super_define(module_name, mocker):
     target_class = getattr(module_object, module_name)
     class_instance = target_class(logger)
     testhash = {"NAME": "testname"}
-    with pytest.raises(Exception, match="OK"):
-        await class_instance.Define(testhash, ["test", "PythonModule", module_name], {})
+    await class_instance.Define(testhash, ["test", "PythonModule", module_name], {})
+    assert called == 1, (
+        "Please call await super().Define(hash, args, argh) in Define() in "
+        + module_name
+    )
 
 
 # create testcase to check if Undefine calls FhemModule.Undefine()
@@ -130,6 +138,13 @@ async def test_super_undefine(module_name, mocker):
 
     mocker.patch("fhempy.lib.generic.FhemModule.Undefine", undefinecall)
 
+    async def async_startstop_search(classinstance):
+        return
+
+    # disable create_async_task, otherwise it fails as it uses asyncio.create_task()
+    mocker.patch("fhempy.lib.core.ssdp.ssdp.start_search", async_startstop_search)
+    mocker.patch("fhempy.lib.core.ssdp.ssdp.stop_search", async_startstop_search)
+
     module_object = importlib.import_module(
         "fhempy.lib." + module_name + "." + module_name
     )
@@ -140,13 +155,3 @@ async def test_super_undefine(module_name, mocker):
     assert called == 1, (
         "Please call await super().Undefine(hash) in Undefine(hash) in " + module_name
     )
-
-
-# create testcase to check if FhemModule.Set() was called
-
-
-# check if module is instance? of FhemModule
-
-# Load modules
-# Define it with arguments
-# Set ?
