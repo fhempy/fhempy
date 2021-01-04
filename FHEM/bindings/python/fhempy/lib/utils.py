@@ -57,6 +57,8 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
+    if "function" in attr_list[attr_name]:
+        fct_name = attr_list[attr_name]["function"]
     try:
         fct_call = getattr(obj, fct_name)
         return await fct_call(hash)
