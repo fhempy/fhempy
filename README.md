@@ -16,7 +16,7 @@ This repository includes following working modules:
 |discover_mdns|Discover mDNS (e.g. googlecast) devices|
 |discover_ble|Discover Bluetooth LE devices|
 |discover_upnp|Discover UPnP devices|
-|dlna_dmr|Control DLNA MediaRenderer devices)|
+|dlna_dmr|Control DLNA MediaRenderer devices|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat|
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management|
 |gfprobt|Control GF Pro Bluetooth irrigation control|
