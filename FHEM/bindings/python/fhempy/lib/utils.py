@@ -4,7 +4,7 @@ import socket
 import concurrent.futures
 from cryptography.fernet import Fernet
 from codecs import encode, decode
-from functools import reduce
+from functools import partial, reduce
 import base64
 from . import fhem
 
@@ -25,6 +25,9 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 async def run_blocking(function):
+    if isinstance(function, partial) == False:
+        raise Exception("Use functools.partial to call run_blocking")
+
     with concurrent.futures.ThreadPoolExecutor() as pool:
         return await asyncio.get_event_loop().run_in_executor(pool, function)
 
@@ -69,6 +72,7 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
 
 
 def get_local_ip():
+    sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -82,7 +86,8 @@ def get_local_ip():
         except socket.gaierror:
             return "127.0.0.1"
     finally:
-        sock.close()
+        if sock is not None:
+            sock.close()
 
 
 async def handle_define_attr(attr_list, obj, hash):
