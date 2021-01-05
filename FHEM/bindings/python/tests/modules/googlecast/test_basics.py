@@ -163,7 +163,3 @@ async def test_everything(mocker):
     )
     await asyncio.sleep(10)
     assert mock_fhem.readings["testdevice"]["display_name"] == "Backdrop"
-
-    for reading in mock_fhem.readings["testdevice"]:
-        print(f"{reading} = {mock_fhem.readings['testdevice'][reading]}")
-    assert False
