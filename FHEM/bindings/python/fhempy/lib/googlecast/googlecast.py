@@ -251,7 +251,24 @@ class googlecast(FhemModule):
 
     async def set_attr_spotify_cookie(self, hash):
         if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
-            self.update_token()
+            self.create_async_task(self.update_token())
+        else:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "attr spotify_sp... required", 1
+            )
+
+    async def update_token(self):
+        if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
+            data = await utils.run_blocking(
+                functools.partial(
+                    st.start_session,
+                    self._attr_spotify_sp_dc,
+                    self._attr_spotify_sp_key,
+                )
+            )
+            self.spotify_access_token = data[0]
+            self.spotify_expires = data[1] - int(time.time())
+            self.spotify = spotipy.Spotify(auth=self.spotify_access_token)
 
             user = await utils.run_blocking(
                 functools.partial(self.spotify.current_user)
@@ -267,18 +284,6 @@ class googlecast(FhemModule):
                 await fhem.readingsSingleUpdate(
                     self.hash, "spotify_user", "login failed", 1
                 )
-        else:
-            await fhem.readingsSingleUpdate(
-                self.hash, "spotify_user", "attr spotify_sp... required", 1
-            )
-
-    def update_token(self):
-        # TODO this is blocking!!!
-        if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
-            data = st.start_session(self._attr_spotify_sp_dc, self._attr_spotify_sp_key)
-            self.spotify_access_token = data[0]
-            self.spotify_expires = data[1] - int(time.time())
-            self.spotify = spotipy.Spotify(auth=self.spotify_access_token)
 
     async def launchSpotify(self):
         if self.spotify_access_token is None:
@@ -286,7 +291,7 @@ class googlecast(FhemModule):
                 self.hash, "spotify_user", "attr spotify sp... required", 1
             )
             return
-        self.update_token()
+        await self.update_token()
         # Launch the spotify app on the cast we want to cast to
         sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
         self.cast.register_handler(sp)
@@ -300,7 +305,7 @@ class googlecast(FhemModule):
             return
 
         try:
-            self.update_token()
+            await self.update_token()
             # Launch the spotify app on the cast we want to cast to
             sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
             self.cast.register_handler(sp)
