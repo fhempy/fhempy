@@ -77,7 +77,7 @@ async def test_handle_define_attr(mocker):
 async def test_handle_attr():
     class TestClass:
         async def set_attr(self, hash):
-            assert self._attr_attr4 == "test4"
+            assert self._attr_attr4 == "asdf"
 
     testinstance = TestClass()
     attr_conf = {
@@ -105,10 +105,6 @@ async def test_handle_attr():
         attr_conf, testinstance, hash, ["del", "test", "attr2", ""], {}
     )
     assert testinstance._attr_attr2 == 1
-
-    # call function after set
-    async def set_attr(hash):
-        assert testinstance._attr_attr4 == "asdf"
 
     await utils.handle_attr(
         attr_conf, testinstance, hash, ["set", "test", "attr4", "asdf"], {}

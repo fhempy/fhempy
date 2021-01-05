@@ -1,3 +1,5 @@
 {
-  "requirements": ["python-miio"]
+  "requirements": [
+    "python-miio>=0.5.4"
+  ]
 }
