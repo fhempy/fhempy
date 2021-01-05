@@ -5,6 +5,7 @@ import os
 
 import cv2
 import numpy as np
+import tflit
 from tflite_runtime.interpreter import Interpreter, load_delegate
 
 from .. import fhem, utils
@@ -12,10 +13,12 @@ from threading import Thread
 import time
 import concurrent
 
+from fhempy.lib.generic import FhemModule
 
-class object_detection:
+
+class object_detection(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.loop = asyncio.get_event_loop()
         self._cwd_path = os.getcwd()
         obj_det_mod_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,11 +33,14 @@ class object_detection:
             "detection_interval": {"default": 2, "format": "float"},
             "detection_threshold": {"default": 0.6, "format": "float"},
         }
+        self.set_attr_config(self._attr_list)
+        set_list_conf = {"start": {}, "detect_once": {}, "stop": {}}
+        self.set_set_config(set_list_conf)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 5:
             return "Usage: define obj_detection PythonModule object_detection <image/stream> <LOCATION>"
         if args[3] == "image":
@@ -46,14 +52,8 @@ class object_detection:
             self._source_uri = args[4]
         self._source_type = args[3]
 
-        await utils.handle_define_attr(self._attr_list, self, hash)
-
         self.logger.debug(f"Source URI: {self._source_uri}")
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
-        return ""
-
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
 
     def run_stream_object_detection(self):
         # Load the label map
@@ -292,36 +292,25 @@ class object_detection:
                 # cv2.imwrite(self._output_file, image)
         return detected_objects
 
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self._detection_task:
-            self._detection_task.cancel()
-        return
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        set_list_conf = {"start": {}, "detect_once": {}, "stop": {}}
-        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
-
-    async def set_start(self, hash):
+    async def set_start(self, hash, params):
         self._stop_detection = False
         await self.start_detection()
 
-    async def set_detect_once(self, hash):
+    async def set_detect_once(self, hash, params):
         self._stop_detection = True
         await self.start_detection()
 
     async def start_detection(self):
         await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
         if self._source_type == "image":
-            asyncio.create_task(self.image_detect_objects_loop())
+            self.create_async_task(self.image_detect_objects_loop())
         else:
             self._detection_task = utils.run_blocking_task(
                 functools.partial(self.run_stream_object_detection)
             )
         return ""
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         self._stop_detection = True
 
     async def image_detect_objects_loop(self):

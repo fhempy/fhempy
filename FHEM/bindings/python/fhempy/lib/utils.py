@@ -4,7 +4,7 @@ import socket
 import concurrent.futures
 from cryptography.fernet import Fernet
 from codecs import encode, decode
-from functools import reduce
+from functools import partial, reduce
 import base64
 from . import fhem
 
@@ -25,6 +25,9 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 async def run_blocking(function):
+    if isinstance(function, partial) == False:
+        raise Exception("Use functools.partial to call run_blocking")
+
     with concurrent.futures.ThreadPoolExecutor() as pool:
         return await asyncio.get_event_loop().run_in_executor(pool, function)
 
@@ -57,6 +60,8 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
+    if "function" in attr_list[attr_name]:
+        fct_name = attr_list[attr_name]["function"]
     try:
         fct_call = getattr(obj, fct_name)
         return await fct_call(hash)
@@ -67,6 +72,7 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
 
 
 def get_local_ip():
+    sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -80,7 +86,8 @@ def get_local_ip():
         except socket.gaierror:
             return "127.0.0.1"
     finally:
-        sock.close()
+        if sock is not None:
+            sock.close()
 
 
 async def handle_define_attr(attr_list, obj, hash):
@@ -198,20 +205,20 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
                 for param in cmd_def["params"]:
                     # check if value is available or default value
                     # check if all required params are availble
-                    if (
+                    if "value" in cmd_def["params"][param]:
+                        final_params[param] = cmd_def["params"][param]["value"]
+                    elif "default" not in cmd_def["params"][param] and (
+                        "optional" not in cmd_def["params"][param]
+                        or cmd_def["params"][param]["optional"] == False
+                    ):
+                        # no value found, check if optional
+                        return f"Required argument {param} missing."
+                    elif (
                         "default" in cmd_def["params"][param]
                         and "value" not in cmd_def["params"][param]
                     ):
                         final_params[param] = cmd_def["params"][param]["default"]
-                    elif "value" in cmd_def["params"][param]:
-                        final_params[param] = cmd_def["params"][param]["value"]
-                    elif (
-                        "optional" not in cmd_def["params"][param]
-                        or cmd_def["params"][param]["optional"] is False
-                    ):
-                        # no value found, check if optional
-                        return f"Required argument {param} missing."
-                    if "format" in cmd_def["params"][param]:
+                    if "format" in cmd_def["params"][param] and param in final_params:
                         final_params[param] = convert2format(
                             final_params[param], cmd_def["params"][param]
                         )
@@ -223,9 +230,6 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             else:
                 fct_name = "set_" + cmd
             fct_call = getattr(obj, fct_name)
-            if len(final_params) > 0:
-                return await fct_call(hash, final_params)
-
-            return await fct_call(hash)
+            return await fct_call(hash, final_params)
         else:
             return f"Command not available for this device."

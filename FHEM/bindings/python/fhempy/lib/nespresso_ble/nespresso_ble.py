@@ -35,19 +35,17 @@ class nespresso_ble(FhemModule):
             "updateStatus": {},
         }
         self.set_set_config(self.set_conf_list)
-        return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        await fhem.readingsBeginUpdate(hash)
-        await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
-        await fhem.readingsEndUpdate(hash, 1)
-        self.hash = hash
         if len(args) < 4:
             return (
                 "Usage: define devicename PythonModule nespresso_ble <MAC> [<AUTHKEY>]"
             )
+        await fhem.readingsBeginUpdate(hash)
+        await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
+        await fhem.readingsEndUpdate(hash, 1)
         self.mac = args[3]
         hash["MAC"] = args[3]
 
@@ -103,7 +101,7 @@ class nespresso_ble(FhemModule):
         except:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
-    async def set_updateStatus(self, hash):
+    async def set_updateStatus(self, hash, params):
         self.create_async_task(self.update_status())
 
     async def update_status(self):

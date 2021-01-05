@@ -1,0 +1,2 @@
+global-include manifest.json
+include requirements.txt

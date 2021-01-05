@@ -4,21 +4,21 @@ import subprocess
 import socket
 
 from .. import fhem, utils
+from fhempy.lib.generic import FhemModule
 
 
-class esphome:
+class esphome(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.proc = None
         self._set_list = {"start": {}, "stop": {}, "restart": {}}
+        self.set_set_config(self._set_list)
         self._attr_list = {"disable": {"default": "0", "options": "0,1"}}
-        return
+        self.set_attr_config(self._attr_list)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
-
-        await utils.handle_define_attr(self._attr_list, self, hash)
+        await super().Define(hash, args, argsh)
 
         if self._attr_disable == "1":
             return
@@ -27,9 +27,7 @@ class esphome:
 
         if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
             await fhem.CommandAttr(self.hash, hash["NAME"] + " room ESPHome")
-            asyncio.create_task(self.create_weblink())
-
-        return ""
+            self.create_async_task(self.create_weblink())
 
     async def start_process(self):
         self._esphomeargs = [
@@ -69,11 +67,9 @@ class esphome:
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        self.proc.terminate()
-        return
-
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+        if self.proc:
+            self.proc.terminate()
+        return await super().Undefine(hash)
 
     async def set_attr_disable(self, hash):
         if self._attr_disable == "0":
@@ -81,17 +77,14 @@ class esphome:
         else:
             await self.stop_process()
 
-    async def Set(self, hash, args, argsh):
-        return await utils.handle_set(self._set_list, self, hash, args, argsh)
-
-    async def set_start(self, hash):
+    async def set_start(self, hash, params):
         await self.stop_process()
         await self.start_process()
         return ""
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         await self.stop_process()
         return ""
 
-    async def set_restart(self, hash):
+    async def set_restart(self, hash, params):
         return await self.set_start(hash)

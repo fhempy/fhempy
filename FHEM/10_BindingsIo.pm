@@ -36,6 +36,7 @@ BindingsIo_Initialize($)
   $hash->{GetFn}    = 'BindingsIo_Get';
   $hash->{SetFn}    = 'BindingsIo_Set';
   $hash->{AttrFn}   = 'BindingsIo_Attr';
+  $hash->{AttrList} = $readingFnAttributes;
   $hash->{NotifyFn}   = 'BindingsIo_Notify';
 
   $hash->{ReadFn}   = 'BindingsIo_Read';
@@ -308,7 +309,7 @@ BindingsIo_Set($$$)
     return BindingsIo_Write($hash, $hash, "update", [], {});
   }
 
-  return undef;
+  return "Unknown argument $cmd, choose one of $list";
 }
 
 sub

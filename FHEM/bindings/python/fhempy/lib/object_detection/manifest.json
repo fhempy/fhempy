@@ -1,3 +1,6 @@
 {
-  "requirements": ["opencv-python-headless"]
+  "requirements": [
+    "opencv-python-headless",
+    "tflit"
+  ]
 }

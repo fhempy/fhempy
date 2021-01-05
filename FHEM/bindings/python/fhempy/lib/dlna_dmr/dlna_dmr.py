@@ -14,6 +14,8 @@ from async_upnp_client.aiohttp import get_local_ip
 from .. import fhem
 from ..discover_upnp.discover_upnp import ssdp
 
+from fhempy.lib.generic import FhemModule
+
 DEFAULT_LISTEN_PORT = 8301
 
 
@@ -36,16 +38,36 @@ def catch_request_errors():
     return call_wrapper
 
 
-class dlna_dmr:
+class dlna_dmr(FhemModule):
 
     event_handler = None
 
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.server = None
         self.device = None
         # set log level to ERROR for aiohttp.access to avoid INFO notify msgs
         logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
+
+        set_config = {
+            "play": {
+                "args": ["url"],
+                "params": {"url": {"optional": True, "default": ""}},
+            },
+            "volume": {"args": ["volume"], "options": "slider,0,1,100"},
+            "mute": {"args": ["onoff"], "options": "on,off,toggle"},
+            "pause": {},
+            "next": {},
+            "previous": {},
+            "off": {},
+            "stop": {},
+            "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
+            "speak": {
+                "args": ["text"],
+                "help": "Please use double quotes for the text to speak",
+            },
+        }
+        self.set_set_config(set_config)
 
     async def found_device(self, upnp_device):
         if self.device:
@@ -72,7 +94,7 @@ class dlna_dmr:
 
         await self.updateDeviceReadings()
         await fhem.readingsSingleUpdate(self.hash, "state", "online", 1)
-        self.update_task = asyncio.create_task(self.update())
+        self.update_task = self.create_async_task(self.update())
 
     async def removed_device(self, upnp_device):
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
@@ -101,7 +123,7 @@ class dlna_dmr:
 
     # FHEM Function
     async def Undefine(self, hash):
-        self.update_task.cancel()
+        await super().Undefine(hash)
         await ssdp.getInstance(self.logger).stop_search()
         if self.server:
             await self.server.stop_server()
@@ -113,9 +135,9 @@ class dlna_dmr:
     # FHEM Function
     async def Define(self, hash, args, argsh):
         """Set up DLNA DMR platform."""
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return "define device PythonModule dlna_dmr <uuid>"
+            return "Usage: define device PythonModule dlna_dmr <UUID>"
 
         if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon scene_scene")
@@ -130,54 +152,53 @@ class dlna_dmr:
         ssdp.getInstance(self.logger).register_listener(self, ssdp_filter)
         await ssdp.getInstance(self.logger).start_search()
 
-    # FHEM Function
-    async def Set(self, hash, args, argsh):
-        if len(args) < 2 or args[1] == "?":
-            return (
-                "Unknown argument ?, choose one of "
-                "play volume:slider,0,1,100 mute:on,off,toggle pause:noArg next:noArg previous:noArg "
-                "off:noArg stop:noArg seek speak"
-            )
+    async def set_play(self, hash, params):
+        if params["url"] == "":
+            await self.device.dlna_dmrdevice.async_play()
         else:
-            cmd = args[1]
-            if cmd == "play":
-                url = args[2]
-                if url is None:
-                    await self.device.dlna_dmrdevice.async_play()
-                else:
-                    asyncio.create_task(self.device.async_play_media(url))
-            elif cmd == "speak":
-                tts_url = (
-                    "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
-                    + "%20".join(args[2:])
-                )
-                asyncio.create_task(self.device.async_play_media(tts_url))
-            elif cmd == "volume":
-                new_vol = int(args[2])
-                asyncio.create_task(
-                    self.device.dlna_dmrdevice.async_set_volume_level(new_vol / 100)
-                )
-            elif cmd == "mute":
-                onoff = args[2]
-                if onoff == "on":
-                    onoff = True
-                elif onoff == "off":
-                    onoff = False
-                else:
-                    onoff = not (self.device.dlna_dmrdevice.is_volume_muted())
-                await self.device.dlna_dmrdevice.async_mute_volume(onoff)
-            elif cmd == "pause":
-                await self.device.dlna_dmrdevice.async_pause()
-            elif cmd == "next":
-                await self.device.dlna_dmrdevice.async_next()
-            elif cmd == "previous":
-                await self.device.dlna_dmrdevice.async_previous()
-            elif cmd == "off" or cmd == "stop":
-                await self.device.dlna_dmrdevice.async_stop()
-            elif cmd == "seek":
-                t = args[2]
-                tdiff = time.gmtime(t)
-                await self.device.dlna_dmrdevice.async_seek_rel_time(tdiff)
+            self.create_async_task(self.device.async_play_media(params["url"]))
+
+    async def set_speak(self, hash, params):
+        tts_url = (
+            "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
+            + params["text"].replace(" ", "%20")
+        )
+        self.create_async_task(self.device.async_play_media(tts_url))
+
+    async def set_volume(self, hash, params):
+        self.create_async_task(
+            self.device.dlna_dmrdevice.async_set_volume_level(params["volume"] / 100)
+        )
+
+    async def set_mute(self, hash, params):
+        onoff = params["onoff"]
+        if onoff == "on":
+            onoff = True
+        elif onoff == "off":
+            onoff = False
+        else:
+            onoff = not (self.device.dlna_dmrdevice.is_volume_muted())
+        await self.device.dlna_dmrdevice.async_mute_volume(onoff)
+
+    async def set_pause(self, hash, params):
+        await self.device.dlna_dmrdevice.async_pause()
+
+    async def set_next(self, hash, params):
+        await self.device.dlna_dmrdevice.async_next()
+
+    async def set_previous(self, hash, params):
+        await self.device.dlna_dmrdevice.async_previous()
+
+    async def set_off(self, hash, params):
+        await self.device.dlna_dmrdevice.async_stop()
+
+    async def set_stop(self, hash, params):
+        await self.device.dlna_dmrdevice.async_stop()
+
+    async def set_seek(self, hash, params):
+        t = params["position"]
+        tdiff = time.gmtime(t)
+        await self.device.dlna_dmrdevice.async_seek_rel_time(tdiff)
 
     async def update(self):
         # get volume
@@ -314,7 +335,7 @@ class DlnaDmrDevice:
         """State variable(s) changed, update readings."""
         self.logger.debug("event received")
         # create event as it is not async
-        asyncio.create_task(self.dlna_dmrinstance.updateReadings())
+        self.create_async_task(self.dlna_dmrinstance.updateReadings())
 
     @property
     def dlna_dmrdevice(self):

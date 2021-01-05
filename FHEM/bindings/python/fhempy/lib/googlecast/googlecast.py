@@ -65,7 +65,7 @@ class googlecast(FhemModule):
         }
         self.set_attr_config(attr_conf)
 
-        set_conf = {
+        self._set_conf = {
             "stop": {},
             "pause": {},
             "rewind": {},
@@ -105,14 +105,21 @@ class googlecast(FhemModule):
             "volUp": {},
             "volDown": {},
         }
-        self.set_set_config(set_conf)
+        self.set_set_config(
+            {
+                "waiting": {
+                    "help": "Please wait till connected and reload the page when connected."
+                }
+            }
+        )
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) > 3:
             hash["CASTNAME"] = args[3]
-        self.hash = hash
+        else:
+            return 'Usage: define my_fhempy_cast PythonModule googlecast "Living Room"'
 
         if self.browser:
             pychromecast.stop_discovery(self.browser)
@@ -126,8 +133,6 @@ class googlecast(FhemModule):
 
         self.startDiscovery()
 
-        return ""
-
     # FHEM FUNCTION
     async def Undefine(self, hash):
         await super().Undefine(hash)
@@ -137,12 +142,6 @@ class googlecast(FhemModule):
                 self.cast.disconnect()
         except:
             pass
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        if self.connectionStateCache != "CONNECTED":
-            return "Please wait until connected..."
-        return await super().Set(hash, args, argsh)
 
     async def set_play(self, hash, params):
         url = params["url"]
@@ -163,39 +162,39 @@ class googlecast(FhemModule):
             return "Please set favorite before usage"
         self.playUrl(url)
 
-    async def set_stop(self, hash):
+    async def set_stop(self, hash, params):
         self.cast.media_controller.stop()
 
-    async def set_pause(self, hash):
+    async def set_pause(self, hash, params):
         self.cast.media_controller.pause()
 
-    async def set_quitApp(self, hash):
+    async def set_quitApp(self, hash, params):
         self.cast.quit_app()
 
     async def set_startApp(self, hash, params):
         appId = params["appid"]
         self.cast.start_app(appId)
 
-    async def set_skip(self, hash):
+    async def set_skip(self, hash, params):
         self.cast.media_controller.skip()
 
-    async def set_rewind(self, hash):
+    async def set_rewind(self, hash, params):
         self.cast.media_controller.rewind()
 
     async def set_seek(self, hash, params):
         position = params["pos"]
         self.cast.media_controller.seek(position)
 
-    async def set_next(self, hash):
+    async def set_next(self, hash, params):
         self.cast.media_controller.queue_next()
 
-    async def set_prev(self, hash):
+    async def set_prev(self, hash, params):
         self.cast.media_controller.queue_prev()
 
-    async def set_volUp(self, hash):
+    async def set_volUp(self, hash, params):
         self.cast.volume_up()
 
-    async def set_volDown(self, hash):
+    async def set_volDown(self, hash, params):
         self.cast.volume_down()
 
     async def set_subtitles(self, hash, params):
@@ -221,7 +220,7 @@ class googlecast(FhemModule):
         dashUrl = params["url"]
         self.create_async_task(self.displayWebsite(dashUrl))
 
-    async def set_startSpotify(self, hash):
+    async def set_startSpotify(self, hash, params):
         self.create_async_task(self.launchSpotify())
 
     def playUrl(self, url):
@@ -252,7 +251,21 @@ class googlecast(FhemModule):
 
     async def set_attr_spotify_cookie(self, hash):
         if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
-            data = st.start_session(self._attr_spotify_sp_dc, self._attr_spotify_sp_key)
+            self.create_async_task(self.update_token())
+        else:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "attr spotify_sp... required", 1
+            )
+
+    async def update_token(self):
+        if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
+            data = await utils.run_blocking(
+                functools.partial(
+                    st.start_session,
+                    self._attr_spotify_sp_dc,
+                    self._attr_spotify_sp_key,
+                )
+            )
             self.spotify_access_token = data[0]
             self.spotify_expires = data[1] - int(time.time())
             self.spotify = spotipy.Spotify(auth=self.spotify_access_token)
@@ -271,10 +284,6 @@ class googlecast(FhemModule):
                 await fhem.readingsSingleUpdate(
                     self.hash, "spotify_user", "login failed", 1
                 )
-        else:
-            await fhem.readingsSingleUpdate(
-                self.hash, "spotify_user", "attr spotify_sp... required", 1
-            )
 
     async def launchSpotify(self):
         if self.spotify_access_token is None:
@@ -282,7 +291,7 @@ class googlecast(FhemModule):
                 self.hash, "spotify_user", "attr spotify sp... required", 1
             )
             return
-
+        await self.update_token()
         # Launch the spotify app on the cast we want to cast to
         sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
         self.cast.register_handler(sp)
@@ -296,6 +305,7 @@ class googlecast(FhemModule):
             return
 
         try:
+            await self.update_token()
             # Launch the spotify app on the cast we want to cast to
             sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
             self.cast.register_handler(sp)
@@ -452,6 +462,7 @@ class googlecast(FhemModule):
             res.result()
 
         if status.status == "CONNECTED":
+            self.set_set_config(self._set_conf)
             # run reading updates in main thread
             res = asyncio.run_coroutine_threadsafe(
                 self.updateDeviceReadings(self.hash), self.loop

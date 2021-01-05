@@ -6,15 +6,22 @@ import re
 import subprocess
 
 from .. import fhem, utils
+from fhempy.lib.generic import FhemModule
 import datetime
 
 
-class ble_reset:
+class ble_reset(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self._hours = 24
         self._resettask = None
         self._attr_list = {"reset_time": {"default": "04:00", "format": "str"}}
+        self.set_attr_config(self._attr_list)
+        set_list_conf = {
+            "interval": {"args": ["hours"], "options": "1h,2h,4h,8h,12h,24h,manual"},
+            "resetnow": {},
+        }
+        self.set_set_config(set_list_conf)
         return
 
     def get_hci_ifaces(self):
@@ -33,8 +40,7 @@ class ble_reset:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
-        await utils.handle_define_attr(self._attr_list, self, hash)
+        await super().Define(hash, args, argsh)
         self._reset_time = datetime.datetime.strptime(self._attr_reset_time, "%H:%M")
 
         hours = await fhem.ReadingsVal(hash["NAME"], "interval", "24h")
@@ -42,13 +48,12 @@ class ble_reset:
             self._hours = 0
         else:
             self._hours = int(hours[:-1])
-            self._resettask = asyncio.create_task(self.ble_reset())
+            self._resettask = self.create_async_task(self.ble_reset())
 
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "interval", hours)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "active")
         await fhem.readingsEndUpdate(hash, 1)
-        return ""
 
     async def ble_reset(self):
         while True:
@@ -108,18 +113,6 @@ class ble_reset:
         except:
             self.logger.exception("Failed to reset bluetooth")
 
-    async def Undefine(self, hash):
-        if self._resettask:
-            self._resettask.cancel()
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        set_list_conf = {
-            "interval": {"args": ["hours"], "options": "1h,2h,4h,8h,12h,24h,manual"},
-            "resetnow": {},
-        }
-        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
-
     async def set_interval(self, hash, params):
         if self._resettask:
             self._resettask.cancel()
@@ -132,16 +125,13 @@ class ble_reset:
             self._hours = int(hours[:-1])
         await fhem.readingsSingleUpdate(hash, "interval", hours, 1)
 
-        self._resettask = asyncio.create_task(self.ble_reset())
+        self._resettask = self.create_async_task(self.ble_reset())
 
-    async def set_resetnow(self, hash):
-        asyncio.create_task(self.ble_reset_once())
-
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+    async def set_resetnow(self, hash, params):
+        self.create_async_task(self.ble_reset_once())
 
     async def set_attr_reset_time(self, hash):
         if self._resettask:
             self._resettask.cancel()
         self._reset_time = datetime.datetime.strptime(self._attr_reset_time, "%H:%M")
-        self._resettask = asyncio.create_task(self.ble_reset())
+        self._resettask = self.create_async_task(self.ble_reset())

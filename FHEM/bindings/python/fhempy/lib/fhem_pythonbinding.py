@@ -224,11 +224,11 @@ class PyBinding:
                                     await fhem.readingsSingleUpdate(
                                         hash,
                                         "state",
-                                        "Installation finished. Define now...",
+                                        "Installation finished. Please wait...",
                                         1,
                                     )
-                                    # wait 5s so that user can read the msg about installation
-                                    await asyncio.sleep(5)
+                                    # wait 3s so that user can read the msg about installation
+                                    await asyncio.sleep(3)
                                     # continue define
 
                                 # import module
@@ -238,6 +238,7 @@ class PyBinding:
                                     + "."
                                     + hash["PYTHONTYPE"]
                                 )
+                                # FIXME this might block fhempy main if import takes long time (e.g. tflit installation)
                                 module_object = importlib.import_module(pymodule)
                                 # create instance of class with logger
                                 target_class = getattr(

@@ -3,16 +3,16 @@ import logging
 from bleak import discover
 
 from .. import fhem
+from fhempy.lib.generic import FhemModule
 
 
-class discover_ble:
+class discover_ble(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         # disable bleak discovery messages
         logging.getLogger("bleak.backends.bluezdbus.discovery").setLevel(logging.ERROR)
         self.hash = None
         self.blescanTask = None
-        return
 
     async def runBleScan(self):
         while True:
@@ -124,7 +124,7 @@ class discover_ble:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
 
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "active")
@@ -136,12 +136,4 @@ class discover_ble:
         if self.blescanTask:
             self.blescanTask.cancel()
 
-        self.blescanTask = asyncio.create_task(self.runBleScan())
-
-        return ""
-
-    # FHEM FUNCTION
-    async def Undefine(self, hash):
-        if self.blescanTask:
-            self.blescanTask.cancel()
-        return
+        self.blescanTask = self.create_async_task(self.runBleScan())

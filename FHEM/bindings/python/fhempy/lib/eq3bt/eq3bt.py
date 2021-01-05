@@ -79,6 +79,8 @@ class eq3bt(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
+        if len(args) < 4:
+            return "Usage: define eq3_livingroom PythonModule eq3bt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
         self.logger.info(f"Define: eq3bt {self._mac}")
@@ -331,14 +333,14 @@ class eq3bt(FhemModule):
         await self.update_readings()
 
     # SET Functions BEGIN
-    async def set_on(self, hash):
+    async def set_on(self, hash, params):
         self.create_async_task(
             self.set_and_update(
                 functools.partial(self.thermostat.set_target_temperature, 30)
             )
         )
 
-    async def set_off(self, hash):
+    async def set_off(self, hash, params):
         self.create_async_task(
             self.set_and_update(
                 functools.partial(self.thermostat.set_target_temperature, 4.5)
@@ -353,7 +355,7 @@ class eq3bt(FhemModule):
             )
         )
 
-    async def set_updateStatus(self, hash):
+    async def set_updateStatus(self, hash, params):
         self.create_async_task(self.update_all())
 
     async def set_boost(self, hash, params):
@@ -377,12 +379,12 @@ class eq3bt(FhemModule):
             )
         )
 
-    async def set_eco(self, hash):
+    async def set_eco(self, hash, params):
         self.create_async_task(
             self.set_and_update(functools.partial(self.thermostat.activate_eco))
         )
 
-    async def set_comfort(self, hash):
+    async def set_comfort(self, hash, params):
         self.create_async_task(
             self.set_and_update(functools.partial(self.thermostat.activate_comfort))
         )

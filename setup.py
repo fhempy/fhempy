@@ -25,6 +25,8 @@ setuptools.setup(
     packages=setuptools.find_packages(where="FHEM/bindings/python"),
     install_requires=required,
     scripts=["FHEM/bindings/python/bin/fhempy"],
+    include_package_data=True,
+    test_suite="tests",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

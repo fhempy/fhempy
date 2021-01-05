@@ -1,3 +1,6 @@
 {
-  "requirements": ["bluepy", "mitemp"]
+  "requirements": [
+    "bluepy",
+    "mitemp_bt"
+  ]
 }

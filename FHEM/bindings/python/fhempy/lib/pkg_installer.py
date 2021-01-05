@@ -6,7 +6,7 @@ import pkg_resources
 import json
 import sys
 import os
-import importlib
+import inspect
 import asyncio
 from subprocess import PIPE, Popen
 from pathlib import Path
@@ -62,9 +62,11 @@ def check_dependencies(module):
     of dependencies
     """
     try:
-        with open(
-            "FHEM/bindings/python/fhempy/lib/" + module + "/manifest.json", "r"
-        ) as f:
+        from fhempy import lib
+
+        initfile = inspect.getfile(lib)
+        fhempy_root = os.path.dirname(initfile)
+        with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
             manifest = json.load(f)
 
             if "requirements" in manifest:
@@ -76,7 +78,7 @@ def check_dependencies(module):
                     else:
                         logger.debug("  OK")
     except FileNotFoundError:
-        pass
+        logger.error("manifest.json not found!")
 
     return True
 
@@ -99,9 +101,11 @@ async def check_and_install_dependencies(module):
     try:
         async with pip_lock:
             kwargs = pip_kwargs(None)
-            with open(
-                "FHEM/bindings/python/fhempy/lib/" + module + "/manifest.json", "r"
-            ) as f:
+            from fhempy import lib
+
+            initfile = inspect.getfile(lib)
+            fhempy_root = os.path.dirname(initfile)
+            with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
                 manifest = json.load(f)
 
                 if "requirements" in manifest:

@@ -1,8 +1,7 @@
-from ..generic import FhemModule
-import asyncio
 import functools
 
 from micloud import MiCloud
+from fhempy.lib.generic import FhemModule
 
 from .. import utils
 from .. import fhem
@@ -44,8 +43,8 @@ class xiaomi_tokens(FhemModule):
 
         # retrieve tokens
         if self._username and self._password:
-            self.create_async_task(self.obtain_tokens())
-        return ""
+            self.create_async_task(functools.partial(self.obtain_tokens))
+        return
 
     async def set_username(self, hash, params):
         self._username = params["username"]
@@ -63,7 +62,7 @@ class xiaomi_tokens(FhemModule):
         )
         return ""
 
-    async def set_get_tokens(self, hash):
+    async def set_get_tokens(self, hash, params):
         if self._username and self._password:
             self.create_async_task(self.obtain_tokens())
         else:
@@ -121,7 +120,7 @@ class xiaomi_tokens(FhemModule):
         try:
             await utils.run_blocking(functools.partial(self.thread_get_tokens))
         except Exception as ex:
-            await fhem.readingsSingleUpdateIfChanged(f"Failed to get tokens: {e}")
+            await fhem.readingsSingleUpdateIfChanged(f"Failed to get tokens: {ex}")
             return
 
         self._miio_devices = []

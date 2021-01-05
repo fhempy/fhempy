@@ -88,10 +88,6 @@ class xiaomi_gateway3_device(FhemModule):
                 )
             await asyncio.sleep(10)
 
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        return
-
     async def initialize(self, device):
         # first update, set attributes and device readings like model, sid, ...
         if self.device_details is None:

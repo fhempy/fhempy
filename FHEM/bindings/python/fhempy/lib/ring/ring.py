@@ -7,11 +7,12 @@ from oauthlib.oauth2 import MissingTokenError
 
 from .. import fhem
 from .. import utils
+from fhempy.lib.generic import FhemModule
 
 
-class ring:
+class ring(FhemModule):
     def __init__(self, logger):
-        self.logger = logger
+        super().__init__(logger)
         self.loop = asyncio.get_event_loop()
         self._username = None
         self._password = ""
@@ -28,6 +29,7 @@ class ring:
             "deviceUpdateInterval": {"default": 300, "format": "int"},
             "dingPollInterval": {"default": 2, "format": "int"},
         }
+        self.set_attr_config(self._attr_list)
         return
 
     async def token_updated(self, token):
@@ -39,7 +41,7 @@ class ring:
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
-        self.hash = hash
+        await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
                 "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME>"
@@ -53,11 +55,7 @@ class ring:
         self._rdevice = None
         self.hash["USERNAME"] = args[3]
         self.hash["RINGDEVICE"] = args[4]
-
-        await utils.handle_define_attr(self._attr_list, self, hash)
-
-        asyncio.create_task(self.ring_login())
-        return ""
+        self.create_async_task(self.ring_login())
 
     async def ring_login(self):
         if self._token == "":
@@ -102,7 +100,7 @@ class ring:
 
             await self.update_readings()
 
-            asyncio.create_task(self.update_dings_loop())
+            self.create_async_task(self.update_dings_loop())
 
             while True:
                 try:
@@ -129,9 +127,10 @@ class ring:
                 alerts = self._ring.active_alerts()
                 self.logger.debug("Received dings: " + str(alerts))
                 if len(alerts) > 0:
-                    alert_active = 1
                     for alert in alerts:
-                        await self.update_alert_readings(alert)
+                        if alert["doorbot_id"] == self._rdevice.device_id:
+                            alert_active = 1
+                            await self.update_alert_readings(alert)
                 elif alert_active == 1:
                     alert_active = 0
                     await fhem.readingsSingleUpdateIfChanged(
@@ -150,6 +149,9 @@ class ring:
         await fhem.readingsBulkUpdate(self.hash, "alert_kind", alert["kind"])
         await fhem.readingsBulkUpdate(self.hash, "alert_sip_to", alert["sip_to"])
         await fhem.readingsBulkUpdate(self.hash, "alert_sip_token", alert["sip_token"])
+        await fhem.readingsBulkUpdate(
+            self.hash, "alert_doorbot_id", alert["doorbot_id"]
+        )
         await fhem.readingsBulkUpdate(self.hash, "state", alert["kind"])
         await fhem.readingsEndUpdate(self.hash, 1)
 
@@ -280,10 +282,6 @@ class ring:
         self._ring = Ring(self._auth)
 
     # FHEM FUNCTION
-    async def Undefine(self, hash):
-        return
-
-    # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
         set_list_conf = {
             "password": {"args": ["password"]},
@@ -295,11 +293,11 @@ class ring:
                 "params": {"volume": {"format": "int"}},
                 "options": "slider,0,1,10",
             }
-        return await utils.handle_set(set_list_conf, self, hash, args, argsh)
+        return await super().Set(hash, args, argsh)
 
     async def set_volume(self, hash, params):
         new_vol = params["volume"]
-        asyncio.create_task(self.set_volume_task(new_vol))
+        self.create_async_task(self.set_volume_task(new_vol))
 
     async def set_volume_task(self, new_volume):
         await utils.run_blocking(
@@ -318,11 +316,8 @@ class ring:
         await fhem.readingsSingleUpdateIfChanged(
             self.hash, "password", encrypted_password, 1
         )
-        asyncio.create_task(self.ring_login())
+        self.create_async_task(self.ring_login())
 
     async def set_2fa_code(self, hash, params):
         self._2facode = params["2facode"]
-        asyncio.create_task(self.ring_login())
-
-    async def Attr(self, hash, args, argsh):
-        return await utils.handle_attr(self._attr_list, self, hash, args, argsh)
+        self.create_async_task(self.ring_login())

@@ -1,0 +1,7 @@
+{
+  "requirements": [
+    "aiohttp",
+    "spotipy>=2.16.1",
+    "pyppeteer>=0.2.2"
+  ]
+}
