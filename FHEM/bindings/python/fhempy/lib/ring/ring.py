@@ -30,6 +30,11 @@ class ring(FhemModule):
             "dingPollInterval": {"default": 2, "format": "int"},
         }
         self.set_attr_config(self._attr_list)
+        self.set_list_conf = {
+            "password": {"args": ["password"]},
+            "2fa_code": {"args": ["2facode"]},
+        }
+        self.set_set_config(self.set_list_conf)
         return
 
     async def token_updated(self, token):
@@ -97,6 +102,14 @@ class ring(FhemModule):
                     self.hash, "state", "device not found", 1
                 )
                 return
+
+            if self._rdevice is not None and self._rdevice.has_capability("volume"):
+                self.set_list_conf["volume"] = {
+                    "args": ["volume"],
+                    "params": {"volume": {"format": "int"}},
+                    "options": "slider,0,1,10",
+                }
+            self.set_set_config(self.set_list_conf)
 
             await self.update_readings()
 
@@ -280,20 +293,6 @@ class ring(FhemModule):
             else:
                 return "please set password"
         self._ring = Ring(self._auth)
-
-    # FHEM FUNCTION
-    async def Set(self, hash, args, argsh):
-        set_list_conf = {
-            "password": {"args": ["password"]},
-            "2fa_code": {"args": ["2facode"]},
-        }
-        if self._rdevice is not None and self._rdevice.has_capability("volume"):
-            set_list_conf["volume"] = {
-                "args": ["volume"],
-                "params": {"volume": {"format": "int"}},
-                "options": "slider,0,1,10",
-            }
-        return await super().Set(hash, args, argsh)
 
     async def set_volume(self, hash, params):
         new_vol = params["volume"]
