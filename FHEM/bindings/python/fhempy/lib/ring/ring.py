@@ -141,7 +141,7 @@ class ring(FhemModule):
                 self.logger.debug("Received dings: " + str(alerts))
                 if len(alerts) > 0:
                     for alert in alerts:
-                        if alert["doorbot_id"] == self._rdevice.device_id:
+                        if alert["doorbot_id"] == self._rdevice.id:
                             alert_active = 1
                             await self.update_alert_readings(alert)
                 elif alert_active == 1:
@@ -192,7 +192,10 @@ class ring(FhemModule):
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "family", self._rdevice.family
         )
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "id", self._rdevice.device_id)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "device_id", self._rdevice.device_id
+        )
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "id", self._rdevice.id)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "model", self._rdevice.model)
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "firmware", self._rdevice.firmware
