@@ -107,17 +107,6 @@ BindingsIo_connectDev($) {
   my ($hash) = @_;
   DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
   DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
-  # start reconnect checks
-  InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
-}
-
-sub
-BindingsIo_reconnectDev($) {
-  my ($hash) = @_;
-  if (!DevIo_IsOpen($hash)) {
-    DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback");
-  }
-  InternalTimer(gettimeofday()+10, "BindingsIo_reconnectDev", $hash, 0);
 }
 
 sub
@@ -256,11 +245,6 @@ BindingsIo_Write($$$$$) {
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
-      if ($timeouts > 3) {
-        # SimpleRead will close the connection and DevIo reconnect starts
-        Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
-        DevIo_Disconnected($hash);
-      }
       last;
     }
     
@@ -471,7 +455,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   if (defined($response) && $response eq "connectionclosed") {
     Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
     # connection seems to be closed, call simpleread to disconnect
-    # connection will be reopened by reconnect
+    # connection will be reopened by ReadyFn
     DevIo_SimpleRead($hash);
     return "Websocket connection closed unexpected";
   }
