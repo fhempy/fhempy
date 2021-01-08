@@ -1,0 +1,156 @@
+{
+  "result": [
+    {
+      "active_time": 1610093671,
+      "biz_type": 18,
+      "category": "cz",
+      "create_time": 1610093671,
+      "icon": "smart/icon/238239823982982/239823982398239823.png",
+      "id": "239823982398239823",
+      "ip": "23.23.23.23",
+      "local_key": "0923092309231234",
+      "name": "Eingangslampe",
+      "online": true,
+      "owner_id": "121211212",
+      "product_id": "j0zozzoarutv0nu1",
+      "product_name": "Wifi Plug",
+      "status": [
+        {
+          "code": "switch_1",
+          "value": true
+        },
+        {
+          "code": "countdown_1",
+          "value": 0
+        },
+        {
+          "code": "add_ele",
+          "value": 2
+        },
+        {
+          "code": "cur_current",
+          "value": 31
+        },
+        {
+          "code": "cur_power",
+          "value": 39
+        },
+        {
+          "code": "cur_voltage",
+          "value": 2343
+        },
+        {
+          "code": "relay_status",
+          "value": "last"
+        }
+      ],
+      "sub": false,
+      "time_zone": "+01:00",
+      "uid": "eu239823982398239823",
+      "update_time": 1610133124,
+      "uuid": "232323232323"
+    },
+    {
+      "active_time": 1610111482,
+      "biz_type": 18,
+      "category": "cz",
+      "create_time": 1610111482,
+      "icon": "smart/icon/238239823982982/239823982398239823.png",
+      "id": "23424524513414245",
+      "ip": "23.23.23.23",
+      "local_key": "0923092309231234",
+      "name": "Plug3",
+      "online": false,
+      "owner_id": "121211212",
+      "product_id": "j0zozzoarutv0nu1",
+      "product_name": "Wifi Plug",
+      "status": [
+        {
+          "code": "switch_1",
+          "value": false
+        },
+        {
+          "code": "countdown_1",
+          "value": 0
+        },
+        {
+          "code": "add_ele",
+          "value": 57
+        },
+        {
+          "code": "cur_current",
+          "value": 0
+        },
+        {
+          "code": "cur_power",
+          "value": 0
+        },
+        {
+          "code": "cur_voltage",
+          "value": 2351
+        },
+        {
+          "code": "relay_status",
+          "value": "last"
+        }
+      ],
+      "sub": false,
+      "time_zone": "+01:00",
+      "uid": "eu239823982398239823",
+      "update_time": 1610111709,
+      "uuid": "2323232323234"
+    },
+    {
+      "active_time": 1610041073,
+      "biz_type": 18,
+      "category": "cz",
+      "create_time": 1610041073,
+      "icon": "smart/icon/238239823982982/239823982398239823.png",
+      "id": "2423425345234234234",
+      "ip": "23.23.23.23",
+      "local_key": "0923092309231234",
+      "name": "Deckenfluter",
+      "online": true,
+      "owner_id": "121211212",
+      "product_id": "j0zozzoarutv0nu1",
+      "product_name": "Wifi Plug",
+      "status": [
+        {
+          "code": "switch_1",
+          "value": false
+        },
+        {
+          "code": "countdown_1",
+          "value": 0
+        },
+        {
+          "code": "add_ele",
+          "value": 3
+        },
+        {
+          "code": "cur_current",
+          "value": 0
+        },
+        {
+          "code": "cur_power",
+          "value": 0
+        },
+        {
+          "code": "cur_voltage",
+          "value": 2364
+        },
+        {
+          "code": "relay_status",
+          "value": "last"
+        }
+      ],
+      "sub": false,
+      "time_zone": "+01:00",
+      "uid": "eu239823982398239823",
+      "update_time": 1610111433,
+      "uuid": "232323232323"
+    }
+  ],
+  "success": true,
+  "t": 1610136188439
+}
