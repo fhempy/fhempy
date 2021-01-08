@@ -61,6 +61,8 @@ class tuya(FhemModule):
                 },
             }
             self.set_attr_config(attr_config)
+            # this is needed to set default values
+            await utils.handle_define_attr(attr_config, self, hash)
             # create device
             self.tt_device = getattr(tinytuya, self.tt_type)(
                 self.tt_id, self.tt_ip, self.tt_key
@@ -123,13 +125,15 @@ class tuya(FhemModule):
     async def set_onoff(self, hash, params):
         if params["cmd"][0:2] == "on":
             func = self.tt_device.turn_on
+            new_state = "on"
         else:
             func = self.tt_device.turn_off
+            new_state = "off"
         self.create_async_task(
             self._call_fct_upd_reading(
                 functools.partial(func, switch=params["function_param"]),
                 "state",
-                "on",
+                new_state,
             )
         )
 
