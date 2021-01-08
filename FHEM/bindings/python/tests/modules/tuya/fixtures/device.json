@@ -1,0 +1,54 @@
+{
+  "result": {
+    "active_time": 1610041073,
+    "biz_type": 18,
+    "category": "cz",
+    "create_time": 1610041073,
+    "icon": "smart/icon/323928323/232323232323.png",
+    "id": "1234567890123456789012",
+    "ip": "123.23.23.23",
+    "local_key": "1234567890123456",
+    "name": "Light",
+    "online": true,
+    "owner_id": "23540075",
+    "product_id": "j0zozzoarutv0nu1",
+    "product_name": "Wifi Plug",
+    "status": [
+      {
+        "code": "switch_1",
+        "value": false
+      },
+      {
+        "code": "countdown_1",
+        "value": 0
+      },
+      {
+        "code": "add_ele",
+        "value": 3
+      },
+      {
+        "code": "cur_current",
+        "value": 0
+      },
+      {
+        "code": "cur_power",
+        "value": 0
+      },
+      {
+        "code": "cur_voltage",
+        "value": 2364
+      },
+      {
+        "code": "relay_status",
+        "value": "last"
+      }
+    ],
+    "sub": false,
+    "time_zone": "+01:00",
+    "uid": "12345678901234567890",
+    "update_time": 1610111433,
+    "uuid": "2345678902345678"
+  },
+  "success": true,
+  "t": 1610136057632
+}
