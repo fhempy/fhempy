@@ -23,7 +23,19 @@ First of all it is required to get the local key of your devices. Please follow 
 ## Usage
 ```
 define tuya_system PythonModule tuya setup CLIENT_ID CLIENT_SECRET DEVICE_ID
+set tuya_system start_scan
 ```
+The scan might take some minutes to finish, please wait and take a coffee.
  - CLIENT_ID: From tuya developer portal
  - CLIENT_SECRET: From tuya developer portal
  - DEVICE_ID: From SmartLife app, doesn't matter which device, we just need one to retrieve the proper uid from it
+
+If a device couldn't be setup properly, you can define it on your own
+```
+define wifi_plug PythonModule tuya TYPE DEVICE_ID IP LOCAL_KEY [VERSION=3.3]
+```
+ - TYPE: OutletDevice,CoverDevice,BulbDevice,Device
+ - DEVICE_ID: Take that one from the tuya_system device you created
+ - IP: Check for the IP in your tuya_system device or on your router
+ - LOCAL_KEY: Take that one from the tuya_system device you created
+ - VERSION: Take that one from the tuya_system device you created

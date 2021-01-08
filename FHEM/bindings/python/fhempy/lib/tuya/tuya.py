@@ -233,6 +233,9 @@ class tuya(FhemModule):
                 continue
 
             await fhem.readingsSingleUpdateIfChanged(self.hash, f"{id}_ip", ip, 1)
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, f"{id}_version", str(ver), 1
+            )
 
             if (
                 await fhem.checkIfDeviceExists(
