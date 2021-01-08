@@ -61,6 +61,8 @@ class tuya(FhemModule):
                 },
             }
             self.set_attr_config(attr_config)
+            # this is needed to set default values
+            await utils.handle_define_attr(attr_config, self, hash)
             # create device
             self.tt_device = getattr(tinytuya, self.tt_type)(
                 self.tt_id, self.tt_ip, self.tt_key
@@ -123,13 +125,15 @@ class tuya(FhemModule):
     async def set_onoff(self, hash, params):
         if params["cmd"][0:2] == "on":
             func = self.tt_device.turn_on
+            new_state = "on"
         else:
             func = self.tt_device.turn_off
+            new_state = "off"
         self.create_async_task(
             self._call_fct_upd_reading(
                 functools.partial(func, switch=params["function_param"]),
                 "state",
-                "on",
+                new_state,
             )
         )
 
@@ -198,7 +202,10 @@ class tuya(FhemModule):
         output = json.dumps(tuyadevices, indent=4)  # sort_keys=True)
         self.logger.debug(output)
         await fhem.readingsSingleUpdate(
-            self.hash, "state", f"found {len(tuyadevices)} devices", 1
+            self.hash,
+            "state",
+            f"found {len(tuyadevices)} devices, start local scan...",
+            1,
         )
 
         # scan local devices to get IP
@@ -214,6 +221,7 @@ class tuya(FhemModule):
             return (0, 0)
 
         self.logger.debug("Polling local devices...")
+        count_created = 0
         for i in tuyadevices:
             name = i["name"].replace(" ", "_")
             id = i["id"]
@@ -225,6 +233,9 @@ class tuya(FhemModule):
                 continue
 
             await fhem.readingsSingleUpdateIfChanged(self.hash, f"{id}_ip", ip, 1)
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, f"{id}_version", str(ver), 1
+            )
 
             if (
                 await fhem.checkIfDeviceExists(
@@ -237,3 +248,11 @@ class tuya(FhemModule):
                     self.hash,
                     f"{name}_{id} PythonModule tuya Device {id} {ip} {local_key} {ver}",
                 )
+                count_created += 1
+
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            "state",
+            f"done, created {count_created} devices",
+            1,
+        )
