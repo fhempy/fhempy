@@ -22,7 +22,7 @@ First of all it is required to get the local key of your devices. Please follow 
 
 ## Usage
 ```
-define wifi_plug PythonModule tuya setup CLIENT_ID CLIENT_SECRET DEVICE_ID
+define tuya_system PythonModule tuya setup CLIENT_ID CLIENT_SECRET DEVICE_ID
 ```
  - CLIENT_ID: From tuya developer portal
  - CLIENT_SECRET: From tuya developer portal
