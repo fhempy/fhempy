@@ -202,7 +202,10 @@ class tuya(FhemModule):
         output = json.dumps(tuyadevices, indent=4)  # sort_keys=True)
         self.logger.debug(output)
         await fhem.readingsSingleUpdate(
-            self.hash, "state", f"found {len(tuyadevices)} devices", 1
+            self.hash,
+            "state",
+            f"found {len(tuyadevices)} devices, start local scan...",
+            1,
         )
 
         # scan local devices to get IP
@@ -218,6 +221,7 @@ class tuya(FhemModule):
             return (0, 0)
 
         self.logger.debug("Polling local devices...")
+        count_created = 0
         for i in tuyadevices:
             name = i["name"].replace(" ", "_")
             id = i["id"]
@@ -241,3 +245,11 @@ class tuya(FhemModule):
                     self.hash,
                     f"{name}_{id} PythonModule tuya Device {id} {ip} {local_key} {ver}",
                 )
+                count_created += 1
+
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            "state",
+            f"done, created {count_created} devices",
+            1,
+        )
