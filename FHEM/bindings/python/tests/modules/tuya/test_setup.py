@@ -3,7 +3,7 @@ import logging
 import pytest
 import os
 import json
-from fhempy.lib.tuya.tuya import tuya
+from fhempy.lib.pkg_installer import check_and_install_dependencies
 from ... import mock_fhem
 
 import requests_mock
@@ -26,7 +26,7 @@ def mock_tuya_requests():
             text=load_fixture("token.json"),
         )
         mock.get(
-            "https://openapi.tuyaeu.com/v1.0/devices/bfdfc0ff3aaecf4559v2jd",
+            "https://openapi.tuyaeu.com/v1.0/devices/345678345673456567",
             text=load_fixture("device.json"),
         )
         mock.get(
@@ -38,8 +38,12 @@ def mock_tuya_requests():
 
 @pytest.mark.asyncio
 async def test_setup(mocker):
+    # prepare
     mock_fhem.mock_module(mocker)
     testhash = {"NAME": "testdevice"}
+    await check_and_install_dependencies("tuya")
+    from fhempy.lib.tuya.tuya import tuya
+
     fhempy_device = tuya(logging.getLogger(__name__))
 
     def devicesScan(verbose, maxretry=1, color=None):
@@ -54,9 +58,9 @@ async def test_setup(mocker):
             "PythonModule",
             "tuya",
             "setup",
-            "kfce3ayxa8hgdbr4wnq7",
-            "26c156d9eecd4f48a1a6f8948c830c96",
-            "bfdfc0ff3aaecf4559v2jd",
+            "12345678123456",
+            "2345678234567",
+            "345678345673456567",
         ],
         {},
     )
@@ -64,12 +68,8 @@ async def test_setup(mocker):
 
     await fhempy_device.Set(testhash, ["testdevice", "scan_devices"], {})
 
-    while True:
-        if mock_fhem.readings["testdevice"]["state"] == "found 3 devices":
-            break
-        else:
-            await asyncio.sleep(0.1)
-    # await asyncio.gather(*asyncio.all_tasks())
+    await asyncio.sleep(0.2)
+    assert mock_fhem.readings["testdevice"]["state"] == "done, created 2 devices"
 
     assert (
         mock_fhem.readings["testdevice"]["239823982398239823_localkey"]
@@ -83,3 +83,5 @@ async def test_setup(mocker):
         mock_fhem.readings["testdevice"]["2423425345234234234_localkey"]
         == "0923092309231234"
     )
+
+    await fhempy_device.Undefine(testhash)

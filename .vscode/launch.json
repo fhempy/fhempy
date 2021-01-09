@@ -12,7 +12,8 @@
       "env": {
         "PYTHONPATH": "${workspaceRoot}/FHEM/bindings/python"
       },
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "justMyCode": false,
     }
   ]
 }

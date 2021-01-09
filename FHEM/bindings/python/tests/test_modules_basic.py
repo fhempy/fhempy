@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 def pytest_generate_tests(metafunc):
     modules = []
     directory = "FHEM/bindings/python/fhempy/lib"
-    for module_name in next(os.walk(directory))[1]:
+    dirs = os.walk(directory)
+    dirs = next(dirs)[1]
+    for module_name in dirs:
         if module_name != "core" and module_name != "__pycache__":
             modules.append(module_name)
     metafunc.parametrize("module_name", modules, ids=modules)

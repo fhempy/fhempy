@@ -2,8 +2,9 @@ import asyncio
 import json
 import time
 import functools
+from asyncio.futures import CancelledError
 from ring_doorbell import Ring, Auth
-from oauthlib.oauth2 import MissingTokenError
+from oauthlib.oauth2 import MissingTokenError, AccessDeniedError
 
 from .. import fhem
 from .. import utils
@@ -24,6 +25,7 @@ class ring(FhemModule):
         self._rdevice = None
         self._lastrecording_url = ""
         self._livestreamjson = ""
+        self._login_lock = asyncio.Lock()
         self._snapshot = None
         self._attr_list = {
             "deviceUpdateInterval": {"default": 300, "format": "int"},
@@ -63,30 +65,33 @@ class ring(FhemModule):
         self.create_async_task(self.ring_login())
 
     async def ring_login(self):
-        if self._token == "":
-            token_reading = await fhem.ReadingsVal(self.hash["NAME"], "token", "")
-            if token_reading != "":
-                token_reading = utils.decrypt_string(
-                    token_reading, self._reading_encryption_key
+        async with self._login_lock:
+            if self._token == "":
+                token_reading = await fhem.ReadingsVal(self.hash["NAME"], "token", "")
+                if token_reading != "":
+                    token_reading = utils.decrypt_string(
+                        token_reading, self._reading_encryption_key
+                    )
+                    self._token = json.loads(token_reading)
+            if self._password == "":
+                self._password = await fhem.ReadingsVal(
+                    self.hash["NAME"], "password", ""
                 )
-                self._token = json.loads(token_reading)
-        if self._password == "":
-            self._password = await fhem.ReadingsVal(self.hash["NAME"], "password", "")
-            if self._password != "":
-                self._password = utils.decrypt_string(
-                    self._password, self._reading_encryption_key
-                )
-        try:
-            ret = await utils.run_blocking(functools.partial(self.blocking_login))
-            if ret:
-                await fhem.readingsSingleUpdate(self.hash, "state", ret, 1)
-                return
-            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
-            # start udpate loop, we are already in a task, therefore no need to create
-            await self.update_loop()
-        except:
-            await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
-            self.logger.error("Login failed")
+                if self._password != "":
+                    self._password = utils.decrypt_string(
+                        self._password, self._reading_encryption_key
+                    )
+            try:
+                ret = await utils.run_blocking(functools.partial(self.blocking_login))
+                if ret:
+                    await fhem.readingsSingleUpdate(self.hash, "state", ret, 1)
+                    return
+                await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+                # start update loop, we are already in a task, therefore no need to create
+                await self.update_loop()
+            except:
+                await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
+                self.logger.error("Login failed")
 
     async def update_loop(self):
         try:
@@ -128,6 +133,8 @@ class ring(FhemModule):
                 except:
                     self.logger.exception("Failed to poll devices")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
+        except CancelledError:
+            pass
         except:
             self.logger.exception("Failed to update devices")
 
@@ -291,6 +298,8 @@ class ring(FhemModule):
                 else:
                     try:
                         self._auth.fetch_token(self._username, self._password)
+                    except AccessDeniedError:
+                        return "AccessDenied: wrong username or password"
                     except MissingTokenError:
                         return "please set 2fa_code"
             else:
