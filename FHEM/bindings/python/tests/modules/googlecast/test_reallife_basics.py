@@ -2,14 +2,18 @@ import asyncio
 import logging
 import pytest
 import os
-from fhempy.lib.googlecast.googlecast import googlecast
+from fhempy.lib.pkg_installer import check_and_install_dependencies
 from ... import mock_fhem
 
 
 @pytest.mark.asyncio
 async def test_everything(mocker):
+    # prepare
     mock_fhem.mock_module(mocker)
     testhash = {"NAME": "testdevice"}
+    await check_and_install_dependencies("googlecast")
+    from fhempy.lib.googlecast.googlecast import googlecast
+
     fhempy_device = googlecast(logging.getLogger(__name__))
     await fhempy_device.Define(
         testhash,
@@ -135,12 +139,12 @@ async def test_everything(mocker):
         [
             "testdevice",
             "volume",
-            "90",
+            "30",
         ],
         {},
     )
     await asyncio.sleep(2)
-    assert mock_fhem.readings["testdevice"]["volume"] == 90
+    assert mock_fhem.readings["testdevice"]["volume"] == 30
 
     # volume
     await fhempy_device.Set(
@@ -148,12 +152,12 @@ async def test_everything(mocker):
         [
             "testdevice",
             "volume",
-            "100",
+            "20",
         ],
         {},
     )
     await asyncio.sleep(2)
-    assert mock_fhem.readings["testdevice"]["volume"] == 100
+    assert mock_fhem.readings["testdevice"]["volume"] == 20
 
     # quitApp
     await fhempy_device.Set(
