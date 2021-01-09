@@ -230,6 +230,9 @@ class tuya(FhemModule):
 
             # do not create device if no IP was discovered
             if ver == 0:
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, f"{id}_ip", "offline", 1
+                )
                 continue
 
             await fhem.readingsSingleUpdateIfChanged(self.hash, f"{id}_ip", ip, 1)
