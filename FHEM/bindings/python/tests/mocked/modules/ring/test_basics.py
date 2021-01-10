@@ -1,12 +1,11 @@
 import asyncio
 import logging
-from subprocess import check_call
 import pytest
 import datetime
 import os
 import requests_mock
 from fhempy.lib.pkg_installer import check_and_install_dependencies
-from ... import mock_fhem
+from tests.utils import mock_fhem
 
 
 def load_fixture(filename):
@@ -69,7 +68,7 @@ def mock_ring_requests():
 async def test_login(mocker):
     mock_fhem.mock_module(mocker)
     testhash = {"NAME": "testdevice"}
-    check_and_install_dependencies("ring")
+    await check_and_install_dependencies("ring")
     from fhempy.lib.ring.ring import ring
 
     fhempy_device = ring(logging.getLogger(__name__))

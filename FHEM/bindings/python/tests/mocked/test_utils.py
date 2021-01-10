@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 import functools
 
 from fhempy.lib import utils
