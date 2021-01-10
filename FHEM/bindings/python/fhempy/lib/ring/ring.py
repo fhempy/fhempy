@@ -2,9 +2,15 @@ import asyncio
 import json
 import time
 import functools
-from asyncio.futures import CancelledError
 from ring_doorbell import Ring, Auth
 from oauthlib.oauth2 import MissingTokenError, AccessDeniedError
+
+try:
+    # Python 3.7
+    from asyncio.futures import CancelledError
+except ImportError:
+    # Python 3.8+
+    from asyncio import CancelledError
 
 from .. import fhem
 from .. import utils
