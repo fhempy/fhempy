@@ -35,10 +35,12 @@ The scan might take some minutes to finish, please wait and take a coffee.
 ### Individual Device
 If a device couldn't be setup properly or you know your local keys and don't need setup, you can define it on your own
 ```
-define wifi_plug PythonModule tuya TYPE DEVICE_ID IP LOCAL_KEY VERSION
+define wifi_plug PythonModule tuya PRODUCT_ID DEVICE_ID IP LOCAL_KEY [VERSION] [API_KEY] [API_SECRET]
 ```
- - TYPE: OutletDevice,CoverDevice,BulbDevice,Device
+ - PRODUCT_ID: Product ID of the device (e.g. j0zozzoarutv0nu1 for standard plug)
  - DEVICE_ID: Take that one from the tuya_system device you created
  - IP: Check for the IP in your tuya_system device or on your router
  - LOCAL_KEY: Take that one from the tuya_system device you created
  - VERSION: Take that one from the tuya_system device you created (default 3.3)
+ - API_KEY: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud
+ - API_SECRET: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud

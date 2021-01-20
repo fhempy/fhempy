@@ -94,7 +94,7 @@ class scanner:
     def register_mac_listener(self, mac, listener):
         self._mac_listener[mac.lower()] = listener
         if self._scan_task is None:
-            self._scan_task = self.create_async_task(self.loop_scan())
+            self._scan_task = asyncio.create_task(self.loop_scan())
 
     def unregister_mac_listener(self, mac):
         if mac in self._mac_listener:

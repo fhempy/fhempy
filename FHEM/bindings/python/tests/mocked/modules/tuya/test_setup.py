@@ -4,7 +4,7 @@ import pytest
 import os
 import json
 from fhempy.lib.pkg_installer import check_and_install_dependencies
-from ... import mock_fhem
+from tests.utils import mock_fhem
 
 import requests_mock
 

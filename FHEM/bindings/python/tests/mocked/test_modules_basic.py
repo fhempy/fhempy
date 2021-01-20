@@ -1,11 +1,10 @@
 import os
 import pytest
-import asyncio
 import logging
 import importlib
 from unittest.mock import MagicMock
 
-from . import mock_fhem
+from ..utils import mock_fhem
 from fhempy.lib import utils
 from fhempy.lib.generic import FhemModule
 from fhempy.lib.pkg_installer import check_and_install_dependencies, check_dependencies

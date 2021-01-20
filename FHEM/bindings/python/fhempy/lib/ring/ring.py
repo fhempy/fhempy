@@ -199,64 +199,75 @@ class ring(FhemModule):
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "address", self._rdevice.address
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "family", self._rdevice.family
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "device_id", self._rdevice.device_id
-        )
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "id", self._rdevice.id)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "model", self._rdevice.model)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "firmware", self._rdevice.firmware
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "latitude", self._rdevice.latitude
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "longitude", self._rdevice.longitude
-        )
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "kind", self._rdevice.kind)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "name", self._rdevice.name)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "timezone", self._rdevice.timezone
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "wifi_name", self._rdevice.wifi_name
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "wifi_signal_strength", self._rdevice.wifi_signal_strength
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "wifi_signal_category", self._rdevice.wifi_signal_category
-        )
-        await self.update_if_available("battery_life")
-        await self.update_if_available("existing_doorbell_type")
-        await self.update_if_available("existing_doorbell_type_enabled")
-        await self.update_if_available("existing_doorbell_type_duration")
-        await self.update_if_available("subscribed")
-        await self.update_if_available("subscribed_motion")
-        await self.update_if_available("has_subscription")
-        await self.update_if_available("volume")
-        await self.update_if_available("connection_status")
-        if (
-            self._rdevice.family == "doorbots"
-            or self._rdevice.family == "authorized_doorbots"
-        ):
-            await self.update_if_available("last_recording_id")
+        try:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "last_recording_url", self._lastrecording_url
+                self.hash, "address", self._rdevice.address
             )
-            if self._livestreamjson != "":
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "family", self._rdevice.family
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "device_id", self._rdevice.device_id
+            )
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "id", self._rdevice.id)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "model", self._rdevice.model
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "firmware", self._rdevice.firmware
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "latitude", self._rdevice.latitude
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "longitude", self._rdevice.longitude
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "kind", self._rdevice.kind
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "name", self._rdevice.name
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "timezone", self._rdevice.timezone
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "wifi_name", self._rdevice.wifi_name
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "wifi_signal_strength", self._rdevice.wifi_signal_strength
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "wifi_signal_category", self._rdevice.wifi_signal_category
+            )
+            await self.update_if_available("battery_life")
+            await self.update_if_available("existing_doorbell_type")
+            await self.update_if_available("existing_doorbell_type_enabled")
+            await self.update_if_available("existing_doorbell_type_duration")
+            await self.update_if_available("subscribed")
+            await self.update_if_available("subscribed_motion")
+            await self.update_if_available("has_subscription")
+            await self.update_if_available("volume")
+            await self.update_if_available("connection_status")
+            if (
+                self._rdevice.family == "doorbots"
+                or self._rdevice.family == "authorized_doorbots"
+            ):
+                await self.update_if_available("last_recording_id")
                 await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "livestream_json", json.dumps(self._livestreamjson)
+                    self.hash, "last_recording_url", self._lastrecording_url
                 )
-            # if self._snapshot:
-            #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
-            #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
+                if self._livestreamjson != "":
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, "livestream_json", json.dumps(self._livestreamjson)
+                    )
+                # if self._snapshot:
+                #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
+                #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
+        except:
+            self.logger.exception(
+                "Failed to update readings, please report here: https://forum.fhem.de/index.php/topic,117381"
+            )
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_if_available(self, reading):

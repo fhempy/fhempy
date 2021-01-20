@@ -238,8 +238,10 @@ class PyBinding:
                                     + "."
                                     + hash["PYTHONTYPE"]
                                 )
-                                # FIXME this might block fhempy main if import takes long time (e.g. tflit installation)
-                                module_object = importlib.import_module(pymodule)
+                                # import might take a long time, therefore run_blocking
+                                module_object = await utils.run_blocking(
+                                    functools.partial(importlib.import_module, pymodule)
+                                )
                                 # create instance of class with logger
                                 target_class = getattr(
                                     module_object, hash["PYTHONTYPE"]
@@ -401,6 +403,7 @@ def run():
         )
 
     logger.info("Waiting for FHEM connection")
+    asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(
             pybinding, "0.0.0.0", 15733, ping_timeout=None, ping_interval=None
