@@ -36,6 +36,26 @@ def setFunctionInactive(hash):
         )
 
 
+async def getDeviceHashName(hash, typeinternal, typevalue, internal, value):
+    cmd = (
+        "foreach my $fhem_dev (sort keys %main::defs) {"
+        + "  return $main::defs($fhem_dev}{NAME}) if(defined($main::defs{$fhem_dev}{"
+        + typeinternal
+        + "}) && $main::defs{$fhem_dev}{"
+        + typeinternal
+        + "} eq '"
+        + typevalue
+        + "' && $main::defs{$fhem_dev}{"
+        + internal
+        + "} eq '"
+        + value
+        + "');;"
+        + "}"
+        + "return 0;;"
+    )
+    return await sendCommandHash(hash, cmd)
+
+
 async def getUniqueId(hash):
     cmd = "getUniqueId()"
     return await sendCommandHash(hash, cmd)
@@ -171,7 +191,7 @@ async def CommandDefine(hash, definition):
 
 
 async def CommandAttr(hash, attrdef):
-    cmd = 'CommandAttr(undef, "' + attrdef + '")'
+    cmd = 'CommandAttr(undef, "' + attrdef.replace('"', '\\"') + '")'
     return await sendCommandHash(hash, cmd)
 
 
