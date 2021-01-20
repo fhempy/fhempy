@@ -523,16 +523,13 @@ class tuya(FhemModule):
             if productid not in mappings.knownSchemas:
                 continue
 
-            if (
-                await fhem.checkIfDeviceExists(
-                    self.hash, "PYTHONTYPE", "tuya", "DEVICEID", id
-                )
-                is False
+            if not await fhem.checkIfDeviceExists(
+                self.hash, "PYTHONTYPE", "tuya", "DEVICEID", id
             ):
                 # create FHEM device
                 await fhem.CommandDefine(
                     self.hash,
-                    f"{name}_{id} PythonModule tuya cloud {productid} {id} {ip} {local_key} {ver} {self.tt_key} {self.tt_secret}",
+                    f"{name}_{id} PythonModule tuya {productid} {id} {ip} {local_key} {ver} {self.tt_key} {self.tt_secret}",
                 )
                 count_created += 1
 
