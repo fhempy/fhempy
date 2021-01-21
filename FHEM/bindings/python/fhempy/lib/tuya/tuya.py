@@ -48,7 +48,7 @@ class tuya(FhemModule):
             hash["API_SECRET"] = self.tt_secret
             hash["REGION"] = self.tt_region
         else:
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "offline", 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
             self.tt_region = "eu"
             self.tt_did = args[4]
             self.tt_ip = args[5]
@@ -401,7 +401,7 @@ class tuya(FhemModule):
                         status[dp],
                     )
             if not stateused:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online", 1)
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
         except:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
