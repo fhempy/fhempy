@@ -1,10 +1,9 @@
 import asyncio
-import socket
+import getopt
 import websockets
 import json
 import traceback
 import logging
-import concurrent.futures
 import functools
 import site
 import sys
@@ -12,6 +11,7 @@ import importlib
 import time
 from . import fhem, pkg_installer, utils
 from .core.zeroconf import zeroconf
+from . import version
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def activate_internal_modules():
 
 
 async def pybinding(websocket, path):
-    if len(sys.argv) == 1 and zc_info is not None:
+    if zc_info is not None:
         # FHEM discovered us, stop zeroconf
         zeroconf.get_instance(logger).unregister_service(zc_info)
 
@@ -381,24 +381,69 @@ class PyBinding:
             logger.error("Failed to handle message: ", exc_info=True)
 
 
+def usage():
+    print("Usage: fhempy [-h|--help] [-v|--version] [-i|--ip] [-p|--port] [-l|--local]")
+    print("  --local   Use only if you run fhempy on your FHEM machine")
+    print(
+        "  --ip      "
+        "Specify the IP address for FHEM connection setup (default: local ip)"
+    )
+    print("  --port    Specify the port fhempy runs on (default: 15733)")
+    print("  --version Print version and exit")
+    print("  --help    This help text")
+
+
 def run():
+    try:
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "dhvli:p:",
+            ["help", "version", "ip=", "port=", "local", "debug"],
+        )
+    except getopt.GetoptError as err:
+        logger.error(err)
+        usage()
+        sys.exit(2)
+
+    ip = None
+    port = 15733
+    local = False
+    for o, a in opts:
+        if o in ("-v", "--version"):
+            print("fhempy " + str(version.__version__))
+            sys.exit()
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-i", "--ip"):
+            ip = a
+        elif o in ("-p", "--port"):
+            port = a
+        elif o in ("-l", "--local"):
+            local = True
+        elif o in ("-d", "--debug"):
+            logging.getLogger("").setLevel(logging.DEBUG)
+
     logger.info("Starting fhempy...")
 
     asyncio.get_event_loop().run_until_complete(
         pkg_installer.check_and_install_dependencies("core")
     )
 
-    if len(sys.argv) == 1:
+    if not local:
         logger.info("Advertise fhempy on local network")
         # running on remote peer, start zeroconf for autodiscovery
-        local_ip = utils.get_local_ip()
+        if ip is None:
+            local_ip = utils.get_local_ip()
+        else:
+            local_ip = ip
         zc = zeroconf.get_instance(logger)
         zc_info = asyncio.get_event_loop().run_until_complete(
             zc.register_service(
                 "_http",
                 "fhempy (" + local_ip + ")",
-                15733,
-                {"port": 15733, "ip": local_ip},
+                port,
+                {"port": port, "ip": local_ip},
             )
         )
 
@@ -406,7 +451,7 @@ def run():
     asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(
-            pybinding, "0.0.0.0", 15733, ping_timeout=None, ping_interval=None
+            pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
         )
     )
     asyncio.get_event_loop().run_forever()

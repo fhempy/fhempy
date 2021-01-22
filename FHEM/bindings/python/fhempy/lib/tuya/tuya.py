@@ -27,7 +27,8 @@ class tuya(FhemModule):
                 "Usage: define wifi_plug PythonModule tuya"
                 " setup <API_KEY> <API_SECRET> <DEVICE_ID> [<REGION>=eu]<br>"
                 "OR if you want to define only one device with existing local key<br>"
-                " <PRODUCTID> <DEVICE_ID> <IP> <LOCAL_KEY> [<VERSION>=3.3] [<API_KEY>] [<API_SECRET>]"
+                " <PRODUCTID> <DEVICE_ID> <IP> <LOCAL_KEY> "
+                "[<VERSION>=3.3] [<API_KEY>] [<API_SECRET>]"
             )
 
         self.tt_type = args[3]
@@ -47,6 +48,7 @@ class tuya(FhemModule):
             hash["API_SECRET"] = self.tt_secret
             hash["REGION"] = self.tt_region
         else:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
             self.tt_region = "eu"
             self.tt_did = args[4]
             self.tt_ip = args[5]
@@ -84,10 +86,8 @@ class tuya(FhemModule):
         for schema_part in schema:
             # rename to values
             schema_part["values"] = schema_part["property"]
-            del schema_part["property"]
             schema_part["type"] = schema_part["values"]["type"]
             schema_part["desc"] = ""
-            del schema_part["values"]["type"]
             schema_part["values"] = json.dumps(schema_part["values"])
             if schema_part["type"] == "bool":
                 schema_part["type"] = "Boolean"
@@ -228,7 +228,7 @@ class tuya(FhemModule):
         self.tuya_spec_functions = ast.literal_eval(self.tuya_spec_functions)
         self.tuya_spec_status = ast.literal_eval(self.tuya_spec_status)
 
-    ## get functions/status from tuya
+    # get functions/status from tuya
     async def get_tuya_dev_specification(self, token):
         # Get specification
         uri = f"devices/{self.tt_did}/specifications"
@@ -281,7 +281,10 @@ class tuya(FhemModule):
             )
             await fhem.CommandAttr(
                 self.hash,
-                f"{self.hash['NAME']} tuya_spec_functions {str(self.tuya_spec_functions)}",
+                (
+                    f"{self.hash['NAME']} tuya_spec_functions "
+                    f"{str(self.tuya_spec_functions)}"
+                ),
             )
             await fhem.CommandAttr(
                 self.hash,
@@ -355,6 +358,7 @@ class tuya(FhemModule):
             except (ValueError, TypeError):
                 pass
             except Exception:
+                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
                 self.logger.error("Failed to get current status from device")
 
     def convert(self, value, schema):
@@ -362,7 +366,7 @@ class tuya(FhemModule):
             values = json.loads(schema["values"])
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
-            if value == True:
+            if value is True:
                 return "on"
             return "off"
         return value
@@ -371,6 +375,7 @@ class tuya(FhemModule):
         status = status["dps"]
         await fhem.readingsBeginUpdate(self.hash)
         try:
+            stateused = False
             for dp in status:
                 found = False
                 for st in self.tuya_spec_status:
@@ -379,6 +384,7 @@ class tuya(FhemModule):
                         reading = st["code"]
                         if st["code"] == "switch_1":
                             reading = "state"
+                            stateused = True
                         await fhem.readingsBulkUpdateIfChanged(
                             self.hash,
                             reading,
@@ -392,6 +398,8 @@ class tuya(FhemModule):
                         f"dp_{int(dp):02d}",
                         status[dp],
                     )
+            if not stateused:
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
         except:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
@@ -529,7 +537,11 @@ class tuya(FhemModule):
                 # create FHEM device
                 await fhem.CommandDefine(
                     self.hash,
-                    f"{name}_{id} PythonModule tuya {productid} {id} {ip} {local_key} {ver} {self.tt_key} {self.tt_secret}",
+                    (
+                        f"{name}_{id} PythonModule tuya "
+                        f"{productid} {id} {ip} {local_key} "
+                        f"{ver} {self.tt_key} {self.tt_secret}"
+                    ),
                 )
                 count_created += 1
 

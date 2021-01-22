@@ -20,7 +20,10 @@ class miio(FhemModule):
         self._attr_list = {
             "update_functions": {
                 "default": "status:60,info:600",
-                "help": "Define command which should be executed every X seconds.<br>info:600 executes info every 600s<br>Default: status:60,info:600",
+                "help": (
+                    "Define command which should be executed every X seconds.<br>"
+                    "info:600 executes info every 600s<br>Default: status:60,info:600"
+                ),
             }
         }
         self.set_attr_config(self._attr_list)
@@ -45,15 +48,17 @@ class miio(FhemModule):
             return f"Device {self._miio_devtype} not found."
 
         for dev_cmd in self._miio_device_class.get_device_group().commands.keys():
-            self._set_list[dev_cmd] = {"function": "set_command"}
+            self._set_list[dev_cmd] = {"function": "set_command", "default": None}
             fct = getattr(self._miio_device_class, dev_cmd)
             sig = inspect.signature(fct)
             if len(list(sig.parameters)) > 1:
                 self._set_list[dev_cmd]["args"] = []
+                self._set_list[dev_cmd]["help"] = []
                 for par in sig.parameters:
                     if sig.parameters[par].name == "self":
                         continue
                     self._set_list[dev_cmd]["args"].append(sig.parameters[par].name)
+                    self._set_list[dev_cmd]["help"].append(str(sig.parameters[par]))
                     if len(list(sig.parameters)) == 2:
                         # set options if there is only one parameter
                         annot = sig.parameters[par].annotation
@@ -66,7 +71,7 @@ class miio(FhemModule):
                         elif inspect.isclass(annot) and issubclass(annot, bool):
                             self._set_list[dev_cmd]["options"] = "on,off"
                 self._set_list[dev_cmd]["help"] = "Arguments: " + " ".join(
-                    self._set_list[dev_cmd]["args"]
+                    self._set_list[dev_cmd]["help"]
                 )
 
         self.set_set_config(self._set_list)
@@ -117,6 +122,8 @@ class miio(FhemModule):
         sig = inspect.signature(fct)
         args = []
         for par_name in sig.parameters:
+            if params[par_name] is None:
+                continue
             ann = sig.parameters[par_name].annotation
             if inspect.isclass(ann) and issubclass(ann, enum.Enum):
                 args.append(ann[params[par_name]])

@@ -56,6 +56,8 @@ BindingsIo_Define($$$)
 
   Log3 $hash, 3, "BindingsIo v1.0.0";
 
+  readingsSingleUpdate($hash, "info", "Please wait till connection is established, might take a few minutes", 1);
+
   my $bindingType = ucfirst(@$a[2]);
 
   $hash->{args} = $a;
@@ -157,6 +159,8 @@ BindingsIo_Callback($$) {
   my $name = $hash->{NAME};
   if (defined($error)) {
     Log3 $name, 1, "BindingsIo: ERROR $name - error while connecting: $error"; 
+  } else {
+    readingsSingleUpdate($hash, "info", "ready", 1);
   }
 }
 
