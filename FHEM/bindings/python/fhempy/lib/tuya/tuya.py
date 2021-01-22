@@ -86,10 +86,8 @@ class tuya(FhemModule):
         for schema_part in schema:
             # rename to values
             schema_part["values"] = schema_part["property"]
-            del schema_part["property"]
             schema_part["type"] = schema_part["values"]["type"]
             schema_part["desc"] = ""
-            del schema_part["values"]["type"]
             schema_part["values"] = json.dumps(schema_part["values"])
             if schema_part["type"] == "bool":
                 schema_part["type"] = "Boolean"
