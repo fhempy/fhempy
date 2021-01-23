@@ -50,7 +50,8 @@ async def activate_internal_modules():
 async def pybinding(websocket, path):
     if zc_info is not None:
         # FHEM discovered us, stop zeroconf
-        zeroconf.get_instance(logger).unregister_service(zc_info)
+        await zeroconf.get_instance(logger).unregister_service(zc_info)
+        zeroconf.get_instance(logger).stop()
 
     global connection_start
     connection_start = time.time()
@@ -459,6 +460,7 @@ def run():
 
     logger.info("Waiting for FHEM connection")
     asyncio.get_event_loop().set_debug(True)
+    asyncio.get_event_loop().slow_callback_duration = 0.05
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(
             pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
