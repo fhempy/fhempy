@@ -16,6 +16,9 @@ from .. import fhem
 import pychromecast
 from pychromecast.error import ChromecastConnectionError
 
+# BubbleUPNP
+from pychromecast.controllers.bubbleupnp import BubbleUPNPController
+
 # YouTube
 from pychromecast.controllers.youtube import YouTubeController
 
@@ -61,6 +64,11 @@ class googlecast(FhemModule):
                 "default": "",
                 "help": "Go to chrome://settings/cookies/detail?site=spotify.com and copy the content of sp_key",
                 "function": "set_attr_spotify_cookie",
+            },
+            "player": {
+                "default": "DefaultMediaRenderer",
+                "help": "Play with BubbleUpnp player or Default Media Renderer cast app",
+                "options": "BubbleUpnp,DefaultMediaRenderer",
             },
         }
         self.set_attr_config(attr_conf)
@@ -245,7 +253,17 @@ class googlecast(FhemModule):
             session = aiohttp.ClientSession()
             res = await session.get(uri)
             mime = res.headers["Content-Type"]
-            self.cast.play_media(uri, mime, enqueue=enqueue)
+            if self._attr_player == "BubbleUpnp":
+                bubbleupnp = BubbleUPNPController()
+                self.cast.register_handler(bubbleupnp)
+                await utils.run_blocking(functools.partial(bubbleupnp.launch))
+                await utils.run_blocking(
+                    functools.partial(bubbleupnp.play_media, uri, mime)
+                )
+            else:
+                await utils.run_blocking(
+                    functools.partial(self.cast.play_media, uri, mime, enqueue=enqueue)
+                )
         except:
             self.logger.exception(f"Failed to play: {uri}")
 
