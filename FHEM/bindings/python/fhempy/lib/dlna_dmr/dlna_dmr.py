@@ -54,7 +54,11 @@ class dlna_dmr(FhemModule):
                 "args": ["url"],
                 "params": {"url": {"optional": True, "default": ""}},
             },
-            "volume": {"args": ["volume"], "options": "slider,0,1,100"},
+            "volume": {
+                "args": ["volume"],
+                "params": {"volume": {"format": "int"}},
+                "options": "slider,0,1,100",
+            },
             "mute": {"args": ["onoff"], "options": "on,off,toggle"},
             "pause": {},
             "next": {},
