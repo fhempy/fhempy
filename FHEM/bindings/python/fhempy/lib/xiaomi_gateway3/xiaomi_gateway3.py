@@ -5,9 +5,9 @@ from ..generic import FhemModule
 from .core.gateway3 import Gateway3
 import asyncio
 import logging
+import functools
 
-from .. import fhem
-from .. import utils as fpyutils
+from .. import fhem, utils
 
 DOMAINS = ["binary_sensor", "climate", "cover", "light", "remote", "sensor", "switch"]
 
@@ -19,6 +19,10 @@ class xiaomi_gateway3(FhemModule):
         self.devices = {}
         self.fhempy_devices = {}
         return
+
+    @property
+    def gateway3(self):
+        return self.gw.gateway3
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -72,7 +76,7 @@ class xiaomi_gateway3(FhemModule):
 
     async def is_connected(self):
         while True:
-            if self.gw.is_connected():
+            if await self.gw.is_connected():
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "connected", 1
                 )
@@ -86,6 +90,8 @@ class xiaomi_gateway3(FhemModule):
         self.logger.debug(f"Check if device {device['did']} exists")
         did = device["did"]
         self.devices[did] = device
+        if did == "lumi.0":
+            did = "lumi." + device["mac"]
         if not await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
         ):
@@ -102,7 +108,7 @@ class xiaomi_gateway3(FhemModule):
             )
         else:
             if "init" in device and did in self.fhempy_devices:
-                if did == "lumi.0":
+                if did == "lumi." + device["mac"]:
                     device["version"] = self.gw.version()
                 await self.fhempy_devices[did].initialize(device)
 
@@ -111,6 +117,10 @@ class FhempyGateway:
     def __init__(self, logger, hash, host, token, config):
         self.gw = Gateway3(host, token, config)
         self.loop = asyncio.get_event_loop()
+
+    @property
+    def gateway3(self):
+        return self.gw
 
     def add_setup(self, domain, handler):
         def setup(gw, device, attr):
@@ -138,5 +148,5 @@ class FhempyGateway:
     def start(self):
         self.gw.start()
 
-    def is_connected(self):
-        return self.gw._check_port(23)
+    async def is_connected(self):
+        return await utils.run_blocking(functools.partial(self.gw._check_port, 23))
