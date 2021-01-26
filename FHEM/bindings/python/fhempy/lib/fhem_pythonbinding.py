@@ -50,7 +50,8 @@ async def activate_internal_modules():
 async def pybinding(websocket, path):
     if zc_info is not None:
         # FHEM discovered us, stop zeroconf
-        zeroconf.get_instance(logger).unregister_service(zc_info)
+        await zeroconf.get_instance(logger).unregister_service(zc_info)
+        zeroconf.get_instance(logger).stop()
 
     global connection_start
     connection_start = time.time()
@@ -123,7 +124,7 @@ class PyBinding:
     async def onMessage(self, payload):
         try:
             await self._onMessage(payload)
-        except SystemExit as se:
+        except SystemExit:
             sys.exit(1)
         except:
             logger.exception("Failed to handle message: " + str(payload))
@@ -154,7 +155,16 @@ class PyBinding:
             else:
                 ret = ""
                 if hash["msgtype"] == "update":
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "version", "update started...", 1
+                    )
                     await pkg_installer.force_update_package("fhempy")
+                    await fhem.readingsSingleUpdate(
+                        self.hash,
+                        "version",
+                        "update finished...please wait",
+                        1,
+                    )
                     sys.exit(1)
                 if hash["msgtype"] == "function":
                     # this is needed to avoid 2 replies on dep installation
@@ -168,7 +178,7 @@ class PyBinding:
                                 hash["args"][1]
                             ] = loadedModuleInstances[hash["args"][0]]
                             del loadedModuleInstances[hash["args"][0]]
-                            self.sendBackReturn(hash, "")
+                            await self.sendBackReturn(hash, "")
                             return 0
 
                     if hash["function"] != "Undefine":
@@ -302,7 +312,7 @@ class PyBinding:
 
                     nmInstance = loadedModuleInstances[hash["NAME"]]
 
-                    if nmInstance != None:
+                    if nmInstance is not None:
                         try:
                             # handle verbose level of logging
                             if (
@@ -438,6 +448,7 @@ def run():
         else:
             local_ip = ip
         zc = zeroconf.get_instance(logger)
+        global zc_info
         zc_info = asyncio.get_event_loop().run_until_complete(
             zc.register_service(
                 "_http",

@@ -213,7 +213,9 @@ class spotify(FhemModule):
 
         if self.spotipy is None:
             self.spotipy = spotipy.Spotify(auth_manager=self.spotipy_pkce)
-            user = self.spotipy.current_user()
+            user = await utils.run_blocking(
+                functools.partial(self.spotipy.current_user)
+            )
             if user is not None:
                 self.loggedin = True
                 await fhem.readingsSingleUpdate(

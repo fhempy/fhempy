@@ -3,12 +3,10 @@ import functools
 import concurrent.futures
 import time
 import random
-import logging
 
 from enum import IntEnum
 from datetime import datetime
 
-from bluepy.btle import BTLEException
 from . import eq3btsmart as eq3
 from .connection import BTLEConnection
 from dbus import DBusException
@@ -68,6 +66,11 @@ class eq3bt(FhemModule):
             "resetConsumption": {
                 "args": ["cons_var"],
                 "options": "all,consumption,consumptionToday,consumptionYesterday",
+            },
+            "temperatureOffset": {
+                "args": ["offset"],
+                "params": {"offset": {"format": "float"}},
+                "options": "slider,-3.5,0.5,3.5,1",
             },
         }
         self.set_set_config(set_list_conf)
@@ -355,6 +358,15 @@ class eq3bt(FhemModule):
             )
         )
 
+    async def set_temperatureOffset(self, hash, params):
+        self.create_async_task(
+            self.set_and_update(
+                functools.partial(
+                    self.thermostat.set_temperature_offset, params["offset"]
+                )
+            )
+        )
+
     async def set_updateStatus(self, hash, params):
         self.create_async_task(self.update_all())
 
@@ -415,6 +427,9 @@ class FhemThermostat(eq3.Thermostat):
         super().query_id()
         for day in range(0, 6):
             super().query_schedule(day)
+
+    def set_temperature_offset(self, temp):
+        self.temperature_offset(temp)
 
     def set_target_temperature(self, temp):
         self.target_temperature = temp
