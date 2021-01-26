@@ -90,4 +90,5 @@ class xiaomi_gateway3_device(FhemModule):
 
     async def Undefine(self, hash):
         await super().Undefine(hash)
-        await self._fhempy_device.Undefine(hash)
+        if self._fhempy_device is not None:
+            await self._fhempy_device.Undefine(hash)
