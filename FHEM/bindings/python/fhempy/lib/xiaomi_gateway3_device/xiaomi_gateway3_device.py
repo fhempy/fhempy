@@ -11,6 +11,7 @@ device_type_mapping = {
     "lumi.sensor_magnet.v2": "ContactSensor",
     "lumi.sensor_ht.v1": "HTSensor",
     "lumi.sensor_ht.v2": "HTSensor",
+    "lumi.weather.v1": "HTSensor",
     "lumi.sensor_motion.v1": "MotionSensor",
     "lumi.gateway.mgl03": "Gateway",
 }

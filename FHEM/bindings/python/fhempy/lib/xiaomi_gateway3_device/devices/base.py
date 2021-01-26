@@ -18,6 +18,10 @@ attr_settings = {
         "stateFormat": "temperature °C, humidity %, pressure kPa",
         "icon": "temp_temperature",
     },
+    "lumi.weather.v1": {
+        "stateFormat": "temperature °C, humidity %, pressure kPa",
+        "icon": "temp_temperature",
+    },
     "lumi.sensor_motion.v1": {
         "devStateIcon": "motion:motion_detector\@red off:motion_detector\@green no_motion:motion_detector\@green",
         "icon": "people_sensor",
