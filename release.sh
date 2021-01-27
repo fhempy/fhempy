@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# .env file required with
+# GH_TOKEN=...
+# PYPI_TOKEN=...
 export $(egrep -v '^#' .env | xargs)
 
 # checkout master
