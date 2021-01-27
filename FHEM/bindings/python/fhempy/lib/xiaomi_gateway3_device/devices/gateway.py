@@ -1,3 +1,4 @@
+import time
 from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
 from fhempy.lib import fhem, utils
 import functools
@@ -40,6 +41,7 @@ class Gateway(BaseDevice):
         self._gateway.gateway3.miio.send("miIO.zb_end_provision", {"code": -1})
 
     async def update(self, data):
+        self.last_update = time.time()
         if data is None:
             return
 
