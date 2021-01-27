@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.34 (2021-01-27)
+### Fix
+* **readme:** Another fix ([`fc11bc4`](https://github.com/dominikkarall/fhempy/commit/fc11bc4426023161c219b2ea7b3daedf9f9696a6))
+
 ## v0.1.33 (2021-01-27)
 ### Fix
 * **release:** One more try to get gh token working ([`f7f0f04`](https://github.com/dominikkarall/fhempy/commit/f7f0f04443b9b2a05d05dbb8bd76cc46132a8f70))
