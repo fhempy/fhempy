@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.35 (2021-01-27)
+### Fix
+* **setup:** Fix excludes in manifest ([`9c3b255`](https://github.com/dominikkarall/fhempy/commit/9c3b255e90fbc8c8f0ab11a85531795c6239fd84))
+
 ## v0.1.34 (2021-01-27)
 ### Fix
 * **readme:** Another fix ([`fc11bc4`](https://github.com/dominikkarall/fhempy/commit/fc11bc4426023161c219b2ea7b3daedf9f9696a6))
