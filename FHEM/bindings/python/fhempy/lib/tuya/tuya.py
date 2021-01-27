@@ -71,6 +71,11 @@ class tuya(FhemModule):
                 },
                 "tuya_spec_functions": {"default": ""},
                 "tuya_spec_status": {"default": ""},
+                "keep_connected": {
+                    "options": "on,off",
+                    "format": "bool",
+                    "default": "off",
+                },
             }
             self.set_attr_config(attr_config)
             # this is needed to set default values
@@ -104,6 +109,9 @@ class tuya(FhemModule):
                 self.tuya_spec_functions.append(schema_part)
 
         await self._generate_set()
+
+    async def set_attr_keep_connected(self, hash):
+        self.tt_device.set_socketPersistent(self._attr_keep_connected)
 
     async def set_attr_dp(self, hash):
         # check defined dp_Xs and their value
@@ -335,8 +343,6 @@ class tuya(FhemModule):
     async def create_device(self):
         self.tt_device = tinytuya.Device(self.tt_did, self.tt_ip, self.tt_localkey)
         self.tt_device.set_version(self.tt_version)
-        # doesn't seem to work as expected
-        # self.tt_device.set_socketPersistent(True)
         if self.tt_type in mappings.knownSchemas:
             await self._create_mapping_dev()
         else:
