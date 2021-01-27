@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.32 (2021-01-27)
+### Fix
+* **release:** Hopefully fix release script ([`cea2a16`](https://github.com/dominikkarall/fhempy/commit/cea2a165abd64ac7410ecb387dbf1d36f50cb468))
+
 ## v0.1.31 (2021-01-27)
 ### Feature
 * **tuya:** Add keep_connected attr ([`b2c1ca4`](https://github.com/dominikkarall/fhempy/commit/b2c1ca47cf1b7adda9eb86731f21e0f755cf3dcd))
