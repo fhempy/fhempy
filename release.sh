@@ -11,5 +11,11 @@ git checkout -q master
 # merge development branch
 git merge development -m "Merge branch 'development'"
 
+# touch to update timestamp
+touch FHEM/10_PythonModule.pm
+# update controls to force update
+perl prepare_update.pl > controls_pythonbinding.txt
+git commit -m "chore: update controls" controls_pythonbinding.txt
+
 # update version / commit / push / release and pypi upload
 semantic-release --patch -D version_variable=FHEM/bindings/python/fhempy/lib/version.py:__version__ publish
