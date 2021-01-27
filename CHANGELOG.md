@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.33 (2021-01-27)
+### Fix
+* **release:** One more try to get gh token working ([`f7f0f04`](https://github.com/dominikkarall/fhempy/commit/f7f0f04443b9b2a05d05dbb8bd76cc46132a8f70))
+
 ## v0.1.32 (2021-01-27)
 ### Fix
 * **release:** Hopefully fix release script ([`cea2a16`](https://github.com/dominikkarall/fhempy/commit/cea2a165abd64ac7410ecb387dbf1d36f50cb468))
