@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.31 (2021-01-27)
+### Feature
+* **tuya:** Add keep_connected attr ([`b2c1ca4`](https://github.com/dominikkarall/fhempy/commit/b2c1ca47cf1b7adda9eb86731f21e0f755cf3dcd))
+
 ## v0.1.30 (2021-01-27)
 ### Fix
 * **xiaomi_gateway3:** Remove unused imports ([`1758909`](https://github.com/dominikkarall/fhem_pythonbinding/commit/175890932f4efeeedba79ae6b2d1dfe81839abcc))
