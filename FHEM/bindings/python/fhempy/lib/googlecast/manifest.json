@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "pychromecast>=7.3.0",
+    "pychromecast>=7.7.2",
     "youtube_dl>=2020.12.22",
     "spotipy>=2.16.1",
     "zeroconf==0.28.6",
