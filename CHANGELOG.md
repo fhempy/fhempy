@@ -2,26 +2,6 @@
 
 <!--next-version-placeholder-->
 
-## v0.1.36 (2021-01-27)
-### Fix
-* **admin:** Another try ([`e592500`](https://github.com/dominikkarall/fhempy/commit/e592500ba431e5bd112e594f38b9a96f2bb0e65d))
-
-## v0.1.35 (2021-01-27)
-### Fix
-* **setup:** Fix excludes in manifest ([`9c3b255`](https://github.com/dominikkarall/fhempy/commit/9c3b255e90fbc8c8f0ab11a85531795c6239fd84))
-
-## v0.1.34 (2021-01-27)
-### Fix
-* **readme:** Another fix ([`fc11bc4`](https://github.com/dominikkarall/fhempy/commit/fc11bc4426023161c219b2ea7b3daedf9f9696a6))
-
-## v0.1.33 (2021-01-27)
-### Fix
-* **release:** One more try to get gh token working ([`f7f0f04`](https://github.com/dominikkarall/fhempy/commit/f7f0f04443b9b2a05d05dbb8bd76cc46132a8f70))
-
-## v0.1.32 (2021-01-27)
-### Fix
-* **release:** Hopefully fix release script ([`cea2a16`](https://github.com/dominikkarall/fhempy/commit/cea2a165abd64ac7410ecb387dbf1d36f50cb468))
-
 ## v0.1.31 (2021-01-27)
 ### Feature
 * **tuya:** Add keep_connected attr ([`b2c1ca4`](https://github.com/dominikkarall/fhempy/commit/b2c1ca47cf1b7adda9eb86731f21e0f755cf3dcd))
