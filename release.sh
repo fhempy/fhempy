@@ -17,5 +17,5 @@ touch FHEM/10_PythonModule.pm
 perl prepare_update.pl > controls_pythonbinding.txt
 git commit -m "chore: update controls" controls_pythonbinding.txt
 
-# update version / commit / push / release / pypi upload
+# update version / commit / push / create release / pypi upload
 semantic-release --patch -D version_variable=FHEM/bindings/python/fhempy/lib/version.py:__version__ publish
