@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.30 (2021-01-27)
+### Fix
+* **xiaomi_gateway3:** Remove unused imports ([`1758909`](https://github.com/dominikkarall/fhem_pythonbinding/commit/175890932f4efeeedba79ae6b2d1dfe81839abcc))
+
 ## v0.1.29 (2021-01-27)
 ### Fix
 * **xiaomi_gateway3:** Add import time ([`7ef7a9e`](https://github.com/dominikkarall/fhem_pythonbinding/commit/7ef7a9ecabb2e8f765f6e1223bcaaaed365c6644))
