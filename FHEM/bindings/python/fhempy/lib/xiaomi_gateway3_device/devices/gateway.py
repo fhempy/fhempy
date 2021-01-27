@@ -38,3 +38,22 @@ class Gateway(BaseDevice):
 
     async def set_stop_pairing(self, hash, params):
         self._gateway.gateway3.miio.send("miIO.zb_end_provision", {"code": -1})
+
+    async def update(self, data):
+        if data is None:
+            return
+
+        await fhem.readingsBeginUpdate(self.hash)
+        # device is online
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
+        # update data
+        for reading in data:
+            if reading == "pairing_start":
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "pairing", "on")
+            elif reading == "pairing_stop":
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "pairing", "off")
+            else:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, reading.replace(" ", "_"), str(data[reading])
+                )
+        await fhem.readingsEndUpdate(self.hash, 1)
