@@ -1,11 +1,8 @@
 from ..generic import FhemModule
 import asyncio
-import time
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhepy
-from .devices.gateway import Gateway
-from .devices.sensor import ContactSensor, HTSensor, MotionSensor
 
 device_type_mapping = {
     "lumi.sensor_magnet.v2": "ContactSensor",
@@ -29,7 +26,10 @@ class xiaomi_gateway3_device(FhemModule):
         await super().Define(hash, args, argsh)
 
         if len(args) < 5:
-            return "Usage: define devname PythonModule xiaomi_gateway3_device <GATEWAY_NAME> <DID>"
+            return (
+                "Usage: define devname PythonModule xiaomi_gateway3_device"
+                " <GATEWAY_NAME> <DID>"
+            )
 
         self.gw_name = args[3]
         self.did = args[4]
