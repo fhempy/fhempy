@@ -1,2 +1,4 @@
 global-include manifest.json
 include requirements.txt
+prune .tox
+prune .vscode
