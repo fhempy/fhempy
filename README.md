@@ -36,7 +36,7 @@ This repository includes following working modules:
 |[xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud|
 
 ## Installation
-Python >=3.7 is required, Python 2 won't work!
+Python >=3.7 is required, Python 2 won't work\!
 
 ### Console
 ```
