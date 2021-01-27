@@ -149,6 +149,11 @@ def convert2format(value, list_def):
         return float(value)
     elif target_format == "str":
         return str(value)
+    elif target_format == "bool":
+        if value == "on":
+            return True
+        else:
+            return False
     return value
 
 
