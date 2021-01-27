@@ -1,0 +1,12 @@
+pytest
+pytest-env
+pytest-mock
+pytest-asyncio
+requests-mock
+aiohttp
+async-upnp-client
+websockets>=8.1
+importlib_metadata>=3.3.0
+cryptography>=3.3.1
+zeroconf>=0.28.6
+semantic_release
