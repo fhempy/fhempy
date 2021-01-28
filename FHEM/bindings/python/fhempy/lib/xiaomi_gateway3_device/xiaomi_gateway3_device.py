@@ -4,6 +4,10 @@ import asyncio
 from .. import fhem
 from .. import fhem_pythonbinding as fhepy
 
+# imports for dynamical usage
+from .devices.gateway import Gateway  # noqa: F401
+from .devices.sensor import ContactSensor, HTSensor, MotionSensor  # noqa: F401
+
 device_type_mapping = {
     "lumi.sensor_magnet.v2": "ContactSensor",
     "lumi.sensor_ht.v1": "HTSensor",
