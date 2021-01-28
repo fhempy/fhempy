@@ -429,7 +429,7 @@ class FhemThermostat(eq3.Thermostat):
             super().query_schedule(day)
 
     def set_temperature_offset(self, temp):
-        self.temperature_offset(temp)
+        self.temperature_offset = temp
 
     def set_target_temperature(self, temp):
         self.target_temperature = temp
