@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.38 (2021-01-28)
+### Fix
+* **eq3bt:** Fix set temperatureOffset ([`429afcd`](https://github.com/dominikkarall/fhempy/commit/429afcd4f61f17b248dce60161d7418ec5770a54))
+
 ## v0.1.37 (2021-01-28)
 ### Fix
 * **xiaomi_gateway3:** Add missing imports ([`b54aa4a`](https://github.com/dominikkarall/fhempy/commit/b54aa4a2529f1c7c23c3bfbb457c05790dcc0014))
