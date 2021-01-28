@@ -32,7 +32,8 @@ def setFunctionInactive(hash):
     element = function_active.pop()
     if element != hash["NAME"]:
         logger.error(
-            f"Set wrong function inactive, tried {hash['NAME']}, current function_active: {function_active},{element}"
+            f"Set wrong function inactive, tried {hash['NAME']}, "
+            f"current function_active: {function_active},{element}"
         )
 
 
@@ -187,7 +188,13 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 async def CommandDefine(hash, definition):
     cmd = 'CommandDefine(undef, "' + definition + '")'
-    return await sendCommandHash(hash, cmd)
+    ret = await sendCommandHash(hash, cmd)
+    if ret is not None:
+        return ret
+
+    iodev = await AttrVal(hash["NAME"], "IODev", "")
+    if iodev != "":
+        await CommandAttr(hash, f"{definition.split(' ')[0]} IODev {iodev}")
 
 
 async def CommandAttr(hash, attrdef):
@@ -222,11 +229,11 @@ async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
 
 # UTILS FUNCTIONS TO SEND COMMAND TO FHEM
 def convertValue(value):
-    if value == None:
+    if value is None:
         value = ""
-    if value == True:
+    if value is True:
         value = 1
-    if value == False:
+    if value is False:
         value = 0
 
     return str(value)
