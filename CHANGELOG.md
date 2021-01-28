@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.37 (2021-01-28)
+### Fix
+* **xiaomi_gateway3:** Add missing imports ([`b54aa4a`](https://github.com/dominikkarall/fhempy/commit/b54aa4a2529f1c7c23c3bfbb457c05790dcc0014))
+* **fhempy:** Set IODev after CommandDefine ([`b1a1299`](https://github.com/dominikkarall/fhempy/commit/b1a12993b76cebe3949f510add7a7e1857b91869))
+
+### Documentation
+* Remove useless stuff ([`7401907`](https://github.com/dominikkarall/fhempy/commit/74019075190fb53b2cc7fdf6e4721360a698974e))
+
 ## v0.1.31 (2021-01-27)
 ### Feature
 * **tuya:** Add keep_connected attr ([`b2c1ca4`](https://github.com/dominikkarall/fhempy/commit/b2c1ca47cf1b7adda9eb86731f21e0f755cf3dcd))
