@@ -30,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest tox
+        python -m pip install pytest tox-gh-actions tox
         if [ -f requirements_tests.txt ]; then pip install -r requirements_tests.txt; fi
     - name: Test with tox
       run: |
