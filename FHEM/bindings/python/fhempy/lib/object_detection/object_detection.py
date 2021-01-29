@@ -315,7 +315,7 @@ class object_detection(FhemModule):
 
     async def image_detect_objects_loop(self):
         while True:
-            await self.image_detect_objects(self)
+            await self.image_detect_objects()
             if self._stop_detection:
                 break
             await asyncio.sleep(self._attr_detection_interval)
