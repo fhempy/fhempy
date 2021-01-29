@@ -14,6 +14,7 @@ device_type_mapping = {
     "lumi.sensor_ht.v2": "HTSensor",
     "lumi.weather.v1": "HTSensor",
     "lumi.sensor_motion.v1": "MotionSensor",
+    "lumi.sensor_motion.v2": "MotionSensor",
     "lumi.gateway.mgl03": "Gateway",
 }
 
@@ -69,6 +70,15 @@ class xiaomi_gateway3_device(FhemModule):
 
     async def initialize(self, device):
         # first update, set attributes and device readings like model, sid, ...
+        if device["model"] not in device_type_mapping:
+            self.logger.error(
+                f"{device['model']} not yet supported, please report an issue here: "
+                f"https://github.com/dominikkarall/fhempy/issues"
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "state", f"unsupported device: {device['model']}", 1
+            )
+            return
         self._fhempy_device = globals()[device_type_mapping[device["model"]]](
             self.logger, self._fhempy_gateway
         )
