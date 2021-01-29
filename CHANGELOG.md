@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.39 (2021-01-29)
+### Feature
+* **xiaomi_gateway3:** Support motion sensor ([`478db7a`](https://github.com/dominikkarall/fhempy/commit/478db7ad578ae6fef5a18066b2a4058fe561f745))
+* **tuya:** Support another heating device ([`8843138`](https://github.com/dominikkarall/fhempy/commit/884313823231407a2155518cc01d04930246313c))
+
 ## v0.1.38 (2021-01-28)
 ### Fix
 * **eq3bt:** Fix set temperatureOffset ([`429afcd`](https://github.com/dominikkarall/fhempy/commit/429afcd4f61f17b248dce60161d7418ec5770a54))
