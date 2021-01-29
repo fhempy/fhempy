@@ -15,15 +15,21 @@ attr_settings = {
         "icon": "temp_temperature",
     },
     "lumi.sensor_ht.v2": {
-        "stateFormat": "temperature °C, humidity %, pressure kPa",
+        "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.weather.v1": {
-        "stateFormat": "temperature °C, humidity %, pressure kPa",
+        "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.sensor_motion.v1": {
-        "devStateIcon": "motion:motion_detector\@red off:motion_detector\@green no_motion:motion_detector\@green",
+        "stateFormat": "motion",
+        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
+        "icon": "people_sensor",
+    },
+    "lumi.sensor_motion.v2": {
+        "stateFormat": "motion",
+        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
         "icon": "people_sensor",
     },
     "lumi.gateway.mgl03": {
