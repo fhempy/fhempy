@@ -7,6 +7,7 @@ class zeroconf:
 
     instance = None
 
+    @staticmethod
     def get_instance(logger):
         if zeroconf.instance is None:
             zeroconf.instance = zeroconf(logger)

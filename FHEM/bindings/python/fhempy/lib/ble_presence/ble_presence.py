@@ -86,6 +86,7 @@ class scanner:
         self._scan_duration = 10
         self._iface = 0
 
+    @staticmethod
     def get_instance(logger):
         if scanner.scanner_instance is None:
             scanner.scanner_instance = scanner(logger)
