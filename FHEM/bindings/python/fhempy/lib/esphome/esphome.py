@@ -87,4 +87,4 @@ class esphome(FhemModule):
         return ""
 
     async def set_restart(self, hash, params):
-        return await self.set_start(hash)
+        return await self.set_start(hash, None)
