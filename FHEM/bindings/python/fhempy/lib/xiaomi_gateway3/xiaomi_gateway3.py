@@ -18,7 +18,6 @@ class xiaomi_gateway3(FhemModule):
         self.gw = None
         self.devices = {}
         self.fhempy_devices = {}
-        return
 
     @property
     def gateway3(self):
@@ -59,9 +58,8 @@ class xiaomi_gateway3(FhemModule):
         self.gw.add_update(did, handler)
         if did == "lumi.0":
             self.gw.add_stats(did, handler)
-        if did in self.devices:
-            if "init" in self.devices[did]:
-                await fhempy_device.initialize(self.devices[did])
+        if did in self.devices and "init" in self.devices[did]:
+            await fhempy_device.initialize(self.devices[did])
 
     async def connect_gw(self):
         config = {"devices": {}}
