@@ -76,9 +76,9 @@ sub PythonBinding_Define($$$)
   CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
 
   if( $attr{global}{logdir} ) {
-    CommandAttr(undef, "$name logfile %L/PythonBinding-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
+    CommandAttr(undef, "$name logfile %L/fhempy-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
   } else {
-    CommandAttr(undef, "$name logfile ./log/PythonBinding-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
+    CommandAttr(undef, "$name logfile ./log/fhempy-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
   }
 
   return undef;
