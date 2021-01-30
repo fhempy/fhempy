@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.44 (2021-01-30)
+### Fix
+* **fhempy:** Change logfile name to fhempy ([`2dc88df`](https://github.com/dominikkarall/fhempy/commit/2dc88df1177c69990926d5e55852656ee365f666))
+* **xiaomi_gateway3:** Remove added_device reading ([`700e361`](https://github.com/dominikkarall/fhempy/commit/700e361417c9fc4ea634874b2f447396657c85fc))
+* **fhempy:** Change log name to fhempy ([`ce8fac5`](https://github.com/dominikkarall/fhempy/commit/ce8fac5e3faa8fa8db360d787dc481288ba045f0))
+
 ## v0.1.43 (2021-01-30)
 
 
