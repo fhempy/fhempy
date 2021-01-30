@@ -156,11 +156,11 @@ class PyBinding:
                 ret = ""
                 if hash["msgtype"] == "update":
                     await fhem.readingsSingleUpdate(
-                        self.hash, "version", "update started...", 1
+                        hash, "version", "update started...", 1
                     )
                     await pkg_installer.force_update_package("fhempy")
                     await fhem.readingsSingleUpdate(
-                        self.hash,
+                        hash,
                         "version",
                         "update finished...please wait",
                         1,
