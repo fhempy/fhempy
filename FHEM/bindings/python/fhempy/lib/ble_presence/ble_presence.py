@@ -139,7 +139,7 @@ class scanner:
                 self._mac_lastfound[mac] = 0
             try:
                 await utils.run_blocking(functools.partial(self._do_scan))
-            except:
+            except Exception:
                 self.logger.error("Failed to do scan")
             for mac in self._mac_listener:
                 try:
@@ -151,7 +151,7 @@ class scanner:
                         await getattr(
                             self._mac_listener[mac], "check_update_characteristics"
                         )()
-                except:
+                except Exception:
                     self.logger.exception("Failed to handle updates after scan")
             await asyncio.sleep(self._scan_interval)
 
@@ -221,7 +221,7 @@ class ble_presence(FhemModule):
         if time.time() - self._last_char_update > 7200 and self._presence == "present":
             try:
                 await self.update_characteristics()
-            except:
+            except Exception:
                 self.logger.error("Failed to update characteristics")
 
     async def update_characteristics(self):
@@ -235,7 +235,7 @@ class ble_presence(FhemModule):
                     5,
                 )
             )
-        except:
+        except Exception:
             return
         services = await utils.run_blocking(
             functools.partial(self._peripheral.getServices)
@@ -257,14 +257,14 @@ class ble_presence(FhemModule):
                                 val = await utils.run_blocking(
                                     functools.partial(char.read)
                                 )
-                            except:
+                            except Exception:
                                 val = "failed"
                             try:
                                 if len(val) == 1:
                                     val = ord(val)
                                 else:
                                     val = val.decode("ascii")
-                            except:
+                            except Exception:
                                 val = val.hex()
                                 pass
                             await fhem.readingsBulkUpdateIfChanged(
@@ -278,7 +278,7 @@ class ble_presence(FhemModule):
                 batt = ord(char[0].read())
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", batt)
             self._last_char_update = time.time()
-        except:
+        except Exception:
             self.logger.error("Failed to get charachteristics")
         self._peripheral.disconnect()
         await fhem.readingsEndUpdate(self.hash, 1)

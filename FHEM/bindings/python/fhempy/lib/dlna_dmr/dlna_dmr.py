@@ -218,7 +218,7 @@ class dlna_dmr(FhemModule):
                     await self.updateReadings()
                 else:
                     await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
-            except:
+            except Exception:
                 self.logger.exception("Failed to update")
             await asyncio.sleep(30)
 
@@ -300,7 +300,7 @@ class DlnaDmrDevice:
     async def cleanup(self):
         try:
             await self._device.async_unsubscribe_services()
-        except:
+        except Exception:
             pass
 
     @property

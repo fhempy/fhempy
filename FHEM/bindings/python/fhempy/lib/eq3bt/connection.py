@@ -88,7 +88,7 @@ class BTLEConnection(btle.DefaultDelegate):
             if self._conn:
                 try:
                     self._conn.disconnect()
-                except:
+                except Exception:
                     pass
 
     def next_iface(self):

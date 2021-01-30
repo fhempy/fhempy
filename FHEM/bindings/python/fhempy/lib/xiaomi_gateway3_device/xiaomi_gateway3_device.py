@@ -6,10 +6,17 @@ from .. import fhem_pythonbinding as fhepy
 
 # imports for dynamical usage
 from .devices.gateway import Gateway  # noqa: F401
-from .devices.sensor import ContactSensor, HTSensor, MotionSensor  # noqa: F401
+from .devices.sensor import (
+    ContactSensor,
+    HTSensor,
+    MotionSensor,
+    WaterLeakSensor,
+)  # noqa: F401
 
 device_type_mapping = {
     "lumi.sensor_magnet.v2": "ContactSensor",
+    "lumi.sensor_magnet.aq2": "ContactSensor",
+    "lumi.sensor_wleak.aq1": "WaterLeakSensor",
     "lumi.sensor_ht.v1": "HTSensor",
     "lumi.sensor_ht.v2": "HTSensor",
     "lumi.weather.v1": "HTSensor",
@@ -59,7 +66,7 @@ class xiaomi_gateway3_device(FhemModule):
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "online", 1
                     )
-                except:
+                except Exception:
                     self._fhempy_gateway = None
                     pass
             else:

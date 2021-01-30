@@ -406,14 +406,14 @@ class tuya(FhemModule):
                     )
             if not stateused:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
-        except:
+        except Exception:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def _call_fct_upd_reading(self, function):
         try:
             await utils.run_blocking(function)
-        except:
+        except Exception:
             self.logger.exception("Failed to execute function")
         await self.update_once()
 

@@ -262,7 +262,7 @@ async def send_and_wait(name, cmd):
     def listener(rmsg):
         try:
             fut.set_result(rmsg)
-        except:
+        except Exception:
             logger.error("Failed to set result, received: " + rmsg)
 
     global wsconnection

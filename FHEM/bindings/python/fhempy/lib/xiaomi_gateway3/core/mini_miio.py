@@ -22,6 +22,7 @@ HELLO = bytes.fromhex(
 
 class BasemiIO:
     """A simple class that implements the miIO protocol."""
+
     device_id = None
     delta_ts = None
 
@@ -31,8 +32,9 @@ class BasemiIO:
 
         key = hashlib.md5(self.token).digest()
         iv = hashlib.md5(key + self.token).digest()
-        self.cipher = Cipher(algorithms.AES(key), modes.CBC(iv),
-                             backend=default_backend())
+        self.cipher = Cipher(
+            algorithms.AES(key), modes.CBC(iv), backend=default_backend()
+        )
 
     def _encrypt(self, plaintext: bytes):
         padder = padding.PKCS7(128).padder()
@@ -50,18 +52,25 @@ class BasemiIO:
 
     def _pack_raw(self, method: str, params: Union[dict, list] = None):
         # latest zero unnecessary
-        payload = json.dumps({
-            'id': random.randint(100000000, 999999999),
-            'method': method, 'params': params or []
-        }, separators=(',', ':')).encode() + b'\x00'
+        payload = (
+            json.dumps(
+                {
+                    "id": random.randint(100000000, 999999999),
+                    "method": method,
+                    "params": params or [],
+                },
+                separators=(",", ":"),
+            ).encode()
+            + b"\x00"
+        )
 
         data = self._encrypt(payload)
 
-        raw = b'\x21\x31'
-        raw += (32 + len(data)).to_bytes(2, 'big')  # total length
-        raw += b'\x00\x00\x00\x00'  # unknow
-        raw += self.device_id.to_bytes(4, 'big')
-        raw += int(time.time() - self.delta_ts).to_bytes(4, 'big')
+        raw = b"\x21\x31"
+        raw += (32 + len(data)).to_bytes(2, "big")  # total length
+        raw += b"\x00\x00\x00\x00"  # unknow
+        raw += self.device_id.to_bytes(4, "big")
+        raw += int(time.time() - self.delta_ts).to_bytes(4, "big")
 
         raw += hashlib.md5(raw + self.token + data).digest()
         raw += data
@@ -71,7 +80,7 @@ class BasemiIO:
         return raw
 
     def _unpack_raw(self, raw: bytes):
-        assert raw[:2] == b'\x21\x31'
+        assert raw[:2] == b"\x21\x31"
         # length = int.from_bytes(raw[2:4], 'big')
         # unknown = raw[4:8]
         # device_id = int.from_bytes(raw[8:12], 'big')
@@ -96,11 +105,11 @@ class SyncmiIO(BasemiIO):
         try:
             self.sock.sendto(HELLO, self.addr)
             raw = self.sock.recv(1024)
-            if raw[:2] == b'\x21\x31':
-                self.device_id = int.from_bytes(raw[8:12], 'big')
-                self.delta_ts = time.time() - int.from_bytes(raw[12:16], 'big')
+            if raw[:2] == b"\x21\x31":
+                self.device_id = int.from_bytes(raw[8:12], "big")
+                self.delta_ts = time.time() - int.from_bytes(raw[12:16], "big")
                 return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -119,7 +128,7 @@ class SyncmiIO(BasemiIO):
             raw = self.sock.recv(10240)
             data = self._unpack_raw(raw)
 
-            return json.loads(data.rstrip(b'\x00'))['result']
+            return json.loads(data.rstrip(b"\x00"))["result"]
         except Exception as e:
             _LOGGER.debug(f"Can't send: {e}")
             return None
@@ -146,12 +155,12 @@ class SyncmiIO(BasemiIO):
 
             return result + self.send(method, pack)
 
-        except:
+        except Exception:
             return None
 
     def info(self):
         """Get info about miIO device."""
-        return self.send('miIO.info')
+        return self.send("miIO.info")
 
 
 class AsyncmiIO(BasemiIO, BaseProtocol):
@@ -161,9 +170,9 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
     def datagram_received(self, data: bytes, addr):
         # hello message
         if len(data) == 32:
-            if data[:2] == b'\x21\x31':
-                self.device_id = int.from_bytes(data[8:12], 'big')
-                ts = int.from_bytes(data[12:16], 'big')
+            if data[:2] == b"\x21\x31":
+                self.device_id = int.from_bytes(data[8:12], "big")
+                ts = int.from_bytes(data[12:16], "big")
                 self.delta_ts = time.time() - ts
                 result = True
             else:
@@ -174,7 +183,7 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
         self.response.set_result(result)
 
     def error_received(self, exc):
-        print('Error received:', exc)
+        print("Error received:", exc)
 
     def connection_lost(self, exc):
         print("Connection closed")
@@ -184,7 +193,8 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
         loop = asyncio.get_running_loop()
         if not self.sock:
             self.sock, _ = await loop.create_datagram_endpoint(
-                lambda: self, remote_addr=self.addr)
+                lambda: self, remote_addr=self.addr
+            )
 
         self.response = loop.create_future()
         # this method does not block
@@ -204,7 +214,7 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
         try:
             raw = self._pack_raw(method, params)
             data = await self.send_raw(raw)
-            return json.loads(data.rstrip(b'\x00'))['result']
+            return json.loads(data.rstrip(b"\x00"))["result"]
         except Exception as e:
             _LOGGER.warning(f"Can't send: {e}")
             return None
@@ -232,4 +242,4 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
 
     async def info(self):
         """Get info about miIO device."""
-        return await self.send('miIO.info')
+        return await self.send("miIO.info")

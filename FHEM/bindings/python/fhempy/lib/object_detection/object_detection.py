@@ -370,7 +370,7 @@ class object_detection(FhemModule):
             await fhem.readingsEndUpdate(self.hash, 1)
 
             self._prev_objects = curr_objects
-        except:
+        except Exception:
             self.logger.exception("Failed to update readings")
 
 

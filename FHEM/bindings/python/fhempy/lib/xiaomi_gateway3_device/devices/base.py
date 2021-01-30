@@ -10,6 +10,14 @@ attr_settings = {
         "stateFormat": "contact",
         "icon": "tuer_fenster_kontakt",
     },
+    "lumi.sensor_magnet.aq2": {
+        "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
+        "stateFormat": "contact",
+        "icon": "tuer_fenster_kontakt",
+    },
+    "lumi.sensor_wleak.aq1": {
+        "stateFormat": "moisture",
+    },
     "lumi.sensor_ht.v1": {
         "stateFormat": "temperature °C, humidity %",
         "icon": "temp_temperature",

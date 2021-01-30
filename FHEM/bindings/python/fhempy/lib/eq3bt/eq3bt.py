@@ -178,7 +178,7 @@ class eq3bt(FhemModule):
                         self.hash, "state", "update", 1
                     )
                 await self.update_all()
-            except:
+            except Exception:
                 self.logger.error(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
 

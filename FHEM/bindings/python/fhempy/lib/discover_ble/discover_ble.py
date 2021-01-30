@@ -118,7 +118,7 @@ class discover_ble(FhemModule):
                             + ", rssi: "
                             + str(d.rssi)
                         )
-            except:
+            except Exception:
                 self.logger.error("BLE Scan failed, retry in 600s", exc_info=True)
             await asyncio.sleep(600)
 

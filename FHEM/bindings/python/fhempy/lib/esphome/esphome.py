@@ -38,11 +38,11 @@ class esphome(FhemModule):
 
         try:
             self.proc = subprocess.Popen(self._esphomeargs)
-        except:
+        except Exception:
             try:
                 self._esphomeargs = ["esphome", "esphome_config/", "dashboard"]
                 self.proc = subprocess.Popen(self._esphomeargs)
-            except:
+            except Exception:
                 return "Failed to execute esphome"
 
         await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)

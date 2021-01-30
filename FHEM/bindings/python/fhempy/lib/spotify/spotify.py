@@ -233,7 +233,7 @@ class spotify(FhemModule):
         while True:
             try:
                 await self.update_playback()
-            except:
+            except Exception:
                 self.logger.exception("Failed to update playback")
             await asyncio.sleep(self._attr_update_status_interval)
 
@@ -241,7 +241,7 @@ class spotify(FhemModule):
         while True:
             try:
                 await self.update_devices()
-            except:
+            except Exception:
                 self.logger.exception("Failed to update devices")
             await asyncio.sleep(self._attr_update_devices_interval)
 
@@ -366,5 +366,5 @@ class spotify(FhemModule):
                     self.hash, self.hash["NAME"] + " current_" + del_reading
                 )
             self._last_current = flat_status
-        except:
+        except Exception:
             self.logger.exception("Failed to update status")

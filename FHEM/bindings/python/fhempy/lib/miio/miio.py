@@ -99,7 +99,7 @@ class miio(FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
-            except:
+            except Exception:
                 self.logger.error(f"Failed to send_command: {fct_name}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
@@ -157,11 +157,11 @@ class miio(FhemModule):
                             await fhem.readingsBulkUpdateIfChanged(
                                 self.hash, prop + "_" + data_name, st[prop][data_name]
                             )
-                    except:
+                    except Exception:
                         await fhem.readingsBulkUpdateIfChanged(
                             self.hash, prop, st[prop]
                         )
-            except:
+            except Exception:
                 pass
             await fhem.readingsEndUpdate(self.hash, 1)
         else:

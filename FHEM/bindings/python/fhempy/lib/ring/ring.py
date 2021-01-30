@@ -95,7 +95,7 @@ class ring(FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
                 # start update loop, we are already in a task, therefore no need to create
                 await self.update_loop()
-            except:
+            except Exception:
                 await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
                 self.logger.error("Login failed")
 
@@ -136,12 +136,12 @@ class ring(FhemModule):
                         for event in self._history:
                             await self.update_history_readings(event, i)
                             i += 1
-                except:
+                except Exception:
                     self.logger.exception("Failed to poll devices")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
         except CancelledError:
             pass
-        except:
+        except Exception:
             self.logger.exception("Failed to update devices")
 
     async def update_dings_loop(self):
@@ -164,7 +164,7 @@ class ring(FhemModule):
                     )
                     await utils.run_blocking(functools.partial(self.poll_device))
                     await self.update_readings()
-            except:
+            except Exception:
                 self.logger.exception("Failed to poll dings...")
                 await utils.run_blocking(functools.partial(self.blocking_login))
             await asyncio.sleep(self._attr_dingPollInterval)
@@ -264,7 +264,7 @@ class ring(FhemModule):
                 # if self._snapshot:
                 #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
                 #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
-        except:
+        except Exception:
             self.logger.exception(
                 "Failed to update readings, please report here: https://forum.fhem.de/index.php/topic,117381"
             )

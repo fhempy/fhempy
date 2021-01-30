@@ -110,7 +110,7 @@ class ble_reset(FhemModule):
             for iface in ifaces:
                 subprocess.Popen(["sudo", "hciconfig", "hci" + iface, "reset"]).wait()
                 subprocess.Popen(["sudo", "hciconfig", "hci" + iface, "up"]).wait()
-        except:
+        except Exception:
             self.logger.exception("Failed to reset bluetooth")
 
     async def set_interval(self, hash, params):

@@ -41,7 +41,7 @@ from aiohttp import ClientSession
 
 _LOGGER = logging.getLogger(__name__)
 
-SERVERS = ['cn', 'de', 'i2', 'ru', 'sg', 'us']
+SERVERS = ["cn", "de", "i2", "ru", "sg", "us"]
 UA = "Android-7.1.1-1.0.0-ONEPLUS A3010-136-%s APP/xiaomi.smarthome APPV/62830"
 
 
@@ -56,15 +56,15 @@ class MiCloud:
         try:
             payload = await self._login_step1()
             data = await self._login_step2(username, password, payload)
-            if not data['location']:
+            if not data["location"]:
                 return False
 
-            token = await self._login_step3(data['location'])
+            token = await self._login_step3(data["location"])
 
             self.auth = {
-                'user_id': data['userId'],
-                'ssecurity': data['ssecurity'],
-                'service_token': token
+                "user_id": data["userId"],
+                "ssecurity": data["ssecurity"],
+                "service_token": token,
             }
 
             return True
@@ -75,34 +75,37 @@ class MiCloud:
 
     async def _login_step1(self):
         r = await self.session.get(
-            'https://account.xiaomi.com/pass/serviceLogin',
-            cookies={'sdkVersion': '3.8.6', 'deviceId': self.device_id},
-            headers={'User-Agent': UA % self.device_id},
-            params={'sid': 'xiaomiio', '_json': 'true'})
+            "https://account.xiaomi.com/pass/serviceLogin",
+            cookies={"sdkVersion": "3.8.6", "deviceId": self.device_id},
+            headers={"User-Agent": UA % self.device_id},
+            params={"sid": "xiaomiio", "_json": "true"},
+        )
         raw = await r.read()
         _LOGGER.debug(f"MiCloud step1")
         resp: dict = json.loads(raw[11:])
-        return {k: v for k, v in resp.items()
-                if k in ('sid', 'qs', 'callback', '_sign')}
+        return {
+            k: v for k, v in resp.items() if k in ("sid", "qs", "callback", "_sign")
+        }
 
     async def _login_step2(self, username: str, password: str, payload: dict):
-        payload['user'] = username
-        payload['hash'] = hashlib.md5(password.encode()).hexdigest().upper()
+        payload["user"] = username
+        payload["hash"] = hashlib.md5(password.encode()).hexdigest().upper()
 
         r = await self.session.post(
-            'https://account.xiaomi.com/pass/serviceLoginAuth2',
-            cookies={'sdkVersion': '3.8.6', 'deviceId': self.device_id},
+            "https://account.xiaomi.com/pass/serviceLoginAuth2",
+            cookies={"sdkVersion": "3.8.6", "deviceId": self.device_id},
             data=payload,
-            headers={'User-Agent': UA % self.device_id},
-            params={'_json': 'true'})
+            headers={"User-Agent": UA % self.device_id},
+            params={"_json": "true"},
+        )
         raw = await r.read()
         _LOGGER.debug(f"MiCloud step2")
         resp = json.loads(raw[11:])
         return resp
 
     async def _login_step3(self, location):
-        r = await self.session.get(location, headers={'User-Agent': UA})
-        service_token = r.cookies['serviceToken'].value
+        r = await self.session.get(location, headers={"User-Agent": UA})
+        service_token = r.cookies["serviceToken"].value
         _LOGGER.debug(f"MiCloud step3")
         return service_token
 
@@ -117,37 +120,42 @@ class MiCloud:
 
     async def get_devices(self, server: str):
         assert server in SERVERS, "Wrong server: " + server
-        baseurl = 'https://api.io.mi.com/app' if server == 'cn' \
+        baseurl = (
+            "https://api.io.mi.com/app"
+            if server == "cn"
             else f"https://{server}.api.io.mi.com/app"
+        )
 
-        url = '/home/device_list'
+        url = "/home/device_list"
         data = '{"getVirtualModel":false,"getHuamiDevices":0}'
 
         nonce = gen_nonce()
-        signed_nonce = gen_signed_nonce(self.auth['ssecurity'], nonce)
+        signed_nonce = gen_signed_nonce(self.auth["ssecurity"], nonce)
         signature = gen_signature(url, signed_nonce, nonce, data)
 
         try:
-            r = await self.session.post(baseurl + url, cookies={
-                'userId': self.auth['user_id'],
-                'serviceToken': self.auth['service_token'],
-                'locale': 'en_US'
-            }, headers={
-                'User-Agent': UA,
-                'x-xiaomi-protocal-flag-cli': 'PROTOCAL-HTTP2'
-            }, data={
-                'signature': signature,
-                '_nonce': nonce,
-                'data': data
-            }, timeout=10)
+            r = await self.session.post(
+                baseurl + url,
+                cookies={
+                    "userId": self.auth["user_id"],
+                    "serviceToken": self.auth["service_token"],
+                    "locale": "en_US",
+                },
+                headers={
+                    "User-Agent": UA,
+                    "x-xiaomi-protocal-flag-cli": "PROTOCAL-HTTP2",
+                },
+                data={"signature": signature, "_nonce": nonce, "data": data},
+                timeout=10,
+            )
 
             resp = await r.json(content_type=None)
-            assert resp['code'] == 0, resp
-            return resp['result']['list']
+            assert resp["code"] == 0, resp
+            return resp["result"]["list"]
 
         except asyncio.TimeoutError:
             _LOGGER.error("Timeout while loading MiCloud device list")
-        except:
+        except Exception:
             _LOGGER.exception(f"Can't load devices list")
 
         return None
@@ -155,12 +163,12 @@ class MiCloud:
 
 def get_random_string(length: int):
     seq = string.ascii_uppercase + string.digits
-    return ''.join((random.choice(seq) for _ in range(length)))
+    return "".join((random.choice(seq) for _ in range(length)))
 
 
 def gen_nonce() -> str:
     """Time based nonce."""
-    nonce = os.urandom(8) + int(time.time() / 60).to_bytes(4, 'big')
+    nonce = os.urandom(8) + int(time.time() / 60).to_bytes(4, "big")
     return base64.b64encode(nonce).decode()
 
 
@@ -174,8 +182,8 @@ def gen_signed_nonce(ssecret: str, nonce: str) -> str:
 
 def gen_signature(url: str, signed_nonce: str, nonce: str, data: str) -> str:
     """Request signature based on url, signed_nonce, nonce and data."""
-    sign = '&'.join([url, signed_nonce, nonce, 'data=' + data])
-    signature = hmac.new(key=base64.b64decode(signed_nonce),
-                         msg=sign.encode(),
-                         digestmod=hashlib.sha256).digest()
+    sign = "&".join([url, signed_nonce, nonce, "data=" + data])
+    signature = hmac.new(
+        key=base64.b64decode(signed_nonce), msg=sign.encode(), digestmod=hashlib.sha256
+    ).digest()
     return base64.b64encode(signature).decode()

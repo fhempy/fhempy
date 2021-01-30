@@ -84,7 +84,7 @@ class miflora(FhemModule):
             await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
             await fhem.readingsEndUpdate(self.hash, 1)
-        except:
+        except Exception:
             self.logger.error(f"Failed to get updates from miflora {self._address}")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "presence", "offline", 1

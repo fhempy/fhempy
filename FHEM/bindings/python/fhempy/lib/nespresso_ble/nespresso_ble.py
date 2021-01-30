@@ -98,7 +98,7 @@ class nespresso_ble(FhemModule):
                     self.nespressodetect.make_coffee, self.mac, temp, coffee_type
                 )
             )
-        except:
+        except Exception:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
 
     async def set_updateStatus(self, hash, params):
@@ -144,7 +144,7 @@ class nespresso_ble(FhemModule):
             self.nespressodetect.get_sensors()
             self.sensors_data = self.nespressodetect.get_sensor_data()
 
-        except:
+        except Exception:
             self.logger.exception("Failed to update status")
             self.sensors_data = None
             self.device_info = None

@@ -51,7 +51,7 @@ class wienerlinien(FhemModule):
                 return
             message = data.get("message", {})
             data = data.get("data", {})
-        except:
+        except Exception:
             self.logger.debug("Could not get new state")
             return
 

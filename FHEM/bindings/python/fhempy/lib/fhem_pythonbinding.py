@@ -126,7 +126,7 @@ class PyBinding:
             await self._onMessage(payload)
         except SystemExit:
             sys.exit(1)
-        except:
+        except Exception:
             logger.exception("Failed to handle message: " + str(payload))
 
     async def _onMessage(self, payload):
@@ -135,7 +135,7 @@ class PyBinding:
         hash = None
         try:
             hash = json.loads(msg)
-        except:
+        except Exception:
             logger.error("Websocket JSON couldn't be decoded")
             return
 
@@ -340,7 +340,7 @@ class PyBinding:
                                             ret = await asyncio.wait_for(
                                                 func(hash), fct_timeout
                                             )
-                                        except:
+                                        except Exception:
                                             del loadedModuleInstances[hash["NAME"]]
                                     else:
                                         ret = await asyncio.wait_for(
@@ -363,7 +363,7 @@ class PyBinding:
                             else:
                                 await self.sendBackError(hash, errorMsg)
                             return 0
-                        except:
+                        except Exception:
                             errorMsg = (
                                 "Failed to execute function "
                                 + hash["function"]

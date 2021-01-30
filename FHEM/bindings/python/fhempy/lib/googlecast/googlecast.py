@@ -148,7 +148,7 @@ class googlecast(FhemModule):
             pychromecast.stop_discovery(self.browser)
             if self.cast:
                 self.cast.disconnect()
-        except:
+        except Exception:
             pass
 
     async def set_play(self, hash, params):
@@ -264,7 +264,7 @@ class googlecast(FhemModule):
                 await utils.run_blocking(
                     functools.partial(self.cast.play_media, uri, mime, enqueue=enqueue)
                 )
-        except:
+        except Exception:
             self.logger.exception(f"Failed to play: {uri}")
 
     async def set_attr_spotify_cookie(self, hash):
@@ -376,7 +376,7 @@ class googlecast(FhemModule):
                         context_uri=uri,
                     )
                 )
-        except:
+        except Exception:
             self.logger.exception("Failed to play spotify track")
 
     async def displayWebsite(self, url):

@@ -111,7 +111,7 @@ class BaseDecode:
             BYTE3.asByte = val[3]
             try:
                 descaling_counter = int.from_bytes(val[6:9], byteorder="big")
-            except:
+            except Exception:
                 _LOGGER.debug("can't get descaling counter")
                 descaling_counter = 0
             return {

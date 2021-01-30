@@ -71,7 +71,7 @@ class ssdp:
         try:
             if msg != "byebye":
                 upnp_device = await self.factory.async_create_device(data["location"])
-        except:
+        except Exception:
             # upnp_device remains None
             pass
         return upnp_device
@@ -116,7 +116,7 @@ class ssdp:
                             listenerFilter["found_devices"][usn]
                         )
                         del listenerFilter["found_devices"][usn]
-        except:
+        except Exception:
             self.logger.exception("Error in handle_msg")
 
     async def search(self):
@@ -182,5 +182,5 @@ class ssdp:
                 source_ip=source_ip,
             )
             await self.listener.async_start()
-        except:
+        except Exception:
             self.logger.error("Error in advertisements listener")

@@ -10,6 +10,11 @@ class HTSensor(BaseDevice):
         super().__init__(logger, gateway)
 
 
+class WaterLeakSensor(BaseDevice):
+    def __init__(self, logger, gateway):
+        super().__init__(logger, gateway)
+
+
 class MotionSensor(BaseDevice):
     def __init__(self, logger, gateway):
         super().__init__(logger, gateway)

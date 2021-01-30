@@ -60,7 +60,7 @@ class bt_presence(FhemModule):
                             self.hash, "rssi", rssi, 1
                         )
                     new_state = "present"
-            except:
+            except Exception:
                 self.logger.exception("BleakScanner failed")
 
             if self._curr_state != new_state:
