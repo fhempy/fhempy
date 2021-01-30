@@ -33,6 +33,8 @@ class MotionSensor(BaseDevice):
         for reading in data:
             if reading == "motion":
                 await fhem.readingsBulkUpdate(self.hash, reading, str(data[reading]))
+            elif reading == "added_device":
+                pass
             else:
                 await fhem.readingsBulkUpdateIfChanged(
                     self.hash, reading.replace(" ", "_"), str(data[reading])

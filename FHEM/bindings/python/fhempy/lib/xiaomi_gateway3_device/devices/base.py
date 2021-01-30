@@ -16,6 +16,8 @@ attr_settings = {
         "icon": "tuer_fenster_kontakt",
     },
     "lumi.sensor_wleak.aq1": {
+        "icon": "sani_water_tap",
+        "devStateIcon": "0:message_ok 1:humidity@red",
         "stateFormat": "moisture",
     },
     "lumi.sensor_ht.v1": {
@@ -89,9 +91,12 @@ class BaseDevice(FhemModule):
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
         # update data
         for reading in data:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, reading.replace(" ", "_"), str(data[reading])
-            )
+            if reading == "added_device":
+                pass
+            else:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, reading.replace(" ", "_"), str(data[reading])
+                )
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def offline_check(self):
