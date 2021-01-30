@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.41 (2021-01-30)
+
+
 ## v0.1.40 (2021-01-30)
 ### Feature
 * **xiaomi_gateway3:** Support sensor_wleak.aq1 ([`bc8cf61`](https://github.com/dominikkarall/fhempy/commit/bc8cf6183bb4568b5f47b98e07669e3e8cda4f4e))
