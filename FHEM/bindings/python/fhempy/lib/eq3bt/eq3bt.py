@@ -72,6 +72,26 @@ class eq3bt(FhemModule):
                 "params": {"offset": {"format": "float"}},
                 "options": "slider,-3.5,0.5,3.5,1",
             },
+            "windowOpenTemperature": {
+                "args": ["temp"],
+                "params": {"temp": {"format": "float"}},
+                "options": "slider,4.5,0.5,30,1",
+            },
+            "windowOpenTime": {
+                "args": ["seconds"],
+                "params": {"seconds": {"format": "int"}},
+                "options": "slider,0,1,3600,1",
+            },
+            "ecoTemperature": {
+                "args": ["temp"],
+                "params": {"temp": {"format": "float"}},
+                "options": "slider,4.5,0.5,30,1",
+            },
+            "comfortTemperature": {
+                "args": ["temp"],
+                "params": {"temp": {"format": "float"}},
+                "options": "slider,4.5,0.5,30,1",
+            },
         }
         self.set_set_config(set_list_conf)
 
@@ -335,6 +355,10 @@ class eq3bt(FhemModule):
         await utils.run_blocking(fct)
         await self.update_readings()
 
+    def string_to_seconds(self, timestr):
+        ftr = [3600, 60, 1]
+        return sum([a * b for a, b in zip(ftr, map(int, timestr.split(":")))])
+
     # SET Functions BEGIN
     async def set_on(self, hash, params):
         self.create_async_task(
@@ -358,11 +382,63 @@ class eq3bt(FhemModule):
             )
         )
 
+    async def set_ecoTemperature(self, hash, params):
+        comfort_temp = float(
+            await fhem.ReadingsVal(self.hash["NAME"], "comfortTemperature", "17.0")
+        )
+        self.create_async_task(
+            self.set_and_update(
+                functools.partial(
+                    self.thermostat.set_temperature_presets,
+                    comfort_temp,
+                    params["temp"],
+                )
+            )
+        )
+
+    async def set_comfortTemperature(self, hash, params):
+        eco_temp = float(
+            await fhem.ReadingsVal(self.hash["NAME"], "ecoTemperature", "15.0")
+        )
+        self.create_async_task(
+            self.set_and_update(
+                functools.partial(
+                    self.thermostat.set_temperature_presets, params["temp"], eco_temp
+                )
+            )
+        )
+
     async def set_temperatureOffset(self, hash, params):
         self.create_async_task(
             self.set_and_update(
                 functools.partial(
                     self.thermostat.set_temperature_offset, params["offset"]
+                )
+            )
+        )
+
+    async def set_windowOpenTemperature(self, hash, params):
+        duration = await fhem.ReadingsVal(
+            self.hash["NAME"], "windowOpenTime", "0:15:00"
+        )
+        duration_sec = self.string_to_seconds(duration)
+        self.create_async_task(
+            self.set_and_update(
+                functools.partial(
+                    self.thermostat.set_windows_open_config,
+                    params["temp"],
+                    duration_sec,
+                )
+            )
+        )
+
+    async def set_windowOpenTime(self, hash, params):
+        temp = await fhem.ReadingsVal(self.hash["NAME"], "windowOpenTemperature", "5")
+        temp = float(temp)
+        self.create_async_task(
+            self.set_and_update(
+                functools.partial(
+                    self.thermostat.set_windows_open_config, temp, params["seconds"]
                 )
             )
         )
@@ -428,8 +504,14 @@ class FhemThermostat(eq3.Thermostat):
         for day in range(0, 6):
             super().query_schedule(day)
 
+    def set_temperature_presets(self, comfort_temp, eco_temp):
+        self.temperature_presets(comfort_temp, eco_temp)
+
     def set_temperature_offset(self, temp):
         self.temperature_offset = temp
+
+    def set_windows_open_config(self, temperature, duration):
+        self.window_open_config(temperature, duration)
 
     def set_target_temperature(self, temp):
         self.target_temperature = temp
