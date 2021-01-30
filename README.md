@@ -9,6 +9,7 @@
 fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.7 or higher is required, therefore I recommend using buster.
 
 This repository includes following working modules:
+
 |Module | Description|
 |-------|--------------|
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
