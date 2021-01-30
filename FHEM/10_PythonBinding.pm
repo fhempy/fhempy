@@ -40,7 +40,7 @@ sub PythonBinding_detailFn($$$$)
   my $logfile = AttrVal($name, 'logfile', 'FHEM' );
   if( $logfile && $logfile ne "FHEM" ) {
     my $name = 'PythonBindingLog';
-    $ret .= "<a href=\"$FW_ME?detail=$name\">Python Binding Logfile Viewer</a><br>";
+    $ret .= "<a href=\"$FW_ME?detail=$name\">fhempy Logfile Viewer</a><br>";
   }
 
   return $ret;
@@ -59,8 +59,8 @@ sub PythonBinding_Define($$$)
 
   Log3 $hash, 3, "PythonBinding v1.0.0";
 
-  $hash->{logfile} = "./log/PythonBinding-%Y-%m-%d.log";
-  $hash->{CoProcess} = {  name => 'PythonBinding',
+  $hash->{logfile} = "./log/fhempy-%Y-%m-%d.log";
+  $hash->{CoProcess} = {  name => 'fhempy',
                           cmdFn => 'PythonBinding_getCmd',
                        };
 
