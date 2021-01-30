@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.40 (2021-01-30)
+### Feature
+* **xiaomi_gateway3:** Support sensor_wleak.aq1 ([`bc8cf61`](https://github.com/dominikkarall/fhempy/commit/bc8cf6183bb4568b5f47b98e07669e3e8cda4f4e))
+
+### Fix
+* **fhempy:** Fix update ([`6f381c1`](https://github.com/dominikkarall/fhempy/commit/6f381c1be050f3ee26d4cbd236b2e2da447c581f))
+* **object_detection:** Fix image detection ([`cc5c8de`](https://github.com/dominikkarall/fhempy/commit/cc5c8defa3457d5a60d812c062623654ed3b0e9e))
+* **esphome:** Fix restart ([`be47a72`](https://github.com/dominikkarall/fhempy/commit/be47a7221fc1814c091992393652c4c767a8b203))
+
 ## v0.1.39 (2021-01-29)
 ### Feature
 * **xiaomi_gateway3:** Support motion sensor ([`478db7a`](https://github.com/dominikkarall/fhempy/commit/478db7ad578ae6fef5a18066b2a4058fe561f745))
