@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.42 (2021-01-30)
+### Feature
+* **eq3bt:** Support wndOpnTime/Temp, eco/cmftTemp ([`107805f`](https://github.com/dominikkarall/fhempy/commit/107805fd5d85fde76a49e2fabe1994943d27a169))
+
 ## v0.1.41 (2021-01-30)
 
 
