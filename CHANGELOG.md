@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.45 (2021-01-31)
+### Fix
+* **xiaomi_gateway3:** Sort imports ([`89c14bc`](https://github.com/dominikkarall/fhempy/commit/89c14bc1477a91be51c86a80666f12e94430cb04))
+* **googlecast:** Remove spotify_token dependency ([`ab8f872`](https://github.com/dominikkarall/fhempy/commit/ab8f8726158eb7037a62e98517a61b2760fbc47f))
+* **xiaomi_gateway3:** Fix motion sensor reset ([`37222fc`](https://github.com/dominikkarall/fhempy/commit/37222fcd1d52c09cb97ba5943d939436c40d56a8))
+
 ## v0.1.44 (2021-01-30)
 ### Fix
 * **fhempy:** Change logfile name to fhempy ([`2dc88df`](https://github.com/dominikkarall/fhempy/commit/2dc88df1177c69990926d5e55852656ee365f666))
