@@ -39,6 +39,11 @@ def mock_module(mocker):
     mocker.patch("fhempy.lib.fhem.checkIfDeviceExists", checkIfDeviceExists)
     mocker.patch("fhempy.lib.fhem.convertValue", convertValue)
     mocker.patch("fhempy.lib.fhem.send_version", send_version)
+    mocker.patch("fhempy.lib.fhem.setFunctionInactive", do_nothing)
+
+
+def do_nothing(param):
+    return
 
 
 def updateConnection(ws):
