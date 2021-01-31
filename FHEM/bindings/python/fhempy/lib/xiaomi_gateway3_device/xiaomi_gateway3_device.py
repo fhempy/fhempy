@@ -1,8 +1,8 @@
-from ..generic import FhemModule
 import asyncio
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhepy
+from ..generic import FhemModule
 
 # imports for dynamical usage
 from .devices.gateway import Gateway  # noqa: F401
