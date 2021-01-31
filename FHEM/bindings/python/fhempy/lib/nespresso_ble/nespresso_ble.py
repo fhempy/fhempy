@@ -1,11 +1,10 @@
-from ..generic import FhemModule
 import asyncio
 import functools
 import logging
 
 from .. import fhem
 from .. import utils as fpyutils
-
+from ..generic import FhemModule
 from .nespresso import NespressoDetect
 
 

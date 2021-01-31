@@ -1,10 +1,9 @@
 import functools
 
-from micloud import MiCloud
 from fhempy.lib.generic import FhemModule
+from micloud import MiCloud
 
-from .. import utils
-from .. import fhem
+from .. import fhem, utils
 
 
 class xiaomi_tokens(FhemModule):

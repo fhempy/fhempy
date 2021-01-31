@@ -1,13 +1,13 @@
 # THANKS to https://github.com/AlexxIT/XiaomiGateway3 for the HASS implementation
 # which I used as a base for the FHEM implementation
 
-from ..generic import FhemModule
-from .core.gateway3 import Gateway3
 import asyncio
-import logging
 import functools
+import logging
 
 from .. import fhem, utils
+from ..generic import FhemModule
+from .core.gateway3 import Gateway3
 
 DOMAINS = ["binary_sensor", "climate", "cover", "light", "remote", "sensor", "switch"]
 

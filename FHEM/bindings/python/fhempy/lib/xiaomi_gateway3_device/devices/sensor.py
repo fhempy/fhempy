@@ -1,8 +1,9 @@
-from .base import BaseDevice
-
 import asyncio
 import time
+
 from fhempy.lib import fhem
+
+from .base import BaseDevice
 
 
 class HTSensor(BaseDevice):

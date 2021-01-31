@@ -1,20 +1,19 @@
 """Support for DLNA DMR (Device Media Renderer)."""
 import asyncio
 import datetime as dt
-from datetime import timedelta
 import functools
 import logging
 import time
-import aiohttp
+from datetime import timedelta
 
-from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
+import aiohttp
+from async_upnp_client.aiohttp import (AiohttpNotifyServer,
+                                       AiohttpSessionRequester, get_local_ip)
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
-from async_upnp_client.aiohttp import get_local_ip
+from fhempy.lib.generic import FhemModule
 
 from .. import fhem
 from ..discover_upnp.discover_upnp import ssdp
-
-from fhempy.lib.generic import FhemModule
 
 DEFAULT_LISTEN_PORT = 8301
 

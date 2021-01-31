@@ -1,7 +1,8 @@
-import time
-from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
-from fhempy.lib import fhem, utils
 import functools
+import time
+
+from fhempy.lib import fhem, utils
+from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
 
 
 class Gateway(BaseDevice):

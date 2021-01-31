@@ -1,12 +1,12 @@
 import asyncio
-import aiohttp
 import sys
-
-from async_upnp_client.aiohttp import AiohttpSessionRequester
-from async_upnp_client.advertisement import UpnpAdvertisementListener
-from async_upnp_client import UpnpFactory
-from async_upnp_client.search import async_search as async_ssdp_search
 from ipaddress import IPv4Address
+
+import aiohttp
+from async_upnp_client import UpnpFactory
+from async_upnp_client.advertisement import UpnpAdvertisementListener
+from async_upnp_client.aiohttp import AiohttpSessionRequester
+from async_upnp_client.search import async_search as async_ssdp_search
 
 
 # ssdp search class can be used by other modules as well

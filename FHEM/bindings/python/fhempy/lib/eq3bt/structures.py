@@ -1,18 +1,8 @@
 """ Contains construct adapters and structures. """
-from construct import (
-    Struct,
-    Adapter,
-    Int8ub,
-    Enum,
-    FlagsEnum,
-    Const,
-    GreedyRange,
-    IfThenElse,
-    Bytes,
-    Optional,
-)
 from datetime import datetime, time, timedelta
 
+from construct import (Adapter, Bytes, Const, Enum, FlagsEnum, GreedyRange,
+                       IfThenElse, Int8ub, Optional, Struct)
 
 PROP_ID_RETURN = 1
 PROP_INFO_RETURN = 2

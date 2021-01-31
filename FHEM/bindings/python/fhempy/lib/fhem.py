@@ -1,9 +1,10 @@
-import json
-import random
 import asyncio
-import logging
-import traceback
 import concurrent.futures
+import json
+import logging
+import random
+import traceback
+
 import websockets
 
 from .version import __version__

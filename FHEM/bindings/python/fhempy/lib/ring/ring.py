@@ -1,9 +1,10 @@
 import asyncio
+import functools
 import json
 import time
-import functools
-from ring_doorbell import Ring, Auth
-from oauthlib.oauth2 import MissingTokenError, AccessDeniedError
+
+from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
+from ring_doorbell import Auth, Ring
 
 try:
     # Python 3.7
@@ -12,9 +13,9 @@ except ImportError:
     # Python 3.8+
     from asyncio import CancelledError
 
-from .. import fhem
-from .. import utils
 from fhempy.lib.generic import FhemModule
+
+from .. import fhem, utils
 
 
 class ring(FhemModule):

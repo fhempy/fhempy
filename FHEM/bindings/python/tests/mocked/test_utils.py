@@ -1,6 +1,6 @@
-import pytest
 import functools
 
+import pytest
 from fhempy.lib import utils
 
 

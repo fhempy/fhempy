@@ -1,18 +1,18 @@
 import asyncio
-import getopt
-import websockets
-import json
-import traceback
-import logging
 import functools
+import getopt
+import importlib
+import json
+import logging
 import site
 import sys
-import importlib
 import time
-from . import fhem, pkg_installer, utils
-from .core.zeroconf import zeroconf
-from . import version
+import traceback
 
+import websockets
+
+from . import fhem, pkg_installer, utils, version
+from .core.zeroconf import zeroconf
 
 logger = logging.getLogger(__name__)
 

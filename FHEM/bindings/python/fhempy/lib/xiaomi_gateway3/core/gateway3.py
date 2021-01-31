@@ -8,10 +8,11 @@ from threading import Thread
 from typing import Optional, Union
 
 from paho.mqtt.client import Client, MQTTMessage
+
 from . import bluetooth, utils
 from .mini_miio import SyncmiIO
 from .shell import TelnetShell
-from .unqlite import Unqlite, SQLite
+from .unqlite import SQLite, Unqlite
 from .utils import GLOBAL_PROP
 
 _LOGGER = logging.getLogger(__name__)

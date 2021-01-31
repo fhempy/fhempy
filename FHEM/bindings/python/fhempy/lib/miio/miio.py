@@ -1,13 +1,14 @@
 import asyncio
+import enum
 import functools
+import inspect
+import json
+import typing
+
 from miio.click_common import DeviceGroupMeta
 
 from .. import fhem, utils
 from ..generic import FhemModule
-import inspect
-import enum
-import typing
-import json
 
 
 class miio(FhemModule):

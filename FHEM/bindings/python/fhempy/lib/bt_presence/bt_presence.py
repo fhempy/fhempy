@@ -1,13 +1,12 @@
 import asyncio
-import logging
-import bluetooth
 import functools
+import logging
+
+import bluetooth
 from bt_proximity import BluetoothRSSI
-
-from .. import fhem
-from .. import utils
-
 from fhempy.lib.generic import FhemModule
+
+from .. import fhem, utils
 
 
 class bt_presence(FhemModule):

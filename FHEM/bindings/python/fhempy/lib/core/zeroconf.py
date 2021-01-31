@@ -1,6 +1,7 @@
 import asyncio
 import socket
-from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser
+
+from zeroconf import ServiceBrowser, ServiceInfo, Zeroconf
 
 
 class zeroconf:

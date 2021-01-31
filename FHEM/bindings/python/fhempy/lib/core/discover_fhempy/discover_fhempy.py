@@ -1,12 +1,12 @@
 import asyncio
-import logging
-import traceback
 import concurrent.futures
-from zeroconf import ServiceBrowser, Zeroconf
+import logging
 import threading
+import traceback
 
 from fhempy.lib import fhem
 from fhempy.lib.core.zeroconf import zeroconf
+from zeroconf import ServiceBrowser, Zeroconf
 
 
 class discover_fhempy:

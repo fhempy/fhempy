@@ -1,7 +1,8 @@
 import asyncio
 import logging
-import pytest
 import os
+
+import pytest
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 from tests.utils import mock_fhem
 

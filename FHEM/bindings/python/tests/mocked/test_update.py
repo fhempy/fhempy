@@ -1,11 +1,12 @@
-import pytest
-import logging
 import json
+import logging
 from unittest.mock import MagicMock
 
-from ..utils import mock_fhem
+import pytest
 from fhempy.lib import fhem_pythonbinding
 from fhempy.lib.pkg_installer import is_installed
+
+from ..utils import mock_fhem
 
 logger = logging.getLogger(__name__)
 

@@ -1,20 +1,12 @@
 import asyncio
 import functools
-import time
 import re
+import time
 
+from bluepy.btle import (ADDR_TYPE_PUBLIC, ADDR_TYPE_RANDOM, AssignedNumbers,
+                         BluepyHelper, BTLEDisconnectError, Peripheral,
+                         ScanEntry, Scanner)
 from fhempy.lib.generic import FhemModule
-
-from bluepy.btle import (
-    BTLEDisconnectError,
-    ScanEntry,
-    Scanner,
-    Peripheral,
-    ADDR_TYPE_PUBLIC,
-    ADDR_TYPE_RANDOM,
-    BluepyHelper,
-    AssignedNumbers,
-)
 
 from .. import fhem, utils
 

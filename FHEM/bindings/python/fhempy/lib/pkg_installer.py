@@ -1,17 +1,17 @@
 # lot of parts copied from HomeAssistant, many thanks!
 
-import functools
-import logging
-import pkg_resources
-import json
-import sys
-import os
-import inspect
 import asyncio
-from subprocess import PIPE, Popen
-from pathlib import Path
 import concurrent
+import functools
+import inspect
+import json
+import logging
+import os
+import sys
+from pathlib import Path
+from subprocess import PIPE, Popen
 
+import pkg_resources
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,14 +20,10 @@ pip_lock = asyncio.Lock()
 
 if sys.version_info[:2] >= (3, 8):
     from importlib.metadata import (  # pylint: disable=no-name-in-module,import-error
-        PackageNotFoundError,
-        version,
-    )
+        PackageNotFoundError, version)
 else:
     from importlib_metadata import (  # pylint: disable=import-error
-        PackageNotFoundError,
-        version,
-    )
+        PackageNotFoundError, version)
 
 
 def is_virtual_env() -> bool:

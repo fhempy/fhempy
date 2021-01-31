@@ -1,9 +1,9 @@
 import asyncio
-import aiohttp
 
-from .. import fhem
-from .. import utils
+import aiohttp
 from fhempy.lib.generic import FhemModule
+
+from .. import fhem, utils
 
 BASE_URL = "http://www.wienerlinien.at/ogd_realtime/monitor?rbl={}"
 
