@@ -5,6 +5,8 @@ import functools
 import concurrent.futures
 import logging
 import threading
+import requests
+import json
 import urllib.request
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -28,7 +30,6 @@ import pychromecast.controllers.dashcast as dashcast
 # Spotify
 from pychromecast.controllers.spotify import SpotifyController
 import spotipy
-import spotify_token as st
 
 # youtube_dl
 import youtube_dl
@@ -275,11 +276,37 @@ class googlecast(FhemModule):
                 self.hash, "spotify_user", "attr spotify_sp... required", 1
             )
 
+    def start_session(self, dc=None, key=None):
+        """ Starts session to get access token. """
+        USER_AGENT = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+        )
+
+        session = requests.Session()
+
+        cookies = {"sp_dc": dc, "sp_key": key}
+        headers = {"user-agent": USER_AGENT}
+
+        response = session.get(
+            "https://open.spotify.com/get_access_token?reason=transport&productType=web_player",
+            headers=headers,
+            cookies=cookies,
+        )
+        response.raise_for_status()
+        data = response.content.decode("utf-8")
+        config = json.loads(data)
+
+        access_token = config["accessToken"]
+        expires_timestamp = config["accessTokenExpirationTimestampMs"]
+        expiration_date = int(expires_timestamp) // 1000
+        return access_token, expiration_date
+
     async def update_token(self):
         if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
             data = await utils.run_blocking(
                 functools.partial(
-                    st.start_session,
+                    self.start_session,
                     self._attr_spotify_sp_dc,
                     self._attr_spotify_sp_key,
                 )

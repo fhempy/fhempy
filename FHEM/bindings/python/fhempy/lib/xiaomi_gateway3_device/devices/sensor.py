@@ -19,7 +19,7 @@ class MotionSensor(BaseDevice):
     def __init__(self, logger, gateway):
         super().__init__(logger, gateway)
         self.reset_task = None
-        self._attr_reset_motion = 300
+        self._attr_reset_motion = 120
 
     async def update(self, data):
         self.last_update = time.time()
