@@ -2,11 +2,11 @@
 A simple wrapper for bluepy's btle.Connection.
 Handles Connection duties (reconnecting etc.) transparently.
 """
-import logging
 import codecs
-import dbus
+import logging
 import re
 
+import dbus
 from bluepy import btle
 
 DEFAULT_TIMEOUT = 1

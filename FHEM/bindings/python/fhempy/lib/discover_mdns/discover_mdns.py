@@ -1,13 +1,14 @@
 import asyncio
-import logging
-import traceback
 import concurrent.futures
-from zeroconf import ServiceBrowser, Zeroconf
+import logging
 import threading
+import traceback
+
+from fhempy.lib.generic import FhemModule
+from zeroconf import ServiceBrowser, Zeroconf
 
 from .. import fhem
 from ..core.zeroconf import zeroconf
-from fhempy.lib.generic import FhemModule
 
 
 class discover_mdns(FhemModule):

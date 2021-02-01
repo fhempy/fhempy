@@ -1,10 +1,11 @@
 import asyncio
 import site
-import subprocess
 import socket
+import subprocess
+
+from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
-from fhempy.lib.generic import FhemModule
 
 
 class esphome(FhemModule):

@@ -2,8 +2,7 @@ import logging
 import re
 import uuid
 from datetime import datetime
-from typing import Optional, List
-
+from typing import List, Optional
 
 DOMAIN = "xiaomi_gateway3"
 

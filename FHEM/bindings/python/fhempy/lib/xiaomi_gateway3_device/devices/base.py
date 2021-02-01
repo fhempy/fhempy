@@ -1,8 +1,8 @@
 import asyncio
 import time
+
 from fhempy.lib import fhem
 from fhempy.lib.generic import FhemModule
-
 
 attr_settings = {
     "lumi.sensor_magnet.v2": {

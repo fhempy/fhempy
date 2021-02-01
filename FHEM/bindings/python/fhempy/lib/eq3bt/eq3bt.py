@@ -1,19 +1,17 @@
 import asyncio
-import functools
 import concurrent.futures
-import time
+import functools
 import random
-
-from enum import IntEnum
+import time
 from datetime import datetime
+from enum import IntEnum
 
-from . import eq3btsmart as eq3
-from .connection import BTLEConnection
 from dbus import DBusException
 
-from .. import utils
-from .. import fhem
+from .. import fhem, utils
 from ..generic import FhemModule
+from . import eq3btsmart as eq3
+from .connection import BTLEConnection
 
 
 class Mode(IntEnum):

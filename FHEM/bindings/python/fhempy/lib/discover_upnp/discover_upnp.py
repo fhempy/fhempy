@@ -3,8 +3,8 @@ Starts a service to scan in intervals for new devices.
 """
 import asyncio
 
-from fhempy.lib.generic import FhemModule
 from fhempy.lib.core.ssdp import ssdp
+from fhempy.lib.generic import FhemModule
 
 from .. import fhem
 

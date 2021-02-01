@@ -7,12 +7,13 @@ To get the current state, update() has to be called for powersaving reasons.
 Schedule needs to be requested with query_schedule() before accessing for similar reasons.
 """
 
+import codecs
 import logging
 import struct
-import codecs
 from datetime import datetime, timedelta
-from construct import Byte
 from enum import IntEnum
+
+from construct import Byte
 
 from .connection import BTLEConnection
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status

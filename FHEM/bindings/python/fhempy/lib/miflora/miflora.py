@@ -5,11 +5,10 @@ import logging
 import bluepy.btle
 import btlewrap
 from btlewrap import BluetoothBackendException
-
+from fhempy.lib.generic import FhemModule
 from miflora import miflora_poller
 
 from .. import fhem, utils
-from fhempy.lib.generic import FhemModule
 
 
 class miflora(FhemModule):

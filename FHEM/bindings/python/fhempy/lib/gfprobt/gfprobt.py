@@ -1,12 +1,11 @@
-from ..generic import FhemModule
 import asyncio
 import functools
-import time
 import struct
+import time
 
-from .. import fhem
-from .. import utils
+from .. import fhem, utils
 from ..core.ble import BTLEConnection
+from ..generic import FhemModule
 
 DEFAULT_TIMEOUT = 1
 

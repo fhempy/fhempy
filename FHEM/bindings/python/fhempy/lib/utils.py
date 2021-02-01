@@ -1,11 +1,13 @@
 import asyncio
+import base64
+import concurrent.futures
 import logging
 import socket
-import concurrent.futures
-from cryptography.fernet import Fernet
-from codecs import encode, decode
+from codecs import decode, encode
 from functools import partial, reduce
-import base64
+
+from cryptography.fernet import Fernet
+
 from . import fhem
 
 

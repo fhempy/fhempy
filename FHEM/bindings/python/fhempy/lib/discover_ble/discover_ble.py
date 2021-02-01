@@ -1,9 +1,10 @@
 import asyncio
 import logging
+
 from bleak import discover
+from fhempy.lib.generic import FhemModule
 
 from .. import fhem
-from fhempy.lib.generic import FhemModule
 
 
 class discover_ble(FhemModule):

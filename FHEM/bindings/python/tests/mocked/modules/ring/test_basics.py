@@ -1,8 +1,9 @@
 import asyncio
-import logging
-import pytest
 import datetime
+import logging
 import os
+
+import pytest
 import requests_mock
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 from tests.utils import mock_fhem

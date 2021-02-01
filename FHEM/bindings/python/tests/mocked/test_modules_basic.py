@@ -1,13 +1,15 @@
-import os
-import pytest
-import logging
 import importlib
+import logging
+import os
 from unittest.mock import MagicMock
 
-from ..utils import mock_fhem
+import pytest
 from fhempy.lib import utils
 from fhempy.lib.generic import FhemModule
-from fhempy.lib.pkg_installer import check_and_install_dependencies, check_dependencies
+from fhempy.lib.pkg_installer import (check_and_install_dependencies,
+                                      check_dependencies)
+
+from ..utils import mock_fhem
 
 logger = logging.getLogger(__name__)
 

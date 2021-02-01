@@ -7,7 +7,7 @@ import socket
 import time
 from asyncio.protocols import BaseProtocol
 from asyncio.transports import DatagramTransport
-from typing import Union, Optional
+from typing import Optional, Union
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding

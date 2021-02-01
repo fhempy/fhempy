@@ -6,7 +6,6 @@ import bluepy.btle
 import btlewrap
 from btlewrap import BluetoothBackendException
 from fhempy.lib.generic import FhemModule
-
 from mitemp_bt import mitemp_bt_poller
 
 from .. import fhem, utils
