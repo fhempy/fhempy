@@ -127,16 +127,16 @@ class xiaomi_tokens(FhemModule):
         await fhem.readingsBeginUpdate(self.hash)
         for dev in self._device_list:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, dev["did"] + "_name", dev["name"]
+                self.hash, dev["did"] + "_" + dev["country"] + "_name", dev["name"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, dev["did"] + "_token", dev["token"]
+                self.hash, dev["did"] + "_" + dev["country"] + "_token", dev["token"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, dev["did"] + "_model", dev["model"]
+                self.hash, dev["did"] + "_" + dev["country"] + "_model", dev["model"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, dev["did"] + "_ip", dev["localip"]
+                self.hash, dev["did"] + "_" + dev["country"] + "_ip", dev["localip"]
             )
             self._all_devices[dev["did"]] = dev
             if dev["did"][0:3] != "blt" and dev["localip"] != "":
@@ -166,6 +166,9 @@ class xiaomi_tokens(FhemModule):
         mc = MiCloud(self._username, self._password)
         if mc.login():
             for country in self._country:
-                self._device_list.extend(mc.get_devices(country=country))
+                dev_list = mc.get_devices(country=country)
+                for dev in dev_list:
+                    dev["country"] = country
+                    self._device_list.append(dev)
         else:
             raise Exception("Login failed, please check username/password!")
