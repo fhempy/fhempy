@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.47 (2021-02-01)
+### Fix
+* **xiaomi_tokens:** Make readings country specific ([`efe1b7a`](https://github.com/dominikkarall/fhempy/commit/efe1b7a4f37d3530b2f92a906e45f202d67e6d21))
+
 ## v0.1.46 (2021-02-01)
 ### Fix
 * **fhempy:** Raise error if pkg install fails ([`8b15dcd`](https://github.com/dominikkarall/fhempy/commit/8b15dcd19180451b45f3de4aa420938334f951d2))
