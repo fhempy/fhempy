@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.46 (2021-02-01)
+### Fix
+* **fhempy:** Raise error if pkg install fails ([`8b15dcd`](https://github.com/dominikkarall/fhempy/commit/8b15dcd19180451b45f3de4aa420938334f951d2))
+
 ## v0.1.45 (2021-01-31)
 ### Fix
 * **xiaomi_gateway3:** Sort imports ([`89c14bc`](https://github.com/dominikkarall/fhempy/commit/89c14bc1477a91be51c86a80666f12e94430cb04))
