@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.48 (2021-02-02)
+### Fix
+* **xiaomi_tokens:** Fix device creation ([`ebbc3bb`](https://github.com/dominikkarall/fhempy/commit/ebbc3bb61f20fba4ff8d1eadd1af61017abe956e))
+
 ## v0.1.47 (2021-02-01)
 ### Fix
 * **xiaomi_tokens:** Make readings country specific ([`efe1b7a`](https://github.com/dominikkarall/fhempy/commit/efe1b7a4f37d3530b2f92a906e45f202d67e6d21))
