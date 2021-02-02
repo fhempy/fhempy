@@ -103,10 +103,11 @@ class xiaomi_tokens(FhemModule):
             )
 
     async def set_create_gateway3_device(self, hash, params):
-        blank = params["dev"].index("_")
-        did = params["dev"][0:blank]
-        ip = self._all_devices[did]["localip"]
-        token = self._all_devices[did]["token"]
+        arr = params["dev"].split("_")
+        did = arr[0]
+        country = arr[1]
+        ip = self._all_devices[did + country]["localip"]
+        token = self._all_devices[did + country]["token"]
         if ip != "" and token != "":
             self.create_async_task(
                 fhem.CommandDefine(
@@ -138,14 +139,24 @@ class xiaomi_tokens(FhemModule):
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, dev["did"] + "_" + dev["country"] + "_ip", dev["localip"]
             )
-            self._all_devices[dev["did"]] = dev
+            self._all_devices[dev["did"] + dev["country"]] = dev
             if dev["did"][0:3] != "blt" and dev["localip"] != "":
                 self._miio_devices.append(
-                    dev["did"] + "_(" + dev["name"].replace(" ", "_") + ")"
+                    dev["did"]
+                    + "_"
+                    + dev["country"]
+                    + "_("
+                    + dev["name"].replace(" ", "_")
+                    + ")"
                 )
                 if dev["model"] == "lumi.gateway.mgl03":
                     self._xiaomigw3_devices.append(
-                        dev["did"] + "_(" + dev["name"].replace(" ", "_") + ")"
+                        dev["did"]
+                        + "_"
+                        + dev["country"]
+                        + "_("
+                        + dev["name"].replace(" ", "_")
+                        + ")"
                     )
         await fhem.readingsEndUpdate(self.hash, 1)
 
