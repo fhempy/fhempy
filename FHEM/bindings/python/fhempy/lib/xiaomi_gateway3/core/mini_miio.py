@@ -7,7 +7,7 @@ import socket
 import time
 from asyncio.protocols import BaseProtocol
 from asyncio.transports import DatagramTransport
-from typing import Optional, Union
+from typing import Union, Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -95,6 +95,7 @@ class SyncmiIO(BasemiIO):
     def __init__(self, host: str, token: str, timeout: float = 2):
         super().__init__(host, token)
 
+        self.debug = False
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(timeout)
 
@@ -120,41 +121,46 @@ class SyncmiIO(BasemiIO):
         if not self.device_id and not self.ping():
             return None
 
-        try:
-            raw = self._pack_raw(method, params)
-            self.sock.sendto(raw, self.addr)
-
-            # can receive more than 1024 bytes
-            raw = self.sock.recv(10240)
-            data = self._unpack_raw(raw)
-
-            return json.loads(data.rstrip(b"\x00"))["result"]
-        except Exception as e:
-            _LOGGER.debug(f"Can't send: {e}")
+        for times in range(1, 4):
+            try:
+                # pack each time for new message id
+                raw_send = self._pack_raw(method, params)
+                t = time.monotonic()
+                self.sock.sendto(raw_send, self.addr)
+                # can receive more than 1024 bytes (1056 approximate maximum)
+                raw_recv = self.sock.recv(10240)
+                t = time.monotonic() - t
+                data = self._unpack_raw(raw_recv)
+                break
+            except Exception:
+                pass
+        else:
+            _LOGGER.warning(f"Can't send {method} {params}")
             return None
+
+        if self.debug:
+            _LOGGER.debug(
+                f"Send {method} {len(raw_send)}B, recv "
+                f"{len(raw_recv)}B in {t:.1f} sec and {times} try"
+            )
+
+        if data == b"\x00":
+            return None
+
+        return json.loads(data.rstrip(b"\x00"))["result"]
 
     def send_bulk(self, method: str, params: list):
         """Sends a command with a large number of parameters. Splits into
         multiple requests when the size of one request is exceeded.
         """
-        result = []
-        pack = []
-        total_len = 0
-
         try:
-            for item in params:
-                item_len = len(str(item))
-                # approximate number, it seems to work
-                if total_len + item_len > 900:
-                    result += self.send(method, pack)
-                    pack = []
-                    total_len = 0
-
-                pack.append(item)
-                total_len += item_len
-
-            return result + self.send(method, pack)
-
+            result = []
+            # Chunk of 15 is seems like the best size. Because request should
+            # be lower than 1024 and response should be not more than 1056.
+            # {'did':'1234567890','siid': 2,'piid': 1,'value': False,'code': 0}
+            for i in range(0, len(params), 15):
+                result += self.send(method, params[i : i + 15])
+            return result
         except Exception:
             return None
 
@@ -223,22 +229,13 @@ class AsyncmiIO(BasemiIO, BaseProtocol):
         """Sends a command with a large number of parameters. Splits into
         multiple requests when the size of one request is exceeded.
         """
-        result = []
-        pack = []
-        total_len = 0
-
-        for item in params:
-            item_len = len(str(item))
-            # approximate number, it seems to work
-            if total_len + item_len > 900:
-                result += await self.send(method, pack)
-                pack = []
-                total_len = 0
-
-            pack.append(item)
-            total_len += item_len
-
-        return result + await self.send(method, pack)
+        try:
+            result = []
+            for i in range(0, len(params), 15):
+                result += await self.send(method, params[i : i + 15])
+            return result
+        except Exception:
+            return None
 
     async def info(self):
         """Get info about miIO device."""

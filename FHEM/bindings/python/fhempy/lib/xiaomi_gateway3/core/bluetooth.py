@@ -1,10 +1,13 @@
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
-DEVICES = {
+# Bluetooth Model: [Manufacturer, Device Name, Device Model]
+# params: [siid, piid, hass attr name, hass domain]
+DEVICES = [{
     # BLE
     152: ["Xiaomi", "Flower Care", "HHCCJCY01"],
     426: ["Xiaomi", "TH Sensor", "LYWSDCGQ/01ZM"],
+    794: ["Xiaomi", "Door Lock", "MJZNMS02LM"],
     839: ["Xiaomi", "Qingping TH Sensor", "CGG1"],
     1034: ["Xiaomi", "Mosquito Repellent", "WX08ZM"],
     1115: ["Xiaomi", "TH Clock", "LYWSD02MMC"],
@@ -12,12 +15,18 @@ DEVICES = {
     1371: ["Xiaomi", "TH Sensor 2", "LYWSD03MMC"],
     1398: ["Xiaomi", "Alarm Clock", "CGD1"],
     1694: ["Aqara", "Door Lock N100", "ZNMS16LM"],
+    1695: ["Aqara", "Door Lock N200", "ZNMS17LM"],
     1747: ["Xiaomi", "ZenMeasure Clock", "MHO-C303"],
     1983: ["Yeelight", "Button S1", "YLAI003"],
-    2038: ["Xiaomi", "Night Light 2", "MJYD02YL-A"],
+    2038: ["Xiaomi", "Night Light 2", "MJYD02YL-A"],  # 15,4103,4106,4119,4120
     2443: ["Xiaomi", "Door Sensor 2", "MCCGQ02HL"],
+    2444: ["Xiaomi", "Door Lock", "XMZNMST02YD"],
     2480: ["Xiaomi", "Safe Box", "BGX-5/X1-3001"],
-    # Mesh
+    # logs: https://github.com/AlexxIT/XiaomiGateway3/issues/180
+    2701: ["Xiaomi", "Motion Sensor 2", "RTCGQ02LM"],  # 15,4119,4120
+}, {
+    # Mesh Light
+    0: ["Xiaomi", "Mesh Group", "Mesh Group"],
     948: ["Yeelight", "Mesh Downlight", "YLSD01YL"],
     995: ["Yeelight", "Mesh Bulb E14", "YLDP09YL"],
     996: ["Yeelight", "Mesh Bulb E27", "YLDP10YL"],
@@ -26,9 +35,51 @@ DEVICES = {
     1772: ["Xiaomi", "Mesh Downlight", "MJTS01YL"],
     2076: ["Yeelight", "Mesh Downlight M2", "YLTS02YL/YLTS04YL"],
     2342: ["Yeelight", "Mesh Bulb M2", "YLDP25YL/YLDP26YL"],
-    # Mesh Group
-    0: ["Xiaomi", "Mesh Group", "Mesh Group"]
-}
+    'params': [
+        [2, 1, 'light', 'light'],
+        [2, 2, 'brightness', None],
+        [2, 3, 'color_temp', None],
+    ]
+}, {
+    # Mesh Switches
+    1946: ["Xiaomi", "Mesh Wall Double Switch", "DHKG02ZM"],
+    'params': [
+        [2, 1, 'left_switch', 'switch'],
+        [3, 1, 'right_switch', 'switch'],
+    ]
+}, {
+    2007: ["Unknown", "Mesh Switch Controller", "2007"],
+    'params': [
+        [2, 1, 'switch', 'switch']
+    ]
+}, {
+    2093: ["PTX", "Mesh Wall Triple Switch", "PTX-TK3/M"],
+    'params': [
+        [2, 1, 'left_switch', 'switch'],
+        [3, 1, 'middle_switch', 'switch'],
+        [4, 1, 'right_switch', 'switch'],
+        [8, 1, 'backlight', 'switch'],
+        [8, 2, 'left_smart', 'switch'],
+        [8, 3, 'middle_smart', 'switch'],
+        [8, 4, 'right_smart', 'switch']
+    ]
+}, {
+    2257: ["PTX", "Mesh Wall Double Switch", "PTX-SK2M"],
+    'params': [
+        [2, 1, 'left_switch', 'switch'],
+        [3, 1, 'right_switch', 'switch'],
+        [8, 1, 'backlight', 'switch'],
+        [8, 2, 'left_smart', 'switch'],
+        [8, 3, 'right_smart', 'switch'],
+    ]
+}, {
+    2258: ["PTX", "Mesh Wall Single Switch", "PTX-SK1M"],
+    'params': [
+        [2, 1, 'switch', 'switch'],
+        [8, 1, 'backlight', 'switch'],
+        [8, 2, 'smart', 'switch'],
+    ]
+}]
 
 BLE_FINGERPRINT_ACTION = [
     "Match successful", "Match failed", "Timeout", "Low quality",
@@ -97,7 +148,7 @@ ACTIONS = {
 def get_ble_domain(param: str) -> Optional[str]:
     if param in (
             'sleep', 'lock', 'opening', 'water_leak', 'smoke', 'gas', 'light',
-            'contact'):
+            'contact', 'motion'):
         return 'binary_sensor'
 
     elif param in (
@@ -132,15 +183,23 @@ def parse_xiaomi_ble(event: dict, pdid: int) -> Optional[dict]:
         return {'rssi': data[0]}
 
     elif eid == 0x1004 and length == 2:  # 4100
-        return {'temperature': int.from_bytes(data, 'little', signed=True) / 10.0}
+        return {
+            'temperature': int.from_bytes(data, 'little', signed=True) / 10.0
+        }
 
     elif eid == 0x1006 and length == 2:  # 4102
         # Humidity percentage, ranging from 0-1000
         return {'humidity': int.from_bytes(data, 'little') / 10.0}
 
     elif eid == 0x1007 and length == 3:  # 4103
+        value = int.from_bytes(data, 'little')
+
+        if pdid == 2038:
+            # Night Light 2: 1 - no light, 100 - light
+            return {'light': int(value >= 100)}
+
         # Range: 0-120000, lux
-        return {'illuminance': int.from_bytes(data, 'little')}
+        return {'illuminance': value}
 
     elif eid == 0x1008 and length == 1:  # 4104
         # Humidity percentage, range: 0-100
@@ -156,7 +215,8 @@ def parse_xiaomi_ble(event: dict, pdid: int) -> Optional[dict]:
 
     elif eid == 0x100D and length == 4:  # 4109
         return {
-            'temperature': int.from_bytes(data[:2], 'little', signed=True) / 10.0,
+            'temperature': int.from_bytes(data[:2], 'little',
+                                          signed=True) / 10.0,
             'humidity': int.from_bytes(data[2:], 'little') / 10.0
         }
 
@@ -195,7 +255,8 @@ def parse_xiaomi_ble(event: dict, pdid: int) -> Optional[dict]:
         return {'idle_time': int.from_bytes(data, 'little')}
 
     elif eid == 0x1018 and length == 1:  # 4120
-        return {'light': data[0]}  # 1 => on => strong light
+        # Door Sensor 2: 0 - dark, 1 - light
+        return {'light': 1 if data[0] else 0}
 
     elif eid == 0x1019 and length == 1:  # 4121
         # 0x00: open the door, 0x01: close the door,
@@ -260,57 +321,38 @@ def parse_xiaomi_ble(event: dict, pdid: int) -> Optional[dict]:
         }
 
     elif eid == 0x0F:  # 15
-        # 1 - moving no light, 100 - moving with light
-        # TODO: fix me in future
-        return {'action': int.from_bytes(data, 'little')}
+        # Night Light 2: 1 - moving no light, 100 - moving with light
+        # Motion Sensor 2: 0 - moving no light, 256 - moving with light
+        value = int.from_bytes(data, 'little')
+        return {
+            'motion': 1,
+            'light': int(value >= 100)
+        }
 
     return None
 
 
-MESH_PROPS = [None, 'light', 'brightness', 'color_temp']
-
-
-def parse_xiaomi_mesh(data: list):
-    """Can receive multiple properties from multiple devices."""
-    result = {}
-
-    for payload in data:
-        if payload['siid'] != 2 or payload.get('code', 0) != 0:
-            continue
-
-        did = payload['did']
-        key = MESH_PROPS[payload['piid']]
-        result.setdefault(did, {})[key] = payload['value']
-
-    return result
-
-
-def pack_xiaomi_mesh(did: str, data: Union[dict, list]):
-    if isinstance(data, dict):
-        return [{
-            'did': did,
-            'siid': 2,
-            'piid': MESH_PROPS.index(k),
-            'value': v
-        } for k, v in data.items()]
-    else:
-        return [{
-            'did': did,
-            'siid': 2,
-            'piid': MESH_PROPS.index(k),
-        } for k in data]
-
-
 def get_device(pdid: int, default_name: str) -> Optional[dict]:
-    if pdid in DEVICES:
-        desc = DEVICES[pdid]
-        return {
-            'device_manufacturer': desc[0],
-            'device_name': desc[0] + ' ' + desc[1],
-            'device_model': desc[2] if len(desc) > 2 else pdid
-        }
-    else:
-        return {
-            'device_name': default_name,
-            'device_model': pdid
-        }
+    for device in DEVICES:
+        if pdid in device:
+            desc = device[pdid]
+            return {
+                'device_manufacturer': desc[0],
+                'device_name': desc[0] + ' ' + desc[1],
+                'device_model': desc[2] if len(desc) > 2 else pdid,
+                'params': device.get('params')
+            }
+
+    return {
+        'device_name': default_name,
+        'device_model': pdid,
+        # default Mesh device will be Bulb
+        'params': [
+            [2, 1, 'light', 'light'],
+            [2, 2, 'brightness', None],
+            [2, 3, 'color_temp', None],
+        ]
+    } if default_name == 'Mesh' else {
+        'device_name': default_name,
+        'device_model': pdid,
+    }
