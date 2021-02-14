@@ -68,11 +68,12 @@ class xiaomi_tokens(FhemModule):
             return "Please set username & password first!"
 
     async def set_create_miio_device(self, hash, params):
-        blank = params["dev"].index("_")
-        did = params["dev"][0:blank]
-        model = self._all_devices[did]["model"]
-        ip = self._all_devices[did]["localip"]
-        token = self._all_devices[did]["token"]
+        arr = params["dev"].split("_")
+        did = arr[0]
+        country = arr[1]
+        model = self._all_devices[did + country]["model"]
+        ip = self._all_devices[did + country]["localip"]
+        token = self._all_devices[did + country]["token"]
         if "vacuum" in model:
             self.create_async_task(
                 fhem.CommandDefine(
