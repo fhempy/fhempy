@@ -10,8 +10,8 @@ wsconnection = None
 readings = {}
 attributes = {}
 internals = {}
-command_define = ""
-command_attr = ""
+command_define = []
+command_attr = []
 
 
 def mock_module(mocker):
@@ -125,11 +125,11 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 
 async def CommandDefine(hash, definition):
-    command_define = definition
+    command_define.append(definition)
 
 
 async def CommandAttr(hash, attrdef):
-    command_attr = attrdef
+    command_attr.append(attrdef)
 
 
 async def CommandDeleteReading(hash, deldef):

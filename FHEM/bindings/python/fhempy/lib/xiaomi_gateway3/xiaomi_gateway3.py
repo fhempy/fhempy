@@ -9,7 +9,16 @@ from .. import fhem, utils
 from ..generic import FhemModule
 from .core.gateway3 import Gateway3
 
-DOMAINS = ["binary_sensor", "climate", "cover", "light", "remote", "sensor", "switch"]
+DOMAINS = [
+    "binary_sensor",
+    "climate",
+    "cover",
+    "light",
+    "remote",
+    "sensor",
+    "switch",
+    "alarm_control_panel",
+]
 
 
 class xiaomi_gateway3(FhemModule):
