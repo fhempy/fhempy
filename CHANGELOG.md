@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.49 (2021-02-14)
+### Feature
+* **xiaomi_gateway3:** Update to latest version ([`9643837`](https://github.com/dominikkarall/fhempy/commit/96438373925c4c583dfbe4a9d8433fbc98aa678a))
+
+### Fix
+* **xiaomi_tokens:** Fix create miio device ([`f8e4352`](https://github.com/dominikkarall/fhempy/commit/f8e43525f62f00939f60d0ee30349246203682db))
+
 ## v0.1.48 (2021-02-02)
 ### Fix
 * **xiaomi_tokens:** Fix device creation ([`ebbc3bb`](https://github.com/dominikkarall/fhempy/commit/ebbc3bb61f20fba4ff8d1eadd1af61017abe956e))
