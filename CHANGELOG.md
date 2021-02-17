@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.51 (2021-02-17)
+### Fix
+* **fhempy:** Update cryptography ([`b154eb6`](https://github.com/dominikkarall/fhempy/commit/b154eb6b592cb672dbaabefc45b37e11ef304bce))
+
 ## v0.1.50 (2021-02-17)
 ### Fix
 * **fhempy:** Fix cryptography installation ([`a7b4b6e`](https://github.com/dominikkarall/fhempy/commit/a7b4b6e5a5357f6b409656f4f79d99ce1b6154a3))
