@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.50 (2021-02-17)
+### Fix
+* **fhempy:** Fix cryptography installation ([`a7b4b6e`](https://github.com/dominikkarall/fhempy/commit/a7b4b6e5a5357f6b409656f4f79d99ce1b6154a3))
+
 ## v0.1.49 (2021-02-14)
 ### Feature
 * **xiaomi_gateway3:** Update to latest version ([`9643837`](https://github.com/dominikkarall/fhempy/commit/96438373925c4c583dfbe4a9d8433fbc98aa678a))
