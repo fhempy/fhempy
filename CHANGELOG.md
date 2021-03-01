@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.52 (2021-03-01)
+### Feature
+* **ring:** Update to latest ring_doorbell lib ([`a7295ca`](https://github.com/dominikkarall/fhempy/commit/a7295ca3fcfb3e6f62cdcc969556b79f8198f468))
+* **tuya:** Update to latest tinytuya lib ([`0edc476`](https://github.com/dominikkarall/fhempy/commit/0edc476557bf54da6c7775b0101b68eb35894115))
+
 ## v0.1.51 (2021-02-17)
 ### Fix
 * **fhempy:** Update cryptography ([`b154eb6`](https://github.com/dominikkarall/fhempy/commit/b154eb6b592cb672dbaabefc45b37e11ef304bce))
