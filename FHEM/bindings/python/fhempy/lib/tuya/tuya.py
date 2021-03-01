@@ -5,6 +5,7 @@ import json
 import re
 
 import tinytuya
+from tinytuya import wizard as tt_wizard
 
 from .. import fhem, utils
 from ..generic import FhemModule
@@ -430,7 +431,7 @@ class tuya(FhemModule):
     async def _request_tuyacloud(self, uri, token=None):
         return await utils.run_blocking(
             functools.partial(
-                tinytuya.tuyaPlatform,
+                tt_wizard.tuyaPlatform,
                 self.tt_region,
                 self.tt_key,
                 self.tt_secret,
