@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.53 (2021-03-01)
+
+
 ## v0.1.52 (2021-03-01)
 ### Feature
 * **ring:** Update to latest ring_doorbell lib ([`a7295ca`](https://github.com/dominikkarall/fhempy/commit/a7295ca3fcfb3e6f62cdcc969556b79f8198f468))
