@@ -9,18 +9,24 @@ import urllib.request
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
+
 # PyChromecast
 import pychromecast
+
 # DashCast
 import pychromecast.controllers.dashcast as dashcast
 import requests
 import spotipy
+
 # youtube_dl
 import youtube_dl
+
 # BubbleUPNP
 from pychromecast.controllers.bubbleupnp import BubbleUPNPController
+
 # Spotify
 from pychromecast.controllers.spotify import SpotifyController
+
 # YouTube
 from pychromecast.controllers.youtube import YouTubeController
 from pychromecast.error import ChromecastConnectionError
@@ -123,7 +129,7 @@ class googlecast(FhemModule):
             return 'Usage: define my_fhempy_cast PythonModule googlecast "Living Room"'
 
         if self.browser:
-            pychromecast.stop_discovery(self.browser)
+            self.browser.stop_discovery()
         if self.cast:
             self.cast.disconnect()
 
@@ -138,7 +144,7 @@ class googlecast(FhemModule):
     async def Undefine(self, hash):
         await super().Undefine(hash)
         try:
-            pychromecast.stop_discovery(self.browser)
+            self.browser.stop_discovery()
             if self.cast:
                 self.cast.disconnect()
         except Exception:
