@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.56 (2021-03-08)
+### Feature
+* **googlecast:** Update to pychromecast 9.1.1 ([`fdaab50`](https://github.com/dominikkarall/fhempy/commit/fdaab50f99006806464603a2ecfd2f4adf137967))
+
+### Fix
+* **ring:** Revert ring_doorbell lib to 0.6.2 ([`71b9511`](https://github.com/dominikkarall/fhempy/commit/71b9511e47751eb93e2365f0861918aabfe738cd))
+
 ## v0.1.55 (2021-03-01)
 
 
