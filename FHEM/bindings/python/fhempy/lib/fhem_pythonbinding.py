@@ -48,9 +48,11 @@ async def activate_internal_modules():
 
 
 async def pybinding(websocket, path):
+    global zc_info
     if zc_info is not None:
         # FHEM discovered us, stop zeroconf
         await zeroconf.get_instance(logger).unregister_service(zc_info)
+        zc_info = None
         zeroconf.get_instance(logger).stop()
 
     global connection_start
@@ -404,6 +406,7 @@ def usage():
 
 
 def run():
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
