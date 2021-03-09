@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.57 (2021-03-09)
+### Fix
+* **fhempy:** Fix possible crash on reconnect ([`d68d60b`](https://github.com/dominikkarall/fhempy/commit/d68d60bcf9f52c145ad6be221fb6a7fe7388ee03))
+* **ring:** Fix battery/volume updates ([`936cc49`](https://github.com/dominikkarall/fhempy/commit/936cc495c86040d13fc34e11668daf6d32967aa1))
+
 ## v0.1.56 (2021-03-08)
 ### Feature
 * **googlecast:** Update to pychromecast 9.1.1 ([`fdaab50`](https://github.com/dominikkarall/fhempy/commit/fdaab50f99006806464603a2ecfd2f4adf137967))
