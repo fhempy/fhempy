@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.59 (2021-04-18)
+### Fix
+* **ring:** Fix update_health_data ([`747a129`](https://github.com/dominikkarall/fhempy/commit/747a12996a9b2552256fe0492086150c94586e5d))
+
 ## v0.1.58 (2021-04-18)
 ### Feature
 * **tuya:** Support miio lib 0.5.5.2 ([`88fb98b`](https://github.com/dominikkarall/fhempy/commit/88fb98bdd7e9f73bff231e64236832685e12f47b))
