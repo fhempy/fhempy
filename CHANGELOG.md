@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.58 (2021-04-18)
+### Feature
+* **tuya:** Support miio lib 0.5.5.2 ([`88fb98b`](https://github.com/dominikkarall/fhempy/commit/88fb98bdd7e9f73bff231e64236832685e12f47b))
+
 ## v0.1.57 (2021-03-09)
 ### Fix
 * **fhempy:** Fix possible crash on reconnect ([`d68d60b`](https://github.com/dominikkarall/fhempy/commit/d68d60bcf9f52c145ad6be221fb6a7fe7388ee03))
