@@ -2,6 +2,7 @@ import asyncio
 import functools
 
 import spotipy
+from spotipy.oauth2 import CacheFileHandler
 
 from .. import fhem, utils
 from ..generic import FhemModule
@@ -180,11 +181,12 @@ class spotify(FhemModule):
         x = "e92855a009"
         y = "e74eb69ba6609d3bfd7d"
         z = 90 + 6
+        handler = CacheFileHandler(cache_path=f".{self.hash['NAME']}_spotify_token")
         self.spotipy_pkce = spotipy.oauth2.SpotifyPKCE(
             f"{x}{y}{str(z)}",
             "https://oskar.pw/",
             scope=self.spotipy_scope,
-            cache_path=f".{self.hash['NAME']}_spotify_token",
+            cache_handler=handler,
         )
         url = self.spotipy_pkce.get_authorize_url()
         url = (
