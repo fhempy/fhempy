@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.60 (2021-05-04)
+### Feature
+* **mitemp2:** Test version of mitemp2 ([`31e17a4`](https://github.com/dominikkarall/fhempy/commit/31e17a4e439ab92463659c20c0e494cd33f85947))
+
+### Fix
+* **spotify:** Change auth url ([`63319ba`](https://github.com/dominikkarall/fhempy/commit/63319bad78301caae4b0273745e459969fcf308f))
+* **googlecast:** Fix spotify play ([`08ea929`](https://github.com/dominikkarall/fhempy/commit/08ea929003d6966c587aed433f6fefbe70e13cdf))
+* **spotify:** Fix deprecation warning ([`a852b75`](https://github.com/dominikkarall/fhempy/commit/a852b75cd13a06ae90ad8b004225fb04014b0b45))
+* **spotify_connect_player:** Fix deprecation warn ([`e9bc04b`](https://github.com/dominikkarall/fhempy/commit/e9bc04bc61cf439b12e6ad4b5101ca57f1bab2e6))
+* **googlecast:** Fix spotify, add speak_lang attr ([`6a81f15`](https://github.com/dominikkarall/fhempy/commit/6a81f15dbce5d2b57489b1c0cffec88fe5653c53))
+
 ## v0.1.59 (2021-04-18)
 ### Fix
 * **ring:** Fix update_health_data ([`747a129`](https://github.com/dominikkarall/fhempy/commit/747a12996a9b2552256fe0492086150c94586e5d))
