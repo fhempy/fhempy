@@ -16,7 +16,6 @@ import pychromecast
 # DashCast
 import pychromecast.controllers.dashcast as dashcast
 import requests
-import spotipy
 
 # youtube_dl
 import youtube_dl
@@ -26,10 +25,11 @@ from pychromecast.controllers.bubbleupnp import BubbleUPNPController
 
 # Spotify
 from pychromecast.controllers.spotify import SpotifyController
+import spotipy
+from spotipy.oauth2 import CacheFileHandler
 
 # YouTube
 from pychromecast.controllers.youtube import YouTubeController
-from pychromecast.error import ChromecastConnectionError
 
 from .. import fhem, utils
 from ..generic import FhemModule
@@ -48,31 +48,37 @@ class googlecast(FhemModule):
         self.currPosTask = None
         self.connectionStateCache = ""
         self.browser = None
+        self.spotipy = None
         attr_conf = {
             "favorite_1": {"default": ""},
             "favorite_2": {"default": ""},
             "favorite_3": {"default": ""},
             "favorite_4": {"default": ""},
             "favorite_5": {"default": ""},
+            "speak_lang": {"default": "de", "options": "de,en,nl,fr,it,es"},
             "spotify_sp_dc": {
                 "default": "",
-                "help": "Go to chrome://settings/cookies/detail?site=spotify.com and copy the content of sp_dc",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
+                + " and copy the content of sp_dc",
                 "function": "set_attr_spotify_cookie",
             },
             "spotify_sp_key": {
                 "default": "",
-                "help": "Go to chrome://settings/cookies/detail?site=spotify.com and copy the content of sp_key",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
+                + " and copy the content of sp_key",
                 "function": "set_attr_spotify_cookie",
             },
             "player": {
                 "default": "DefaultMediaRenderer",
-                "help": "Play with BubbleUpnp player or Default Media Renderer cast app",
+                "help": "Play with BubbleUpnp player or"
+                + " Default Media Renderer cast app",
                 "options": "BubbleUpnp,DefaultMediaRenderer",
             },
         }
         self.set_attr_config(attr_conf)
 
         self._set_conf = {
+            "authcode": {"args": ["code"]},
             "stop": {},
             "pause": {},
             "rewind": {},
@@ -115,7 +121,8 @@ class googlecast(FhemModule):
         self.set_set_config(
             {
                 "waiting": {
-                    "help": "Please wait till connected and reload the page when connected."
+                    "help": "Please wait till connected and"
+                    + " reload the page when connected."
                 }
             }
         )
@@ -137,6 +144,8 @@ class googlecast(FhemModule):
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsBulkUpdateIfChanged(hash, "connection", "disconnected")
         await fhem.readingsEndUpdate(hash, 1)
+        await self.set_auth_url()
+        self.create_async_task(self.connect_spotipy())
 
         self.startDiscovery()
 
@@ -149,6 +158,85 @@ class googlecast(FhemModule):
                 self.cast.disconnect()
         except Exception:
             pass
+
+    async def set_auth_url(self):
+        spotipy_scope = (
+            ""
+            # Spotify scopes:
+            #  https://developer.spotify.com/documentation/general/guides/scopes/
+            # Listening history
+            + "user-read-recently-played "
+            + "user-top-read "
+            + "user-read-playback-position "
+            # Spotify connect
+            + "user-read-playback-state "
+            + "user-modify-playback-state "
+            + "user-read-currently-playing "
+            # Playback
+            + "streaming "
+            # Playlist
+            + "playlist-read-private "
+            + "playlist-read-collaborative "
+            # Follow
+            + "user-follow-read "
+            # Library
+            + "user-library-read "
+            # User
+            + "user-read-email "
+            + "user-read-private"
+        )
+        # not sure if this is useful...
+        x = "e92855a009"
+        y = "e74eb69ba6609d3bfd7d"
+        z = 90 + 6
+        handler = CacheFileHandler(cache_path=f".{self.hash['NAME']}_spotify_token")
+        self.spotipy_pkce = spotipy.oauth2.SpotifyPKCE(
+            f"{x}{y}{str(z)}",
+            "https://europe-west1-fhem-ga-connector.cloudfunctions.net/codelanding/start",
+            scope=spotipy_scope,
+            cache_handler=handler,
+        )
+        url = self.spotipy_pkce.get_authorize_url()
+        url = (
+            '<html><a href="'
+            + url
+            + '" target="_blank">Connect Spotify account '
+            + "(new window/tab)</a><br></html>"
+        )
+        await fhem.readingsSingleUpdate(self.hash, "spotify_login", url, 1)
+
+    async def set_authcode(self, hash, params):
+        code = params["code"]
+        self.create_async_task(self.handle_authcode(code))
+
+    async def handle_authcode(self, code):
+        access_token = await utils.run_blocking(
+            functools.partial(
+                self.spotipy_pkce.get_access_token, code=code, check_cache=False
+            )
+        )
+        await self.connect_spotipy()
+
+    async def connect_spotipy(self):
+        if self.spotipy_pkce.get_cached_token() is None:
+            await fhem.readingsSingleUpdate(
+                self.hash, "spotify_user", "login required", 1
+            )
+            return
+
+        if self.spotipy is None:
+            self.spotipy = spotipy.Spotify(auth_manager=self.spotipy_pkce)
+            user = await utils.run_blocking(
+                functools.partial(self.spotipy.current_user)
+            )
+            if user is not None:
+                self.loggedin = True
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "spotify_user",
+                    user["display_name"] + " (" + user["email"] + ")",
+                    1,
+                )
 
     async def set_play(self, hash, params):
         url = params["url"]
@@ -216,9 +304,15 @@ class googlecast(FhemModule):
         self.cast.set_volume(vol / 100)
 
     async def set_speak(self, hash, params):
+        self.create_async_task(self.do_set_speak(hash, params))
+
+    async def do_set_speak(self, hash, params):
         txt = params["text"]
+        lang = await fhem.AttrVal(self.hash["NAME"], "speak_lang", "de")
         ttsUrl = (
-            "http://translate.google.com/translate_tts?tl=de&client=tw-ob&q="
+            "http://translate.google.com/translate_tts?tl="
+            + lang
+            + "&client=tw-ob&q="
             + urllib.parse.quote(txt)
         )
         self.cast.play_media(ttsUrl, "audio/mpeg")
@@ -232,7 +326,7 @@ class googlecast(FhemModule):
 
     def playUrl(self, url):
         videoid = self.extract_video_id(url)
-        if videoid == None:
+        if videoid is None:
             if url.find("spotify") >= 0:
                 self.create_async_task(self.playSpotify(url))
             else:
@@ -287,7 +381,8 @@ class googlecast(FhemModule):
         headers = {"user-agent": USER_AGENT}
 
         response = session.get(
-            "https://open.spotify.com/get_access_token?reason=transport&productType=web_player",
+            "https://open.spotify.com/get_access_token?"
+            + "reason=transport&productType=web_player",
             headers=headers,
             cookies=cookies,
         )
@@ -316,14 +411,7 @@ class googlecast(FhemModule):
             user = await utils.run_blocking(
                 functools.partial(self.spotify.current_user)
             )
-            if user is not None:
-                await fhem.readingsSingleUpdate(
-                    self.hash,
-                    "spotify_user",
-                    user["display_name"] + " (" + user["email"] + ")",
-                    1,
-                )
-            else:
+            if user is None:
                 await fhem.readingsSingleUpdate(
                     self.hash, "spotify_user", "login failed", 1
                 )
@@ -331,7 +419,7 @@ class googlecast(FhemModule):
     async def launchSpotify(self):
         if self.spotify_access_token is None:
             await fhem.readingsSingleUpdate(
-                self.hash, "spotify_user", "attr spotify sp... required", 1
+                self.hash, "spotify_user", "attr spotify sp... and login required", 1
             )
             return
         await self.update_token()
@@ -364,8 +452,11 @@ class googlecast(FhemModule):
                 return
 
             # Query spotify for active devices
+            if self.spotipy is None:
+                return
+
             devices_available = await utils.run_blocking(
-                functools.partial(self.spotify.devices)
+                functools.partial(self.spotipy.devices)
             )
 
             # Match active spotify devices with the spotify controller's device id
@@ -388,7 +479,7 @@ class googlecast(FhemModule):
             if uri.find("track") > 0:
                 await utils.run_blocking(
                     functools.partial(
-                        self.spotify.start_playback,
+                        self.spotipy.start_playback,
                         device_id=spotify_device_id,
                         uris=[uri],
                     )
@@ -396,7 +487,7 @@ class googlecast(FhemModule):
             else:
                 await utils.run_blocking(
                     functools.partial(
-                        self.spotify.start_playback,
+                        self.spotipy.start_playback,
                         device_id=spotify_device_id,
                         context_uri=uri,
                     )
@@ -529,7 +620,7 @@ class googlecast(FhemModule):
         ).result()
         if (
             status.player_state == "PLAYING"
-            and self.currPosTask == None
+            and self.currPosTask is None
             and status.duration
             and status.duration > 0
         ):
