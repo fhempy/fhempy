@@ -48,6 +48,7 @@ class googlecast(FhemModule):
         self.currPosTask = None
         self.connectionStateCache = ""
         self.browser = None
+        self.spotipy = None
         attr_conf = {
             "favorite_1": {"default": ""},
             "favorite_2": {"default": ""},
@@ -191,7 +192,7 @@ class googlecast(FhemModule):
         handler = CacheFileHandler(cache_path=f".{self.hash['NAME']}_spotify_token")
         self.spotipy_pkce = spotipy.oauth2.SpotifyPKCE(
             f"{x}{y}{str(z)}",
-            "https://oskar.pw/",
+            "https://europe-west1-fhem-ga-connector.cloudfunctions.net/codelanding/start",
             scope=spotipy_scope,
             cache_handler=handler,
         )
@@ -410,14 +411,7 @@ class googlecast(FhemModule):
             user = await utils.run_blocking(
                 functools.partial(self.spotify.current_user)
             )
-            if user is not None:
-                await fhem.readingsSingleUpdate(
-                    self.hash,
-                    "spotify_user",
-                    user["display_name"] + " (" + user["email"] + ")",
-                    1,
-                )
-            else:
+            if user is None:
                 await fhem.readingsSingleUpdate(
                     self.hash, "spotify_user", "login failed", 1
                 )
@@ -425,7 +419,7 @@ class googlecast(FhemModule):
     async def launchSpotify(self):
         if self.spotify_access_token is None:
             await fhem.readingsSingleUpdate(
-                self.hash, "spotify_user", "attr spotify sp... required", 1
+                self.hash, "spotify_user", "attr spotify sp... and login required", 1
             )
             return
         await self.update_token()
@@ -485,7 +479,7 @@ class googlecast(FhemModule):
             if uri.find("track") > 0:
                 await utils.run_blocking(
                     functools.partial(
-                        self.spotify.start_playback,
+                        self.spotipy.start_playback,
                         device_id=spotify_device_id,
                         uris=[uri],
                     )
@@ -493,7 +487,7 @@ class googlecast(FhemModule):
             else:
                 await utils.run_blocking(
                     functools.partial(
-                        self.spotify.start_playback,
+                        self.spotipy.start_playback,
                         device_id=spotify_device_id,
                         context_uri=uri,
                     )
