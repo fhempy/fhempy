@@ -184,7 +184,7 @@ class spotify(FhemModule):
         handler = CacheFileHandler(cache_path=f".{self.hash['NAME']}_spotify_token")
         self.spotipy_pkce = spotipy.oauth2.SpotifyPKCE(
             f"{x}{y}{str(z)}",
-            "https://oskar.pw/",
+            "https://europe-west1-fhem-ga-connector.cloudfunctions.net/codelanding/start",
             scope=self.spotipy_scope,
             cache_handler=handler,
         )
