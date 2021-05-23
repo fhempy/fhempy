@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.61 (2021-05-23)
+### Fix
+* **miflora:** Fix deadlocks ([`21810f8`](https://github.com/dominikkarall/fhempy/commit/21810f8f6680186b329db31e5a6de8fc0010b0aa))
+* **BindingsIo:** Fix possible 100% cpu bug ([`947a90e`](https://github.com/dominikkarall/fhempy/commit/947a90e472034186656128676ba7d16f728950b3))
+
 ## v0.1.60 (2021-05-04)
 ### Feature
 * **mitemp2:** Test version of mitemp2 ([`31e17a4`](https://github.com/dominikkarall/fhempy/commit/31e17a4e439ab92463659c20c0e494cd33f85947))
