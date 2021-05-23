@@ -40,9 +40,9 @@ class miflora(FhemModule):
 
         self._poller = miflora_poller.MiFloraPoller(
             self._address,
+            btlewrap.BluepyBackend,
             cache_timeout=60,
             adapter=self._attr_hci_device,
-            backend=btlewrap.BluepyBackend,
         )
 
         if self.updateTask:
@@ -55,18 +55,17 @@ class miflora(FhemModule):
             await asyncio.sleep(self._attr_update_interval)
 
     async def do_update(self):
-        self.logger.debug(f"Run update task")
+        self.logger.debug("Run update task")
         try:
-            await fhem.readingsBeginUpdate(self.hash)
             # name
             name = await utils.run_blocking(functools.partial(self._poller.name))
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "name", name)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "name", name, 1)
             # firmware_version
             firmware_version = await utils.run_blocking(
                 functools.partial(self._poller.firmware_version)
             )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "firmware", firmware_version
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "firmware", firmware_version, 1
             )
             for param in (
                 "temperature",
@@ -79,10 +78,9 @@ class miflora(FhemModule):
                 param_val = await utils.run_blocking(
                     functools.partial(self._poller.parameter_value, param)
                 )
-                await fhem.readingsBulkUpdateIfChanged(self.hash, param, param_val)
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
-            await fhem.readingsEndUpdate(self.hash, 1)
+                await fhem.readingsSingleUpdateIfChanged(self.hash, param, param_val, 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "online", 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
         except Exception:
             self.logger.error(f"Failed to get updates from miflora {self._address}")
             await fhem.readingsSingleUpdateIfChanged(
@@ -112,10 +110,10 @@ class miflora(FhemModule):
         return
 
     async def set_attr_hci_device(self, hash):
-        self.logger.debug(f"attr change of hci device")
+        self.logger.debug("attr change of hci device")
         self._poller = miflora_poller.MiFloraPoller(
             self._address,
+            btlewrap.BluepyBackend,
             cache_timeout=60,
             adapter=self._attr_hci_device,
-            backend=btlewrap.BluepyBackend,
         )
