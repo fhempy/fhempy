@@ -50,10 +50,10 @@ class warema(FhemModule):
 
         self._warema_shades = Shade.get_all_shades(WmsController('http://' + self._warema_ip))
         
-        self._warema_room = self._warema_channel_shades[self._warema_channel].get_room_name()
+        self._warema_room = self._warema_shades[self._warema_channel].get_room_name()
         self.hash["ROOM"] = self._warema_room
 
-        state = self._warema_channel_shades[self._warema_channel].get_shade_state()
+        state = self._warema_shades[self._warema_channel].get_shade_state()
         (position,ismoving,date) = state
 
         self._warema_position = str(int(position))
