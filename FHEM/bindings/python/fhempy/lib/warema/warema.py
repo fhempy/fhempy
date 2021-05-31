@@ -82,7 +82,7 @@ class warema(FhemModule):
     async def update_task(self):
         while True:
             await self.do_update()
-            await asyncio.sleep(self._attr_update_interval)
+            await asyncio.sleep(self._attr_interval)
 
     async def do_update(self):
         state = self._warema_shades[self._warema_channel].get_shade_state()
