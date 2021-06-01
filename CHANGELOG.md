@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.62 (2021-06-01)
+
+
 ## v0.1.61 (2021-05-23)
 ### Fix
 * **miflora:** Fix deadlocks ([`21810f8`](https://github.com/dominikkarall/fhempy/commit/21810f8f6680186b329db31e5a6de8fc0010b0aa))
