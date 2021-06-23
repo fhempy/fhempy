@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "skodaconnect==1.0.40-rc6"
+  ]
+}
