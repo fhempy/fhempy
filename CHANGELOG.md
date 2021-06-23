@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.64 (2021-06-23)
+### Feature
+* **skodaconnect:** Add skoda connect support ([`ab507e8`](https://github.com/dominikkarall/fhempy/commit/ab507e872293014fedad786bf5d85c4e82eb36a4))
+
 ## v0.1.63 (2021-06-01)
 
 
