@@ -19,6 +19,9 @@ class skodaconnect(FhemModule):
         }
         self.set_attr_config(self.attr_config)
 
+        self._update_interval = 30
+        self._update_readings = "always"
+
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
@@ -139,6 +142,7 @@ class skodaconnect(FhemModule):
             "args": ["lockunlock"],
             "options": "lock,unlock",
         }
+
         if self.vehicle.is_pheater_heating_supported:
             self.set_config["pheater"] = {
                 "args": ["mode"],
@@ -150,6 +154,31 @@ class skodaconnect(FhemModule):
                 "params": {"duration": {"format": "int"}},
             }
 
+        self.set_config["force_update"] = {
+            "help": (
+                "will trigger force update<br>"
+                "this command should not be used too often<br>"
+                "you might be locked out by Skoda<br>"
+                "until next motor start"
+            ),
+        }
+
+        self.set_config["update_interval"] = {
+            "args": ["UpdateInterval"],
+            "params": {"UpdateInterval": {"format": "int"}},
+            "options": "slider,30,30,300",
+        }
+
+        self.set_config["update_readings"] = {
+            "args": ["alwaysupdated"],
+            "options": "always,onchange",
+            "help": (
+                "Parameters: always, onchange<br>"
+                "`always` will update readings on each intervall<br>"
+                "`onchange` will update readings only when new value available"
+            ),
+        }
+
         self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
@@ -159,29 +188,84 @@ class skodaconnect(FhemModule):
         self.vehicle.pheater_duration = params["duration"]
         self.create_async_task(self.update_readings_once())
 
+    async def set_lock(self, hash, params):
+        self.create_async_task(self.vehicle.set_lock(params["lockunlock"], self.spin))
+
+    async def set_charger(self, hash, params):
+        self.create_async_task(self.vehicle.set_charger(params["onoff"]))
+
+    async def set_charger_current(self, hash, params):
+        self.create_async_task(self.vehicle.set_charger_current(params["current"]))
+
+    async def set_charge_limit(self, hash, params):
+        self.create_async_task(self.vehicle.set_charger(params["limit"]))
+
+    async def set_battery_climatisation(self, hash, params):
+        self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
+
+    async def set_climatisation_temp(self, hash, params):
+        self.create_async_task(
+            self.vehicle.set_climatisation_temp(params["temperature"])
+        )
+
+    async def set_window_heating(self, hash, params):
+        self.create_async_task(self.vehicle.set_window_heating(params["startstop"]))
+
+    async def set_force_update(self, hash, params):
+        self.create_async_task(self.vehicle.set_refresh())
+
+    async def set_update_interval(self, hash, params):
+        self._update_interval = params["UpdateInterval"]
+        await fhem.readingsSingleUpdate(
+            self.hash, "update_interval", self._update_interval, 1
+        )
+        self.create_async_task(self.update_readings_once())
+
+    async def set_update_readings(self, hash, params):
+        self._update_readings = params["alwaysupdated"]
+        await fhem.readingsSingleUpdate(
+            self.hash, "update_readings", self._update_readings, 1
+        )
+        self.create_async_task(self.update_readings_once())
+
     async def update_readings(self):
         self.instruments = self.vehicle.dashboard(mutable=True).instruments
         while True:
             await self.update_readings_once()
-            await asyncio.sleep(30)
+            await asyncio.sleep(self._update_interval)
 
     async def update_readings_once(self):
-        await self.vehicle.update()
+        await self.connection.update()
         try:
             for instrument in self.instruments:
                 if hasattr(instrument, "reverse_state") and instrument.reverse_state:
                     val_state = not instrument.state
                 else:
                     val_state = instrument.state
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, instrument.attr, val_state, 1
-                )
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, instrument.attr + "_str", instrument.str_state, 1
-                )
-                if instrument.attr == "fuel_level":
-                    await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "state", instrument.str_state, 1
+                if self._update_readings == "always":
+                    await fhem.readingsSingleUpdate(
+                        self.hash, instrument.attr, val_state, 1
                     )
+                else:
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, instrument.attr, val_state, 1
+                    )
+                if self._update_readings == "always":
+                    await fhem.readingsSingleUpdate(
+                        self.hash, instrument.attr + "_str", instrument.str_state, 1
+                    )
+                else:
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, instrument.attr + "_str", instrument.str_state, 1
+                    )
+                if instrument.attr == "fuel_level":
+                    if self._update_readings == "always":
+                        await fhem.readingsSingleUpdate(
+                            self.hash, "state", instrument.str_state, 1
+                        )
+                    else:
+                        await fhem.readingsSingleUpdateIfChanged(
+                            self.hash, "state", instrument.str_state, 1
+                        )
         except Exception:
             self.logger.exception("Failed to update readings")
