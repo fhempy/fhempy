@@ -19,8 +19,8 @@ class skodaconnect(FhemModule):
         }
         self.set_attr_config(self.attr_config)
 
-        self._UpdateInterval = 30
-        self._UpdateReadings = "allways"
+        self._update_interval = 30
+        self._update_readings = "always"
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -154,9 +154,7 @@ class skodaconnect(FhemModule):
                 "params": {"duration": {"format": "int"}},
             }
 
-        self.set_config["ForceUpdate"] = {
-            "args": ["ok"],
-            "options": "ok",
+        self.set_config["force_update"] = {
             "help": (
                 "will trigger force update<br>"
                 "this command should not be used too often<br>"
@@ -165,21 +163,21 @@ class skodaconnect(FhemModule):
             ),
         }
 
-        self.set_config["UpdateInterval"] = {
+        self.set_config["update_interval"] = {
             "args": ["UpdateInterval"],
             "params": {"UpdateInterval": {"format": "int"}},
             "options": "slider,30,30,300",
         }
 
-        self.set_config["UpdateReadings"] = {
-            "args": ["allwaysupdated"],
-            "options": "allways,updated",
+        self.set_config["update_readings"] = {
+            "args": ["alwaysupdated"],
+            "options": "always,onchange",
             "help": (
-                "Parameters: allways, updated<br>"
-                "`allways` will update readings on each intervall<br>"
-                "`updated` will update readings only when new value available"
+                "Parameters: always, onchange<br>"
+                "`always` will update readings on each intervall<br>"
+                "`onchange` will update readings only when new value available"
             ),
-       }
+        }
 
         self.set_set_config(self.set_config)
 
@@ -198,7 +196,7 @@ class skodaconnect(FhemModule):
 
     async def set_charger_current(self, hash, params):
         self.create_async_task(self.vehicle.set_charger_current(params["current"]))
- 
+
     async def set_charge_limit(self, hash, params):
         self.create_async_task(self.vehicle.set_charger(params["limit"]))
 
@@ -206,25 +204,27 @@ class skodaconnect(FhemModule):
         self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
 
     async def set_climatisation_temp(self, hash, params):
-        self.create_async_task(self.vehicle.set_climatisation_temp(params["temperature"]))
+        self.create_async_task(
+            self.vehicle.set_climatisation_temp(params["temperature"])
+        )
 
     async def set_window_heating(self, hash, params):
         self.create_async_task(self.vehicle.set_window_heating(params["startstop"]))
 
-    async def set_ForceUpdate(self, hash, params):
+    async def set_force_update(self, hash, params):
         self.create_async_task(self.vehicle.set_refresh())
 
-    async def set_UpdateInterval(self, hash, params):
-        self._UpdateInterval = params["UpdateInterval"]
+    async def set_update_interval(self, hash, params):
+        self._update_interval = params["UpdateInterval"]
         await fhem.readingsSingleUpdate(
-            self.hash, "update_interval", self._UpdateInterval, 1
+            self.hash, "update_interval", self._update_interval, 1
         )
         self.create_async_task(self.update_readings_once())
 
-    async def set_UpdateReadings(self, hash, params):
-        self._UpdateReadings = params["allwaysupdated"]
+    async def set_update_readings(self, hash, params):
+        self._update_readings = params["alwaysupdated"]
         await fhem.readingsSingleUpdate(
-            self.hash, "update_readings", self._UpdateReadings, 1
+            self.hash, "update_readings", self._update_readings, 1
         )
         self.create_async_task(self.update_readings_once())
 
@@ -232,7 +232,7 @@ class skodaconnect(FhemModule):
         self.instruments = self.vehicle.dashboard(mutable=True).instruments
         while True:
             await self.update_readings_once()
-            await asyncio.sleep(self._UpdateInterval)
+            await asyncio.sleep(self._update_interval)
 
     async def update_readings_once(self):
         await self.connection.update()
@@ -242,7 +242,7 @@ class skodaconnect(FhemModule):
                     val_state = not instrument.state
                 else:
                     val_state = instrument.state
-                if self._UpdateReadings == "allways":
+                if self._update_readings == "always":
                     await fhem.readingsSingleUpdate(
                         self.hash, instrument.attr, val_state, 1
                     )
@@ -250,7 +250,7 @@ class skodaconnect(FhemModule):
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, instrument.attr, val_state, 1
                     )
-                if self._UpdateReadings == "allways":
+                if self._update_readings == "always":
                     await fhem.readingsSingleUpdate(
                         self.hash, instrument.attr + "_str", instrument.str_state, 1
                     )
@@ -259,7 +259,7 @@ class skodaconnect(FhemModule):
                         self.hash, instrument.attr + "_str", instrument.str_state, 1
                     )
                 if instrument.attr == "fuel_level":
-                    if self._UpdateReadings == "allways":
+                    if self._update_readings == "always":
                         await fhem.readingsSingleUpdate(
                             self.hash, "state", instrument.str_state, 1
                         )
