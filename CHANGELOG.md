@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.65 (2021-06-25)
+### Feature
+* **skodaconnect:** Change vehicle.update() to connection.update(), add UpdateInterval, add UpdateReading, add ForceUpdate, add missing set_ commands, ([`1de20c3`](https://github.com/dominikkarall/fhempy/commit/1de20c34fe61541d42a1628a05b6b526aa439698))
+
 ## v0.1.64 (2021-06-23)
 ### Feature
 * **skodaconnect:** Add skoda connect support ([`ab507e8`](https://github.com/dominikkarall/fhempy/commit/ab507e872293014fedad786bf5d85c4e82eb36a4))
