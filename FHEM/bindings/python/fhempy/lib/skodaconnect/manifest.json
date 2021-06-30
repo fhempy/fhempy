@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "skodaconnect==1.0.40-rc6"
+    "skodaconnect==1.0.42"
   ]
 }
