@@ -66,6 +66,7 @@ class ring(FhemModule):
         self._rdevname = args[4]
         if len(args) > 5:
             self._ridentifier = args[5]
+            self.hash["IDENTIFIER"] = args[5]
         else:
             characters = string.ascii_letters + string.digits
             self._ridentifier = ''.join(random.choice(characters) for _ in range(20))
@@ -76,7 +77,6 @@ class ring(FhemModule):
         self._rdevice = None
         self.hash["USERNAME"] = args[3]
         self.hash["RINGDEVICE"] = args[4]
-        self.hash["IDENTIFIER"] = args[5]
         self.create_async_task(self.ring_login())
 
     async def ring_login(self):
