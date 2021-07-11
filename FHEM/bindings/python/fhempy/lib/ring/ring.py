@@ -60,7 +60,7 @@ class ring(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
-                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME> <IDENTIFIER>"
+                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME> [<IDENTIFIER>]"
             )
         self._username = args[3]
         self._rdevname = args[4]
@@ -68,7 +68,7 @@ class ring(FhemModule):
             self._ridentifier = args[5]
         else:
             characters = string.ascii_letters + string.digits
-            self._ridentifier = ''.join(random.choice(characters) for i in range(20))
+            self._ridentifier = ''.join(random.choice(characters) for _ in range(20))
         self._reading_encryption_key = await fhem.getUniqueId(hash)
         # ring service
         self._ring = None
