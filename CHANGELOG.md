@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.67 (2021-07-13)
+### Fix
+* **tuya:** Create unknown devices ([`3a57f5b`](https://github.com/dominikkarall/fhempy/commit/3a57f5bb5bbd3697ad19e8d58a0cff5da9267ad2))
+* **ring:** Fix ring auth ([`ebc454d`](https://github.com/dominikkarall/fhempy/commit/ebc454d5302b3f9356b9d54efab6d76f833c5d35))
+
 ## v0.1.66 (2021-07-04)
 
 
