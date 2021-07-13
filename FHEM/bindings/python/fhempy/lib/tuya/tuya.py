@@ -536,8 +536,8 @@ class tuya(FhemModule):
             )
 
             # do not create a device if unknown
-            if productid not in mappings.knownSchemas:
-                continue
+            # if productid not in mappings.knownSchemas:
+            #    continue
 
             if not await fhem.checkIfDeviceExists(
                 self.hash, "PYTHONTYPE", "tuya", "DEVICEID", id
