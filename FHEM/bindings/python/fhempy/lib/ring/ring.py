@@ -2,6 +2,8 @@ import asyncio
 import functools
 import json
 import time
+import string
+import random
 
 from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
 from ring_doorbell import Auth, Ring
@@ -58,10 +60,16 @@ class ring(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
-                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME>"
+                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME> [<IDENTIFIER>]"
             )
         self._username = args[3]
         self._rdevname = args[4]
+        if len(args) > 5:
+            self._ridentifier = args[5]
+            self.hash["IDENTIFIER"] = args[5]
+        else:
+            characters = string.ascii_letters + string.digits
+            self._ridentifier = ''.join(random.choice(characters) for _ in range(20))
         self._reading_encryption_key = await fhem.getUniqueId(hash)
         # ring service
         self._ring = None
@@ -306,10 +314,10 @@ class ring(FhemModule):
             ).result()
 
         if self._token != "":
-            self._auth = Auth("MyProject/1.0", self._token, token_updater)
+            self._auth = Auth(self._ridentifier+"/1.0", self._token, token_updater)
         else:
             if self._password != "":
-                self._auth = Auth("MyProject/1.0", None, token_updater)
+                self._auth = Auth(self._ridentifier+"/1.0", None, token_updater)
                 if self._2facode:
                     self._auth.fetch_token(
                         self._username, self._password, self._2facode
