@@ -65,7 +65,7 @@ class tuya(FhemModule):
             # set internal
             hash["DEVICEID"] = self.tt_did
             # set attributes
-            attr_config = {
+            self.attr_config = {
                 "interval": {
                     "default": 15,
                     "format": "int",
@@ -79,9 +79,9 @@ class tuya(FhemModule):
                     "default": "off",
                 },
             }
-            self.set_attr_config(attr_config)
+            self.set_attr_config(self.attr_config)
             # this is needed to set default values
-            await utils.handle_define_attr(attr_config, self, hash)
+            await utils.handle_define_attr(self.attr_config, self, hash)
             # create device
             await self.create_device()
             self.create_async_task(self.update_loop())
@@ -320,6 +320,11 @@ class tuya(FhemModule):
         # dp_1 = "switch_1"
         # dp_42 = "switch_overcharge"
         if self.local_dev is not None:
+            dev = tinytuya.OutletDevice(self.tt_did, self.tt_ip, self.tt_localkey)
+            dev.set_version(self.tt_version)
+            self.local_dev["dps"] = await utils.run_blocking(
+                functools.partial(dev.status)
+            )
             dps = []
             for dp in self.local_dev["dps"]["dps"]:
                 dps.append(f"dp_{int(dp):02d}")
@@ -334,8 +339,8 @@ class tuya(FhemModule):
                     "default": "",
                     "options": ",".join(options),
                 }
-            self._conf_attr.update(attr_conf)
-            self.set_attr_config(self._conf_attr)
+            self.attr_config.update(attr_conf)
+            self.set_attr_config(self.attr_config)
             await utils.handle_define_attr(attr_conf, self, self.hash)
 
         await fhem.readingsSingleUpdate(
