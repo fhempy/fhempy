@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.69 (2021-07-27)
+### Feature
+* **erelax_vaillant:** Support erelax vaillant ([`0c7f12c`](https://github.com/dominikkarall/fhempy/commit/0c7f12c7f8709687cdf2d477b055c03bb3c6e38a))
+
 ## v0.1.68 (2021-07-13)
 ### Feature
 * **tuya:** Support unknown tuya devices ([`d42d30d`](https://github.com/dominikkarall/fhempy/commit/d42d30d2f91b4266eabf13a8e0985a24dee10f32))
