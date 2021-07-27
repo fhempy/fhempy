@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "pyvaillant@git+https://github.com/pjmaenh/pyvaillant#pyvaillant==0.0.4"
+  ]
+}
