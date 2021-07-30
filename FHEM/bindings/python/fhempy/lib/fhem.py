@@ -63,6 +63,11 @@ async def getUniqueId(hash):
     return await sendCommandHash(hash, cmd)
 
 
+async def init_done(hash):
+    cmd = "$init_done"
+    return await sendCommandHash(hash, cmd)
+
+
 async def ReadingsVal(name, reading, default):
     cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
     return await sendCommandName(name, cmd)

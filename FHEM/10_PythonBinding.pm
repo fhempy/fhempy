@@ -71,8 +71,8 @@ sub PythonBinding_Define($$$)
     CoProcess::start($hash);
   }
 
-  # put in hidden room
-  CommandAttr(undef, "$name room hidden");
+  # put in fhempy room
+  CommandAttr(undef, "$name room fhempy");
   CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
 
   if( $attr{global}{logdir} ) {
@@ -148,7 +148,7 @@ sub PythonBinding_Attr($$$)
   if( $attrName eq 'logfile' ) {
     if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
       fhem( "defmod -temporary PythonBindingLog FileLog $attrVal fakelog" );
-      CommandAttr( undef, 'PythonBindingLog room hidden' );
+      CommandAttr( undef, 'PythonBindingLog room fhempy' );
       $hash->{logfile} = $attrVal;
     } else {
       fhem( "delete PythonBindingLog" );

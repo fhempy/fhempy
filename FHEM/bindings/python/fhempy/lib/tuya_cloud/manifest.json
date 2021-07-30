@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "tuya-iot-py-sdk"
+  ]
+}

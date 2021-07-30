@@ -37,20 +37,17 @@ class erelax_vaillant(FhemModule):
         self.set_attr_config(attr_config)
 
         set_config = {
-            # "mode": {
-            #    "args": ["mode"],
-            #    "argsh": ["mode"],
-            #    "options": "manual,away,hwb",
-            # },
+            "away": {},
+            "home": {},
             "desiredTemperature": {
                 "args": ["temperature"],
                 "options": "slider,7,0.5,30",
             },
-            # "system_mode": {
-            #    "args": ["mode"],
-            #    "argsh": ["mode"],
-            #    "options": "winter,summer,frostguard",
-            # },
+            "system_mode": {
+                "args": ["mode"],
+                "argsh": ["mode"],
+                "options": "winter,summer,frostguard",
+            },
         }
         self.set_set_config(set_config)
 
@@ -64,9 +61,20 @@ class erelax_vaillant(FhemModule):
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.do_update_loop(args[3], args[4]))
 
+    async def set_away(self, hash, params):
+        self.create_async_task(self.v_station.get_modules()[0].set_mode("away"))
+
+    async def set_home(self, hash, params):
+        self.create_async_task(self.v_station.get_modules()[0].disable_mode("away"))
+
     async def set_desiredTemperature(self, hash, params):
         self.create_async_task(
             self.v_station.get_modules()[0].set_setpoint_temp(params["temperature"])
+        )
+
+    async def set_system_mode(self, hash, params):
+        self.create_async_task(
+            self.v_station.get_modules()[0].set_system_mode(params["mode"])
         )
 
     async def do_update_loop(self, username, password):
@@ -419,6 +427,41 @@ class VaillantModule:
         try:
             await utils.run_blocking_task(
                 functools.partial(self.station.vaillant.activate, "manual", temp)
+            )
+            # wait for update at netatmo
+            await asyncio.sleep(1)
+            await self.station.update()
+        except Exception as ex:
+            self.logger.exception(ex)
+
+    async def set_mode(self, mode):
+        try:
+            # this is not handled but a required parameter within the function
+            settemp = 15
+            await utils.run_blocking_task(
+                functools.partial(self.station.vaillant.activate, mode, settemp)
+            )
+            # wait for update at netatmo
+            await asyncio.sleep(1)
+            await self.station.update()
+        except Exception as ex:
+            self.logger.exception(ex)
+
+    async def disable_mode(self, mode):
+        try:
+            await utils.run_blocking_task(
+                functools.partial(self.station.vaillant.disable, mode)
+            )
+            # wait for update at netatmo
+            await asyncio.sleep(1)
+            await self.station.update()
+        except Exception as ex:
+            self.logger.exception(ex)
+
+    async def set_system_mode(self, mode):
+        try:
+            await utils.run_blocking_task(
+                functools.partial(self.station.vaillant.setSystemMode, mode)
             )
             # wait for update at netatmo
             await asyncio.sleep(1)
