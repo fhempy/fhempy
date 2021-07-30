@@ -341,7 +341,7 @@ class tuya(FhemModule):
                 }
             self.attr_config.update(attr_conf)
             self.set_attr_config(self.attr_config)
-            await utils.handle_define_attr(attr_conf, self, self.hash)
+            await utils.handle_define_attr(self.attr_config, self, self.hash)
 
         await fhem.readingsSingleUpdate(
             self.hash, "state", "Ready to configure dp_ attributes", 1
