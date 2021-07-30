@@ -96,7 +96,7 @@ BindingsIo_Define($$$)
   }
 
   # put in hidden room
-  CommandAttr(undef, "$name room hidden");
+  CommandAttr(undef, "$name room fhempy");
   #CommandAttr(undef, "$name verbose 5");
 
   return undef;
