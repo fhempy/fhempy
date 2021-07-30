@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.70 (2021-07-30)
+### Feature
+* **tuya_cloud:** Support all tuya devices ([`ddceb85`](https://github.com/dominikkarall/fhempy/commit/ddceb855fe6758d5884346ea93a6e84a06625c34))
+* **fhempy:** Use fhempy room instead of hidden ([`ae2ffdc`](https://github.com/dominikkarall/fhempy/commit/ae2ffdc9672e467d0ae68294acb6b79b559c8a04))
+* **fhempy:** Support init_done ([`c807582`](https://github.com/dominikkarall/fhempy/commit/c80758235165e50f9256cc060db2930a5b97b738))
+* **erelax_vaillant:** Support home/away ([`b29edde`](https://github.com/dominikkarall/fhempy/commit/b29eddeb16eb50c86f22eceb7cd8b2277e87f718))
+
+### Fix
+* **tuya:** Fix attributes ([`1bd998e`](https://github.com/dominikkarall/fhempy/commit/1bd998e478ff6e278b889169baeb89d0493031cb))
+
 ## v0.1.69 (2021-07-27)
 ### Feature
 * **erelax_vaillant:** Support erelax vaillant ([`0c7f12c`](https://github.com/dominikkarall/fhempy/commit/0c7f12c7f8709687cdf2d477b055c03bb3c6e38a))
