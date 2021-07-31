@@ -21,15 +21,15 @@ attr_settings = {
         "stateFormat": "moisture",
     },
     "lumi.sensor_ht.v1": {
-        "stateFormat": "temperature °C, humidity %",
+        "stateFormat": "temperature C, humidity %",
         "icon": "temp_temperature",
     },
     "lumi.sensor_ht.v2": {
-        "stateFormat": "temperature °C, humidity %, pressure hPa",
+        "stateFormat": "temperature C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.weather.v1": {
-        "stateFormat": "temperature °C, humidity %, pressure hPa",
+        "stateFormat": "temperature C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.sensor_motion.v1": {
