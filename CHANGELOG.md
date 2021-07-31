@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.71 (2021-07-31)
+### Fix
+* **tuya_cloud:** Fix autocreation of new devices ([`80607f2`](https://github.com/dominikkarall/fhempy/commit/80607f2c566e6cf548e3eee786cc00df516e50ec))
+* **xiaomi_gateway3:** Fix temp symbol ([`b033d42`](https://github.com/dominikkarall/fhempy/commit/b033d421c0634375fda99512b91e99b5dcb9e27c))
+
 ## v0.1.70 (2021-07-30)
 ### Feature
 * **tuya_cloud:** Support all tuya devices ([`ddceb85`](https://github.com/dominikkarall/fhempy/commit/ddceb855fe6758d5884346ea93a6e84a06625c34))
