@@ -1,5 +1,5 @@
 
-# Tuya
+# Tuya Cloud
 This module uses the official tuya library to communicate with ALL sort of tuya devices.
 
 ## Installation
