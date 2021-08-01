@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.72 (2021-08-01)
+### Fix
+* **tuya_cloud:** Handle unsupported devices ([`0c224bd`](https://github.com/dominikkarall/fhempy/commit/0c224bd5d05825c6da004890574640442df6566c))
+
 ## v0.1.71 (2021-07-31)
 ### Fix
 * **tuya_cloud:** Fix autocreation of new devices ([`80607f2`](https://github.com/dominikkarall/fhempy/commit/80607f2c566e6cf548e3eee786cc00df516e50ec))
