@@ -44,7 +44,13 @@ class tuya_cloud_device:
                 self.tuyaiot.device_manager.get_device_specification, self._t_deviceid
             )
         )
-        self._t_specification = self._t_specification["result"]
+        if self._t_specification["success"]:
+            self._t_specification = self._t_specification["result"]
+        else:
+            self._t_specification = {"functions": [], "status": []}
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", self._t_specification["msg"], 1
+            )
         # retrieve general infos
         self._t_info = await utils.run_blocking(
             functools.partial(
