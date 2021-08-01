@@ -1,6 +1,6 @@
 
 # Tuya Cloud
-This module uses the official tuya library to communicate with ALL sort of tuya devices.
+This module uses the official tuya library to communicate with all sort of tuya devices supported by the Tuya Cloud API.
 
 ## Installation
 You need to setup a Tuya IoT project on the tuya development platform.
