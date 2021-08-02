@@ -74,7 +74,7 @@ class tuya_cloud_setup:
 
     async def restart_mqtt(self):
         self.device_manager.mq.stop()
-        tuya_mq = TuyaOpenMQ(self.device_manager.device_manager.api)
+        tuya_mq = TuyaOpenMQ(self.device_manager.api)
         tuya_mq.start()
 
         self.device_manager.mq = tuya_mq
