@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.75 (2021-08-02)
+### Fix
+* **tuya_cloud:** One more fix ([`4a8dc19`](https://github.com/dominikkarall/fhempy/commit/4a8dc199c0fbb5ea99105e7ee47e0c83a0acbc96))
+
 ## v0.1.74 (2021-08-02)
 ### Fix
 * **tuya_cloud:** Some fixes ([`357ddf1`](https://github.com/dominikkarall/fhempy/commit/357ddf1299a123e28c3b18571b64ced5da2aeac4))
