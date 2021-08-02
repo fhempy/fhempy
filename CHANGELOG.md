@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.76 (2021-08-02)
+### Fix
+* **fhempy:** Fix shutdown after update ([`3d7d556`](https://github.com/dominikkarall/fhempy/commit/3d7d5569ee5416e08ed793791a55b5d3e15531d8))
+
 ## v0.1.75 (2021-08-02)
 ### Fix
 * **tuya_cloud:** One more fix ([`4a8dc19`](https://github.com/dominikkarall/fhempy/commit/4a8dc199c0fbb5ea99105e7ee47e0c83a0acbc96))
