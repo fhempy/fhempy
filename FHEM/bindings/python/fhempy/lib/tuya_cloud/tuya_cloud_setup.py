@@ -37,7 +37,7 @@ class tuya_cloud_setup:
         else:
             self._t_apptype = "smartlife"
 
-        if len(args) > 8:
+        if len(args) > 9:
             self._t_region = args[9]
         else:
             self._t_region = "Europe"
@@ -63,6 +63,22 @@ class tuya_cloud_setup:
             await self._init_devices()
         else:
             await fhem.readingsSingleUpdate(self.hash, "state", "failed to connect", 1)
+
+    async def restart_mqtt_loop(self):
+        while True:
+            await asyncio.sleep(7100)  # nearly 2 hours
+            try:
+                await self.restart_mqtt()
+            except Exception as ex:
+                self.logger.exception(ex)
+
+    async def restart_mqtt(self):
+        self.device_manager.mq.stop()
+        tuya_mq = TuyaOpenMQ(self.device_manager.device_manager.api)
+        tuya_mq.start()
+
+        self.device_manager.mq = tuya_mq
+        tuya_mq.add_message_listener(self.device_manager._on_message)
 
     async def _init_tuya_sdk(self) -> bool:
         project_type = ProjectType(0)
@@ -96,6 +112,7 @@ class tuya_cloud_setup:
 
         tuya_mq = TuyaOpenMQ(api)
         tuya_mq.start()
+        self.fhemdev.create_async_task(self.restart_mqtt_loop())
 
         self.device_manager = TuyaDeviceManager(api, tuya_mq)
 

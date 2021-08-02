@@ -21,3 +21,5 @@ This command will create the tuya cloud connector device which automatically cre
  - API_SECRET: From tuya developer portal
  - USERNAME: From SmartLife app
  - PASSWORD: From SmartLife app
+ - APPTYPE: smartlife (default) or tuyaSmart, depending on the app you use
+ - REGION: Europe (default), China, America, India, EasternAmerica, WesternEurope
