@@ -20,10 +20,14 @@ pip_lock = asyncio.Lock()
 
 if sys.version_info[:2] >= (3, 8):
     from importlib.metadata import (  # pylint: disable=no-name-in-module,import-error
-        PackageNotFoundError, version)
+        PackageNotFoundError,
+        version,
+    )
 else:
     from importlib_metadata import (  # pylint: disable=import-error
-        PackageNotFoundError, version)
+        PackageNotFoundError,
+        version,
+    )
 
 
 def is_virtual_env() -> bool:
@@ -186,4 +190,5 @@ def install_package(
         )
         return False
 
+    logger.info("Successfully installed fhempy update!")
     return True
