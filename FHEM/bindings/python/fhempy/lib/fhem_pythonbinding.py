@@ -6,6 +6,7 @@ import json
 import logging
 import site
 import sys
+import os
 import time
 import traceback
 
@@ -167,7 +168,7 @@ class PyBinding:
                         "update finished...please wait",
                         1,
                     )
-                    sys.exit(1)
+                    os._exit(1)
                 if hash["msgtype"] == "function":
                     # this is needed to avoid 2 replies on dep installation
                     fhem_reply_done = False
