@@ -14,7 +14,7 @@ https://github.com/tuya/tuya-home-assistant/wiki/Tuya-IoT-Platform-Configuration
 Please read installation instructions before! You need the tuya account and a smart home project on the tuya platform to get api key and api secret.
 
 ```
-define tuya_cloud_connector PythonModule tuya_cloud setup <API_KEY> <API_SECRET> <USERNAME> <PASSWORD> [<APPTYPE>=smartlife] [<REGION>=Europe]
+define tuya_cloud_connector PythonModule tuya_cloud setup <API_KEY> <API_SECRET> <USERNAME> <PASSWORD> [<APPTYPE>] [<REGION>]
 ```
 This command will create the tuya cloud connector device which automatically create all tuya devices in your FHEM installation.
  - API_KEY: From tuya developer portal
