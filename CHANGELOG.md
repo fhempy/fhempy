@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.73 (2021-08-02)
+### Fix
+* **tuya_cloud:** Fix readings for unsupported devs ([`8dea541`](https://github.com/dominikkarall/fhempy/commit/8dea541efce093b80eb187a051d00fc1051f55a0))
+
 ## v0.1.72 (2021-08-01)
 ### Fix
 * **tuya_cloud:** Handle unsupported devices ([`0c224bd`](https://github.com/dominikkarall/fhempy/commit/0c224bd5d05825c6da004890574640442df6566c))
