@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.77 (2021-08-02)
+### Fix
+* **tests:** Fix update test ([`b170df1`](https://github.com/dominikkarall/fhempy/commit/b170df1cfb06185c83aad5aa8a8c05aa183d89c9))
+* **fhempy:** Log successfull update ([`2a3e37f`](https://github.com/dominikkarall/fhempy/commit/2a3e37f75db9b7277344e8fe0e255f31f1a59f9f))
+
 ## v0.1.76 (2021-08-02)
 ### Fix
 * **fhempy:** Fix shutdown after update ([`3d7d556`](https://github.com/dominikkarall/fhempy/commit/3d7d5569ee5416e08ed793791a55b5d3e15531d8))
