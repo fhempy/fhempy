@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import sys
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,6 +36,7 @@ async def test_update(mocker):
         "defargsh": {},
     }
     update_text = json.dumps(update_msg)
+    os._exit = sys.exit
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         await fhempy.onMessage(update_text)
     assert pytest_wrapped_e.type == SystemExit
