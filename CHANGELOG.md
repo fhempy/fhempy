@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.78 (2021-08-06)
+### Fix
+* **skodaconnect:** Climatisation fix ([`8f2bc7d`](https://github.com/dominikkarall/fhempy/commit/8f2bc7da3d0767897d31269a5fba91e2c3854f0c))
+
 ## v0.1.77 (2021-08-02)
 ### Fix
 * **tests:** Fix update test ([`b170df1`](https://github.com/dominikkarall/fhempy/commit/b170df1cfb06185c83aad5aa8a8c05aa183d89c9))
