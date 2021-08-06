@@ -198,12 +198,17 @@ class skodaconnect(FhemModule):
         self.create_async_task(self.vehicle.set_charger_current(params["current"]))
 
     async def set_charge_limit(self, hash, params):
-        self.create_async_task(self.vehicle.set_charger(params["limit"]))
+        self.create_async_task(self.vehicle.set_charge_limit(params["limit"]))
 
     async def set_battery_climatisation(self, hash, params):
         self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
 
-    async def set_climatisation_temp(self, hash, params):
+    async def set_climatisation(self, hash, params):
+        self.create_async_task(
+            self.vehicle.set_climatisation(params["mode"], self.spin)
+        )
+
+    async def set_climatisation_temperature(self, hash, params):
         self.create_async_task(
             self.vehicle.set_climatisation_temp(params["temperature"])
         )
