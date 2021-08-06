@@ -1,3 +1,5 @@
 {
-  "requirements": ["zeroconf"]
+  "requirements": [
+    "zeroconf==0.28.6"
+  ]
 }
