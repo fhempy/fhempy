@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.79 (2021-08-06)
+### Fix
+* **fhempy:** Fix zeroconf ([`bf048e3`](https://github.com/dominikkarall/fhempy/commit/bf048e322a58949eef11f305ecf09435b24ebda9))
+
 ## v0.1.78 (2021-08-06)
 ### Fix
 * **skodaconnect:** Climatisation fix ([`8f2bc7d`](https://github.com/dominikkarall/fhempy/commit/8f2bc7da3d0767897d31269a5fba91e2c3854f0c))
