@@ -5,6 +5,7 @@ from ..generic import FhemModule
 
 from aiohttp import ClientSession
 from skodaconnect import Connection
+from skodaconnect.vehicle import Vehicle
 
 
 class skodaconnect(FhemModule):
@@ -57,7 +58,7 @@ class skodaconnect(FhemModule):
                 )
                 return
 
-            self.vehicle = None
+            self.vehicle: Vehicle = None
             for vehicle in connection.vehicles:
                 if self._attr_vin != "" and vehicle.vin == self._attr_vin:
                     self.vehicle = vehicle
@@ -129,7 +130,7 @@ class skodaconnect(FhemModule):
             }
             self.set_config["climatisation"] = {
                 "args": ["mode"],
-                "options": "auxilliary,electric,off",
+                "options": "auxiliary,electric,off",
             }
         if (
             self.vehicle.is_auxiliary_climatisation_supported
