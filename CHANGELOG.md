@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.81 (2021-08-07)
+### Fix
+* **skodaconnect:** Fix typo auxiliary ([`9455fc2`](https://github.com/dominikkarall/fhempy/commit/9455fc2b8fd66c329f4eb3e30b67e9fabd31cee6))
+
 ## v0.1.80 (2021-08-07)
 ### Fix
 * **skodaconnect:** Fix update_interval/_readings ([`8ee0686`](https://github.com/dominikkarall/fhempy/commit/8ee0686595e22337b0f5bf8c17720ec09a3a33a8))
