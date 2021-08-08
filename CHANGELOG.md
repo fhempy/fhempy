@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.82 (2021-08-08)
+### Fix
+* **tuya_cloud:** Fix tuya lib version ([`9cb101e`](https://github.com/dominikkarall/fhempy/commit/9cb101e9ba9812e5060039eebb105e4f95855385))
+
 ## v0.1.81 (2021-08-07)
 ### Fix
 * **skodaconnect:** Fix typo auxiliary ([`9455fc2`](https://github.com/dominikkarall/fhempy/commit/9455fc2b8fd66c329f4eb3e30b67e9fabd31cee6))
