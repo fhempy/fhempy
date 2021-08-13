@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.83 (2021-08-13)
+### Fix
+* **tuya_cloud:** Fix default code for state ([`deedac5`](https://github.com/dominikkarall/fhempy/commit/deedac5f4853c92d3d79b6848b89542134dfdaf0))
+
 ## v0.1.82 (2021-08-08)
 ### Fix
 * **tuya_cloud:** Fix tuya lib version ([`9cb101e`](https://github.com/dominikkarall/fhempy/commit/9cb101e9ba9812e5060039eebb105e4f95855385))
