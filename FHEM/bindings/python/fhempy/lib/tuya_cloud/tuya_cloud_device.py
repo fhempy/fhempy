@@ -77,22 +77,12 @@ class tuya_cloud_device:
         set_conf = {}
         for fct in self._t_specification["functions"]:
             if fct["type"] == "Boolean":
-                if fct["code"] == "switch_1" or fct["code"] == "switch":
-                    set_conf["on"] = {
-                        "function_param": fct,
-                        "function": "set_boolean",
-                    }
-                    set_conf["off"] = {
-                        "function_param": fct,
-                        "function": "set_boolean",
-                    }
-                else:
-                    set_conf[fct["code"]] = {
-                        "options": "on,off",
-                        "args": ["onoff"],
-                        "function_param": fct,
-                        "function": "set_boolean",
-                    }
+                set_conf[fct["code"]] = {
+                    "options": "on,off",
+                    "args": ["onoff"],
+                    "function_param": fct,
+                    "function": "set_boolean",
+                }
             elif fct["type"] == "Enum":
                 options = json.loads(fct["values"])["range"]
                 set_conf[fct["code"]] = {
@@ -119,6 +109,23 @@ class tuya_cloud_device:
                 }
             elif fct["type"] == "Json":
                 pass
+
+        default_code = None
+        if set_conf["switch"]:
+            default_code = "switch"
+        elif set_conf["switch_1"]:
+            default_code = "switch_1"
+
+        if default_code is not None:
+            set_conf["on"] = {
+                "function_param": {"code": default_code},
+                "function": "set_boolean",
+            }
+            set_conf["off"] = {
+                "function_param": {"code": default_code},
+                "function": "set_boolean",
+            }
+            del set_conf[default_code]
         self.fhemdev.set_set_config(set_conf)
 
     async def set_boolean(self, hash, params):
