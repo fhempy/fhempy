@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.84 (2021-08-15)
+### Fix
+* **tuya_cloud:** Fix switch ([`d1d1e03`](https://github.com/dominikkarall/fhempy/commit/d1d1e03f629985175a0bae88f797f5cc49ab1b0d))
+
 ## v0.1.83 (2021-08-13)
 ### Fix
 * **tuya_cloud:** Fix default code for state ([`deedac5`](https://github.com/dominikkarall/fhempy/commit/deedac5f4853c92d3d79b6848b89542134dfdaf0))
