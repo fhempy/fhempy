@@ -111,9 +111,9 @@ class tuya_cloud_device:
                 pass
 
         default_code = None
-        if set_conf["switch"]:
+        if "switch" in set_conf:
             default_code = "switch"
-        elif set_conf["switch_1"]:
+        elif "switch_1" in set_conf:
             default_code = "switch_1"
 
         if default_code is not None:
