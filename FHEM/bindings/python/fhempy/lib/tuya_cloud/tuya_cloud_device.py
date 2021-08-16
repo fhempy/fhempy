@@ -19,6 +19,7 @@ class tuya_cloud_device:
         self.hash["DEVICEID"] = self._t_deviceid
 
         self.tuyaiot = None
+        self.default_code = None
         await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         self.fhemdev.create_async_task(self._init_device())
 
@@ -110,22 +111,22 @@ class tuya_cloud_device:
             elif fct["type"] == "Json":
                 pass
 
-        default_code = None
+        self.default_code = None
         if "switch" in set_conf:
-            default_code = "switch"
+            self.default_code = "switch"
         elif "switch_1" in set_conf:
-            default_code = "switch_1"
+            self.default_code = "switch_1"
 
-        if default_code is not None:
+        if self.default_code is not None:
             set_conf["on"] = {
-                "function_param": {"code": default_code},
+                "function_param": {"code": self.default_code},
                 "function": "set_boolean",
             }
             set_conf["off"] = {
-                "function_param": {"code": default_code},
+                "function_param": {"code": self.default_code},
                 "function": "set_boolean",
             }
-            del set_conf[default_code]
+            del set_conf[self.default_code]
         self.fhemdev.set_set_config(set_conf)
 
     async def set_boolean(self, hash, params):
@@ -159,7 +160,7 @@ class tuya_cloud_device:
         return self._t_deviceid
 
     def _convert_code2fhem(self, code):
-        if code == "switch_1" or code == "switch":
+        if code == self.default_code:
             return "state"
         return code
 
