@@ -240,7 +240,7 @@ class skodaconnect(FhemModule):
                         self.hash, instrument.attr + "_str", instrument.str_state, 1
                     )
                 if instrument.attr == "fuel_level":
-                    if self._update_readings == "always":
+                    if self._attr_update_readings == "always":
                         await fhem.readingsSingleUpdate(
                             self.hash, "state", instrument.str_state, 1
                         )
