@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.85 (2021-08-16)
+### Fix
+* **skodaconnect:** Fix update readings ([#21](https://github.com/dominikkarall/fhempy/issues/21)) ([`cd0aef9`](https://github.com/dominikkarall/fhempy/commit/cd0aef9dec0350570b9b6667e356db53216e631e))
+
 ## v0.1.84 (2021-08-15)
 ### Fix
 * **tuya_cloud:** Fix switch ([`d1d1e03`](https://github.com/dominikkarall/fhempy/commit/d1d1e03f629985175a0bae88f797f5cc49ab1b0d))
