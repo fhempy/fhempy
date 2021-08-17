@@ -3,10 +3,15 @@ import asyncio
 from .. import fhem
 from .. import fhem_pythonbinding as fhepy
 from ..generic import FhemModule
+
 # imports for dynamical usage
 from .devices.gateway import Gateway  # noqa: F401
-from .devices.sensor import (ContactSensor, HTSensor,  # noqa: F401
-                             MotionSensor, WaterLeakSensor)
+from .devices.sensor import (
+    ContactSensor,
+    HTSensor,  # noqa: F401
+    MotionSensor,
+    WaterLeakSensor,
+)
 
 device_type_mapping = {
     "lumi.sensor_magnet.v2": "ContactSensor",
@@ -88,7 +93,8 @@ class xiaomi_gateway3_device(FhemModule):
         await self._fhempy_device.initialize(device)
 
     async def update(self, data):
-        await self._fhempy_device.update(data)
+        if self._fhempy_device is not None:
+            await self._fhempy_device.update(data)
 
     # FHEM functions which will be redirected to device type class
     async def FW_detailFn(self, hash, args, argsh):
