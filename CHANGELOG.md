@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.87 (2021-08-17)
+### Fix
+* **xiaomi_gateway3:** Fix reading updates ([`d8a7ff0`](https://github.com/dominikkarall/fhempy/commit/d8a7ff04545b8411c0692df3f5d42cf44f14bec8))
+
 ## v0.1.86 (2021-08-16)
 ### Fix
 * **tuya_cloud:** Fix reading updates ([`54a1259`](https://github.com/dominikkarall/fhempy/commit/54a12595ec52bb6bb13a6619a77e26d16b161654))
