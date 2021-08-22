@@ -45,16 +45,19 @@ Python >=3.7 is required, Python 2 won't work\!
 
 ### Console
 ```
-sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev
-
+sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
+```
+```
 sudo cpan Protocol::WebSocket
 ```
 ### FHEM
 ```
 update add https://raw.githubusercontent.com/dominikkarall/fhempy/master/controls_pythonbinding.txt
-
+```
+```
 update
-
+```
+```
 define local_pybinding BindingsIo Python
 ```
 
