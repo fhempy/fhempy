@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.88 (2021-08-22)
+### Fix
+* **skodaconnect:** Fix climatisation ([`527214f`](https://github.com/dominikkarall/fhempy/commit/527214fa5be15a7ba52b726472f1900b43262f61))
+
 ## v0.1.87 (2021-08-17)
 ### Fix
 * **xiaomi_gateway3:** Fix reading updates ([`d8a7ff0`](https://github.com/dominikkarall/fhempy/commit/d8a7ff04545b8411c0692df3f5d42cf44f14bec8))
