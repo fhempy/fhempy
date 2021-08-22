@@ -136,8 +136,9 @@ class skodaconnect(FhemModule):
             self.vehicle.is_auxiliary_climatisation_supported
             or self.vehicle.is_electric_climatisation_supported
         ):
-            self.set_config["climatisation_temperature"] = {
+            self.set_config["climatisation_target_temperature"] = {
                 "args": ["temperature"],
+                "params": {"temperature": {"format": "int"}},
                 "options": "slider,16,1,30",
             }
         if self.vehicle.is_window_heater_supported:
@@ -200,7 +201,7 @@ class skodaconnect(FhemModule):
             self.vehicle.set_climatisation(params["mode"], self.spin)
         )
 
-    async def set_climatisation_temperature(self, hash, params):
+    async def set_climatisation_target_temperature(self, hash, params):
         self.create_async_task(
             self.vehicle.set_climatisation_temp(params["temperature"])
         )
