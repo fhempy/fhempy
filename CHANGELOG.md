@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.90 (2021-08-23)
+
+
 ## v0.1.89 (2021-08-23)
 ### Feature
 * **tuya_cloud:** Support json commands ([`fdc9170`](https://github.com/dominikkarall/fhempy/commit/fdc9170129fb0d45298eb9d3d323169fdba857a0))
