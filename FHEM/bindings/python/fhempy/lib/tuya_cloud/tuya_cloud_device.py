@@ -109,7 +109,11 @@ class tuya_cloud_device:
                     "function": "set_string",
                 }
             elif fct["type"] == "Json":
-                pass
+                set_conf[fct["code"]] = {
+                    "args": ["new_val"],
+                    "function_param": fct,
+                    "function": "set_json",
+                }
 
         self.default_code = None
         if "switch" in set_conf:
@@ -147,6 +151,12 @@ class tuya_cloud_device:
     async def set_string(self, hash, params):
         code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": params["new_val"]}])
+
+    async def set_json(self, hash, params):
+        code = params["function_param"]["code"]
+        await self.send_commands(
+            [{"code": code, "value": json.loads(params["new_val"])}]
+        )
 
     async def set_integer(self, hash, params):
         code = params["function_param"]["code"]
