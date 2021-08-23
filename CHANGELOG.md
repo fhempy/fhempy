@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.89 (2021-08-23)
+### Feature
+* **tuya_cloud:** Support json commands ([`fdc9170`](https://github.com/dominikkarall/fhempy/commit/fdc9170129fb0d45298eb9d3d323169fdba857a0))
+
+### Fix
+* **skodaconnect:** Fix climatisation ([`1870427`](https://github.com/dominikkarall/fhempy/commit/18704278f393203e487899b79ca6fe2b7b065745))
+
 ## v0.1.88 (2021-08-22)
 ### Fix
 * **skodaconnect:** Fix climatisation ([`527214f`](https://github.com/dominikkarall/fhempy/commit/527214fa5be15a7ba52b726472f1900b43262f61))
