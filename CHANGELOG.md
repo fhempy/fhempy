@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.91 (2021-08-24)
+### Fix
+* **tuya_cloud:** Fix set_json ([`246584f`](https://github.com/dominikkarall/fhempy/commit/246584fc1fd7adc6d4743e6dc9be9c43c8a28498))
+* **skodaconnect:** Fix climater with new library ([`bdc8058`](https://github.com/dominikkarall/fhempy/commit/bdc8058c2d759454e6919b16d04aa36238de1d2e))
+
 ## v0.1.90 (2021-08-23)
 
 
