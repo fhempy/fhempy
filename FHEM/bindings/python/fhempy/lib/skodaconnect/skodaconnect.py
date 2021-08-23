@@ -198,7 +198,7 @@ class skodaconnect(FhemModule):
 
     async def set_climatisation(self, hash, params):
         self.create_async_task(
-            self.vehicle.set_climatisation(params["mode"], self.spin)
+            self.vehicle.set_climatisation(params["mode"], spin=self.spin)
         )
 
     async def set_climatisation_target_temperature(self, hash, params):
