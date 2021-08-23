@@ -36,6 +36,9 @@ class tuya_cloud(FhemModule):
     async def set_enum(self, hash, params):
         await self.device.set_enum(hash, params)
 
+    async def set_json(self, hash, params):
+        await self.device.set_json(hash, params)
+
     async def set_string(self, hash, params):
         await self.device.set_string(hash, params)
 
