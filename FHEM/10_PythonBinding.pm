@@ -148,7 +148,7 @@ sub PythonBinding_Attr($$$)
   if( $attrName eq 'logfile' ) {
     if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
       fhem( "defmod -temporary PythonBindingLog FileLog $attrVal fakelog" );
-      CommandAttr( undef, 'PythonBindingLog room fhempy' );
+      CommandAttr( undef, 'PythonBindingLog room fhempy' ) if( !AttrVal($name, 'room', undef ) );
       $hash->{logfile} = $attrVal;
     } else {
       fhem( "delete PythonBindingLog" );
