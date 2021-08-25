@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.93 (2021-08-25)
+### Fix
+* **tuya_cloud:** Fix reset_reading ([`48410ec`](https://github.com/dominikkarall/fhempy/commit/48410ecfbe89b1c0310e83c4676c9407900551ad))
+* **mitemp:** Update library ([`6919917`](https://github.com/dominikkarall/fhempy/commit/691991759cbc9909ede6aa44b23c030d9350d234))
+
 ## v0.1.92 (2021-08-25)
 ### Feature
 * **tuya_cloud:** Set state for some devices ([`de4f07a`](https://github.com/dominikkarall/fhempy/commit/de4f07a9d47c19c536464670081ef5f80f3789cf))
