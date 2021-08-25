@@ -78,6 +78,8 @@ class miflora(FhemModule):
                 param_val = await utils.run_blocking(
                     functools.partial(self._poller.parameter_value, param)
                 )
+                if param == "conductivity":
+                    param = "fertility"
                 await fhem.readingsSingleUpdateIfChanged(self.hash, param, param_val, 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "online", 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
