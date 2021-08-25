@@ -120,6 +120,8 @@ class tuya_cloud_device:
             self.default_code = "switch"
         elif "switch_1" in set_conf:
             self.default_code = "switch_1"
+        elif "switch_led" in set_conf:
+            self.default_code = "switch_led"
 
         if self.default_code is not None:
             set_conf["on"] = {
@@ -172,6 +174,23 @@ class tuya_cloud_device:
     def _convert_code2fhem(self, code):
         if code == self.default_code:
             return "state"
+
+        # pir device
+        if code == "pir" and self._t_info["category"] == "pir":
+            return "state"
+
+        # smoke detector
+        if code == "smoke_sensor_status":
+            return "state"
+
+        # water detector
+        if code == "watersensor_state":
+            return "state"
+
+        # door window sensor
+        if code == "doorcontact_state":
+            return "state"
+
         return code
 
     def _convert_value2fhem(self, code, value):
@@ -186,11 +205,28 @@ class tuya_cloud_device:
                 + "/"
                 + value
             )
+        # pir device
+        elif code == "pir" and self._t_info["category"] == "pir":
+            if value == "pir":
+                self.fhemdev.create_async_task(
+                    self.reset_reading("state", "nomotion", 180)
+                )
+                return "motion"
+        # door window sensor
+        elif code == "doorcontact_state":
+            if value is True:
+                return "open"
+            return "closed"
+
         if isinstance(value, bool):
             if value:
                 return "on"
             return "off"
         return value
+
+    async def reset_reading(self, reading, resetvalue, timeout):
+        asyncio.sleep(timeout)
+        await fhem.readingsSingleUpdate(self.fhemdev.hash, reading, resetvalue, 1)
 
     async def update(self, device: TuyaDevice):
         await self.update_readings_dict(device.status)

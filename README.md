@@ -1,4 +1,4 @@
-[![Download](https://img.shields.io/pypi/dw/fhempy)](https://pypistats.org/packages/fhempy)
+[![Download](https://img.shields.io/pypi/dm/fhempy)](https://pypistats.org/packages/fhempy)
 [![python](https://img.shields.io/badge/python-3.7+-critical)](https://github.com/dominikkarall/fhempy)
 [![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
 [![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
