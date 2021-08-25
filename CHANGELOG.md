@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.92 (2021-08-25)
+### Feature
+* **tuya_cloud:** Set state for some devices ([`de4f07a`](https://github.com/dominikkarall/fhempy/commit/de4f07a9d47c19c536464670081ef5f80f3789cf))
+* **miflora:** Change conductivity to fertility ([`6d27f47`](https://github.com/dominikkarall/fhempy/commit/6d27f47f196c889c0c80cbaf0f5fcf2af0c2ae51))
+* **tuya_cloud:** Use switch_led for state ([`a5f7e65`](https://github.com/dominikkarall/fhempy/commit/a5f7e659af1ba32ae9f15567f061122a6312c22c))
+
+### Fix
+* **fhempy:** Fix room for fhempy log ([`9662148`](https://github.com/dominikkarall/fhempy/commit/966214849c577e085dd3e796bb4ba71a7367a721))
+
 ## v0.1.91 (2021-08-24)
 ### Fix
 * **tuya_cloud:** Fix set_json ([`246584f`](https://github.com/dominikkarall/fhempy/commit/246584fc1fd7adc6d4743e6dc9be9c43c8a28498))
