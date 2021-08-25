@@ -1,6 +1,6 @@
 {
   "requirements": [
     "bluepy",
-    "mitemp-bt==0.0.4"
+    "mitemp-bt==0.0.3"
   ]
 }
