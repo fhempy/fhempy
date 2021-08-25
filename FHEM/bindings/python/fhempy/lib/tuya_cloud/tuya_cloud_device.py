@@ -120,6 +120,8 @@ class tuya_cloud_device:
             self.default_code = "switch"
         elif "switch_1" in set_conf:
             self.default_code = "switch_1"
+        elif "switch_led" in set_conf:
+            self.default_code = "switch_led"
 
         if self.default_code is not None:
             set_conf["on"] = {
