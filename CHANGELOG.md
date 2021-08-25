@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.94 (2021-08-25)
+### Fix
+* **mitemp:** Latest mitemp lib not working ([`9e2dcfc`](https://github.com/dominikkarall/fhempy/commit/9e2dcfc092d9102248bc8b4ef28c340505d5fc46))
+
 ## v0.1.93 (2021-08-25)
 ### Fix
 * **tuya_cloud:** Fix reset_reading ([`48410ec`](https://github.com/dominikkarall/fhempy/commit/48410ecfbe89b1c0310e83c4676c9407900551ad))
