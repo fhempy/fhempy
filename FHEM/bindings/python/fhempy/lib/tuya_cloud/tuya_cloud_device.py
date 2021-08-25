@@ -225,7 +225,7 @@ class tuya_cloud_device:
         return value
 
     async def reset_reading(self, reading, resetvalue, timeout):
-        asyncio.sleep(timeout)
+        await asyncio.sleep(timeout)
         await fhem.readingsSingleUpdate(self.fhemdev.hash, reading, resetvalue, 1)
 
     async def update(self, device: TuyaDevice):
