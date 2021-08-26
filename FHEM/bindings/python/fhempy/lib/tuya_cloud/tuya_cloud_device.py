@@ -300,11 +300,15 @@ class tuya_cloud_device:
         if hsv_code == "colour_data" and self._t_info["category"] == "dj":
             # only category dj (light) has old colour_data
             rgb = colorsys.hsv_to_rgb(
-                hsv_json["h"] / 360, hsv_json["s"] / 100, hsv_json["v"] / 100
+                int(hsv_json["h"]) / 360,
+                int(hsv_json["s"]) / 100,
+                int(hsv_json["v"]) / 100,
             )
         else:
             rgb = colorsys.hsv_to_rgb(
-                hsv_json["h"] / 360, hsv_json["s"] / 1000, hsv_json["v"] / 1000
+                int(hsv_json["h"]) / 360,
+                int(hsv_json["s"]) / 1000,
+                int(hsv_json["v"]) / 1000,
             )
 
         red = rgb[0]
