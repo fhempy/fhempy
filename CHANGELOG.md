@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.97 (2021-08-26)
+### Fix
+* **tuya_cloud:** Handle exception on mqtt stop ([`de40876`](https://github.com/dominikkarall/fhempy/commit/de4087678f95429e9c86bf4ee3cd767f6836a326))
+* **tuya_cloud:** Fix colour_data ([`c87c985`](https://github.com/dominikkarall/fhempy/commit/c87c9857c67b164cca75f87f5ff2b28fc284b5ac))
+* **fhempy:** Add use Color ([`89c8264`](https://github.com/dominikkarall/fhempy/commit/89c8264adab1a2d788d73c0e1caaa438aa7af850))
+
 ## v0.1.96 (2021-08-26)
 ### Fix
 * **tuya_cloud:** Fix colour_data ([`b46189c`](https://github.com/dominikkarall/fhempy/commit/b46189c60d0f0e58797b2dd0e8024ddfd97a66f8))
