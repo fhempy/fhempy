@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.96 (2021-08-26)
+### Fix
+* **tuya_cloud:** Fix colour_data ([`b46189c`](https://github.com/dominikkarall/fhempy/commit/b46189c60d0f0e58797b2dd0e8024ddfd97a66f8))
+
 ## v0.1.95 (2021-08-26)
 ### Feature
 * **tuya_cloud:** Support colorpicker ([`fbef95d`](https://github.com/dominikkarall/fhempy/commit/fbef95d49466342270833adb428b466312ef372c))
