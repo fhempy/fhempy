@@ -12,7 +12,7 @@ define cast PythonModule googlecast <NAME>
 As soon as the device is online you can connect your Spotify account. See the attributes section below.
 
 ```
-set cast play https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
+set cast play url=https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
 ```
 
 ## Commands
@@ -20,7 +20,7 @@ set cast play https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
  - displayWebsite: Uses dashcast to display a website on Chromecast, NestHub or other cast devices
  - next
  - pause
- - play: E.g. set dev play https://url.to.youtube or set dev play to just resume playback. URLs other than YouTube will be played in the default media renderer. It might take some seconds for the video stream to show up.
+ - play: E.g. set dev play url=https://url.to.youtube or set dev play to just resume playback. URLs other than YouTube will be played in the default media renderer. It might take some seconds for the video stream to show up.
  - playFavorite
  - prev
  - quitApp
