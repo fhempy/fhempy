@@ -9,6 +9,8 @@ use warnings;
 use JSON;
 use Time::HiRes qw(time);
 
+use Color;
+
 sub Log($$);
 sub Log3($$$);
 
