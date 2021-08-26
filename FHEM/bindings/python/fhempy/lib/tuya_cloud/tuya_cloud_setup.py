@@ -73,7 +73,11 @@ class tuya_cloud_setup:
                 self.logger.exception(ex)
 
     async def restart_mqtt(self):
-        self.device_manager.mq.stop()
+        try:
+            self.device_manager.mq.stop()
+        except Exception:
+            pass
+
         tuya_mq = TuyaOpenMQ(self.device_manager.api)
         tuya_mq.start()
 
