@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import colorsys
 from tuya_iot.device import TuyaDevice
 from fhempy.lib.generic import FhemModule
 from fhempy.lib import fhem, fhem_pythonbinding, utils
@@ -114,6 +115,12 @@ class tuya_cloud_device:
                     "function_param": fct,
                     "function": "set_json",
                 }
+                if fct["code"] == "colour_data":
+                    set_conf[fct["code"]]["function"] = "set_colour_data"
+                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
+                elif fct["code"] == "colour_data_v2":
+                    set_conf[fct["code"]]["function"] = "set_colour_data_v2"
+                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
         self.default_code = None
         if "switch" in set_conf:
@@ -163,6 +170,31 @@ class tuya_cloud_device:
     async def set_integer(self, hash, params):
         code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
+
+    async def set_colour_data(self, hash, params):
+        # convert e.g. ff0000 to hsv (360, 100, 100) and set hsv values with json
+        hsv = self.fhemrgb2hsv(params["new_val"])
+        hsv["s"] = int(hsv["s"] / 10)
+        hsv["v"] = int(hsv["v"] / 10)
+        code = params["function_param"]["code"]
+        await self.send_commands([{"code": code, "value": hsv}])
+
+    async def set_colour_data_v2(self, hash, params):
+        # convert e.g. ff0000 to hsv (360, 1000, 1000) and set hsv values with json
+        hsv = self.fhemrgb2hsv(params["new_val"])
+        code = params["function_param"]["code"]
+        await self.send_commands([{"code": code, "value": hsv}])
+
+    def fhemrgb2hsv(self, rgb):
+        red = int(rgb[0:2], base=16)
+        green = int(rgb[2:4], base=16)
+        blue = int(rgb[4:6], base=16)
+        hsv = colorsys.rgb_to_hsv(red / 255, green / 255, blue / 255)
+        return {
+            "h": int(hsv[0] * 360),
+            "s": int(hsv[1] * 1000),
+            "v": int(hsv[2] * 1000),
+        }
 
     async def send_commands(self, commands):
         await self.tuyaiot.send_commands(self._t_deviceid, commands)
@@ -235,11 +267,14 @@ class tuya_cloud_device:
         await fhem.readingsBeginUpdate(self.hash)
         try:
             for status in status_arr:
-                await fhem.readingsBulkUpdate(
-                    self.hash,
-                    self._convert_code2fhem(status["code"]),
-                    self._convert_value2fhem(status["code"], status["value"]),
-                )
+                if status["code"] in ["colour_data", "colour_data_v2"]:
+                    await self.update_readings_hsv(status["code"], status["value"])
+                else:
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        self._convert_code2fhem(status["code"]),
+                        self._convert_value2fhem(status["code"], status["value"]),
+                    )
         except Exception as ex:
             self.logger.exception(ex)
         await fhem.readingsEndUpdate(self.hash, 1)
@@ -248,11 +283,34 @@ class tuya_cloud_device:
         await fhem.readingsBeginUpdate(self.hash)
         try:
             for st_name in status_dic:
-                await fhem.readingsBulkUpdate(
-                    self.hash,
-                    self._convert_code2fhem(st_name),
-                    self._convert_value2fhem(st_name, status_dic[st_name]),
-                )
+                if st_name in ["colour_data", "colour_data_v2"]:
+                    await self.update_readings_hsv(st_name, status_dic[st_name])
+                else:
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        self._convert_code2fhem(st_name),
+                        self._convert_value2fhem(st_name, status_dic[st_name]),
+                    )
         except Exception as ex:
             self.logger.exception(ex)
         await fhem.readingsEndUpdate(self.hash, 1)
+
+    async def update_readings_hsv(self, hsv_code, hsv_json):
+        if hsv_code == "colour_data":
+            rgb = colorsys.hsv_to_rgb(
+                hsv_json["h"] / 360, hsv_json["s"] / 100, hsv_json["v"] / 100
+            )
+        else:
+            rgb = colorsys.hsv_to_rgb(
+                hsv_json["h"] / 360, hsv_json["s"] / 1000, hsv_json["v"] / 1000
+            )
+
+        red = rgb[0]
+        green = rgb[1]
+        blue = rgb[2]
+        rgb_hex = f"{red:02x}{green:02x}{blue:02x}"
+        await fhem.readingsBulkUpdate(
+            self.hash,
+            hsv_code,
+            rgb_hex,
+        )

@@ -45,6 +45,12 @@ class tuya_cloud(FhemModule):
     async def set_integer(self, hash, params):
         await self.device.set_integer(hash, params)
 
+    async def set_colour_data(self, hash, params):
+        await self.device.set_colour_data(hash, params)
+
+    async def set_colour_data_v2(self, hash, params):
+        await self.device.set_colour_data_v2(hash, params)
+
     @property
     def tuya_cloud_device(self):
         return self.device

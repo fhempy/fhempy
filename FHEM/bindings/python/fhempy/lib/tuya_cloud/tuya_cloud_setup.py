@@ -132,17 +132,23 @@ class tuya_cloud_setup:
 
             def update_device(self, device: TuyaDevice):
                 self.logger.info(f"update_device received for {device.id}")
-                for dev in t_cloud_setup.tuya_devices:
-                    if dev.id == device.id:
-                        asyncio.run_coroutine_threadsafe(
-                            dev.update(device), t_cloud_setup.fhemdev.loop
-                        )
+                try:
+                    for dev in t_cloud_setup.tuya_devices:
+                        if dev.id == device.id:
+                            asyncio.run_coroutine_threadsafe(
+                                dev.update(device), t_cloud_setup.fhemdev.loop
+                            )
+                except Exception:
+                    self.logger.exception("Failed to update device")
 
             def add_device(self, device: TuyaDevice):
                 self.logger.info(f"add_device received for {device.id}")
-                asyncio.run_coroutine_threadsafe(
-                    self.add_fhem_device(device), t_cloud_setup.fhemdev.loop
-                )
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        self.add_fhem_device(device), t_cloud_setup.fhemdev.loop
+                    )
+                except Exception:
+                    self.logger.exception("Failed to add device")
 
             async def add_fhem_device(self, device: TuyaDevice):
                 await t_cloud_setup._create_fhem_device(device.name, device.id)
