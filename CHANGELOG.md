@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.95 (2021-08-26)
+### Feature
+* **tuya_cloud:** Support colorpicker ([`fbef95d`](https://github.com/dominikkarall/fhempy/commit/fbef95d49466342270833adb428b466312ef372c))
+
 ## v0.1.94 (2021-08-25)
 ### Fix
 * **mitemp:** Latest mitemp lib not working ([`9e2dcfc`](https://github.com/dominikkarall/fhempy/commit/9e2dcfc092d9102248bc8b4ef28c340505d5fc46))
