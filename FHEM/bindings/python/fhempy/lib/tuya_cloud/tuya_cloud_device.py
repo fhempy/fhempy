@@ -269,7 +269,9 @@ class tuya_cloud_device:
         try:
             for status in status_arr:
                 if status["code"] in ["colour_data", "colour_data_v2"]:
-                    await self.update_readings_hsv(status["code"], status["value"])
+                    await self.update_readings_hsv(
+                        status["code"], json.loads(status["value"])
+                    )
                 else:
                     await fhem.readingsBulkUpdate(
                         self.hash,
