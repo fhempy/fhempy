@@ -41,7 +41,7 @@ class esphome(FhemModule):
             self.proc = subprocess.Popen(self._esphomeargs)
         except Exception:
             try:
-                self._esphomeargs = ["esphome", "esphome_config/", "dashboard"]
+                self._esphomeargs = ["esphome", "dashboard", "esphome_config/"]
                 self.proc = subprocess.Popen(self._esphomeargs)
             except Exception:
                 return "Failed to execute esphome"
