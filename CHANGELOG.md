@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.98 (2021-08-27)
+### Fix
+* **tuya_cloud:** Fix again colour_data ([`82998c7`](https://github.com/dominikkarall/fhempy/commit/82998c757357c9c9aee4fbc0b7c83ac8d9170cfb))
+
 ## v0.1.97 (2021-08-26)
 ### Fix
 * **tuya_cloud:** Handle exception on mqtt stop ([`de40876`](https://github.com/dominikkarall/fhempy/commit/de4087678f95429e9c86bf4ee3cd767f6836a326))
