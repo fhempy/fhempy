@@ -190,5 +190,5 @@ def install_package(
         )
         return False
 
-    logger.info("Successfully installed fhempy update!")
+    logger.info("Successfully installed " + package + " update!")
     return True
