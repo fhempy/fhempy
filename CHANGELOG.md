@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.100 (2021-08-27)
+### Fix
+* **skodaconnect:** Update library ([`dc2035b`](https://github.com/dominikkarall/fhempy/commit/dc2035bb80810343eae441279ce52d1d1eddbbea))
+* **tuya_cloud:** Update tuya lib ([`8059a68`](https://github.com/dominikkarall/fhempy/commit/8059a68023c693e0035bd163cdb6a393a53a63d4))
+
 ## v0.1.99 (2021-08-27)
 ### Fix
 * **tuya_cloud:** Fix colour_data again ([`fd37524`](https://github.com/dominikkarall/fhempy/commit/fd37524f94bc30667b75849b1933e223d92df361))
