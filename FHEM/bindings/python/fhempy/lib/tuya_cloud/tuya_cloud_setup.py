@@ -161,7 +161,7 @@ class tuya_cloud_setup:
                 tuya_mq.start()
 
                 t_cloud_setup.device_manager.mq = tuya_mq
-                tuya_mq.add_message_listener(t_cloud_setup.device_manager._on_message)
+                tuya_mq.add_message_listener(t_cloud_setup.device_manager.on_message)
 
             def remove_device(self, device_id: str):
                 self.logger.info(f"remove_device received for {device_id}")
