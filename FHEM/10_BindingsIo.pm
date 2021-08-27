@@ -264,6 +264,10 @@ BindingsIo_Write($$$$$) {
   if ($returnval eq "") {
     $returnval = undef;
   }
+
+  while ($hash->{ReceiverQueue}->pending() > 0) {
+    BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
+  }
   
   return $returnval;
 }
@@ -502,12 +506,14 @@ sub BindingsIo_readWebsocketMessage($$$$) {
       $hash->{TempReceiverQueue}->enqueue($msg);
     }
   }
-  Log3 $hash, 5, "BindingsIo: QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
-
+  
   # add not matching messages to the queue
   while (my $msg = $hash->{TempReceiverQueue}->dequeue_nb()) {
     $hash->{ReceiverQueue}->enqueue($msg);
   }
+
+  Log3 $hash, 5, "BindingsIo: QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
+
   return $returnval;
 }
 
