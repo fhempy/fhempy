@@ -313,9 +313,9 @@ class tuya_cloud_device:
                 int(hsv_json["v"]) / 1000,
             )
 
-        red = rgb[0]
-        green = rgb[1]
-        blue = rgb[2]
+        red = int(rgb[0] * 255)
+        green = int(rgb[1] * 255)
+        blue = int(rgb[2] * 255)
         rgb_hex = f"{red:02x}{green:02x}{blue:02x}"
         await fhem.readingsBulkUpdate(
             self.hash,
