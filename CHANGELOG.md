@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.101 (2021-08-27)
+### Fix
+* **esphome:** Fix deprecation warning ([`49af229`](https://github.com/dominikkarall/fhempy/commit/49af2290a0527370857292c23bc51b9a9a522b2f))
+* **fhempy:** Fix NO RESPONSE msgs ([`3413202`](https://github.com/dominikkarall/fhempy/commit/341320259b85f2d545c62cf898c060025181db5a))
+* **fhempy:** Fix log ([`d3d11c4`](https://github.com/dominikkarall/fhempy/commit/d3d11c440c107fa21a871e331c7834add1e820ad))
+
 ## v0.1.100 (2021-08-27)
 ### Fix
 * **skodaconnect:** Update library ([`dc2035b`](https://github.com/dominikkarall/fhempy/commit/dc2035bb80810343eae441279ce52d1d1eddbbea))
