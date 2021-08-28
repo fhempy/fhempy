@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.102 (2021-08-28)
+### Feature
+* **fhempy:** Update to asynczeroconf ([`7b319e3`](https://github.com/dominikkarall/fhempy/commit/7b319e347601634894c458c7ac2b3782b99dee5e))
+
+### Fix
+* **fhempy:** Better error handling ([`e4f2ba2`](https://github.com/dominikkarall/fhempy/commit/e4f2ba2a2d1c46b9bc767119ff4f4519e61ce724))
+* **fhempy:** Rename to fhempy ([`38121ce`](https://github.com/dominikkarall/fhempy/commit/38121ce24260cf4dfd8291901c760008d6ee48e8))
+
 ## v0.1.101 (2021-08-27)
 ### Fix
 * **esphome:** Fix deprecation warning ([`49af229`](https://github.com/dominikkarall/fhempy/commit/49af2290a0527370857292c23bc51b9a9a522b2f))
