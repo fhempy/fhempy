@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.104 (2021-08-28)
+### Feature
+* **googlecast:** Update libraries ([#25](https://github.com/dominikkarall/fhempy/issues/25)) ([`856eeac`](https://github.com/dominikkarall/fhempy/commit/856eeac940659974458b323c6aa2d266a576040d))
+* **ring:** Update library to 0.7.1 ([#24](https://github.com/dominikkarall/fhempy/issues/24)) ([`9aa2360`](https://github.com/dominikkarall/fhempy/commit/9aa236079a81f483294be41e0a84a167b2ae5bed))
+
 ## v0.1.103 (2021-08-28)
 ### Fix
 * **fhempy:** Update requirements ([`02de53d`](https://github.com/dominikkarall/fhempy/commit/02de53de90b910c9a00a16267961869e5848ee41))
