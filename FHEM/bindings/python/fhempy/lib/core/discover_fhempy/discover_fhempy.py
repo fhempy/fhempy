@@ -1,41 +1,35 @@
 import asyncio
-import concurrent.futures
 import logging
-import threading
 import traceback
 
 from fhempy.lib import fhem
-from fhempy.lib.core.zeroconf import zeroconf
-from zeroconf import ServiceBrowser, Zeroconf
+from fhempy.lib.core.zeroconf import zeroconf as fzeroconf
+from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
 
 
 class discover_fhempy:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.loop = asyncio.get_event_loop()
-        self.zeroconf = None
+        self.zeroconf: AsyncZeroconf = None
         self.browser = None
         self.hash = {"NAME": "discover_fhempy"}
 
     # zeroconf callback
-    def update_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s updated, service info: %s" % (name, info))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
-        res.result()
+    def update_service(self, zc, type, name):
+        asyncio.create_task(self.foundDevice(zc, type, name))
 
     # zeroconf callback
-    def remove_service(self, zeroconf, type, name):
+    def remove_service(self, zc, type, name):
         self.logger.debug("Service %s removed" % (name))
 
     # zeroconf callback
-    def add_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s added, service info: %s" % (name, info))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
-        res.result()
+    def add_service(self, zc, type, name):
+        asyncio.create_task(self.foundDevice(zc, type, name))
 
-    async def foundDevice(self, name, info):
+    async def foundDevice(self, zc, type, name):
+        info = await zc.async_get_service_info(type, name)
+        self.logger.debug("Service %s found, service info: %s" % (name, info))
         if info is None:
             return
         try:
@@ -67,16 +61,16 @@ class discover_fhempy:
 
             # wait for the devices to initialize
             await asyncio.sleep(10)
-        except Exception as err:
+        except Exception:
             self.logger.error(traceback.print_exc())
 
     async def runZeroconfScan(self):
-        self.zeroconf = zeroconf.get_instance(self.logger).get_zeroconf()
+        self.zeroconf = fzeroconf.get_instance(self.logger).get_zeroconf()
         listener = self
         services = [
             "_http._tcp.local.",
         ]
-        self.browser = ServiceBrowser(self.zeroconf, services, listener)
+        self.browser = AsyncServiceBrowser(self.zeroconf.zeroconf, services, listener)
 
     async def activate(self):
         await self.runZeroconfScan()
@@ -84,4 +78,5 @@ class discover_fhempy:
 
     async def deactivate(self):
         if self.browser:
-            self.browser.cancel()
+            await self.browser.async_cancel()
+            self.browser = None

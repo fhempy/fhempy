@@ -54,7 +54,7 @@ async def pybinding(websocket, path):
         # FHEM discovered us, stop zeroconf
         await zeroconf.get_instance(logger).unregister_service(zc_info)
         zc_info = None
-        zeroconf.get_instance(logger).stop()
+        await zeroconf.get_instance(logger).stop()
 
     global connection_start
     connection_start = time.time()
@@ -406,8 +406,7 @@ def usage():
     print("  --help    This help text")
 
 
-def run():
-    logging.getLogger("asyncio").setLevel(logging.WARNING)
+async def async_main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
@@ -440,9 +439,7 @@ def run():
 
     logger.info("Starting fhempy...")
 
-    asyncio.get_event_loop().run_until_complete(
-        pkg_installer.check_and_install_dependencies("core")
-    )
+    await pkg_installer.check_and_install_dependencies("core")
 
     if not local:
         logger.info("Advertise fhempy on local network")
@@ -453,20 +450,21 @@ def run():
             local_ip = ip
         zc = zeroconf.get_instance(logger)
         global zc_info
-        zc_info = asyncio.get_event_loop().run_until_complete(
-            zc.register_service(
-                "_http",
-                "fhempy (" + local_ip + ")",
-                port,
-                {"port": port, "ip": local_ip},
-            )
+        zc_info = await zc.register_service(
+            "_http",
+            "fhempy (" + local_ip + ")",
+            port,
+            {"port": port, "ip": local_ip},
         )
 
     logger.info("Waiting for FHEM connection")
-    asyncio.get_event_loop().set_debug(True)
-    asyncio.get_event_loop().run_until_complete(
-        websockets.serve(
-            pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
-        )
+    await websockets.serve(
+        pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
     )
+
+
+def run():
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    asyncio.get_event_loop().set_debug(True)
+    asyncio.get_event_loop().run_until_complete(async_main())
     asyncio.get_event_loop().run_forever()
