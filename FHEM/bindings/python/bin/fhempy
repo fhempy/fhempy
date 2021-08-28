@@ -93,7 +93,8 @@ kwargs = pip_kwargs(None)
 
 try:
     import fhempy.lib.fhem_pythonbinding as fpb
-except Exception:
+except ImportError as exc:
+    logging.getLogger(__name__).warning(f"Failed to load fhempy: {exc}")
     if install_package("fhempy>=0.1.12") == False:
         logging.getLogger(__name__).error("Failed to install fhempy, exit now...")
         time.sleep(60)
@@ -105,17 +106,8 @@ except Exception:
             logging.getLogger(__name__).error("Failed to import fhempy, exit now...")
             time.sleep(60)
             sys.exit(1)
-
-# TODO delete old fhempy files from FHEM
-
-# local FHEM installation: uses FHEM files - NOT IN USE ANYMORE
-# try:
-#     sys.path.insert(0, os.getcwd() + "/FHEM/bindings/python")
-#     import fhempy.lib.fhem_pythonbinding as fpb
-# except Exception:
-#     logging.getLogger(__name__).exception("Corrupt installation detected")
-#     time.sleep(60)
-#     sys.exit(1)
-
+except Exception as exc:
+    logging.getLogger(__name__).exception(f"Failed to load fhempy: {exc}")
+    sys.exit(1)
 
 fpb.run()

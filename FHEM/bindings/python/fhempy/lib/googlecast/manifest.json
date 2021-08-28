@@ -3,7 +3,6 @@
     "pychromecast==9.1.1",
     "youtube_dl>=2020.12.22",
     "spotipy==2.18.0",
-    "zeroconf==0.28.6",
     "requests>=2.0",
     "aiohttp"
   ]

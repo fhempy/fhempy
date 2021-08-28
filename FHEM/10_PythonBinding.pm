@@ -39,7 +39,7 @@ sub PythonBinding_detailFn($$$$)
 
   my $logfile = AttrVal($name, 'logfile', 'FHEM' );
   if( $logfile && $logfile ne "FHEM" ) {
-    my $name = 'PythonBindingLog';
+    my $name = 'fhempy_log';
     $ret .= "<a href=\"$FW_ME?detail=$name\">fhempy Logfile Viewer</a><br>";
   }
 
@@ -72,7 +72,7 @@ sub PythonBinding_Define($$$)
   }
 
   # put in fhempy room
-  CommandAttr(undef, "$name room fhempy");
+  CommandAttr(undef, "$name room fhempy") if( !AttrVal($name, 'room', undef ) );;
   CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
 
   if( $attr{global}{logdir} ) {
@@ -118,7 +118,7 @@ sub PythonBinding_Undefine($$)
     $hash->{reason} = 'delete';
     CoProcess::stop($hash);
       
-    return "$name will be deleted after pythonbinding.py has stopped or after 5 seconds. whatever comes first.";
+    return "$name will be deleted after fhempy has stopped or after 5 seconds. whatever comes first.";
   }   
       
   delete $modules{$hash->{TYPE}}{defptr};
@@ -147,11 +147,11 @@ sub PythonBinding_Attr($$$)
 
   if( $attrName eq 'logfile' ) {
     if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
-      fhem( "defmod -temporary PythonBindingLog FileLog $attrVal fakelog" );
-      CommandAttr( undef, 'PythonBindingLog room fhempy' ) if( !AttrVal($name, 'room', undef ) );
+      fhem( "defmod -temporary fhempy_log FileLog $attrVal fakelog" );
+      CommandAttr( undef, 'fhempy_log room fhempy' ) if( !AttrVal($name, 'room', undef ) );
       $hash->{logfile} = $attrVal;
     } else {
-      fhem( "delete PythonBindingLog" );
+      fhem( "delete fhempy_log" );
     }
 
     $attr{$name}{$attrName} = $attrVal;
