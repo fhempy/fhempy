@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.103 (2021-08-28)
+### Fix
+* **fhempy:** Update requirements ([`02de53d`](https://github.com/dominikkarall/fhempy/commit/02de53de90b910c9a00a16267961869e5848ee41))
+
 ## v0.1.102 (2021-08-28)
 ### Feature
 * **fhempy:** Update to asynczeroconf ([`7b319e3`](https://github.com/dominikkarall/fhempy/commit/7b319e347601634894c458c7ac2b3782b99dee5e))
