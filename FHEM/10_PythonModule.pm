@@ -62,7 +62,7 @@ PythonModule_Define($$$)
   AssignIoPort($hash, "local_pybinding");
 
   if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 4, "PythonModule: PythonBinding not yet connected! Define will continue after connect...";
+    Log3 $hash, 4, "PythonModule: fhempy not yet connected! Define will continue after connect...";
     return undef;
   }
 
