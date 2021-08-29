@@ -7,8 +7,8 @@ import time
 from datetime import timedelta
 
 import aiohttp
-from async_upnp_client.aiohttp import (AiohttpNotifyServer,
-                                       AiohttpSessionRequester, get_local_ip)
+from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
+from async_upnp_client.utils import async_get_local_ip
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
 from fhempy.lib.generic import FhemModule
 
@@ -82,7 +82,7 @@ class dlna_dmr(FhemModule):
         session = aiohttp.ClientSession()
         requester = AiohttpSessionRequester(session, True)
         # ensure event handler has been started
-        server_host = get_local_ip()
+        server_host = await async_get_local_ip()
         server_port = DEFAULT_LISTEN_PORT
         event_handler = await self.async_start_event_handler(
             server_host, server_port, requester

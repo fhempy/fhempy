@@ -28,7 +28,7 @@ class discover_fhempy:
         asyncio.create_task(self.foundDevice(zc, type, name))
 
     async def foundDevice(self, zc, type, name):
-        info = await zc.async_get_service_info(type, name)
+        info = await self.zeroconf.async_get_service_info(type, name)
         self.logger.debug("Service %s found, service info: %s" % (name, info))
         if info is None:
             return
