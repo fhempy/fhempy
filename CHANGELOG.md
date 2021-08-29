@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.105 (2021-08-29)
+### Feature
+* **upnp:** Update upnp library ([`f2c5120`](https://github.com/dominikkarall/fhempy/commit/f2c512079c665e8dd84c1efa288b08873cc98fed))
+
+### Fix
+* **fhempy:** Fix zeroconf exception ([`7ad2e73`](https://github.com/dominikkarall/fhempy/commit/7ad2e73c4140fa99ccac5a9a28fcc094fa890a61))
+
 ## v0.1.104 (2021-08-28)
 ### Feature
 * **googlecast:** Update libraries ([#25](https://github.com/dominikkarall/fhempy/issues/25)) ([`856eeac`](https://github.com/dominikkarall/fhempy/commit/856eeac940659974458b323c6aa2d266a576040d))
