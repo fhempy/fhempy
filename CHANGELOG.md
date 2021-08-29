@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.106 (2021-08-29)
+### Fix
+* **tests:** Fix ring test ([`9098245`](https://github.com/dominikkarall/fhempy/commit/90982456484aec502ceeefe08c3a4be9e0ff9db4))
+
 ## v0.1.105 (2021-08-29)
 ### Feature
 * **upnp:** Update upnp library ([`f2c5120`](https://github.com/dominikkarall/fhempy/commit/f2c512079c665e8dd84c1efa288b08873cc98fed))
