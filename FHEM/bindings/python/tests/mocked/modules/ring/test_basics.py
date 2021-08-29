@@ -59,6 +59,10 @@ def mock_ring_requests():
             "https://api.ring.com/clients_api/doorbots/987652/siren_off", text="ok"
         )
         mock.get(
+            "https://api.ring.com/clients_api/dings/987654321/share/play?api_version=9",
+            text='{"url":"https://api.ring.com/clients_api/dings/987654321/recording?api_version=9"}',
+        )
+        mock.get(
             "https://api.ring.com/clients_api/dings/987654321/recording",
             text="ok",
         )
