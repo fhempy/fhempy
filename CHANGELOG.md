@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.108 (2021-08-30)
+### Fix
+* **tuya_cloud:** Fix startup issues ([`a9c2e99`](https://github.com/dominikkarall/fhempy/commit/a9c2e99db2fd0730b95bb3a1dab5e8f853753ec1))
+* **fhempy:** Fix github sec alert ([`6be1403`](https://github.com/dominikkarall/fhempy/commit/6be14039106babb653faa048336827e1719533bb))
+
 ## v0.1.107 (2021-08-30)
 ### Fix
 * **fhempy:** Update aiohttp library ([`f00540a`](https://github.com/dominikkarall/fhempy/commit/f00540abbc6daf6c8b8ba81772c3bef6769499fd))
