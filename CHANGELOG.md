@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.107 (2021-08-30)
+### Fix
+* **fhempy:** Update aiohttp library ([`f00540a`](https://github.com/dominikkarall/fhempy/commit/f00540abbc6daf6c8b8ba81772c3bef6769499fd))
+* **skodaconnect:** Update library to 1.0.52 ([`f14583e`](https://github.com/dominikkarall/fhempy/commit/f14583ef3b6beb5032064aeb016fe0966238cbe8))
+* **dlna_dmr:** Fix get_local_ip ([`e12f602`](https://github.com/dominikkarall/fhempy/commit/e12f60233cb5bd703d091a47bc21a3261d926331))
+
 ## v0.1.106 (2021-08-29)
 ### Fix
 * **tests:** Fix ring test ([`9098245`](https://github.com/dominikkarall/fhempy/commit/90982456484aec502ceeefe08c3a4be9e0ff9db4))
