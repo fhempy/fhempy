@@ -35,7 +35,8 @@ class tuya_cloud_device:
         while self.tuyaiot is None or self.tuyaiot.ready is False:
             await asyncio.sleep(1)
             self.tuyaiot = fhem_pythonbinding.getFhemPyDeviceByName(self._t_setupdev)
-            self.tuyaiot = self.tuyaiot.tuya_cloud_device
+            if self.tuyaiot is not None:
+                self.tuyaiot = self.tuyaiot.tuya_cloud_device
 
         self.tuyaiot.register_tuya_device(self)
 
