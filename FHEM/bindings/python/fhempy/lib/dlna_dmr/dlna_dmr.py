@@ -83,6 +83,10 @@ class dlna_dmr(FhemModule):
         requester = AiohttpSessionRequester(session, True)
         # ensure event handler has been started
         server_host = await async_get_local_ip()
+        if server_host:
+            server_host = server_host[1]
+        else:
+            self.logger.error(f"Failed to add device {self.device}")
         server_port = DEFAULT_LISTEN_PORT
         event_handler = await self.async_start_event_handler(
             server_host, server_port, requester
