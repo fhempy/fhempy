@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.109 (2021-08-31)
+### Fix
+* **tuya_cloud:** Fix reading updates ([`572c088`](https://github.com/dominikkarall/fhempy/commit/572c0880747a8535f9092f87cc12ee91e0910f6c))
+
 ## v0.1.108 (2021-08-30)
 ### Fix
 * **tuya_cloud:** Fix startup issues ([`a9c2e99`](https://github.com/dominikkarall/fhempy/commit/a9c2e99db2fd0730b95bb3a1dab5e8f853753ec1))
