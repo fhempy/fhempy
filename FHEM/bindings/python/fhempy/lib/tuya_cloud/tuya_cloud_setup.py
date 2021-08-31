@@ -82,7 +82,7 @@ class tuya_cloud_setup:
         tuya_mq.start()
 
         self.device_manager.mq = tuya_mq
-        tuya_mq.add_message_listener(self.device_manager._on_message)
+        tuya_mq.add_message_listener(self.device_manager.on_message)
 
     async def _init_tuya_sdk(self) -> bool:
         project_type = ProjectType(0)
