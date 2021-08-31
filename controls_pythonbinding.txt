@@ -4,5 +4,5 @@ DIR FHEM/bindings/python
 DIR FHEM/bindings/python/bin
 UPD 2021-08-27_21:02:54 14451 FHEM/10_BindingsIo.pm
 UPD 2021-08-28_12:01:46 4588 FHEM/10_PythonBinding.pm
-UPD 2021-08-30_21:56:26 3163 FHEM/10_PythonModule.pm
+UPD 2021-08-31_20:19:49 3163 FHEM/10_PythonModule.pm
 UPD 2021-08-28_12:01:46 3501 FHEM/bindings/python/bin/fhempy
