@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.114 (2021-09-05)
+### Fix
+* **erelax_vaillant:** Set endtime 0 if not active ([`9103634`](https://github.com/dominikkarall/fhempy/commit/91036349b24ded901051833a79aecf920af23f0f))
+
 ## v0.1.113 (2021-09-05)
 ### Fix
 * **erelax_vaillant:** Fix readings again ([`4fcb9d2`](https://github.com/dominikkarall/fhempy/commit/4fcb9d24c6deadbc1b622dc7dd9df4d26a6be645))
