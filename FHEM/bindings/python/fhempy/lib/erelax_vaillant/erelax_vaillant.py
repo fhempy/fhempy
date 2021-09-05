@@ -94,28 +94,30 @@ class erelax_vaillant(FhemModule):
                 self.logger.exception(ex)
 
     async def do_login(self, username, password):
-        try:
-            self.v_auth = await utils.run_blocking(
-                functools.partial(
-                    ClientAuth,
-                    "na_client_android_vaillant",
-                    self.unknown_code,
-                    username,
-                    password,
-                    (
-                        "read_station read_camera access_camera read_thermostat "
-                        "write_thermostat read_presence access_presence"
-                    ),
-                    "1.0.4.0",
-                    "vaillant",
+        for i in range(3):
+            try:
+                self.v_auth = await utils.run_blocking(
+                    functools.partial(
+                        ClientAuth,
+                        "na_client_android_vaillant",
+                        self.unknown_code,
+                        username,
+                        password,
+                        (
+                            "read_station read_camera access_camera read_thermostat "
+                            "write_thermostat read_presence access_presence"
+                        ),
+                        "1.0.4.0",
+                        "vaillant",
+                    )
                 )
-            )
-        except Exception as ex:
-            await fhem.readingsSingleUpdate(
-                self.hash, "state", "Failed to login to netatmo API", 1
-            )
-            self.logger.exception(ex)
-            return
+                await asyncio.sleep(5)
+                return
+            except Exception as ex:
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "Failed to login to netatmo API", 1
+                )
+                self.logger.exception(ex)
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
@@ -176,6 +178,8 @@ class erelax_vaillant(FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "desiredTemperature", v_module.setpoint_temp
         )
+        await fhem.readingsBulkUpdate(self.hash, "away", v_module.setpoint_away)
+        await fhem.readingsBulkUpdate(self.hash, "manual", v_module.setpoint_manual)
         await fhem.readingsEndUpdate(self.hash, 1)
 
 
