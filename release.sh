@@ -26,3 +26,6 @@ semantic-release --patch -D build_command="python3 setup.py sdist bdist_wheel" -
 # apply stash
 git stash apply
 
+# checkout development
+git checkout -q development
+
