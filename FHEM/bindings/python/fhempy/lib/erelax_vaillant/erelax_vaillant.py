@@ -181,7 +181,7 @@ class erelax_vaillant(FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "away", v_module.setpoint_away["setpoint_activate"]
         )
-        if v_module.setpoint_away["setpoint_active"]:
+        if v_module.setpoint_away["setpoint_activate"]:
             await fhem.readingsBulkUpdate(
                 self.hash, "away_endtime", v_module.setpoint_away["setpoint_endtime"]
             )
@@ -192,7 +192,7 @@ class erelax_vaillant(FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "manual", v_module.setpoint_manual["setpoint_activate"]
         )
-        if v_module.setpoint_manual["setpoint_active"]:
+        if v_module.setpoint_manual["setpoint_activate"]:
             await fhem.readingsBulkUpdate(
                 self.hash,
                 "manual_endtime",
@@ -424,13 +424,13 @@ class VaillantModule:
     @property
     def setpoint_away(self) -> str:
         if self.raw_module is None:
-            return ""
+            return {"setpoint_activate": False}
         return self.raw_module["setpoint_away"]
 
     @property
     def setpoint_manual(self) -> str:
         if self.raw_module is None:
-            return ""
+            return {"setpoint_activate": False}
         return self.raw_module["setpoint_manual"]
 
     @property
