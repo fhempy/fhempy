@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.111 (2021-09-05)
+### Fix
+* **erelax_vaillant:** Fix away/manual readings ([`31dfb46`](https://github.com/dominikkarall/fhempy/commit/31dfb464fc2a79121cbe0ea89a2e890954244f5c))
+
 ## v0.1.110 (2021-09-05)
 ### Feature
 * **erelax_vaillant:** Add away, manual readings ([`2e49418`](https://github.com/dominikkarall/fhempy/commit/2e494188b5e5c84603e2994bf4cb977b33b4c586))
