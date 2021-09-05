@@ -178,8 +178,32 @@ class erelax_vaillant(FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "desiredTemperature", v_module.setpoint_temp
         )
-        await fhem.readingsBulkUpdate(self.hash, "away", v_module.setpoint_away)
-        await fhem.readingsBulkUpdate(self.hash, "manual", v_module.setpoint_manual)
+        await fhem.readingsBulkUpdate(
+            self.hash, "away", v_module.setpoint_away["setpoint_activate"]
+        )
+        if v_module.setpoint_away["setpoint_active"]:
+            await fhem.readingsBulkUpdate(
+                self.hash, "away_endtime", v_module.setpoint_away["setpoint_endtime"]
+            )
+        else:
+            await fhem.readingsBulkUpdate(
+                self.hash, "away_endtime", v_module.setpoint_away["setpoint_endtime"]
+            )
+        await fhem.readingsBulkUpdate(
+            self.hash, "manual", v_module.setpoint_manual["setpoint_activate"]
+        )
+        if v_module.setpoint_manual["setpoint_active"]:
+            await fhem.readingsBulkUpdate(
+                self.hash,
+                "manual_endtime",
+                v_module.setpoint_manual["setpoint_endtime"],
+            )
+        else:
+            await fhem.readingsBulkUpdate(
+                self.hash,
+                "manual_endtime",
+                v_module.setpoint_manual["setpoint_endtime"],
+            )
         await fhem.readingsEndUpdate(self.hash, 1)
 
 
