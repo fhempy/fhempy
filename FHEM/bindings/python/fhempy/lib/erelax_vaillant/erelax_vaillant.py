@@ -422,13 +422,13 @@ class VaillantModule:
         return self.raw_module["battery_percent"]
 
     @property
-    def setpoint_away(self) -> str:
+    def setpoint_away(self):
         if self.raw_module is None:
             return {"setpoint_activate": False}
         return self.raw_module["setpoint_away"]
 
     @property
-    def setpoint_manual(self) -> str:
+    def setpoint_manual(self):
         if self.raw_module is None:
             return {"setpoint_activate": False}
         return self.raw_module["setpoint_manual"]
