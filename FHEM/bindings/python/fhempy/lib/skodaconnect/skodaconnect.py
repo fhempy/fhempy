@@ -50,6 +50,8 @@ class skodaconnect(FhemModule):
             while await connection.doLogin() is False:
                 await asyncio.sleep(5)
 
+            await connection.get_vehicles()
+
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
                 # there is more than one car
@@ -219,7 +221,7 @@ class skodaconnect(FhemModule):
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):
-        await self.connection.update()
+        await self.connection.update_all()
         try:
             for instrument in self.instruments:
                 if hasattr(instrument, "reverse_state") and instrument.reverse_state:
