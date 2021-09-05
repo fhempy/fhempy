@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.115 (2021-09-05)
+### Fix
+* **skodaconnect:** Update lib to 1.1.2 ([`a012022`](https://github.com/dominikkarall/fhempy/commit/a012022ae7ccb7c746df448d0b99975251fa25ce))
+
 ## v0.1.114 (2021-09-05)
 ### Fix
 * **erelax_vaillant:** Set endtime 0 if not active ([`9103634`](https://github.com/dominikkarall/fhempy/commit/91036349b24ded901051833a79aecf920af23f0f))
