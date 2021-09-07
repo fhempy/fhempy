@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.116 (2021-09-07)
+### Feature
+* **skodaconnect:** Add honk and flash support ([`623c3d3`](https://github.com/dominikkarall/fhempy/commit/623c3d3bef608edfa0ed5c00f157e8f90fcc908d))
+
+### Fix
+* **skodaconnect:** Update lib to 1.1.4 ([`192c4f3`](https://github.com/dominikkarall/fhempy/commit/192c4f3ac70b1b2ee33298f8d23d3aba7b025e79))
+* **skodaconnect:** Update lib to 1.1.3 ([`ae47357`](https://github.com/dominikkarall/fhempy/commit/ae4735782c9d15a7a408de965b27bcdb422c1d23))
+
 ## v0.1.115 (2021-09-05)
 ### Fix
 * **skodaconnect:** Update lib to 1.1.2 ([`a012022`](https://github.com/dominikkarall/fhempy/commit/a012022ae7ccb7c746df448d0b99975251fa25ce))
