@@ -154,6 +154,11 @@ class skodaconnect(FhemModule):
             "options": "lock,unlock",
         }
 
+        self.set_config["honkandflash"] = {
+            "args": ["honkandflash"],
+            "options": "flash,honkandflash",
+        }
+
         if self.vehicle.is_pheater_heating_supported:
             self.set_config["pheater"] = {
                 "args": ["mode"],
@@ -185,6 +190,9 @@ class skodaconnect(FhemModule):
 
     async def set_lock(self, hash, params):
         self.create_async_task(self.vehicle.set_lock(params["lockunlock"], self.spin))
+
+    async def set_honkandflash(self, hash, params):
+        self.create_async_task(self.vehicle.set_honkandflash(params["honkandflash"]))
 
     async def set_charger(self, hash, params):
         self.create_async_task(self.vehicle.set_charger(params["onoff"]))
