@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.117 (2021-09-08)
+### Fix
+* **fhempy:** Fix release script ([`de82f89`](https://github.com/dominikkarall/fhempy/commit/de82f891c300feda26bc35168119293a520991f6))
+
 ## v0.1.116 (2021-09-07)
 ### Feature
 * **skodaconnect:** Add honk and flash support ([`623c3d3`](https://github.com/dominikkarall/fhempy/commit/623c3d3bef608edfa0ed5c00f157e8f90fcc908d))
