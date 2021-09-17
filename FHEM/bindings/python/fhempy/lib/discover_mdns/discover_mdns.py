@@ -1,11 +1,8 @@
 import asyncio
-import concurrent.futures
-import logging
-import threading
 import traceback
 
 from fhempy.lib.generic import FhemModule
-from zeroconf import ServiceBrowser, Zeroconf
+from zeroconf.asyncio import AsyncServiceBrowser
 
 from .. import fhem
 from ..core.zeroconf import zeroconf
@@ -21,9 +18,8 @@ class discover_mdns(FhemModule):
 
     # zeroconf callback
     def update_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s updated, service info: %s" % (name, info))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
+        self.logger.debug("Service %s updated" % (name))
+        res = asyncio.run_coroutine_threadsafe(self.foundDevice(type, name), self.loop)
         res.result()
 
     # zeroconf callback
@@ -32,15 +28,13 @@ class discover_mdns(FhemModule):
 
     # zeroconf callback
     def add_service(self, zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
-        self.logger.debug("Service %s added, service info: %s" % (name, info))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(name, info), self.loop)
+        self.logger.debug("Service %s added" % (name))
+        res = asyncio.run_coroutine_threadsafe(self.foundDevice(type, name), self.loop)
         res.result()
 
-    async def foundDevice(self, name, info):
-        if info is None:
-            return
+    async def foundDevice(self, type, name):
         try:
+            info = await self.zeroconf.async_get_service_info(type, name)
 
             def get_value(key):
                 """Retrieve value and decode to UTF-8."""
@@ -117,7 +111,7 @@ class discover_mdns(FhemModule):
 
             # wait for the devices to initialize
             await asyncio.sleep(10)
-        except Exception as err:
+        except Exception:
             self.logger.error(traceback.print_exc())
 
     async def runZeroconfScan(self):
@@ -131,7 +125,7 @@ class discover_mdns(FhemModule):
             "_http._tcp.local.",
             "_spotify-connect",
         ]
-        self.browser = ServiceBrowser(self.zeroconf, services, listener)
+        self.browser = AsyncServiceBrowser(self.zeroconf.zeroconf, services, listener)
 
     # FHEM
     async def Define(self, hash, args, argsh):
