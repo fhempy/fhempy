@@ -185,7 +185,7 @@ class tuya_cloud_setup:
     async def _create_fhem_device(self, name, device_id):
         devalias = name
         devname = name + "_" + device_id
-        devname = devname.replace(" ", "_")
+        devname = utils.remove_umlaut(devname.replace(" ", "_"))
         device_exists = await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "tuya_cloud", "DEVICEID", device_id
         )

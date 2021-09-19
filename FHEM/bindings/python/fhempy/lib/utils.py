@@ -140,6 +140,33 @@ def flatten_json(y):
     return out
 
 
+def remove_umlaut(string):
+    """
+    Removes umlauts from strings and replaces them with the letter+e convention
+    :param string: string to remove umlauts from
+    :return: unumlauted string
+    """
+    u_enc = "ü".encode()
+    U_enc = "Ü".encode()
+    a_enc = "ä".encode()
+    A_enc = "Ä".encode()
+    o_enc = "ö".encode()
+    O_enc = "Ö".encode()
+    ss_enc = "ß".encode()
+
+    string = string.encode()
+    string = string.replace(u_enc, b"ue")
+    string = string.replace(U_enc, b"Ue")
+    string = string.replace(a_enc, b"ae")
+    string = string.replace(A_enc, b"Ae")
+    string = string.replace(o_enc, b"oe")
+    string = string.replace(O_enc, b"Oe")
+    string = string.replace(ss_enc, b"ss")
+
+    string = string.decode("utf-8")
+    return string
+
+
 def convert2format(value, list_def):
     target_format = "none"
     if "format" in list_def:
