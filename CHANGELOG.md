@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.118 (2021-09-19)
+### Fix
+* **tuya_cloud:** Support devices with umlauts ([`df937dc`](https://github.com/dominikkarall/fhempy/commit/df937dc0c9298ac0dea0a795510ea14330b0b2d9))
+* **discover_mdns:** Use async zeroconf ([`6ad6445`](https://github.com/dominikkarall/fhempy/commit/6ad6445e202e5cbe0a486b2701a775b6b32d599d))
+
 ## v0.1.117 (2021-09-08)
 ### Fix
 * **fhempy:** Fix release script ([`de82f89`](https://github.com/dominikkarall/fhempy/commit/de82f891c300feda26bc35168119293a520991f6))
