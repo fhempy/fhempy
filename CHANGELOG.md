@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.119 (2021-09-20)
+### Fix
+* **fhempy:** Add debug output ([`3b09a35`](https://github.com/dominikkarall/fhempy/commit/3b09a351db8851dfc5b34b684768d093e1a8ba45))
+
 ## v0.1.118 (2021-09-19)
 ### Fix
 * **tuya_cloud:** Support devices with umlauts ([`df937dc`](https://github.com/dominikkarall/fhempy/commit/df937dc0c9298ac0dea0a795510ea14330b0b2d9))
