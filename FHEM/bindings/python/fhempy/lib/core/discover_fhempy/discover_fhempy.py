@@ -29,7 +29,12 @@ class discover_fhempy:
 
     async def foundDevice(self, zc, type, name):
         self.logger.debug(f"Found service: {type} - {name}")
-        info = await self.zeroconf.async_get_service_info(type, name)
+        try:
+            info = await self.zeroconf.async_get_service_info(type, name)
+        except Exception:
+            self.logger.exception(f"async_get_service_info failed for {type} - {name}")
+            return
+
         self.logger.debug("Service %s found, service info: %s" % (name, info))
         if info is None:
             return
