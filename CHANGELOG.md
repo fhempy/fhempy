@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.120 (2021-09-22)
+### Fix
+* **fhempy:** Handle zeroconf exceptions ([`eebf78f`](https://github.com/dominikkarall/fhempy/commit/eebf78f761909ded5228cb0e32e99a89bd7cbeab))
+
 ## v0.1.119 (2021-09-20)
 ### Fix
 * **fhempy:** Add debug output ([`3b09a35`](https://github.com/dominikkarall/fhempy/commit/3b09a351db8851dfc5b34b684768d093e1a8ba45))
