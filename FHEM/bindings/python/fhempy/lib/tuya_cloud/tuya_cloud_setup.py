@@ -75,14 +75,15 @@ class tuya_cloud_setup:
     async def restart_mqtt(self):
         try:
             self.device_manager.mq.stop()
+            self.tuya_mq.stop()
         except Exception:
             pass
 
-        tuya_mq = TuyaOpenMQ(self.device_manager.api)
-        tuya_mq.start()
+        self.tuya_mq = TuyaOpenMQ(self.device_manager.api)
+        self.tuya_mq.start()
 
-        self.device_manager.mq = tuya_mq
-        tuya_mq.add_message_listener(self.device_manager.on_message)
+        self.device_manager.mq = self.tuya_mq
+        self.tuya_mq.add_message_listener(self.device_manager.on_message)
 
     async def _init_tuya_sdk(self) -> bool:
         project_type = ProjectType(0)
@@ -114,14 +115,14 @@ class tuya_cloud_setup:
             self.logger.error(f"Tuya login error response: {response}")
             return False
 
-        tuya_mq = TuyaOpenMQ(api)
-        tuya_mq.start()
+        self.tuya_mq = TuyaOpenMQ(api)
+        self.tuya_mq.start()
         self.fhemdev.create_async_task(self.restart_mqtt_loop())
 
-        self.device_manager = TuyaDeviceManager(api, tuya_mq)
+        self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
 
         # Get device list
-        self.home_manager = TuyaHomeManager(api, tuya_mq, self.device_manager)
+        self.home_manager = TuyaHomeManager(api, self.tuya_mq, self.device_manager)
         await utils.run_blocking(
             functools.partial(self.home_manager.update_device_cache)
         )
@@ -156,12 +157,16 @@ class tuya_cloud_setup:
 
             async def add_fhem_device(self, device: TuyaDevice):
                 await t_cloud_setup._create_fhem_device(device.name, device.id)
-                t_cloud_setup.device_manager.mq.stop()
-                tuya_mq = TuyaOpenMQ(t_cloud_setup.device_manager.device_manager.api)
-                tuya_mq.start()
+                self.tuya_mq.stop()
+                self.tuya_mq = TuyaOpenMQ(
+                    t_cloud_setup.device_manager.device_manager.api
+                )
+                self.tuya_mq.start()
 
-                t_cloud_setup.device_manager.mq = tuya_mq
-                tuya_mq.add_message_listener(t_cloud_setup.device_manager.on_message)
+                t_cloud_setup.device_manager.mq = self.tuya_mq
+                self.tuya_mq.add_message_listener(
+                    t_cloud_setup.device_manager.on_message
+                )
 
             def remove_device(self, device_id: str):
                 self.logger.info(f"remove_device received for {device_id}")
@@ -185,7 +190,7 @@ class tuya_cloud_setup:
     async def _create_fhem_device(self, name, device_id):
         devalias = name
         devname = name + "_" + device_id
-        devname = utils.remove_umlaut(devname.replace(" ", "_"))
+        devname = utils.remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
         device_exists = await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "tuya_cloud", "DEVICEID", device_id
         )
