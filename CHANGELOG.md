@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.122 (2021-09-28)
+### Feature
+* **seatconnect:** First Version of seatconnect ([#35](https://github.com/dominikkarall/fhempy/issues/35)) ([`124f715`](https://github.com/dominikkarall/fhempy/commit/124f71588f3bd54e20118baf37029760809cdfe8))
+
 ## v0.1.121 (2021-09-28)
 
 
