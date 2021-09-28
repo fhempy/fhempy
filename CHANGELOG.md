@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.121 (2021-09-28)
+
+
 ## v0.1.120 (2021-09-22)
 ### Fix
 * **fhempy:** Handle zeroconf exceptions ([`eebf78f`](https://github.com/dominikkarall/fhempy/commit/eebf78f761909ded5228cb0e32e99a89bd7cbeab))
