@@ -31,6 +31,7 @@ This repository includes following working modules:
 |[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
 |[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
 |[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
+|[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
 |[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
 |[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your skoda car|
 |[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Control tuya devices via local key|
