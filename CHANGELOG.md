@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.123 (2021-09-28)
+### Fix
+* **tuya_cloud:** Fix devnames with dashes ([`54e2f7c`](https://github.com/dominikkarall/fhempy/commit/54e2f7cb1de5f8bc844eb18f4332fbbbb8c7151d))
+
 ## v0.1.122 (2021-09-28)
 ### Feature
 * **seatconnect:** First Version of seatconnect ([#35](https://github.com/dominikkarall/fhempy/issues/35)) ([`124f715`](https://github.com/dominikkarall/fhempy/commit/124f71588f3bd54e20118baf37029760809cdfe8))
