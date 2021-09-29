@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.124 (2021-09-29)
+### Feature
+* **meross:** Support meross on/off ([`d08c927`](https://github.com/dominikkarall/fhempy/commit/d08c927361771164d8dc7665e0687fdc3420e777))
+* **fhempy:** Add gen_fhemdev_name fct ([`6cf9829`](https://github.com/dominikkarall/fhempy/commit/6cf9829124d6c3f759360b176be34510b319b7c7))
+
+### Fix
+* **fhempy:** Add exception handling ([`bcaaf97`](https://github.com/dominikkarall/fhempy/commit/bcaaf970f4b0f2e239bba52fe7c136f92c95218c))
+* **tuya_cloud:** Handle stop() exceptions ([`8bb081a`](https://github.com/dominikkarall/fhempy/commit/8bb081aa46f55a98a3900fc062b77fdd8369c16f))
+
 ## v0.1.123 (2021-09-28)
 ### Fix
 * **tuya_cloud:** Fix devnames with dashes ([`54e2f7c`](https://github.com/dominikkarall/fhempy/commit/54e2f7cb1de5f8bc844eb18f4332fbbbb8c7151d))
