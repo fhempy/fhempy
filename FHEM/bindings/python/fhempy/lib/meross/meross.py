@@ -16,6 +16,11 @@ class meross(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        if len(args) < 5:
+            return (
+                "Usage: define meross_integration PythonModule meross"
+                " setup <USERNAME> <PASSWORD>"
+            )
 
         if args[3] == "setup":
             self.device = meross_setup(self.logger, self)
