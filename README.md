@@ -25,6 +25,7 @@ This repository includes following working modules:
 |gfprobt|Control GF Pro Bluetooth irrigation control|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |helloworld|Hello World example for developers to start writing their own module|
+|[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor|
 |[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor|
