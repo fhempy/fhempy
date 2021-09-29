@@ -157,7 +157,10 @@ class tuya_cloud_setup:
 
             async def add_fhem_device(self, device: TuyaDevice):
                 await t_cloud_setup._create_fhem_device(device.name, device.id)
-                self.tuya_mq.stop()
+                try:
+                    self.tuya_mq.stop()
+                except Exception:
+                    pass
                 self.tuya_mq = TuyaOpenMQ(
                     t_cloud_setup.device_manager.device_manager.api
                 )

@@ -140,6 +140,10 @@ def flatten_json(y):
     return out
 
 
+def gen_fhemdev_name(devname):
+    return remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
+
+
 def remove_umlaut(string):
     """
     Removes umlauts from strings and replaces them with the letter+e convention
