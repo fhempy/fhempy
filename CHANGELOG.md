@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.125 (2021-09-30)
+### Fix
+* **tuya_cloud:** Fix rgb readings ([`5257ff2`](https://github.com/dominikkarall/fhempy/commit/5257ff2428219e75767b4f756734d7dbf1982bbf))
+* **meross:** Add usage ([`ccd7a4c`](https://github.com/dominikkarall/fhempy/commit/ccd7a4cd9b84573fbc472a024c0e1854fb509038))
+
 ## v0.1.124 (2021-09-29)
 ### Feature
 * **meross:** Support meross on/off ([`d08c927`](https://github.com/dominikkarall/fhempy/commit/d08c927361771164d8dc7665e0687fdc3420e777))
