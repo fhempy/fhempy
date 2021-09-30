@@ -3,9 +3,9 @@ pytest-env
 pytest-mock
 pytest-asyncio
 requests-mock
-aiohttp
 async-upnp-client
-websockets>=8.1
-importlib_metadata>=3.3.0
+websockets==10.0
+importlib_metadata==4.8.1
 cryptography==3.3.2
-zeroconf>=0.28.6
+zeroconf==0.36.7
+aiohttp[speedups]==3.7.4.post0
