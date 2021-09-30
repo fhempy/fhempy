@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.126 (2021-09-30)
+### Fix
+* **fhempy:** Update requirements ([`f327a5a`](https://github.com/dominikkarall/fhempy/commit/f327a5a5e5abd3393c336743a376618d5136176a))
+
 ## v0.1.125 (2021-09-30)
 ### Fix
 * **tuya_cloud:** Fix rgb readings ([`5257ff2`](https://github.com/dominikkarall/fhempy/commit/5257ff2428219e75767b4f756734d7dbf1982bbf))
