@@ -1,65 +1,69 @@
 import json
 import logging
-import random
 import re
 import socket
-import string
 import time
+from pathlib import Path
 from threading import Thread
 from typing import Optional
 
+import yaml
+
 from paho.mqtt.client import Client, MQTTMessage
-from . import bluetooth, utils
+from . import bluetooth, utils, zigbee
+from .helpers import DevicesRegistry
 from .mini_miio import SyncmiIO
 from .shell import TelnetShell, ntp_time
 from .unqlite import Unqlite, SQLite
-from .utils import GLOBAL_PROP
 
 _LOGGER = logging.getLogger(__name__)
 
 RE_NWK_KEY = re.compile(r"lumi send-nwk-key (0x.+?) {(.+?)}")
-RE_MAC = re.compile("^0x0*")
-# MAC reverse
-RE_REVERSE = re.compile(r"(..)(..)(..)(..)(..)(..)")
+
+TELNET_CMD = '{"method":"enable_telnet_service","params":""}'
+
+GW3_ERROR = (
+    "Check if [issue](https://github.com/AlexxIT/XiaomiGateway3/issues) "
+    "exists or create new one:\n```\n%s\n```"
+)
 
 
-class GatewayV:
-    """Handling different firmware versions."""
+class GatewayBase(DevicesRegistry):
+    did: str = None
+    """Xiaomi did of the gateway"""
 
-    ver = None
-
-    @property
-    def ver_mesh_group(self) -> str:
-        return "mesh_group_v1" if self.ver >= "1.4.6_0043" else "mesh_group"
-
-    @property
-    def ver_zigbee_db(self) -> str:
-        # https://github.com/AlexxIT/XiaomiGateway3/issues/14
-        # fw 1.4.6_0012 and below have one zigbee_gw.db file
-        # fw 1.4.6_0030 have many json files in this folder
-        return "*.json" if self.ver >= "1.4.6_0030" else "zigbee_gw.db"
-
-    @property
-    def ver_miio(self) -> bool:
-        return self.ver >= "1.4.7_0063"
-
-    @property
-    def ver_z3(self) -> bool:
-        return self.ver >= "1.4.7_0063"
-
-
-class GatewayMesh:
+    available: bool = None
+    """Getaway is considered online if there is an active connection to mqtt"""
     enabled: bool = None
+    """Gateway stops main loop if enabled property sets to False"""
 
-    devices: dict = None
-    updates: dict = None
+    host: str = None
 
+    options: dict = None
+
+    # TODO: remove this prop
+    gw_topic: str = None
+
+    mqtt: Client = None
     miio: SyncmiIO = None
-    mesh_params: list = None
-    mesh_ts: float = 0
+
+    @property
+    def debug_mode(self):
+        return self.options.get("debug", "")
+
+    @property
+    def device(self):
+        return self.devices[self.did]
 
     def debug(self, message: str):
-        raise NotImplemented
+        # basic logs
+        if "true" in self.debug_mode:
+            _LOGGER.debug(f"{self.host} | {message}")
+
+
+class GatewayMesh(GatewayBase):
+    mesh_params: list = None
+    mesh_ts: float = 0
 
     def mesh_start(self):
         self.mesh_params = []
@@ -67,14 +71,14 @@ class GatewayMesh:
         for device in self.devices.values():
             if device["type"] == "mesh" and "childs" not in device:
                 # TODO: rewrite more clear logic for lights and switches
-                p = device["params"][0]
+                p = device["miot_spec"][0]
                 self.mesh_params.append(
                     {"did": device["did"], "siid": p[0], "piid": p[1]}
                 )
 
         if self.mesh_params:
             self.mesh_ts = time.time() + 30
-            Thread(target=self.mesh_run).start()
+            Thread(target=self.mesh_run, name=f"{self.host}_mesh").start()
 
     def mesh_run(self):
         self.debug("Start Mesh Thread")
@@ -93,7 +97,7 @@ class GatewayMesh:
                             continue
 
                         did = item["did"]
-                        device_params = self.devices[did]["params"]
+                        device_params = self.devices[did]["miot_spec"]
                         # get other props for turn on lights or live switches
                         if device_params[0][3] == "switch" or item["value"]:
                             params2 += [
@@ -125,11 +129,15 @@ class GatewayMesh:
         bulk = {}
 
         for param in data:
-            if param.get("code", 0) != 0:
+            code = param.get("code", 0)
+            if code == -4004:
+                # handle device offline state
+                param["value"] = None
+            elif code != 0:
                 continue
 
             did = param["did"]
-            if did not in self.updates:
+            if did not in self.devices:
                 continue
 
             device = self.devices[did]
@@ -137,7 +145,7 @@ class GatewayMesh:
             prop = next(
                 (
                     p[2]
-                    for p in device["params"]
+                    for p in device["miot_spec"]
                     if p[0] == param["siid"] and p[1] == param["piid"]
                 ),
                 None,
@@ -148,18 +156,28 @@ class GatewayMesh:
             if did not in bulk:
                 bulk[did] = {}
 
+            # TODO: fix this dirty hack
+            if device["model"] == 3083 and prop == "power" and param["value"]:
+                param["value"] /= 100.0
+
+            # https://github.com/AlexxIT/XiaomiGateway3/issues/312
+            if prop in ("temperature", "humidity") and param["value"]:
+                param["value"] = round(param["value"], 2)
+
             bulk[did][prop] = param["value"]
 
         for did, payload in bulk.items():
-            self.debug(f"Process Mesh Data for {did}: {payload}")
-            for handler in self.updates[did]:
-                handler(payload)
+            # self.debug(f"Process Mesh Data for {did}: {payload}")
+            device = self.devices[did]
+            for entity in device["entities"].values():
+                if entity:
+                    entity.update(payload)
 
     def send_mesh(self, device: dict, data: dict):
         # data = {'light':True}
         payload = []
         for k, v in data.items():
-            param = next(p for p in device["params"] if p[2] == k)
+            param = next(p for p in device["miot_spec"] if p[2] == k)
             payload.append(
                 {
                     "did": device["did"],
@@ -180,17 +198,10 @@ class GatewayMesh:
         self.mesh_ts = time.time() + 2
 
 
-# noinspection PyUnusedLocal
-class GatewayStats:
-    stats: dict = None
-    host: str = None
-    info_ts: float = 0
-
-    mqtt: Client = None
-    gw_topic: str = None
-
-    # if mqtt connected
-    available: bool = None
+class GatewayStats(GatewayMesh):
+    # global stats for all gateways
+    # stats: dict = {}
+    parent_scan_ts: float = 0
 
     # interval for auto parent refresh in minutes, 0 - disabled auto refresh
     # -1 - disabled
@@ -199,23 +210,22 @@ class GatewayStats:
     # collected data from MQTT topic log/z3 (zigbee console)
     z3buffer: Optional[dict] = None
 
-    def debug(self, message: str):
-        raise NotImplemented
-
-    def add_stats(self, ieee: str, handler):
-        self.stats[ieee] = handler
-
-        if self.parent_scan_interval > 0:
-            self.info_ts = time.time() + 5
-
-    def remove_stats(self, ieee: str, handler):
-        self.stats.pop(ieee)
+    @property
+    def stats_enable(self):
+        return self.options.get("stats")
 
     def process_gw_stats(self, payload: dict = None):
         # empty payload - update available state
         self.debug(f"gateway <= {payload or self.available}")
 
-        if "lumi.0" not in self.stats:
+        if self.parent_scan_ts and time.time() > self.parent_scan_ts:
+            # block any auto updates in 30 seconds
+            self.parent_scan_ts = time.time() + 30
+
+            self.get_gateway_info()
+
+        device = self.devices.get(self.did)
+        if not device or not device.get("stats"):
             return
 
         if payload:
@@ -228,31 +238,35 @@ class GatewayStats:
                 }
             elif "free_mem" in payload:
                 s = payload["run_time"]
-                h, m, s = s // 3600, s % 3600 // 60, s % 60
+                d, h, m, s = (
+                    s // (3600 * 24),
+                    s % (3600 * 24) // 3600,
+                    s % 3600 // 60,
+                    s % 60,
+                )
+
                 payload = {
                     "free_mem": payload["free_mem"],
                     "load_avg": payload["load_avg"],
                     "rssi": -payload["rssi"],
-                    "uptime": f"{h:02}:{m:02}:{s:02}",
+                    "uptime": f"{d} days, {h:02}:{m:02}:{s:02}",
                 }
 
-        self.stats["lumi.0"](payload)
+        device["stats"].update(payload)
 
-    def process_zb_stats(self, payload: dict):
-        ieee = payload["eui64"]
-        if ieee in self.stats:
-            self.stats[ieee](payload)
+    def process_zb_stats(self, payload: dict) -> bool:
+        # convert ieee to did
+        did = "lumi." + str(payload["eui64"]).lstrip("0x").lower()
+        device = self.devices.get(did)
+        if device and device.get("stats"):
+            device["stats"].update(payload)
+            return True
+        return False
 
-        if self.info_ts and time.time() > self.info_ts:
-            # block any auto updates in 30 seconds
-            self.info_ts = time.time() + 30
-
-            self.get_gateway_info()
-
-    def process_ble_stats(self, payload: dict):
-        did = payload["dev"]["did"]
-        if did in self.stats:
-            self.stats[did](payload)
+    def process_ble_stats(self, mac: str, data: dict = None):
+        device = self.devices.get(mac)
+        if device and device.get("stats"):
+            device["stats"].update(data)
 
     def process_z3(self, payload: str):
         if payload.startswith("CLI command executed"):
@@ -322,33 +336,106 @@ class GatewayStats:
                 parent = "0x" + m4[nwk][0] if nwk in m4 else "-"
 
                 payload = {
+                    "eui64": ieee,
                     "nwk": "0x" + nwk,
                     "ago": ago,
                     "type": type_,
                     "parent": parent,
                 }
 
-                if ieee in self.stats:
-                    self.stats[ieee](payload)
-                else:
+                if not self.process_zb_stats(payload):
                     self.debug(f"Unknown zigbee device {ieee}: {payload}")
 
             # one hour later
             if self.parent_scan_interval > 0:
-                self.info_ts = time.time() + self.parent_scan_interval * 60
+                self.parent_scan_ts = time.time() + self.parent_scan_interval * 60
 
         except Exception as e:
             self.debug(f"Can't update parents: {e}")
 
 
+class GatewayGW3(GatewayStats):
+    ble_known = {}
+    ble_retain = {}
+
+    def process_gw3_state(self, mac: str, data: dict):
+        mac = mac.lower().replace(":", "")
+        if mac not in self.devices:
+            # save data for first init with device/info topic
+            self.ble_retain[mac] = data
+            return
+
+        device = self.devices[mac]
+
+        # skip messages with same sequence numb
+        if "seq" in data:
+            if device.get("seq") == data["seq"]:
+                return
+            device["seq"] = data["seq"]
+
+        # don't create stats if device don't have entities
+        if self.stats_enable and device["entities"]:
+            self.add_stats(device)
+            self.process_ble_stats(mac)
+
+        self.process_ble_payload(device, data)
+
+    def process_gw3_info(self, mac: str, data: dict):
+        if data["type"] != "ble":
+            return
+
+        mac = mac.lower().replace(":", "")
+        # defaults can be set from: YAML, Cloud and integrations GUI
+        if mac not in self.defaults:
+            name = f"{data['brand']} {data['name']} ({mac.upper()})"
+            self.debug(f"Skip new BLE device: {name}")
+            self.ble_known[mac] = name
+            return
+
+        device = self.find_or_create_device(
+            {
+                "mac": mac,
+                "type": "ble",
+                "model": None,
+                "init": {},
+                "device_manufacturer": data["brand"],
+                "device_name": data["brand"] + " " + data["name"],
+                "device_model": data["model"],
+            }
+        )
+
+        if mac in self.ble_retain:
+            self.process_ble_payload(device, self.ble_retain[mac])
+
+    def process_ble_payload(self, device: dict, payload: dict):
+        # init entities if needed
+        for k, v in payload.items():
+            if k in device["entities"]:
+                continue
+
+            device["init"][k] = payload[k]
+
+            domain = bluetooth.get_ble_domain(k, v)
+            self.add_entity(domain, device, k)
+
+        for entity in device["entities"].values():
+            if entity:
+                entity.update(payload)
+
+
 # noinspection PyUnusedLocal
-class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
+class GatewayEntry(Thread, GatewayGW3):
+    """Main class for working with the gateway via Telnet (23), MQTT (1883) and
+    miIO (54321) protocols.
+    """
+
     time_offset = 0
     pair_model = None
     pair_payload = None
+    pair_payload2 = None
 
-    def __init__(self, host: str, token: str, config: dict, **options):
-        super().__init__(daemon=True)
+    def __init__(self, host: str, token: str, **options):
+        super().__init__(daemon=True, name=f"{host}_main")
 
         self.host = host
         self.options = options
@@ -360,44 +447,38 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
         self.mqtt.on_disconnect = self.on_disconnect
         self.mqtt.on_message = self.on_message
 
-        self._ble = options.get("ble")  # for fast access
-        self._debug = options.get("debug", "")  # for fast access
-        self.parent_scan_interval = (
-            -1 if options.get("parent") is None else options["parent"]
-        )
-        self.default_devices = config["devices"] if config else None
-
-        if "true" in self._debug:
+        if "true" in self.debug_mode:
             self.miio.debug = True
 
-        self.devices = {}
-        self.updates = {}
         self.setups = {}
-        self.stats = {}
 
     @property
-    def device(self):
-        return self.devices["lumi.0"]
+    def ble_mode(self):
+        return self.options.get("ble", True)
 
-    def add_update(self, did: str, handler):
-        """Add handler to device update event."""
-        self.updates.setdefault(did, []).append(handler)
+    @property
+    def parent_scan_interval(self):
+        return self.options.get("parent", -1)
 
-    def remove_update(self, did: str, handler):
-        self.updates.setdefault(did, []).remove(handler)
+    @property
+    def telnet_cmd(self):
+        return self.options.get("telnet_cmd") or TELNET_CMD
 
-    def add_setup(self, domain: str, handler):
-        """Add hass device setup funcion."""
-        self.setups[domain] = handler
+    @property
+    def hass(self):
+        for device in self.devices.values():
+            for entity in device["entities"].values():
+                if entity and entity.hass:
+                    return entity.hass
+        return None
 
-    def debug(self, message: str):
-        # basic logs
-        if "true" in self._debug:
-            _LOGGER.debug(f"{self.host} | {message}")
-
-    def stop(self):
+    def stop(self, *args):
         self.enabled = False
-        self.mqtt._thread_terminate = True
+        self.mqtt.disconnect()
+
+        for device in self.devices.values():
+            if self in device["gateways"]:
+                device["gateways"].remove(self)
 
     def run(self):
         """Main thread loop."""
@@ -412,20 +493,15 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 time.sleep(30)
                 continue
 
-            devices = self._prepare_gateway(with_devices=True)
-            if devices:
-                self.gw_topic = f"gw/{devices[0]['mac'][2:].upper()}/"
+            if not self.did:
+                devices = self._get_devices()
+                if not devices:
+                    time.sleep(60)
+                    continue
+
                 self.setup_devices(devices)
-                break
-
-        self.update_time_offset()
-        self.mesh_start()
-
-        while self.enabled:
-            # if not telnet - enable it
-            if not self._check_port(23) and not self._enable_telnet():
-                time.sleep(30)
-                continue
+                self.update_time_offset()
+                self.mesh_start()
 
             # if not mqtt - enable it (handle Mi Home and ZHA mode)
             if not self._prepare_gateway() or not self._mqtt_connect():
@@ -452,22 +528,20 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
 
     def _enable_telnet(self):
         """Enable telnet with miio protocol."""
-        if self.miio.send("enable_telnet_service") != "ok":
+        raw = json.loads(self.telnet_cmd)
+        if self.miio.send(raw["method"], raw.get("params")) != ["ok"]:
             self.debug(f"Can't enable telnet")
             return False
         return True
 
-    def _prepare_gateway(self, with_devices: bool = False):
+    def _prepare_gateway(self):
         """Launching the required utilities on the hub, if they are not already
         running.
         """
         self.debug("Prepare Gateway")
         try:
             shell = TelnetShell(self.host)
-
-            if self.ver is None:
-                self.ver = shell.get_version()
-                self.debug(f"Version: {self.ver}")
+            self.debug(f"Version: {shell.ver}")
 
             ps = shell.get_running_ps()
 
@@ -479,16 +553,15 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 # run NTPd for sync time
                 shell.run_ntpd()
 
-            # all data or only necessary events
-            pattern = (
-                '\\{"'
-                if "miio" in self._debug
-                else "ble_event|properties_changed|heartbeat"
-            )
-
-            if f"awk /{pattern} {{" not in ps:
+            if "-t log/miio" not in ps:
+                # all data or only necessary events
+                pattern = (
+                    '\\{"'
+                    if "miio" in self.debug_mode
+                    else "ot_agent_recv_handler_one.+" "properties_changed|heartbeat"
+                )
                 self.debug(f"Redirect miio to MQTT")
-                shell.redirect_miio2mqtt(pattern, self.ver_miio)
+                shell.redirect_miio2mqtt(pattern)
 
             if self.options.get("buzzer"):
                 if "dummy:basic_gw" not in ps:
@@ -499,36 +572,51 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                     self.debug("Enable buzzer")
                     shell.run_buzzer()
 
-            if self.options.get("zha"):
-                if "socat" not in ps:
-                    if "Received" in shell.check_or_download_socat():
-                        self.debug("Download socat")
-                    self.debug("Run socat")
-                    shell.run_socat()
+            # running gw3 last because it touches the daemon_miio.sh file
+            if self.ble_mode:
+                # check if binary has latest version
+                if shell.check_gw3():
+                    if "/gw3" not in ps:
+                        self.debug("Run gw3")
+                        shell.run_gw3()
+                else:
+                    if "/gw3" in ps:
+                        shell.stop_gw3()
+                    self.debug("Download and run gw3")
+                    shell.run_gw3()
+            elif "/gw3" in ps:
+                self.debug("Stop gw3")
+                shell.stop_gw3()
 
-                if "Lumi_Z3GatewayHost_MQTT" in ps:
-                    self.debug("Stop Lumi Zigbee")
-                    shell.stop_lumi_zigbee()
+            if self.options.get("zha"):
+                # stop lumi without checking if it's running
+                shell.stop_lumi_zigbee()
+
+                if "tcp-l:8889" in ps:
+                    shell.stop_zigbee_tcp()
+                if "tcp-l:8888" not in ps:
+                    self.debug("Run Zigbee TCP")
+                    shell.run_zigbee_tcp()
 
             else:
-                if "socat" in ps:
-                    self.debug("Stop socat")
-                    shell.stop_socat()
+                # check both 8888 and 8889
+                if "tcp-l:888" in ps:
+                    self.debug("Stop Zigbee TCP")
+                    shell.stop_zigbee_tcp()
 
-                if (
-                    self.parent_scan_interval >= 0
-                    and "Lumi_Z3GatewayHost_MQTT -n 1 -b 115200 -l" not in ps
-                ):
-                    self.debug("Run public Zigbee console")
-                    shell.run_public_zb_console(self.ver_z3)
+                if self.parent_scan_interval >= 0:
+                    if "Lumi_Z3GatewayHost_MQTT -n 1 -b 115200 -l" not in ps:
+                        self.debug("Run public Zigbee console")
+                        shell.run_public_zb_console()
 
-                elif "Lumi_Z3GatewayHost_MQTT" not in ps:
+                    if self.parent_scan_interval > 0:
+                        self.parent_scan_ts = 1
+
+                elif "daemon_app.sh" not in ps:
                     self.debug("Run Lumi Zigbee")
                     shell.run_lumi_zigbee()
 
-            if with_devices:
-                self.debug("Get devices")
-                return self._get_devices(shell)
+            shell.close()
 
             return True
 
@@ -536,175 +624,168 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
             return False
 
         except Exception as e:
-            self.debug(f"Can't read devices: {e}")
+            self.debug(f"Can't prepare gateway: {e}")
             return False
 
     def _mqtt_connect(self) -> bool:
         try:
             self.mqtt.reconnect()
             return True
-        except Exception:
+        except:
             return False
 
-    def _miio_connect(self) -> bool:
-        if not self.miio.ping():
-            self.debug("Can't send handshake")
-            return False
-
-        return True
-
-    def _get_devices(self, shell: TelnetShell):
+    def _get_devices(self):
         """Load devices info for Coordinator, Zigbee and Mesh."""
+        try:
+            shell = TelnetShell(self.host)
 
-        # 1. Read coordinator info
-        raw = shell.read_file("/data/miio/device.conf").decode()
-        m = re.search(r"did=(\d+)", raw)
-
-        raw = shell.read_file("/data/zigbee/coordinator.info")
-        device = json.loads(raw)
-        devices = [
-            {
-                "did": "lumi.0",
-                "model": "lumi.gateway.mgl03",
-                "mac": device["mac"],
-                "type": "gateway",
-                "init": {
-                    "firmware lock": shell.check_firmware_lock(),
-                    "alarm_did": m[1],
-                },
-            }
-        ]
-
-        # 2. Read zigbee devices
-        if not self.options.get("zha"):
-            # read Silicon devices DB
-            nwks = {}
-            try:
-                raw = shell.read_file("/data/silicon_zigbee_host/devices.txt")
-                raw = raw.decode().split(" ")
-                for i in range(0, len(raw) - 1, 32):
-                    ieee = reversed(raw[i + 3 : i + 11])
-                    ieee = "".join(f"{i:>02s}" for i in ieee)
-                    nwks[ieee] = f"{raw[i]:>04s}"
-            except Exception:
-                _LOGGER.exception("Can't read Silicon devices DB")
-
-            # read Xiaomi devices DB
-            raw = shell.read_file(
-                "/data/zigbee_gw/" + self.ver_zigbee_db, as_base64=True
-            )
-            if raw.startswith(b"unqlite"):
-                db = Unqlite(raw)
-                data = db.read_all()
-            else:
-                raw = re.sub(br"}\s+{", b",", raw)
-                data = json.loads(raw)
-
-            # data = {} or data = {'dev_list': 'null'}
-            dev_list = json.loads(data.get("dev_list", "null")) or []
-
-            for did in dev_list:
-                model = data[did + ".model"]
-                desc = utils.get_device(model)
-
-                # skip unknown model
-                if desc is None:
-                    self.debug(f"{did} has an unsupported modell: {model}")
-                    continue
-
-                retain = json.loads(data[did + ".prop"])["props"]
-                self.debug(f"{did} {model} retain: {retain}")
-
-                params = {
-                    p[2]: retain.get(p[1])
-                    for p in (desc["params"] or desc["mi_spec"])
-                    if p[1] is not None
+            # 1. Read coordinator info
+            raw = shell.read_file("/data/zigbee/coordinator.info")
+            device = json.loads(raw)
+            devices = [
+                {
+                    "did": shell.get_did(),
+                    "model": "lumi.gateway.mgl03",
+                    "mac": device["mac"],
+                    "wlan_mac": shell.get_wlan_mac(),
+                    "type": "gateway",
+                    "fw_ver": shell.ver,
+                    "online": True,
+                    "init": {
+                        "firmware lock": shell.check_firmware_lock(),
+                    },
                 }
+            ]
 
-                ieee = f"{data[did + '.mac']:>016s}"
-                device = {
-                    "did": did,
-                    "mac": "0x" + data[did + ".mac"],
-                    "ieee": ieee,
-                    "nwk": nwks.get(ieee),
-                    "model": data[did + ".model"],
-                    "type": "zigbee",
-                    "zb_ver": data[did + ".version"],
-                    "init": utils.fix_xiaomi_props(params),
-                    "online": retain.get("alive", 1) == 1,
-                }
-                devices.append(device)
+            # 2. Read zigbee devices
+            if not self.options.get("zha"):
+                # read Silicon devices DB
+                nwks = {}
+                try:
+                    raw = shell.read_file("/data/silicon_zigbee_host/devices.txt")
+                    raw = raw.decode().split(" ")
+                    for i in range(0, len(raw) - 1, 32):
+                        ieee = reversed(raw[i + 3 : i + 11])
+                        ieee = "".join(f"{i:>02s}" for i in ieee)
+                        nwks[ieee] = f"{raw[i]:>04s}"
+                except:
+                    _LOGGER.exception("Can't read Silicon devices DB")
 
-        # 3. Read bluetooth devices
-        if self._ble:
-            raw = shell.read_file("/data/miio/mible_local.db", as_base64=True)
-            db = SQLite(raw)
+                # read Xiaomi devices DB
+                raw = shell.read_file(shell.zigbee_db, as_base64=True)
+                # self.debug(f"Devices RAW: {raw}")
+                if raw is None:
+                    self.debug("No zigbee database")
+                    data = {}
+                elif raw.startswith(b"unqlite"):
+                    db = Unqlite(raw)
+                    data = db.read_all()
+                else:
+                    raw = re.sub(br"}\s*{", b",", raw)
+                    data = json.loads(raw)
 
-            # load BLE devices
-            rows = db.read_table("gateway_authed_table")
-            for row in rows:
-                device = {
-                    "did": row[4],
-                    "mac": RE_REVERSE.sub(r"\6\5\4\3\2\1", row[1]),
-                    "model": row[2],
-                    "type": "ble",
-                }
-                devices.append(device)
+                # data = {} or data = {'dev_list': 'null'}
+                dev_list = json.loads(data.get("dev_list", "null")) or []
 
-            # load Mesh groups
-            try:
-                mesh_groups = {}
+                for did in dev_list:
+                    model = data.get(did + ".model")
+                    if not model:
+                        self.debug(f"{did} has not in devices DB")
+                        continue
+                    desc = zigbee.get_device(model)
 
-                rows = db.read_table(self.ver_mesh_group)
-                for row in rows:
-                    # don't know if 8 bytes enougth
-                    mac = int(row[0]).to_bytes(8, "big").hex()
-                    device = {
-                        "did": "group." + row[0],
-                        "mac": mac,
-                        "model": 0,
-                        "childs": [],
-                        "type": "mesh",
+                    # skip unknown model
+                    if desc is None:
+                        self.debug(f"{did} has an unsupported modell: {model}")
+                        continue
+
+                    retain = json.loads(data[did + ".prop"])["props"]
+                    self.debug(f"{did} {model} retain: {retain}")
+
+                    params = {
+                        p[2]: retain.get(p[1])
+                        for p in (desc["lumi_spec"] or desc["miot_spec"])
+                        if p[1] is not None
                     }
-                    group_addr = row[1]
-                    mesh_groups[group_addr] = device
 
-                # load Mesh bulbs
-                rows = db.read_table("mesh_device")
-                for row in rows:
+                    ieee = f"{data[did + '.mac']:>016s}"
                     device = {
-                        "did": row[0],
-                        "mac": row[1].replace(":", ""),
-                        "model": row[2],
-                        "type": "mesh",
+                        "did": did,
+                        "mac": "0x" + data[did + ".mac"],
+                        "ieee": ieee,
+                        "nwk": nwks.get(ieee),
+                        "model": model,
+                        "type": "zigbee",
+                        "fw_ver": retain.get("fw_ver") or retain.get("1.4"),
+                        "init": zigbee.fix_xiaomi_props(model, params),
+                        "online": retain.get("alive", 1) == 1,
                     }
                     devices.append(device)
 
-                    group_addr = row[5]
-                    if group_addr in mesh_groups:
-                        # add bulb to group if exist
-                        mesh_groups[group_addr]["childs"].append(row[0])
+            # 3. Read bluetooth devices
+            if self.ble_mode:
+                raw = shell.read_file("/data/miio/mible_local.db", as_base64=True)
+                try:
+                    db = SQLite(raw)
 
-                for device in mesh_groups.values():
-                    if device["childs"]:
+                    # load Mesh groups
+                    mesh_groups = {}
+
+                    rows = db.read_table(shell.mesh_group_table)
+                    for row in rows:
+                        # don't know if 8 bytes enougth
+                        mac = int(row[0]).to_bytes(8, "big").hex()
+                        device = {
+                            "did": "group." + row[0],
+                            "mac": mac,
+                            "model": 0,
+                            "childs": [],
+                            "type": "mesh",
+                            "online": True,
+                        }
                         devices.append(device)
 
-            except Exception:
-                _LOGGER.exception("Can't read mesh devices")
+                        group_addr = row[1]
+                        mesh_groups[group_addr] = device
 
-        # for testing purposes
-        for k, v in self.default_devices.items():
-            if k[0] == "_":
-                devices.append(v)
+                    # load Mesh bulbs
+                    rows = db.read_table(shell.mesh_device_table)
+                    for row in rows:
+                        device = {
+                            "did": row[0],
+                            "mac": row[1].replace(":", ""),
+                            "model": row[2],
+                            "type": "mesh",
+                            "online": False,
+                        }
+                        devices.append(device)
 
-        return devices
+                        group_addr = row[5]
+                        if group_addr in mesh_groups:
+                            # add bulb to group if exist
+                            mesh_groups[group_addr]["childs"].append(row[0])
+
+                except:
+                    _LOGGER.exception("Can't read mesh devices")
+
+            # for testing purposes
+            for k, v in self.defaults.items():
+                if k[0] == "_":
+                    devices.append(v)
+
+            return devices
+
+        except (ConnectionRefusedError, socket.timeout):
+            return None
+
+        except Exception as e:
+            _LOGGER.exception(f"{self.host} | Can't read devices: {e}")
+            return None
 
     def lock_firmware(self, enable: bool):
         self.debug(f"Set firmware lock to {enable}")
         try:
             shell = TelnetShell(self.host)
-            if "Received" in shell.check_or_download_busybox():
-                self.debug("Download busybox")
             shell.lock_firmware(enable)
             locked = shell.check_firmware_lock()
             shell.close()
@@ -714,12 +795,20 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
             self.debug(f"Can't set firmware lock: {e}")
             return False
 
+    def update_entities_states(self):
+        for device in list(self.devices.values()):
+            if self in device["gateways"]:
+                for entity in list(device["entities"].values()):
+                    if entity:
+                        entity.schedule_update_ha_state()
+
     def on_connect(self, client, userdata, flags, rc):
         self.debug("MQTT connected")
         self.mqtt.subscribe("#")
 
         self.available = True
         self.process_gw_stats()
+        self.update_entities_states()
 
     def on_disconnect(self, client, userdata, rc):
         self.debug("MQTT disconnected")
@@ -728,25 +817,48 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
 
         self.available = False
         self.process_gw_stats()
+        self.update_entities_states()
 
     def on_message(self, client: Client, userdata, msg: MQTTMessage):
+        # for debug purpose
+        enabled = self.enabled
         try:
             topic = msg.topic
 
-            if "mqtt" in self._debug:
-                self.debug(f"[MQ] {topic} {msg.payload.decode()}")
+            if "mqtt" in self.debug_mode:
+                _LOGGER.debug(f"{self.host} | MQTT | {topic} {msg.payload}")
 
             if topic == "zigbee/send":
                 payload = json.loads(msg.payload)
-                self.process_message(payload)
+                self.process_zigbee_message(payload)
+
+            elif topic == "gw3/stderr":
+                _LOGGER.warning(msg.payload)
+
+                message = GW3_ERROR % msg.payload.decode("utf-8")
+                utils.notification(self.hass, message)
+
+                # restore gw3 application
+                self._prepare_gateway()
+
+            elif topic.startswith("gw3/"):
+                items = topic.split("/")
+                if len(items) != 3:
+                    return
+
+                payload = json.loads(msg.payload)
+                if items[2] in ("state", "event"):
+                    self.process_gw3_state(items[1], payload)
+                elif items[2] == "info":
+                    self.process_gw3_info(items[1], payload)
 
             elif topic == "log/miio":
+                # don't need to process another data
+                if b"ot_agent_recv_handler_one" not in msg.payload:
+                    return
+
                 for raw in utils.extract_jsons(msg.payload):
-                    if self._ble and b"_async.ble_event" in raw:
-                        data = json.loads(raw)["params"]
-                        self.process_ble_event(data)
-                        self.process_ble_stats(data)
-                    elif self._ble and b"properties_changed" in raw:
+                    if self.ble_mode and b"properties_changed" in raw:
                         data = json.loads(raw)["params"]
                         self.debug(f"Process props {data}")
                         self.process_mesh_data(data)
@@ -767,96 +879,34 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 payload = json.loads(msg.payload)
                 self.process_zb_stats(payload)
 
-            # read only retained ble
-            elif topic.startswith("ble") and msg.retain:
-                payload = json.loads(msg.payload)
-                self.process_ble_retain(topic[4:], payload)
-
             elif self.pair_model and topic.endswith("/commands"):
                 self.process_pair(msg.payload)
 
-        except Exception:
+        except:
             _LOGGER.exception(f"Processing MQTT: {msg.topic} {msg.payload}")
 
     def setup_devices(self, devices: list):
         """Add devices to hass."""
         for device in devices:
-            if device["type"] in ("gateway", "zigbee"):
-                desc = utils.get_device(device["model"])
-                if not desc:
-                    self.debug(f"Unsupported model: {device}")
-                    continue
+            type_ = device["type"]
+            self.debug(f"Setup {type_} device {device}")
 
-                self.debug(f"Setup Zigbee device {device}")
+            device = self.find_or_create_device(device)
 
-                device.update(desc)
+            if type_ == "gateway":
+                self.did = device["did"]
+                self.gw_topic = f"gw/{device['mac'][2:].upper()}/"
 
-                # update params from config
-                default_config = self.default_devices.get(
-                    device["mac"]
-                ) or self.default_devices.get(device["did"])
-                if default_config:
-                    device.update(default_config)
+            if type_ in ("gateway", "zigbee", "mesh"):
+                for param in device["lumi_spec"] or []:
+                    self.add_entity(param[3], device, param[2])
+                for param in device["miot_spec"] or []:
+                    self.add_entity(param[3], device, param[2])
 
-                self.devices[device["did"]] = device
+            if self.stats_enable and type_ in ("gateway", "zigbee"):
+                self.add_stats(device)
 
-                for param in device["params"] or device["mi_spec"]:
-                    domain = param[3]
-                    if not domain:
-                        continue
-
-                    # wait domain init
-                    while domain not in self.setups:
-                        time.sleep(1)
-
-                    self.setups[domain](self, device, param[2])
-
-            elif device["type"] == "mesh":
-                desc = bluetooth.get_device(device["model"], "Mesh")
-                device.update(desc)
-
-                self.debug(f"Setup Mesh device {device}")
-
-                # update params from config
-                default_config = self.default_devices.get(device["did"])
-                if default_config:
-                    device.update(default_config)
-
-                device["online"] = False
-
-                self.devices[device["did"]] = device
-
-                for param in device["params"]:
-                    domain = param[3]
-                    if not domain:
-                        continue
-
-                    # wait domain init
-                    while domain not in self.setups:
-                        time.sleep(1)
-
-                    self.setups[domain](self, device, param[2])
-
-            elif device["type"] == "ble":
-                # only save info for future
-                desc = bluetooth.get_device(device["model"], "BLE")
-                device.update(desc)
-
-                # update params from config
-                default_config = self.default_devices.get(device["did"])
-                if default_config:
-                    device.update(default_config)
-
-                self.devices[device["did"]] = device
-
-                device["init"] = {}
-
-            if self.options.get("stats") and device["type"] != "mesh":
-                while "sensor" not in self.setups:
-                    time.sleep(1)
-                self.setups["sensor"](self, device, device["type"])
-
-    def process_message(self, data: dict):
+    def process_zigbee_message(self, data: dict):
         if data["cmd"] == "heartbeat":
             # don't know if only one item
             assert len(data["params"]) == 1, data
@@ -866,17 +916,17 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
         elif data["cmd"] == "report":
             pkey = "params" if "params" in data else "mi_spec"
         elif data["cmd"] in ("write_rsp", "read_rsp"):
-            pkey = "results"
+            pkey = "results" if "results" in data else "mi_spec"
         elif data["cmd"] == "write_ack":
             return
         else:
             _LOGGER.warning(f"Unsupported cmd: {data}")
             return
 
-        did = data["did"]
+        did = data["did"] if data["did"] != "lumi.0" else self.did
 
-        # skip without callback
-        if did not in self.updates:
+        # skip without callback and without data
+        if did not in self.devices or pkey not in data:
             return
 
         ts = time.time()
@@ -899,13 +949,13 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 _LOGGER.warning(f"Unsupported param: {data}")
                 return
 
-            if prop in GLOBAL_PROP:
-                prop = GLOBAL_PROP[prop]
+            if prop in zigbee.GLOBAL_PROP:
+                prop = zigbee.GLOBAL_PROP[prop]
             else:
                 prop = next(
                     (
                         p[2]
-                        for p in (device["params"] or device["mi_spec"])
+                        for p in (device["lumi_spec"] or device["miot_spec"])
                         if p[0] == prop
                     ),
                     prop,
@@ -913,17 +963,18 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
 
             # https://github.com/Koenkk/zigbee2mqtt/issues/798
             # https://www.maero.dk/aqara-temperature-humidity-pressure-sensor-teardown/
-            if prop == "temperature":
+            if prop == "temperature" and device["model"] != "lumi.airmonitor.acn01":
                 if -4000 < param["value"] < 12500:
                     payload[prop] = param["value"] / 100.0
-            elif prop == "humidity":
+            elif prop == "humidity" and device["model"] != "lumi.airmonitor.acn01":
                 if 0 <= param["value"] <= 10000:
                     payload[prop] = param["value"] / 100.0
             elif prop == "pressure":
                 payload[prop] = param["value"] / 100.0
-            elif prop == "battery" and param["value"] > 1000:
-                # xiaomi light sensor
-                payload[prop] = round((min(param["value"], 3200) - 2500) / 7)
+            elif prop == "battery":
+                # I do not know if the formula is correct, so battery is more
+                # important than voltage
+                payload[prop] = zigbee.fix_xiaomi_battery(param["value"])
             elif prop == "alive" and param["value"]["status"] == "offline":
                 device["online"] = False
             elif prop == "angle":
@@ -934,11 +985,22 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 payload[prop] = param["value"] / 1000.0
             elif prop in ("consumption", "power"):
                 payload[prop] = round(param["value"], 2)
+            elif prop in ("voltage", "current"):
+                payload[prop] = round(param["value"] / 1000.0, 2)
+            elif prop == "energy":
+                # energy consumption Wh to kWh
+                payload[prop] = round(param["value"] / 1000.0, 3)
+            elif prop == "fw_ver" and param["value"] != device["fw_ver"]:
+                device["fw_ver"] = param["value"]
+                self._update_device_fw_ver(device, param["value"])
+            elif prop == "ota_progress":
+                self._update_device_fw_ver(device, f"Update {param['value']}%")
             elif "value" in param:
                 payload[prop] = param["value"]
             elif "arguments" in param:
-                if prop == "motion":
-                    payload[prop] = 1
+                d = yaml.safe_load(prop)
+                if isinstance(d, dict):
+                    payload.update(d)
                 else:
                     payload[prop] = param["arguments"]
 
@@ -953,9 +1015,12 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
         if payload:
             device["online"] = True
 
-        for handler in self.updates[did]:
-            handler(payload)
+        for entity in device["entities"].values():
+            if entity:
+                entity.update(payload)
+                break
 
+        # TODO: move code earlier!!!
         if "added_device" in payload:
             # {'did': 'lumi.fff', 'mac': 'fff', 'model': 'lumi.sen_ill.mgl01',
             # 'version': '21', 'zb_ver': '3.0'}
@@ -965,115 +1030,23 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
             device["init"] = payload
             self.setup_devices([device])
 
-    def process_ble_event(self, data: dict):
-        self.debug(f"Process BLE {data}")
+        # return for tests purpose
+        return payload
 
-        pdid = data["dev"].get("pdid")
-
-        did = data["dev"]["did"]
-        if did not in self.devices:
-            mac = (
-                data["dev"]["mac"].replace(":", "").lower()
-                if "mac" in data["dev"]
-                else "ble_" + did.replace("blt.3.", "")
-            )
-            self.devices[did] = device = {
-                "did": did,
-                "mac": mac,
-                "init": {},
-                "type": "bluetooth",
-            }
-            desc = bluetooth.get_device(pdid, "BLE")
-            device.update(desc)
-
-            # update params from config
-            default_config = self.default_devices.get(did)
-            if default_config:
-                device.update(default_config)
-
-        else:
-            device = self.devices[did]
-
-        if isinstance(data["evt"], list):
-            # check if only one
-            assert len(data["evt"]) == 1, data
-            payload = bluetooth.parse_xiaomi_ble(data["evt"][0], pdid)
-        elif isinstance(data["evt"], dict):
-            payload = bluetooth.parse_xiaomi_ble(data["evt"], pdid)
-        else:
-            payload = None
-
-        if payload is None:
-            self.debug(f"Unsupported BLE {data}")
-            return
-
-        # init entities if needed
-        init = device["init"]
-        for k in payload.keys():
-            if k in init:
-                # update for retain
-                init[k] = payload[k]
-                continue
-
-            init[k] = payload[k]
-
-            domain = bluetooth.get_ble_domain(k)
-            if not domain:
-                continue
-
-            # wait domain init
-            while domain not in self.setups:
-                time.sleep(1)
-
-            self.setups[domain](self, device, k)
-
-        if did in self.updates:
-            for handler in self.updates[did]:
-                handler(payload)
-
-        raw = json.dumps(init, separators=(",", ":"))
-        self.mqtt.publish(f"ble/{did}", raw, retain=True)
-
-    def process_ble_retain(self, did: str, payload: dict):
-        if did not in self.devices:
-            self.debug(f"BLE device {did} is no longer on the gateway")
-            return
-
-        self.debug(f"{did} retain: {payload}")
-
-        device = self.devices[did]
-
-        # init entities if needed
-        for k in payload.keys():
-            # don't retain action and motion
-            if k in device["init"]:
-                continue
-
-            if k in ("action", "motion"):
-                device["init"][k] = ""
-            else:
-                device["init"][k] = payload[k]
-
-            domain = bluetooth.get_ble_domain(k)
-            if not domain:
-                continue
-
-            # wait domain init
-            while domain not in self.setups:
-                time.sleep(1)
-
-            self.setups[domain](self, device, k)
-
-        if did in self.updates:
-            for handler in self.updates[did]:
-                handler(payload)
+    @staticmethod
+    def _update_device_fw_ver(device: dict, fw_ver: str):
+        for entity in device["entities"].values():
+            if entity:
+                utils.update_device_info(entity.hass, device["did"], sw_version=fw_ver)
+                break
 
     def process_pair(self, raw: bytes):
+        _LOGGER.debug(f"!!! {raw}")
         # get shortID and eui64 of paired device
         if b"lumi send-nwk-key" in raw:
             # create model response
             payload = (
-                f"0x18010105000042{len(self.pair_model):02x}"
+                f"0x08020105000042{len(self.pair_model):02x}"
                 f"{self.pair_model.encode().hex()}"
             )
             m = RE_NWK_KEY.search(raw.decode())
@@ -1090,38 +1063,60 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
                 },
                 separators=(",", ":"),
             )
+            self.pair_payload2 = json.dumps(
+                {
+                    "sourceAddress": m[1],
+                    "eui64": "0x" + m[2],
+                    "profileId": "0x0104",
+                    "clusterId": "0x0000",
+                    "sourceEndpoint": "0x01",
+                    "destinationEndpoint": "0x01",
+                    "APSCounter": "0x01",
+                    "APSPlayload": "0x0801010100002001",
+                },
+                separators=(",", ":"),
+            )
 
         # send model response "from device"
         elif b"zdo active " in raw:
+            self.mqtt.publish(self.gw_topic + "MessageReceived", self.pair_payload2)
             self.mqtt.publish(self.gw_topic + "MessageReceived", self.pair_payload)
 
     def send(self, device: dict, data: dict):
-        payload = {"cmd": "write", "did": device["did"]}
+        did = device["did"] if device["did"] != self.did else "lumi.0"
+        payload = {"cmd": "write", "did": did}
 
         # convert hass prop to lumi prop
-        if device["mi_spec"]:
-            params = []
-            for k, v in data.items():
-                if k == "switch":
-                    v = bool(v)
-                k = next(p[0] for p in device["mi_spec"] if p[2] == k)
-                params.append({"siid": k[0], "piid": k[1], "value": v})
+        if device["miot_spec"]:
+            try:
+                params = []
+                for k, v in data.items():
+                    k = next(p[0] for p in device["miot_spec"] if p[2] == k)
+                    if k == "switch":
+                        v = bool(v)
+                    params.append({"siid": int(k[0]), "piid": int(k[2]), "value": v})
 
-            payload["mi_spec"] = params
-        else:
-            params = [
-                {
-                    "res_name": next(p[0] for p in device["params"] if p[2] == k),
-                    "value": v,
-                }
-                for k, v in data.items()
-            ]
+                # Attention! mi_spec are used in payload
+                payload["mi_spec"] = params
+            except StopIteration:
+                pass
 
-            payload = {
-                "cmd": "write",
-                "did": device["did"],
-                "params": params,
-            }
+        # lumi_spec and miot_spec persist simultaneously only in gateway
+        if device["lumi_spec"]:
+            try:
+                params = [
+                    {
+                        "res_name": next(
+                            p[0] for p in device["lumi_spec"] if p[2] == k
+                        ),
+                        "value": v,
+                    }
+                    for k, v in data.items()
+                ]
+
+                payload["params"] = params
+            except StopIteration:
+                pass
 
         self.debug(f"{device['did']} {device['model']} => {payload}")
         payload = json.dumps(payload, separators=(",", ":")).encode()
@@ -1132,8 +1127,12 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
             shell = TelnetShell(self.host)
             for command in args:
                 if command == "ftp":
-                    shell.check_or_download_busybox()
                     shell.run_ftp()
+                elif command == "dump":
+                    raw = shell.tar_data()
+                    filename = Path().absolute() / f"{self.host}.tar.gz"
+                    with open(filename, "wb") as f:
+                        f.write(raw)
                 else:
                     shell.exec(command)
             shell.close()
@@ -1152,30 +1151,4 @@ class Gateway3(Thread, GatewayV, GatewayMesh, GatewayStats):
         return None
 
 
-def is_gw3(host: str, token: str) -> Optional[str]:
-    device = SyncmiIO(host, token)
-    info = device.info()
-
-    if not info:
-        return "cant_connect"
-
-    if info["model"] != "lumi.gateway.mgl03":
-        return "wrong_model"
-
-    return None
-
-
-def get_lan_key(device: dict):
-    device = SyncmiIO(device["localip"], device["token"])
-    resp = device.send("get_lumi_dpf_aes_key")
-    if resp is None:
-        return "Can't connect to gateway"
-    if len(resp[0]) == 16:
-        return resp[0]
-    key = "".join(
-        random.choice(string.ascii_lowercase + string.digits) for _ in range(16)
-    )
-    resp = device.send("set_lumi_dpf_aes_key", [key])
-    if resp[0] == "ok":
-        return key
-    return "Can't update gateway key"
+Gateway3 = GatewayEntry

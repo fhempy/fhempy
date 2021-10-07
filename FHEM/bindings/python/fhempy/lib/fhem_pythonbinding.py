@@ -313,7 +313,14 @@ class PyBinding:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
 
-                    nmInstance = loadedModuleInstances[hash["NAME"]]
+                    try:
+                        nmInstance = loadedModuleInstances[hash["NAME"]]
+                    except Exception:
+                        if hash["function"] != "Undefine":
+                            logging.getLogger(hash["NAME"]).exception(
+                                f"Couldn't handle {msg}"
+                            )
+                        nmInstance = None
 
                     if nmInstance is not None:
                         try:
