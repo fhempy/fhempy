@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.128 (2021-10-07)
+### Fix
+* **xiaomi_gateway3:** Fix gateway device ([`24f0b13`](https://github.com/dominikkarall/fhempy/commit/24f0b13aa29f557ec3ccee32e78c18fc03a619ef))
+
 ## v0.1.127 (2021-10-07)
 ### Feature
 * **xiaomi_gateway3:** Update xg3 library ([`62352da`](https://github.com/dominikkarall/fhempy/commit/62352da7581f1f338d34078ebfc2822fd38e217a))
