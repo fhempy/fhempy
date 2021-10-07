@@ -86,7 +86,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
                     "e.g. set my_seat timer_1_schedule_reccuring 08:00 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
                 ),
             },
                 "timer_1_schedule_date": {
@@ -94,7 +94,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
                     "e.g. set my_seat timer_1_schedule_date 2025-01-01 08:00<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
                 ),
                 },
             "timer_2_schedule_reccuring": {
@@ -102,7 +102,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
                     "e.g. set my_seat timer_2_schedule_reccuring 08:00 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
                 ),
             },
                 "timer_2_schedule_date": {
@@ -110,7 +110,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
                     "e.g. set my_seat timer_2_schedule_date 2025-01-01 08:00<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
                 ),
             },
             "timer_3_schedule_reccuring": {
@@ -118,7 +118,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
                     "e.g. set my_seat timer_3_schedule_reccuring 08:00 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
                 ),
             },
                 "timer_3_schedule_date": {
@@ -126,7 +126,7 @@ class seatconnect(FhemModule):
                 "help": (
                     "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
                     "e.g. set my_seat timer_3_schedule_date 2025-01-01 08:00<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
                 ),
             },
         }
