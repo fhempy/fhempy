@@ -4,7 +4,7 @@ from .. import fhem
 from .. import fhem_pythonbinding as fhepy
 from ..generic import FhemModule
 
-# imports for dynamical usage
+# imports for dynamical usage, do NOT remove
 from .devices.gateway import Gateway  # noqa: F401
 from .devices.sensor import (
     ContactSensor,
@@ -86,15 +86,18 @@ class xiaomi_gateway3_device(FhemModule):
                 self.hash, "state", f"unsupported device: {device['model']}", 1
             )
             return
+        # create device based on device model
         self._fhempy_device = globals()[device_type_mapping[device["model"]]](
             self.logger, self._fhempy_gateway
         )
         self._fhempy_device.set_hash(self.hash)
         await self._fhempy_device.initialize(device)
+        self._fhempy_gateway.gateway3.set_entity(self._fhempy_device)
+        self._fhempy_gateway.gateway3.set_stats(self._fhempy_device)
 
-    async def update(self, data):
+    def update(self, data):
         if self._fhempy_device is not None:
-            await self._fhempy_device.update(data)
+            self._fhempy_device.update(data)
 
     # FHEM functions which will be redirected to device type class
     async def FW_detailFn(self, hash, args, argsh):

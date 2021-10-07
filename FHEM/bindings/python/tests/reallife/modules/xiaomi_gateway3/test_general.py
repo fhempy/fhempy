@@ -1,7 +1,7 @@
+import asyncio
 import pytest
 import logging
 import os
-import asyncio
 from tests.utils import mock_fhem
 from fhempy.lib.xiaomi_gateway3.xiaomi_gateway3 import xiaomi_gateway3
 from fhempy.lib.xiaomi_gateway3_device.xiaomi_gateway3_device import (
@@ -76,7 +76,7 @@ async def test_general(mocker):
     assert weather_readings["mac"] == "0x" + os.environ["XIAOMI_GATEWAY3_lumiweatherv1"]
     assert weather_readings["model"] == "lumi.weather.v1"
     assert weather_readings["type"] == "zigbee"
-    assert weather_readings["zb_ver"] == "1.2"
+    # assert weather_readings["zb_ver"] == "1.2"
     assert float(weather_readings["temperature"]) > 0
     assert float(weather_readings["humidity"]) > 0
     assert float(weather_readings["pressure"]) > 0
@@ -99,7 +99,7 @@ async def test_general(mocker):
     )
     assert sensor_readings["model"] == "lumi.sensor_magnet.aq2"
     assert sensor_readings["type"] == "zigbee"
-    assert sensor_readings["zb_ver"] == "1.2"
+    # assert sensor_readings["zb_ver"] == "1.2"
     assert int(sensor_readings["contact"]) >= 0
     assert int(sensor_readings["battery"]) > 0
     assert sensor_readings["online"] is True
@@ -117,7 +117,7 @@ async def test_general(mocker):
     assert sensor_readings["mac"] == "0x" + os.environ["XIAOMI_GATEWAY3_sensormotionv2"]
     assert sensor_readings["model"] == "lumi.sensor_motion.v2"
     assert sensor_readings["type"] == "zigbee"
-    assert sensor_readings["zb_ver"] == "1.2"
+    # assert sensor_readings["zb_ver"] == "1.2"
     assert int(sensor_readings["battery"]) > 0
     assert sensor_readings["online"] is True
     assert sensor_readings["device_manufacturer"] == "Xiaomi"
