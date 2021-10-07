@@ -65,8 +65,9 @@ class xiaomi_gateway3(FhemModule):
         # wait till gateway is ready
         while self.gw is None:
             await asyncio.sleep(3)
-        if did == "lumi.0":
-            self.gw.add_stats(did, handler)
+        # if did == "lumi.0":
+        #    self.gw.add_stats(did, handler)
+        await asyncio.sleep(3)
         if did in self.devices and "init" in self.devices[did]:
             await fhempy_device.initialize(self.devices[did])
 
@@ -97,8 +98,6 @@ class xiaomi_gateway3(FhemModule):
         self.logger.debug(f"Check if device {device['did']} exists")
         did = device["did"]
         self.devices[did] = device
-        if device["type"] == "gateway":
-            did = "lumi." + device["mac"]
         if not await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
         ):
