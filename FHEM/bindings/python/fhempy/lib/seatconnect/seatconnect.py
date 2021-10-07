@@ -81,33 +81,51 @@ class seatconnect(FhemModule):
             "timer_1": {"args": ["onoff"], "options": "on,off"},
             "timer_2": {"args": ["onoff"], "options": "on,off"},
             "timer_3": {"args": ["onoff"], "options": "on,off"},
-            "timer_1_schedule": {
-                "args": ["active", "recurring", "date", "time", "days","temp"],
+            "timer_1_schedule_reccuring": {
+                "args": ["time", "days"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_1_schedule_reccuring 08:00 yyyyynn<br>"
                     "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
+                ),
+            },
+                "timer_1_schedule_date": {
+                "args": ["date", "time"],
+                "help": (
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_1_schedule_date 2025-01-01 08:00<br>"
+                    "timer which is only activated on 1.1.2025 at 08:00"
+                ),
+                },
+            "timer_2_schedule_reccuring": {
+                "args": ["time", "days"],
+                "help": (
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_2_schedule_reccuring 08:00 yyyyynn<br>"
+                    "recurring timer which is activated mon-fri 08:00<br>"
+                ),
+            },
+                "timer_2_schedule_date": {
+                "args": ["date", "time"],
+                "help": (
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_2_schedule_date 2025-01-01 08:00<br>"
                     "timer which is only activated on 1.1.2025 at 08:00"
                 ),
             },
-            "timer_2_schedule": {
-                "args": ["active", "recurring", "date", "time", "days","temp"],
+            "timer_3_schedule_reccuring": {
+                "args": ["time", "days"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_3_schedule_reccuring 08:00 yyyyynn<br>"
                     "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
                 ),
             },
-            "timer_3_schedule": {
-                "args": ["active", "recurring", "date", "time", "days","temp"],
+                "timer_3_schedule_date": {
+                "args": ["date", "time"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_3_schedule_date 2025-01-01 08:00<br>"
                     "timer which is only activated on 1.1.2025 at 08:00"
                 ),
             },
@@ -225,8 +243,23 @@ class seatconnect(FhemModule):
     async def set_timer_3(self, hash, params):
         self.create_async_task(self.vehicle.set_timer_active(id = 3, action = params["onoff"]))
 
-    async def set_timer_1_schedule(self, hash, params):
-        self.create_async_task(self.vehicle.set_timer_schedule(id=1, schedule={"enabled": params["active"], "recurring": params["recurring"], "date": params["date"], "time": params["time"], "days": params["days"], "operationClimatisation": True, "targetTemp": params["temp"]}))
+    async def set_timer_1_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=1, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_1_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=1, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_2_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=2, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_2_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=2, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_3_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=3, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_3_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=3, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
 
     async def set_force_update(self, hash, params):
         self.create_async_task(self.vehicle.set_refresh())
