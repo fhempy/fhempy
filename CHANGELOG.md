@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.127 (2021-10-07)
+### Feature
+* **xiaomi_gateway3:** Update xg3 library ([`62352da`](https://github.com/dominikkarall/fhempy/commit/62352da7581f1f338d34078ebfc2822fd38e217a))
+
+### Fix
+* **fhempy:** Better error handling ([`5910b6a`](https://github.com/dominikkarall/fhempy/commit/5910b6ae1fe3a6ea2e2cb97cdcf45ba782a25024))
+
 ## v0.1.126 (2021-09-30)
 ### Fix
 * **fhempy:** Update requirements ([`f327a5a`](https://github.com/dominikkarall/fhempy/commit/f327a5a5e5abd3393c336743a376618d5136176a))
