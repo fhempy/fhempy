@@ -149,6 +149,7 @@ class seatconnect(FhemModule):
             self.set_config["battery_climatisation"] = {
                 "args": ["onoff"],
                 "options": "on,off",
+                "params": {"onoff": {"format": "bool"}},
             }
             self.set_config["climatisation"] = {
                 "args": ["mode"],
