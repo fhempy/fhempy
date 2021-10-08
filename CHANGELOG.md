@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.129 (2021-10-08)
+### Fix
+* **xiaomi_gateway3:** Small fixes ([`d96bbc8`](https://github.com/dominikkarall/fhempy/commit/d96bbc849c24fb275e8bc3e3f3b0095f81464ccc))
+
 ## v0.1.128 (2021-10-07)
 ### Fix
 * **xiaomi_gateway3:** Fix gateway device ([`24f0b13`](https://github.com/dominikkarall/fhempy/commit/24f0b13aa29f557ec3ccee32e78c18fc03a619ef))
