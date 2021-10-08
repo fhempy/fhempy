@@ -160,7 +160,7 @@ class seatconnect(FhemModule):
         ):
             self.set_config["climatisation_target_temperature"] = {
                 "args": ["climatisation_target_temperature"],
-                "params": {"climatisation_target_temperature": {"format": "int"}},
+                "params": {"climatisation_target_temperature": {"format": "float"}},
             }
         if self.vehicle.is_window_heater_supported:
             self.set_config["window_heating"] = {
