@@ -25,6 +25,7 @@ This repository includes following working modules:
 |gfprobt|Control GF Pro Bluetooth irrigation control|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |helloworld|Hello World example for developers to start writing their own module|
+|[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor|
 |[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor|
@@ -34,8 +35,8 @@ This repository includes following working modules:
 |[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
 |[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
 |[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your skoda car|
-|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Control tuya devices via local key|
-|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control all tuya devices via cloud incl. real-time updates|
+|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Not recommended: Control tuya devices via local key|
+|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Recommended: Control all tuya devices via cloud incl. real-time updates|
 |[warema](FHEM/bindings/python/fhempy/lib/warema/)|Control Warema devices|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3\!)|

@@ -1,5 +1,6 @@
 import functools
 import time
+import asyncio
 
 from fhempy.lib import fhem, utils
 from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
@@ -41,7 +42,10 @@ class Gateway(BaseDevice):
     async def set_stop_pairing(self, hash, params):
         self._gateway.gateway3.miio.send("miIO.zb_end_provision", {"code": -1})
 
-    async def update(self, data):
+    def update(self, data):
+        asyncio.run_coroutine_threadsafe(self.async_update(data), self.loop).result()
+
+    async def async_update(self, data):
         self.last_update = time.time()
         if data is None:
             return

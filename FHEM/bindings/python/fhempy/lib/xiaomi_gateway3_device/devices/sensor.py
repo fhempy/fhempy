@@ -22,7 +22,10 @@ class MotionSensor(BaseDevice):
         self.reset_task = None
         self._attr_reset_motion = 120
 
-    async def update(self, data):
+    def update(self, data):
+        asyncio.run_coroutine_threadsafe(self.async_update(data), self.loop).result()
+
+    async def async_update(self, data):
         self.last_update = time.time()
         if data is None:
             return

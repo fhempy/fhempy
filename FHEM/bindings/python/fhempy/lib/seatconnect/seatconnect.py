@@ -129,6 +129,7 @@ class seatconnect(FhemModule):
                     "timer for climatisation which is only activated on 1.1.2025 at 08:00"
                     ),
                     },
+
         }
         if self.vehicle.is_charging_supported:
             self.set_config["charger"] = {
@@ -159,7 +160,6 @@ class seatconnect(FhemModule):
         ):
             self.set_config["climatisation_target_temperature"] = {
                 "args": ["climatisation_target_temperature"],
-                # "options": "slider,16,1,30",
                 "params": {"climatisation_target_temperature": {"format": "int"}},
             }
         if self.vehicle.is_window_heater_supported:

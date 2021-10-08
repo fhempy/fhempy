@@ -7,7 +7,7 @@ import logging
 
 from .. import fhem, utils
 from ..generic import FhemModule
-from .core.gateway3 import Gateway3
+from .core.gateway3 import GatewayEntry
 
 DOMAINS = [
     "binary_sensor",
@@ -18,6 +18,7 @@ DOMAINS = [
     "sensor",
     "switch",
     "alarm_control_panel",
+    "device_tracker",
 ]
 
 
@@ -64,9 +65,9 @@ class xiaomi_gateway3(FhemModule):
         # wait till gateway is ready
         while self.gw is None:
             await asyncio.sleep(3)
-        self.gw.add_update(did, handler)
-        if did == "lumi.0":
-            self.gw.add_stats(did, handler)
+        # if did == "lumi.0":
+        #    self.gw.add_stats(did, handler)
+        await asyncio.sleep(3)
         if did in self.devices and "init" in self.devices[did]:
             await fhempy_device.initialize(self.devices[did])
 
@@ -97,8 +98,6 @@ class xiaomi_gateway3(FhemModule):
         self.logger.debug(f"Check if device {device['did']} exists")
         did = device["did"]
         self.devices[did] = device
-        if did == "lumi.0":
-            did = "lumi." + device["mac"]
         if not await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
         ):
@@ -113,6 +112,8 @@ class xiaomi_gateway3(FhemModule):
                 + " "
                 + did,
             )
+            # wait for fhem
+            await asyncio.sleep(1)
         else:
             if "init" in device and did in self.fhempy_devices:
                 if did == "lumi." + device["mac"]:
@@ -122,7 +123,7 @@ class xiaomi_gateway3(FhemModule):
 
 class FhempyGateway:
     def __init__(self, logger, hash, host, token, config):
-        self.gw = Gateway3(host, token, config)
+        self.gw = GatewayEntry(host=host, token=token, options=config)
         self.loop = asyncio.get_event_loop()
 
     @property
@@ -137,23 +138,11 @@ class FhempyGateway:
 
         self.gw.add_setup(domain, setup)
 
-    def add_update(self, did, handler):
-        def update(data):
-            asyncio.run_coroutine_threadsafe(handler(data), self.loop).result()
-
-        self.gw.add_update(did, update)
-
-    def add_stats(self, ieee, handler):
-        def stats(data):
-            asyncio.run_coroutine_threadsafe(handler(data), self.loop).result()
-
-        self.gw.add_stats(ieee, stats)
-
     def version(self):
         return self.gw.ver
 
     def start(self):
-        self.gw.start()
+        utils.run_blocking_task(functools.partial(self.gw.start))
 
     async def is_connected(self):
         return await utils.run_blocking(functools.partial(self.gw._check_port, 23))

@@ -103,24 +103,10 @@ async def readingsBeginUpdate(hash):
 
 
 async def readingsBulkUpdateIfChanged(hash, reading, value):
-    value = convertValue(value)
-    cmd = (
-        "readingsBulkUpdateIfChanged($defs{'"
-        + hash["NAME"]
-        + "'},'"
-        + reading
-        + "','"
-        + value.replace("'", "\\'")
-        + "');;"
-    )
-    return await sendCommandHash(hash, cmd)
-
-
-async def readingsBulkUpdate(hash, reading, value, changed=None):
-    value = convertValue(value)
-    if changed is None:
+    try:
+        value = convertValue(value)
         cmd = (
-            "readingsBulkUpdate($defs{'"
+            "readingsBulkUpdateIfChanged($defs{'"
             + hash["NAME"]
             + "'},'"
             + reading
@@ -128,19 +114,39 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
             + value.replace("'", "\\'")
             + "');;"
         )
-    else:
-        cmd = (
-            "readingsBulkUpdate($defs{'"
-            + hash["NAME"]
-            + "'},'"
-            + reading
-            + "','"
-            + value.replace("'", "\\'")
-            + "', "
-            + str(changed)
-            + ");;"
-        )
-    return await sendCommandHash(hash, cmd)
+        return await sendCommandHash(hash, cmd)
+    except Exception:
+        logger.exception("Failed to do readingsBulkUpdateIfChanged")
+
+
+async def readingsBulkUpdate(hash, reading, value, changed=None):
+    try:
+        value = convertValue(value)
+        if changed is None:
+            cmd = (
+                "readingsBulkUpdate($defs{'"
+                + hash["NAME"]
+                + "'},'"
+                + reading
+                + "','"
+                + value.replace("'", "\\'")
+                + "');;"
+            )
+        else:
+            cmd = (
+                "readingsBulkUpdate($defs{'"
+                + hash["NAME"]
+                + "'},'"
+                + reading
+                + "','"
+                + value.replace("'", "\\'")
+                + "', "
+                + str(changed)
+                + ");;"
+            )
+        return await sendCommandHash(hash, cmd)
+    except Exception:
+        logger.exception("Failed to do readingsBulkUpdate")
 
 
 async def readingsEndUpdate(hash, do_trigger):

@@ -3,6 +3,7 @@ import time
 
 from fhempy.lib import fhem
 from fhempy.lib.generic import FhemModule
+from fhempy.lib.xiaomi_gateway3.xiaomi_gateway3 import FhempyGateway
 
 attr_settings = {
     "lumi.sensor_magnet.v2": {
@@ -21,15 +22,15 @@ attr_settings = {
         "stateFormat": "moisture",
     },
     "lumi.sensor_ht.v1": {
-        "stateFormat": "temperature C, humidity %",
+        "stateFormat": "temperature °C, humidity %",
         "icon": "temp_temperature",
     },
     "lumi.sensor_ht.v2": {
-        "stateFormat": "temperature C, humidity %, pressure hPa",
+        "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.weather.v1": {
-        "stateFormat": "temperature C, humidity %, pressure hPa",
+        "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
     "lumi.sensor_motion.v1": {
@@ -50,15 +51,20 @@ attr_settings = {
 
 
 class BaseDevice(FhemModule):
-    def __init__(self, logger, gateway):
+    def __init__(self, logger, gateway: FhempyGateway):
         super().__init__(logger)
         self._gateway = gateway
+        self._xg3_device = None
         self.last_update = 0
         self.logger = logger
         self.create_async_task(self.offline_check())
 
     def set_hash(self, hash):
         self.hash = hash
+
+    @property
+    def device(self):
+        return self._xg3_device
 
     async def initialize(self, device):
         self._xg3_device = device
@@ -70,8 +76,12 @@ class BaseDevice(FhemModule):
                 )
 
         for reading in device:
+            # following attributes are not readings
+            if reading in ("lumi_spec", "miot_spec", "entities", "gateways", "stats"):
+                continue
+
             if reading == "init":
-                await self.update(device["init"])
+                await self.async_update(device["init"])
                 continue
             elif reading == "params":
                 continue
@@ -80,7 +90,10 @@ class BaseDevice(FhemModule):
                     self.hash, reading, device[reading], 1
                 )
 
-    async def update(self, data):
+    def update(self, data):
+        asyncio.run_coroutine_threadsafe(self.async_update(data), self.loop).result()
+
+    async def async_update(self, data):
         self.logger.debug(f"update call {str(data)}")
         self.last_update = time.time()
         if data is None:

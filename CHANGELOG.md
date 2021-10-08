@@ -2,6 +2,46 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.128 (2021-10-07)
+### Fix
+* **xiaomi_gateway3:** Fix gateway device ([`24f0b13`](https://github.com/dominikkarall/fhempy/commit/24f0b13aa29f557ec3ccee32e78c18fc03a619ef))
+
+## v0.1.127 (2021-10-07)
+### Feature
+* **xiaomi_gateway3:** Update xg3 library ([`62352da`](https://github.com/dominikkarall/fhempy/commit/62352da7581f1f338d34078ebfc2822fd38e217a))
+
+### Fix
+* **fhempy:** Better error handling ([`5910b6a`](https://github.com/dominikkarall/fhempy/commit/5910b6ae1fe3a6ea2e2cb97cdcf45ba782a25024))
+
+## v0.1.126 (2021-09-30)
+### Fix
+* **fhempy:** Update requirements ([`f327a5a`](https://github.com/dominikkarall/fhempy/commit/f327a5a5e5abd3393c336743a376618d5136176a))
+
+## v0.1.125 (2021-09-30)
+### Fix
+* **tuya_cloud:** Fix rgb readings ([`5257ff2`](https://github.com/dominikkarall/fhempy/commit/5257ff2428219e75767b4f756734d7dbf1982bbf))
+* **meross:** Add usage ([`ccd7a4c`](https://github.com/dominikkarall/fhempy/commit/ccd7a4cd9b84573fbc472a024c0e1854fb509038))
+
+## v0.1.124 (2021-09-29)
+### Feature
+* **meross:** Support meross on/off ([`d08c927`](https://github.com/dominikkarall/fhempy/commit/d08c927361771164d8dc7665e0687fdc3420e777))
+* **fhempy:** Add gen_fhemdev_name fct ([`6cf9829`](https://github.com/dominikkarall/fhempy/commit/6cf9829124d6c3f759360b176be34510b319b7c7))
+
+### Fix
+* **fhempy:** Add exception handling ([`bcaaf97`](https://github.com/dominikkarall/fhempy/commit/bcaaf970f4b0f2e239bba52fe7c136f92c95218c))
+* **tuya_cloud:** Handle stop() exceptions ([`8bb081a`](https://github.com/dominikkarall/fhempy/commit/8bb081aa46f55a98a3900fc062b77fdd8369c16f))
+
+## v0.1.123 (2021-09-28)
+### Fix
+* **tuya_cloud:** Fix devnames with dashes ([`54e2f7c`](https://github.com/dominikkarall/fhempy/commit/54e2f7cb1de5f8bc844eb18f4332fbbbb8c7151d))
+
+## v0.1.122 (2021-09-28)
+### Feature
+* **seatconnect:** First Version of seatconnect ([#35](https://github.com/dominikkarall/fhempy/issues/35)) ([`124f715`](https://github.com/dominikkarall/fhempy/commit/124f71588f3bd54e20118baf37029760809cdfe8))
+
+## v0.1.121 (2021-09-28)
+
+
 ## v0.1.120 (2021-09-22)
 ### Fix
 * **fhempy:** Handle zeroconf exceptions ([`eebf78f`](https://github.com/dominikkarall/fhempy/commit/eebf78f761909ded5228cb0e32e99a89bd7cbeab))
