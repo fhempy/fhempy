@@ -1,7 +1,7 @@
 {
   "requirements": [
-    "python-miio>=0.5.3",
-    "paho-mqtt>=1.5.0",
+    "python-miio==0.5.8",
+    "paho-mqtt==1.5.1",
     "xmodem==0.4.6"
   ]
 }
