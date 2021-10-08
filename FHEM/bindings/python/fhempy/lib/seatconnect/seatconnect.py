@@ -81,36 +81,55 @@ class seatconnect(FhemModule):
             "timer_1": {"args": ["onoff"], "options": "on,off"},
             "timer_2": {"args": ["onoff"], "options": "on,off"},
             "timer_3": {"args": ["onoff"], "options": "on,off"},
-            "timer_1_schedule": {
-                "args": ["active", "recurring", "date", "time", "days"],
+            "timer_1_schedule_reccuring": {
+                "args": ["time", "days"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_1_schedule_reccuring 08:00 yyyyynn<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
                 ),
             },
-            "timer_2_schedule": {
-                "args": ["active", "recurring", "date", "time", "days"],
+            "timer_1_schedule_date": {
+                "args": ["date", "time"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_1_schedule_date 2025-01-01 08:00<br>"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
+                ),
+                },
+            "timer_2_schedule_reccuring": {
+                "args": ["time", "days"],
+                "help": (
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_2_schedule_reccuring 08:00 yyyyynn<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
                 ),
             },
-            "timer_3_schedule": {
-                "args": ["active", "recurring", "date", "time", "days"],
+            "timer_2_schedule_date": {
+                "args": ["date", "time"],
                 "help": (
-                    "Parameters: activate(0/1) recurring(0/1) date(yyyymmdd) time(hhmm) weekdays(yyyyynn)<br>"
-                    "e.g. set my_seat timer_1_schedule 1 1 0800 yyyyynn<br>"
-                    "recurring timer which is activated mon-fri 08:00<br>"
-                    "e.g. set my_seat timer_1_schedule 1 0 20250101 0800<br>"
-                    "timer which is only activated on 1.1.2025 at 08:00"
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_2_schedule_date 2025-01-01 08:00<br>"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
                 ),
             },
+            "timer_3_schedule_reccuring": {
+                "args": ["time", "days"],
+                "help": (
+                    "Parameters: time(hh:mm) weekdays(yyyyynn)<br>"
+                    "e.g. set my_seat timer_3_schedule_reccuring 08:00 yyyyynn<br>"
+                    "recurring timer for climatisation which is activated mon-fri 08:00<br>"
+                ),
+            },
+            "timer_3_schedule_date": {
+                "args": ["date", "time"],
+                "help": (
+                    "Parameters: date(yyyy-mm-dd) time(hh:mm)<br>"
+                    "e.g. set my_seat timer_3_schedule_date 2025-01-01 08:00<br>"
+                    "timer for climatisation which is only activated on 1.1.2025 at 08:00"
+                    ),
+                    },
+
         }
         if self.vehicle.is_charging_supported:
             self.set_config["charger"] = {
@@ -120,6 +139,7 @@ class seatconnect(FhemModule):
             self.set_config["charger_current"] = {
                 "args": ["current"],
                 "options": "slider,1,1,254",
+                "params": {"current": {"format": "int"}},
             }
             self.set_config["charge_limit"] = {
                 "args": ["limit"],
@@ -139,9 +159,8 @@ class seatconnect(FhemModule):
             or self.vehicle.is_electric_climatisation_supported
         ):
             self.set_config["climatisation_target_temperature"] = {
-                "args": ["temperature"],
-                "params": {"temperature": {"format": "int"}},
-                "options": "slider,16,1,30",
+                "args": ["climatisation_target_temperature"],
+                "params": {"climatisation_target_temperature": {"format": "int"}},
             }
         if self.vehicle.is_window_heater_supported:
             self.set_config["window_heating"] = {
@@ -182,42 +201,65 @@ class seatconnect(FhemModule):
         self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
-        self.create_async_task(self.vehicle.set_pheater(params["mode"], self.spin))
+        self.create_async_task(self.vehicle.set_pheater(mode=params["mode"],spin=self.spin))
 
     async def set_pheater_duration(self, hash, params):
         self.vehicle.pheater_duration = params["duration"]
         self.create_async_task(self.update_readings_once())
 
     async def set_lock(self, hash, params):
-        self.create_async_task(self.vehicle.set_lock(params["lockunlock"], self.spin))
+        self.create_async_task(self.vehicle.set_lock(action=params["lockunlock"], spin=self.spin))
 
     async def set_honkandflash(self, hash, params):
         self.create_async_task(self.vehicle.set_honkandflash(params["honkandflash"]))
 
     async def set_charger(self, hash, params):
-        self.create_async_task(self.vehicle.set_charger(params["onoff"]))
+        self.create_async_task(self.vehicle.set_charger(action=params["onoff"]))
 
     async def set_charger_current(self, hash, params):
         self.create_async_task(self.vehicle.set_charger_current(params["current"]))
 
     async def set_charge_limit(self, hash, params):
-        self.create_async_task(self.vehicle.set_charge_limit(params["limit"]))
+        self.create_async_task(self.vehicle.set_charge_limit(limit=params["limit"]))
 
     async def set_battery_climatisation(self, hash, params):
-        self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
+        self.create_async_task(self.vehicle.set_battery_climatisation(mode=params["onoff"]))
 
     async def set_climatisation(self, hash, params):
-        self.create_async_task(
-            self.vehicle.set_climatisation(params["mode"], self.spin)
-        )
+        self.create_async_task(self.vehicle.set_climatisation(mode=params["mode"], spin=self.spin))
 
     async def set_climatisation_target_temperature(self, hash, params):
-        self.create_async_task(
-            self.vehicle.set_climatisation_temp(params["temperature"])
-        )
+        self.create_async_task(self.vehicle.set_climatisation_temp(temperature=params["climatisation_target_temperature"]))
 
     async def set_window_heating(self, hash, params):
-        self.create_async_task(self.vehicle.set_window_heating(params["startstop"]))
+        self.create_async_task(self.vehicle.set_window_heating(action=params["startstop"]))
+
+    async def set_timer_1(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_active(id=1, action=params["onoff"]))
+
+    async def set_timer_2(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_active(id=2, action=params["onoff"]))
+
+    async def set_timer_3(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_active(id=3, action=params["onoff"]))
+
+    async def set_timer_1_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=1, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_1_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=1, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_2_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=2, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_2_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=2, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_3_schedule_reccuring(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=3, schedule={"enabled": True, "recurring": True, "time": params["time"], "days": params["days"], "operationClimatisation": True, "operationCharging": False,}))
+
+    async def set_timer_3_schedule_date(self, hash, params):
+        self.create_async_task(self.vehicle.set_timer_schedule(id=3, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
 
     async def set_force_update(self, hash, params):
         self.create_async_task(self.vehicle.set_refresh())
