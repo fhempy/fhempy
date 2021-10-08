@@ -202,7 +202,7 @@ class seatconnect(FhemModule):
         self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
-        self.create_async_task(self.vehicle.set_pheater(mode=params["mode"],spin=self.spin))
+        self.create_async_task(self.vehicle.set_pheater(mode=params["mode"], spin=self.spin))
 
     async def set_pheater_duration(self, hash, params):
         self.vehicle.pheater_duration = params["duration"]
@@ -263,7 +263,8 @@ class seatconnect(FhemModule):
         self.create_async_task(self.vehicle.set_timer_schedule(id=3, schedule={"enabled": True, "recurring": False, "date": params["date"], "time": params["time"], "operationClimatisation": True, "operationCharging": False,}))
 
     async def set_force_update(self, hash, params):
-        self.create_async_task(self.vehicle.set_refresh())
+        # self.create_async_task(self.vehicle.set_refresh())
+        await self.update_readings_once()
 
     async def update_readings(self):
         self.instruments = self.vehicle.dashboard(mutable=True).instruments
