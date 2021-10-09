@@ -72,7 +72,10 @@ class BaseDevice(FhemModule):
             if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
                 await fhem.CommandAttr(
                     self.hash,
-                    f"{self.hash['NAME']} {attr} {attr_settings[self._xg3_device['model']][attr]}",
+                    (
+                        f"{self.hash['NAME']} {attr} "
+                        f"{attr_settings[self._xg3_device['model']][attr]}"
+                    ),
                 )
 
         for reading in device:

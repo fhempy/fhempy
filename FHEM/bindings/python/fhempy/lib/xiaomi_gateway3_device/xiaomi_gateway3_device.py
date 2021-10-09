@@ -6,9 +6,9 @@ from ..generic import FhemModule
 
 # imports for dynamical usage, do NOT remove
 from .devices.gateway import Gateway  # noqa: F401
-from .devices.sensor import (
+from .devices.sensor import (  # noqa: F401
     ContactSensor,
-    HTSensor,  # noqa: F401
+    HTSensor,
     MotionSensor,
     WaterLeakSensor,
 )

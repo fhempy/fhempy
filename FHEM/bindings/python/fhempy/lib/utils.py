@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import concurrent.futures
-import logging
 import socket
 from codecs import decode, encode
 from functools import partial, reduce
@@ -27,7 +26,7 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 async def run_blocking(function):
-    if isinstance(function, partial) == False:
+    if isinstance(function, partial) is False:
         raise Exception("Use functools.partial to call run_blocking")
 
     with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -247,7 +246,7 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
                         final_params[param] = cmd_def["params"][param]["value"]
                     elif "default" not in cmd_def["params"][param] and (
                         "optional" not in cmd_def["params"][param]
-                        or cmd_def["params"][param]["optional"] == False
+                        or cmd_def["params"][param]["optional"] is False
                     ):
                         # no value found, check if optional
                         return f"Required argument {param} missing."
@@ -274,4 +273,4 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             fct_call = getattr(obj, fct_name)
             return await fct_call(hash, final_params)
         else:
-            return f"Command not available for this device."
+            return "Command not available for this device."

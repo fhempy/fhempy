@@ -530,7 +530,7 @@ class GatewayEntry(Thread, GatewayGW3):
         """Enable telnet with miio protocol."""
         raw = json.loads(self.telnet_cmd)
         if self.miio.send(raw["method"], raw.get("params")) != ["ok"]:
-            self.debug(f"Can't enable telnet")
+            self.debug("Can't enable telnet")
             return False
         return True
 
@@ -560,7 +560,7 @@ class GatewayEntry(Thread, GatewayGW3):
                     if "miio" in self.debug_mode
                     else "ot_agent_recv_handler_one.+" "properties_changed|heartbeat"
                 )
-                self.debug(f"Redirect miio to MQTT")
+                self.debug("Redirect miio to MQTT")
                 shell.redirect_miio2mqtt(pattern)
 
             if self.options.get("buzzer"):
@@ -631,7 +631,7 @@ class GatewayEntry(Thread, GatewayGW3):
         try:
             self.mqtt.reconnect()
             return True
-        except:
+        except Exception:
             return False
 
     def _get_devices(self):
@@ -668,7 +668,7 @@ class GatewayEntry(Thread, GatewayGW3):
                         ieee = reversed(raw[i + 3 : i + 11])
                         ieee = "".join(f"{i:>02s}" for i in ieee)
                         nwks[ieee] = f"{raw[i]:>04s}"
-                except:
+                except Exception:
                     _LOGGER.exception("Can't read Silicon devices DB")
 
                 # read Xiaomi devices DB
@@ -765,7 +765,7 @@ class GatewayEntry(Thread, GatewayGW3):
                             # add bulb to group if exist
                             mesh_groups[group_addr]["childs"].append(row[0])
 
-                except:
+                except Exception:
                     _LOGGER.exception("Can't read mesh devices")
 
             # for testing purposes
@@ -882,7 +882,7 @@ class GatewayEntry(Thread, GatewayGW3):
             elif self.pair_model and topic.endswith("/commands"):
                 self.process_pair(msg.payload)
 
-        except:
+        except Exception:
             _LOGGER.exception(f"Processing MQTT: {msg.topic} {msg.payload}")
 
     def setup_devices(self, devices: list):
