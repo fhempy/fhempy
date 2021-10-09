@@ -114,6 +114,8 @@ class xiaomi_gateway3_device(FhemModule):
         return await self._fhempy_device.Set(hash, args, argsh)
 
     async def Attr(self, hash, args, argsh):
+        if self._fhempy_device is None:
+            return await super().Attr(hash, args, argsh)
         return await self._fhempy_device.Attr(hash, args, argsh)
 
     async def Undefine(self, hash):
