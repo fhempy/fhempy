@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+from fhempy.lib import fhem
+
 from . import utils
 
 
@@ -83,6 +85,14 @@ class FhemModule:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        if await fhem.init_done(self.hash) == 1:
+            if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
+                await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} room fhempy")
+            if await fhem.AttrVal(self.hash["NAME"], "group", "") == "":
+                await fhem.CommandAttr(
+                    self.hash,
+                    (f"{self.hash['NAME']} group " f"{self.hash['PYTHONTYPE']}"),
+                )
         await utils.handle_define_attr(self._conf_attr, self, hash)
 
     # FHEM FUNCTION
