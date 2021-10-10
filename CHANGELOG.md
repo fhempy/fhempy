@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.131 (2021-10-10)
+### Feature
+* **seatconnect:** Bugfixing ([#39](https://github.com/dominikkarall/fhempy/issues/39)) ([`a5996f5`](https://github.com/dominikkarall/fhempy/commit/a5996f557c12ce4a7390faee31d0cbaeb05dbe71))
+* **fhempy:** Add new devices to room/group ([`c197110`](https://github.com/dominikkarall/fhempy/commit/c197110a26df50acea79ae9abdac7832ac0182f6))
+
+### Fix
+* **tuya_cloud:** Better error handling ([`056ab5c`](https://github.com/dominikkarall/fhempy/commit/056ab5c4c5583f490c17b7d007b347f1d08ca2a4))
+* **xiaomi_gateway3:** Fix attr usage ([`eb1f4b1`](https://github.com/dominikkarall/fhempy/commit/eb1f4b180944d28697fd49a0c4b7be5730d9e326))
+* **fhempy:** Flake8 fixes ([`519658c`](https://github.com/dominikkarall/fhempy/commit/519658ccbad6ebc9c8eb27f4dc9025913f7fdb4f))
+
 ## v0.1.130 (2021-10-08)
 ### Feature
 * **seatconnect:** Integration of Timer Schedule for Climatisation ([#38](https://github.com/dominikkarall/fhempy/issues/38)) ([`f3a130d`](https://github.com/dominikkarall/fhempy/commit/f3a130d92948ce9eaa5cb65c61ce7e68c7049251))
