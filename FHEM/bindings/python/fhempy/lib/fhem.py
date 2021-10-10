@@ -198,15 +198,25 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
         return await sendCommandHash(hash, cmd)
 
 
-async def CommandDefine(hash, definition):
+async def CommandDefine(hash, definition: str):
     cmd = 'CommandDefine(undef, "' + definition + '")'
     ret = await sendCommandHash(hash, cmd)
     if ret is not None:
         return ret
 
-    iodev = await AttrVal(hash["NAME"], "IODev", "")
-    if iodev != "":
-        await CommandAttr(hash, f"{definition.split(' ')[0]} IODev {iodev}")
+    pos_pythonmodule = definition.find("PythonModule")
+    if pos_pythonmodule > 0:
+        devname = definition.split(" ")[0]
+        iodev = await AttrVal(hash["NAME"], "IODev", "")
+        if iodev != "":
+            await CommandAttr(hash, f"{devname} IODev {iodev}")
+
+        fhempytype = definition.split(" ")[2]
+        await CommandAttr(hash, f"{devname} group {fhempytype}")
+
+        room = await AttrVal(hash["NAME"], "room", "")
+        if room != "":
+            await CommandAttr(hash, f"{devname} room fhempy")
 
 
 async def CommandAttr(hash, attrdef):

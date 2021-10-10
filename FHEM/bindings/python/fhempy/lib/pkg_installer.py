@@ -72,7 +72,7 @@ def check_dependencies(module):
             if "requirements" in manifest:
                 for req in manifest["requirements"]:
                     logger.debug("Check requirement: " + req)
-                    if is_installed(req) == False:
+                    if is_installed(req) is False:
                         logger.debug("  NOK")
                         return False
                     else:
@@ -110,7 +110,7 @@ async def check_and_install_dependencies(module):
 
                 if "requirements" in manifest:
                     for req in manifest["requirements"]:
-                        if is_installed(req) == False:
+                        if is_installed(req) is False:
                             inst_tries = 0
                             while inst_tries < 3:
                                 with concurrent.futures.ThreadPoolExecutor() as pool:

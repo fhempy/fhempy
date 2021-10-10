@@ -185,7 +185,8 @@ class PyBinding:
                             return 0
 
                     if hash["function"] != "Undefine":
-                        # Load module and execute Define if Define isn't called right now
+                        # Load module and execute Define
+                        # if Define isn't called right now
                         if not (hash["NAME"] in loadedModuleInstances):
                             if hash["NAME"] in moduleLoadingRunning:
                                 await self.sendBackReturn(hash, "")
@@ -193,7 +194,8 @@ class PyBinding:
 
                             moduleLoadingRunning[hash["NAME"]] = True
 
-                            # loading a module might take some time, therefore sendBackReturn now
+                            # loading a module might take some time,
+                            # therefore sendBackReturn now
                             await self.sendBackReturn(hash, "")
                             fhem_reply_done = True
 
@@ -202,21 +204,25 @@ class PyBinding:
                                 deps_ok = pkg_installer.check_dependencies(
                                     hash["PYTHONTYPE"]
                                 )
-                                if deps_ok == False:
+                                if deps_ok is False:
                                     # readingsSingleUpdate inform about dep installation
                                     await fhem.readingsSingleUpdate(
                                         hash, "state", "Installing updates...", 1
                                     )
-                                    # run only one installation and do depcheck before any other installation
+                                    # run only one installation and do depcheck
+                                    # before any other installation
                                     async with pip_lock:
-                                        # make sure that all import caches are up2date before check
+                                        # make sure that all import caches
+                                        # are up2date before check
                                         importlib.invalidate_caches()
-                                        # check again if something changed for dependencies
+                                        # check again if something
+                                        # changed for dependencies
                                         deps_ok = pkg_installer.check_dependencies(
                                             hash["PYTHONTYPE"]
                                         )
-                                        if deps_ok == False:
-                                            # start installation in a separate asyncio thread
+                                        if deps_ok is False:
+                                            # start installation in
+                                            # a separate asyncio thread
                                             await pkg_installer.check_and_install_dependencies(
                                                 hash["PYTHONTYPE"]
                                             )
@@ -240,7 +246,8 @@ class PyBinding:
                                         "Installation finished. Please wait...",
                                         1,
                                     )
-                                    # wait 3s so that user can read the msg about installation
+                                    # wait 3s so that user can read
+                                    # the msg about installation
                                     await asyncio.sleep(3)
                                     # continue define
 
@@ -280,7 +287,10 @@ class PyBinding:
                                         fct_timeout,
                                     )
                             except asyncio.TimeoutError:
-                                errorMsg = f"Function execution >{fct_timeout}s, cancelled: {hash['NAME']} Define"
+                                errorMsg = (
+                                    f"Function execution >{fct_timeout}s, "
+                                    f"cancelled: {hash['NAME']} Define"
+                                )
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(
                                         hash, "state", errorMsg, 1
@@ -289,7 +299,11 @@ class PyBinding:
                                     await self.sendBackError(hash, errorMsg)
                                 return 0
                             except ModuleNotFoundError:
-                                errorMsg = f"Module failed to load: {hash['PYTHONTYPE']}\nMaybe you need to update fhempy on this or remote peer."
+                                errorMsg = (
+                                    f"Module failed to load: {hash['PYTHONTYPE']}\n"
+                                    f"Maybe you need to update fhempy "
+                                    f"on this or remote peer."
+                                )
                                 errorMsg += "\n\nStacktrace:\n" + traceback.format_exc()
                                 if fhem_reply_done:
                                     await fhem.readingsSingleUpdate(
@@ -343,7 +357,10 @@ class PyBinding:
                                 )
                                 if func != "nofunction":
                                     logger.debug(
-                                        f"Start function {hash['NAME']}:{hash['function']}"
+                                        (
+                                            f"Start function {hash['NAME']}:"
+                                            f"{hash['function']}"
+                                        )
                                     )
                                     if hash["function"] == "Undefine":
                                         try:
@@ -358,14 +375,20 @@ class PyBinding:
                                             fct_timeout,
                                         )
                                     logger.debug(
-                                        f"End function {hash['NAME']}:{hash['function']}"
+                                        (
+                                            f"End function {hash['NAME']}:"
+                                            f"{hash['function']}"
+                                        )
                                     )
-                                    if ret == None:
+                                    if ret is None:
                                         ret = ""
                                     if fhem_reply_done:
                                         await self.updateHash(hash)
                         except asyncio.TimeoutError:
-                            errorMsg = f"Function execution >{fct_timeout}s, cancelled: {hash['NAME']} - {hash['function']}"
+                            errorMsg = (
+                                f"Function execution >{fct_timeout}s, "
+                                f"cancelled: {hash['NAME']} - {hash['function']}"
+                            )
                             if fhem_reply_done:
                                 await fhem.readingsSingleUpdate(
                                     hash, "state", errorMsg, 1
