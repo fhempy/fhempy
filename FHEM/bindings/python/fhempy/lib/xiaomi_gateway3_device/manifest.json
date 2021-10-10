@@ -1,3 +1,6 @@
 {
-  "requirements": ["python-miio>=0.5.3", "asyncio-mqtt"]
+  "requirements": [
+    "python-miio==0.5.8",
+    "asyncio-mqtt"
+  ]
 }

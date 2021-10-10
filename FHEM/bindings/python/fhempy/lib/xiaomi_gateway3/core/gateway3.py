@@ -808,7 +808,7 @@ class GatewayEntry(Thread, GatewayGW3):
 
         self.available = True
         self.process_gw_stats()
-        self.update_entities_states()
+        # self.update_entities_states()
 
     def on_disconnect(self, client, userdata, rc):
         self.debug("MQTT disconnected")
@@ -817,7 +817,7 @@ class GatewayEntry(Thread, GatewayGW3):
 
         self.available = False
         self.process_gw_stats()
-        self.update_entities_states()
+        # self.update_entities_states()
 
     def on_message(self, client: Client, userdata, msg: MQTTMessage):
         # for debug purpose

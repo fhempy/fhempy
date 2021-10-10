@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.130 (2021-10-08)
+### Feature
+* **seatconnect:** Integration of Timer Schedule for Climatisation ([#38](https://github.com/dominikkarall/fhempy/issues/38)) ([`f3a130d`](https://github.com/dominikkarall/fhempy/commit/f3a130d92948ce9eaa5cb65c61ce7e68c7049251))
+
+## v0.1.129 (2021-10-08)
+### Fix
+* **xiaomi_gateway3:** Small fixes ([`d96bbc8`](https://github.com/dominikkarall/fhempy/commit/d96bbc849c24fb275e8bc3e3f3b0095f81464ccc))
+
 ## v0.1.128 (2021-10-07)
 ### Fix
 * **xiaomi_gateway3:** Fix gateway device ([`24f0b13`](https://github.com/dominikkarall/fhempy/commit/24f0b13aa29f557ec3ccee32e78c18fc03a619ef))
