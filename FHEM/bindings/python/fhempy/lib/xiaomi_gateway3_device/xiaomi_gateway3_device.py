@@ -76,6 +76,9 @@ class xiaomi_gateway3_device(FhemModule):
             await asyncio.sleep(10)
 
     async def initialize(self, device):
+        if self._fhempy_gateway is None:
+            return
+
         # first update, set attributes and device readings like model, sid, ...
         if device["model"] not in device_type_mapping:
             self.logger.error(
