@@ -59,16 +59,16 @@ update add https://raw.githubusercontent.com/dominikkarall/fhempy/master/control
 update
 ```
 ```
-define local_pybinding BindingsIo Python
+define local_pybinding BindingsIo fhempy
 ```
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
 ## Usage in FHEM (examples)
 This are just a few examples for some modules, please see the modules readme linked in the table above for more details
- - `define castdevice PythonModule googlecast "Living Room"`
- - `define eq3bt PythonModule eq3bt 00:11:22:33:44:66:77`
- - `define upnp PythonModule discover_upnp`
+ - `define castdevice fhempy googlecast "Living Room"`
+ - `define eq3bt fhempy eq3bt 00:11:22:33:44:66:77`
+ - `define upnp fhempy discover_upnp`
 
 ## fhempy peers (e.g. extend Bluetooth range)
 fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
@@ -95,7 +95,7 @@ The following steps are only needed if you want to install fhempy on a remote pe
 - FHEM configuration
   - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_remote_192_168_1_50
   - You can move any device to the remote peer by changing the IODev of the device.
-  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_remote_IP BindingsIo IP:15733 Python`
+  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_remote_IP BindingsIo IP:15733 fhempy`
 
 ### Log file
 `journalctl -u fhempy.service -f`
@@ -107,17 +107,17 @@ Just do `set remote_pybinding update` and the remote peer will install the new p
 
 ### 10_BindingsIo
 This module is a DevIo device which builds a language neutral communicaton bridge in JSON via websockets.
-### 10_PythonBinding
+### 10_fhempyServer
 This module just starts the fhempy server instance
-### 10_PythonModule
+### 10_fhempy
 This module is used as the bridge to BindingsIo. It calls BindingsIo with IOWrite.
 ### fhempy
 This is the Python server instance which handles JSON websocket messages from BindingsIo. Based on the message it executes the proper function and replies to BindingsIo via websocket.
 
 ### Call flow
 This example shows how Define function is called from the Python module.
- 1. define castdevice PythonModule googlecast "Living Room"
- 2. PythonModule sends IOWrite to BindingsIo
+ 1. define castdevice fhempy googlecast "Living Room"
+ 2. fhempy sends IOWrite to BindingsIo
  3. BindingsIo sends a JSON websocket message to fhempy
  4. fhempy loads the corresponding module (e.g. googlecast), creates an instance of the object (e.g. googlecast) and calls the Define function on that instance
  5. Define function is executed within the Python context, as long as the function is executed, FHEM waits for the answer the same way as it does for Perl modules
