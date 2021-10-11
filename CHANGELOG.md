@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.133 (2021-10-11)
+### Fix
+* **fhempy:** Rename to fhempy ([`3ee719c`](https://github.com/dominikkarall/fhempy/commit/3ee719c336ba7ddb834ecd236e4e66961c6cb7d7))
+* **fhempy:** Rename to fhempy ([`74442ea`](https://github.com/dominikkarall/fhempy/commit/74442ea9c4c03e748e4734df95ae6c4c93ef72ce))
+
 ## v0.1.132 (2021-10-11)
 ### Fix
 * **fhempy:** Rename to fhempy ([`53c68c0`](https://github.com/dominikkarall/fhempy/commit/53c68c0f95b584ade1d6283a8208295f8e5038be))
