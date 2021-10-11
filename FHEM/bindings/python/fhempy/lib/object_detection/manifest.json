@@ -1,6 +1,6 @@
 {
   "requirements": [
     "opencv-python-headless",
-    "tflit"
+    "tflit==0.1.2"
   ]
 }
