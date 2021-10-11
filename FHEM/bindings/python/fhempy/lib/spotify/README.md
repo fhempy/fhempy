@@ -4,7 +4,7 @@ Control your Spotify account via official Spotify Web API. Stream music to any S
 
 ## Usage
 ```
-define spoti PythonModule spotify
+define spoti fhempy spotify
 ```
 
 Login with your Spotify account and copy the authcode
