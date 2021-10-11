@@ -4,7 +4,7 @@ This module connects to your Skoda Connect accounts and retrieves data from your
 
 ## Usage
 ```
-define my_skoda PythonModule skodaconnect my@account.com PaSSwOrD SPIN
+define my_skoda fhempy skodaconnect my@account.com PaSSwOrD SPIN
 ```
 
 If you have more than one car, set the attribute `vin` to the car you want to connect to.

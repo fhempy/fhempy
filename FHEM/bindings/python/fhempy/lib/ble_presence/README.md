@@ -35,5 +35,5 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' PATH_FROM_FIND
 
 ## Usage
 ```
-define ble_tag PythonModule ble_presence <MAC>
+define ble_tag fhempy ble_presence <MAC>
 ```

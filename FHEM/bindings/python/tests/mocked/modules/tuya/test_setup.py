@@ -55,7 +55,7 @@ async def test_setup(mocker):
         testhash,
         [
             "testdevice",
-            "PythonModule",
+            "fhempy",
             "tuya",
             "setup",
             "12345678123456",

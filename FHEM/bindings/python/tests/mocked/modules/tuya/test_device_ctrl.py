@@ -88,7 +88,7 @@ async def test_mapping_ctrl(mocker):
         testhash,
         [
             "testdevice",
-            "PythonModule",
+            "fhempy",
             "tuya",
             "j0zozzoarutv0nu1",
             "34567adf13165",

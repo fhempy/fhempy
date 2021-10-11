@@ -27,7 +27,7 @@ class wienerlinien(FhemModule):
         set_list_conf = {"update": {}}
         self.set_set_config(set_list_conf)
         if len(args) < 4:
-            return "Usage: define devname PythonModule wienerlinien <STOPID>"
+            return "Usage: define devname fhempy wienerlinien <STOPID>"
         self._stopid = args[3]
         self.api = WienerlinienAPI(self._stopid)
         self._updateloop = self.create_async_task(self.update_loop())

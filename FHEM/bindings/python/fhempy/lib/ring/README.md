@@ -4,7 +4,7 @@ This module supports Ring products
 
 ## Usage
 ```
-define rrring PythonModule ring USERNAME@MAIL.COM RINGDEVICENAME
+define rrring fhempy ring USERNAME@MAIL.COM RINGDEVICENAME
 set rrring password PASSWORD
 set rrring 2fa_code 2FACODE_FROM_MAIL
 ```

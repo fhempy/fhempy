@@ -18,12 +18,12 @@ https://www.tensorflow.org/lite/guide/python
 ## Usage
 Stream
 ```
-define obj_det PythonModule object_detection stream "https://rbmn-live.akamaized.net/hls/live/2002825/geoSTVATweb/master.m3u8"
+define obj_det fhempy object_detection stream "https://rbmn-live.akamaized.net/hls/live/2002825/geoSTVATweb/master.m3u8"
 set obj_det start
 ```
 Image
 ```
-define obj_det PythonModule object_detection image "FHEM/www/snapshot.jpg"
+define obj_det fhempy object_detection image "FHEM/www/snapshot.jpg"
 set obj_det start
 ```
 

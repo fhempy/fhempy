@@ -60,7 +60,7 @@ class ring(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
-                "Usage: define rrring PythonModule ring <USERNAME> <RING_DEVICE_NAME> [<IDENTIFIER>]"
+                "Usage: define rrring fhempy ring <USERNAME> <RING_DEVICE_NAME> [<IDENTIFIER>]"
             )
         self._username = args[3]
         self._rdevname = args[4]

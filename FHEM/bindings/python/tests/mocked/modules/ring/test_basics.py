@@ -82,7 +82,7 @@ async def test_login(mocker):
         testhash,
         [
             "testdevice",
-            "PythonModule",
+            "fhempy",
             "ring",
             "test@test.com",
             "Front Door",

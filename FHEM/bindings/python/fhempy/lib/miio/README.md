@@ -5,7 +5,7 @@ https://github.com/rytilahti/python-miio
 
 ## Usage
 ```
-define cam PythonModule miio <TYPE> <IP> <TOKEN>
+define cam fhempy miio <TYPE> <IP> <TOKEN>
 ```
  - TYPE: Choose one of the following types
     - airconditioningcompanion

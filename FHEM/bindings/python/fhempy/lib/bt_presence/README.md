@@ -13,5 +13,5 @@ sudo apt-get install python-bluez
 
 ## Usage
 ```
-define my_smartphone PythonModule bt_presence <MAC>
+define my_smartphone fhempy bt_presence <MAC>
 ```

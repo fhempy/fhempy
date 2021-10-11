@@ -24,7 +24,7 @@ First of all it is required to get the local key of your devices. Please follow 
 Note: If you know your local keys already, just move over to individual device setup.
 ### Automatic Setup
 ```
-define tuya_system PythonModule tuya setup CLIENT_ID CLIENT_SECRET DEVICE_ID
+define tuya_system fhempy tuya setup CLIENT_ID CLIENT_SECRET DEVICE_ID
 set tuya_system start_scan
 ```
 The scan might take some minutes to finish, please wait and take a coffee.
@@ -35,7 +35,7 @@ The scan might take some minutes to finish, please wait and take a coffee.
 ### Individual Device
 If a device couldn't be setup properly or you know your local keys and don't need setup, you can define it on your own
 ```
-define wifi_plug PythonModule tuya PRODUCT_ID DEVICE_ID IP LOCAL_KEY [VERSION] [API_KEY] [API_SECRET]
+define wifi_plug fhempy tuya PRODUCT_ID DEVICE_ID IP LOCAL_KEY [VERSION] [API_KEY] [API_SECRET]
 ```
  - PRODUCT_ID: Product ID of the device (e.g. j0zozzoarutv0nu1 for standard plug)
  - DEVICE_ID: Take that one from the tuya_system device you created

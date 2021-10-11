@@ -144,7 +144,7 @@ class dlna_dmr(FhemModule):
         """Set up DLNA DMR platform."""
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return "Usage: define device PythonModule dlna_dmr <UUID>"
+            return "Usage: define device fhempy dlna_dmr <UUID>"
 
         if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon scene_scene")

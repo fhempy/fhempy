@@ -4,7 +4,7 @@ This module is used to connect to a Bluetooth enabled Nespresso coffee machine.
 
 ## Usage
 ```
-define nespresso_device PythonModule nespresso_ble <MAC> <AUTHKEY>
+define nespresso_device fhempy nespresso_ble <MAC> <AUTHKEY>
 ```
 
 ## Obtain Auth Key (Android only)

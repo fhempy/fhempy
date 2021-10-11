@@ -55,9 +55,7 @@ class erelax_vaillant(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return (
-                "Usage: define erelax_vaillant PythonModule USERNAME PASSWORD [STATION]"
-            )
+            return "Usage: define erelax_vaillant fhempy USERNAME PASSWORD [STATION]"
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.do_update_loop(args[3], args[4]))
 

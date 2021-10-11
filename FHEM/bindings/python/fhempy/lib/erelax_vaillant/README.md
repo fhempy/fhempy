@@ -4,5 +4,5 @@ This module is used to control eRelax Vaillant or similar devices via netatmo cl
 
 ## Usage
 ```
-define my_vaillant PythonModule erelax_vaillant <USER> <PASSWORD> [<STATION_NAME>]
+define my_vaillant fhempy erelax_vaillant <USER> <PASSWORD> [<STATION_NAME>]
 ```

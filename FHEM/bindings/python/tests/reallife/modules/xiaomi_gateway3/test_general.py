@@ -32,7 +32,7 @@ async def test_general(mocker):
         testhash,
         [
             "testdevice",
-            "PythonModule",
+            "fhempy",
             "xiaomi_gateway3",
             os.environ["XIAOMI_GATEWAY3_IP"],
             os.environ["XIAOMI_GATEWAY3_TOKEN"],
@@ -50,7 +50,7 @@ async def test_general(mocker):
     assert (
         mock_fhem.command_define.index(
             f"lumigatewaymgl03_0x{os.environ['XIAOMI_GATEWAY3_MAC']} "
-            f"PythonModule xiaomi_gateway3_device testdevice "
+            f"fhempy xiaomi_gateway3_device testdevice "
             f"lumi.0x{os.environ['XIAOMI_GATEWAY3_MAC']}"
         )
         > -1

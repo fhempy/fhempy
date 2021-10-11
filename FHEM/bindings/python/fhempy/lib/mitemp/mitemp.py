@@ -30,7 +30,7 @@ class mitemp(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return "Usage: define mi_temphum PythonModule mitemp <MAC>"
+            return "Usage: define mi_temphum fhempy mitemp <MAC>"
 
         self._address = args[3]
         hash["MAC"] = args[3]
