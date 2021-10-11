@@ -78,7 +78,7 @@ async def test_mapping_ctrl(mocker):
     mocker.patch("tinytuya.Device.set_value", set_value)
     mocker.patch("tinytuya.Device.status", status)
 
-    testhash = {"NAME": "testdevice"}
+    testhash = {"NAME": "testdevice", "FHEMPYTYPE": "tuya"}
     await check_and_install_dependencies("tuya")
     from fhempy.lib.tuya.tuya import tuya
 

@@ -30,6 +30,8 @@ async def test_update(mocker):
         "id": "123",
         "msgtype": "update",
         "NAME": "testdevice",
+        "PYTHONTYPE": "testname",
+        "FHEMPYTYPE": "testname",
         "args": [],
         "argsh": {},
         "defargs": [],

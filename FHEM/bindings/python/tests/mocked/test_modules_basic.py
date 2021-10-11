@@ -33,11 +33,11 @@ async def test_basics(module_name, mocker):
     module_object = importlib.import_module(
         "fhempy.lib." + module_name + "." + module_name
     )
-    assert check_dependencies(module_name) == True
+    assert check_dependencies(module_name) is True
 
     # check FhemModule
     target_class = getattr(module_object, module_name)
-    assert issubclass(target_class, FhemModule) == True, (
+    assert issubclass(target_class, FhemModule) is True, (
         "Use FhemModule as base class for your module " + module_name
     )
 
@@ -46,10 +46,10 @@ async def test_basics(module_name, mocker):
     testinstance = MagicMock()
 
     class_instance = target_class(logger)
-    assert isinstance(class_instance.logger, logging.Logger) == True
+    assert isinstance(class_instance.logger, logging.Logger) is True
 
     # check define usage
-    testhash = {"NAME": "testname"}
+    testhash = {"NAME": "testname", "FHEMPYTYPE": "testtype"}
     def_res = await class_instance.Define(testhash, ["test", "fhempy", module_name], {})
     if def_res is not None:
         assert (

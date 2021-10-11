@@ -195,7 +195,7 @@ async def test_handle_set():
             nonlocal newstate
             newstate = params
 
-    testhash = {"NAME": "testhash"}
+    testhash = {"NAME": "testhash", "FHEMPYTYPE": "testtype"}
 
     testinstance = TestClass()
     retval = await utils.handle_set(

@@ -40,6 +40,7 @@ def mock_module(mocker):
     mocker.patch("fhempy.lib.fhem.convertValue", convertValue)
     mocker.patch("fhempy.lib.fhem.send_version", send_version)
     mocker.patch("fhempy.lib.fhem.setFunctionInactive", do_nothing)
+    mocker.patch("fhempy.lib.fhem.init_done", return_value=1)
 
 
 def do_nothing(param):

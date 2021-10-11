@@ -25,7 +25,7 @@ async def test_general(mocker):
     mock_fhem.mock_module(mocker)
     mocker.patch("socket.socket.connect_ex", return_value=0)
 
-    testhash = {"NAME": "testdevice"}
+    testhash = {"NAME": "testdevice", "FHEMPYTYPE": "testtype"}
     logger = logging.getLogger(__name__)
     xg_module = xiaomi_gateway3(logger)
     await xg_module.Define(
