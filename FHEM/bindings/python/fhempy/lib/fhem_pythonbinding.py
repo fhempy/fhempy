@@ -139,7 +139,8 @@ class PyBinding:
         try:
             hash = json.loads(msg)
             # keep this for one year (written on 11.10.2021)
-            hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
+            if "PYTHONTYPE" in hash:
+                hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
         except Exception:
             logger.error("Websocket JSON couldn't be decoded")
             return
