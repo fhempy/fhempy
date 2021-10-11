@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.132 (2021-10-11)
+### Fix
+* **fhempy:** Rename to fhempy ([`53c68c0`](https://github.com/dominikkarall/fhempy/commit/53c68c0f95b584ade1d6283a8208295f8e5038be))
+* **fhempy:** Rename to fhempy ([`7aac6cb`](https://github.com/dominikkarall/fhempy/commit/7aac6cb07e8195835c5b28b5227caeaa8b7fa81d))
+* **fhempy:** Rename to fhempy ([`058ba5f`](https://github.com/dominikkarall/fhempy/commit/058ba5f385c90a6ae79a27f575fcd90390af4448))
+* **fhempy:** Rename to fhempy ([`11e8f99`](https://github.com/dominikkarall/fhempy/commit/11e8f99f033481a4bd44e58007831d9036d823f2))
+* **miio:** Update miio lib ([`32cbc78`](https://github.com/dominikkarall/fhempy/commit/32cbc78d21326edc760425c32727ddea5f7a380b))
+* **fhempy:** Update zeroconf lib ([`40eefeb`](https://github.com/dominikkarall/fhempy/commit/40eefebec873f5ebba506bbd0aa9bb47f73db44c))
+
 ## v0.1.131 (2021-10-10)
 ### Feature
 * **seatconnect:** Bugfixing ([#39](https://github.com/dominikkarall/fhempy/issues/39)) ([`a5996f5`](https://github.com/dominikkarall/fhempy/commit/a5996f557c12ce4a7390faee31d0cbaeb05dbe71))
