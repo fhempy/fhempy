@@ -40,7 +40,7 @@ def mock_module(mocker):
     mocker.patch("fhempy.lib.fhem.convertValue", convertValue)
     mocker.patch("fhempy.lib.fhem.send_version", send_version)
     mocker.patch("fhempy.lib.fhem.setFunctionInactive", do_nothing)
-    mocker.patch("fhempy.lib.fhem.init_done", return_value=1)
+    mocker.patch("fhempy.lib.fhem.init_done", init_done)
 
 
 def do_nothing(param):
@@ -61,6 +61,10 @@ def setFunctionInactive(hash):
         logger.error(
             f"Set wrong function inactive, tried {hash['NAME']}, current function_active: {function_active},{element}"
         )
+
+
+async def init_done(hash):
+    return 1
 
 
 async def getUniqueId(hash):
