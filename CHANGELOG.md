@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.134 (2021-10-11)
+### Fix
+* **fhempy:** Fix version ([`ed0159d`](https://github.com/dominikkarall/fhempy/commit/ed0159da60a40da8077cee4cf77855965084062a))
+* **fhempy:** Add 3.8,3.9 tests ([`d06989d`](https://github.com/dominikkarall/fhempy/commit/d06989d3bd9aa713cb8eea87c163aa9471be0ae0))
+* **fhempy:** Update requirements ([`3dd10df`](https://github.com/dominikkarall/fhempy/commit/3dd10dfa1e86c88c3b68aa1b8a3d89f15aaf553b))
+* **fhempy:** Fix tests ([`b1e68a8`](https://github.com/dominikkarall/fhempy/commit/b1e68a88ff25565a63c89b45a9a550fd45434d26))
+* **fhempy:** Fix pythontype handling ([`8c43843`](https://github.com/dominikkarall/fhempy/commit/8c4384324501b03fdbeb712bacf0ca1fa773800f))
+* **object_detection:** Update lib ([`8273a31`](https://github.com/dominikkarall/fhempy/commit/8273a314ed001c7b54ff324f3831be389bc09e1d))
+
 ## v0.1.45 (2021-10-11)
 ### Fix
 * **fhempy:** Add 3.8,3.9 tests ([`d06989d`](https://github.com/dominikkarall/fhempy/commit/d06989d3bd9aa713cb8eea87c163aa9471be0ae0))
