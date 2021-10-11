@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.45 (2021-10-11)
+### Fix
+* **fhempy:** Add 3.8,3.9 tests ([`d06989d`](https://github.com/dominikkarall/fhempy/commit/d06989d3bd9aa713cb8eea87c163aa9471be0ae0))
+
 ## v0.1.44 (2021-10-11)
 ### Feature
 * **seatconnect:** Bugfixing ([#39](https://github.com/dominikkarall/fhempy/issues/39)) ([`a5996f5`](https://github.com/dominikkarall/fhempy/commit/a5996f557c12ce4a7390faee31d0cbaeb05dbe71))
