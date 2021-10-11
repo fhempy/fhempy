@@ -43,7 +43,7 @@ BindingsIo_Initialize($)
   $hash->{ReadyFn}  = 'BindingsIo_Ready';
   $hash->{WriteFn}  = 'BindingsIo_Write';
 
-  $hash->{Clients} = "PythonModule"; # NodeModule
+  $hash->{Clients} = "PythonModule:fhempy"; # NodeModule
 
   return undef;
 }
@@ -56,14 +56,14 @@ BindingsIo_Define($$$)
 
   Log3 $hash, 3, "BindingsIo v1.0.0";
 
-  my $bindingType = ucfirst(@$a[2]);
+  my $bindingType = @$a[2];
 
   $hash->{args} = $a;
   $hash->{argsh} = $h;
 
   my $port = 0;
   my $localServer = 1;
-  if ($bindingType eq "Python") {
+  if ($bindingType eq "Python" || $bindingType eq "fhempy") {
     $hash->{DeviceName} = "ws:127.0.0.1:15733";
     $hash->{IP} = "127.0.0.1";
     $hash->{PORT} = "15733";
@@ -72,7 +72,7 @@ BindingsIo_Define($$$)
     $hash->{DeviceName} = "ws:".@$a[2];
     $hash->{IP} = substr($hash->{DeviceName}, 0, index($hash->{DeviceName}, ":"));
     $hash->{PORT} = substr($hash->{DeviceName}, index($hash->{DeviceName}, ":")+1);
-    $bindingType = ucfirst(@$a[3]);
+    $bindingType = @$a[3];
     $localServer = 0;
     $hash->{localBinding} = 0;
   }
@@ -85,9 +85,10 @@ BindingsIo_Define($$$)
     my $foundServer = 0;
     foreach my $fhem_dev (sort keys %main::defs) {
       $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Binding");
+      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
     }
     if ($foundServer == 0) {
-      CommandDefine(undef, $bindingType."binding_".$hash->{PORT}." ".$bindingType."Binding ".$port);
+      CommandDefine(undef, $bindingType."server_".$hash->{PORT}." ".$bindingType."Server ".$port);
       InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
     }
   }
@@ -95,9 +96,33 @@ BindingsIo_Define($$$)
     InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
   }
 
-  # put in hidden room
-  CommandAttr(undef, "$name room fhempy");
-  #CommandAttr(undef, "$name verbose 5");
+  # put in fhempy room
+  if (AttrVal($name, "room", "") eq "") {
+    CommandAttr(undef, "$name room fhempy");
+  }
+  # set icon
+  if (AttrVal($name, "icon", "") eq "") {
+    CommandAttr(undef, "$name icon file_json-ld2");
+  }
+  # set group
+  if (AttrVal($name, "group", "") eq "") {
+    CommandAttr(undef, "$name group fhempy");
+  }
+  # set devStateIcon
+  if (AttrVal($name, "devStateIcon", "") eq "") {
+    my $devstate_cmd = '{
+      my $status_img = "10px-kreis-gruen";;
+      my $status_txt = "connected";;
+      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+        $status_img = "10px-kreis-rot";;
+        $status_txt = "disconnected";;
+      }
+      my $ver = ReadingsVal($name, "version", "-");;
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a><a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start update\">".FW_makeImage("refresh")."</a></div>"
+    }';
+    $devstate_cmd =~ tr/\n//d;
+    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+  }
 
   return undef;
 }
@@ -191,7 +216,7 @@ BindingsIo_Write($$$$$) {
 
   if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
     if ($init_done == 1) {
-      readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding offline", 1);
+      readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
     }
     return undef;
   }
@@ -212,6 +237,10 @@ BindingsIo_Write($$$$$) {
     "defargsh" => $devhash->{argsh}
   );
   $msg{$bindingType} =  $devhash->{$bindingType};
+  # keep this for one year (written on 11.10.2021)
+  if ($bindingType eq "FHEMPYTYPE") {
+    $msg{PYTHONTYPE} = $devhash->{$bindingType};
+  }
 
   if ($function eq "update") {
     $msg{"msgtype"} = "update";
@@ -237,19 +266,23 @@ BindingsIo_Write($$$$$) {
   while (1) {
     if (!DevIo_IsOpen($hash)) {
       Log3 $hash, 1, "BindingsIo: ERROR: Connection closed while waiting for function to finish (id: $waitingForId)";
+      while (my ($key, $value) = each (%msg))
+      {
+        Log3 $hash, 1, "  $key =>  $msg{$key}";
+      }
       last;
     }
     my $t2 = time * 1000;
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
-      readingsSingleUpdate($devhash, "state", $hash->{BindingType}."Binding timeout", 1);
+      readingsSingleUpdate($devhash, "state", $hash->{BindingType}." timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
-      if ($timeouts > 1) {
+      #if ($timeouts > 1) {
         # SimpleRead will close the connection and DevIo reconnect starts
-        Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
-        DevIo_Disconnected($hash);
-      }
+      #  Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
+      #  DevIo_Disconnected($hash);
+      #}
       last;
     }
     
@@ -265,8 +298,10 @@ BindingsIo_Write($$$$$) {
     $returnval = undef;
   }
 
-  while ($hash->{ReceiverQueue}->pending() > 0) {
+  my $cnt = 0;
+  while ($hash->{ReceiverQueue}->pending() > 0 && $cnt > 50) {
     BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
+    $cnt = $cnt + 1
   }
   
   return $returnval;
@@ -532,7 +567,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   <a name="BindingsIo_Define"></a>
   <b>Define</b>
   <ul>
-  define pybinding BindingsIo Python
+  define pybinding BindingsIo fhempy
   </ul>
 
 </ul><br>
