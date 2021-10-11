@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.136 (2021-10-11)
+### Fix
+* **fhempy:** Fix tests ([`8cd8c71`](https://github.com/dominikkarall/fhempy/commit/8cd8c7116eab1c0e53f55413c4e82bacb7eaa324))
+
 ## v0.1.135 (2021-10-11)
 ### Fix
 * **fhempy:** Fix tests for 3.7 ([`c620d09`](https://github.com/dominikkarall/fhempy/commit/c620d0992acd3e94b309b9bda493e92775abf30f))
