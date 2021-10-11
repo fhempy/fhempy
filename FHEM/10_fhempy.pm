@@ -1,5 +1,5 @@
 
-# $Id: 10_PythonModule.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_fhempy.pm 18283 2019-01-16 16:58:23Z dominikkarall $
 
 package main;
 
@@ -15,32 +15,34 @@ sub Log($$);
 sub Log3($$$);
 
 sub
-PythonModule_Initialize($)
+fhempy_Initialize($)
 {
   my ($hash) = @_;
 
   $hash->{parseParams} = 1;
 
-  $hash->{DefFn}    = 'PythonModule_Define';
-  $hash->{UndefFn}  = 'PythonModule_Undefine';
-  $hash->{GetFn}    = 'PythonModule_Get';
-  $hash->{SetFn}    = 'PythonModule_Set';
-  $hash->{AttrFn}   = 'PythonModule_Attr';
-  $hash->{RenameFn} = 'PythonModule_Rename';
+  $hash->{DefFn}    = 'fhempy_Define';
+  $hash->{UndefFn}  = 'fhempy_Undefine';
+  $hash->{GetFn}    = 'fhempy_Get';
+  $hash->{SetFn}    = 'fhempy_Set';
+  $hash->{AttrFn}   = 'fhempy_Attr';
+  $hash->{RenameFn} = 'fhempy_Rename';
   $hash->{AttrList} = 'IODev '.$readingFnAttributes;
-  $hash->{FW_detailFn} = "PythonModule_detailFn";
+  $hash->{FW_detailFn} = "fhempy_detailFn";
   $hash->{FW_deviceOverview} = 1;
 
   return undef;
 }
 
 sub
-PythonModule_Define($$$)
+fhempy_Define($$$)
 {
   my ($hash, $a, $h) = @_;
   $hash->{args} = $a;
   $hash->{argsh} = $h;
   $hash->{FHEMPYTYPE} = @$a[2];
+
+  # keep this for 1 year to avoid upgrade issues (written on 11.10.2021)
   $hash->{PYTHONTYPE} = @$a[2];
 
   setDevAttrList($hash->{NAME}, ".*");
@@ -54,16 +56,16 @@ PythonModule_Define($$$)
       }
     }
     if ($foundServer == 0) {
-      return "Before you use PythonModule please define BindingsIo once:\ndefine pyBinding BindingsIo Python";
+      return "Before you use fhempy please define BindingsIo once:\ndefine pyBinding BindingsIo fhempy";
     }
   }
 
-  Log3 $hash, 3, "PythonModule v1.0.0 (".$hash->{PYTHONTYPE}.")";
+  Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.")";
 
   AssignIoPort($hash, "local_pybinding");
 
   if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 4, "PythonModule: fhempy not yet connected! Define will continue after connect...";
+    Log3 $hash, 4, "fhempy: fhempy not yet connected! Define will continue after connect...";
     return undef;
   }
 
@@ -71,7 +73,7 @@ PythonModule_Define($$$)
 }
 
 sub
-PythonModule_Undefine($$)
+fhempy_Undefine($$)
 {
   my ($hash, $name) = @_;
 
@@ -81,7 +83,7 @@ PythonModule_Undefine($$)
 }
 
 sub
-PythonModule_Get($$$)
+fhempy_Get($$$)
 {
   my ($hash, $a, $h) = @_;
 
@@ -89,7 +91,7 @@ PythonModule_Get($$$)
 }
 
 sub
-PythonModule_Set($$$)
+fhempy_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
@@ -97,7 +99,7 @@ PythonModule_Set($$$)
 }
 
 sub
-PythonModule_Attr($$$)
+fhempy_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
@@ -109,7 +111,7 @@ PythonModule_Attr($$$)
 }
 
 sub
-PythonModule_Rename($$$)
+fhempy_Rename($$$)
 {
   my ($oldname, $newname) = @_;
 
@@ -117,7 +119,7 @@ PythonModule_Rename($$$)
 }
 
 sub
-PythonModule_DelayedShutdownFn($)
+fhempy_DelayedShutdownFn($)
 {
   my ($hash) = @_;
 
@@ -125,7 +127,7 @@ PythonModule_DelayedShutdownFn($)
 }
 
 sub
-PythonModule_Shutdown($)
+fhempy_Shutdown($)
 {
   my ($hash) = @_;
 
@@ -133,7 +135,7 @@ PythonModule_Shutdown($)
 }
 
 sub
-PythonModule_detailFn($$$)
+fhempy_detailFn($$$)
 {
   my ($FW_wname, $d, $room, $pageHash) = @_; # pageHash is set for summaryFn.
   my $hash = $defs{$d};
@@ -147,8 +149,8 @@ PythonModule_detailFn($$$)
 =item summary_DE Schnittstelle fuer Python Module
 =begin html
 
-<a name="PythonModule"></a>
-<h3>PythonModule</h3>
+<a name="fhempy"></a>
+<h3>fhempy</h3>
 <ul>
   This module provides the interface for python modules.<br><br>
   <a href="https://github.com/dominikkarall/fhempy#readme">Click here for online README</a>
