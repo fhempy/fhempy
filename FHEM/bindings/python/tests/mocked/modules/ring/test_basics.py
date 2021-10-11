@@ -72,7 +72,7 @@ def mock_ring_requests():
 @pytest.mark.asyncio
 async def test_login(mocker):
     mock_fhem.mock_module(mocker)
-    testhash = {"NAME": "testdevice"}
+    testhash = {"NAME": "testdevice", "FHEMPYTYPE": "ring"}
     await check_and_install_dependencies("ring")
     from fhempy.lib.ring.ring import ring
 
