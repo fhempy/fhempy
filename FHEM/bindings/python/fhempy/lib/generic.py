@@ -85,7 +85,8 @@ class FhemModule:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
-        if await fhem.init_done(self.hash) == 1:
+        check_init_done = await fhem.init_done(self.hash)
+        if check_init_done == 1:
             if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
                 await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} room fhempy")
             if await fhem.AttrVal(self.hash["NAME"], "group", "") == "":
