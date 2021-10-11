@@ -18,7 +18,7 @@ async def test_everything(mocker):
     fhempy_device = googlecast(logging.getLogger(__name__))
     await fhempy_device.Define(
         testhash,
-        ["testdevice", "PythonModule", "googlecast", os.environ["CAST_DEVICE_NAME"]],
+        ["testdevice", "fhempy", "googlecast", os.environ["CAST_DEVICE_NAME"]],
         {},
     )
     assert mock_fhem.readings["testdevice"]["state"] == "offline"

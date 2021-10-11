@@ -6,8 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from fhempy.lib import utils
 from fhempy.lib.generic import FhemModule
-from fhempy.lib.pkg_installer import (check_and_install_dependencies,
-                                      check_dependencies)
+from fhempy.lib.pkg_installer import check_and_install_dependencies, check_dependencies
 
 from ..utils import mock_fhem
 
@@ -51,9 +50,7 @@ async def test_basics(module_name, mocker):
 
     # check define usage
     testhash = {"NAME": "testname"}
-    def_res = await class_instance.Define(
-        testhash, ["test", "PythonModule", module_name], {}
-    )
+    def_res = await class_instance.Define(testhash, ["test", "fhempy", module_name], {})
     if def_res is not None:
         assert (
             isinstance(def_res, str) == True

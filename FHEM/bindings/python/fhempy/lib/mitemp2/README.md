@@ -19,5 +19,5 @@ Restart dbus afterwards: `sudo systemctl restart dbus`
 
 ## Usage
 ```
-define mi_temphum PythonModule mitemp2 <MAC>
+define mi_temphum fhempy mitemp2 <MAC>
 ```

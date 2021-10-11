@@ -3,9 +3,16 @@ import functools
 import re
 import time
 
-from bluepy.btle import (ADDR_TYPE_PUBLIC, ADDR_TYPE_RANDOM, AssignedNumbers,
-                         BluepyHelper, BTLEDisconnectError, Peripheral,
-                         ScanEntry, Scanner)
+from bluepy.btle import (
+    ADDR_TYPE_PUBLIC,
+    ADDR_TYPE_RANDOM,
+    AssignedNumbers,
+    BluepyHelper,
+    BTLEDisconnectError,
+    Peripheral,
+    ScanEntry,
+    Scanner,
+)
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
@@ -279,7 +286,7 @@ class ble_presence(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return "Usage: define p_mysmartphone PythonModule ble_presence <MAC>"
+            return "Usage: define p_mysmartphone fhempy ble_presence <MAC>"
 
         self._address = args[3]
         self.hash["MAC"] = args[3]

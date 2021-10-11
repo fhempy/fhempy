@@ -9,5 +9,5 @@ https://till.mabe.at/rbl/
 
 ## Usage
 ```
-define wl_U1_departures PythonModule wienerlinien 4118
+define wl_U1_departures fhempy wienerlinien 4118
 ```

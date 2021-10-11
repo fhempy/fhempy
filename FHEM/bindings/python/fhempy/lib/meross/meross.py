@@ -18,7 +18,7 @@ class meross(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
-                "Usage: define meross_integration PythonModule meross"
+                "Usage: define meross_integration fhempy meross"
                 " setup <USERNAME> <PASSWORD>"
             )
 

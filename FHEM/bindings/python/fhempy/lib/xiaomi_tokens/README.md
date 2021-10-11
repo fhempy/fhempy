@@ -7,7 +7,7 @@ https://github.com/squachen/micloud
 
 ## Usage
 ```
-define xiaomi_tokens PythonModule xiaomi_tokens
+define xiaomi_tokens fhempy xiaomi_tokens
 set xiaomi_tokens username USERNAME@MAIL.COM
 set xiaomi_tokens password PASSWORD
 set xiaomi_tokens get_tokens

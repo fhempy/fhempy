@@ -41,7 +41,7 @@ class object_detection(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
-            return "Usage: define obj_detection PythonModule object_detection <image/stream> <LOCATION>"
+            return "Usage: define obj_detection fhempy object_detection <image/stream> <LOCATION>"
         if args[3] == "image":
             if args[4][0] == "/":
                 self._source_uri = args[4]

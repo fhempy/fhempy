@@ -39,7 +39,7 @@ class xiaomi_gateway3(FhemModule):
         self.hash = hash
 
         if len(args) < 5:
-            return "Usage: define devname PythonModule xiaomi_gateway3 <IP> <TOKEN>"
+            return "Usage: define devname fhempy xiaomi_gateway3 <IP> <TOKEN>"
 
         if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon mqtt")

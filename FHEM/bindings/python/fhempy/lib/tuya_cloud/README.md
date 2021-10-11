@@ -14,7 +14,7 @@ https://github.com/tuya/tuya-home-assistant/wiki/Tuya-IoT-Platform-Configuration
 Please read installation instructions before! You need the tuya developer account and a smart home project on the tuya platform to get client id and client secret.
 
 ```
-define tuya_cloud_connector PythonModule tuya_cloud setup <CLIENT_ID> <CLIENT_SECRET> <USERNAME> <PASSWORD> [<APPTYPE>] [<REGION>]
+define tuya_cloud_connector fhempy tuya_cloud setup <CLIENT_ID> <CLIENT_SECRET> <USERNAME> <PASSWORD> [<APPTYPE>] [<REGION>]
 ```
 This command will create the tuya cloud connector device which automatically create all tuya devices in your FHEM installation.
  - CLIENT_ID: From tuya developer portal

@@ -9,7 +9,7 @@ https://github.com/AlexxIT/XiaomiGateway3#supported-firmwares
 
 ## Usage
 ```
-define xiaomi_gw3 PythonModule xiaomi_gateway3 IP TOKEN
+define xiaomi_gw3 fhempy xiaomi_gateway3 IP TOKEN
 ```
  - TOKEN: Token can be easily extracted via xiaomi_tokens module:
 

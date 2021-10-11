@@ -16,7 +16,7 @@ class tuya_cloud(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5 or (len(args) < 8 and args[3] == "setup"):
             return (
-                "Usage: define tuya_cloud PythonModule tuya_cloud"
+                "Usage: define tuya_cloud fhempy tuya_cloud"
                 " setup <API_KEY> <API_SECRET> <USERNAME> <PASSWORD>"
                 " [<APPTYPE=smartlife>] [<REGION>=Europe]<br>"
                 "OR if you want to define only one device<br>"

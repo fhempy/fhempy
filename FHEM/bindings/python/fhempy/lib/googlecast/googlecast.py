@@ -133,7 +133,7 @@ class googlecast(FhemModule):
         if len(args) > 3:
             hash["CASTNAME"] = args[3]
         else:
-            return 'Usage: define my_fhempy_cast PythonModule googlecast "Living Room"'
+            return 'Usage: define my_fhempy_cast fhempy googlecast "Living Room"'
 
         if self.browser:
             self.browser.stop_discovery()
@@ -369,7 +369,7 @@ class googlecast(FhemModule):
             )
 
     def start_session(self, dc=None, key=None):
-        """ Starts session to get access token. """
+        """Starts session to get access token."""
         USER_AGENT = (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"

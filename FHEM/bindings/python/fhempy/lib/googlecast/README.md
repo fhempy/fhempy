@@ -4,7 +4,7 @@ This module can be used to control cast enabled devices like Google Home, Nest H
 
 ## Usage
 ```
-define cast PythonModule googlecast <NAME>
+define cast fhempy googlecast <NAME>
 ```
 
  - NAME: Name of the cast device (e.g. "Living Room"). You need to use quotes if the name contains spaces.

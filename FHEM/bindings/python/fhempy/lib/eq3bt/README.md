@@ -21,7 +21,7 @@ Restart dbus afterwards: `sudo systemctl restart dbus`
 
 ## Usage
 ```
-define thermostat1 PythonModule eq3bt <MAC>
+define thermostat1 fhempy eq3bt <MAC>
 ```
 
 ## Commands

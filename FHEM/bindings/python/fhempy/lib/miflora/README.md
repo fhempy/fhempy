@@ -19,5 +19,5 @@ Restart dbus afterwards: `sudo systemctl restart dbus`
 
 ## Usage
 ```
-define mi_plant PythonModule miflora <MAC>
+define mi_plant fhempy miflora <MAC>
 ```

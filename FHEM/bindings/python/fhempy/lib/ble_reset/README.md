@@ -15,7 +15,7 @@ fhem    ALL=NOPASSWD: /bin/hciconfig hci? up
 
 ## Usage
 ```
-define ble_reset PythonModule ble_reset
+define ble_reset fhempy ble_reset
 ```
 
 ## Attributes

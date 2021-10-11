@@ -39,7 +39,7 @@ class xiaomi_gateway3_device(FhemModule):
 
         if len(args) < 5:
             return (
-                "Usage: define devname PythonModule xiaomi_gateway3_device"
+                "Usage: define devname fhempy xiaomi_gateway3_device"
                 " <GATEWAY_NAME> <DID>"
             )
 

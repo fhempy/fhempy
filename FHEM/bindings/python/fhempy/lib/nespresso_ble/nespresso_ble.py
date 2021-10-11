@@ -39,9 +39,7 @@ class nespresso_ble(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return (
-                "Usage: define devicename PythonModule nespresso_ble <MAC> [<AUTHKEY>]"
-            )
+            return "Usage: define devicename fhempy nespresso_ble <MAC> [<AUTHKEY>]"
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
         await fhem.readingsEndUpdate(hash, 1)

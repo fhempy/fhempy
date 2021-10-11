@@ -204,8 +204,10 @@ async def CommandDefine(hash, definition: str):
     if ret is not None:
         return ret
 
-    pos_pythonmodule = definition.find("PythonModule")
-    if pos_pythonmodule > 0:
+    pos_fhempy = definition.find(" fhempy ")
+    if pos_fhempy == -1:
+        pos_fhempy = definition.find(" PythonModule ")
+    if pos_fhempy > 0:
         devname = definition.split(" ")[0]
         iodev = await AttrVal(hash["NAME"], "IODev", "")
         if iodev != "":
