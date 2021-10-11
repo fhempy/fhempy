@@ -138,6 +138,8 @@ class PyBinding:
         hash = None
         try:
             hash = json.loads(msg)
+            # keep this for one year (written on 11.10.2021)
+            hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
         except Exception:
             logger.error("Websocket JSON couldn't be decoded")
             return
@@ -201,8 +203,11 @@ class PyBinding:
 
                             try:
                                 # check dependencies
-                                deps_ok = pkg_installer.check_dependencies(
-                                    hash["PYTHONTYPE"]
+                                deps_ok = await utils.run_blocking(
+                                    functools.partial(
+                                        pkg_installer.check_dependencies,
+                                        hash["FHEMPYTYPE"],
+                                    )
                                 )
                                 if deps_ok is False:
                                     # readingsSingleUpdate inform about dep installation
@@ -218,13 +223,13 @@ class PyBinding:
                                         # check again if something
                                         # changed for dependencies
                                         deps_ok = pkg_installer.check_dependencies(
-                                            hash["PYTHONTYPE"]
+                                            hash["FHEMPYTYPE"]
                                         )
                                         if deps_ok is False:
                                             # start installation in
                                             # a separate asyncio thread
                                             await pkg_installer.check_and_install_dependencies(
-                                                hash["PYTHONTYPE"]
+                                                hash["FHEMPYTYPE"]
                                             )
                                             # update cache again after install
                                             if (
@@ -254,9 +259,9 @@ class PyBinding:
                                 # import module
                                 pymodule = (
                                     "fhempy.lib."
-                                    + hash["PYTHONTYPE"]
+                                    + hash["FHEMPYTYPE"]
                                     + "."
-                                    + hash["PYTHONTYPE"]
+                                    + hash["FHEMPYTYPE"]
                                 )
                                 # import might take a long time, therefore run_blocking
                                 module_object = await utils.run_blocking(
@@ -264,7 +269,7 @@ class PyBinding:
                                 )
                                 # create instance of class with logger
                                 target_class = getattr(
-                                    module_object, hash["PYTHONTYPE"]
+                                    module_object, hash["FHEMPYTYPE"]
                                 )
                                 moduleLogger = logging.getLogger(hash["NAME"])
                                 moduleLogger.setLevel(
@@ -300,7 +305,7 @@ class PyBinding:
                                 return 0
                             except ModuleNotFoundError:
                                 errorMsg = (
-                                    f"Module failed to load: {hash['PYTHONTYPE']}\n"
+                                    f"Module failed to load: {hash['FHEMPYTYPE']}\n"
                                     f"Maybe you need to update fhempy "
                                     f"on this or remote peer."
                                 )
@@ -315,7 +320,7 @@ class PyBinding:
                             except Exception:
                                 errorMsg = (
                                     "Failed to load module "
-                                    + hash["PYTHONTYPE"]
+                                    + hash["FHEMPYTYPE"]
                                     + ": "
                                     + traceback.format_exc()
                                 )
