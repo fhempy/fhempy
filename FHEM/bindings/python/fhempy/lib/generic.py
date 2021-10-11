@@ -91,7 +91,7 @@ class FhemModule:
             if await fhem.AttrVal(self.hash["NAME"], "group", "") == "":
                 await fhem.CommandAttr(
                     self.hash,
-                    (f"{self.hash['NAME']} group " f"{self.hash['PYTHONTYPE']}"),
+                    (f"{self.hash['NAME']} group " f"{self.hash['FHEMPYTYPE']}"),
                 )
         await utils.handle_define_attr(self._conf_attr, self, hash)
 
