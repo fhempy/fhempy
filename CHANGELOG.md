@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.137 (2021-10-12)
+### Fix
+* **fhempy:** Fix no response ([`a2656a0`](https://github.com/dominikkarall/fhempy/commit/a2656a0e0c00260e299e0593751fd22f503d67bc))
+
 ## v0.1.136 (2021-10-11)
 ### Fix
 * **fhempy:** Fix tests ([`8cd8c71`](https://github.com/dominikkarall/fhempy/commit/8cd8c7116eab1c0e53f55413c4e82bacb7eaa324))
