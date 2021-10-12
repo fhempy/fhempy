@@ -299,7 +299,7 @@ BindingsIo_Write($$$$$) {
   }
 
   my $cnt = 0;
-  while ($hash->{ReceiverQueue}->pending() > 0 && $cnt > 50) {
+  while ($hash->{ReceiverQueue}->pending() > 0 && $cnt < 50) {
     BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
     $cnt = $cnt + 1
   }
