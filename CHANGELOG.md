@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.139 (2021-10-13)
+### Fix
+* **xiaomi_gateway3:** Update readme ([`541d941`](https://github.com/dominikkarall/fhempy/commit/541d941f5f0a08b9c5e5f04e2bd3dba4e41e3a6f))
+* **fhempy:** Reducing >100ms "blocking" ([`a4d2799`](https://github.com/dominikkarall/fhempy/commit/a4d27996c83ae197145b5ebd1dbcace3f90b2471))
+
 ## v0.1.138 (2021-10-13)
 ### Feature
 * **fhempy:** Use readme as help in fhem ([`faf245f`](https://github.com/dominikkarall/fhempy/commit/faf245f403af6da5d752a2ebce248bb2d3d0c212))
