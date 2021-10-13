@@ -10,7 +10,7 @@ import os
 import time
 import traceback
 
-import websockets
+from websockets import server as wsserver
 
 from . import fhem, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
@@ -494,7 +494,7 @@ async def async_main():
         )
 
     logger.info("Waiting for FHEM connection")
-    async with websockets.serve(
+    async with wsserver.serve(
         pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
     ):
         await asyncio.Future()
