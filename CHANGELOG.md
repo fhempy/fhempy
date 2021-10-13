@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.140 (2021-10-13)
+### Fix
+* **fhempy:** Do not use legacy websockets ([`c5ea3c1`](https://github.com/dominikkarall/fhempy/commit/c5ea3c1e1969058a03f71314598491477c5f4b79))
+
 ## v0.1.139 (2021-10-13)
 ### Fix
 * **xiaomi_gateway3:** Update readme ([`541d941`](https://github.com/dominikkarall/fhempy/commit/541d941f5f0a08b9c5e5f04e2bd3dba4e41e3a6f))
