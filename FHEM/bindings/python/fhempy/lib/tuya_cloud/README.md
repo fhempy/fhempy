@@ -16,7 +16,9 @@ Please read installation instructions before! You need the tuya developer accoun
 ```
 define tuya_cloud_connector fhempy tuya_cloud setup <CLIENT_ID> <CLIENT_SECRET> <USERNAME> <PASSWORD> [<APPTYPE>] [<REGION>]
 ```
+
 This command will create the tuya cloud connector device which automatically create all tuya devices in your FHEM installation.
+
  - CLIENT_ID: From tuya developer portal
  - CLIENT_SECRET: From tuya developer portal
  - USERNAME: From SmartLife/Tuya app (not developer account)
