@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.142 (2021-10-13)
+### Fix
+* **fhempy:** Revert websockets change ([`4c4bf7e`](https://github.com/dominikkarall/fhempy/commit/4c4bf7e27f286cf1f794a0b4c41f142b7de95612))
+
 ## v0.1.141 (2021-10-13)
 ### Fix
 * **eq3bt:** Fix circular import ([`0ffe738`](https://github.com/dominikkarall/fhempy/commit/0ffe7383c645ceecfa7d4411437a8f009245e9a9))
