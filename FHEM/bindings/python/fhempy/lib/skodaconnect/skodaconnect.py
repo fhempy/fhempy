@@ -1,14 +1,14 @@
 import asyncio
 
 from .. import fhem
-from ..generic import FhemModule
+from .. import generic
 
 from aiohttp import ClientSession
 from skodaconnect import Connection
 from skodaconnect.vehicle import Vehicle
 
 
-class skodaconnect(FhemModule):
+class skodaconnect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 

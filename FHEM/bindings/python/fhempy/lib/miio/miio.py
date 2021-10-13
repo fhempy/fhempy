@@ -8,10 +8,10 @@ import typing
 from miio.click_common import DeviceGroupMeta
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 
-class miio(FhemModule):
+class miio(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._set_list = {}

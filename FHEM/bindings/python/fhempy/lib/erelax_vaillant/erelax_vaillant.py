@@ -4,12 +4,12 @@ import asyncio
 import functools
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 from pyvaillant import ClientAuth, VaillantThermostatData
 
 
-class erelax_vaillant(FhemModule):
+class erelax_vaillant(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 

@@ -2,7 +2,7 @@ import asyncio
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhepy
-from ..generic import FhemModule
+from .. import generic
 
 # imports for dynamical usage, do NOT remove
 from .devices.gateway import Gateway  # noqa: F401
@@ -26,7 +26,7 @@ device_type_mapping = {
 }
 
 
-class xiaomi_gateway3_device(FhemModule):
+class xiaomi_gateway3_device(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._fhempy_gateway = None

@@ -8,11 +8,11 @@ import tinytuya
 from tinytuya import wizard as tt_wizard
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 from . import mappings
 
 
-class tuya(FhemModule):
+class tuya(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.tt_device = None

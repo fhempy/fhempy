@@ -1,10 +1,10 @@
 import asyncio
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 
-class helloworld(FhemModule):
+class helloworld(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
