@@ -4,11 +4,11 @@ import logging
 
 from .. import fhem
 from .. import utils as fpyutils
-from ..generic import FhemModule
+from .. import generic
 from .nespresso import NespressoDetect
 
 
-class nespresso_ble(FhemModule):
+class nespresso_ble(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.nespressodetect = None

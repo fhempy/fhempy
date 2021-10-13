@@ -1,9 +1,9 @@
 from ..core.ble import BTLEConnection
-from ..generic import FhemModule
+from .. import generic
 from .. import fhem
 
 
-class mitemp2(FhemModule):
+class mitemp2(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 

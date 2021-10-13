@@ -5,7 +5,7 @@ import time
 
 from .. import fhem, utils
 from ..core.ble import BTLEConnection
-from ..generic import FhemModule
+from .. import generic
 
 DEFAULT_TIMEOUT = 1
 
@@ -42,7 +42,7 @@ HANDLE_RW_TIMERS = [
 ]
 
 
-class gfprobt(FhemModule):
+class gfprobt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         set_conf = {
@@ -72,7 +72,7 @@ class gfprobt(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
-            return "Usage: define irrigation_control PythonModule gfprobt <MAC>"
+            return "Usage: define irrigation_control fhempy gfprobt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
         self._conn = BTLEConnection(
@@ -80,14 +80,14 @@ class gfprobt(FhemModule):
             keep_connected=True,
             connection_established_callback=self.write_password,
         )
-        self.create_async_task(self.update())
+        self.create_async_task(self.update_loop())
 
     # write_password is running in another thread
     def write_password(self, mac):
         self._conn.write_characteristic(HANDLE_RW_PASSWORD, b"123456")
 
     async def set_update(self, hash, params):
-        self.create_async_task(self.update())
+        self.create_async_task(self.update_once())
 
     async def set_on(self, hash, params):
         onseconds = params["onseconds"]
@@ -113,7 +113,15 @@ class gfprobt(FhemModule):
         self._conn.write_characteristic(HANDLE_W_WATERING, b"\x00")
         self._conn.write_characteristic(HANDLE_W_WATERING, b"\x01")
 
-    async def update(self):
+    async def update_loop(self):
+        while True:
+            try:
+                await self.update_once()
+            except Exception:
+                self.logger.exception("Failed to update readings")
+            await asyncio.sleep(60)
+
+    async def update_once(self):
         await utils.run_blocking(functools.partial(self.blocking_update))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", self._watering)

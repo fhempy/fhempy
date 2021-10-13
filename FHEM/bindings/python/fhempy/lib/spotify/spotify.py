@@ -5,10 +5,10 @@ import spotipy
 from spotipy.oauth2 import CacheFileHandler
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 
-class spotify(FhemModule):
+class spotify(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         # Spotipy Spotify instance

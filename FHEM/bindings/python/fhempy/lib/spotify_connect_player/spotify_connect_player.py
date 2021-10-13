@@ -7,10 +7,10 @@ from aiohttp import web
 from pyppeteer import launch
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 
-class spotify_connect_player(FhemModule):
+class spotify_connect_player(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         # Spotipy PKCE authenticator instance
