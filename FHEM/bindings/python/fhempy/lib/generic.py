@@ -30,21 +30,20 @@ class FhemModule:
         (FW_wname, d, room, pageHash) = args
         ret = """<script type="text/javascript">
         function displayHelp() {
-          var x = document.getElementById("devSpecHelp");
+          var x = document.getElementById("fhempyReadme");
           if (x.style.display === "none") {
             x.style.display = "block";
           } else {
             x.style.display = "none";
           }
-          var off = $("#devSpecHelp").position().top-20;
+          var off = $("#fhempyReadme").position().top-20;
           $('body, html').animate({scrollTop:off}, 500);
         }
         
         $(document).ready(function() {
-          var helpLink = document.getElementById("content");
-          helpLink.innerHTML += `<div class="makeTable" id="devSpecHelp">
-          ###README_HELP_STRING###</div>`;
-          document.getElementById("devSpecHelp").style.display = "none";
+          $("#content").append('<div class="makeTable help" id="fhempyReadme"></div>');
+          $("#fhempyReadme").html(`###README_HELP_STRING###`);
+          document.getElementById("fhempyReadme").style.display = "none";
 
           var helpCmdStr = '###SET_CMD_CONFIG_STRING###';
           var helpCmdJson = JSON.parse(helpCmdStr);
@@ -108,8 +107,7 @@ class FhemModule:
 
         # add readme as help
         if self.readme_str is not None:
-            html_str = markdown.markdown(self.readme_str)
-            ret = ret.replace("###README_HELP_STRING###", html_str)
+            ret = ret.replace("###README_HELP_STRING###", self.readme_str)
 
         return ret
 
@@ -119,10 +117,18 @@ class FhemModule:
         initfile = inspect.getfile(lib)
         fhempy_root = os.path.dirname(initfile)
         try:
+            readme_md = ""
             with open(
                 fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/README.md", "r"
             ) as f:
-                return f.read()
+                readme_md = f.read()
+
+            readme_str = markdown.markdown(readme_md)
+            return readme_str
+            # make_html_images_inline(
+            #    readme_str, fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/"
+            # )
+
         except FileNotFoundError:
             return f"No README.md file found for {self.hash['FHEMPYTYPE']}."
 

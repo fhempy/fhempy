@@ -181,7 +181,7 @@ BindingsIo_Callback($$) {
   my ($hash, $error) = @_;
   my $name = $hash->{NAME};
   if (defined($error)) {
-    Log3 $name, 1, "BindingsIo: ERROR $name - error while connecting: $error"; 
+    Log3 $name, 1, "BindingsIo ($hash->{NAME}): ERROR $name - error while connecting: $error"; 
   }
 }
 
@@ -222,7 +222,7 @@ BindingsIo_Write($$$$$) {
   }
 
   my $waitingForId = int(rand()*100000000);
-  Log3 $hash, 4, "BindingsIo: start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
 
   my $bindingType = uc($hash->{BindingType})."TYPE";
 
@@ -248,7 +248,7 @@ BindingsIo_Write($$$$$) {
   }
 
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
-  Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
     if ($waitforresponse == 0) {
@@ -265,7 +265,7 @@ BindingsIo_Write($$$$$) {
   my $t1 = time * 1000;
   while (1) {
     if (!DevIo_IsOpen($hash)) {
-      Log3 $hash, 1, "BindingsIo: ERROR: Connection closed while waiting for function to finish (id: $waitingForId)";
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Connection closed while waiting for function to finish (id: $waitingForId)";
       while (my ($key, $value) = each (%msg))
       {
         Log3 $hash, 1, "  $key =>  $msg{$key}";
@@ -275,12 +275,12 @@ BindingsIo_Write($$$$$) {
     my $t2 = time * 1000;
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
-      Log3 $hash, 1, "BindingsIo: ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
       #if ($timeouts > 1) {
         # SimpleRead will close the connection and DevIo reconnect starts
-      #  Log3 $hash, 1, "BindingsIo: ERROR: Too many timeouts, disconnect now and try to reconnect";
+      #  Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Too many timeouts, disconnect now and try to reconnect";
       #  DevIo_Disconnected($hash);
       #}
       last;
@@ -292,7 +292,7 @@ BindingsIo_Write($$$$$) {
       last;
     }
   }
-  Log3 $hash, 4, "BindingsIo: end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
 
   if ($returnval eq "") {
     $returnval = undef;
@@ -374,8 +374,8 @@ sub BindingsIo_processMessage($$$$) {
   Log3 $hash, 5, "processMessage: ".$response;
   my $json = eval {from_json($response)};
   if ($@) {
-    Log3 $hash, 1, "BindingsIo: ERROR JSON: ".$@;
-    Log3 $hash, 1, "BindingsIo: received JSON was: ".$response;
+    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
+    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: ".$response;
     return "error";
   }
 
@@ -394,7 +394,7 @@ sub BindingsIo_processMessage($$$$) {
         return $json->{error};
       }
       if ($devhash->{NAME} ne $json->{NAME}) {
-        Log3 $hash, 1, "BindingsIo: ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
+        Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
         return "nothandled";
       } else {
         foreach my $key (keys %$json) {
@@ -405,8 +405,8 @@ sub BindingsIo_processMessage($$$$) {
         $returnval = $json->{returnval};
       }
     } else {
-      Log3 $hash, 4, "BindingsIo: Received message doesn't match, continue waiting...";
-      Log3 $hash, 4, "BindingsIo:   received id (".$json->{id}.") = waiting for id (".$waitingForId.")";
+      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): Received message doesn't match, continue waiting...";
+      Log3 $hash, 4, "BindingsIo ($hash->{NAME}):   received id (".$json->{id}.") = waiting for id (".$waitingForId.")";
       return "nothandled";
     }
   } elsif ($json->{msgtype} eq "update_hash") {
@@ -424,7 +424,7 @@ sub BindingsIo_processMessage($$$$) {
     my %res;
     $ret = eval $json->{command};
     if ($@) {
-      Log3 $hash, 1, "BindingsIo: ERROR failed (".$json->{command}."): ".$@;
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$json->{command}."): ".$@;
       %res = (
         awaitId => $json->{awaitId},
         error => 1,
@@ -439,7 +439,7 @@ sub BindingsIo_processMessage($$$$) {
       );
     }
     my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%res)));
-    Log3 $hash, 4, "BindingsIo: <<< WS: ".$utf8msg;
+    Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
     if (length $utf8msg > 0) {
       DevIo_SimpleWrite($hash, $utf8msg, 0);
     }
@@ -483,21 +483,21 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   my $returnval = "continue";
   my $response = "";
   if (defined($socketready) && $socketready == 1) {
-    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead";
     if ($USE_DEVIO_DECODEWS == 0) {
       delete $hash->{WEBSOCKET};
     }
     $response = BindingsIo_SimpleReadWithTimeout($hash, 0.00001);
     #$response = DevIo_SimpleRead($hash);
     $hash->{WEBSOCKET} = 1;
-    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead NoTimeout";
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead NoTimeout";
   } else {
-    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead";
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead";
     $response = BindingsIo_SimpleReadWithTimeout($hash, 0.01);
-    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout";
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead WithTimeout";
   }
   if (defined($response) && $response eq "connectionclosed") {
-    Log3 $hash, 5, "BindingsIo: DevIo_SimpleRead WithTimeout - connection seems to be closed";
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead WithTimeout - connection seems to be closed";
     # connection seems to be closed, call simpleread to disconnect
     # connection will be reopened by ReadyFn
     DevIo_SimpleRead($hash);
@@ -507,7 +507,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   if ($USE_DEVIO_DECODEWS == 0) {
     $hash->{frame}->append($response);
     while (my $r = $hash->{frame}->next) {
-      Log3 $hash, 4, "BindingsIo: >>> WS: ".$r;
+      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
       my $resTemp = {
         "response" => $r,
         "time" => time
@@ -516,7 +516,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     }
   } else {
     if (defined($response) && $response ne "") {
-      Log3 $hash, 4, "BindingsIo: >>> WS: ".$response;
+      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$response;
       my $resTemp = {
         "response" => $response,
         "time" => time
@@ -527,7 +527,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
 
   # handle messages on the queue
   $hash->{TempReceiverQueue} = Thread::Queue->new();
-  Log3 $hash, 5, "BindingsIo: QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
   while (my $msg = $hash->{ReceiverQueue}->dequeue_nb()) {
     if ((time - $msg->{'time'}) > 10) {
       next;
@@ -547,7 +547,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     $hash->{ReceiverQueue}->enqueue($msg);
   }
 
-  Log3 $hash, 5, "BindingsIo: QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
 
   return $returnval;
 }
