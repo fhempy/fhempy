@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.145 (2021-10-13)
+### Fix
+* **fhempy:** Fix circular imports ([`6feb2e9`](https://github.com/dominikkarall/fhempy/commit/6feb2e9641f0122402f6840030fc1b0a41d7b1ef))
+
 ## v0.1.144 (2021-10-13)
 ### Fix
 * **tuya_cloud:** Change info to debug ([`55b5ed5`](https://github.com/dominikkarall/fhempy/commit/55b5ed5aea41c94fc97ab5ac6edd6692c98415bf))
