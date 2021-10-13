@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.144 (2021-10-13)
+### Fix
+* **tuya_cloud:** Change info to debug ([`55b5ed5`](https://github.com/dominikkarall/fhempy/commit/55b5ed5aea41c94fc97ab5ac6edd6692c98415bf))
+
 ## v0.1.143 (2021-10-13)
 ### Fix
 * **fhempy:** Better logging ([`38337ea`](https://github.com/dominikkarall/fhempy/commit/38337ea15575c56cc3cb3d4edad2e6050e1413f3))
