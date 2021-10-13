@@ -9,7 +9,7 @@ from enum import IntEnum
 from dbus import DBusException
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 from . import eq3btsmart as eq3
 from .connection import BTLEConnection
 
@@ -30,7 +30,7 @@ class Mode(IntEnum):
 # TODO set windowOpen, windowOpenTime, eco/comfortTemperature
 
 
-class eq3bt(FhemModule):
+class eq3bt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
