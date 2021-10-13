@@ -3,7 +3,7 @@ DIR FHEM/bindings
 DIR FHEM/bindings/python
 DIR FHEM/bindings/python/bin
 UPD 2021-08-28_12:01:46 4588 FHEM/10_PythonBinding.pm
-UPD 2021-10-12_21:20:12 3195 FHEM/10_PythonModule.pm
+UPD 2021-10-13_17:06:44 3195 FHEM/10_PythonModule.pm
 UPD 2021-10-11_21:25:42 3131 FHEM/10_fhempy.pm
 UPD 2021-10-11_21:25:42 5435 FHEM/10_fhempyServer.pm
 UPD 2021-10-12_21:20:12 15758 FHEM/10_BindingsIo.pm
