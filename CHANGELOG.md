@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.141 (2021-10-13)
+### Fix
+* **eq3bt:** Fix circular import ([`0ffe738`](https://github.com/dominikkarall/fhempy/commit/0ffe7383c645ceecfa7d4411437a8f009245e9a9))
+
 ## v0.1.140 (2021-10-13)
 ### Fix
 * **fhempy:** Do not use legacy websockets ([`c5ea3c1`](https://github.com/dominikkarall/fhempy/commit/c5ea3c1e1969058a03f71314598491477c5f4b79))
