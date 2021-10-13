@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.138 (2021-10-13)
+### Feature
+* **fhempy:** Use readme as help in fhem ([`faf245f`](https://github.com/dominikkarall/fhempy/commit/faf245f403af6da5d752a2ebce248bb2d3d0c212))
+
+### Fix
+* **xiaomi_gateway3:** Fix circular import ([`d9402b9`](https://github.com/dominikkarall/fhempy/commit/d9402b9e4d3554ac15532351e15b684f081f42ca))
+
 ## v0.1.137 (2021-10-12)
 ### Fix
 * **fhempy:** Fix no response ([`a2656a0`](https://github.com/dominikkarall/fhempy/commit/a2656a0e0c00260e299e0593751fd22f503d67bc))
