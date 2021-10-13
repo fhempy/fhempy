@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.143 (2021-10-13)
+### Fix
+* **fhempy:** Better logging ([`38337ea`](https://github.com/dominikkarall/fhempy/commit/38337ea15575c56cc3cb3d4edad2e6050e1413f3))
+* **fhempy:** Fix fhempyServer module ([`c969a27`](https://github.com/dominikkarall/fhempy/commit/c969a279c2ee1ba0b60afac96091695d72d9a243))
+* **fhempy:** Fix fhem help ([`220bf15`](https://github.com/dominikkarall/fhempy/commit/220bf1544dee7103dc40b5afdc6bd0f93d945ee0))
+
 ## v0.1.142 (2021-10-13)
 ### Fix
 * **fhempy:** Revert websockets change ([`4c4bf7e`](https://github.com/dominikkarall/fhempy/commit/4c4bf7e27f286cf1f794a0b4c41f142b7de95612))
