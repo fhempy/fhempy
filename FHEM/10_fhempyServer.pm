@@ -78,15 +78,15 @@ sub fhempyServer_Define($$$)
     CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
   }
   # set icon
-  if (AttrVal($name, "icon", "") == "") {
+  if (AttrVal($name, "icon", "") eq "") {
     CommandAttr(undef, "$name icon python");
   }
   # set group
-  if (AttrVal($name, "group", "") == "") {
+  if (AttrVal($name, "group", "") eq "") {
     CommandAttr(undef, "$name group fhempy");
   }
   # set devStateIcon
-  if (AttrVal($name, "devStateIcon", "") == "") {
+  if (AttrVal($name, "devStateIcon", "") eq "") {
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "running";;
