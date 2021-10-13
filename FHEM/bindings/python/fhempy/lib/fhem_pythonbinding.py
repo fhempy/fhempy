@@ -494,13 +494,13 @@ async def async_main():
         )
 
     logger.info("Waiting for FHEM connection")
-    await websockets.serve(
+    async with websockets.serve(
         pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
-    )
+    ):
+        await asyncio.Future()
 
 
 def run():
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(async_main())
-    asyncio.get_event_loop().run_forever()

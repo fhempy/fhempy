@@ -72,6 +72,7 @@ class xiaomi_gateway3(generic.FhemModule):
             await fhempy_device.initialize(self.devices[did])
 
     async def connect_gw(self):
+        await asyncio.sleep(0)
         config = {"devices": {}}
         self.gw = FhempyGateway(self.logger)
         await self.gw.create_gateway(self.hash, self.host, self.token, config)
