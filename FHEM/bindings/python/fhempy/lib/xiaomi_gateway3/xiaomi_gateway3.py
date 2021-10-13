@@ -6,7 +6,7 @@ import functools
 import logging
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 from .core.gateway3 import GatewayEntry
 
 DOMAINS = [
@@ -22,7 +22,7 @@ DOMAINS = [
 ]
 
 
-class xiaomi_gateway3(FhemModule):
+class xiaomi_gateway3(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.gw = None
@@ -73,7 +73,8 @@ class xiaomi_gateway3(FhemModule):
 
     async def connect_gw(self):
         config = {"devices": {}}
-        self.gw = FhempyGateway(self.logger, self.hash, self.host, self.token, config)
+        self.gw = FhempyGateway(self.logger)
+        await self.gw.create_gateway(self.hash, self.host, self.token, config)
         # prepare domains
         for domain in DOMAINS:
             self.gw.add_setup(domain, self.create_device)
@@ -122,9 +123,13 @@ class xiaomi_gateway3(FhemModule):
 
 
 class FhempyGateway:
-    def __init__(self, logger, hash, host, token, config):
-        self.gw = GatewayEntry(host=host, token=token, options=config)
+    def __init__(self, logger):
         self.loop = asyncio.get_event_loop()
+
+    async def create_gateway(self, hash, host, token, config):
+        self.gw = await utils.run_blocking(
+            functools.partial(GatewayEntry, host=host, token=token, options=config)
+        )
 
     @property
     def gateway3(self):
