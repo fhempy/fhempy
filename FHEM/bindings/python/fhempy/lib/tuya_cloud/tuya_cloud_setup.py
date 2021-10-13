@@ -142,7 +142,7 @@ class tuya_cloud_setup:
                 self.logger = logger
 
             def update_device(self, device: TuyaDevice):
-                self.logger.info(f"update_device received for {device.id}")
+                self.logger.debug(f"update_device received for {device.id}")
                 try:
                     for dev in t_cloud_setup.tuya_devices:
                         if dev.id == device.id:
