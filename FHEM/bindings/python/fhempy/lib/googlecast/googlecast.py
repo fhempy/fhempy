@@ -32,12 +32,12 @@ from spotipy.oauth2 import CacheFileHandler
 from pychromecast.controllers.youtube import YouTubeController
 
 from .. import fhem, utils
-from ..generic import FhemModule
+from .. import generic
 
 connection_update_lock = threading.Lock()
 
 
-class googlecast(FhemModule):
+class googlecast(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         # do only error logging for pychromecast library
