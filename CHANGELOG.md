@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.147 (2021-10-16)
+### Fix
+* **esphome:** Revert path change ([`7452ebb`](https://github.com/dominikkarall/fhempy/commit/7452ebb20fa012bda4a6a52bc955e20cf7dd24b1))
+
 ## v0.1.146 (2021-10-16)
 ### Fix
 * **googlecast:** Fix circular import ([`6d705de`](https://github.com/dominikkarall/fhempy/commit/6d705def909adef171a8d461d10ea5cbf9a44a8a))
