@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.146 (2021-10-16)
+### Fix
+* **googlecast:** Fix circular import ([`6d705de`](https://github.com/dominikkarall/fhempy/commit/6d705def909adef171a8d461d10ea5cbf9a44a8a))
+* **esphome:** Update library ([`56af685`](https://github.com/dominikkarall/fhempy/commit/56af685dba0cf25c362a3dd320acc8ae795695e4))
+* **esphome:** Set path for esphome ([`5b80c65`](https://github.com/dominikkarall/fhempy/commit/5b80c65b4ffcb3acbeca3dff2725f980b2cfa34d))
+
 ## v0.1.145 (2021-10-13)
 ### Fix
 * **fhempy:** Fix circular imports ([`6feb2e9`](https://github.com/dominikkarall/fhempy/commit/6feb2e9641f0122402f6840030fc1b0a41d7b1ef))
