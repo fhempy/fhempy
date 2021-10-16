@@ -32,8 +32,6 @@ class esphome(FhemModule):
 
     async def start_process(self):
         self._esphomeargs = [
-            "PATH=" + site.getuserbase() + "/bin:$PATH",
-            "&&",
             site.getuserbase() + "/bin/esphome",
             "esphome_config/",
             "dashboard",
