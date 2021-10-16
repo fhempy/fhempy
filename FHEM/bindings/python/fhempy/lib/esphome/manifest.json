@@ -1,3 +1,5 @@
 {
-  "requirements": ["esphome>=1.15.3"]
+  "requirements": [
+    "esphome==2021.9.3"
+  ]
 }
