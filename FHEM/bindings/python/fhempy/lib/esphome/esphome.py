@@ -2,6 +2,7 @@ import asyncio
 import site
 import socket
 import subprocess
+import os
 
 from fhempy.lib.generic import FhemModule
 
@@ -31,6 +32,8 @@ class esphome(FhemModule):
             self.create_async_task(self.create_weblink())
 
     async def start_process(self):
+        my_env = os.environ
+        my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
         self._esphomeargs = [
             site.getuserbase() + "/bin/esphome",
             "esphome_config/",
@@ -38,7 +41,7 @@ class esphome(FhemModule):
         ]
 
         try:
-            self.proc = subprocess.Popen(self._esphomeargs)
+            self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
         except Exception:
             try:
                 self._esphomeargs = ["esphome", "dashboard", "esphome_config/"]
