@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.148 (2021-10-17)
+### Fix
+* **esphome:** Fix path again ([`d35b0af`](https://github.com/dominikkarall/fhempy/commit/d35b0af64b8a2603385f9bc499c40fd549d18c89))
+
 ## v0.1.147 (2021-10-16)
 ### Fix
 * **esphome:** Revert path change ([`7452ebb`](https://github.com/dominikkarall/fhempy/commit/7452ebb20fa012bda4a6a52bc955e20cf7dd24b1))
