@@ -2,6 +2,8 @@ import asyncio
 from fhempy.lib.generic import FhemModule
 from fhempy.lib import fhem, fhem_pythonbinding
 from meross_iot.model.enums import OnlineStatus, Namespace
+from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
+from meross_iot.controller.mixins.garage import GarageOpenerMixin
 
 
 class meross_device:
@@ -22,8 +24,18 @@ class meross_device:
 
     async def _get_set_commands(self):
         set_conf = {}
-        set_conf["on"] = {}
-        set_conf["off"] = {}
+
+        if isinstance(self._device, ToggleXMixin) or isinstance(
+            self._device, ToggleMixin
+        ):
+            set_conf["on"] = {}
+            set_conf["off"] = {}
+            set_conf["toggle"] = {}
+
+        if isinstance(self._device, GarageOpenerMixin):
+            set_conf["open"] = {}
+            set_conf["close"] = {}
+
         self.fhemdev.set_set_config(set_conf)
 
     async def set_on(self, hash, params):
@@ -31,6 +43,15 @@ class meross_device:
 
     async def set_off(self, hash, params):
         await self._device.async_turn_off()
+
+    async def set_toggle(self, hash, params):
+        await self._device.async_toggle()
+
+    async def set_open(self, hash, params):
+        await self._device.async_open()
+
+    async def set_close(self, hash, params):
+        await self._device.async_close()
 
     async def _init_device(self):
         try:
