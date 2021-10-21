@@ -43,6 +43,14 @@ class erelax_vaillant(generic.FhemModule):
                 "args": ["temperature"],
                 "options": "slider,7,0.5,30",
             },
+            "desiredTemperatureDuration": {
+                "args": ["temperature", "duration"],
+                "params": {"duration": {"format": "int"}},
+                "help": (
+                    "Set temperature for a specific duration in minutes<br>"
+                    "set vaillant TEMPERATURE DURATION"
+                ),
+            },
             "system_mode": {
                 "args": ["mode"],
                 "argsh": ["mode"],
@@ -68,6 +76,13 @@ class erelax_vaillant(generic.FhemModule):
     async def set_desiredTemperature(self, hash, params):
         self.create_async_task(
             self.v_station.get_modules()[0].set_setpoint_temp(params["temperature"])
+        )
+
+    async def set_desiredTemperatureDuration(self, hash, params):
+        self.create_async_task(
+            self.v_station.get_modules()[0].set_setpoint_temp(
+                params["temperature"], params["duration"]
+            )
         )
 
     async def set_system_mode(self, hash, params):
@@ -447,10 +462,12 @@ class VaillantModule:
             return 0.0
         return self.raw_module["measured"]["setpoint_temp"]
 
-    async def set_setpoint_temp(self, temp):
+    async def set_setpoint_temp(self, temp, duration=None):
         try:
             await utils.run_blocking_task(
-                functools.partial(self.station.vaillant.activate, "manual", temp)
+                functools.partial(
+                    self.station.vaillant.activate, "manual", temp, duration * 60
+                )
             )
             # wait for update at netatmo
             await asyncio.sleep(1)
