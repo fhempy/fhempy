@@ -27,7 +27,7 @@ class esphome(FhemModule):
 
         await self.start_process()
 
-        if fhem.init_done() == 1:
+        if fhem.init_done(hash) == 1:
             # create weblinks on first define
             self.create_async_task(self.create_weblink())
 
