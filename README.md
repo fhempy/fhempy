@@ -45,12 +45,21 @@ This repository includes following working modules:
 Python >=3.7 is required, Python 2 won't work\!
 
 ### Console
+#### Debian 11 (Bullseye)
+Copy & paste this command if you are running Debian Bullseye.
+```
+sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
+```
+
+#### Others
+Use the following 2 commands if you run Debian 10 (Buster) or older (e.g. stretch, jessie, ...).
 ```
 sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
 ```
 ```
 sudo cpan Protocol::WebSocket
 ```
+
 ### FHEM
 ```
 update add https://raw.githubusercontent.com/dominikkarall/fhempy/master/controls_pythonbinding.txt
