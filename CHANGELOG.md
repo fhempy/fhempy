@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.150 (2021-10-21)
+### Fix
+* **meross:** Fix open/close ([`63e25bd`](https://github.com/dominikkarall/fhempy/commit/63e25bdda3adcb54ee75109601a52e0fee3219b4))
+* **esphome:** Fix weblink creation ([`60ebbcf`](https://github.com/dominikkarall/fhempy/commit/60ebbcf2896802410dd5b1f8c2b6d96cef2bddae))
+
 ## v0.1.149 (2021-10-21)
 ### Feature
 * **erelax_vaillant:** Add duration for temp ([`d96f897`](https://github.com/dominikkarall/fhempy/commit/d96f897a18b29bb03af3838869b710aa996968ae))
