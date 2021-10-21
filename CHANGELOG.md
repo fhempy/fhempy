@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.151 (2021-10-21)
+### Fix
+* **esphome:** Fix weblink creation (2) ([`3df3ec0`](https://github.com/dominikkarall/fhempy/commit/3df3ec013400939ce17a6ba1883ef8eff256a964))
+
 ## v0.1.150 (2021-10-21)
 ### Fix
 * **meross:** Fix open/close ([`63e25bd`](https://github.com/dominikkarall/fhempy/commit/63e25bdda3adcb54ee75109601a52e0fee3219b4))
