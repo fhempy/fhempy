@@ -35,6 +35,15 @@ class meross(FhemModule):
     async def set_off(self, hash, params):
         self.create_async_task(self.device.set_off(hash, params))
 
+    async def set_toggle(self, hash, params):
+        self.create_async_task(self.device.set_toggle(hash, params))
+
+    async def set_open(self, hash, params):
+        self.create_async_task(self.device.set_open(hash, params))
+
+    async def set_close(self, hash, params):
+        self.create_async_task(self.device.set_close(hash, params))
+
     @property
     def meross_device(self):
         return self.device
