@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.149 (2021-10-21)
+### Feature
+* **erelax_vaillant:** Add duration for temp ([`d96f897`](https://github.com/dominikkarall/fhempy/commit/d96f897a18b29bb03af3838869b710aa996968ae))
+* **esphome:** Add install link ([`6a22557`](https://github.com/dominikkarall/fhempy/commit/6a225570b39d201f670061cbe96b288ad0fdd99b))
+* **meross:** Support garage opener ([`dd4136e`](https://github.com/dominikkarall/fhempy/commit/dd4136e3ded61788242771ddd70fe37cfaff2e8e))
+
+### Fix
+* **fhempy:** Make installation easier on debian 11 ([`6857d47`](https://github.com/dominikkarall/fhempy/commit/6857d475dd67cba27fdf074949e87741fadcc4e2))
+
 ## v0.1.148 (2021-10-17)
 ### Fix
 * **esphome:** Fix path again ([`d35b0af`](https://github.com/dominikkarall/fhempy/commit/d35b0af64b8a2603385f9bc499c40fd549d18c89))
