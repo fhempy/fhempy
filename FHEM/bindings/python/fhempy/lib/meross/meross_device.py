@@ -137,8 +137,18 @@ class meross_device:
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "online_status", self._device.online_status.name
         )
-        onoff = "off"
-        if self._device.is_on():
-            onoff = "on"
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", onoff)
+
+        if isinstance(self._device, ToggleXMixin) or isinstance(
+            self._device, ToggleMixin
+        ):
+            state_val = "off"
+            if self._device.is_on():
+                state_val = "on"
+
+        if isinstance(self._device, GarageOpenerMixin):
+            state_val = "closed"
+            if self._device.get_is_open():
+                state_val = "open"
+
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_val)
         await fhem.readingsEndUpdate(self.hash, 1)
