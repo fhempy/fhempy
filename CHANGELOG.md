@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.152 (2021-10-22)
+### Fix
+* **meross:** Fix garage readings ([`b65e004`](https://github.com/dominikkarall/fhempy/commit/b65e004ad9942063cc6d24eefcec6e4292a1e7ea))
+
 ## v0.1.151 (2021-10-21)
 ### Fix
 * **esphome:** Fix weblink creation (2) ([`3df3ec0`](https://github.com/dominikkarall/fhempy/commit/3df3ec013400939ce17a6ba1883ef8eff256a964))
