@@ -139,11 +139,7 @@ sub
 BindingsIo_setIODevAttr($) {
   my ($hash) = @_;
 
-  my @fhempydev_list = ();
-  foreach my $fhem_dev (sort keys %main::defs) {
-    push(@fhempydev_list, $fhem_dev) if ($main::defs{$fhem_dev}->{TYPE} eq "BindingsIo");
-  }
-  my $fhempydev_str = join(",", @fhempydev_list);
+  my $fhempydev_str = BindingsIo_getIODevList($hash);
 
   foreach my $fhem_dev (sort keys %main::defs) {
     my $devhash = $main::defs{$fhem_dev};
@@ -153,6 +149,16 @@ BindingsIo_setIODevAttr($) {
       setDevAttrList($devhash->{NAME}, $attr_list);
     }
   }
+}
+
+sub
+BindingsIo_getIODevList($) {
+  my @fhempydev_list = ();
+  foreach my $fhem_dev (sort keys %main::defs) {
+    push(@fhempydev_list, $fhem_dev) if ($main::defs{$fhem_dev}->{TYPE} eq "BindingsIo");
+  }
+  my $fhempydev_str = join(",", @fhempydev_list);
+  return $fhempydev_str;
 }
 
 sub
@@ -448,6 +454,11 @@ sub BindingsIo_processMessage($$$$) {
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
+    # set proper IODev list for easier handling
+    if ($json->{command} =~ /^setDevAttrList/) {
+        my $liststr = BindingsIo_getIODevList($hash);
+        $json->{command} =~ s/IODev/IODev:$liststr/;
+    }
     $ret = eval $json->{command};
     if ($@) {
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$json->{command}."): ".$@;
