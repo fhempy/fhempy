@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.153 (2021-10-23)
+### Fix
+* **fhempy:** Better logging ([`d35fff7`](https://github.com/dominikkarall/fhempy/commit/d35fff7c6bf35197ddb0e0323d10e9029dd0fab7))
+
 ## v0.1.152 (2021-10-22)
 ### Fix
 * **meross:** Fix garage readings ([`b65e004`](https://github.com/dominikkarall/fhempy/commit/b65e004ad9942063cc6d24eefcec6e4292a1e7ea))
