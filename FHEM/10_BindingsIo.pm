@@ -143,7 +143,7 @@ BindingsIo_setIODevAttr($) {
 
   foreach my $fhem_dev (sort keys %main::defs) {
     my $devhash = $main::defs{$fhem_dev};
-    if(defined($devhash->{"FHEMPYTYPE"}) && $devhash->{IODev}{NAME} eq $hash->{NAME}) {
+    if(defined($devhash->{"FHEMPYTYPE"})) {
       my $attr_list = $devhash->{".AttrList"};
       $attr_list =~ s/IODev/IODev:$fhempydev_str/;
       setDevAttrList($devhash->{NAME}, $attr_list);
