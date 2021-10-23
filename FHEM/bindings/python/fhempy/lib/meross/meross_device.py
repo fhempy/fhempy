@@ -4,6 +4,7 @@ from fhempy.lib import fhem, fhem_pythonbinding
 from meross_iot.model.enums import OnlineStatus, Namespace
 from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
 from meross_iot.controller.mixins.garage import GarageOpenerMixin
+from meross_iot.controller.mixins.light import LightMixin
 
 
 class meross_device:
@@ -36,7 +37,36 @@ class meross_device:
             set_conf["open"] = {}
             set_conf["close"] = {}
 
+        if isinstance(self._device, LightMixin):
+            if self._device.get_supports_rgb():
+                set_conf["rgb"] = {"args": ["value"], "options": "colorpicker,RGB"}
+            if self._device.get_supports_luminance():
+                set_conf["brightness"] = {
+                    "args": ["value"],
+                    "options": "colorpicker,BRI,0,1,100",
+                }
+            if self._device.get_supports_temperature():
+                set_conf["ct"] = {
+                    "args": ["value"],
+                    "options": "colorpicker,CT,2000,1,6500",
+                }
+
         self.fhemdev.set_set_config(set_conf)
+
+    async def set_rgb(self, hash, params):
+        rgb = params["value"]
+        red = int(rgb[0:2], base=16)
+        green = int(rgb[2:4], base=16)
+        blue = int(rgb[4:6], base=16)
+        await self._device.async_set_light_color(rgb=(red, green, blue))
+
+    async def set_brightness(self, hash, params):
+        bri = params["value"]
+        await self._device.async_set_light_color(luminance=bri)
+
+    async def set_ct(self, hash, params):
+        ct = params["value"]
+        await self._device.async_set_light_color(temperature=ct)
 
     async def set_on(self, hash, params):
         await self._device.async_turn_on()
@@ -149,6 +179,17 @@ class meross_device:
             state_val = "closed"
             if self._device.get_is_open():
                 state_val = "open"
+
+        if isinstance(self._device, LightMixin):
+            ct = self._device.get_color_temperature()
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "ct", ct)
+
+            bri = self._device.get_luminance()
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "birghtness", bri)
+
+            rgb_tuple = self._device.get_rgb_color()
+            rgb = f"{rgb_tuple[0]:02x}{rgb_tuple[1]:02x}{rgb_tuple[2]:02x}"
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "rgb", rgb)
 
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_val)
         await fhem.readingsEndUpdate(self.hash, 1)
