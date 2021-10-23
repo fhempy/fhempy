@@ -185,7 +185,7 @@ class meross_device:
             await fhem.readingsBulkUpdateIfChanged(self.hash, "ct", ct)
 
             bri = self._device.get_luminance()
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "birghtness", bri)
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "brightness", bri)
 
             rgb_tuple = self._device.get_rgb_color()
             rgb = f"{rgb_tuple[0]:02x}{rgb_tuple[1]:02x}{rgb_tuple[2]:02x}"
