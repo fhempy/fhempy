@@ -130,8 +130,29 @@ BindingsIo_Define($$$)
 sub
 BindingsIo_connectDev($) {
   my ($hash) = @_;
+  BindingsIo_setIODevAttr($hash);
   DevIo_CloseDev($hash) if(DevIo_IsOpen($hash));
   DevIo_OpenDev($hash, 0, "BindingsIo_doInit", "BindingsIo_Callback");
+}
+
+sub
+BindingsIo_setIODevAttr($) {
+  my ($hash) = @_;
+
+  my @fhempydev_list = ();
+  foreach my $fhem_dev (sort keys %main::defs) {
+    push(@fhempydev_list, $fhem_dev) if ($main::defs{$fhem_dev}->{TYPE} eq "BindingsIo");
+  }
+  my $fhempydev_str = join(",", @fhempydev_list);
+
+  foreach my $fhem_dev (sort keys %main::defs) {
+    my $devhash = $main::defs{$fhem_dev};
+    if(defined($devhash->{"FHEMPYTYPE"}) && $devhash->{IODev}{NAME} eq $hash->{NAME}) {
+      my $attr_list = $devhash->{".AttrList"};
+      $attr_list =~ s/IODev/IODev:$fhempydev_str/;
+      setDevAttrList($devhash->{NAME}, $attr_list);
+    }
+  }
 }
 
 sub
@@ -276,6 +297,11 @@ BindingsIo_Write($$$$$) {
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
+      while (my ($key, $value) = each (%msg))
+      {
+        Log3 $hash, 1, "  $key =>  $msg{$key}";
+      }
+      last;
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." timeout", 1);
       $returnval = ""; # was before "Timeout while waiting for reply from $function"
       #if ($timeouts > 1) {
