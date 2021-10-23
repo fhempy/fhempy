@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.156 (2021-10-23)
+### Feature
+* **fhempy:** Add sentry logging ([`4d3cab6`](https://github.com/dominikkarall/fhempy/commit/4d3cab6a833d21fcb87136550e00b5bd96fffdb6))
+
+### Fix
+* **fhempy:** Iodev selection fix ([`495e41d`](https://github.com/dominikkarall/fhempy/commit/495e41da6c4b6054ffa8de5b0cde2ca2e297141c))
+
 ## v0.1.155 (2021-10-23)
 ### Fix
 * **meross:** Fix typo ([`08f332e`](https://github.com/dominikkarall/fhempy/commit/08f332e8c2f08e70429b2f54b40988c37654c01f))
