@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.154 (2021-10-23)
+### Feature
+* **meross:** Support rgb,bri,ct ([`a23f34d`](https://github.com/dominikkarall/fhempy/commit/a23f34ddb496feba162f51542a6c1f66af26b62b))
+* **fhempy:** Support iodev select in attr ([`3f64c63`](https://github.com/dominikkarall/fhempy/commit/3f64c633721cee69d9d4042e6a941ae6f97a8895))
+
 ## v0.1.153 (2021-10-23)
 ### Fix
 * **fhempy:** Better logging ([`d35fff7`](https://github.com/dominikkarall/fhempy/commit/d35fff7c6bf35197ddb0e0323d10e9029dd0fab7))
