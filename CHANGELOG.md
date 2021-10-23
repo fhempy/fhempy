@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.155 (2021-10-23)
+### Fix
+* **meross:** Fix typo ([`08f332e`](https://github.com/dominikkarall/fhempy/commit/08f332e8c2f08e70429b2f54b40988c37654c01f))
+
 ## v0.1.154 (2021-10-23)
 ### Feature
 * **meross:** Support rgb,bri,ct ([`a23f34d`](https://github.com/dominikkarall/fhempy/commit/a23f34ddb496feba162f51542a6c1f66af26b62b))
