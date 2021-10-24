@@ -7,6 +7,8 @@ import traceback
 
 import websockets
 
+from sentry_sdk import start_transaction
+
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -308,15 +310,16 @@ async def send_and_wait(name, cmd):
 async def sendCommandName(name, cmd, hash=None):
     ret = ""
     try:
-        logger.debug("sendCommandName START")
-        while len(function_active) != 0:
-            if function_active[-1] == name:
-                break
-            await asyncio.sleep(0.001)
-        # wait max 1s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 15)
-        logger.debug("sendCommandName END")
-        ret = json.loads(jsonmsg)["result"]
+        with start_transaction(op="sendCommandName", name=name):
+            logger.debug("sendCommandName START")
+            while len(function_active) != 0:
+                if function_active[-1] == name:
+                    break
+                await asyncio.sleep(0.001)
+            # wait max 1s for reply from FHEM
+            jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 15)
+            logger.debug("sendCommandName END")
+            ret = json.loads(jsonmsg)["result"]
     except asyncio.TimeoutError:
         logger.error("Timeout - NO RESPONSE for command: " + cmd)
         ret = ""

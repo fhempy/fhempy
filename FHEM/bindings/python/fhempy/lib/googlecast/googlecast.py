@@ -380,20 +380,23 @@ class googlecast(generic.FhemModule):
         cookies = {"sp_dc": dc, "sp_key": key}
         headers = {"user-agent": USER_AGENT}
 
-        response = session.get(
-            "https://open.spotify.com/get_access_token?"
-            + "reason=transport&productType=web_player",
-            headers=headers,
-            cookies=cookies,
-        )
-        response.raise_for_status()
-        data = response.content.decode("utf-8")
-        config = json.loads(data)
+        try:
+            response = session.get(
+                "https://open.spotify.com/get_access_token?"
+                + "reason=transport&productType=web_player",
+                headers=headers,
+                cookies=cookies,
+            )
+            response.raise_for_status()
+            data = response.content.decode("utf-8")
+            config = json.loads(data)
 
-        access_token = config["accessToken"]
-        expires_timestamp = config["accessTokenExpirationTimestampMs"]
-        expiration_date = int(expires_timestamp) // 1000
-        return access_token, expiration_date
+            access_token = config["accessToken"]
+            expires_timestamp = config["accessTokenExpirationTimestampMs"]
+            expiration_date = int(expires_timestamp) // 1000
+            return access_token, expiration_date
+        except Exception:
+            return None
 
     async def update_token(self):
         if self._attr_spotify_sp_dc != "" and self._attr_spotify_sp_key != "":
@@ -404,6 +407,12 @@ class googlecast(generic.FhemModule):
                     self._attr_spotify_sp_key,
                 )
             )
+            if data == None:
+                await fhem.readingsSingleUpdate(
+                    self.hash, "spotify_user", "sp_dc/sp_key update required", 1
+                )
+                return
+
             self.spotify_access_token = data[0]
             self.spotify_expires = data[1] - int(time.time())
             self.spotify = spotipy.Spotify(auth=self.spotify_access_token)
