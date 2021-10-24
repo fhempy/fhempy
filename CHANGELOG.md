@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.158 (2021-10-24)
+### Fix
+* **ring:** Ding poll in separate thread ([`7fc27a6`](https://github.com/dominikkarall/fhempy/commit/7fc27a683177ce84b2aaac7eac541c66b6bde574))
+
 ## v0.1.157 (2021-10-24)
 ### Fix
 * **fhempy:** Change sentry sample rate ([`3a0d3e5`](https://github.com/dominikkarall/fhempy/commit/3a0d3e5b4d617cc73f4107801ad4237d4e596672))
