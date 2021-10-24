@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.157 (2021-10-24)
+### Fix
+* **fhempy:** Change sentry sample rate ([`3a0d3e5`](https://github.com/dominikkarall/fhempy/commit/3a0d3e5b4d617cc73f4107801ad4237d4e596672))
+* **googlecast:** Report token errors to user ([`a65c64e`](https://github.com/dominikkarall/fhempy/commit/a65c64ea956e415afa0a2e52dce7e293ba8b5d65))
+* **fhempy:** Hopefully fixed a timeout bug ([`1c4f6be`](https://github.com/dominikkarall/fhempy/commit/1c4f6be11f7c8d06b57094bfffafb5ec9fda6ecc))
+
 ## v0.1.156 (2021-10-23)
 ### Feature
 * **fhempy:** Add sentry logging ([`4d3cab6`](https://github.com/dominikkarall/fhempy/commit/4d3cab6a833d21fcb87136550e00b5bd96fffdb6))
