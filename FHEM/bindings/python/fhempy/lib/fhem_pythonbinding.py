@@ -42,7 +42,7 @@ sentry_logging = LoggingIntegration(
 
 sentry_sdk.init(
     unknown_code,
-    traces_sample_rate=1.0,
+    traces_sample_rate=0.1,
     release="fhempy@" + str(version.__version__),
     integrations=[sentry_logging],
 )
