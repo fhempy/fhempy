@@ -5,7 +5,6 @@ import json
 import logging
 import threading
 import time
-import urllib.request
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
@@ -15,7 +14,7 @@ import pychromecast
 
 # DashCast
 import pychromecast.controllers.dashcast as dashcast
-import requests
+from requests import Session
 
 # youtube_dl
 import youtube_dl
@@ -147,17 +146,15 @@ class googlecast(generic.FhemModule):
         await self.set_auth_url()
         self.create_async_task(self.connect_spotipy())
 
-        self.startDiscovery()
+        utils.run_blocking_task(functools.partial(self.startDiscovery))
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
         await super().Undefine(hash)
         try:
             self.browser.stop_discovery()
-            if self.cast:
-                self.cast.disconnect()
         except Exception:
-            pass
+            self.logger.exception("Failed to undefine googlecast")
 
     async def set_auth_url(self):
         spotipy_scope = (
@@ -375,7 +372,7 @@ class googlecast(generic.FhemModule):
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
         )
 
-        session = requests.Session()
+        session = Session()
 
         cookies = {"sp_dc": dc, "sp_key": key}
         headers = {"user-agent": USER_AGENT}
@@ -569,25 +566,25 @@ class googlecast(generic.FhemModule):
         return None
 
     def startDiscovery(self):
-        def castFound(chromecast):
-            if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
-                self.logger.info("Discovered cast: " + chromecast.name)
-                self.cast = chromecast
+        self.logger.debug("Start discovery")
+        while True:
+            chromecasts, self.browser = pychromecast.get_listed_chromecasts(
+                friendly_names=[self.hash["CASTNAME"]],
+                tries=None,
+                retry_wait=5,
+                timeout=5,
+            )
+            if len(chromecasts) > 0:
+                self.cast = chromecasts[0]
                 # add status listener
                 self.cast.register_connection_listener(self)
                 self.cast.register_status_listener(self)
                 # add media controller listener
                 self.cast.media_controller.register_status_listener(self)
-                self.logger.debug("wait for chromecast")
-                # timeout 0.001 just waits for status to be ready
-                # but we just need the thread to start by calling wait()
                 self.cast.wait(0.001)
-                self.logger.debug("wait finished")
-
-        self.logger.debug("Start discovery")
-        self.browser = pychromecast.get_chromecasts(
-            blocking=False, tries=None, retry_wait=5, timeout=5, callback=castFound
-        )
+                break
+            else:
+                time.sleep(30)
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
