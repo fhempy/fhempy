@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.159 (2021-10-24)
+### Fix
+* **fhempy:** Remove perf sentry ([`cc5d4f8`](https://github.com/dominikkarall/fhempy/commit/cc5d4f8985ecd3c904f5c9bac78f50170f6da830))
+* **googlecast:** Fix endless loop on undefine ([`655e3ad`](https://github.com/dominikkarall/fhempy/commit/655e3adc13a4d7d79036055a2595893f6b98ad60))
+
 ## v0.1.158 (2021-10-24)
 ### Fix
 * **ring:** Ding poll in separate thread ([`7fc27a6`](https://github.com/dominikkarall/fhempy/commit/7fc27a683177ce84b2aaac7eac541c66b6bde574))
