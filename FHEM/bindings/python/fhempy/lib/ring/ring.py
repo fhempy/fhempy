@@ -60,7 +60,8 @@ class ring(FhemModule):
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return (
-                "Usage: define rrring fhempy ring <USERNAME> <RING_DEVICE_NAME> [<IDENTIFIER>]"
+                "Usage: define rrring fhempy ring <USERNAME>"
+                " <RING_DEVICE_NAME> [<IDENTIFIER>]"
             )
         self._username = args[3]
         self._rdevname = args[4]
@@ -69,7 +70,7 @@ class ring(FhemModule):
             self.hash["IDENTIFIER"] = args[5]
         else:
             characters = string.ascii_letters + string.digits
-            self._ridentifier = ''.join(random.choice(characters) for _ in range(20))
+            self._ridentifier = "".join(random.choice(characters) for _ in range(20))
         self._reading_encryption_key = await fhem.getUniqueId(hash)
         # ring service
         self._ring = None
@@ -154,10 +155,13 @@ class ring(FhemModule):
             self.logger.exception("Failed to update devices")
 
     async def update_dings_loop(self):
+        await utils.run_blocking(functools.partial(self.update_dings_loop_thread))
+
+    def update_dings_loop_thread(self):
         alert_active = 0
         while True:
             try:
-                await utils.run_blocking(functools.partial(self.poll_dings))
+                self.poll_dings()
                 # handle alerts
                 alerts = self._ring.active_alerts()
                 self.logger.debug("Received dings: " + str(alerts))
@@ -165,18 +169,25 @@ class ring(FhemModule):
                     for alert in alerts:
                         if alert["doorbot_id"] == self._rdevice.id:
                             alert_active = 1
-                            await self.update_alert_readings(alert)
+                            asyncio.run_coroutine_threadsafe(
+                                self.update_alert_readings(alert), self.loop
+                            ).result()
                 elif alert_active == 1:
                     alert_active = 0
-                    await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "state", "connected", 1
-                    )
-                    await utils.run_blocking(functools.partial(self.poll_device))
-                    await self.update_readings()
+                    asyncio.run_coroutine_threadsafe(
+                        fhem.readingsSingleUpdateIfChanged(
+                            self.hash, "state", "connected", 1
+                        ),
+                        self.loop,
+                    ).result()
+                    self.poll_device()
+                    asyncio.run_coroutine_threadsafe(
+                        self.update_readings(), self.loop
+                    ).result()
             except Exception:
                 self.logger.exception("Failed to poll dings...")
-                await utils.run_blocking(functools.partial(self.blocking_login))
-            await asyncio.sleep(self._attr_dingPollInterval)
+                self.blocking_login()
+            time.sleep(self._attr_dingPollInterval)
 
     async def update_alert_readings(self, alert):
         await fhem.readingsBeginUpdate(self.hash)
@@ -314,10 +325,10 @@ class ring(FhemModule):
             ).result()
 
         if self._token != "":
-            self._auth = Auth(self._ridentifier+"/1.0", self._token, token_updater)
+            self._auth = Auth(self._ridentifier + "/1.0", self._token, token_updater)
         else:
             if self._password != "":
-                self._auth = Auth(self._ridentifier+"/1.0", None, token_updater)
+                self._auth = Auth(self._ridentifier + "/1.0", None, token_updater)
                 if self._2facode:
                     self._auth.fetch_token(
                         self._username, self._password, self._2facode
