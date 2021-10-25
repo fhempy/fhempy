@@ -372,7 +372,6 @@ class tuya(generic.FhemModule):
                 pass
             except Exception:
                 await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
-                self.logger.error("Failed to get current status from device")
 
     def convert(self, value, schema):
         if schema["type"] == "Integer":
