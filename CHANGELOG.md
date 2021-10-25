@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.160 (2021-10-25)
+### Fix
+* **tuya:** Remove error when offline ([`91cfa6c`](https://github.com/dominikkarall/fhempy/commit/91cfa6cf58df2dd789d9675c420849a7c1a04a35))
+
 ## v0.1.159 (2021-10-24)
 ### Fix
 * **fhempy:** Remove perf sentry ([`cc5d4f8`](https://github.com/dominikkarall/fhempy/commit/cc5d4f8985ecd3c904f5c9bac78f50170f6da830))
