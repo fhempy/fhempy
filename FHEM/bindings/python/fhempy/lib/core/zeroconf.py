@@ -1,6 +1,7 @@
 import asyncio
 import socket
 
+from zeroconf import Zeroconf
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 
@@ -17,7 +18,8 @@ class zeroconf:
     def __init__(self, logger):
         self.logger = logger
         self.loop = asyncio.get_event_loop()
-        self.zeroconf = AsyncZeroconf()
+        self.async_zeroconf = AsyncZeroconf()
+        self.zeroconf = Zeroconf()
 
     async def register_service(self, type, name, port, properties):
         hostname = socket.gethostname()
@@ -30,14 +32,17 @@ class zeroconf:
             properties=properties,
             server=hostname + ".local.",
         )
-        await self.zeroconf.async_register_service(info)
+        await self.async_zeroconf.async_register_service(info)
         return info
 
     async def unregister_service(self, info):
-        await self.zeroconf.async_unregister_service(info)
+        await self.async_zeroconf.async_unregister_service(info)
 
     def get_zeroconf(self):
         return self.zeroconf
 
+    def get_async_zeroconf(self):
+        return self.async_zeroconf
+
     async def stop(self):
-        await self.zeroconf.async_close()
+        await self.async_zeroconf.async_close()

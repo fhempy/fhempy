@@ -117,7 +117,7 @@ class discover_mdns(FhemModule):
     async def runZeroconfScan(self):
         # await here to finish define before zeroconf object is created
         await asyncio.sleep(1)
-        self.zeroconf = zeroconf.get_instance(self.logger).get_zeroconf()
+        self.zeroconf = zeroconf.get_instance(self.logger).get_async_zeroconf()
         listener = self
         services = [
             "_googlecast._tcp.local.",
