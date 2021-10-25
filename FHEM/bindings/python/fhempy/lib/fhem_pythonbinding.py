@@ -407,7 +407,6 @@ class PyBinding:
                                             )
                                         except Exception:
                                             logger.exception("Undefine failed")
-                                        del loadedModuleInstances[hash["NAME"]]
                                     else:
                                         ret = await asyncio.wait_for(
                                             func(hash, hash["args"], hash["argsh"]),
@@ -450,12 +449,12 @@ class PyBinding:
                                 await self.sendBackError(hash, errorMsg)
                             return 0
 
+                    if fhem_reply_done is False:
+                        await self.sendBackReturn(hash, ret)
+
                     if hash["function"] == "Undefine":
                         if hash["NAME"] in loadedModuleInstances:
                             del loadedModuleInstances[hash["NAME"]]
-
-                    if fhem_reply_done is False:
-                        await self.sendBackReturn(hash, ret)
 
         except SystemExit as se:
             raise se
