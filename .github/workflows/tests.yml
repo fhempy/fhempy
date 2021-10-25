@@ -26,6 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install apt depencies
       run: |
+        sudo apt update
         sudo apt install python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev
     - name: Install dependencies
       run: |
