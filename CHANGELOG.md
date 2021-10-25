@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.161 (2021-10-25)
+### Fix
+* **googlecast:** Update lib/zeroconf ([`cab72a7`](https://github.com/dominikkarall/fhempy/commit/cab72a71694f9754af29d8ccdb64050697717dea))
+* **fhempy:** Fix timeout again ([`6f920cb`](https://github.com/dominikkarall/fhempy/commit/6f920cbc79fb1ebfe4394ae147fa908213555d2a))
+* **fhempy:** Update zeroconf ([`650f7ad`](https://github.com/dominikkarall/fhempy/commit/650f7ad6176d0d89a54fa638b12da75e50619740))
+
 ## v0.1.160 (2021-10-25)
 ### Fix
 * **tuya:** Remove error when offline ([`91cfa6c`](https://github.com/dominikkarall/fhempy/commit/91cfa6cf58df2dd789d9675c420849a7c1a04a35))
