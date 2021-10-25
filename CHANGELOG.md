@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.162 (2021-10-25)
+### Fix
+* **fhempy:** Wait max60s for fhem reply ([`1dbcf1e`](https://github.com/dominikkarall/fhempy/commit/1dbcf1e5e929815864f2791dc6407c3415b30688))
+
 ## v0.1.161 (2021-10-25)
 ### Fix
 * **googlecast:** Update lib/zeroconf ([`cab72a7`](https://github.com/dominikkarall/fhempy/commit/cab72a71694f9754af29d8ccdb64050697717dea))
