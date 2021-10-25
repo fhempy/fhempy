@@ -315,8 +315,8 @@ async def sendCommandName(name, cmd, hash=None):
             if function_active[-1] == name:
                 break
             await asyncio.sleep(0.001)
-        # wait max 1s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 15)
+        # wait max 60s for reply from FHEM
+        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 60)
         logger.debug("sendCommandName END")
         ret = json.loads(jsonmsg)["result"]
     except asyncio.TimeoutError:
