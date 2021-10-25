@@ -60,7 +60,7 @@ class discover_fhempy:
                         ipstr = ip.replace(".", "_")
                         await fhem.CommandDefine(
                             self.hash,
-                            f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python",
+                            f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} fhempy",
                         )
             else:
                 return
@@ -71,7 +71,7 @@ class discover_fhempy:
             self.logger.error(traceback.print_exc())
 
     async def runZeroconfScan(self):
-        self.zeroconf = fzeroconf.get_instance(self.logger).get_zeroconf()
+        self.zeroconf = fzeroconf.get_instance(self.logger).get_async_zeroconf()
         listener = self
         services = [
             "_http._tcp.local.",

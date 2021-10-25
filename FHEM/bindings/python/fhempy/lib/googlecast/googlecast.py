@@ -23,7 +23,7 @@ import youtube_dl
 from pychromecast.controllers.bubbleupnp import BubbleUPNPController
 
 # Spotify
-from pychromecast.controllers.spotify import SpotifyController
+from .spotcast.spotify_controller import SpotifyController
 import spotipy
 from spotipy.oauth2 import CacheFileHandler
 
@@ -32,6 +32,7 @@ from pychromecast.controllers.youtube import YouTubeController
 
 from .. import fhem, utils
 from .. import generic
+from ..core.zeroconf import zeroconf
 
 connection_update_lock = threading.Lock()
 
@@ -152,7 +153,10 @@ class googlecast(generic.FhemModule):
     async def Undefine(self, hash):
         await super().Undefine(hash)
         try:
-            self.browser.stop_discovery()
+            if self.browser:
+                self.browser.stop_discovery()
+            if self.cast:
+                utils.run_blocking_task(functools.partial(self.cast.disconnect))
         except Exception:
             self.logger.exception("Failed to undefine googlecast")
 
@@ -567,15 +571,24 @@ class googlecast(generic.FhemModule):
 
     def startDiscovery(self):
         self.logger.debug("Start discovery")
+        zc = zeroconf.get_instance(self.logger).get_zeroconf()
         while True:
-            chromecasts, self.browser = pychromecast.get_listed_chromecasts(
-                friendly_names=[self.hash["CASTNAME"]],
-                tries=None,
-                retry_wait=5,
-                timeout=5,
+            (
+                chromecasts,
+                self.browser,
+            ) = pychromecast.discovery.discover_listed_chromecasts(
+                friendly_names=[self.hash["CASTNAME"]], zeroconf_instance=zc
             )
+            try:
+                self.browser.stop_discovery()
+            except asyncio.TimeoutError:
+                pass
+            self.browser = None
+
             if len(chromecasts) > 0:
-                self.cast = chromecasts[0]
+                self.cast = pychromecast.get_chromecast_from_cast_info(
+                    chromecasts[0], zconf=zc
+                )
                 # add status listener
                 self.cast.register_connection_listener(self)
                 self.cast.register_status_listener(self)
@@ -584,7 +597,7 @@ class googlecast(generic.FhemModule):
                 self.cast.wait(0.001)
                 break
             else:
-                time.sleep(30)
+                time.sleep(10)
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
