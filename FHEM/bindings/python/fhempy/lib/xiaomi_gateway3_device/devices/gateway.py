@@ -33,7 +33,7 @@ class Gateway(BaseDevice):
         self._gateway.gateway3.pair_model = (
             model[:-3] if model.endswith(".v1") else model
         )
-        await self.set_start_pairing()
+        await self.set_start_pairing(hash, params)
 
     async def set_start_pairing(self, hash, params):
         self._gateway.gateway3.miio.send(
