@@ -493,7 +493,7 @@ class GatewayEntry(Thread, GatewayGW3):
                 time.sleep(30)
                 continue
 
-            if not self.did:
+            if not self.did and self.options.get("zha") is False:
                 devices = self._get_devices()
                 if not devices:
                     time.sleep(60)
