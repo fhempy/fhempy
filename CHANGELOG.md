@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.165 (2021-10-28)
+### Fix
+* **xiaomi_gateway3:** Fix zigbee2mqtt ([`fd10b93`](https://github.com/dominikkarall/fhempy/commit/fd10b93e9719626add8604b913743a5bcba41694))
+
 ## v0.1.164 (2021-10-27)
 ### Fix
 * **xiaomi_gateway3:** Fix pairing ([`26848db`](https://github.com/dominikkarall/fhempy/commit/26848db865253f70a95851fa44621adc0e783b51))
