@@ -67,6 +67,8 @@ class xiaomi_gateway3(generic.FhemModule):
                     "   adapter: ezsp<br>"
                     " mqtt:<br>"
                     "   client_id: zigbee_pi<br>"
+                    "PLEASE CHECK THE LOG FILE AFTER CLICKING HERE, "
+                    "DO NOT DISCONNECT GATEWAY FROM POWER"
                 )
             },
             "deactivate_zigbee2mqtt": {},
@@ -101,15 +103,15 @@ class xiaomi_gateway3(generic.FhemModule):
 
     async def connect_gw(self):
         await asyncio.sleep(0)
-        config = {"devices": {}}
+        self.gw = FhempyGateway(self.logger)
         z2m = await fhem.ReadingsVal(self.hash["NAME"], "zigbee2mqtt", "off")
         if z2m == "on":
-            config["zha"] = True
-        self.gw = FhempyGateway(self.logger)
-        await self.gw.create_gateway(self.hash, self.host, self.token, config)
-        # prepare domains
-        for domain in DOMAINS:
-            self.gw.add_setup(domain, self.create_device)
+            await self.gw.create_gateway(self.hash, self.host, self.token, zha=True)
+        else:
+            await self.gw.create_gateway(self.hash, self.host, self.token, zha=False)
+            # prepare domains
+            for domain in DOMAINS:
+                self.gw.add_setup(domain, self.create_device)
         # start check task
         self.create_async_task(self.is_connected())
         # run gateway
@@ -145,22 +147,22 @@ class xiaomi_gateway3(generic.FhemModule):
                 + " "
                 + did,
             )
-            # wait for fhem
-            await asyncio.sleep(1)
         else:
             if "init" in device and did in self.fhempy_devices:
                 if did == "lumi." + device["mac"]:
                     device["version"] = self.gw.version()
                 await self.fhempy_devices[did].initialize(device)
+        # wait for fhem
+        await asyncio.sleep(2)
 
 
 class FhempyGateway:
     def __init__(self, logger):
         self.loop = asyncio.get_event_loop()
 
-    async def create_gateway(self, hash, host, token, config):
+    async def create_gateway(self, hash, host, token, **options):
         self.gw = await utils.run_blocking(
-            functools.partial(GatewayEntry, host=host, token=token, options=config)
+            functools.partial(GatewayEntry, host=host, token=token, **options)
         )
 
     @property
