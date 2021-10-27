@@ -109,7 +109,7 @@ async def get_room_mapping(cloud: MiCloud, host: str, token: str):
             result += f"\n- {local_id}: {cloud_name}"
         return result
 
-    except:
+    except Exception:
         return "Can't get from cloud"
 
 
@@ -144,7 +144,7 @@ def _update_zigbee_firmware(host: str, ezsp_version: int):
     shell.run_zigbee_tcp(port=8889)
     time.sleep(0.5)
 
-    _LOGGER.debug(f"Try update EZSP to version {ezsp_version}")
+    _LOGGER.info(f"Try update EZSP to version {ezsp_version}")
 
     from .elelabs_ezsp_utility import ElelabsUtilities
 
@@ -155,7 +155,7 @@ def _update_zigbee_firmware(host: str, ezsp_version: int):
 
     # check current ezsp version
     resp = utils.probe()
-    _LOGGER.debug(f"EZSP before flash: {resp}")
+    _LOGGER.info(f"EZSP before flash: {resp}")
     if resp[0] == 0 and resp[1] == ezsp_version:
         return True
 
@@ -163,7 +163,7 @@ def _update_zigbee_firmware(host: str, ezsp_version: int):
     r = requests.get(url)
 
     resp = utils.flash(r.content)
-    _LOGGER.debug(f"EZSP after flash: {resp}")
+    _LOGGER.info(f"EZSP after flash: {resp}")
     return resp[0] == 0 and resp[1] == ezsp_version
 
 

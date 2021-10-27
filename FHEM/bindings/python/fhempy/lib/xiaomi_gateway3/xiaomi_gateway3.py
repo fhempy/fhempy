@@ -8,6 +8,7 @@ import logging
 from .. import fhem, utils
 from .. import generic
 from .core.gateway3 import GatewayEntry
+from .core.utils import update_zigbee_firmware
 
 DOMAINS = [
     "binary_sensor",
@@ -55,9 +56,36 @@ class xiaomi_gateway3(generic.FhemModule):
         self.host = args[3]
         self.token = args[4]
 
+        set_conf = {
+            "activate_zigbee2mqtt": {
+                "help": (
+                    "You need to install zigbee2mqtt aftewards<br>"
+                    "=> https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#2-installing<br>"
+                    "Set following lines in configuration.yaml<br>"
+                    " serial:<br>"
+                    "   port: tcp://GATEWAY_IP_ADDRESS:8888<br>"
+                    "   adapter: ezsp<br>"
+                    " mqtt:<br>"
+                    "   client_id: zigbee_pi<br>"
+                )
+            },
+            "deactivate_zigbee2mqtt": {},
+        }
+        self.set_set_config(set_conf)
+
         self.create_async_task(self.connect_gw())
 
         return ""
+
+    async def set_activate_zigbee2mqtt(self, hash, params):
+        ezsp_version = 8
+        self.create_async_task(update_zigbee_firmware(self.host, ezsp_version))
+        await fhem.readingsSingleUpdateIfChanged(hash, "zigbee2mqtt", "on", 1)
+
+    async def set_deactivate_zigbee2mqtt(self, hash, params):
+        ezsp_version = 7
+        self.create_async_task(update_zigbee_firmware(self.host, ezsp_version))
+        await fhem.readingsSingleUpdateIfChanged(hash, "zigbee2mqtt", "off", 1)
 
     async def register_device(self, fhempy_device, handler):
         did = fhempy_device.did
@@ -74,6 +102,9 @@ class xiaomi_gateway3(generic.FhemModule):
     async def connect_gw(self):
         await asyncio.sleep(0)
         config = {"devices": {}}
+        z2m = await fhem.ReadingsVal(self.hash["NAME"], "zigbee2mqtt", "off")
+        if z2m == "on":
+            config["zha"] = True
         self.gw = FhempyGateway(self.logger)
         await self.gw.create_gateway(self.hash, self.host, self.token, config)
         # prepare domains
