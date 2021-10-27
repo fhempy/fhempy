@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.163 (2021-10-27)
+### Feature
+* **xiaomi_gateway3:** Support zigbee2mqtt ([`3829860`](https://github.com/dominikkarall/fhempy/commit/3829860d8cdf9ace4b181b3769579874d62eee43))
+* **xiaomi_gateway3:** Support non xiaomi zigbee ([`be74c22`](https://github.com/dominikkarall/fhempy/commit/be74c22428b890bf30650f0031eba02bd7507bc9))
+
 ## v0.1.162 (2021-10-25)
 ### Fix
 * **fhempy:** Wait max60s for fhem reply ([`1dbcf1e`](https://github.com/dominikkarall/fhempy/commit/1dbcf1e5e929815864f2791dc6407c3415b30688))
