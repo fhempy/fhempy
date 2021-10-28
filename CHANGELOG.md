@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.166 (2021-10-28)
+### Fix
+* **ring:** Update test ([`cef1d64`](https://github.com/dominikkarall/fhempy/commit/cef1d643813884af75ff54e24296d56fe79aa422))
+* **ring:** Correctly stop update thread ([`cec6b74`](https://github.com/dominikkarall/fhempy/commit/cec6b746886a8991cacb95a10ec361b6f0d7085b))
+* **googlecast:** Do not stop zeroconf ([`720b007`](https://github.com/dominikkarall/fhempy/commit/720b007c81f3ff41da84485feedd7a0660e5fc5e))
+* **fhempy:** Add sentry requirement ([`0df8c52`](https://github.com/dominikkarall/fhempy/commit/0df8c522e369b225878d656a291cf22714e66157))
+
 ## v0.1.165 (2021-10-28)
 ### Fix
 * **xiaomi_gateway3:** Fix zigbee2mqtt ([`fd10b93`](https://github.com/dominikkarall/fhempy/commit/fd10b93e9719626add8604b913743a5bcba41694))
