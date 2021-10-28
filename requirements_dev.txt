@@ -12,3 +12,4 @@ cryptography==3.3.2
 zeroconf==0.36.8
 aiohttp[speedups]==3.7.4.post0
 markdown==3.3.4
+sentry-sdk==1.4.3

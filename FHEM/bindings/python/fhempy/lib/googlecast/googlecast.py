@@ -136,9 +136,9 @@ class googlecast(generic.FhemModule):
             return 'Usage: define my_fhempy_cast fhempy googlecast "Living Room"'
 
         if self.browser:
-            self.browser.stop_discovery()
+            utils.run_blocking_task(functools.partial(self.browser.stop_discovery))
         if self.cast:
-            self.cast.disconnect()
+            utils.run_blocking_task(functools.partial(self.cast.disconnect))
 
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "offline")
@@ -154,7 +154,7 @@ class googlecast(generic.FhemModule):
         await super().Undefine(hash)
         try:
             if self.browser:
-                self.browser.stop_discovery()
+                utils.run_blocking_task(functools.partial(self.browser.stop_discovery))
             if self.cast:
                 utils.run_blocking_task(functools.partial(self.cast.disconnect))
         except Exception:
@@ -579,11 +579,6 @@ class googlecast(generic.FhemModule):
             ) = pychromecast.discovery.discover_listed_chromecasts(
                 friendly_names=[self.hash["CASTNAME"]], zeroconf_instance=zc
             )
-            try:
-                self.browser.stop_discovery()
-            except asyncio.TimeoutError:
-                pass
-            self.browser = None
 
             if len(chromecasts) > 0:
                 self.cast = pychromecast.get_chromecast_from_cast_info(

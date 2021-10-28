@@ -113,7 +113,7 @@ async def test_login(mocker):
         await asyncio.sleep(0.1)
 
     # wait for the ding
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(1)
     assert mock_fhem.readings["testdevice"]["state"] == "ding"
     assert mock_fhem.readings["testdevice"]["address"] == "123 Main St"
     assert mock_fhem.readings["testdevice"]["family"] == "doorbots"
