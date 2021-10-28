@@ -4,6 +4,7 @@ import json
 import time
 import string
 import random
+import threading
 
 from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
 from ring_doorbell import Auth, Ring
@@ -46,6 +47,8 @@ class ring(FhemModule):
             "2fa_code": {"args": ["2facode"]},
         }
         self.set_set_config(self.set_list_conf)
+        self.stop_dings_loop = threading.Event()
+        self.update_dings_thread = None
         return
 
     async def token_updated(self, token):
@@ -155,12 +158,20 @@ class ring(FhemModule):
             self.logger.exception("Failed to update devices")
 
     async def update_dings_loop(self):
-        await utils.run_blocking(functools.partial(self.update_dings_loop_thread))
+        try:
+            self.update_dings_thread = await utils.run_blocking(
+                functools.partial(self.update_dings_loop_thread)
+            )
+        except CancelledError:
+            pass
 
     def update_dings_loop_thread(self):
         alert_active = 0
         while True:
             try:
+                if self.stop_dings_loop.is_set():
+                    return
+
                 self.poll_dings()
                 # handle alerts
                 alerts = self._ring.active_alerts()
@@ -281,9 +292,15 @@ class ring(FhemModule):
                     await fhem.readingsBulkUpdateIfChanged(
                         self.hash, "livestream_json", json.dumps(self._livestreamjson)
                     )
-                # if self._snapshot:
-                #     snapshot = '<html><img src="data:image/png,' + self._snapshot + '"/></html>'
-                #     await fhem.readingsBulkUpdateIfChanged(self.hash, "snapshot", snapshot)
+                if self._snapshot:
+                    snapshot = (
+                        '<html><img src="data:image/png,'
+                        + self._snapshot
+                        + '"/></html>'
+                    )
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, "snapshot", snapshot
+                    )
         except Exception:
             self.logger.exception(
                 "Failed to update readings, please report here: https://forum.fhem.de/index.php/topic,117381"
@@ -316,7 +333,7 @@ class ring(FhemModule):
             )
             if self._lastrecording_url is False:
                 self.blocking_login()
-            # self._snapshot = self._rdevice.get_snapshot()
+            # self._snapshot = self._rdevice.get_snapshot(retries=10)
 
     def blocking_login(self):
         def token_updater(token):
@@ -370,3 +387,9 @@ class ring(FhemModule):
     async def set_2fa_code(self, hash, params):
         self._2facode = params["2facode"]
         self.create_async_task(self.ring_login())
+
+    async def Undefine(self, hash):
+        self.stop_dings_loop.set()
+        if self.update_dings_thread:
+            self.update_dings_thread.cancel()
+        await super().Undefine(hash)
