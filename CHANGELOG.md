@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.168 (2021-10-30)
+### Fix
+* **tuya_cloud:** Fix python 3.7 ([`b28cf4e`](https://github.com/dominikkarall/fhempy/commit/b28cf4e0213e9ee802c8aec94b40d1840d92ba3f))
+
 ## v0.1.167 (2021-10-30)
 ### Fix
 * **tuya_cloud:** Update tuya iot lib ([`3ef9f5b`](https://github.com/dominikkarall/fhempy/commit/3ef9f5bbddf53aa03d07044b881fedf069733f91))
