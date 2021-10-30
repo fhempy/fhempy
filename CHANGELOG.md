@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.167 (2021-10-30)
+### Fix
+* **tuya_cloud:** Update tuya iot lib ([`3ef9f5b`](https://github.com/dominikkarall/fhempy/commit/3ef9f5bbddf53aa03d07044b881fedf069733f91))
+* **esphome:** Fix create weblinks ([`e4ec22f`](https://github.com/dominikkarall/fhempy/commit/e4ec22f6597ee96307bc1ea5de6a4d2c22f67264))
+
 ## v0.1.166 (2021-10-28)
 ### Fix
 * **ring:** Update test ([`cef1d64`](https://github.com/dominikkarall/fhempy/commit/cef1d643813884af75ff54e24296d56fe79aa422))
