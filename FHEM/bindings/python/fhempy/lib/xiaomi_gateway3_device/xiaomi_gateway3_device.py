@@ -14,14 +14,20 @@ from .devices.sensor import (  # noqa: F401
 )
 
 device_type_mapping = {
+    "lumi.sensor_magnet": "ContactSensor",
     "lumi.sensor_magnet.v2": "ContactSensor",
     "lumi.sensor_magnet.aq2": "ContactSensor",
+    "lumi.sensor_wleak": "WaterLeakSensor",
     "lumi.sensor_wleak.aq1": "WaterLeakSensor",
+    "lumi.sensor_ht": "HTSensor",
     "lumi.sensor_ht.v1": "HTSensor",
     "lumi.sensor_ht.v2": "HTSensor",
+    "lumi.weather": "HTSensor",
     "lumi.weather.v1": "HTSensor",
+    "lumi.sensor_motion": "MotionSensor",
     "lumi.sensor_motion.v1": "MotionSensor",
     "lumi.sensor_motion.v2": "MotionSensor",
+    "lumi.gateway": "Gateway",
     "lumi.gateway.mgl03": "Gateway",
 }
 
