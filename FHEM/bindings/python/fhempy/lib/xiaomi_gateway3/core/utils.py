@@ -1,17 +1,18 @@
+import asyncio
 import json
 import logging
 import random
 import re
 import string
-import time
+import traceback
 import functools
 from typing import List, Optional
 
-from fhempy.lib import utils
-
 import requests
 
-from .mini_miio import SyncmiIO
+from fhempy.lib import utils
+from .ezsp import EzspUtils
+from .mini_miio import AsyncMiIO
 from .shell import TelnetShell
 from .xiaomi_cloud import MiCloud
 
@@ -44,45 +45,54 @@ def migrate_options(data):
     return {"data": data, "options": options}
 
 
-def check_mgl03(host: str, token: str, telnet_cmd: Optional[str]) -> Optional[str]:
+async def check_mgl03(
+    host: str, token: str, telnet_cmd: Optional[str]
+) -> Optional[str]:
+    # 1. try connect with telnet (custom firmware)?
+    sh = TelnetShell()
     try:
-        # 1. try connect with telnet (custom firmware)?
-        shell = TelnetShell(host)
-        # 1.1. check token with telnet
-        return None if shell.get_token() == token else "wrong_token"
-    except:
+        if await sh.connect(host):
+            # 1.1. check token with telnet
+            return None if await sh.get_token() == token else "wrong_token"
+
         if not telnet_cmd:
             return "cant_connect"
 
-    # 2. try connect with miio
-    miio = SyncmiIO(host, token)
-    info = miio.info()
-    # fw 1.4.6_0012 without cloud will respond with a blank string reply
-    if info is None:
-        # if device_id not None - device works but not answer on commands
-        return "wrong_token" if miio.device_id else "cant_connect"
+        # 2. try connect with miio
+        miio = AsyncMiIO(host, token)
+        info = await miio.info()
 
-    # 3. check if right model
-    if info and info["model"] != "lumi.gateway.mgl03":
-        return "wrong_model"
+        # if info is None - devise doesn't answer on pings
+        if info is None:
+            return "cant_connect"
 
-    raw = json.loads(telnet_cmd)
-    # fw 1.4.6_0043+ won't answer on cmd without cloud, so don't check answer
-    miio.send(raw["method"], raw.get("params"))
+        # if empty info - device works but not answer on commands
+        if not info:
+            return "wrong_token"
 
-    # waiting for telnet to start
-    time.sleep(1)
+        # 3. check if right model
+        if info["model"] != "lumi.gateway.mgl03":
+            return "wrong_model"
 
-    try:
-        # 4. check if telnet command helps
-        TelnetShell(host)
-    except:
-        return "wrong_telnet"
+        raw = json.loads(telnet_cmd)
+        # fw 1.4.6_0043+ won't answer on cmd without cloud, don't check answer
+        await miio.send(raw["method"], raw.get("params"))
+
+        # waiting for telnet to start
+        await asyncio.sleep(1)
+
+        if not await sh.connect(host):
+            return "wrong_telnet"
+
+        return None
+
+    finally:
+        await sh.close()
 
 
-def get_lan_key(host: str, token: str):
-    device = SyncmiIO(host, token)
-    resp = device.send("get_lumi_dpf_aes_key")
+async def get_lan_key(host: str, token: str):
+    device = AsyncMiIO(host, token)
+    resp = await device.send("get_lumi_dpf_aes_key")
     if resp is None:
         return "Can't connect to gateway"
     if len(resp[0]) == 16:
@@ -90,7 +100,7 @@ def get_lan_key(host: str, token: str):
     key = "".join(
         random.choice(string.ascii_lowercase + string.digits) for _ in range(16)
     )
-    resp = device.send("set_lumi_dpf_aes_key", [key])
+    resp = await device.send("set_lumi_dpf_aes_key", [key])
     if resp[0] == "ok":
         return key
     return "Can't update gateway key"
@@ -98,8 +108,8 @@ def get_lan_key(host: str, token: str):
 
 async def get_room_mapping(cloud: MiCloud, host: str, token: str):
     try:
-        device = SyncmiIO(host, token)
-        local_rooms = device.send("get_room_mapping")
+        device = AsyncMiIO(host, token)
+        local_rooms = await device.send("get_room_mapping")
         cloud_rooms = await cloud.get_rooms()
         result = ""
         for local_id, cloud_id in local_rooms:
@@ -109,7 +119,7 @@ async def get_room_mapping(cloud: MiCloud, host: str, token: str):
             result += f"\n- {local_id}: {cloud_name}"
         return result
 
-    except Exception:
+    except:
         return "Can't get from cloud"
 
 
@@ -126,48 +136,114 @@ def reverse_mac(s: str):
     return f"{s[10:]}{s[8:10]}{s[6:8]}{s[4:6]}{s[2:4]}{s[:2]}"
 
 
-EZSP_URLS = {
-    7: "https://master.dl.sourceforge.net/project/mgl03/zigbee/"
-    "ncp-uart-sw_mgl03_6_6_2_stock.gbl?viasf=1",
-    8: "https://master.dl.sourceforge.net/project/mgl03/zigbee/"
-    "ncp-uart-sw_mgl03_6_7_8_z2m.gbl?viasf=1",
-}
+NCP_URL = "https://master.dl.sourceforge.net/project/mgl03/zigbee/%s?viasf=1"
 
 
-def _update_zigbee_firmware(host: str, ezsp_version: int):
-    shell = TelnetShell(host)
+def flash_zigbee_firmware(
+    host: str, ports: list, fw_url: str, fw_ver: str, fw_port=0, force=False
+):
+    """
+    param host: gateway host
+    param ports: one or multiple ports with different speeds, first port
+        should be 115200
+    param fw_url: url to firmware file
+    param fw_ver: firmware version, checks before and after flash
+    param fw_port: optional, port with firmware speed if it is not 115200
+    param second_port: optional, second port if current firmware may have
+        different speed
+    param force: skip check firmware version before flash
+    return: True if NCP firmware version equal to fw_ver
+    """
 
-    # stop all utilities without checking if they are running
-    shell.stop_lumi_zigbee()
-    shell.stop_zigbee_tcp()
-    # flash on another port because running ZHA or z2m can breake process
-    shell.run_zigbee_tcp(port=8889)
-    time.sleep(0.5)
+    # we can flash NCP only in boot mode on speed 115200
+    # but NCP can work on another speed, so we need to try both of them
+    # work with 115200 on port 8115, and with 38400 on port 8038
+    _LOGGER.debug(f"Try to update Zigbee NCP to version {fw_ver}")
 
-    _LOGGER.info(f"Try update EZSP to version {ezsp_version}")
+    if isinstance(ports, int):
+        ports = [ports]
 
-    from .elelabs_ezsp_utility import ElelabsUtilities
+    utils = EzspUtils()
 
-    config = type(
-        "", (), {"port": (host, 8889), "baudrate": 115200, "dlevel": _LOGGER.level}
+    try:
+        # try to find right speed from the list
+        for port in ports:
+            utils.connect(host, port)
+            state = utils.state()
+            if state:
+                break
+            utils.close()
+        else:
+            raise RuntimeError
+
+        if state == "normal":
+            if fw_ver in utils.version and not force:
+                _LOGGER.info("No need to flash")
+                return True
+            _LOGGER.info(f"NCP state: {state}, version: {utils.version}")
+            utils.launch_boot()
+            state = utils.state()
+
+        _LOGGER.info(f"NCP state: {state}, version: {utils.version}")
+
+        # should be in boot
+        if state != "boot":
+            return False
+
+        r = requests.get(fw_url)
+        assert r.status_code == 200, r.status_code
+
+        assert utils.flash_and_close(r.content)
+
+        utils.connect(host, ports[0])
+        utils.reboot_and_close()
+
+        utils.connect(host, fw_port or ports[0])
+        state = utils.state()
+        _LOGGER.info(f"NCP state: {state}, version: {utils.version}")
+        return fw_ver in utils.version
+
+    except:
+        _LOGGER.error(f"NCP flash error: {traceback.format_exc(1)}")
+        return False
+
+    finally:
+        utils.close()
+
+
+async def update_zigbee_firmware(host: str, custom: bool):
+    """Update zigbee firmware for both ZHA and zigbee2mqtt modes"""
+
+    sh = TelnetShell()
+    try:
+        if not await sh.connect(host) or not await sh.run_zigbee_flash():
+            return False
+    except:
+        pass
+    finally:
+        await sh.close()
+
+    await asyncio.sleep(0.5)
+
+    args = (
+        [
+            host,
+            [8115, 8038],
+            NCP_URL % "mgl03_ncp_6_7_10_b38400_sw.gbl",
+            "v6.7.10",
+            8038,
+        ]
+        if custom
+        else [
+            host,
+            [8115, 8038],
+            NCP_URL % "ncp-uart-sw_mgl03_6_6_2_stock.gbl",
+            "v6.6.2",
+            8115,
+        ]
     )
-    utils = ElelabsUtilities(config, _LOGGER)
 
-    # check current ezsp version
-    resp = utils.probe()
-    _LOGGER.info(f"EZSP before flash: {resp}")
-    if resp[0] == 0 and resp[1] == ezsp_version:
-        return True
-
-    url = EZSP_URLS[ezsp_version]
-    r = requests.get(url)
-
-    resp = utils.flash(r.content)
-    _LOGGER.info(f"EZSP after flash: {resp}")
-    return resp[0] == 0 and resp[1] == ezsp_version
-
-
-async def update_zigbee_firmware(host: str, ezsp_version: int):
-    return await utils.run_blocking(
-        functools.partial(_update_zigbee_firmware, host, ezsp_version)
-    )
+    for _ in range(3):
+        if await utils.run_blocking(functools.partial(flash_zigbee_firmware, *args)):
+            return True
+    return False

@@ -1,9 +1,12 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Callable
+from typing import *
+
+from .utils import DOMAIN
 
 from . import bluetooth, zigbee
-from .utils import DOMAIN
+
+CONNECTION_NETWORK_MAC = "mac"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ class DevicesRegistry:
         """Add hass device setup funcion."""
         self.setups[domain] = handler
 
-    def add_entity(self, domain: str, device: dict, attr: str):
+    async def add_entity(self, domain: str, device: dict, attr: str):
         if self not in device["gateways"]:
             device["gateways"].append(self)
 
@@ -59,7 +62,7 @@ class DevicesRegistry:
         # instant add entity to prevent double setup
         device["entities"]["main"] = None
 
-        self.setups[domain](self, device, attr)
+        await self.setups[domain](self, device, attr)
 
     def set_entity(self, fhem_dev):
         fhem_dev.device["entities"]["main"] = fhem_dev
@@ -94,8 +97,8 @@ class DevicesRegistry:
             device.update(zigbee.get_device(device["model"]))
         elif type_ == "mesh":
             device.update(bluetooth.get_device(device["model"], "Mesh"))
-        # elif type_ == 'ble':
-        #     device.update(bluetooth.get_device(device['model'], 'BLE'))
+        elif type_ == "ble":
+            device.update(bluetooth.get_device(device["model"], "BLE"))
 
         model = device["model"]
         if model in self.defaults:
@@ -168,7 +171,7 @@ class XiaomiEntity:
         type_ = self.device["type"]
         if type_ == "gateway":
             return {
-                "connections": {("mac", self.device["wlan_mac"])},
+                "connections": {(CONNECTION_NETWORK_MAC, self.device["wlan_mac"])},
                 "identifiers": {(DOMAIN, self.device["mac"])},
                 "manufacturer": self.device["device_manufacturer"],
                 "model": self.device["device_model"],
@@ -182,7 +185,7 @@ class XiaomiEntity:
                 "manufacturer": self.device.get("device_manufacturer"),
                 "model": self.device["device_model"],
                 "name": self.device["device_name"],
-                "sw_version": self.device.get("fw_ver"),
+                "sw_version": self.device["fw_ver"],
                 "via_device": (DOMAIN, self.gw.device["mac"]),
             }
         else:  # ble and mesh
@@ -195,5 +198,5 @@ class XiaomiEntity:
                 "via_device": (DOMAIN, self.gw.device["mac"]),
             }
 
-    def update(self, data: dict):
-        pass
+    async def async_update(self, data: dict):
+        raise NotImplementedError

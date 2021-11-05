@@ -6,6 +6,11 @@ from fhempy.lib.generic import FhemModule
 from fhempy.lib.xiaomi_gateway3.xiaomi_gateway3 import FhempyGateway
 
 attr_settings = {
+    "lumi.sensor_magnet": {
+        "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
+        "stateFormat": "contact",
+        "icon": "tuer_fenster_kontakt",
+    },
     "lumi.sensor_magnet.v2": {
         "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
         "stateFormat": "contact",
@@ -16,10 +21,19 @@ attr_settings = {
         "stateFormat": "contact",
         "icon": "tuer_fenster_kontakt",
     },
+    "lumi.sensor_wleak": {
+        "icon": "sani_water_tap",
+        "devStateIcon": "0:message_ok 1:humidity@red",
+        "stateFormat": "moisture",
+    },
     "lumi.sensor_wleak.aq1": {
         "icon": "sani_water_tap",
         "devStateIcon": "0:message_ok 1:humidity@red",
         "stateFormat": "moisture",
+    },
+    "lumi.sensor_ht": {
+        "stateFormat": "temperature °C, humidity %",
+        "icon": "temp_temperature",
     },
     "lumi.sensor_ht.v1": {
         "stateFormat": "temperature °C, humidity %",
@@ -29,9 +43,18 @@ attr_settings = {
         "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
     },
+    "lumi.weather": {
+        "stateFormat": "temperature °C, humidity %, pressure hPa",
+        "icon": "temp_temperature",
+    },
     "lumi.weather.v1": {
         "stateFormat": "temperature °C, humidity %, pressure hPa",
         "icon": "temp_temperature",
+    },
+    "lumi.sensor_motion": {
+        "stateFormat": "motion",
+        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
+        "icon": "people_sensor",
     },
     "lumi.sensor_motion.v1": {
         "stateFormat": "motion",
@@ -42,6 +65,10 @@ attr_settings = {
         "stateFormat": "motion",
         "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
         "icon": "people_sensor",
+    },
+    "lumi.gateway": {
+        "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
+        "icon": "tradfri_gateway",
     },
     "lumi.gateway.mgl03": {
         "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
