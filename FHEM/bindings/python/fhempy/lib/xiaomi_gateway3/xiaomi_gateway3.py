@@ -132,7 +132,7 @@ class xiaomi_gateway3(generic.FhemModule):
                         self.hash, "state", "disconnected", 1
                     )
                     last_was_connected = False
-            await asyncio.sleep(20)
+            await asyncio.sleep(60)
 
     async def create_device(self, gw, device, type):
         self.logger.debug(f"Check if device {device['did']} exists")
@@ -185,4 +185,4 @@ class FhempyGateway:
         self.gw.start()
 
     async def is_connected(self):
-        return self.gw.available
+        return await self.gw.check_port(23)
