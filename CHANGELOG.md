@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.170 (2021-11-05)
+### Fix
+* **xiaomi_gateway3:** Fix connected state ([`08005c0`](https://github.com/dominikkarall/fhempy/commit/08005c0634846aa21e9b56b977b41d24497bc288))
+
 ## v0.1.169 (2021-11-05)
 ### Feature
 * **xiaomi_gateway3:** Update to 1.6.0rc2 xgw3 lib ([`bcf7f8d`](https://github.com/dominikkarall/fhempy/commit/bcf7f8d9d303efadafc5f33c0166b5d38fa575c0))
