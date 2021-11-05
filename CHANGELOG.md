@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.169 (2021-11-05)
+### Feature
+* **xiaomi_gateway3:** Update to 1.6.0rc2 xgw3 lib ([`bcf7f8d`](https://github.com/dominikkarall/fhempy/commit/bcf7f8d9d303efadafc5f33c0166b5d38fa575c0))
+
+### Fix
+* **esphome:** Fix weblinks device ([`9e93ef0`](https://github.com/dominikkarall/fhempy/commit/9e93ef00a44e15845906196536651dd858fab87a))
+
 ## v0.1.168 (2021-10-30)
 ### Fix
 * **tuya_cloud:** Fix python 3.7 ([`b28cf4e`](https://github.com/dominikkarall/fhempy/commit/b28cf4e0213e9ee802c8aec94b40d1840d92ba3f))
