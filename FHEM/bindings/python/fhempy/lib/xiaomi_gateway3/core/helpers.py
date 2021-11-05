@@ -62,7 +62,8 @@ class DevicesRegistry:
         # instant add entity to prevent double setup
         device["entities"]["main"] = None
 
-        await self.setups[domain](self, device, attr)
+        if domain in self.setups:
+            await self.setups[domain](self, device, attr)
 
     def set_entity(self, fhem_dev):
         fhem_dev.device["entities"]["main"] = fhem_dev
