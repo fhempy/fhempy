@@ -5,7 +5,7 @@ import json
 import logging
 import threading
 import time
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, quote
 
 import aiohttp
 
@@ -314,7 +314,7 @@ class googlecast(generic.FhemModule):
             "http://translate.google.com/translate_tts?tl="
             + lang
             + "&client=tw-ob&q="
-            + urllib.parse.quote(txt)
+            + quote(txt)
         )
         self.cast.play_media(ttsUrl, "audio/mpeg")
 
