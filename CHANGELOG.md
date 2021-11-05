@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.171 (2021-11-06)
+### Fix
+* **xiaomi_gateway3:** Fix z2m mode ([`14f3f5b`](https://github.com/dominikkarall/fhempy/commit/14f3f5b305e7a76bb61092819c5dc404f66e6206))
+
 ## v0.1.170 (2021-11-05)
 ### Fix
 * **xiaomi_gateway3:** Fix connected state ([`08005c0`](https://github.com/dominikkarall/fhempy/commit/08005c0634846aa21e9b56b977b41d24497bc288))
