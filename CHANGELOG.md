@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.172 (2021-11-06)
+### Fix
+* **googlecast:** Fix speak ([`5a37d57`](https://github.com/dominikkarall/fhempy/commit/5a37d57ac0ce598827598918dbe3c50d261f9cf7))
+* **skodaconnect:** Update lib to 1.1.10 ([`eb19421`](https://github.com/dominikkarall/fhempy/commit/eb19421b9ddc7c17cddb84847503fa1f5f608fcb))
+
 ## v0.1.171 (2021-11-06)
 ### Fix
 * **xiaomi_gateway3:** Fix z2m mode ([`14f3f5b`](https://github.com/dominikkarall/fhempy/commit/14f3f5b305e7a76bb61092819c5dc404f66e6206))
