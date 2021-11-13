@@ -231,7 +231,7 @@ class tuya_cloud_device:
         for code_def in self._t_specification["status"]:
             if code_def["code"] == code and code_def["type"] == "Integer":
                 values = json.loads(code_def["values"])
-                return value / (10 ** values["scale"])
+                return value / (10 ** int(values["scale"]))
 
         if code == "icon":
             return (
