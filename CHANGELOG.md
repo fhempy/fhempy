@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.174 (2021-11-15)
+
+
 ## v0.1.173 (2021-11-15)
 ### Fix
 * **tuya_cloud:** Fix colour_data ([`d2fd1ac`](https://github.com/dominikkarall/fhempy/commit/d2fd1ac0b56540ff589c234489416e95f1973fc4))
