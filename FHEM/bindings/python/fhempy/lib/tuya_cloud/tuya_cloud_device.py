@@ -173,11 +173,11 @@ class tuya_cloud_device:
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
 
     async def set_colour_data(self, hash, params):
-        # convert e.g. ff0000 to hsv (360, 100, 100) and set hsv values with json
+        # convert e.g. ff0000 to hsv (360, 255, 255) and set hsv values with json
         hsv = self.fhemrgb2hsv(params["new_val"])
         if self._t_info["category"] == "dj":
-            hsv["s"] = int(hsv["s"] / 10)
-            hsv["v"] = int(hsv["v"] / 10)
+            hsv["s"] = int(hsv["s"] / 1000 * 255)
+            hsv["v"] = int(hsv["v"] / 1000 * 255)
         code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": hsv}])
 
@@ -306,8 +306,8 @@ class tuya_cloud_device:
             # only category dj (light) has old colour_data
             rgb = colorsys.hsv_to_rgb(
                 int(hsv_json["h"]) / 360,
-                int(hsv_json["s"]) / 100,
-                int(hsv_json["v"]) / 100,
+                int(hsv_json["s"]) / 255,
+                int(hsv_json["v"]) / 255,
             )
         else:
             rgb = colorsys.hsv_to_rgb(
