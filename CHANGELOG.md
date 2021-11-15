@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.173 (2021-11-15)
+### Fix
+* **tuya_cloud:** Fix colour_data ([`d2fd1ac`](https://github.com/dominikkarall/fhempy/commit/d2fd1ac0b56540ff589c234489416e95f1973fc4))
+* **fhempy:** Update zeroconf 0.36.12 ([`768df9e`](https://github.com/dominikkarall/fhempy/commit/768df9e8a27d0ac06b1f8e7ccd95ff01a7ec34f5))
+* **googlecast:** Update lib to 9.4.0 ([`82a1d6b`](https://github.com/dominikkarall/fhempy/commit/82a1d6b8431343d4d5ed1a1c9dd8c07de2ac2e28))
+* **tuya_cloud:** Fix pow() bug ([`275ef99`](https://github.com/dominikkarall/fhempy/commit/275ef996e953cf65224af85d606d517db07cc8b3))
+
 ## v0.1.172 (2021-11-06)
 ### Fix
 * **googlecast:** Fix speak ([`5a37d57`](https://github.com/dominikkarall/fhempy/commit/5a37d57ac0ce598827598918dbe3c50d261f9cf7))
