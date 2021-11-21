@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.175 (2021-11-21)
+### Fix
+* **googlecast:** Update lib and change discovery ([`13f02e1`](https://github.com/dominikkarall/fhempy/commit/13f02e1eeba09a4f6f61452727b5a4f3825c64fd))
+
 ## v0.1.174 (2021-11-15)
 
 
