@@ -147,7 +147,7 @@ class googlecast(generic.FhemModule):
         await self.set_auth_url()
         self.create_async_task(self.connect_spotipy())
 
-        utils.run_blocking_task(functools.partial(self.startDiscovery))
+        self.create_async_task(self.startDiscovery())
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -569,30 +569,32 @@ class googlecast(generic.FhemModule):
             return parse_qs(query.query)["list"]
         return None
 
-    def startDiscovery(self):
-        self.logger.debug("Start discovery")
-        zc = zeroconf.get_instance(self.logger).get_zeroconf()
-        while True:
-            (
-                chromecasts,
-                self.browser,
-            ) = pychromecast.discovery.discover_listed_chromecasts(
-                friendly_names=[self.hash["CASTNAME"]], zeroconf_instance=zc
-            )
-
-            if len(chromecasts) > 0:
-                self.cast = pychromecast.get_chromecast_from_cast_info(
-                    chromecasts[0], zconf=zc
-                )
+    async def startDiscovery(self):
+        def castFound(chromecast):
+            if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
+                self.logger.info("Discovered cast: " + chromecast.name)
+                self.cast = chromecast
                 # add status listener
                 self.cast.register_connection_listener(self)
                 self.cast.register_status_listener(self)
                 # add media controller listener
                 self.cast.media_controller.register_status_listener(self)
+                self.logger.debug("wait for chromecast")
+                # timeout 0.001 just waits for status to be ready
+                # but we just need the thread to start by calling wait()
                 self.cast.wait(0.001)
-                break
-            else:
-                time.sleep(10)
+                self.logger.debug("wait finished")
+
+        self.logger.debug("Start discovery")
+        zc = zeroconf.get_instance(self.logger).get_zeroconf()
+        self.browser = pychromecast.get_chromecasts(
+            blocking=False,
+            tries=None,
+            retry_wait=5,
+            timeout=5,
+            callback=castFound,
+            zeroconf_instance=zc,
+        )
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
