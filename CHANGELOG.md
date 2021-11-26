@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.176 (2021-11-26)
+### Fix
+* **esphome:** Fix attr sortby on restart ([`a605adf`](https://github.com/dominikkarall/fhempy/commit/a605adfe0c0704f3e04db94fbb4d59697a4bef3f))
+* **tuya_cloud:** Change lib to 0.4.1 ([`8ef2e9f`](https://github.com/dominikkarall/fhempy/commit/8ef2e9f03c64bb0ef69ab6e14aaddd73806251b0))
+
 ## v0.1.175 (2021-11-21)
 ### Fix
 * **googlecast:** Update lib and change discovery ([`13f02e1`](https://github.com/dominikkarall/fhempy/commit/13f02e1eeba09a4f6f61452727b5a4f3825c64fd))
