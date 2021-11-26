@@ -58,6 +58,11 @@ class esphome(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
+        if fhem.checkIfDeviceExists(
+            self.hash, "TYPE", "weblink", "NAME", "esphome_dashboard"
+        ):
+            return
+
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         await fhem.CommandDefine(
