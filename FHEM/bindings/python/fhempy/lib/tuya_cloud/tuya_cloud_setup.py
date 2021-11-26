@@ -2,7 +2,7 @@ import asyncio
 import functools
 
 from tuya_iot import (
-    AuthType,
+    ProjectType,
     TuyaDevice,
     TuyaDeviceListener,
     TuyaDeviceManager,
@@ -84,24 +84,24 @@ class tuya_cloud_setup:
         self.tuya_mq.add_message_listener(self.device_manager.on_message)
 
     async def _init_tuya_sdk(self) -> bool:
-        auth_type = AuthType(0)
+        project_type = ProjectType(0)
         api = TuyaOpenAPI(
             self._get_region_url(self._t_region),
             self._t_apikey,
             self._t_apisecret,
-            auth_type,
+            project_type,
         )
 
         api.set_dev_channel("fhempy")
 
         response = (
             await utils.run_blocking(
-                functools.partial(api.connect, self._t_username, self._t_password)
+                functools.partial(api.login, self._t_username, self._t_password)
             )
-            if auth_type == AuthType.CUSTOM
+            if project_type == ProjectType.INDUSTY_SOLUTIONS
             else await utils.run_blocking(
                 functools.partial(
-                    api.connect,
+                    api.login,
                     self._t_username,
                     self._t_password,
                     self._get_countrycode(self._t_region),
