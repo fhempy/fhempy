@@ -58,7 +58,7 @@ class esphome(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
-        if fhem.checkIfDeviceExists(
+        if await fhem.checkIfDeviceExists(
             self.hash, "TYPE", "weblink", "NAME", "esphome_dashboard"
         ):
             return
