@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.177 (2021-11-26)
+### Fix
+* **esphome:** Fix checkIfDeviceExists ([`2b67d7d`](https://github.com/dominikkarall/fhempy/commit/2b67d7d6dbfc14e1e800dcdd957f5d7a0355bfbd))
+* **fhempy:** Fix dbus dependency ([`09c5717`](https://github.com/dominikkarall/fhempy/commit/09c5717cee2fd8aa13c911ca5466d1a50dba7f6d))
+
 ## v0.1.176 (2021-11-26)
 ### Fix
 * **esphome:** Fix attr sortby on restart ([`a605adf`](https://github.com/dominikkarall/fhempy/commit/a605adfe0c0704f3e04db94fbb4d59697a4bef3f))
