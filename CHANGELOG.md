@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.178 (2021-11-27)
+### Fix
+* **tuya_cloud:** Update lib to 0.6.3 (python>=3.8) ([`d2448d7`](https://github.com/dominikkarall/fhempy/commit/d2448d764ece18b4387420216e86b83f15adb495))
+
 ## v0.1.177 (2021-11-26)
 ### Fix
 * **esphome:** Fix checkIfDeviceExists ([`2b67d7d`](https://github.com/dominikkarall/fhempy/commit/2b67d7d6dbfc14e1e800dcdd957f5d7a0355bfbd))
