@@ -143,14 +143,14 @@ class tuya_cloud_setup:
 
             def update_device(self, device: TuyaDevice):
                 self.logger.debug(f"update_device received for {device.id}")
-                try:
-                    for dev in t_cloud_setup.tuya_devices:
-                        if dev.id == device.id:
+                for dev in t_cloud_setup.tuya_devices:
+                    if dev.id == device.id:
+                        try:
                             asyncio.run_coroutine_threadsafe(
                                 dev.update(device), t_cloud_setup.fhemdev.loop
                             )
-                except Exception:
-                    self.logger.exception("Failed to update device")
+                        except Exception:
+                            self.logger.exception("Failed to update device")
 
             def add_device(self, device: TuyaDevice):
                 self.logger.info(f"add_device received for {device.id}")
@@ -182,6 +182,7 @@ class tuya_cloud_setup:
 
         __listener = DeviceListener(self.logger)
         self.device_manager.add_device_listener(__listener)
+        self.tuya_mq.add_message_listener(self.device_manager.on_message)
 
         return True
 

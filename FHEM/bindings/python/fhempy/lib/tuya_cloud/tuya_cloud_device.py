@@ -76,6 +76,26 @@ class tuya_cloud_device:
         # update status
         await self.update_readings_arr(self._t_status)
 
+        # FIXME remove this when tuya works again
+        self.fhemdev.create_async_task(self.update_device_loop())
+
+    async def update_device_loop(self):
+        while True:
+            await asyncio.sleep(900)
+            try:
+                # retrieve current status
+                self._t_status = await utils.run_blocking(
+                    functools.partial(
+                        self.tuyaiot.device_manager.get_device_status, self._t_deviceid
+                    )
+                )
+                self._t_status = self._t_status["result"]
+
+                # update status
+                await self.update_readings_arr(self._t_status)
+            except Exception:
+                self.logger.exception(f"Failed to update device {self._t_deviceid}")
+
     async def _generate_set(self):
         set_conf = {}
         for fct in self._t_specification["functions"]:
