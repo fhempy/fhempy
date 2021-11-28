@@ -1,12 +1,1 @@
-2020-12-31: Further updates are done via pip
-            No need to change anything, everything is done for you :)
-            Happy New Year!
-2020-12-23: Save xiaomi_tokens credentials
-            Add ip address to xiaomi_tokens
-            Create miio/gateway3 device out of xiaomi_tokens
-            Add firmware version to xiaomi_gateway3
-            Fix icons in googlecast
-            Fix python version check
-            First version of gfprobt (irrigation control)
-2020-12-03: Remote peers: Please read new installation instructions https://github.com/dominikkarall/fhempy
-2020-10-19: Initial release of CHANGED file :)
+See https://github.com/dominikkarall/fhempy/releases for details

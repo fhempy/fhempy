@@ -102,8 +102,8 @@ Click here to easily install ESPHome on a new devices
                 "\n", ""
             ),
         )
-        await fhem.CommandAttr(self.hash, "esphome_dashboard room ESPHome")
-        await fhem.CommandAttr(self.hash, "esphome_dashboard sortby 1")
+        await fhem.CommandAttr(self.hash, "esphome_installer room ESPHome")
+        await fhem.CommandAttr(self.hash, "esphome_installer sortby 1")
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
