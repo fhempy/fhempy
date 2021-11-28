@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.180 (2021-11-28)
+### Fix
+* **esphome:** Fix esphome_installer device ([`7b0d925`](https://github.com/dominikkarall/fhempy/commit/7b0d92581d0700e295164e125a909687f97dfd2f))
+* **fhempy:** Link to github releases ([`7e3f326`](https://github.com/dominikkarall/fhempy/commit/7e3f326b3f8cf34728510ada4d2bffc07b6408a4))
+
 ## v0.1.179 (2021-11-28)
 ### Fix
 * **tuya_cloud:** Fix typo ([`e7b8b62`](https://github.com/dominikkarall/fhempy/commit/e7b8b62c1acf7cc65de83c8cd8688e4c0808fa05))
