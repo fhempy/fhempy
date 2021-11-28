@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.179 (2021-11-28)
+### Fix
+* **tuya_cloud:** Fix typo ([`e7b8b62`](https://github.com/dominikkarall/fhempy/commit/e7b8b62c1acf7cc65de83c8cd8688e4c0808fa05))
+* **tuya_cloud:** Retrieve status every 900s ([`c085381`](https://github.com/dominikkarall/fhempy/commit/c085381fe00d1087feba2afd1a44dea88b0b5e3b))
+* **tuya_cloud:** Better error handling ([`0d94229`](https://github.com/dominikkarall/fhempy/commit/0d94229f70039e7b650462101fd3940c8cb26e95))
+
 ## v0.1.178 (2021-11-27)
 ### Fix
 * **tuya_cloud:** Update lib to 0.6.3 (python>=3.8) ([`d2448d7`](https://github.com/dominikkarall/fhempy/commit/d2448d764ece18b4387420216e86b83f15adb495))
