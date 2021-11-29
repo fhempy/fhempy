@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.181 (2021-11-29)
+### Fix
+* **tuya_cloud:** Remove update API calls ([`2aac25c`](https://github.com/dominikkarall/fhempy/commit/2aac25c2426850ee0fa3d419b5eff9e4474b150a))
+* **googlecast:** Update lib to 10.1.1 ([`334d171`](https://github.com/dominikkarall/fhempy/commit/334d171f3ead33f6b108bd519d0e5d01a2577779))
+
 ## v0.1.180 (2021-11-28)
 ### Fix
 * **esphome:** Fix esphome_installer device ([`7b0d925`](https://github.com/dominikkarall/fhempy/commit/7b0d92581d0700e295164e125a909687f97dfd2f))
