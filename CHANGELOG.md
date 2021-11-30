@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.182 (2021-11-30)
+### Fix
+* **tuya_cloud:** Support python 3.7 again ([`b54b5b8`](https://github.com/dominikkarall/fhempy/commit/b54b5b82683d177691df0a7c0c3bb85ab9670f38))
+* **fhempy:** Clarify peer installation ([`9d9a5d3`](https://github.com/dominikkarall/fhempy/commit/9d9a5d3415afd500948f4043ae02847245998d8f))
+
 ## v0.1.181 (2021-11-29)
 ### Fix
 * **tuya_cloud:** Remove update API calls ([`2aac25c`](https://github.com/dominikkarall/fhempy/commit/2aac25c2426850ee0fa3d419b5eff9e4474b150a))
