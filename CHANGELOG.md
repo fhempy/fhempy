@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.183 (2021-11-30)
+### Fix
+* **tuya_cloud:** Fix AuthType ([`777edc0`](https://github.com/dominikkarall/fhempy/commit/777edc0327b71e424864f9478e0fbc2564ac51f2))
+
 ## v0.1.182 (2021-11-30)
 ### Fix
 * **tuya_cloud:** Support python 3.7 again ([`b54b5b8`](https://github.com/dominikkarall/fhempy/commit/b54b5b82683d177691df0a7c0c3bb85ab9670f38))
