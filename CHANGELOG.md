@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.184 (2021-12-01)
+### Fix
+* **eq3bt:** Fix windowOpenTime/Temp ([`47ad1d2`](https://github.com/dominikkarall/fhempy/commit/47ad1d2c24fb50dba7f1f1ed09041eb4375ac56e))
+
 ## v0.1.183 (2021-11-30)
 ### Fix
 * **tuya_cloud:** Fix AuthType ([`777edc0`](https://github.com/dominikkarall/fhempy/commit/777edc0327b71e424864f9478e0fbc2564ac51f2))
