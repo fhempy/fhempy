@@ -76,9 +76,9 @@ class eq3bt(generic.FhemModule):
                 "options": "slider,4.5,0.5,30,1",
             },
             "windowOpenTime": {
-                "args": ["seconds"],
-                "params": {"seconds": {"format": "int"}},
-                "options": "slider,0,1,3600,1",
+                "args": ["minutes"],
+                "params": {"minutes": {"format": "int"}},
+                "options": "slider,0,5,60",
             },
             "ecoTemperature": {
                 "args": ["temp"],
@@ -423,7 +423,7 @@ class eq3bt(generic.FhemModule):
         self.create_async_task(
             self.set_and_update(
                 functools.partial(
-                    self.thermostat.set_windows_open_config,
+                    self.thermostat.set_window_open_config,
                     params["temp"],
                     duration_sec,
                 )
@@ -436,7 +436,7 @@ class eq3bt(generic.FhemModule):
         self.create_async_task(
             self.set_and_update(
                 functools.partial(
-                    self.thermostat.set_windows_open_config, temp, params["seconds"]
+                    self.thermostat.set_window_open_config, temp, params["minutes"] * 60
                 )
             )
         )
@@ -508,7 +508,7 @@ class FhemThermostat(eq3.Thermostat):
     def set_temperature_offset(self, temp):
         self.temperature_offset = temp
 
-    def set_windows_open_config(self, temperature, duration):
+    def set_window_open_config(self, temperature, duration):
         self.window_open_config(temperature, duration)
 
     def set_target_temperature(self, temp):
