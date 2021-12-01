@@ -48,7 +48,7 @@ EQ3BT_ON_TEMP = 30.0
 
 
 class Mode(IntEnum):
-    """ Thermostat modes. """
+    """Thermostat modes."""
 
     Unknown = -1
     Closed = 0
@@ -239,7 +239,7 @@ class Thermostat:
         return self._schedule
 
     def set_schedule(self, data):
-        """Sets the schedule for the given day. """
+        """Sets the schedule for the given day."""
         value = Schedule.build(data)
         self._conn.make_request(PROP_WRITE_HANDLE, value)
 
@@ -378,14 +378,14 @@ class Thermostat:
             "Window open config, temperature: %s duration: %s", temperature, duration
         )
         self._verify_temperature(temperature)
-        if duration.seconds < 0 and duration.seconds > 3600:
+        if duration < 0 and duration > 3600:
             raise ValueError
 
         value = struct.pack(
             "BBB",
             PROP_WINDOW_OPEN_CONFIG,
             int(temperature * 2),
-            int(duration.seconds / 300),
+            int(duration / 300),
         )
         self._conn.make_request(PROP_WRITE_HANDLE, value)
 
