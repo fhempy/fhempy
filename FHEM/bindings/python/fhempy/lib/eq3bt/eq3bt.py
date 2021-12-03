@@ -73,7 +73,7 @@ class eq3bt(generic.FhemModule):
             "windowOpenTemperature": {
                 "args": ["temp"],
                 "params": {"temp": {"format": "float"}},
-                "options": "slider,4.5,0.5,30,1",
+                "options": "slider,5,0.5,30,1",
             },
             "windowOpenTime": {
                 "args": ["minutes"],
