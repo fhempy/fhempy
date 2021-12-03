@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.185 (2021-12-03)
+### Fix
+* **eq3bt:** WindowOpenTemp starts at 5 degrees ([`3ef7e36`](https://github.com/dominikkarall/fhempy/commit/3ef7e36bdfe2b90cd5f9780ac390decb5d0a3775))
+
 ## v0.1.184 (2021-12-01)
 ### Fix
 * **eq3bt:** Fix windowOpenTime/Temp ([`47ad1d2`](https://github.com/dominikkarall/fhempy/commit/47ad1d2c24fb50dba7f1f1ed09041eb4375ac56e))
