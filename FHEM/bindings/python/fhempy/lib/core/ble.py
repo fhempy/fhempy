@@ -81,7 +81,7 @@ class BTLEConnection(btle.DefaultDelegate):
         self._mac = mac
         self._callbacks = {}
         self._keep_connected = keep_connected
-        self._connection_etablished_callback = connection_established_callback
+        self._connection_established_callback = connection_established_callback
 
     def set_keep_connected(self, new_state):
         self._keep_connected = new_state
@@ -137,8 +137,8 @@ class BTLEConnection(btle.DefaultDelegate):
                     self._conn.connect(
                         self._mac, iface=self._ifaces[self._iface_idx], timeout=10
                     )
-                    if self._connection_etablished_callback is not None:
-                        self._connection_etablished_callback(self._mac)
+                    if self._connection_established_callback is not None:
+                        self._connection_established_callback(self._mac)
                     break
                 except btle.BTLEException as ex:
                     _LOGGER.debug(
@@ -151,8 +151,8 @@ class BTLEConnection(btle.DefaultDelegate):
                         self._conn.connect(
                             self._mac, iface=self._ifaces[self._iface_idx], timeout=10
                         )
-                        if self._connection_etablished_callback is not None:
-                            self._connection_etablished_callback(self._mac)
+                        if self._connection_established_callback is not None:
+                            self._connection_established_callback(self._mac)
                         break
                     except Exception as ex2:
                         _LOGGER.debug(
@@ -180,6 +180,10 @@ class BTLEConnection(btle.DefaultDelegate):
         )
         if handle in self._callbacks:
             for callback in self._callbacks[handle]:
+                callback(data)
+
+        if "all" in self._callbacks:
+            for callback in self._callbacks["all"]:
                 callback(data)
 
     @property
