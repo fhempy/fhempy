@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.187 (2021-12-05)
+### Fix
+* **fhempy:** Fix CoProcess error ([`397edde`](https://github.com/dominikkarall/fhempy/commit/397edde0b39d52b0175454c2fd071b5ce8b2e973))
+
 ## v0.1.186 (2021-12-05)
 ### Feature
 * **fhempy:** Support "all" notification in ble ([`ea1f5eb`](https://github.com/dominikkarall/fhempy/commit/ea1f5ebb0d40f5b3efdde39e04d38fd1350a8302))
