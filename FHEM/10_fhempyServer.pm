@@ -6,6 +6,8 @@ package main;
 use strict;
 use warnings;
 
+use CoProcess;
+
 sub Log($$);
 sub Log3($$$);
 
