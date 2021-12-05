@@ -21,11 +21,15 @@ class mitemp2(generic.FhemModule):
         )
 
     def connection_setup(self, mac):
+        self.create_async_task(self.async_connection_setup(mac))
+
+    async def async_connection_setup(self, mac):
+        await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
         # enable notifications
         self._conn.write_characteristic(0x0038, b"\x01\x00")
         # enable lower power mode
-        # self._conn.write_characteristic(0x0046, b"\xf4\x01\x00")
-        self._conn.set_callback(0x0036, self.received_notification)
+        self._conn.write_characteristic(0x0046, b"\xf4\x01\x00")
+        self._conn.set_callback("all", self.received_notification)
 
     def received_notification(self, data):
         self.create_async_task(self.update_data(data))
