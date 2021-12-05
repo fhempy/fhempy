@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.186 (2021-12-05)
+### Feature
+* **fhempy:** Support "all" notification in ble ([`ea1f5eb`](https://github.com/dominikkarall/fhempy/commit/ea1f5ebb0d40f5b3efdde39e04d38fd1350a8302))
+
+### Fix
+* **mitemp2:** Try to fix mitemp2 ([`ba558c0`](https://github.com/dominikkarall/fhempy/commit/ba558c07a56841c998166709447902e6fb671fa7))
+
 ## v0.1.185 (2021-12-03)
 ### Fix
 * **eq3bt:** WindowOpenTemp starts at 5 degrees ([`3ef7e36`](https://github.com/dominikkarall/fhempy/commit/3ef7e36bdfe2b90cd5f9780ac390decb5d0a3775))
