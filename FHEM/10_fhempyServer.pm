@@ -174,7 +174,7 @@ sub fhempyServer_Attr($$$)
 
   if( $attrName eq 'logfile' ) {
     if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
-      fhem( "defmod -temporary fhempy_log FileLog $attrVal fakelog" );
+      fhem( "defmod fhempy_log FileLog $attrVal Logfile" );
       CommandAttr( undef, 'fhempy_log room fhempy' ) if( !AttrVal($name, 'room', undef ) );
       $hash->{logfile} = $attrVal;
     } else {
