@@ -15,7 +15,10 @@ class esphome(FhemModule):
         self.proc = None
         self._set_list = {"start": {}, "stop": {}, "restart": {}}
         self.set_set_config(self._set_list)
-        self._attr_list = {"disable": {"default": "0", "options": "0,1"}}
+        self._attr_list = {
+            "disable": {"default": "0", "options": "0,1"},
+            "port_dashboard": {"default": "6052", "format": "int"},
+        }
         self.set_attr_config(self._attr_list)
 
     # FHEM FUNCTION
@@ -38,13 +41,21 @@ class esphome(FhemModule):
             site.getuserbase() + "/bin/esphome",
             "dashboard",
             "esphome_config/",
+            "--port",
+            self._attr_port_dashboard,
         ]
 
         try:
             self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
         except Exception:
             try:
-                self._esphomeargs = ["esphome", "dashboard", "esphome_config/"]
+                self._esphomeargs = [
+                    "esphome",
+                    "dashboard",
+                    "esphome_config/",
+                    "--port",
+                    self._attr_port_dashboard,
+                ]
                 self.proc = subprocess.Popen(self._esphomeargs)
             except Exception:
                 return "Failed to execute esphome"
