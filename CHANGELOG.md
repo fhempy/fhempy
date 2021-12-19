@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.188 (2021-12-19)
+### Feature
+* **esphome:** Attr port_dashboard ([`c52fa7a`](https://github.com/dominikkarall/fhempy/commit/c52fa7aa7f50bf195803c4b81435832c391c9d7c))
+
+### Fix
+* **fhempy:** Remove temporary for log ([`957a14b`](https://github.com/dominikkarall/fhempy/commit/957a14b92368af0b8a329bb2fc601eff98518a38))
+
 ## v0.1.187 (2021-12-05)
 ### Fix
 * **fhempy:** Fix CoProcess error ([`397edde`](https://github.com/dominikkarall/fhempy/commit/397edde0b39d52b0175454c2fd071b5ce8b2e973))
