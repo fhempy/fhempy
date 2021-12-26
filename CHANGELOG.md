@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.189 (2021-12-26)
+### Fix
+* **tuya_cloud:** Update lib, python>3.7 required!! ([`ea69096`](https://github.com/dominikkarall/fhempy/commit/ea690962be90d0c8713b503008ea52d8d4fe338d))
+
 ## v0.1.188 (2021-12-19)
 ### Feature
 * **esphome:** Attr port_dashboard ([`c52fa7a`](https://github.com/dominikkarall/fhempy/commit/c52fa7aa7f50bf195803c4b81435832c391c9d7c))
