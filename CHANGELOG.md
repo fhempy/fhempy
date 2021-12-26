@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.190 (2021-12-26)
+### Fix
+* **tuya_cloud:** Fix lib usage ([`9b2dccf`](https://github.com/dominikkarall/fhempy/commit/9b2dccfc4469b0f186d3097b2f4aa1a3898ff058))
+
 ## v0.1.189 (2021-12-26)
 ### Fix
 * **tuya_cloud:** Update lib, python>3.7 required!! ([`ea69096`](https://github.com/dominikkarall/fhempy/commit/ea690962be90d0c8713b503008ea52d8d4fe338d))
