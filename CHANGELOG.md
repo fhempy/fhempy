@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.192 (2022-01-03)
+### Fix
+* **tuya_cloud:** Restart mqtt loop deactivated ([`3cbad93`](https://github.com/dominikkarall/fhempy/commit/3cbad9381002299d3b64f51887838e92dc9fb4fd))
+
 ## v0.1.191 (2022-01-03)
 ### Fix
 * **xiaomi_tokens:** Fix for de server ([`63c6c4b`](https://github.com/dominikkarall/fhempy/commit/63c6c4b458f2432cef97dade4d490f2cc0be7369))
