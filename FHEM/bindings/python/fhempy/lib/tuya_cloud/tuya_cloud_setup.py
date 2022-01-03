@@ -123,7 +123,7 @@ class tuya_cloud_setup:
 
         self.tuya_mq = TuyaOpenMQ(api)
         self.tuya_mq.start()
-        self.fhemdev.create_async_task(self.restart_mqtt_loop())
+        # self.fhemdev.create_async_task(self.restart_mqtt_loop())
 
         self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
 
