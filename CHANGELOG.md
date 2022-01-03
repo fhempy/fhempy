@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.191 (2022-01-03)
+### Fix
+* **xiaomi_tokens:** Fix for de server ([`63c6c4b`](https://github.com/dominikkarall/fhempy/commit/63c6c4b458f2432cef97dade4d490f2cc0be7369))
+
 ## v0.1.190 (2021-12-26)
 ### Fix
 * **tuya_cloud:** Fix lib usage ([`9b2dccf`](https://github.com/dominikkarall/fhempy/commit/9b2dccfc4469b0f186d3097b2f4aa1a3898ff058))
