@@ -1,3 +1,5 @@
 {
-  "requirements": ["micloud"]
+  "requirements": [
+    "micloud==0.5"
+  ]
 }
