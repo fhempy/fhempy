@@ -50,7 +50,6 @@ class pyit600(generic.FhemModule):
         async with IT600GatewaySingleton.get_instance(host=self.host, euid=self.euid, debug=self.debug) as self.gateway:
             try:
                 await self.gateway.connect()
-                #await self.gateway.add_climate_update_callback(my_climate_callback)
                 await self.gateway.poll_status(send_callback=False)
                 self.prepare_set_commands()
                 await self.update_readings()
@@ -78,7 +77,6 @@ class pyit600(generic.FhemModule):
         self.set_set_config(self.set_config)
 
     async def set_target_temperature(self, hash, params):
-        #_LOGGER.info(f'set commands: %s %f', params["climate_device_id"], params["temperature"])
         self.create_async_task(
             self.gateway.set_climate_device_temperature(params["climate_device_id"], params["temperature"])
         )
