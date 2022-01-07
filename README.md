@@ -31,6 +31,7 @@ This repository includes following working modules:
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor|
 |[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
 |[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
+|[pyit600](FHEM/bindings/python/fhempy/lib/pyit600/README.md)|Control Salus iT600 devices|
 |[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
 |[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
 |[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your skoda car|
