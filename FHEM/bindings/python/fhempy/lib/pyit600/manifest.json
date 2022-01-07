@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "pyit600==0.3.1"
+  ]
+}
