@@ -103,14 +103,14 @@ class pyit600(generic.FhemModule):
                             curtemp = re.search('current_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
                         except AttributeError:
                             curtemp = "Err"
-                        await fhem.readingsSingleUpdateIfChanged(
+                        await fhem.readingsSingleUpdate(
                             self.hash, climate_device_id + "_curtemp", curtemp, 1
                         )
                         try:
                             targtemp = re.search('target_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
                         except AttributeError:
                             targtemp = "Err"
-                        await fhem.readingsSingleUpdateIfChanged(
+                        await fhem.readingsSingleUpdate(
                             self.hash, climate_device_id + "_targtemp", targtemp, 1
                         )
                     else:
