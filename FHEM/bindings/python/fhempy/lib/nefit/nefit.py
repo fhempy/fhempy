@@ -12,6 +12,7 @@ class nefit(generic.FhemModule):
     URL_REC_GASUSAGEPOINTER = "/ecus/rrc/recordings/gasusagePointer"
     URL_REC_GASUSAGE = "/ecus/rrc/recordings/gasusage"
     URL_REC_YEARTOTAL = "/ecus/rrc/recordings/yearTotal"
+    URL_OUTDOOR_TEMP = "/system/sensors/temperatures/outdoor_t1"
 
     def __init__(self, logger):
         super().__init__(logger)
@@ -94,6 +95,13 @@ class nefit(generic.FhemModule):
             await self.handle_gasusage(msg)
         elif msg["id"] == nefit.URL_REC_YEARTOTAL:
             await self.handle_yeartotal(msg)
+        elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
+            await self.handle_outdoortemp(msg)
+
+    async def handle_outdoortemp(self, msg):
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "outdoor_temperature", msg["value"], 1
+        )
 
     async def handle_yeartotal(self, msg):
         await fhem.readingsSingleUpdateIfChanged(
@@ -238,6 +246,7 @@ class nefit(generic.FhemModule):
             try:
                 self._nefit_client.get(nefit.URL_RRC_UISTATUS)
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
+                self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update uiStatus")
