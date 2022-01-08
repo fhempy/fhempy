@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.195 (2022-01-08)
+### Feature
+* **nefit:** Support nefit devices ([`ea41aa8`](https://github.com/dominikkarall/fhempy/commit/ea41aa8d608e19a11c61fafae0c708f9fb7df140))
+
 ## v0.1.194 (2022-01-08)
 
 
