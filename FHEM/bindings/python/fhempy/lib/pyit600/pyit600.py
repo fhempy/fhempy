@@ -51,8 +51,6 @@ class pyit600(generic.FhemModule):
             try:
                 await self.gateway.connect()
                 await self.gateway.poll_status(send_callback=False)
-                self.prepare_set_commands()
-                await self.update_readings()
             except IT600ConnectionError:
                 await fhem.readingsSingleUpdate(self.hash, "state", "Connection error", 1)
                 _LOGGER.info(f'Connection error: check if you have specified gateway')
@@ -60,6 +58,8 @@ class pyit600(generic.FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "Authentication error", 1)
                 _LOGGER.info(f'Authentication error: check if you have specified gateway EUID is correctly.')
 
+            self.prepare_set_commands()
+            await self.update_readings()
 
     def prepare_set_commands(self):
         self.set_config = {
