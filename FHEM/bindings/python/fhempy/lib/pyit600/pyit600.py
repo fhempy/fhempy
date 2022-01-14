@@ -28,10 +28,6 @@ class pyit600(generic.FhemModule):
         }
         self.set_attr_config(self.attr_config)
 
-    async def my_climate_callback(device_id):
-        _LOGGER.info(f'Got callback for climate device id: {device_id}')
-        await fhem.readingsSingleUpdate(self.hash, "state", "Device found", 1)
-        
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
@@ -94,6 +90,8 @@ class pyit600(generic.FhemModule):
             if not climate_devices:
                 await fhem.readingsSingleUpdate(self.hash, "state", "No device found", 1)
             else:
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
+
                 for climate_device_id in climate_devices:
                     if self._attr_update_readings == "always":
                         await fhem.readingsSingleUpdate(
@@ -132,6 +130,5 @@ class pyit600(generic.FhemModule):
                             self.hash, climate_device_id + "_targtemp", targtemp, 1
                         )
 
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
         except Exception:
             self.logger.exception("Failed to update readings")
