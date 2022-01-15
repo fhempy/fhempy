@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.197 (2022-01-15)
+### Fix
+* **pyit600:** Minor fixes ([#56](https://github.com/dominikkarall/fhempy/issues/56)) ([`3bdbaff`](https://github.com/dominikkarall/fhempy/commit/3bdbaff9f374b4ab7b5fae250b76921b8ea2a98a))
+
 ## v0.1.196 (2022-01-15)
 ### Feature
 * **nefit:** Add outdoor temperature ([`ecaadb1`](https://github.com/dominikkarall/fhempy/commit/ecaadb159dad75b96ea13d1149ca893b588af922))
