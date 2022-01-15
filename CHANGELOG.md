@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.195 (2022-01-08)
+### Feature
+* **nefit:** Support nefit devices ([`ea41aa8`](https://github.com/dominikkarall/fhempy/commit/ea41aa8d608e19a11c61fafae0c708f9fb7df140))
+
+## v0.1.194 (2022-01-08)
+
+
+## v0.1.193 (2022-01-07)
+
+
 ## v0.1.192 (2022-01-03)
 ### Fix
 * **tuya_cloud:** Restart mqtt loop deactivated ([`3cbad93`](https://github.com/dominikkarall/fhempy/commit/3cbad9381002299d3b64f51887838e92dc9fb4fd))
