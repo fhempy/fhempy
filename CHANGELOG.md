@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.196 (2022-01-15)
+### Feature
+* **nefit:** Add outdoor temperature ([`ecaadb1`](https://github.com/dominikkarall/fhempy/commit/ecaadb159dad75b96ea13d1149ca893b588af922))
+
+### Fix
+* **nefit:** Fix reconnect, rename readings ([`0705e8d`](https://github.com/dominikkarall/fhempy/commit/0705e8d44ab84743cb99b05ca8252a5a2e0e31e4))
+
 ## v0.1.195 (2022-01-08)
 ### Feature
 * **nefit:** Support nefit devices ([`ea41aa8`](https://github.com/dominikkarall/fhempy/commit/ea41aa8d608e19a11c61fafae0c708f9fb7df140))
