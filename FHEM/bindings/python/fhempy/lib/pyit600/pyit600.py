@@ -95,40 +95,57 @@ class pyit600(generic.FhemModule):
                 for climate_device_id in climate_devices:
                     if self._attr_update_readings == "always":
                         await fhem.readingsSingleUpdate(
-                            self.hash, climate_device_id, climate_devices.get(climate_device_id), 1
-                        )
+                            self.hash, climate_device_id, climate_devices.get(climate_device_id), 1)
                         try:
+                            name = re.search('name=''(.+?)'',', str(climate_devices.get(climate_device_id))).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
                             curtemp = re.search('current_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
+                            if name == 'unknown':
+                                await fhem.readingsSingleUpdate(self.hash, climate_device_id + "_curtemp", curtemp, 1)
+                            else:
+                                await fhem.readingsSingleUpdate(self.hash, name + "_curtemp", curtemp, 1)
                         except AttributeError:
-                            curtemp = "Err"
-                        await fhem.readingsSingleUpdate(
-                            self.hash, climate_device_id + "_curtemp", curtemp, 1
-                        )
+                            _LOGGER.info(f'Error on reading device name or current temperature!')
+
                         try:
+                            name = re.search('name=''(.+?)'',', str(climate_devices.get(climate_device_id))).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
                             targtemp = re.search('target_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
+                            if name == 'unknown':
+                                await fhem.readingsSingleUpdate(self.hash, climate_device_id + "_targtemp", targtemp, 1)
+                            else:
+                                await fhem.readingsSingleUpdate(self.hash, name + "_targtemp", targtemp, 1)
                         except AttributeError:
-                            targtemp = "Err"
-                        await fhem.readingsSingleUpdate(
-                            self.hash, climate_device_id + "_targtemp", targtemp, 1
-                        )
+                            _LOGGER.info(f'Error on reading device name or target temperature!')
+
                     else:
                         await fhem.readingsSingleUpdateIfChanged(
-                            self.hash, climate_device_id, climate_devices.get(climate_device_id), 1
-                        )
+                            self.hash, climate_device_id, climate_devices.get(climate_device_id), 1)
                         try:
+                            name = re.search('name=''(.+?)'',', str(climate_devices.get(climate_device_id))).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
                             curtemp = re.search('current_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
+                            if name == 'unknown':
+                                await fhem.readingsSingleUpdateIfChanged(self.hash, climate_device_id + "_curtemp", curtemp, 1)
+                            else:
+                                await fhem.readingsSingleUpdateIfChanged(self.hash, name + "_curtemp", curtemp, 1)
                         except AttributeError:
-                            curtemp = "Err"
-                        await fhem.readingsSingleUpdateIfChanged(
-                            self.hash, climate_device_id + "_curtemp", curtemp, 1
-                        )
+                            _LOGGER.info(f'Error on reading device name or current temperature!')
+
                         try:
+                            name = re.search('name=''(.+?)'',', str(climate_devices.get(climate_device_id))).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
                             targtemp = re.search('target_temperature=(.+?),', str(climate_devices.get(climate_device_id))).group(1)
+                            if name == 'unknown':
+                                await fhem.readingsSingleUpdateIfChanged(self.hash, climate_device_id + "_targtemp", targtemp, 1)
+                            else:
+                                await fhem.readingsSingleUpdateIfChanged(self.hash, name + "_targtemp", targtemp, 1)
                         except AttributeError:
-                            targtemp = "Err"
-                        await fhem.readingsSingleUpdateIfChanged(
-                            self.hash, climate_device_id + "_targtemp", targtemp, 1
-                        )
+                            _LOGGER.info(f'Error on reading device name or target temperature!')
 
         except Exception:
             self.logger.exception("Failed to update readings")
