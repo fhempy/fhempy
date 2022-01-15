@@ -17,6 +17,9 @@ class nefit(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+        self.first_run = True
+        self.module_shutdown = False
+
         attr_config = {
             "interval": {
                 "default": 300,
@@ -37,7 +40,7 @@ class nefit(generic.FhemModule):
             },
             "desiredTemp": {
                 "args": ["temperature"],
-                "params": {"temperature": {"format": "int"}},
+                "params": {"temperature": {"format": "float"}},
                 "options": "slider,10,0.5,30,1",
             },
             "todayAsSunday": {"options": "on,off"},
@@ -165,7 +168,7 @@ class nefit(generic.FhemModule):
                 self.hash, "todayAsSunday", msg["value"]["DAS"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "dhw", msg["value"]["DHW"]
+                self.hash, "hot_water", msg["value"]["DHW"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "dot", msg["value"]["DOT"]
@@ -174,19 +177,19 @@ class nefit(generic.FhemModule):
                 self.hash, "esi", msg["value"]["ESI"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "fah", msg["value"]["FAH"]
+                self.hash, "temp_in_fahrenheit", msg["value"]["FAH"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "fpa", msg["value"]["FPA"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "hed_db", msg["value"]["HED_DB"]
+                self.hash, "presence_detection_status_device", msg["value"]["HED_DB"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "hed_dev", msg["value"]["HED_DEV"]
+                self.hash, "presence_detection_device", msg["value"]["HED_DEV"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "hed_enabled", msg["value"]["HED_EN"]
+                self.hash, "presence_detection", msg["value"]["HED_EN"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "holiday_mode", msg["value"]["HMD"]
@@ -198,7 +201,7 @@ class nefit(generic.FhemModule):
                 self.hash, "temperature", msg["value"]["IHT"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "mmt", msg["value"]["MMT"]
+                self.hash, "manual_mode_temperature", msg["value"]["MMT"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "pmr", msg["value"]["PMR"]
@@ -228,18 +231,38 @@ class nefit(generic.FhemModule):
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def nefit_connect(self):
-        self._nefit_client = NefitCore(
-            self._serial_number,
-            self._attr_access_key,
-            self._attr_password,
-            message_callback=self.received_message,
-        )
+        if self.first_run:
+            self._nefit_client = NefitCore(
+                self._serial_number,
+                self._attr_access_key,
+                self._attr_password,
+                message_callback=self.received_message,
+            )
+
+            self._nefit_client.failed_auth_handler = self.failed_auth_handler
+            self._nefit_client.no_content_callback = self.no_content_callback
+            self._nefit_client.session_end_callback = self.session_end_callback
+
         await self._nefit_client.connect()
         await self._nefit_client.xmppclient.connected_event.wait()
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
 
-        self.create_async_task(self.update_loop())
+        if self.first_run:
+            self.create_async_task(self.update_loop())
+            self.first_run = False
+
+    async def failed_auth_handler(self, event):
+        pass
+
+    async def no_content_callback(self, data):
+        pass
+
+    async def session_end_callback(self):
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "disconnected", 1)
+        if not self.module_shutdown:
+            await asyncio.sleep(10)
+            await self.nefit_connect()
 
     async def update_loop(self):
         while True:
@@ -254,3 +277,7 @@ class nefit(generic.FhemModule):
 
     async def update_gasusage(self):
         self._nefit_client.get(nefit.URL_REC_GASUSAGEPOINTER)
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        self.module_shutdown = True
