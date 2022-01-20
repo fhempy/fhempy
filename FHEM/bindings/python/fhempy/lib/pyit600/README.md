@@ -7,7 +7,7 @@ Supported devices:
 
 ## Usage
 ```
-define Salus_iT600 fhempy pyit600
+define Salus_iT600 fhempy pyit600 host euid
 ```
 
 ## Attributes
