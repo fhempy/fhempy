@@ -1,5 +1,6 @@
 import asyncio
 from aionefit import NefitCore
+from datetime import date
 
 import math
 
@@ -90,16 +91,19 @@ class nefit(generic.FhemModule):
         pass
 
     async def received_message(self, msg):
-        if msg["id"] == nefit.URL_RRC_UISTATUS:
-            await self.handle_uistatus(msg)
-        elif msg["id"] == nefit.URL_REC_GASUSAGEPOINTER:
-            await self.handle_gasusagepointer(msg)
-        elif msg["id"] == nefit.URL_REC_GASUSAGE:
-            await self.handle_gasusage(msg)
-        elif msg["id"] == nefit.URL_REC_YEARTOTAL:
-            await self.handle_yeartotal(msg)
-        elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
-            await self.handle_outdoortemp(msg)
+        try:
+            if msg["id"] == nefit.URL_RRC_UISTATUS:
+                await self.handle_uistatus(msg)
+            elif msg["id"] == nefit.URL_REC_GASUSAGEPOINTER:
+                await self.handle_gasusagepointer(msg)
+            elif msg["id"] == nefit.URL_REC_GASUSAGE:
+                await self.handle_gasusage(msg)
+            elif msg["id"] == nefit.URL_REC_YEARTOTAL:
+                await self.handle_yeartotal(msg)
+            elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
+                await self.handle_outdoortemp(msg)
+        except Exception:
+            self.logger.exception(f"Failed to handle msg: {msg}")
 
     async def handle_outdoortemp(self, msg):
         await fhem.readingsSingleUpdateIfChanged(
@@ -113,15 +117,17 @@ class nefit(generic.FhemModule):
 
     async def handle_gasusage(self, msg):
         entry = msg["value"][self._gasusage_page_entry]
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_consumption_ch", entry["ch"], 1
-        )
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_consumption_hw", entry["hw"], 1
-        )
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_temperature", entry["T"] / 10, 1
-        )
+        today = date.today()
+        if entry["d"] == f"{today.day:02d}-{today.month:02d}-{today.year}":
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_consumption_ch", entry["ch"], 1
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_consumption_hw", entry["hw"], 1
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_temperature", entry["T"] / 10, 1
+            )
 
     async def handle_gasusagepointer(self, msg):
         if msg["value"] < 2:
