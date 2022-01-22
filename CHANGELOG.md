@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.199 (2022-01-22)
+### Fix
+* **nefit:** Fix consumption ([`11ce422`](https://github.com/dominikkarall/fhempy/commit/11ce4222a7c9ddbf214eca26a5fdec6b03bea882))
+
 ## v0.1.198 (2022-01-22)
 ### Fix
 * **nefit:** Fix some readings ([`e4613f9`](https://github.com/dominikkarall/fhempy/commit/e4613f909156015c190d2d39603f241e4d2769b3))
