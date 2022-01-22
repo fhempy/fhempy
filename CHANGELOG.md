@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.201 (2022-01-22)
+### Fix
+* **nefit:** Fix umlaut issue ([`76710bf`](https://github.com/dominikkarall/fhempy/commit/76710bf279eef26303edff96f7cce3de968c5983))
+
 ## v0.1.200 (2022-01-22)
 ### Fix
 * **nefit:** Fix consumption again ([`def458c`](https://github.com/dominikkarall/fhempy/commit/def458c970e5deae0e60b237a973e3cdcfb93338))
