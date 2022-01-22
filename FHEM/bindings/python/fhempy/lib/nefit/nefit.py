@@ -2,6 +2,7 @@ import asyncio
 import datetime
 from aionefit import NefitCore
 
+import re
 import math
 
 from .. import fhem, generic
@@ -14,6 +15,10 @@ class nefit(generic.FhemModule):
     URL_REC_GASUSAGE = "/ecus/rrc/recordings/gasusage"
     URL_REC_YEARTOTAL = "/ecus/rrc/recordings/yearTotal"
     URL_OUTDOOR_TEMP = "/system/sensors/temperatures/outdoor_t1"
+    URL_DAY_STARTSWITH = "/ecus/rrc/dayassunday/day"
+    URL_DAY_ACTIVE = "/ecus/rrc/dayassunday/day%DAY%/active"
+    URL_DAY_MODE = "/ecus/rrc/dayassunday/day%DAY%/mode"
+    URL_DAY_DATE = "/ecus/rrc/dayassunday/day%DAY%/date"
 
     def __init__(self, logger):
         super().__init__(logger)
@@ -102,8 +107,17 @@ class nefit(generic.FhemModule):
                 await self.handle_yeartotal(msg)
             elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
                 await self.handle_outdoortemp(msg)
+            elif msg["id"].startswith(nefit.URL_DAY_STARTSWITH):
+                await self.handle_dayassunday(msg)
         except Exception:
             self.logger.exception(f"Failed to handle msg: {msg}")
+
+    async def handle_dayassunday(self, msg):
+        day = re.findall(r"\d+", msg["id"])[0]
+        val_type = re.findall(r"/(\w+)$", msg["id"])
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, f"day_{day:02d}_{val_type}", msg["value"], 1
+        )
 
     async def handle_outdoortemp(self, msg):
         await fhem.readingsSingleUpdateIfChanged(
@@ -276,6 +290,11 @@ class nefit(generic.FhemModule):
                 self._nefit_client.get(nefit.URL_RRC_UISTATUS)
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
                 self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
+                for day in range(13):
+                    self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", day))
+                    self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", day))
+                    self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", day))
+
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update uiStatus")
