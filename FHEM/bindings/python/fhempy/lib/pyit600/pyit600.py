@@ -45,17 +45,17 @@ class pyit600(generic.FhemModule):
     async def start_login(self):
         async with IT600GatewaySingleton.get_instance(host=self.host, euid=self.euid, debug=self.debug) as self.gateway:
             try:
+                _LOGGER.debug(f'start login')
                 await self.gateway.connect()
                 await self.gateway.poll_status(send_callback=False)
+                self.prepare_set_commands()
+                await self.update_readings()
             except IT600ConnectionError:
                 await fhem.readingsSingleUpdate(self.hash, "state", "Connection error", 1)
                 _LOGGER.info(f'Connection error: check if you have specified gateway')
             except IT600AuthenticationError:
                 await fhem.readingsSingleUpdate(self.hash, "state", "Authentication error", 1)
                 _LOGGER.info(f'Authentication error: check if you have specified gateway EUID is correctly.')
-
-            self.prepare_set_commands()
-            await self.update_readings()
 
     def prepare_set_commands(self):
         self.set_config = {
@@ -65,7 +65,7 @@ class pyit600(generic.FhemModule):
                     "climate_device_id": {"format": "str"},
                     "temperature": {"default": 23, "format": "float"}},
                 "help": (
-                    "Parameters: ID Temperature) <br>"
+                    "Parameters: deviceID Temperature <br>"
                     "e.g. set target_temperature 001e5e09020770e3 23<br>"
                 )
             }
@@ -79,11 +79,23 @@ class pyit600(generic.FhemModule):
 
     async def update_readings(self):
         while True:
+            _LOGGER.debug(f'update reading')
             await self.update_readings_once()
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):
-        await self.gateway.poll_status(send_callback=False)
+        for remaining_attempts in reversed(range(60)): 
+            try:
+                await self.gateway.poll_status(send_callback=False)
+            except Exception as e:
+                if remaining_attempts == 0:
+                    await fhem.readingsSingleUpdate(self.hash, "state", "Connection timeout: retrying stopped",1) 
+                    raise e
+                else:
+                    _LOGGER.info(f'Connection timeout - remaining attempts: %d',remaining_attempts)
+                    await fhem.readingsSingleUpdate(self.hash, "state", "Connection timeout: retrying ...",1)
+                    await asyncio.sleep(self._attr_update_interval)
+
         try:
             climate_devices = self.gateway.get_climate_devices()
 
