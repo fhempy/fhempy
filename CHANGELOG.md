@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.202 (2022-01-22)
+### Fix
+* **fhempy:** Use markdown2 instead of markdown ([`f2403e6`](https://github.com/dominikkarall/fhempy/commit/f2403e6457e860afc4b69485e48caf90a0a8c24a))
+
 ## v0.1.201 (2022-01-22)
 ### Fix
 * **nefit:** Fix umlaut issue ([`76710bf`](https://github.com/dominikkarall/fhempy/commit/76710bf279eef26303edff96f7cce3de968c5983))
