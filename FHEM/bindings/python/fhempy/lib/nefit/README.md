@@ -18,14 +18,17 @@ This module is used to control Nefit devices like:
 ## Usage
 
 First define the thermostat device:
+
 ```
 define nefit_thermostat fhempy nefit <SERIAL_NUMBER>
 ```
 
 Set the credential attributes:
+
 ```
 attr nefit_thermostat access_key <ACCEESS_KEY>
 ```
+
 ```
 attr nefit_thermostat password <PASSWORD>
 ```
