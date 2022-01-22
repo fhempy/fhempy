@@ -1,6 +1,6 @@
 import asyncio
+import datetime
 from aionefit import NefitCore
-from datetime import date
 
 import math
 
@@ -117,8 +117,8 @@ class nefit(generic.FhemModule):
 
     async def handle_gasusage(self, msg):
         entry = msg["value"][self._gasusage_page_entry]
-        today = date.today()
-        if entry["d"] == f"{today.day:02d}-{today.month:02d}-{today.year}":
+        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+        if entry["d"] == f"{yesterday.day:02d}-{yesterday.month:02d}-{yesterday.year}":
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "yesterday_consumption_ch", entry["ch"], 1
             )
