@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.203 (2022-01-22)
+### Feature
+* **nefit:** Retrieve dayassunday ([`8462ba4`](https://github.com/dominikkarall/fhempy/commit/8462ba421fc30c793b178d4f7b0ea7509f794dbf))
+
+### Fix
+* **nefix:** Readme fixes ([`7f698e8`](https://github.com/dominikkarall/fhempy/commit/7f698e898a7281f3a789ac54284c44261c86fb9f))
+
 ## v0.1.202 (2022-01-22)
 ### Fix
 * **fhempy:** Use markdown2 instead of markdown ([`f2403e6`](https://github.com/dominikkarall/fhempy/commit/f2403e6457e860afc4b69485e48caf90a0a8c24a))
