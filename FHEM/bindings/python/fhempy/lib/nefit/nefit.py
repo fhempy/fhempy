@@ -113,10 +113,10 @@ class nefit(generic.FhemModule):
             self.logger.exception(f"Failed to handle msg: {msg}")
 
     async def handle_dayassunday(self, msg):
-        day = re.findall(r"\d+", msg["id"])[0]
-        val_type = re.findall(r"/(\w+)$", msg["id"])
+        day = int(re.findall(r"\d+", msg["id"])[0])
+        val_type = re.findall(r"/(\w+)$", msg["id"])[0]
         await fhem.readingsSingleUpdateIfChanged(
-            self.hash, f"day_{day:02d}_{val_type}", msg["value"], 1
+            self.hash, f"dayassunday_{day:02d}_{val_type}", msg["value"], 1
         )
 
     async def handle_outdoortemp(self, msg):
@@ -291,9 +291,15 @@ class nefit(generic.FhemModule):
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
                 self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
                 for day in range(13):
-                    self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", day))
-                    self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", day))
-                    self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", day))
+                    self._nefit_client.get(
+                        nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day))
+                    )
+                    self._nefit_client.get(
+                        nefit.URL_DAY_DATE.replace("%DAY%", str(day))
+                    )
+                    self._nefit_client.get(
+                        nefit.URL_DAY_MODE.replace("%DAY%", str(day))
+                    )
 
                 await self.update_gasusage()
             except Exception:
