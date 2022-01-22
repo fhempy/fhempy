@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.198 (2022-01-22)
+### Fix
+* **nefit:** Fix some readings ([`e4613f9`](https://github.com/dominikkarall/fhempy/commit/e4613f909156015c190d2d39603f241e4d2769b3))
+* **pyit600:** Usage description updated ([#58](https://github.com/dominikkarall/fhempy/issues/58)) ([`9ce8405`](https://github.com/dominikkarall/fhempy/commit/9ce84058d648878e06cb720d1abdfc505124d388))
+
 ## v0.1.197 (2022-01-15)
 ### Fix
 * **pyit600:** Minor fixes ([#56](https://github.com/dominikkarall/fhempy/issues/56)) ([`3bdbaff`](https://github.com/dominikkarall/fhempy/commit/3bdbaff9f374b4ab7b5fae250b76921b8ea2a98a))
