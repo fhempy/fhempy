@@ -180,7 +180,7 @@ class nefit(generic.FhemModule):
                 self.hash, "temp_in_fahrenheit", msg["value"]["FAH"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "fpa", msg["value"]["FPA"]
+                self.hash, "fireplace_mode", msg["value"]["FPA"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "presence_detection_status_device", msg["value"]["HED_DB"]
@@ -214,7 +214,7 @@ class nefit(generic.FhemModule):
                 self.hash, "temperature_override_duration", msg["value"]["TOD"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "tor", msg["value"]["TOR"]
+                self.hash, "temperature_override", msg["value"]["TOR"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "temperature_override", msg["value"]["TOT"]
