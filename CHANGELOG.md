@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.204 (2022-01-22)
+### Fix
+* **nefit:** Fix retrieve dayassunday ([`c78e836`](https://github.com/dominikkarall/fhempy/commit/c78e836598aabf7289213200ce12aad3843e2423))
+
 ## v0.1.203 (2022-01-22)
 ### Feature
 * **nefit:** Retrieve dayassunday ([`8462ba4`](https://github.com/dominikkarall/fhempy/commit/8462ba421fc30c793b178d4f7b0ea7509f794dbf))
