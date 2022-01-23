@@ -241,15 +241,17 @@ class nefit(generic.FhemModule):
 
     async def set_todayAsSunday(self, hash, params):
         # call set_dayassunday_activate
-        self.set_dayassunday_activate(
+        await self.set_dayassunday_activate(
             hash, {"onoff": params["onoff"], "function_param": "11"}
         )
         if params["onoff"] == "on":
             # call set_dayassunday_mode (day11)
-            self.set_dayassunday_mode(hash, {"mode": "once", "function_param": "11"})
+            await self.set_dayassunday_mode(
+                hash, {"mode": "once", "function_param": "11"}
+            )
             # call set_dayssunday_date
             today = datetime.date.today()
-            self.set_dayassunday_date(
+            await self.set_dayassunday_date(
                 hash,
                 {
                     "dateval": f"{today.month:02d}-{today.day:02d}",
@@ -259,15 +261,17 @@ class nefit(generic.FhemModule):
 
     async def set_tomorrowAsSunday(self, hash, params):
         # call set_dayassunday_activate
-        self.set_dayassunday_activate(
+        await self.set_dayassunday_activate(
             hash, {"onoff": params["onoff"], "function_param": "10"}
         )
         if params["onoff"] == "on":
             # call set_dayassunday_mode (day10)
-            self.set_dayassunday_mode(hash, {"mode": "once", "function_param": "10"})
+            await self.set_dayassunday_mode(
+                hash, {"mode": "once", "function_param": "10"}
+            )
             # call set_dayssunday_date
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-            self.set_dayassunday_date(
+            await self.set_dayassunday_date(
                 hash,
                 {
                     "dateval": f"{tomorrow.month:02d}-{tomorrow.day:02d}",
