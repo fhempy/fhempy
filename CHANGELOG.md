@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.207 (2022-01-23)
+### Fix
+* **nefit:** Fix again tomorrow/todayAsSunday ([`6449ad2`](https://github.com/dominikkarall/fhempy/commit/6449ad21485ce005e34d88853b2b71c44192d28e))
+
 ## v0.1.206 (2022-01-23)
 ### Fix
 * **nefit:** Fix today/tomorrowAsSunday ([`ff11294`](https://github.com/dominikkarall/fhempy/commit/ff1129413f761ee9d9badff2d5080ac525c8e469))
