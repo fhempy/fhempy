@@ -188,11 +188,13 @@ class nefit(generic.FhemModule):
         day = params["function_param"]
         onoff = params["onoff"]
         self._nefit_client.put_value(nefit.URL_DAY_ACTIVE.replace("%DAY%", day), onoff)
+        await self.update_dayassunday(day)
 
     async def set_dayassunday_date(self, hash, params):
         day = params["function_param"]
         dateval = params["dateval"]
         self._nefit_client.put_value(nefit.URL_DAY_DATE.replace("%DAY%", day), dateval)
+        await self.update_dayassunday(day)
 
     async def set_desiredTemp(self, hash, params):
         self._nefit_client.set_temperature(params["temperature"])
@@ -429,21 +431,23 @@ class nefit(generic.FhemModule):
                 self._nefit_client.get(nefit.URL_RRC_UISTATUS)
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
                 self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
-                for day in range(13):
-                    self._nefit_client.get(
-                        nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day))
-                    )
-                    self._nefit_client.get(
-                        nefit.URL_DAY_DATE.replace("%DAY%", str(day))
-                    )
-                    self._nefit_client.get(
-                        nefit.URL_DAY_MODE.replace("%DAY%", str(day))
-                    )
+                await self.update_dayassunday()
 
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update readings")
             await asyncio.sleep(self._attr_interval)
+
+    async def update_dayassunday(self, day=None):
+        if day is None:
+            for day in range(13):
+                self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day)))
+                self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", str(day)))
+                self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", str(day)))
+        else:
+            self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day)))
+            self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", str(day)))
+            self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", str(day)))
 
     async def update_gasusage(self):
         self._nefit_client.get(nefit.URL_REC_GASUSAGEPOINTER)
