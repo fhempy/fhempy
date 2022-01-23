@@ -152,36 +152,6 @@ class nefit(generic.FhemModule):
                 "function": "set_dayassunday_date",
                 "function_param": "11",
             },
-            "dayAsSunday_07_mode": {
-                "args": ["mode"],
-                "options": "once,recurring",
-                "function": "set_dayassunday_mode",
-                "function_param": "7",
-            },
-            "dayAsSunday_08_mode": {
-                "args": ["mode"],
-                "options": "once,recurring",
-                "function": "set_dayassunday_mode",
-                "function_param": "8",
-            },
-            "dayAsSunday_09_mode": {
-                "args": ["mode"],
-                "options": "once,recurring",
-                "function": "set_dayassunday_mode",
-                "function_param": "9",
-            },
-            "dayAsSunday_10_mode": {
-                "args": ["mode"],
-                "options": "once,recurring",
-                "function": "set_dayassunday_mode",
-                "function_param": "10",
-            },
-            "dayAsSunday_11_mode": {
-                "args": ["mode"],
-                "options": "once,recurring",
-                "function": "set_dayassunday_mode",
-                "function_param": "11",
-            },
             "todayAsSunday": {"args": ["onoff"], "options": "on,off"},
             "tomorrowAsSunday": {"args": ["onoff"], "options": "on,off"},
         }
@@ -222,14 +192,7 @@ class nefit(generic.FhemModule):
     async def set_dayassunday_date(self, hash, params):
         day = params["function_param"]
         dateval = params["dateval"]
-        self._nefit_client.put_value(
-            nefit.URL_DAY_ACTIVE.replace("%DAY%", day), dateval
-        )
-
-    async def set_dayassunday_mode(self, hash, params):
-        day = params["function_param"]
-        mode = params["mode"]
-        self._nefit_client.put_value(nefit.URL_DAY_ACTIVE.replace("%DAY%", day), mode)
+        self._nefit_client.put_value(nefit.URL_DAY_DATE.replace("%DAY%", day), dateval)
 
     async def set_desiredTemp(self, hash, params):
         self._nefit_client.set_temperature(params["temperature"])
@@ -245,10 +208,6 @@ class nefit(generic.FhemModule):
             hash, {"onoff": params["onoff"], "function_param": "11"}
         )
         if params["onoff"] == "on":
-            # call set_dayassunday_mode (day11)
-            await self.set_dayassunday_mode(
-                hash, {"mode": "once", "function_param": "11"}
-            )
             # call set_dayssunday_date
             today = datetime.date.today()
             await self.set_dayassunday_date(
@@ -265,10 +224,6 @@ class nefit(generic.FhemModule):
             hash, {"onoff": params["onoff"], "function_param": "10"}
         )
         if params["onoff"] == "on":
-            # call set_dayassunday_mode (day10)
-            await self.set_dayassunday_mode(
-                hash, {"mode": "once", "function_param": "10"}
-            )
             # call set_dayssunday_date
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             await self.set_dayassunday_date(
