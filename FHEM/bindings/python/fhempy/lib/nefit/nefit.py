@@ -49,8 +49,141 @@ class nefit(generic.FhemModule):
                 "params": {"temperature": {"format": "float"}},
                 "options": "slider,10,0.5,30,1",
             },
-            "todayAsSunday": {"options": "on,off"},
-            "tomorrowAsSunday": {"options": "on,off"},
+            "dayAsSunday_00_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "0",
+            },
+            "dayAsSunday_01_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "1",
+            },
+            "dayAsSunday_02_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "2",
+            },
+            "dayAsSunday_03_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "3",
+            },
+            "dayAsSunday_04_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "4",
+            },
+            "dayAsSunday_05_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "5",
+            },
+            "dayAsSunday_06_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "6",
+            },
+            "dayAsSunday_12_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "12",
+            },
+            "dayAsSunday_07_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "7",
+            },
+            "dayAsSunday_08_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "8",
+            },
+            "dayAsSunday_09_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "9",
+            },
+            "dayAsSunday_10_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "10",
+            },
+            "dayAsSunday_11_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "11",
+            },
+            "dayAsSunday_07_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "7",
+            },
+            "dayAsSunday_08_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "8",
+            },
+            "dayAsSunday_09_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "9",
+            },
+            "dayAsSunday_10_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "10",
+            },
+            "dayAsSunday_11_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "11",
+            },
+            "dayAsSunday_07_mode": {
+                "args": ["mode"],
+                "options": "once,recurring",
+                "function": "set_dayassunday_mode",
+                "function_param": "7",
+            },
+            "dayAsSunday_08_mode": {
+                "args": ["mode"],
+                "options": "once,recurring",
+                "function": "set_dayassunday_mode",
+                "function_param": "8",
+            },
+            "dayAsSunday_09_mode": {
+                "args": ["mode"],
+                "options": "once,recurring",
+                "function": "set_dayassunday_mode",
+                "function_param": "9",
+            },
+            "dayAsSunday_10_mode": {
+                "args": ["mode"],
+                "options": "once,recurring",
+                "function": "set_dayassunday_mode",
+                "function_param": "10",
+            },
+            "dayAsSunday_11_mode": {
+                "args": ["mode"],
+                "options": "once,recurring",
+                "function": "set_dayassunday_mode",
+                "function_param": "11",
+            },
+            "todayAsSunday": {"args": ["onoff"], "options": "on,off"},
+            "tomorrowAsSunday": {"args": ["onoff"], "options": "on,off"},
         }
         self.set_set_config(set_config)
 
@@ -81,6 +214,23 @@ class nefit(generic.FhemModule):
         if self._attr_password != "" and self._attr_access_key != "":
             self.create_async_task(self.nefit_connect())
 
+    async def set_dayassunday_activate(self, hash, params):
+        day = params["function_param"]
+        onoff = params["onoff"]
+        self._nefit_client.put_value(nefit.URL_DAY_ACTIVE.replace("%DAY%", day), onoff)
+
+    async def set_dayassunday_date(self, hash, params):
+        day = params["function_param"]
+        dateval = params["dateval"]
+        self._nefit_client.put_value(
+            nefit.URL_DAY_ACTIVE.replace("%DAY%", day), dateval
+        )
+
+    async def set_dayassunday_mode(self, hash, params):
+        day = params["function_param"]
+        mode = params["mode"]
+        self._nefit_client.put_value(nefit.URL_DAY_ACTIVE.replace("%DAY%", day), mode)
+
     async def set_desiredTemp(self, hash, params):
         self._nefit_client.set_temperature(params["temperature"])
         self._nefit_client.get(nefit.URL_RRC_UISTATUS)
@@ -90,10 +240,40 @@ class nefit(generic.FhemModule):
         self._nefit_client.get(nefit.URL_RRC_UISTATUS)
 
     async def set_todayAsSunday(self, hash, params):
-        pass
+        # call set_dayassunday_activate
+        self.set_dayassunday_activate(
+            hash, {"onoff": params["onoff"], "function_param": "11"}
+        )
+        if params["onoff"] == "on":
+            # call set_dayassunday_mode (day11)
+            self.set_dayassunday_mode(hash, {"mode": "once", "function_param": "11"})
+            # call set_dayssunday_date
+            today = datetime.date.today()
+            self.set_dayassunday_date(
+                hash,
+                {
+                    "dateval": f"{today.month:02d}-{today.day:02d}",
+                    "function_param": "11",
+                },
+            )
 
-    async def set_todayAsSaturday(self, hash, params):
-        pass
+    async def set_tomorrowAsSunday(self, hash, params):
+        # call set_dayassunday_activate
+        self.set_dayassunday_activate(
+            hash, {"onoff": params["onoff"], "function_param": "10"}
+        )
+        if params["onoff"] == "on":
+            # call set_dayassunday_mode (day10)
+            self.set_dayassunday_mode(hash, {"mode": "once", "function_param": "10"})
+            # call set_dayssunday_date
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            self.set_dayassunday_date(
+                hash,
+                {
+                    "dateval": f"{tomorrow.month:02d}-{tomorrow.day:02d}",
+                    "function_param": "10",
+                },
+            )
 
     async def received_message(self, msg):
         try:
@@ -303,7 +483,7 @@ class nefit(generic.FhemModule):
 
                 await self.update_gasusage()
             except Exception:
-                self.logger.exception("Failed to update uiStatus")
+                self.logger.exception("Failed to update readings")
             await asyncio.sleep(self._attr_interval)
 
     async def update_gasusage(self):
