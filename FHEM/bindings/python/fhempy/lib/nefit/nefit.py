@@ -19,6 +19,7 @@ class nefit(generic.FhemModule):
     URL_DAY_ACTIVE = "/ecus/rrc/dayassunday/day%DAY%/active"
     URL_DAY_MODE = "/ecus/rrc/dayassunday/day%DAY%/mode"
     URL_DAY_DATE = "/ecus/rrc/dayassunday/day%DAY%/date"
+    URL_SYSTEM_PRESSURE = "/system/appliance/systemPressure"
 
     def __init__(self, logger):
         super().__init__(logger)
@@ -248,10 +249,17 @@ class nefit(generic.FhemModule):
                 await self.handle_yeartotal(msg)
             elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
                 await self.handle_outdoortemp(msg)
+            elif msg["id"] == nefit.URL_SYSTEM_PRESSURE:
+                await self.handle_systempressure(msg)
             elif msg["id"].startswith(nefit.URL_DAY_STARTSWITH):
                 await self.handle_dayassunday(msg)
         except Exception:
             self.logger.exception(f"Failed to handle msg: {msg}")
+
+    async def handle_systempressure(self, msg):
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "system_pressure", msg["value"], 1
+        )
 
     async def handle_dayassunday(self, msg):
         day = int(re.findall(r"\d+", msg["id"])[0])
@@ -431,6 +439,7 @@ class nefit(generic.FhemModule):
                 self._nefit_client.get(nefit.URL_RRC_UISTATUS)
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
                 self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
+                self._nefit_client.get(nefit.URL_SYSTEM_PRESSURE)
                 await self.update_dayassunday()
 
                 await self.update_gasusage()
