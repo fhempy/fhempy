@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.205 (2022-01-23)
+### Feature
+* **nefit:** Support dayassunday set functions ([`0ed99f2`](https://github.com/dominikkarall/fhempy/commit/0ed99f2ddb49d03bf1112efa50684d01c6e2afea))
+
+### Fix
+* **fhempy:** Remove sentry as I'm not using it ([`0fefcf0`](https://github.com/dominikkarall/fhempy/commit/0fefcf0dfd67d94f20678cf50dee8f9847233b86))
+
 ## v0.1.204 (2022-01-22)
 ### Fix
 * **nefit:** Fix retrieve dayassunday ([`c78e836`](https://github.com/dominikkarall/fhempy/commit/c78e836598aabf7289213200ce12aad3843e2423))
