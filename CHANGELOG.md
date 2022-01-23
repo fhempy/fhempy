@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.208 (2022-01-23)
+### Fix
+* **nefit:** Update dayassunday readings asap ([`9f55182`](https://github.com/dominikkarall/fhempy/commit/9f55182cd8231bf397d824b43cfeff0b36ab6111))
+
 ## v0.1.207 (2022-01-23)
 ### Fix
 * **nefit:** Fix again tomorrow/todayAsSunday ([`6449ad2`](https://github.com/dominikkarall/fhempy/commit/6449ad21485ce005e34d88853b2b71c44192d28e))
