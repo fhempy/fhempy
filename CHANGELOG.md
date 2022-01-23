@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.206 (2022-01-23)
+### Fix
+* **nefit:** Fix today/tomorrowAsSunday ([`ff11294`](https://github.com/dominikkarall/fhempy/commit/ff1129413f761ee9d9badff2d5080ac525c8e469))
+
 ## v0.1.205 (2022-01-23)
 ### Feature
 * **nefit:** Support dayassunday set functions ([`0ed99f2`](https://github.com/dominikkarall/fhempy/commit/0ed99f2ddb49d03bf1112efa50684d01c6e2afea))
