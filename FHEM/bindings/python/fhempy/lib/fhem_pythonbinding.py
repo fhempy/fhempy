@@ -15,38 +15,6 @@ import websockets
 from . import fhem, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
 
-import sentry_sdk
-from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk import start_transaction
-
-unknown_key = "thisisnotmagic012345678901234567"
-unknown_code = utils.decrypt_string(
-    (
-        "eJwVwc0OQzAAAOAnclgi"
-        "xmGH6raGlg1juAilpbowtvp5+mX"
-        "fx8Gf3daolFK10DOeG7yEzVHj6b"
-        "wX\nao54HvSNMksFwtXyb/hISo9"
-        "xDDkEr3O4kApkNQQYxqrUO2sNh2"
-        "QkouabLFDOUpoM6PapAurDvXN8\n"
-        "+XHGWMRUi75bZsvBbMFqcI/oggks"
-        "N/3dnz2CJqu4zxPFq6hZZLsaW8CV"
-        "u4cFCSt6jLFN6ekH7iE/\npQ==\n"
-    ),
-    unknown_key,
-)
-
-sentry_logging = LoggingIntegration(
-    level=logging.INFO,  # Capture info and above as breadcrumbs
-    event_level=logging.ERROR,  # Send errors as events
-)
-
-sentry_sdk.init(
-    unknown_code,
-    traces_sample_rate=0.1,
-    release="fhempy@" + str(version.__version__),
-    integrations=[sentry_logging],
-)
-
 logger = logging.getLogger(__name__)
 
 loadedModuleInstances = {}
