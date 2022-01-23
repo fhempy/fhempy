@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.209 (2022-01-23)
+### Feature
+* **nefit:** Support system pressure ([`c90669e`](https://github.com/dominikkarall/fhempy/commit/c90669e3e1a053691eca2356c22fac30bc7a1ce6))
+
 ## v0.1.208 (2022-01-23)
 ### Fix
 * **nefit:** Update dayassunday readings asap ([`9f55182`](https://github.com/dominikkarall/fhempy/commit/9f55182cd8231bf397d824b43cfeff0b36ab6111))
