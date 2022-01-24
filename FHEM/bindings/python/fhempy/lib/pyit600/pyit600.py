@@ -87,6 +87,7 @@ class pyit600(generic.FhemModule):
         for remaining_attempts in reversed(range(60)): 
             try:
                 await self.gateway.poll_status(send_callback=False)
+                break
             except Exception as e:
                 if remaining_attempts == 0:
                     await fhem.readingsSingleUpdate(self.hash, "state", "Connection timeout: retrying stopped",1) 
