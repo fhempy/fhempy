@@ -3,6 +3,5 @@ importlib_metadata==4.8.1
 cryptography==3.3.2
 zeroconf==0.36.12
 aiohttp[speedups]==3.7.4.post0
-markdown==3.3.4
-sentry-sdk==1.4.3
+markdown2==2.4.2
 dbus-python==1.2.18

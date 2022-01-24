@@ -1,6 +1,8 @@
 import asyncio
+import datetime
 from aionefit import NefitCore
 
+import re
 import math
 
 from .. import fhem, generic
@@ -13,6 +15,11 @@ class nefit(generic.FhemModule):
     URL_REC_GASUSAGE = "/ecus/rrc/recordings/gasusage"
     URL_REC_YEARTOTAL = "/ecus/rrc/recordings/yearTotal"
     URL_OUTDOOR_TEMP = "/system/sensors/temperatures/outdoor_t1"
+    URL_DAY_STARTSWITH = "/ecus/rrc/dayassunday/day"
+    URL_DAY_ACTIVE = "/ecus/rrc/dayassunday/day%DAY%/active"
+    URL_DAY_MODE = "/ecus/rrc/dayassunday/day%DAY%/mode"
+    URL_DAY_DATE = "/ecus/rrc/dayassunday/day%DAY%/date"
+    URL_SYSTEM_PRESSURE = "/system/appliance/systemPressure"
 
     def __init__(self, logger):
         super().__init__(logger)
@@ -43,8 +50,111 @@ class nefit(generic.FhemModule):
                 "params": {"temperature": {"format": "float"}},
                 "options": "slider,10,0.5,30,1",
             },
-            "todayAsSunday": {"options": "on,off"},
-            "tomorrowAsSunday": {"options": "on,off"},
+            "dayAsSunday_00_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "0",
+            },
+            "dayAsSunday_01_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "1",
+            },
+            "dayAsSunday_02_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "2",
+            },
+            "dayAsSunday_03_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "3",
+            },
+            "dayAsSunday_04_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "4",
+            },
+            "dayAsSunday_05_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "5",
+            },
+            "dayAsSunday_06_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "6",
+            },
+            "dayAsSunday_12_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "12",
+            },
+            "dayAsSunday_07_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "7",
+            },
+            "dayAsSunday_08_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "8",
+            },
+            "dayAsSunday_09_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "9",
+            },
+            "dayAsSunday_10_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "10",
+            },
+            "dayAsSunday_11_active": {
+                "args": ["onoff"],
+                "options": "on,off",
+                "function": "set_dayassunday_activate",
+                "function_param": "11",
+            },
+            "dayAsSunday_07_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "7",
+            },
+            "dayAsSunday_08_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "8",
+            },
+            "dayAsSunday_09_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "9",
+            },
+            "dayAsSunday_10_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "10",
+            },
+            "dayAsSunday_11_date": {
+                "args": ["dateval"],
+                "function": "set_dayassunday_date",
+                "function_param": "11",
+            },
+            "todayAsSunday": {"args": ["onoff"], "options": "on,off"},
+            "tomorrowAsSunday": {"args": ["onoff"], "options": "on,off"},
         }
         self.set_set_config(set_config)
 
@@ -75,6 +185,18 @@ class nefit(generic.FhemModule):
         if self._attr_password != "" and self._attr_access_key != "":
             self.create_async_task(self.nefit_connect())
 
+    async def set_dayassunday_activate(self, hash, params):
+        day = params["function_param"]
+        onoff = params["onoff"]
+        self._nefit_client.put_value(nefit.URL_DAY_ACTIVE.replace("%DAY%", day), onoff)
+        await self.update_dayassunday(day)
+
+    async def set_dayassunday_date(self, hash, params):
+        day = params["function_param"]
+        dateval = params["dateval"]
+        self._nefit_client.put_value(nefit.URL_DAY_DATE.replace("%DAY%", day), dateval)
+        await self.update_dayassunday(day)
+
     async def set_desiredTemp(self, hash, params):
         self._nefit_client.set_temperature(params["temperature"])
         self._nefit_client.get(nefit.URL_RRC_UISTATUS)
@@ -84,22 +206,67 @@ class nefit(generic.FhemModule):
         self._nefit_client.get(nefit.URL_RRC_UISTATUS)
 
     async def set_todayAsSunday(self, hash, params):
-        pass
+        # call set_dayassunday_activate
+        await self.set_dayassunday_activate(
+            hash, {"onoff": params["onoff"], "function_param": "11"}
+        )
+        if params["onoff"] == "on":
+            # call set_dayssunday_date
+            today = datetime.date.today()
+            await self.set_dayassunday_date(
+                hash,
+                {
+                    "dateval": f"{today.month:02d}-{today.day:02d}",
+                    "function_param": "11",
+                },
+            )
 
-    async def set_todayAsSaturday(self, hash, params):
-        pass
+    async def set_tomorrowAsSunday(self, hash, params):
+        # call set_dayassunday_activate
+        await self.set_dayassunday_activate(
+            hash, {"onoff": params["onoff"], "function_param": "10"}
+        )
+        if params["onoff"] == "on":
+            # call set_dayssunday_date
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            await self.set_dayassunday_date(
+                hash,
+                {
+                    "dateval": f"{tomorrow.month:02d}-{tomorrow.day:02d}",
+                    "function_param": "10",
+                },
+            )
 
     async def received_message(self, msg):
-        if msg["id"] == nefit.URL_RRC_UISTATUS:
-            await self.handle_uistatus(msg)
-        elif msg["id"] == nefit.URL_REC_GASUSAGEPOINTER:
-            await self.handle_gasusagepointer(msg)
-        elif msg["id"] == nefit.URL_REC_GASUSAGE:
-            await self.handle_gasusage(msg)
-        elif msg["id"] == nefit.URL_REC_YEARTOTAL:
-            await self.handle_yeartotal(msg)
-        elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
-            await self.handle_outdoortemp(msg)
+        try:
+            if msg["id"] == nefit.URL_RRC_UISTATUS:
+                await self.handle_uistatus(msg)
+            elif msg["id"] == nefit.URL_REC_GASUSAGEPOINTER:
+                await self.handle_gasusagepointer(msg)
+            elif msg["id"] == nefit.URL_REC_GASUSAGE:
+                await self.handle_gasusage(msg)
+            elif msg["id"] == nefit.URL_REC_YEARTOTAL:
+                await self.handle_yeartotal(msg)
+            elif msg["id"] == nefit.URL_OUTDOOR_TEMP:
+                await self.handle_outdoortemp(msg)
+            elif msg["id"] == nefit.URL_SYSTEM_PRESSURE:
+                await self.handle_systempressure(msg)
+            elif msg["id"].startswith(nefit.URL_DAY_STARTSWITH):
+                await self.handle_dayassunday(msg)
+        except Exception:
+            self.logger.exception(f"Failed to handle msg: {msg}")
+
+    async def handle_systempressure(self, msg):
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "system_pressure", msg["value"], 1
+        )
+
+    async def handle_dayassunday(self, msg):
+        day = int(re.findall(r"\d+", msg["id"])[0])
+        val_type = re.findall(r"/(\w+)$", msg["id"])[0]
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, f"dayassunday_{day:02d}_{val_type}", msg["value"], 1
+        )
 
     async def handle_outdoortemp(self, msg):
         await fhem.readingsSingleUpdateIfChanged(
@@ -113,15 +280,17 @@ class nefit(generic.FhemModule):
 
     async def handle_gasusage(self, msg):
         entry = msg["value"][self._gasusage_page_entry]
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_consumption_ch", entry["ch"], 1
-        )
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_consumption_hw", entry["hw"], 1
-        )
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "yesterday_temperature", entry["T"] / 10, 1
-        )
+        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+        if entry["d"] == f"{yesterday.day:02d}-{yesterday.month:02d}-{yesterday.year}":
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_consumption_ch", entry["ch"], 1
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_consumption_hw", entry["hw"], 1
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "yesterday_temperature", entry["T"] / 10, 1
+            )
 
     async def handle_gasusagepointer(self, msg):
         if msg["value"] < 2:
@@ -180,7 +349,7 @@ class nefit(generic.FhemModule):
                 self.hash, "temp_in_fahrenheit", msg["value"]["FAH"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "fpa", msg["value"]["FPA"]
+                self.hash, "fireplace_mode", msg["value"]["FPA"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "presence_detection_status_device", msg["value"]["HED_DB"]
@@ -214,7 +383,7 @@ class nefit(generic.FhemModule):
                 self.hash, "temperature_override_duration", msg["value"]["TOD"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "tor", msg["value"]["TOR"]
+                self.hash, "temperature_override", msg["value"]["TOR"]
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "temperature_override", msg["value"]["TOT"]
@@ -270,10 +439,24 @@ class nefit(generic.FhemModule):
                 self._nefit_client.get(nefit.URL_RRC_UISTATUS)
                 self._nefit_client.get(nefit.URL_REC_YEARTOTAL)
                 self._nefit_client.get(nefit.URL_OUTDOOR_TEMP)
+                self._nefit_client.get(nefit.URL_SYSTEM_PRESSURE)
+                await self.update_dayassunday()
+
                 await self.update_gasusage()
             except Exception:
-                self.logger.exception("Failed to update uiStatus")
+                self.logger.exception("Failed to update readings")
             await asyncio.sleep(self._attr_interval)
+
+    async def update_dayassunday(self, day=None):
+        if day is None:
+            for day in range(13):
+                self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day)))
+                self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", str(day)))
+                self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", str(day)))
+        else:
+            self._nefit_client.get(nefit.URL_DAY_ACTIVE.replace("%DAY%", str(day)))
+            self._nefit_client.get(nefit.URL_DAY_DATE.replace("%DAY%", str(day)))
+            self._nefit_client.get(nefit.URL_DAY_MODE.replace("%DAY%", str(day)))
 
     async def update_gasusage(self):
         self._nefit_client.get(nefit.URL_REC_GASUSAGEPOINTER)

@@ -7,8 +7,6 @@ import traceback
 
 import websockets
 
-from sentry_sdk import start_transaction
-
 from .version import __version__
 
 logger = logging.getLogger(__name__)

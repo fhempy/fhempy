@@ -2,6 +2,61 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.209 (2022-01-23)
+### Feature
+* **nefit:** Support system pressure ([`c90669e`](https://github.com/dominikkarall/fhempy/commit/c90669e3e1a053691eca2356c22fac30bc7a1ce6))
+
+## v0.1.208 (2022-01-23)
+### Fix
+* **nefit:** Update dayassunday readings asap ([`9f55182`](https://github.com/dominikkarall/fhempy/commit/9f55182cd8231bf397d824b43cfeff0b36ab6111))
+
+## v0.1.207 (2022-01-23)
+### Fix
+* **nefit:** Fix again tomorrow/todayAsSunday ([`6449ad2`](https://github.com/dominikkarall/fhempy/commit/6449ad21485ce005e34d88853b2b71c44192d28e))
+
+## v0.1.206 (2022-01-23)
+### Fix
+* **nefit:** Fix today/tomorrowAsSunday ([`ff11294`](https://github.com/dominikkarall/fhempy/commit/ff1129413f761ee9d9badff2d5080ac525c8e469))
+
+## v0.1.205 (2022-01-23)
+### Feature
+* **nefit:** Support dayassunday set functions ([`0ed99f2`](https://github.com/dominikkarall/fhempy/commit/0ed99f2ddb49d03bf1112efa50684d01c6e2afea))
+
+### Fix
+* **fhempy:** Remove sentry as I'm not using it ([`0fefcf0`](https://github.com/dominikkarall/fhempy/commit/0fefcf0dfd67d94f20678cf50dee8f9847233b86))
+
+## v0.1.204 (2022-01-22)
+### Fix
+* **nefit:** Fix retrieve dayassunday ([`c78e836`](https://github.com/dominikkarall/fhempy/commit/c78e836598aabf7289213200ce12aad3843e2423))
+
+## v0.1.203 (2022-01-22)
+### Feature
+* **nefit:** Retrieve dayassunday ([`8462ba4`](https://github.com/dominikkarall/fhempy/commit/8462ba421fc30c793b178d4f7b0ea7509f794dbf))
+
+### Fix
+* **nefix:** Readme fixes ([`7f698e8`](https://github.com/dominikkarall/fhempy/commit/7f698e898a7281f3a789ac54284c44261c86fb9f))
+
+## v0.1.202 (2022-01-22)
+### Fix
+* **fhempy:** Use markdown2 instead of markdown ([`f2403e6`](https://github.com/dominikkarall/fhempy/commit/f2403e6457e860afc4b69485e48caf90a0a8c24a))
+
+## v0.1.201 (2022-01-22)
+### Fix
+* **nefit:** Fix umlaut issue ([`76710bf`](https://github.com/dominikkarall/fhempy/commit/76710bf279eef26303edff96f7cce3de968c5983))
+
+## v0.1.200 (2022-01-22)
+### Fix
+* **nefit:** Fix consumption again ([`def458c`](https://github.com/dominikkarall/fhempy/commit/def458c970e5deae0e60b237a973e3cdcfb93338))
+
+## v0.1.199 (2022-01-22)
+### Fix
+* **nefit:** Fix consumption ([`11ce422`](https://github.com/dominikkarall/fhempy/commit/11ce4222a7c9ddbf214eca26a5fdec6b03bea882))
+
+## v0.1.198 (2022-01-22)
+### Fix
+* **nefit:** Fix some readings ([`e4613f9`](https://github.com/dominikkarall/fhempy/commit/e4613f909156015c190d2d39603f241e4d2769b3))
+* **pyit600:** Usage description updated ([#58](https://github.com/dominikkarall/fhempy/issues/58)) ([`9ce8405`](https://github.com/dominikkarall/fhempy/commit/9ce84058d648878e06cb720d1abdfc505124d388))
+
 ## v0.1.197 (2022-01-15)
 ### Fix
 * **pyit600:** Minor fixes ([#56](https://github.com/dominikkarall/fhempy/issues/56)) ([`3bdbaff`](https://github.com/dominikkarall/fhempy/commit/3bdbaff9f374b4ab7b5fae250b76921b8ea2a98a))

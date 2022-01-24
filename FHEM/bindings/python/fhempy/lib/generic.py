@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import json
 import os
-import markdown
+import markdown2
 import functools
 
 from fhempy.lib import fhem
@@ -123,7 +123,7 @@ class FhemModule:
             ) as f:
                 readme_md = f.read()
 
-            readme_str = markdown.markdown(readme_md)
+            readme_str = markdown2.markdown(readme_md)
             return readme_str
             # make_html_images_inline(
             #    readme_str, fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/"
