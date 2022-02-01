@@ -257,9 +257,10 @@ class nefit(generic.FhemModule):
             self.logger.exception(f"Failed to handle msg: {msg}")
 
     async def handle_systempressure(self, msg):
-        await fhem.readingsSingleUpdateIfChanged(
-            self.hash, "system_pressure", msg["value"], 1
-        )
+        if msg["value"] <= msg["maxValue"] and msg["value"] >= msg["minValue"]:
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "system_pressure", float(msg["value"]) / 10, 1
+            )
 
     async def handle_dayassunday(self, msg):
         day = int(re.findall(r"\d+", msg["id"])[0])
