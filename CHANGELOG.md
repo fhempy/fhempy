@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.210 (2022-02-01)
+### Feature
+* **pyit600:** Additional attributes added ([#59](https://github.com/dominikkarall/fhempy/issues/59)) ([`1753761`](https://github.com/dominikkarall/fhempy/commit/1753761290a41ba11e8959e6010a879554e8b0c9))
+
+### Fix
+* **nefit:** Fix system_pressure ([`1804780`](https://github.com/dominikkarall/fhempy/commit/1804780e585ca796277346d57da87810f9ec1349))
+* **skodaconnect:** Update manifest.json ([#60](https://github.com/dominikkarall/fhempy/issues/60)) ([`df00380`](https://github.com/dominikkarall/fhempy/commit/df0038006fece2eee2ff176255d1113a09037633))
+
 ## v0.1.209 (2022-01-23)
 ### Feature
 * **nefit:** Support system pressure ([`c90669e`](https://github.com/dominikkarall/fhempy/commit/c90669e3e1a053691eca2356c22fac30bc7a1ce6))
