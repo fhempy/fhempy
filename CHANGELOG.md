@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.211 (2022-02-04)
+### Fix
+* **nefit:** Change default interval to 900s ([`48a69e8`](https://github.com/dominikkarall/fhempy/commit/48a69e8cd819fe443a7e5ff2ef5e432e8972827f))
+* **skodaconnect:** Update Base Lib ([#64](https://github.com/dominikkarall/fhempy/issues/64)) ([`c1eefd4`](https://github.com/dominikkarall/fhempy/commit/c1eefd4dd91c5563453b14469b2a41777208afda))
+
 ## v0.1.210 (2022-02-01)
 ### Feature
 * **pyit600:** Additional attributes added ([#59](https://github.com/dominikkarall/fhempy/issues/59)) ([`1753761`](https://github.com/dominikkarall/fhempy/commit/1753761290a41ba11e8959e6010a879554e8b0c9))
