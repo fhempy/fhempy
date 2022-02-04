@@ -29,9 +29,9 @@ class nefit(generic.FhemModule):
 
         attr_config = {
             "interval": {
-                "default": 300,
+                "default": 900,
                 "format": "int",
-                "help": "Change interval, default is 300.",
+                "help": "Change interval, default is 900.",
             },
             "password": {"default": ""},
             "access_key": {"default": ""},
