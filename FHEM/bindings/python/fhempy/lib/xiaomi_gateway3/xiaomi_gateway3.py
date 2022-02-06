@@ -142,7 +142,7 @@ class xiaomi_gateway3(generic.FhemModule):
             self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
         ):
             devname = (
-                "".join(filter(str.isalnum, device["model"])) + "_" + device["mac"]
+                "".join(filter(str.isalnum, str(device["model"]))) + "_" + device["mac"]
             )
             await fhem.CommandDefine(
                 self.hash,
