@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.215 (2022-02-06)
+### Feature
+* **xiaomi_gateway3:** Support 1371 sensor ([`3c04477`](https://github.com/dominikkarall/fhempy/commit/3c044779f1ccf3d7fafcd7fcdc238425169c90f1))
+
+### Fix
+* **fhempy:** Change fhempy_remote to _peer ([`570afc8`](https://github.com/dominikkarall/fhempy/commit/570afc8d469e2e498b1320928f359fa52628d2db))
+
 ## v0.1.214 (2022-02-06)
 ### Feature
 * **meross:** Support roller shutter ([`eba7e27`](https://github.com/dominikkarall/fhempy/commit/eba7e2744e80549dd2efd5c733f17222481527b1))
