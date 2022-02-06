@@ -86,8 +86,8 @@ This are just a few examples for some modules, please see the modules readme lin
 fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
 
 
-### Peer setup (short)
-Only on remote peers, do not run this commands on the FHEM instance.
+### Peer setup (short version)
+Only on remote peers, do not run this commands on the FHEM instance. Run this commands with user "pi".
 
 ```
 ### WARNING: DO THIS COMMAND ONLY ON REMOTE PEER, NOT ON YOUR FHEM INSTANCE ###
@@ -96,8 +96,8 @@ pip3 install --upgrade fhempy
 curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
 ```
 
-### Peer setup (long)
-The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
+### Peer setup (long version)
+Only needed if you didn't run Peer setup (short version). The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
 
 - Install fhempy with user pi: `pip3 install --upgrade fhempy`
 - Make sure your main fhempy instance (within FHEM) is running
