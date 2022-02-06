@@ -40,7 +40,12 @@ class eq3bt(generic.FhemModule):
                 "format": "str",
                 "options": "on,off",
                 "help": "On...keeps bluetooth low energy connection active which makes commands to be executed immediately",
-            }
+            },
+            "max_retries": {
+                "default": 5,
+                "format": "int",
+                "help": "Maximum retries for connection setup, default=5.",
+            },
         }
         self.set_attr_config(attr_list)
 
@@ -120,6 +125,7 @@ class eq3bt(generic.FhemModule):
                 self.logger,
                 self._mac,
                 keep_connection=self._attr_keep_connected == "on",
+                max_retries=self._attr_max_retries,
             )
         except DBusException:
             dbus_conf_err = (
@@ -488,10 +494,19 @@ class eq3bt(generic.FhemModule):
 
 
 class FhemThermostat(eq3.Thermostat):
-    def __init__(self, logger, mac, keep_connection):
+    def __init__(self, logger, mac, keep_connection, max_retries):
         self.logger = logger
         self._keep_conection = keep_connection
-        super(FhemThermostat, self).__init__(mac, BTLEConnection, keep_connection=True)
+        self._max_retries = max_retries
+        super(FhemThermostat, self).__init__(
+            mac,
+            BTLEConnection,
+            keep_connection=self._keep_conection,
+            max_retries=self._max_retries,
+        )
+
+    def set_max_retries(self, max_retries):
+        self.set_max_retries(max_retries)
 
     def set_keep_connection(self, new_state):
         self.set_keep_connected(new_state)
