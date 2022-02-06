@@ -29,6 +29,7 @@ device_type_mapping = {
     "lumi.sensor_motion.v2": "MotionSensor",
     "lumi.gateway": "Gateway",
     "lumi.gateway.mgl03": "Gateway",
+    "1371": "HTSensor",  # Bluetooth sensor
 }
 
 
