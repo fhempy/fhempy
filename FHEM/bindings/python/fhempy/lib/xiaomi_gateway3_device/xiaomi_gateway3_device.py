@@ -90,7 +90,7 @@ class xiaomi_gateway3_device(generic.FhemModule):
             return
 
         # first update, set attributes and device readings like model, sid, ...
-        if device["model"] not in device_type_mapping:
+        if str(device["model"]) not in device_type_mapping:
             self.logger.error(
                 f"{device['model']} not yet supported, please report an issue here: "
                 f"https://github.com/dominikkarall/fhempy/issues"
@@ -100,7 +100,7 @@ class xiaomi_gateway3_device(generic.FhemModule):
             )
             return
         # create device based on device model
-        self._fhempy_device = globals()[device_type_mapping[device["model"]]](
+        self._fhempy_device = globals()[device_type_mapping[str(device["model"])]](
             self.logger, self._fhempy_gateway
         )
         self._fhempy_device.set_hash(self.hash)
