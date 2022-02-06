@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.213 (2022-02-06)
+### Fix
+* **xiaomi_gateway3:** Fix ble devices ([`3c100d9`](https://github.com/dominikkarall/fhempy/commit/3c100d990ae16ddd2af94508c89545dd735414a7))
+* **fhempy:** Fix fhempy_log error msg ([`da0f71c`](https://github.com/dominikkarall/fhempy/commit/da0f71c9d1230c4cc83980711797f42a6d84a3ae))
+
 ## v0.1.212 (2022-02-06)
 ### Feature
 * **eq3bt:** Support max_retries attr ([`b483878`](https://github.com/dominikkarall/fhempy/commit/b483878b89e05fe78df9db4df4cbe2498468799c))
