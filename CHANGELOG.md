@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.216 (2022-02-06)
+### Feature
+* **xiaomi_gateway3:** Support BT smoke alarm ([`983fe78`](https://github.com/dominikkarall/fhempy/commit/983fe78877eefa9232091273276a127776bd143b))
+
 ## v0.1.215 (2022-02-06)
 ### Feature
 * **xiaomi_gateway3:** Support 1371 sensor ([`3c04477`](https://github.com/dominikkarall/fhempy/commit/3c044779f1ccf3d7fafcd7fcdc238425169c90f1))
