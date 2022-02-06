@@ -106,9 +106,9 @@ The following steps are only needed if you want to install fhempy on a remote pe
   - `curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
   - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
 - FHEM configuration
-  - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_remote_192_168_1_50
+  - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_peer_192_168_1_50
   - You can move any device to the remote peer by changing the IODev of the device.
-  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_remote_IP BindingsIo IP:15733 fhempy`
+  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_peer_IP BindingsIo IP:15733 fhempy`
 
 ### Log file
 `journalctl -u fhempy.service -f`
