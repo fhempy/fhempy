@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.212 (2022-02-06)
+### Feature
+* **eq3bt:** Support max_retries attr ([`b483878`](https://github.com/dominikkarall/fhempy/commit/b483878b89e05fe78df9db4df4cbe2498468799c))
+
 ## v0.1.211 (2022-02-04)
 ### Fix
 * **nefit:** Change default interval to 900s ([`48a69e8`](https://github.com/dominikkarall/fhempy/commit/48a69e8cd819fe443a7e5ff2ef5e432e8972827f))
