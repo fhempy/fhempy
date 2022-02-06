@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.217 (2022-02-06)
+### Fix
+* **xiaomi_gateway3:** Fix BT devices ([`be7b30d`](https://github.com/dominikkarall/fhempy/commit/be7b30d6117c77b0c8e9d6fcfce995d7a619bfca))
+
 ## v0.1.216 (2022-02-06)
 ### Feature
 * **xiaomi_gateway3:** Support BT smoke alarm ([`983fe78`](https://github.com/dominikkarall/fhempy/commit/983fe78877eefa9232091273276a127776bd143b))
