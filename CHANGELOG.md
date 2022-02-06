@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.214 (2022-02-06)
+### Feature
+* **meross:** Support roller shutter ([`eba7e27`](https://github.com/dominikkarall/fhempy/commit/eba7e2744e80549dd2efd5c733f17222481527b1))
+
 ## v0.1.213 (2022-02-06)
 ### Fix
 * **xiaomi_gateway3:** Fix ble devices ([`3c100d9`](https://github.com/dominikkarall/fhempy/commit/3c100d990ae16ddd2af94508c89545dd735414a7))
