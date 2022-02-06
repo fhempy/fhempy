@@ -5,6 +5,7 @@ from meross_iot.model.enums import OnlineStatus, Namespace
 from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
 from meross_iot.controller.mixins.garage import GarageOpenerMixin
 from meross_iot.controller.mixins.light import LightMixin
+from meross_iot.controller.mixins.roller_shutter import RollerShutterTimerMixin
 
 
 class meross_device:
@@ -32,6 +33,11 @@ class meross_device:
             set_conf["on"] = {}
             set_conf["off"] = {}
             set_conf["toggle"] = {}
+
+        if isinstance(self._device, RollerShutterTimerMixin):
+            set_conf["open"] = {}
+            set_conf["close"] = {}
+            set_conf["stop"] = {}
 
         if isinstance(self._device, GarageOpenerMixin):
             set_conf["open"] = {}
@@ -82,6 +88,9 @@ class meross_device:
 
     async def set_close(self, hash, params):
         await self._device.async_close()
+
+    async def set_stop(self, hash, params):
+        await self._device.async_stop()
 
     async def _init_device(self):
         try:
@@ -179,6 +188,19 @@ class meross_device:
             state_val = "closed"
             if self._device.get_is_open():
                 state_val = "open"
+
+        if isinstance(self._device, RollerShutterTimerMixin):
+            status = self._device.get_status()
+            state_val = "unknown"
+            if status == 1:
+                state_val = "open"
+            elif status == 2:
+                state_val = "closed"
+            elif status == 0:
+                state_val = "stopped"
+
+            pct = self._device.get_position()
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "pct", pct)
 
         if isinstance(self._device, LightMixin):
             ct = self._device.get_color_temperature()
