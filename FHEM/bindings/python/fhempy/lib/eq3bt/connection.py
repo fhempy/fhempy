@@ -70,7 +70,7 @@ class PeripheralTimeout(btle.Peripheral):
 class BTLEConnection(btle.DefaultDelegate):
     """Representation of a BTLE Connection."""
 
-    def __init__(self, mac, keep_connected=False):
+    def __init__(self, mac, keep_connected=False, max_retries=5):
         """Initialize the connection."""
         btle.DefaultDelegate.__init__(self)
 
@@ -81,6 +81,10 @@ class BTLEConnection(btle.DefaultDelegate):
         self._mac = mac
         self._callbacks = {}
         self._keep_connected = keep_connected
+        self._max_retries = max_retries
+
+    def set_max_retries(self, max_retries):
+        self._max_retries = max_retries
 
     def set_keep_connected(self, new_state):
         self._keep_connected = new_state
@@ -94,7 +98,7 @@ class BTLEConnection(btle.DefaultDelegate):
     def next_iface(self):
         self._nr_conn_errors += 1
         self._iface_idx = (self._iface_idx + 1) % len(self._ifaces)
-        if self._nr_conn_errors >= len(self._ifaces) * 5:
+        if self._nr_conn_errors >= len(self._ifaces) * self._max_retries:
             return False
         return True
 
