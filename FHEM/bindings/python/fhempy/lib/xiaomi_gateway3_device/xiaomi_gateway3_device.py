@@ -11,6 +11,7 @@ from .devices.sensor import (  # noqa: F401
     HTSensor,
     MotionSensor,
     WaterLeakSensor,
+    SmokeSensor,
 )
 
 device_type_mapping = {
@@ -29,7 +30,9 @@ device_type_mapping = {
     "lumi.sensor_motion.v2": "MotionSensor",
     "lumi.gateway": "Gateway",
     "lumi.gateway.mgl03": "Gateway",
-    "1371": "HTSensor",  # Bluetooth sensor
+    # Bluetooth sensors here
+    "1371": "HTSensor",
+    "2455": "SmokeSensor",
 }
 
 
