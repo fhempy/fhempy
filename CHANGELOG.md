@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.218 (2022-02-07)
+### Fix
+* **xiaomi_gateway3:** Fix BT devices ([`81f8aea`](https://github.com/dominikkarall/fhempy/commit/81f8aea5ffc16f55a239a3579c15ca5b1fc9b547))
+* **ring:** Fix circular import? ([`a061667`](https://github.com/dominikkarall/fhempy/commit/a061667c55ec1e58d57ef0bd2ed6452a2acf0c0c))
+* **meross:** Fix stop ([`b22b7a0`](https://github.com/dominikkarall/fhempy/commit/b22b7a0d232b0312aeb8eb62974f0dfdcd020fe6))
+* **helloworld:** Add README ([`7f12567`](https://github.com/dominikkarall/fhempy/commit/7f12567ab7a5e84adeab4dfb5395e76bdc38011f))
+
 ## v0.1.217 (2022-02-06)
 ### Fix
 * **xiaomi_gateway3:** Fix BT devices ([`be7b30d`](https://github.com/dominikkarall/fhempy/commit/be7b30d6117c77b0c8e9d6fcfce995d7a619bfca))
