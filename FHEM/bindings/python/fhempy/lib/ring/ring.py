@@ -6,8 +6,8 @@ import string
 import random
 import threading
 
-from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
 from ring_doorbell import Auth, Ring
+from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
 
 try:
     # Python 3.7
