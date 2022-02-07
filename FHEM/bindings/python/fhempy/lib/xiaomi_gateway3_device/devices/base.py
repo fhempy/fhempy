@@ -74,6 +74,11 @@ attr_settings = {
         "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
         "icon": "tradfri_gateway",
     },
+    # Bluetooth devices
+    "1371": {
+        "stateFormat": "temperature °C, humidity %",
+        "icon": "temp_temperature",
+    },
 }
 
 
@@ -95,13 +100,13 @@ class BaseDevice(FhemModule):
 
     async def initialize(self, device):
         self._xg3_device = device
-        for attr in attr_settings[device["model"]]:
+        for attr in attr_settings[str(device["model"])]:
             if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
                 await fhem.CommandAttr(
                     self.hash,
                     (
                         f"{self.hash['NAME']} {attr} "
-                        f"{attr_settings[self._xg3_device['model']][attr]}"
+                        f"{attr_settings[str(self._xg3_device['model'])][attr]}"
                     ),
                 )
 
