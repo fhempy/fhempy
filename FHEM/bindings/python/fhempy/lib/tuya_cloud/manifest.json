@@ -1,5 +1,6 @@
 {
   "requirements": [
-    "tuya-iot-py-sdk==0.6.6"
+    "tuya-iot-py-sdk==0.6.6",
+    "tuya-connector-python==0.1.2"
   ]
 }

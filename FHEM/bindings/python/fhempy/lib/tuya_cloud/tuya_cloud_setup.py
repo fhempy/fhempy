@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import json
 
 from tuya_iot import (
     AuthType,
@@ -9,6 +10,10 @@ from tuya_iot import (
     TuyaHomeManager,
     TuyaOpenAPI,
     TuyaOpenMQ,
+)
+from tuya_connector import (
+    TuyaOpenPulsar,
+    TuyaCloudPulsarTopic,
 )
 from fhempy.lib import fhem, utils
 
@@ -49,6 +54,9 @@ class tuya_cloud_setup:
             if TUYA_ENDPOINT[url] == region:
                 return url
 
+    def _get_pulsar_endpoint(self, region):
+        return "wss://mqe.tuya" + self._get_countrycode(self._t_region) + ".com:8285/"
+
     def _get_countrycode(self, region) -> str:
         if region == "Europe":
             return "eu"
@@ -61,27 +69,6 @@ class tuya_cloud_setup:
             self._ready = True
             await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
             await self._init_devices()
-
-    async def restart_mqtt_loop(self):
-        while True:
-            await asyncio.sleep(7100)  # nearly 2 hours
-            try:
-                await self.restart_mqtt()
-            except Exception as ex:
-                self.logger.exception(ex)
-
-    async def restart_mqtt(self):
-        try:
-            self.device_manager.mq.stop()
-            self.tuya_mq.stop()
-        except Exception:
-            pass
-
-        self.tuya_mq = TuyaOpenMQ(self.device_manager.api)
-        self.tuya_mq.start()
-
-        self.device_manager.mq = self.tuya_mq
-        self.tuya_mq.add_message_listener(self.device_manager.on_message)
 
     async def _init_tuya_sdk(self) -> bool:
         auth_type = AuthType(0)
@@ -123,7 +110,14 @@ class tuya_cloud_setup:
 
         self.tuya_mq = TuyaOpenMQ(api)
         self.tuya_mq.start()
-        # self.fhemdev.create_async_task(self.restart_mqtt_loop())
+
+        self.tuya_pulsar = TuyaOpenPulsar(
+            self._t_apikey,
+            self._t_apisecret,
+            self._get_pulsar_endpoint(self._t_region),
+            TuyaCloudPulsarTopic.PROD,
+        )
+        self.tuya_pulsar.start()
 
         self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
 
@@ -182,7 +176,23 @@ class tuya_cloud_setup:
 
         __listener = DeviceListener(self.logger)
         self.device_manager.add_device_listener(__listener)
-        self.tuya_mq.add_message_listener(self.device_manager.on_message)
+
+        def on_pulsar_message(msg):
+            msg = json.loads(msg)
+            status = msg.get("status", [])
+            device = {"id": msg["devId"], "status": status}
+            self.logger.debug(f"update_device received: {msg}")
+            for dev in t_cloud_setup.tuya_devices:
+                if dev.id == device["id"]:
+                    try:
+                        asyncio.run_coroutine_threadsafe(
+                            dev.update_readings_arr(device["status"]),
+                            t_cloud_setup.fhemdev.loop,
+                        )
+                    except Exception:
+                        self.logger.exception("Failed to update device")
+
+        self.tuya_pulsar.add_message_listener(on_pulsar_message)
 
         return True
 
