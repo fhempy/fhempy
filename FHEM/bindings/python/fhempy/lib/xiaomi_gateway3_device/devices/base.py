@@ -138,7 +138,7 @@ class BaseDevice(FhemModule):
         # device is online
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
         # update data
-        for reading in data:
+        for reading in list(data):
             if reading == "added_device":
                 pass
             else:
