@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.220 (2022-02-08)
+### Fix
+* **skodaconnect:** Update Base Lib ([#65](https://github.com/dominikkarall/fhempy/issues/65)) ([`7ef4a13`](https://github.com/dominikkarall/fhempy/commit/7ef4a13358312ef14f764d5f81e754fc47732dcf))
+
 ## v0.1.219 (2022-02-08)
 ### Feature
 * **tuya_cloud:** Add tuya open pulsar messaging ([`2c49000`](https://github.com/dominikkarall/fhempy/commit/2c4900090738a80113512877a3a65172246514cb))
