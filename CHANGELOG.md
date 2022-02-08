@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.219 (2022-02-08)
+### Feature
+* **tuya_cloud:** Add tuya open pulsar messaging ([`2c49000`](https://github.com/dominikkarall/fhempy/commit/2c4900090738a80113512877a3a65172246514cb))
+
+### Fix
+* **xiaomi_gateway3:** Fix dict changed during iter ([`8c5bd74`](https://github.com/dominikkarall/fhempy/commit/8c5bd74e3262d60b9afbe3af472c1b3944c92d54))
+* **fhempy:** Fix utf8 issues ([`36383c5`](https://github.com/dominikkarall/fhempy/commit/36383c5141a7ed48e386c73dfac9074bb1b3d28d))
+
 ## v0.1.218 (2022-02-07)
 ### Fix
 * **xiaomi_gateway3:** Fix BT devices ([`81f8aea`](https://github.com/dominikkarall/fhempy/commit/81f8aea5ffc16f55a239a3579c15ca5b1fc9b547))
