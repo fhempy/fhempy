@@ -181,6 +181,7 @@ sub
 BindingsIo_Notify($)
 {
   my ($hash, $dev) = @_;
+  # TODO send everything to fhempy and do not wait on feedback
   return if($dev->{NAME} ne "global");
 
   return "" if(IsDisabled($hash->{NAME})); # Return without any further action if the module is disabled
@@ -402,7 +403,7 @@ BindingsIo_Shutdown($)
 
 sub BindingsIo_processMessage($$$$) {
   my ($hash, $devhash, $waitingForId, $response) = @_;
-  $response = Encode::encode("UTF-8", $response);
+  $response = Encode::encode("utf8", $response);
   Log3 $hash, 5, "processMessage: ".$response;
   my $json = eval {from_json($response)};
   if ($@) {
