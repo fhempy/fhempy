@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.221 (2022-02-09)
+### Fix
+* **tuya_cloud:** Add pulsar activation error msg ([`faab929`](https://github.com/dominikkarall/fhempy/commit/faab92932949a2eea85414704397d50aa8270e4b))
+
 ## v0.1.220 (2022-02-08)
 ### Fix
 * **skodaconnect:** Update Base Lib ([#65](https://github.com/dominikkarall/fhempy/issues/65)) ([`7ef4a13`](https://github.com/dominikkarall/fhempy/commit/7ef4a13358312ef14f764d5f81e754fc47732dcf))
