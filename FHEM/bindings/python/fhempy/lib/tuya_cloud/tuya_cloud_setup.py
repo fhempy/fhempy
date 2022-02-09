@@ -108,9 +108,6 @@ class tuya_cloud_setup:
                 self.logger.error(f"Tuya login error response: {response}")
             return False
 
-        self.tuya_mq = TuyaOpenMQ(api)
-        self.tuya_mq.start()
-
         self.tuya_pulsar = TuyaOpenPulsar(
             self._t_apikey,
             self._t_apisecret,
@@ -118,6 +115,27 @@ class tuya_cloud_setup:
             TuyaCloudPulsarTopic.PROD,
         )
         self.tuya_pulsar.start()
+
+        # check if pulsar is working
+        await asyncio.sleep(2)
+        pulsar_connected = False
+        try:
+            pulsar_connected = self.tuya_pulsar.ws_app.sock.status == 101
+        except Exception:
+            pass
+
+        if pulsar_connected is False:
+            self.logger.error(
+                "Please activate OpenPulsar: "
+                + "https://developer.tuya.com/en/docs/iot/subscribe-mq?id=Kavqcrvckbh9h"
+            )
+            # pulsar not working
+            self.tuya_pulsar.stop()
+        else:
+            self.logger.info("Tuya Open Pulsar connected")
+
+        self.tuya_mq = TuyaOpenMQ(api)
+        self.tuya_mq.start()
 
         self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
 
