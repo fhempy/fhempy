@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.222 (2022-02-09)
+### Feature
+* **rct_power:** Support RCT Power inverter ([`76f316f`](https://github.com/dominikkarall/fhempy/commit/76f316fd280a3209c44e0f6fc91a21bb8f206079))
+
 ## v0.1.221 (2022-02-09)
 ### Fix
 * **tuya_cloud:** Add pulsar activation error msg ([`faab929`](https://github.com/dominikkarall/fhempy/commit/faab92932949a2eea85414704397d50aa8270e4b))
