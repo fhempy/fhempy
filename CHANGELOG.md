@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.223 (2022-02-10)
+### Fix
+* **rct_power:** Change interval to 10s, fix state ([`72dced8`](https://github.com/dominikkarall/fhempy/commit/72dced8eb70b4082a317254b9be6eac35d608c2e))
+
 ## v0.1.222 (2022-02-09)
 ### Feature
 * **rct_power:** Support RCT Power inverter ([`76f316f`](https://github.com/dominikkarall/fhempy/commit/76f316fd280a3209c44e0f6fc91a21bb8f206079))
