@@ -13,9 +13,9 @@ class rct_power(generic.FhemModule):
 
         attr_config = {
             "interval": {
-                "default": 30,
+                "default": 10,
                 "format": "int",
-                "help": "Poll interval in seconds, default is 300s.",
+                "help": "Poll interval in seconds, default is 10s.",
             }
         }
         self.set_attr_config(attr_config)
@@ -96,6 +96,9 @@ class rct_power(generic.FhemModule):
                         response[object_id].cause,
                     )
 
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
+
         except Exception:
+            await fhem.readingsBulkUpdateIfChanged(hash, "state", "connection error")
             self.logger.exception("Failed to update_readings")
         await fhem.readingsEndUpdate(self.hash, 1)
