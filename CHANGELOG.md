@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.224 (2022-02-10)
+### Feature
+* **rct_power:** New attributes ([`0651dc5`](https://github.com/dominikkarall/fhempy/commit/0651dc5dbe48e3ecaf8454a20ad357ecac61be35))
+
 ## v0.1.223 (2022-02-10)
 ### Fix
 * **rct_power:** Change interval to 10s, fix state ([`72dced8`](https://github.com/dominikkarall/fhempy/commit/72dced8eb70b4082a317254b9be6eac35d608c2e))
