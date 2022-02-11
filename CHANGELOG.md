@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.225 (2022-02-11)
+### Fix
+* **rct_power:** Support json/array format ([`c282ac9`](https://github.com/dominikkarall/fhempy/commit/c282ac979ee79e53a08593b169619b046b86f362))
+
 ## v0.1.224 (2022-02-10)
 ### Feature
 * **rct_power:** New attributes ([`0651dc5`](https://github.com/dominikkarall/fhempy/commit/0651dc5dbe48e3ecaf8454a20ad357ecac61be35))
