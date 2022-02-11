@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.226 (2022-02-11)
+### Feature
+* **rct_power:** Attr error_reading, default_... ([`584e849`](https://github.com/dominikkarall/fhempy/commit/584e8495ae323e4f71d2d4db9e4ac4af98bc000a))
+* **rct_power:** Add format, add error reading ([`0772e76`](https://github.com/dominikkarall/fhempy/commit/0772e7693cefb66f84bc90b9a633b8cd11f22f56))
+
+### Fix
+* **fhempy:** Fix naming ([`b9c9cf1`](https://github.com/dominikkarall/fhempy/commit/b9c9cf1fa3562fe24d8c4601a9520c565f1bb09c))
+
 ## v0.1.225 (2022-02-11)
 ### Fix
 * **rct_power:** Support json/array format ([`c282ac9`](https://github.com/dominikkarall/fhempy/commit/c282ac979ee79e53a08593b169619b046b86f362))
