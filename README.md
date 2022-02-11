@@ -72,7 +72,7 @@ update add https://raw.githubusercontent.com/dominikkarall/fhempy/master/control
 update
 ```
 ```
-define local_pybinding BindingsIo fhempy
+define fhempy_local BindingsIo fhempy
 ```
 
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.

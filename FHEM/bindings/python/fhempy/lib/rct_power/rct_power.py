@@ -40,6 +40,14 @@ class rct_power(generic.FhemModule):
                 "format": "int",
                 "help": "Poll interval in seconds, default is 10s.",
             },
+            "default_device_readings": {
+                "default": "on",
+                "help": "When off only readings defined in device_readings and device_readings_json are updated.",
+            },
+            "error_reading": {
+                "default": "on",
+                "help": "Use separate error reading.",
+            },
             "device_readings": {
                 "default": "",
                 "format": "array",
@@ -62,6 +70,7 @@ class rct_power(generic.FhemModule):
                 + '&nbsp;&nbsp;&nbsp;&nbsp;"battery.soc_target": {<br>'
                 + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reading": "battery_soc_target",<br>'
                 + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"factor":100<br>'
+                + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"format":".2f"<br>'
                 + "&nbsp;&nbsp;&nbsp;&nbsp;}<br>"
                 + "}",
             },
@@ -113,10 +122,14 @@ class rct_power(generic.FhemModule):
         try:
             object_ids = []
             retrieve_objects = [
-                *rct_power.DEFAULT_OBJECTS,
                 *self._attr_device_readings,
                 *list(self._attr_device_readings_json),
             ]
+            if self._attr_default_device_readings == "on":
+                retrieve_objects = [
+                    *rct_power.DEFAULT_OBJECTS,
+                    *retrieve_objects,
+                ]
             for val in retrieve_objects:
                 for object_info in REGISTRY.all():
                     if object_info.name == val:
@@ -124,6 +137,12 @@ class rct_power(generic.FhemModule):
 
             response = await self.rctclient.async_get_data(object_ids)
             for object_id in response:
+                if self._attr_error_reading == "on":
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash,
+                        "error",
+                        "",
+                    )
                 # set reading name from attribute config
                 reading = response[object_id].object_name
                 if reading in self._attr_device_readings_json:
@@ -139,7 +158,10 @@ class rct_power(generic.FhemModule):
                             response[object_id].object_name, {}
                         ).get("factor", 1)
                         value = value * factor
-                        value = f"{value:.2f}"
+                        format = self._attr_device_readings_json.get(
+                            response[object_id].object_name, {}
+                        ).get("format", ".2f")
+                        value = f"{value:{format}}"
 
                     await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
@@ -147,11 +169,18 @@ class rct_power(generic.FhemModule):
                         value,
                     )
                 else:
-                    await fhem.readingsBulkUpdateIfChanged(
-                        self.hash,
-                        reading,
-                        response[object_id].cause,
-                    )
+                    if self._attr_error_reading == "on":
+                        await fhem.readingsBulkUpdateIfChanged(
+                            self.hash,
+                            "error",
+                            f"{reading} failed with {response[object_id].cause}",
+                        )
+                    else:
+                        await fhem.readingsBulkUpdateIfChanged(
+                            self.hash,
+                            reading,
+                            response[object_id].cause,
+                        )
 
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
 
