@@ -2,6 +2,7 @@ import asyncio
 import base64
 import concurrent.futures
 import socket
+import json
 from codecs import decode, encode
 from functools import partial, reduce
 
@@ -186,6 +187,13 @@ def convert2format(value, list_def):
             return True
         else:
             return False
+    elif target_format == "json":
+        try:
+            return json.loads(value)
+        except Exception:
+            return {}
+    elif target_format == "array":
+        return value.split(",")
     return value
 
 
