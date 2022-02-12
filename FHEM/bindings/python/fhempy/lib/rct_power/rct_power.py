@@ -79,7 +79,47 @@ class rct_power(generic.FhemModule):
                 "args": ["value"],
                 "params": {"value": {"format": "int"}},
                 "options": "slider,0,1,255",
-            }
+                "function": "set_rct_write",
+                # 0x29BDA75F = display_struct.brightness
+                "function_param": 0x29BDA75F,
+            },
+            "display_contrast": {
+                "args": ["value"],
+                "params": {"value": {"format": "int"}},
+                "options": "slider,0,1,255",
+                "function": "set_rct_write",
+                # 0xF247BB16 = display_struct.contrast
+                "function_param": 0xF247BB16,
+            },
+            "max_compensation_power": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "options": "slider,0,1,10000",
+                "function": "set_rct_write",
+                # 0x85886E2E = p_rec_lim[0]
+                "function_param": 0x85886E2E,
+            },
+            "battery_discharge_power": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "options": "slider,0,1,10000",
+                "function": "set_rct_write",
+                "function_param": 0x1156DFD0,
+            },
+            "min_soc_target": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "options": "0,1",
+                "function": "set_rct_write",
+                "function_param": 0xCE266F0F,
+            },
+            "max_soc_target": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "options": "0,1",
+                "function": "set_rct_write",
+                "function_param": 0x97997C93,
+            },
         }
         self.set_set_config(set_config)
 
@@ -100,10 +140,9 @@ class rct_power(generic.FhemModule):
 
         self.create_async_task(self.setup_rct())
 
-    async def set_display_brightness(self, hash, params):
-        # 0x29BDA75F = display_struct.brightness
+    async def set_rct_write(self, hash, params):
         self.create_async_task(
-            self.rctclient.async_send_data(0x29BDA75F, params["value"])
+            self.rctclient.async_send_data(params["function_param"], params["value"])
         )
 
     async def setup_rct(self):
