@@ -77,8 +77,9 @@ class rct_power(generic.FhemModule):
         }
         self.set_attr_config(attr_config)
 
-        set_config = {"battery_soc_target_high": {"args": ["id", "value"]}}
-        set_config = {}
+        set_config = {
+            "display_brightness": {"args": ["value"], "options": "slider:0,1,255"}
+        }
         self.set_set_config(set_config)
 
     # FHEM FUNCTION
@@ -98,10 +99,11 @@ class rct_power(generic.FhemModule):
 
         self.create_async_task(self.setup_rct())
 
-    async def set_battery_soc_target_high(self, hash, params):
-        oinfo = REGISTRY.get_by_id(params["id"])
-        payload = encode_value(oinfo.request_data_type, params["value"])
-        sframe = SendFrame(command=Command.WRITE, id=params["id"], payload=payload)
+    async def set_display_brightness(self, hash, params):
+        # 0x29BDA75F = display_struct.brightness
+        self.create_async_task(
+            self.rctclient.async_send_data(0x29BDA75F, params["value"])
+        )
 
     async def setup_rct(self):
         self.rctclient = RctPowerApiClient(
