@@ -109,14 +109,14 @@ class rct_power(generic.FhemModule):
             "min_soc_target": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "options": "0,1",
+                "options": "slider:0,0.01,1,1",
                 "function": "set_rct_write",
                 "function_param": 0xCE266F0F,
             },
             "max_soc_target": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "options": "0,1",
+                "options": "slider:0,0.01,1,1",
                 "function": "set_rct_write",
                 "function_param": 0x97997C93,
             },

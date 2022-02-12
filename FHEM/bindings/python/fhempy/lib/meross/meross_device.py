@@ -197,7 +197,9 @@ class meross_device:
             elif status == 2:
                 state_val = "closed"
             elif status == 0:
-                state_val = "stopped"
+                # stopped, keep last state instead of stopped
+                # state_val = "stopped"
+                pass
 
             pct = self._device.get_position()
             await fhem.readingsBulkUpdateIfChanged(self.hash, "pct", pct)
