@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.230 (2022-02-12)
+### Fix
+* **skodaconnect:** Fix login ([`d3a92df`](https://github.com/dominikkarall/fhempy/commit/d3a92df885c40d5a500bfc640cef191c5e2a6124))
+
 ## v0.1.229 (2022-02-12)
 ### Fix
 * **rct_power:** Fix display_brightness ([`89c8d92`](https://github.com/dominikkarall/fhempy/commit/89c8d92b3ce3e1db89cd909d1a97fc3b6a918e1d))
