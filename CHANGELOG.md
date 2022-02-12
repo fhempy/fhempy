@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.229 (2022-02-12)
+### Fix
+* **rct_power:** Fix display_brightness ([`89c8d92`](https://github.com/dominikkarall/fhempy/commit/89c8d92b3ce3e1db89cd909d1a97fc3b6a918e1d))
+
 ## v0.1.228 (2022-02-12)
 ### Fix
 * **rct_power:** Fix function call ([`995c6ba`](https://github.com/dominikkarall/fhempy/commit/995c6ba5d9ab78c906ff2c7d320e46ea122f1b73))
