@@ -75,7 +75,11 @@ class rct_power(generic.FhemModule):
         self.set_attr_config(attr_config)
 
         set_config = {
-            "display_brightness": {"args": ["value"], "options": "slider:0,1,255"}
+            "display_brightness": {
+                "args": ["value"],
+                "params": {"value": {"format": "int"}},
+                "options": "slider,0,1,255",
+            }
         }
         self.set_set_config(set_config)
 
