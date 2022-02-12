@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.227 (2022-02-12)
+### Feature
+* **rct_power:** Support display brightness ([`533954a`](https://github.com/dominikkarall/fhempy/commit/533954ac61b9fa84ce07a1edc692c712ff3d2a70))
+
 ## v0.1.226 (2022-02-11)
 ### Feature
 * **rct_power:** Attr error_reading, default_... ([`584e849`](https://github.com/dominikkarall/fhempy/commit/584e8495ae323e4f71d2d4db9e4ac4af98bc000a))
