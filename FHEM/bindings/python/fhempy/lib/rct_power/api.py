@@ -6,7 +6,6 @@ from asyncio import StreamReader, StreamWriter, TimeoutError, open_connection
 from asyncio.locks import Lock
 from dataclasses import dataclass
 from datetime import datetime
-import logging
 import struct
 from typing import Dict, List, Optional, Tuple, TypeVar, Union
 
@@ -110,10 +109,15 @@ class RctPowerApiClient:
         oinfo = REGISTRY.get_by_id(object_id)
         object_name = oinfo.name
         payload = encode_value(oinfo.request_data_type, value)
-        send_command_frame = SendFrame(command=Command.WRITE, id=object_id, payload)
+        send_command_frame = SendFrame(
+            command=Command.WRITE, id=object_id, payload=payload
+        )
 
         self.logger.debug(
-            "Writing RCT Power data (%s) for object %x (%s)...", str(value), object_id, object_name
+            "Writing RCT Power data (%s) for object %x (%s)...",
+            str(value),
+            object_id,
+            object_name,
         )
         request_time = datetime.now()
 
