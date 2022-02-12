@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.231 (2022-02-12)
+### Feature
+* **rct_power:** Further set functions ([`27812d0`](https://github.com/dominikkarall/fhempy/commit/27812d066ee58689aab681b066180705f5805b5d))
+
 ## v0.1.230 (2022-02-12)
 ### Fix
 * **skodaconnect:** Fix login ([`d3a92df`](https://github.com/dominikkarall/fhempy/commit/d3a92df885c40d5a500bfc640cef191c5e2a6124))
