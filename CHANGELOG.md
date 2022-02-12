@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.228 (2022-02-12)
+### Fix
+* **rct_power:** Fix function call ([`995c6ba`](https://github.com/dominikkarall/fhempy/commit/995c6ba5d9ab78c906ff2c7d320e46ea122f1b73))
+
 ## v0.1.227 (2022-02-12)
 ### Feature
 * **rct_power:** Support display brightness ([`533954a`](https://github.com/dominikkarall/fhempy/commit/533954ac61b9fa84ce07a1edc692c712ff3d2a70))
