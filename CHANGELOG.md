@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.232 (2022-02-12)
+### Fix
+* **rct_power:** Fix set *_soc_target ([`f867b78`](https://github.com/dominikkarall/fhempy/commit/f867b7882ea37441e91ee0ace3760e3f74720946))
+* **meross:** Remove stopped state ([`450fbf4`](https://github.com/dominikkarall/fhempy/commit/450fbf4ec7d412a08e86c8173ce0933212fdd945))
+
 ## v0.1.231 (2022-02-12)
 ### Feature
 * **rct_power:** Further set functions ([`27812d0`](https://github.com/dominikkarall/fhempy/commit/27812d066ee58689aab681b066180705f5805b5d))
