@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.235 (2022-02-13)
+### Feature
+* **fhempy:** Add fusionsolar ([`a449c5e`](https://github.com/dominikkarall/fhempy/commit/a449c5e22b632f8a486a9d17a7e5dc8c7707cda6))
+* **rct_power:** Support max_(dis)charge_current ([`0612cae`](https://github.com/dominikkarall/fhempy/commit/0612cae475e10e54da7f428cd14f104fcc267e47))
+* **fusionsolar:** Get data from fusionsolar kiosk ([`85f1a1f`](https://github.com/dominikkarall/fhempy/commit/85f1a1fc3dc98c21ecaca66a70ef5950531b8266))
+* **fhempy:** No more BETA ([`bac69fc`](https://github.com/dominikkarall/fhempy/commit/bac69fc659dbcc5224d907d867bc5d7424eae278))
+
 ## v0.1.198 (2022-02-13)
 
 
