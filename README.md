@@ -4,7 +4,7 @@
 [![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
-# fhempy (BETA)
+# fhempy
 
 fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.7 or higher is required, therefore I recommend using buster.
 
