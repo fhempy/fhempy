@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.233 (2022-02-13)
+### Feature
+* **rct_power:** Support disable/update_readings ([`f511879`](https://github.com/dominikkarall/fhempy/commit/f51187962b5357406e97fabe24e7203d85faaa2f))
+
 ## v0.1.232 (2022-02-12)
 ### Fix
 * **rct_power:** Fix set *_soc_target ([`f867b78`](https://github.com/dominikkarall/fhempy/commit/f867b7882ea37441e91ee0ace3760e3f74720946))
