@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.234 (2022-02-13)
+### Fix
+* **rct_power:** Use textfield for set *_soc_target ([`ba9a923`](https://github.com/dominikkarall/fhempy/commit/ba9a92370159b35c33f87778c977173a5915f941))
+
 ## v0.1.233 (2022-02-13)
 ### Feature
 * **rct_power:** Support disable/update_readings ([`f511879`](https://github.com/dominikkarall/fhempy/commit/f51187962b5357406e97fabe24e7203d85faaa2f))
