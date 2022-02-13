@@ -131,6 +131,20 @@ class rct_power(generic.FhemModule):
                 "function": "set_rct_write",
                 "function_param": 0x97997C93,
             },
+            "max_discharge_current": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "help": "Decimal values from 0.00 - 20.00 are allowed.",
+                "function": "set_rct_write",
+                "function_param": 0xDF0A735C,
+            },
+            "max_charge_current": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "help": "Decimal values from 0.00 - 20.00 are allowed.",
+                "function": "set_rct_write",
+                "function_param": 0x1E5FCA70,
+            },
         }
         self.set_set_config(set_config)
 

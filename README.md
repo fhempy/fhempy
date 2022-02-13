@@ -4,7 +4,7 @@
 [![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
-# fhempy (BETA)
+# fhempy
 
 fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.7 or higher is required, therefore I recommend using buster.
 
@@ -22,6 +22,7 @@ This repository includes following working modules:
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat|
 |[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management|
+|[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve values from FusionSolar Kiosk|
 |gfprobt|Control GF Pro Bluetooth irrigation control|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |helloworld|Hello World example for developers to start writing their own module|
