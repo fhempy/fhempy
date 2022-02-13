@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.198 (2022-02-13)
+
+
 ## v0.1.197 (2022-02-13)
 ### Feature
 * **fhempy:** Add fusionsolar ([`a449c5e`](https://github.com/dominikkarall/fhempy/commit/a449c5e22b632f8a486a9d17a7e5dc8c7707cda6))
