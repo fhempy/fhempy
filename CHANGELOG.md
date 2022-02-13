@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.236 (2022-02-13)
+### Fix
+* **fusionsolar:** Fix usage ([`76e4858`](https://github.com/dominikkarall/fhempy/commit/76e485828b35179dd5bd8de11700c7e2e3e806c0))
+
 ## v0.1.235 (2022-02-13)
 ### Feature
 * **fhempy:** Add fusionsolar ([`a449c5e`](https://github.com/dominikkarall/fhempy/commit/a449c5e22b632f8a486a9d17a7e5dc8c7707cda6))
