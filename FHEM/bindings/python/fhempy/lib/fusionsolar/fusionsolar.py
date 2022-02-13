@@ -16,7 +16,7 @@ class fusionsolar(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        if len(args) != 3 and len(argsh) != 1:
+        if len(args) != 3 or len(argsh) != 1:
             return "Usage: define my_solar fhempy fusionsolar KIOSKURL"
         self._url = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
