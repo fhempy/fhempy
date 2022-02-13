@@ -31,11 +31,22 @@ class rct_power(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+        self.update_loop_task = None
+
         attr_config = {
             "interval": {
                 "default": 10,
                 "format": "int",
                 "help": "Poll interval in seconds, default is 10s.",
+            },
+            "disable": {
+                "default": 0,
+                "format": "int",
+                "options": "0,1",
+            },
+            "update_readings": {
+                "default": "on_change",
+                "options": "always,on_change",
             },
             "default_device_readings": {
                 "default": "on",
@@ -145,14 +156,25 @@ class rct_power(generic.FhemModule):
             self.rctclient.async_send_data(params["function_param"], params["value"])
         )
 
+    async def set_attr_disable(self, hash):
+        if self._attr_disable == 1:
+            self.cancel_async_task(self.update_loop_task)
+            self.update_loop_task = None
+        else:
+            if self.update_loop_task is not None:
+                self.update_loop_task = self.create_async_task(self.update_loop())
+
     async def setup_rct(self):
         self.rctclient = RctPowerApiClient(
             self.logger, hostname=self._hostname, port=self._port
         )
-        self.create_async_task(self.update_loop())
+        self.update_loop_task = self.create_async_task(self.update_loop())
 
     async def update_loop(self):
         while True:
+            if self._attr_disable == 1:
+                return
+
             try:
                 await self.update_readings()
             except Exception:
@@ -205,20 +227,20 @@ class rct_power(generic.FhemModule):
                         ).get("format", ".2f")
                         value = f"{value:{format}}"
 
-                    await fhem.readingsBulkUpdateIfChanged(
+                    await self.readingsBulkUpdate(
                         self.hash,
                         reading,
                         value,
                     )
                 else:
                     if self._attr_error_reading == "on":
-                        await fhem.readingsBulkUpdateIfChanged(
+                        await self.readingsBulkUpdate(
                             self.hash,
                             "error",
                             f"{reading} failed with {response[object_id].cause}",
                         )
                     else:
-                        await fhem.readingsBulkUpdateIfChanged(
+                        await self.readingsBulkUpdate(
                             self.hash,
                             reading,
                             response[object_id].cause,
@@ -230,3 +252,9 @@ class rct_power(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(hash, "state", "connection error")
             self.logger.exception("Failed to update_readings")
         await fhem.readingsEndUpdate(self.hash, 1)
+
+    async def readingsBulkUpdate(self, hash, reading, value):
+        if self._attr_update_readings == "always":
+            await fhem.readingsBulkUpdate(hash, reading, value)
+        else:
+            await fhem.readingsBulkUpdateIfChanged(hash, reading, value)
