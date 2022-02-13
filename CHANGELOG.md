@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.237 (2022-02-13)
+### Feature
+* **ble_monitor:** Prepare ble_monitor ([`c6098fa`](https://github.com/dominikkarall/fhempy/commit/c6098faf16fe140631c470a1e72d3def6eeae07d))
+
 ## v0.1.236 (2022-02-13)
 ### Fix
 * **fusionsolar:** Fix usage ([`76e4858`](https://github.com/dominikkarall/fhempy/commit/76e485828b35179dd5bd8de11700c7e2e3e806c0))
