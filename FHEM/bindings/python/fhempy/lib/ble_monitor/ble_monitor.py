@@ -62,7 +62,14 @@ class ble_monitor(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
-        attr_config = {"hci_interface": {"default": "0", "options": ",".join(list(map(str,BT_INTERFACES))), "format": "int", "help": f"{BT_INTERFACES}"}}
+        attr_config = {
+            "hci_interface": {
+                "default": "0",
+                "options": ",".join(list(map(str, BT_INTERFACES))),
+                "format": "int",
+                "help": f"{BT_INTERFACES}",
+            }
+        }
         self.set_attr_config(attr_config)
 
     # FHEM FUNCTION
@@ -128,7 +135,9 @@ class ble_monitor(generic.FhemModule):
                 measured = await self.blemonitor.dataqueue["measuring"].async_q.get()
                 await fhem.readingsBeginUpdate(self.hash)
                 for reading in measured:
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, reading, measured[reading])
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, reading, measured[reading]
+                    )
                 await fhem.readingsEndUpdate(self.hash, 1)
             except Exception:
                 self.logger.execption("Failed to update_measuring_readings")
@@ -140,7 +149,9 @@ class ble_monitor(generic.FhemModule):
                 tracker = await self.blemonitor.dataqueue["tracker"].async_q.get()
                 await fhem.readingsBeginUpdate(self.hash)
                 for reading in tracker:
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, reading, tracker[reading])
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, reading, tracker[reading]
+                    )
                 await fhem.readingsEndUpdate(self.hash, 1)
             except Exception:
                 self.logger.execption("Failed to update_tracker_readings")
