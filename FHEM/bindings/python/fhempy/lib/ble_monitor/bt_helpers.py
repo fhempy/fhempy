@@ -171,7 +171,7 @@ else:
     DEFAULT_BT_INTERFACE = "disable"
     DEFAULT_HCI_INTERFACE = "disable"
     BT_MULTI_SELECT = {}
-    _LOGGER.debug(
+    _LOGGER.error(
         "No Bluetooth LE adapter found. Make sure Bluetooth is installed on your system."
     )
 BT_MULTI_SELECT["disable"] = "Don't use Bluetooth adapter"
