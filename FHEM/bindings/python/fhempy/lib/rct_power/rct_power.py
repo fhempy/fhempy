@@ -62,9 +62,9 @@ class rct_power(generic.FhemModule):
                 "help": (
                     "Add further objects/readings which should be retrieved<br>"
                     + "Find details about possible objects here:<br>"
-                    + '<a href="https://github.com/svalouch/python-rctclient/'
-                    + "blob/67b0f7bc5a8fb6d8b8e15d68d4a24b1d9fb93e48/src/"
-                    + 'rctclient/registry.py#L202">Object Infos</a><br><br>'
+                    + '<a href="https://rctclient.readthedocs.io/en/latest/'
+                    + "inverter_registry.html"
+                    + '">Object Infos</a><br><br>'
                     + "Example: battery.bms_sn,battery.bms_power_version"
                 ),
             },
@@ -144,6 +144,13 @@ class rct_power(generic.FhemModule):
                 "help": "Decimal values from 0.00 - 20.00 are allowed.",
                 "function": "set_rct_write",
                 "function_param": 0x1E5FCA70,
+            },
+            "max_power_ac": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "help": "Decimal values from 0 - 10000 are allowed.",
+                "function": "set_rct_write",
+                "function_param": 0x9A67600D,
             },
         }
         self.set_set_config(set_config)

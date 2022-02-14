@@ -41,7 +41,7 @@ DEFAULT_DISCOVERY = True
 DEFAULT_RESTORE_STATE = False
 DEFAULT_DEVICE_MAC = ""
 DEFAULT_DEVICE_UUID = ""
-DEFAULT_DEVICE_ENCRYPTION_KEY = ""
+DEFAULT_DEVICE_ENCRYPTION_KEY = None
 DEFAULT_DEVICE_DECIMALS = "default"
 DEFAULT_DEVICE_USE_MEDIAN = "default"
 DEFAULT_DEVICE_RESTORE_STATE = "default"
@@ -51,6 +51,12 @@ DEFAULT_DEVICE_TRACKER_CONSIDER_HOME = 180
 DEFAULT_DEVICE_TRACK = False
 DEFAULT_DEVICE_DELETE_DEVICE = False
 
+# regex constants for configuration schema
+MAC_REGEX = "(?i)^(?:[0-9A-F]{2}[:]){5}(?:[0-9A-F]{2})$"
+# MiBeacon V2/V3 uses 24 character long key
+AES128KEY24_REGEX = "(?i)^[A-F0-9]{24}$"
+# MiBeacon V4/V5 uses 32 character long key
+AES128KEY32_REGEX = "(?i)^[A-F0-9]{32}$"
 
 # Dictionary with supported sensors
 # Format {device: [averaging sensor list], [instantly updating sensor list],[binary sensor list]}:

@@ -468,7 +468,7 @@ async def async_main():
         elif o in ("-i", "--ip"):
             ip = a
         elif o in ("-p", "--port"):
-            port = a
+            port = int(a)
         elif o in ("-l", "--local"):
             local = True
         elif o in ("-d", "--debug"):
