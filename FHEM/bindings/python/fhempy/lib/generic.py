@@ -90,7 +90,7 @@ class FhemModule:
         for key in self._conf_set:
             if "help" in self._conf_set[key]:
                 js_set_conf[key] = {}
-                js_set_conf[key]["help"] = self._conf_set[key]["help"].replace(
+                js_set_conf[key]["help"] = self._conf_set[key]["help"].replace("'", '"').replace(
                     '"', '\\"'
                 )
         ret = ret.replace(
@@ -101,7 +101,7 @@ class FhemModule:
         for key in self._conf_attr:
             if "help" in self._conf_attr[key]:
                 js_attr_conf[key] = {}
-                js_attr_conf[key]["help"] = self._conf_attr[key]["help"].replace(
+                js_attr_conf[key]["help"] = self._conf_attr[key]["help"].replace("'", '"').replace(
                     '"', '\\"'
                 )
         ret = ret.replace(
