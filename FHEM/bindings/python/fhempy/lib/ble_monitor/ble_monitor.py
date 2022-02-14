@@ -5,7 +5,7 @@ from fhempy.lib.ble_monitor.bt_helpers import BT_INTERFACES
 from .. import generic
 
 
-class miscale(generic.FhemModule):
+class ble_monitor(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 

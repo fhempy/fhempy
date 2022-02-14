@@ -47,7 +47,7 @@ class BLEmonitor:
     def getInstance(logger):
         """Static access method."""
         if BLEmonitor.__instance is None:
-            BLEmonitor(logger)
+            BLEmonitor.__instance = BLEmonitor(logger)
         return BLEmonitor.__instance
 
     def __init__(self, logger):
@@ -77,6 +77,7 @@ class BLEmonitor:
         }
         self.dumpthread = None
         self.fhem_devices = {}
+        self.receive_from_queues()
 
     def receive_from_queues(self):
         self.task_measuring = asyncio.create_task(self.receive_from_measuring())
@@ -85,7 +86,7 @@ class BLEmonitor:
     async def receive_from_measuring(self):
         while True:
             try:
-                measuring = await self.blemonitor.dataqueue["measuring"].async_q.get()
+                measuring = await self.dataqueue["measuring"].async_q.get()
                 if "mac" in measuring:
                     await self.fhem_devices[measuring["mac"].lower()].received_data(
                         measuring
@@ -97,7 +98,7 @@ class BLEmonitor:
     async def receive_from_tracker(self):
         while True:
             try:
-                tracker = await self.blemonitor.dataqueue["tracker"].async_q.get()
+                tracker = await self.dataqueue["tracker"].async_q.get()
                 if "mac" in tracker:
                     await self.fhem_devices[tracker["mac"].lower()].received_data(
                         tracker
