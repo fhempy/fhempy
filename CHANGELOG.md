@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.238 (2022-02-14)
+### Feature
+* **ble_monitor:** First working release ([`24eb78e`](https://github.com/dominikkarall/fhempy/commit/24eb78e3328bea123a1c17c75d404373ef526a9a))
+* **rct_power:** Support max_power_ac ([`f4f6d8c`](https://github.com/dominikkarall/fhempy/commit/f4f6d8c89792ed3c4e8e2b84a0dc4d92f0a1081f))
+
+### Fix
+* **ble_monitor:** Fix codestyle ([`9c8e691`](https://github.com/dominikkarall/fhempy/commit/9c8e6919fbbe8e8aa0e811ca28d160e9ba4a664c))
+* **fhempy:** Do not call set_attr on define ([`f32f12f`](https://github.com/dominikkarall/fhempy/commit/f32f12ff173b410492c4184b48085373046163e1))
+* **fhempy:** Fix port parameter ([`1f55020`](https://github.com/dominikkarall/fhempy/commit/1f5502006678b2161fd6ee7393541bd5a3f91a88))
+* **fhempy:** Fix quotes ([`934a344`](https://github.com/dominikkarall/fhempy/commit/934a344d5cfc10479799e73434bf6bf8440be466))
+
 ## v0.1.237 (2022-02-13)
 ### Feature
 * **ble_monitor:** Prepare ble_monitor ([`c6098fa`](https://github.com/dominikkarall/fhempy/commit/c6098faf16fe140631c470a1e72d3def6eeae07d))
