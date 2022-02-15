@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from fhempy.lib import fhem
 from fhempy.lib.ble_monitor.blemonitor import BLEmonitor
 from fhempy.lib.ble_monitor.bt_helpers import BT_INTERFACES
@@ -47,6 +47,8 @@ class miscale(generic.FhemModule):
         self.blemonitor = BLEmonitor.getInstance(self.logger)
         self.blemonitor.register_device(self)
 
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "ready", 1)
+
     def mac(self):
         return self.mac_addr
 
@@ -77,10 +79,10 @@ class miscale(generic.FhemModule):
 
             await fhem.readingsEndUpdate(self.hash, 1)
         except Exception:
-            self.logger.execption("Failed to update readings")
+            self.logger.exception("Failed to update readings")
 
     async def update_scores(self, data):
-        if self._attr_height == 0 or self._attr_age == "" or self._attr_gender == "":
+        if self._attr_height == 0 or self._attr_birthday == "" or self._attr_gender == "":
             await fhem.readingsBulkUpdate(
                 self.hash, "state", "attr weight/birthday/gender missing"
             )
@@ -172,8 +174,8 @@ class miscale(generic.FhemModule):
         )
 
     async def set_attr_hci_interface(self, hash):
-        self.unregister_device(self)
-        self.register_device(self)
+        self.blemonitor.unregister_device(self)
+        self.blemonitor.register_device(self)
 
     async def Undefine(self, hash):
         if self.blemonitor:

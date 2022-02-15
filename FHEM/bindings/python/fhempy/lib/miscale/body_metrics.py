@@ -197,9 +197,9 @@ class bodyMetrics:
             self.weight * (self.scales.getFatPercentageScale()[2] / 100)
         )
         if mass < 0:
-            return {"type": "to_gain", "mass": mass * -1}
+            return {"type": "to_gain", "mass": mass}
         else:
-            return {"type": "to_lose", "mass": mass}
+            return {"type": "to_lose", "mass": mass * -1}
 
     # Get protetin percentage (warn: guessed formula)
     def getProteinPercentage(self, orig=True):
