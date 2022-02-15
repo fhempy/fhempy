@@ -46,11 +46,11 @@ class ble_monitor(generic.FhemModule):
                 )
             await fhem.readingsEndUpdate(self.hash, 1)
         except Exception:
-            self.logger.execption("Failed to update readings")
+            self.logger.exception("Failed to update readings")
 
     async def set_attr_hci_interface(self, hash):
-        self.unregister_device(self)
-        self.register_device(self)
+        self.blemonitor.unregister_device(self)
+        self.blemonitor.register_device(self)
 
     async def Undefine(self, hash):
         if self.blemonitor:

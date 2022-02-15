@@ -87,7 +87,7 @@ class BLEmonitor:
         while True:
             try:
                 measuring = await self.dataqueue["measuring"].async_q.get()
-                if "mac" in measuring and measuring['mac'] in self.fhem_devices:
+                if "mac" in measuring and measuring['mac'].lower() in self.fhem_devices:
                     for fhem_dev in self.fhem_devices[measuring['mac'].lower()]:
                         await fhem_dev.received_data(
                             measuring
@@ -100,7 +100,7 @@ class BLEmonitor:
         while True:
             try:
                 tracker = await self.dataqueue["tracker"].async_q.get()
-                if "mac" in tracker and tracker['mac'] in self.fhem_devices:
+                if "mac" in tracker and tracker['mac'].lower() in self.fhem_devices:
                     for fhem_dev in self.fhem_devices[tracker['mac'].lower()]:
                         await fhem_dev.received_data(
                             tracker
