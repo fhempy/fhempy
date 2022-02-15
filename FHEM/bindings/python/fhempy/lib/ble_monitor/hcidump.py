@@ -267,7 +267,7 @@ class HCIdump(Thread):
         self._event_loop.close()
         self.logger.debug("HCIdump thread: Run finished")
 
-    def join(self, timeout=10):
+    def join(self, timeout=1):
         """Join HCIdump thread."""
         self.logger.debug("HCIdump thread: joining")
         self._joining = True
