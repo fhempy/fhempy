@@ -40,7 +40,7 @@ class miscale(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
-            return "Usage: define my_miscale fhempy ble_monitor 11:22:33:44:55:66"
+            return "Usage: define my_miscale fhempy miscale 11:22:33:44:55:66"
 
         self.mac_addr = args[3]
 
