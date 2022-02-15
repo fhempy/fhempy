@@ -63,9 +63,9 @@ class BLEmonitor:
             CONF_ACTIVE_SCAN: DEFAULT_ACTIVE_SCAN,
             CONF_BATT_ENTITIES: DEFAULT_BATT_ENTITIES,
             CONF_BT_AUTO_RESTART: DEFAULT_BT_AUTO_RESTART,
-            CONF_BT_INTERFACE: [DEFAULT_BT_INTERFACE],
+            CONF_BT_INTERFACE: [],
             CONF_DECIMALS: DEFAULT_DECIMALS,
-            CONF_HCI_INTERFACE: [DEFAULT_HCI_INTERFACE],
+            CONF_HCI_INTERFACE: [],
             CONF_GATEWAY_ID: "",
             CONF_PERIOD: DEFAULT_PERIOD,
             CONF_LOG_SPIKES: DEFAULT_LOG_SPIKES,
@@ -87,10 +87,11 @@ class BLEmonitor:
         while True:
             try:
                 measuring = await self.dataqueue["measuring"].async_q.get()
-                if "mac" in measuring:
-                    await self.fhem_devices[measuring["mac"].lower()].received_data(
-                        measuring
-                    )
+                if "mac" in measuring and measuring['mac'] in self.fhem_devices:
+                    for fhem_dev in self.fhem_devices[measuring['mac'].lower()]:
+                        await fhem_dev.received_data(
+                            measuring
+                        )
             except Exception:
                 self.logger.exception("Failed to receive_from_measuring")
                 asyncio.sleep(10)
@@ -99,27 +100,42 @@ class BLEmonitor:
         while True:
             try:
                 tracker = await self.dataqueue["tracker"].async_q.get()
-                if "mac" in tracker:
-                    await self.fhem_devices[tracker["mac"].lower()].received_data(
-                        tracker
-                    )
+                if "mac" in tracker and tracker['mac'] in self.fhem_devices:
+                    for fhem_dev in self.fhem_devices[tracker['mac'].lower()]:
+                        await fhem_dev.received_data(
+                            tracker
+                        )
             except Exception:
                 self.logger.exception("Failed to receive_from_tracker")
                 asyncio.sleep(10)
 
     def register_device(self, fhemdevice):
-        self.fhem_devices[fhemdevice.mac().replace(":", "").lower()] = fhemdevice
+        simple_mac = fhemdevice.mac().replace(":", "").lower()
+        if simple_mac not in self.fhem_devices:
+            self.fhem_devices[simple_mac] = []
+        self.fhem_devices[simple_mac].append(fhemdevice)
         self.config[CONF_DEVICES].append({CONF_MAC: fhemdevice.mac()})
-        self.add_hci_interface(fhemdevice.hci())
+
+        self.update_hci_interface(fhemdevice.hci())
+
         self.restart()
 
-    def add_hci_interface(self, intf):
-        self.config[CONF_HCI_INTERFACE].append(intf)
-        self.config[CONF_BT_INTERFACE].append(BT_INTERFACES[intf])
+    def update_hci_interface(self, intf):
+        self.config[CONF_HCI_INTERFACE] = []
+        self.config[CONF_BT_INTERFACE]=[]
+        for fhem_mac in self.fhem_devices:
+            for fhem_dev in self.fhem_devices[fhem_mac]:
+                self.config[CONF_HCI_INTERFACE].append(fhem_dev.hci())
+                self.config[CONF_BT_INTERFACE].append(BT_INTERFACES[fhem_dev.hci()])
+        
 
     def unregister_device(self, fhemdevice):
-        del self.fhem_devices[fhemdevice.mac().replace(":", "").lower()]
+        simple_mac = fhemdevice.mac().replace(":", "").lower()
+        self.fhem_devices[simple_mac].remove(fhemdevice)
         self.config[CONF_DEVICES].remove({CONF_MAC: fhemdevice.mac()})
+
+        self.update_hci_interface(fhemdevice.hci())
+        
         self.restart()
 
     def shutdown_handler(self, event):
