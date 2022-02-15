@@ -1,4 +1,3 @@
-
 from fhempy.lib import fhem
 from fhempy.lib.ble_monitor.blemonitor import BLEmonitor
 from fhempy.lib.ble_monitor.bt_helpers import BT_INTERFACES
@@ -52,9 +51,6 @@ class ble_monitor(generic.FhemModule):
     async def set_attr_hci_interface(self, hash):
         self.unregister_device(self)
         self.register_device(self)
-
-    async def restart_blemonitor(self):
-        self.blemonitor.restart()
 
     async def Undefine(self, hash):
         if self.blemonitor:
