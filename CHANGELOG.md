@@ -2,6 +2,22 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.239 (2022-02-15)
+### Feature
+* **fhempy:** Add ble_monitor, miscale ([`819e678`](https://github.com/dominikkarall/fhempy/commit/819e6789a2d141287daa6f6a10b865013f27c5ce))
+* **miscale:** Support miscale ([`b9dc4d6`](https://github.com/dominikkarall/fhempy/commit/b9dc4d698d9df2dc88e7fb888df3157ffd9d6509))
+
+### Fix
+* **miscale:** Working version ([`e30988a`](https://github.com/dominikkarall/fhempy/commit/e30988adc9e2e488617f93b2441bd9e3cfd38abe))
+* **ble_monitor:** Working again ([`5399399`](https://github.com/dominikkarall/fhempy/commit/5399399b8ad45350d83a52dc74ef8343f6bbeba1))
+* **miscale:** Fix usage ([`2492790`](https://github.com/dominikkarall/fhempy/commit/2492790f803f5455403048dd3cfa89e6a2deb1d5))
+* **fhempy:** Fix readme processing ([`df9d48d`](https://github.com/dominikkarall/fhempy/commit/df9d48d1055562627c2492335ce28bba73abcad3))
+* **ble_monitor:** Update readme ([`dc82d3d`](https://github.com/dominikkarall/fhempy/commit/dc82d3d9d9e88ec1286cdbb4ba1d4ad0ae6be025))
+* **ble_monitor:** Remove unneeded function ([`206d62e`](https://github.com/dominikkarall/fhempy/commit/206d62ec888b15564750908b029ca52ac426cbc4))
+* **ble_monitor:** Support more devs with same mac ([`2c18861`](https://github.com/dominikkarall/fhempy/commit/2c18861934fa83908bbefae0901922a98899ffe5))
+* **ble_monitor:** Make it working ([`dec3186`](https://github.com/dominikkarall/fhempy/commit/dec31860d40b545cb3b6ad328c08e0344e858d44))
+* **ble_monitor:** Code structure changes ([`aa6e14f`](https://github.com/dominikkarall/fhempy/commit/aa6e14f4b673d98b998df761678e3cfa995eb0da))
+
 ## v0.1.238 (2022-02-14)
 ### Feature
 * **ble_monitor:** First working release ([`24eb78e`](https://github.com/dominikkarall/fhempy/commit/24eb78e3328bea123a1c17c75d404373ef526a9a))
