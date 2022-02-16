@@ -41,6 +41,12 @@ class xiaomi_gateway3(generic.FhemModule):
         await super().Define(hash, args, argsh)
         self.hash = hash
 
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        self.set_attr_config(attr_conf)
+
+        if self._attr_disable == 1:
+            return
+
         if len(args) < 5:
             return "Usage: define devname fhempy xiaomi_gateway3 <IP> <TOKEN>"
 
@@ -89,6 +95,13 @@ class xiaomi_gateway3(generic.FhemModule):
         self.create_async_task(update_zigbee_firmware(self.host, False))
         await fhem.readingsSingleUpdateIfChanged(hash, "zigbee2mqtt", "off", 1)
 
+    async def set_attr_disable(self, hash):
+        if self._attr_disable and self.gw is not None:
+            self.gw.stop()
+            self.cancel_async_task(self.is_connected_task)
+        else:
+            self.create_async_task(self.connect_gw())
+
     async def register_device(self, fhempy_device, handler):
         did = fhempy_device.did
         self.fhempy_devices[did] = fhempy_device
@@ -113,7 +126,7 @@ class xiaomi_gateway3(generic.FhemModule):
             for domain in DOMAINS:
                 self.gw.add_setup(domain, self.create_device)
         # start check task
-        self.create_async_task(self.is_connected())
+        self.is_connected_task = self.create_async_task(self.is_connected())
         # run gateway
         self.gw.start()
 
@@ -183,6 +196,9 @@ class FhempyGateway:
 
     def start(self):
         self.gw.start()
+
+    def stop(self):
+        self.gw.stop()
 
     async def is_connected(self):
         return await self.gw.check_port(23)
