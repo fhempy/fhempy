@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.241 (2022-02-16)
+### Fix
+* **xiaomi_gateway3:** Fix disable ([`591612d`](https://github.com/dominikkarall/fhempy/commit/591612de340b4ed7e0162e441dddbc817dcb7086))
+
 ## v0.1.240 (2022-02-16)
 ### Fix
 * **xiaomi_gateway3:** Support disable ([`1b2a59c`](https://github.com/dominikkarall/fhempy/commit/1b2a59c7488c7c3e0047e8a3b3a2433c94e81f16))
