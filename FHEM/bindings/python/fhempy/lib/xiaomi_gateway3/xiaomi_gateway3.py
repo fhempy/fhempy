@@ -97,7 +97,7 @@ class xiaomi_gateway3(generic.FhemModule):
 
     async def set_attr_disable(self, hash):
         if self._attr_disable and self.gw is not None:
-            self.gw.stop()
+            await self.gw.stop()
             self.cancel_async_task(self.is_connected_task)
         else:
             self.create_async_task(self.connect_gw())
@@ -197,8 +197,8 @@ class FhempyGateway:
     def start(self):
         self.gw.start()
 
-    def stop(self):
-        self.gw.stop()
+    async def stop(self):
+        await self.gw.stop()
 
     async def is_connected(self):
         return await self.gw.check_port(23)
