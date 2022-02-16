@@ -32,6 +32,28 @@ class xiaomi_gateway3(generic.FhemModule):
         self.devices = {}
         self.fhempy_devices = {}
 
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        self.set_attr_config(attr_conf)
+
+        set_conf = {
+            "activate_zigbee2mqtt": {
+                "help": (
+                    "You need to install zigbee2mqtt aftewards<br>"
+                    "=> https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#2-installing<br>"
+                    "Set following lines in configuration.yaml<br>"
+                    " serial:<br>"
+                    "   port: tcp://GATEWAY_IP_ADDRESS:8888<br>"
+                    "   adapter: ezsp<br>"
+                    " mqtt:<br>"
+                    "   client_id: zigbee_pi<br>"
+                    "PLEASE CHECK THE LOG FILE AFTER CLICKING HERE, "
+                    "DO NOT DISCONNECT GATEWAY FROM POWER"
+                )
+            },
+            "deactivate_zigbee2mqtt": {},
+        }
+        self.set_set_config(set_conf)
+
     @property
     def gateway3(self):
         return self.gw.gateway3
@@ -40,9 +62,6 @@ class xiaomi_gateway3(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
-
-        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
-        self.set_attr_config(attr_conf)
 
         if self._attr_disable == 1:
             return
@@ -63,25 +82,6 @@ class xiaomi_gateway3(generic.FhemModule):
 
         self.host = args[3]
         self.token = args[4]
-
-        set_conf = {
-            "activate_zigbee2mqtt": {
-                "help": (
-                    "You need to install zigbee2mqtt aftewards<br>"
-                    "=> https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#2-installing<br>"
-                    "Set following lines in configuration.yaml<br>"
-                    " serial:<br>"
-                    "   port: tcp://GATEWAY_IP_ADDRESS:8888<br>"
-                    "   adapter: ezsp<br>"
-                    " mqtt:<br>"
-                    "   client_id: zigbee_pi<br>"
-                    "PLEASE CHECK THE LOG FILE AFTER CLICKING HERE, "
-                    "DO NOT DISCONNECT GATEWAY FROM POWER"
-                )
-            },
-            "deactivate_zigbee2mqtt": {},
-        }
-        self.set_set_config(set_conf)
 
         self.create_async_task(self.connect_gw())
 
