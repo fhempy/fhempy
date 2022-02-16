@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.240 (2022-02-16)
+### Fix
+* **xiaomi_gateway3:** Support disable ([`1b2a59c`](https://github.com/dominikkarall/fhempy/commit/1b2a59c7488c7c3e0047e8a3b3a2433c94e81f16))
+
 ## v0.1.239 (2022-02-15)
 ### Feature
 * **fhempy:** Add ble_monitor, miscale ([`819e678`](https://github.com/dominikkarall/fhempy/commit/819e6789a2d141287daa6f6a10b865013f27c5ce))
