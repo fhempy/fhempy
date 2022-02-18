@@ -17,10 +17,9 @@ class zigbee2mqtt(FhemModule):
         self.proc = None
         self._set_list = {"start": {}, "stop": {}, "restart": {}, "update": {}}
         self.set_set_config(self._set_list)
-        self._attr_list = {
-            "disable": {"default": "0", "options": "0,1", "format": "int"}
-        }
-        self.set_attr_config(self._attr_list)
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        self.set_attr_config(attr_conf)
+
         self.check_process_task = None
 
     # FHEM FUNCTION
@@ -153,7 +152,7 @@ class zigbee2mqtt(FhemModule):
                     "  server: 'mqtt://localhost'\n"
                     "  client_id: 'zigbee_pi'\n"
                     "serial:\n"
-                    "  port: /dev/ttyACM0\n"
+                    "  port: /dev/ttyUSB0\n"
                     "frontend:\n"
                     "  port: 8080\n"
                 )
