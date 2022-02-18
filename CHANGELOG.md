@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.245 (2022-02-18)
+### Fix
+* **zigbee2mqtt:** Fix weblink ([`ca6c105`](https://github.com/dominikkarall/fhempy/commit/ca6c105ed6140a7d308a69c5f98cf29abd0996ec))
+
 ## v0.1.244 (2022-02-18)
 ### Feature
 * **zigbee2mqtt:** First working release ([`8f9d26a`](https://github.com/dominikkarall/fhempy/commit/8f9d26a503966edef49950d62c2b26e3350fc531))
