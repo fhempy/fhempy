@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.244 (2022-02-18)
+### Feature
+* **zigbee2mqtt:** First working release ([`8f9d26a`](https://github.com/dominikkarall/fhempy/commit/8f9d26a503966edef49950d62c2b26e3350fc531))
+
+### Fix
+* **seatconnect:** Fix Seatconnect Login ([#67](https://github.com/dominikkarall/fhempy/issues/67)) ([`d67cce0`](https://github.com/dominikkarall/fhempy/commit/d67cce057f73e6e91f731fc2196abc14d0e8feef))
+* **zigbee2mqtt:** Fix restart ([`d36bea4`](https://github.com/dominikkarall/fhempy/commit/d36bea4249350ea493757406328602f1b8e7a400))
+
 ## v0.1.243 (2022-02-18)
 ### Feature
 * **zigbee2mqtt:** First release ([`ac1cd73`](https://github.com/dominikkarall/fhempy/commit/ac1cd73555f2edf0b0d34baa68e77a545377aa42))
