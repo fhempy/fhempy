@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import shutil
-import socket
+import netifaces
 import subprocess
 import os
 from git import Repo
@@ -240,10 +240,13 @@ class zigbee2mqtt(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
+        ip_list = [
+            netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
+            for iface in netifaces.interfaces()
+            if netifaces.AF_INET in netifaces.ifaddresses(iface) and iface != "lo"
+        ]
         await fhem.CommandDefine(
-            self.hash, "z2m_frontend weblink iframe http://" + local_ip + ":8080/"
+            self.hash, "z2m_frontend weblink iframe http://" + ip_list[0] + ":8080/"
         )
         await fhem.CommandAttr(
             self.hash,
