@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.243 (2022-02-18)
+### Feature
+* **zigbee2mqtt:** First release ([`ac1cd73`](https://github.com/dominikkarall/fhempy/commit/ac1cd73555f2edf0b0d34baa68e77a545377aa42))
+* **miio:** Update lib ([`828bcec`](https://github.com/dominikkarall/fhempy/commit/828bcec59e385d242cf1cf4c0c69c7e5dabcf44a))
+* **zigbee2mqtt:** Prepare zigbee2mqtt ([`9810678`](https://github.com/dominikkarall/fhempy/commit/98106780b9699a7be17ba713b79e188402d94c55))
+
+### Fix
+* **ring:** Fix Undefine? ([`c6d9d6a`](https://github.com/dominikkarall/fhempy/commit/c6d9d6af60297eba29800ccb8ce1df5e6114b5b1))
+
 ## v0.1.242 (2022-02-16)
 ### Fix
 * **xiaomi_gateway3:** Fix disable ([`16830d1`](https://github.com/dominikkarall/fhempy/commit/16830d1ae68a1da82cb1a7454d9bef6beb4c3947))
