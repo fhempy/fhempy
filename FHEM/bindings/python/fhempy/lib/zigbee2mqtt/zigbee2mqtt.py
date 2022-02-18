@@ -47,30 +47,58 @@ class zigbee2mqtt(FhemModule):
         await self.start_process()
 
     async def update_z2m(self):
-        current_directory = os.getcwd()
-        z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
+        try:
+            await fhem.readingsSingleUpdate(
+                self.hash, "update", "started, may take a few minutes", 1
+            )
+            current_directory = os.getcwd()
+            z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
 
-        await self.stop_process()
-        shutil.copytree(z2m_directory + "/data", z2m_directory + "/data-backup")
+            await self.stop_process()
+            try:
+                await utils.run_blocking(
+                    functools.partial(
+                        shutil.copytree,
+                        z2m_directory + "/data",
+                        z2m_directory + "/data-backup",
+                    )
+                )
+            except FileExistsError:
+                shutil.rmtree(z2m_directory + "/data-backup")
+                await utils.run_blocking(
+                    functools.partial(
+                        shutil.copytree,
+                        z2m_directory + "/data",
+                        z2m_directory + "/data-backup",
+                    )
+                )
 
-        rep = Repo(z2m_directory)
-        await utils.run_blocking(
-            functools.partial(rep.git.checkout, "HEAD", "--", "npm-shrinkwrap.json")
-        )
-        o = rep.remotes.origin
-        await utils.run_blocking(functools.partial(o.pull))
+            rep = Repo(z2m_directory)
+            await utils.run_blocking(
+                functools.partial(rep.git.checkout, "HEAD", "--", "npm-shrinkwrap.json")
+            )
+            o = rep.remotes.origin
+            await utils.run_blocking(functools.partial(o.pull))
 
-        await utils.run_blocking(
-            functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
-        )
+            await utils.run_blocking(
+                functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
+            )
 
-        source_folder = z2m_directory + "/data-backup"
-        destination_folder = z2m_directory + "/data"
-        for file_name in os.listdir(source_folder):
-            # construct full file path
-            source = source_folder + file_name
-            destination = destination_folder + file_name
-            shutil.copy(source, destination)
+            source_folder = z2m_directory + "/data-backup"
+            destination_folder = z2m_directory + "/data"
+            for file in os.listdir(source_folder):
+                file_path = os.path.join(source_folder, file)
+                if os.path.isfile(file_path):
+                    await utils.run_blocking(
+                        functools.partial(shutil.copy, file_path, destination_folder)
+                    )
+
+            await fhem.readingsSingleUpdate(self.hash, "update", "successful", 1)
+        except Exception:
+            self.logger.exception("Failed to update")
+            await fhem.readingsSingleUpdate(
+                self.hash, "update", "failed to update, check log", 1
+            )
 
     async def install_z2m(self):
         GIT_URL = "https://github.com/Koenkk/zigbee2mqtt.git"
