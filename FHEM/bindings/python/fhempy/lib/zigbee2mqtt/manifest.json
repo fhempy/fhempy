@@ -1,5 +1,6 @@
 {
   "requirements": [
-    "GitPython"
+    "GitPython",
+    "netifaces"
   ]
 }
