@@ -17,10 +17,10 @@ class zigbee2mqtt(FhemModule):
         self.proc = None
         self._set_list = {"start": {}, "stop": {}, "restart": {}, "update": {}}
         self.set_set_config(self._set_list)
-        self._attr_list = {
-            "disable": {"default": "0", "options": "0,1", "format": "int"}
-        }
-        self.set_attr_config(self._attr_list)
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        self.set_attr_config(attr_conf)
+
+        self.check_process_task = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -32,15 +32,15 @@ class zigbee2mqtt(FhemModule):
         self.create_async_task(self.run_z2m())
 
     async def run_z2m(self):
-        res = await self.install_z2m()
-        if res is False:
-            return
-
         res = await self.check_node_installation()
         if res is False:
             return
 
         res = await self.check_npm_installation()
+        if res is False:
+            return
+
+        res = await self.install_z2m()
         if res is False:
             return
 
@@ -152,7 +152,7 @@ class zigbee2mqtt(FhemModule):
                     "  server: 'mqtt://localhost'\n"
                     "  client_id: 'zigbee_pi'\n"
                     "serial:\n"
-                    "  port: /dev/ttyACM0\n"
+                    "  port: /dev/ttyUSB0\n"
                     "frontend:\n"
                     "  port: 8080\n"
                 )
@@ -210,7 +210,7 @@ class zigbee2mqtt(FhemModule):
         try:
             self.proc = subprocess.Popen(["npm", "start"], cwd=z2m_directory)
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
-            self.create_async_task(self.check_process())
+            self.check_process_task = self.create_async_task(self.check_process())
         except Exception:
             self.logger.exception("Failed to start zigbee2mqtt with npm start")
 
@@ -227,12 +227,16 @@ class zigbee2mqtt(FhemModule):
                         self.hash, "state", "error, check log file", 1
                     )
                     return
+                elif poll == 0:
+                    await self.start_process()
             await asyncio.sleep(10)
 
     async def stop_process(self):
         if self.proc:
             self.proc.terminate()
             self.proc = None
+        if self.check_process_task:
+            self.cancel_async_task(self.check_process_task)
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
