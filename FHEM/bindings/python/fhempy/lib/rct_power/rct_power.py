@@ -152,6 +152,13 @@ class rct_power(generic.FhemModule):
                 "function": "set_rct_write",
                 "function_param": 0x9A67600D,
             },
+            "min_soc_maint_charge": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "help": "Decimal values from 0.00 - 1.00 are allowed.",
+                "function": "set_rct_write",
+                "function_param": 0xBD3A23C3,
+            },
         }
         self.set_set_config(set_config)
 
