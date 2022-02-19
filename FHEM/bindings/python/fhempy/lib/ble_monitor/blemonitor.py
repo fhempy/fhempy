@@ -9,6 +9,7 @@ from fhempy.lib.ble_monitor.hcidump import HCIdump
 
 
 from .const import (
+    CONF_DEVICE_ENCRYPTION_KEY,
     CONF_DISCOVERY,
     CONF_MAC,
     CONF_DEVICES,
@@ -87,11 +88,9 @@ class BLEmonitor:
         while True:
             try:
                 measuring = await self.dataqueue["measuring"].async_q.get()
-                if "mac" in measuring and measuring['mac'].lower() in self.fhem_devices:
-                    for fhem_dev in self.fhem_devices[measuring['mac'].lower()]:
-                        await fhem_dev.received_data(
-                            measuring
-                        )
+                if "mac" in measuring and measuring["mac"].lower() in self.fhem_devices:
+                    for fhem_dev in self.fhem_devices[measuring["mac"].lower()]:
+                        await fhem_dev.received_data(measuring)
             except Exception:
                 self.logger.exception("Failed to receive_from_measuring")
                 asyncio.sleep(10)
@@ -100,11 +99,9 @@ class BLEmonitor:
         while True:
             try:
                 tracker = await self.dataqueue["tracker"].async_q.get()
-                if "mac" in tracker and tracker['mac'].lower() in self.fhem_devices:
-                    for fhem_dev in self.fhem_devices[tracker['mac'].lower()]:
-                        await fhem_dev.received_data(
-                            tracker
-                        )
+                if "mac" in tracker and tracker["mac"].lower() in self.fhem_devices:
+                    for fhem_dev in self.fhem_devices[tracker["mac"].lower()]:
+                        await fhem_dev.received_data(tracker)
             except Exception:
                 self.logger.exception("Failed to receive_from_tracker")
                 asyncio.sleep(10)
@@ -114,7 +111,12 @@ class BLEmonitor:
         if simple_mac not in self.fhem_devices:
             self.fhem_devices[simple_mac] = []
         self.fhem_devices[simple_mac].append(fhemdevice)
-        self.config[CONF_DEVICES].append({CONF_MAC: fhemdevice.mac()})
+        self.config[CONF_DEVICES].append(
+            {
+                CONF_MAC: fhemdevice.mac(),
+                CONF_DEVICE_ENCRYPTION_KEY: fhemdevice.encryption_key(),
+            }
+        )
 
         self.update_hci_interface(fhemdevice.hci())
 
@@ -122,20 +124,24 @@ class BLEmonitor:
 
     def update_hci_interface(self, intf):
         self.config[CONF_HCI_INTERFACE] = []
-        self.config[CONF_BT_INTERFACE]=[]
+        self.config[CONF_BT_INTERFACE] = []
         for fhem_mac in self.fhem_devices:
             for fhem_dev in self.fhem_devices[fhem_mac]:
                 self.config[CONF_HCI_INTERFACE].append(fhem_dev.hci())
                 self.config[CONF_BT_INTERFACE].append(BT_INTERFACES[fhem_dev.hci()])
-        
 
     def unregister_device(self, fhemdevice):
         simple_mac = fhemdevice.mac().replace(":", "").lower()
         self.fhem_devices[simple_mac].remove(fhemdevice)
-        self.config[CONF_DEVICES].remove({CONF_MAC: fhemdevice.mac()})
+        self.config[CONF_DEVICES].remove(
+            {
+                CONF_MAC: fhemdevice.mac(),
+                CONF_DEVICE_ENCRYPTION_KEY: fhemdevice.encryption_key(),
+            }
+        )
 
         self.update_hci_interface(fhemdevice.hci())
-        
+
         self.restart()
 
     def shutdown_handler(self, event):

@@ -16,7 +16,16 @@ class ble_monitor(generic.FhemModule):
                 "options": ",".join(list(map(str, BT_INTERFACES))),
                 "format": "int",
                 "help": f"{BT_INTERFACES}",
-            }
+                "function": "set_attr_generic",
+            },
+            "encryption_key": {
+                "default": "",
+                "help": (
+                    "Get encryption key (BLE KEY) "
+                    "via https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor"
+                ),
+                "function": "set_attr_generic",
+            },
         }
         self.set_attr_config(attr_config)
 
@@ -37,6 +46,11 @@ class ble_monitor(generic.FhemModule):
     def hci(self):
         return self._attr_hci_interface
 
+    def encryption_key(self):
+        if self._attr_encryption_key == "":
+            return None
+        return self._attr_encryption_key
+
     async def received_data(self, data):
         try:
             await fhem.readingsBeginUpdate(self.hash)
@@ -48,7 +62,7 @@ class ble_monitor(generic.FhemModule):
         except Exception:
             self.logger.exception("Failed to update readings")
 
-    async def set_attr_hci_interface(self, hash):
+    async def set_attr_generic(self, hash):
         self.blemonitor.unregister_device(self)
         self.blemonitor.register_device(self)
 
