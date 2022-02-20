@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.248 (2022-02-20)
+### Fix
+* **fhempy:** Replace \n in help text ([`7a02515`](https://github.com/dominikkarall/fhempy/commit/7a02515a1f73b8a6e4aaca23baa05d08090b59a5))
+* **miio:** Fixes for new library ([`edeab1f`](https://github.com/dominikkarall/fhempy/commit/edeab1f7ecc437fc017e474fb4304cf0f889d488))
+
 ## v0.1.247 (2022-02-20)
 ### Fix
 * **miscale:** Fix missing method ([`dbb4c3a`](https://github.com/dominikkarall/fhempy/commit/dbb4c3a29b6faccf9466ed261e0a913bdef0f574))
