@@ -55,6 +55,9 @@ class miscale(generic.FhemModule):
     def hci(self):
         return self._attr_hci_interface
 
+    def encryption_key(self):
+        return None
+
     async def received_data(self, data):
         try:
             if "type" in data and data["type"][0:8] != "Mi Scale":
@@ -82,7 +85,11 @@ class miscale(generic.FhemModule):
             self.logger.exception("Failed to update readings")
 
     async def update_scores(self, data):
-        if self._attr_height == 0 or self._attr_birthday == "" or self._attr_gender == "":
+        if (
+            self._attr_height == 0
+            or self._attr_birthday == ""
+            or self._attr_gender == ""
+        ):
             await fhem.readingsBulkUpdate(
                 self.hash, "state", "attr weight/birthday/gender missing"
             )
