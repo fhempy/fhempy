@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.247 (2022-02-20)
+### Fix
+* **miscale:** Fix missing method ([`dbb4c3a`](https://github.com/dominikkarall/fhempy/commit/dbb4c3a29b6faccf9466ed261e0a913bdef0f574))
+
 ## v0.1.246 (2022-02-19)
 ### Feature
 * **rct_power:** Add min_soc_maint_charge ([`7695d8e`](https://github.com/dominikkarall/fhempy/commit/7695d8eb1129d0fe0ca505c62f9b28b79cdbf1f0))
