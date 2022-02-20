@@ -90,8 +90,11 @@ class FhemModule:
         for key in self._conf_set:
             if "help" in self._conf_set[key]:
                 js_set_conf[key] = {}
-                js_set_conf[key]["help"] = self._conf_set[key]["help"].replace("'", '"').replace(
-                    '"', '\\"'
+                js_set_conf[key]["help"] = (
+                    self._conf_set[key]["help"]
+                    .replace("\n", "<br>")
+                    .replace("'", '"')
+                    .replace('"', '\\"')
                 )
         ret = ret.replace(
             "###SET_CMD_CONFIG_STRING###",
@@ -101,8 +104,11 @@ class FhemModule:
         for key in self._conf_attr:
             if "help" in self._conf_attr[key]:
                 js_attr_conf[key] = {}
-                js_attr_conf[key]["help"] = self._conf_attr[key]["help"].replace("'", '"').replace(
-                    '"', '\\"'
+                js_attr_conf[key]["help"] = (
+                    self._conf_attr[key]["help"]
+                    .replace("\n", "<br>")
+                    .replace("'", '"')
+                    .replace('"', '\\"')
                 )
         ret = ret.replace(
             "###ATTR_CONFIG_STRING###",
@@ -111,7 +117,12 @@ class FhemModule:
 
         # add readme as help
         if self.readme_str is not None:
-            ret = ret.replace("###README_HELP_STRING###", self.readme_str.replace("\\", "\\\\").replace("`", "\\`"))
+            ret = ret.replace(
+                "###README_HELP_STRING###",
+                self.readme_str.replace("\n", "<br>")
+                .replace("\\", "\\\\")
+                .replace("`", "\\`"),
+            )
 
         return ret
 
