@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.250 (2022-02-21)
+### Feature
+* **meross:** Support mod100 ([`6c0b7e2`](https://github.com/dominikkarall/fhempy/commit/6c0b7e2a94e29299d54104592d11acdad6c8fbcd))
+
 ## v0.1.249 (2022-02-21)
 ### Fix
 * **zigbee2mqtt:** Fix restart ([`54545c2`](https://github.com/dominikkarall/fhempy/commit/54545c2b1935c7cc7f14ec9961188101fe540846))
