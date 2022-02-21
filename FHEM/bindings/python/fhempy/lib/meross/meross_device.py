@@ -1,11 +1,12 @@
 import asyncio
 from fhempy.lib.generic import FhemModule
 from fhempy.lib import fhem, fhem_pythonbinding
-from meross_iot.model.enums import OnlineStatus, Namespace
+from meross_iot.model.enums import OnlineStatus, Namespace, SprayMode
 from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
 from meross_iot.controller.mixins.garage import GarageOpenerMixin
 from meross_iot.controller.mixins.light import LightMixin
 from meross_iot.controller.mixins.roller_shutter import RollerShutterTimerMixin
+from meross_iot.controller.mixins.spray import SprayMixin
 
 
 class meross_device:
@@ -57,7 +58,18 @@ class meross_device:
                     "options": "colorpicker,CT,2000,1,6500",
                 }
 
+        if isinstance(self._device, SprayMixin):
+            set_conf["intermittent"] = {}
+            set_conf["off"] = {}
+            set_conf["continuous"] = {}
+
         self.fhemdev.set_set_config(set_conf)
+
+    async def set_intermittent(self, hash, params):
+        await self._device.async_set_mode(SprayMode.INTERMITTENT)
+
+    async def set_continuous(self, hash, params):
+        await self._device.async_set_mode(SprayMode.CONTINUOUS)
 
     async def set_rgb(self, hash, params):
         rgb = params["value"]
@@ -78,7 +90,10 @@ class meross_device:
         await self._device.async_turn_on()
 
     async def set_off(self, hash, params):
-        await self._device.async_turn_off()
+        if isinstance(self._device, SprayMixin):
+            await self._device.async_set_mode(SprayMode.OFF)
+        else:
+            await self._device.async_turn_off()
 
     async def set_toggle(self, hash, params):
         await self._device.async_toggle()
@@ -177,6 +192,7 @@ class meross_device:
             self.hash, "online_status", self._device.online_status.name
         )
 
+        state_val = "unknown"
         if isinstance(self._device, ToggleXMixin) or isinstance(
             self._device, ToggleMixin
         ):
@@ -214,6 +230,15 @@ class meross_device:
             rgb_tuple = self._device.get_rgb_color()
             rgb = f"{rgb_tuple[0]:02x}{rgb_tuple[1]:02x}{rgb_tuple[2]:02x}"
             await fhem.readingsBulkUpdateIfChanged(self.hash, "rgb", rgb)
+
+        if isinstance(self._device, SprayMixin):
+            mode = self._device.get_current_mode()
+            if mode == SprayMode.CONTINUOUS:
+                state_val = "continuous"
+            elif mode == SprayMode.INTERMITTENT:
+                state_val = "intermittent"
+            elif mode == SprayMode.OFF:
+                state_val = "off"
 
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_val)
         await fhem.readingsEndUpdate(self.hash, 1)

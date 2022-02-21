@@ -35,6 +35,12 @@ class meross(FhemModule):
     async def set_off(self, hash, params):
         self.create_async_task(self.device.set_off(hash, params))
 
+    async def set_continuous(self, hash, params):
+        self.create_async_task(self.device.set_continuous(hash, params))
+
+    async def set_intermittent(self, hash, params):
+        self.create_async_task(self.device.set_continuous(hash, params))
+
     async def set_toggle(self, hash, params):
         self.create_async_task(self.device.set_toggle(hash, params))
 
