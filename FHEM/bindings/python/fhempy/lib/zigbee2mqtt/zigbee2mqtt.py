@@ -210,7 +210,8 @@ class zigbee2mqtt(FhemModule):
         try:
             self.proc = subprocess.Popen(["npm", "start"], cwd=z2m_directory)
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
-            self.check_process_task = self.create_async_task(self.check_process())
+            if self.check_process_task is None:
+                self.check_process_task = self.create_async_task(self.check_process())
         except Exception:
             self.logger.exception("Failed to start zigbee2mqtt with npm start")
 
@@ -226,8 +227,11 @@ class zigbee2mqtt(FhemModule):
                     await fhem.readingsSingleUpdate(
                         self.hash, "state", "error, check log file", 1
                     )
-                    return
+                    await asyncio.sleep(10)
+                    await self.start_process()
                 elif poll == 0:
+                    await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
+                    await asyncio.sleep(10)
                     await self.start_process()
             await asyncio.sleep(10)
 
@@ -237,6 +241,7 @@ class zigbee2mqtt(FhemModule):
             self.proc = None
         if self.check_process_task:
             self.cancel_async_task(self.check_process_task)
+            self.check_process_task = None
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
