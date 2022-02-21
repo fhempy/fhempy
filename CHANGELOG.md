@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.249 (2022-02-21)
+### Fix
+* **zigbee2mqtt:** Fix restart ([`54545c2`](https://github.com/dominikkarall/fhempy/commit/54545c2b1935c7cc7f14ec9961188101fe540846))
+
 ## v0.1.248 (2022-02-20)
 ### Fix
 * **fhempy:** Replace \n in help text ([`7a02515`](https://github.com/dominikkarall/fhempy/commit/7a02515a1f73b8a6e4aaca23baa05d08090b59a5))
