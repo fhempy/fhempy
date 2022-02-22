@@ -132,13 +132,19 @@ class BLEmonitor:
 
     def unregister_device(self, fhemdevice):
         simple_mac = fhemdevice.mac().replace(":", "").lower()
-        self.fhem_devices[simple_mac].remove(fhemdevice)
-        self.config[CONF_DEVICES].remove(
-            {
-                CONF_MAC: fhemdevice.mac(),
-                CONF_DEVICE_ENCRYPTION_KEY: fhemdevice.encryption_key(),
-            }
-        )
+        try:
+            self.fhem_devices[simple_mac].remove(fhemdevice)
+        except Exception:
+            pass
+        try:
+            self.config[CONF_DEVICES].remove(
+                {
+                    CONF_MAC: fhemdevice.mac(),
+                    CONF_DEVICE_ENCRYPTION_KEY: fhemdevice.encryption_key(),
+                }
+            )
+        except Exception:
+            pass
 
         self.update_hci_interface(fhemdevice.hci())
 
