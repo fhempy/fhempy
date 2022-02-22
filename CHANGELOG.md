@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.251 (2022-02-22)
+### Fix
+* **ble_monitor:** Fix possible unregister error ([`264f1fb`](https://github.com/dominikkarall/fhempy/commit/264f1fb50f55fa0296d9aeca1fe45c385d952a11))
+
 ## v0.1.250 (2022-02-21)
 ### Feature
 * **meross:** Support mod100 ([`6c0b7e2`](https://github.com/dominikkarall/fhempy/commit/6c0b7e2a94e29299d54104592d11acdad6c8fbcd))
