@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.252 (2022-02-23)
+### Fix
+* **miio:** Fix error when no helptext available ([`e22c55c`](https://github.com/dominikkarall/fhempy/commit/e22c55cf8654791895f6b220b349f1044a9c008b))
+
 ## v0.1.251 (2022-02-22)
 ### Fix
 * **ble_monitor:** Fix possible unregister error ([`264f1fb`](https://github.com/dominikkarall/fhempy/commit/264f1fb50f55fa0296d9aeca1fe45c385d952a11))
