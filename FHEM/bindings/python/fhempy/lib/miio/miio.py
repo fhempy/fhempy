@@ -74,7 +74,13 @@ class miio(generic.FhemModule):
                             self._set_list[dev_cmd]["options"] = "on,off"
 
             helptext = ""
-            if "help" in self._miio_device_class._device_group_commands[dev_cmd].kwargs:
+            if (
+                "help" in self._miio_device_class._device_group_commands[dev_cmd].kwargs
+                and self._miio_device_class._device_group_commands[dev_cmd].kwargs[
+                    "help"
+                ]
+                is not None
+            ):
                 helptext = self._miio_device_class._device_group_commands[
                     dev_cmd
                 ].kwargs["help"]
