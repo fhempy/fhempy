@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.254 (2022-03-02)
+### Fix
+* **tuya_cloud:** Fix logging ([`f384975`](https://github.com/dominikkarall/fhempy/commit/f38497553e662633c139b7825fe3c047b0bf932f))
+
 ## v0.1.253 (2022-03-02)
 ### Feature
 * **fhempy:** Support datetime for   readings ([`3a9cf74`](https://github.com/dominikkarall/fhempy/commit/3a9cf740b946d80bf9673a04d98c3ed21301bf03))
