@@ -27,7 +27,7 @@ class tuya_cloud(FhemModule):
 
         if args[3] == "setup":
             self.device = tuya_cloud_setup(self.logger, self)
-            if fhem.AttrVal(self.hash["NAME"], "verbose", "3") == "5":
+            if await fhem.AttrVal(self.hash["NAME"], "verbose", "3") == "5":
                 logging.getLogger("tuya_iot").setLevel(logging.DEBUG)
             else:
                 logging.getLogger("tuya_iot").setLevel(logging.ERROR)
