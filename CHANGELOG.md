@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.253 (2022-03-02)
+### Feature
+* **fhempy:** Support datetime for   readings ([`3a9cf74`](https://github.com/dominikkarall/fhempy/commit/3a9cf740b946d80bf9673a04d98c3ed21301bf03))
+
 ## v0.1.252 (2022-02-23)
 ### Fix
 * **miio:** Fix error when no helptext available ([`e22c55c`](https://github.com/dominikkarall/fhempy/commit/e22c55cf8654791895f6b220b349f1044a9c008b))
