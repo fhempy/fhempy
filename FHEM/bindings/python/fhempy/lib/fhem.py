@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+from datetime import datetime
 import json
 import logging
 import random
@@ -259,6 +260,8 @@ def convertValue(value):
         value = 1
     if value is False:
         value = 0
+    if isinstance(value, datetime):
+        value = value.strftime("%Y-%m-%d %H:%M:%S")
 
     return str(value)
 
