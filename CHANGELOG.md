@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.256 (2022-03-03)
+### Feature
+* **rct_power:** Support ext_power_reduction ([`3d72be9`](https://github.com/dominikkarall/fhempy/commit/3d72be98c9d6348413f32086aeea2c184b8516dc))
+
 ## v0.1.255 (2022-03-03)
 ### Fix
 * **fhempy:** Fix python version error handling ([`f9c1d89`](https://github.com/dominikkarall/fhempy/commit/f9c1d899ac312d3e70a5c4d3dffa21124f91d407))
