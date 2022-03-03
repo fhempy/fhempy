@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 import time
-from pathlib import Path
 from subprocess import PIPE, Popen
 
 logging.basicConfig(
@@ -19,12 +18,15 @@ if sys.hexversion < MIN_PYTHON_VERSION_HEX:
     logging.getLogger(__name__).error(
         "fhempy requires Python " + MIN_PYTHON_VERSION_STR
     )
-    logging.getLogger(__name__).error("You are running: " + sys.version)
+    logging.getLogger(__name__).error("You are running: " + sys.version.replace("\n",""))
     time.sleep(60)
+    logging.getLogger(__name__).error("Exiting now")
     sys.exit(1)
 
+# Python 3 can start here
+from pathlib import Path
 
-def is_virtual_env() -> bool:
+def is_virtual_env():
     """Return if we run in a virtual environment."""
     # Check supports venv && virtualenv
     return getattr(sys, "base_prefix", sys.prefix) != sys.prefix or hasattr(
@@ -32,7 +34,7 @@ def is_virtual_env() -> bool:
     )
 
 
-def is_docker_env() -> bool:
+def is_docker_env():
     """Return True if we run in a docker env."""
     return Path("/.dockerenv").exists()
 
@@ -52,13 +54,13 @@ def pip_kwargs(config_dir):
 
 
 def install_package(
-    package: str,
-    upgrade: bool = True,
-    target: [str] = None,
-    constraints: [str] = None,
-    find_links: [str] = None,
-    no_cache_dir: [bool] = False,
-) -> bool:
+    package,
+    upgrade,
+    target,
+    constraints,
+    find_links,
+    no_cache_dir,
+):
     """Install a package on PyPi. Accepts pip compatible package strings.
     Return boolean if install successful.
     """
@@ -84,7 +86,7 @@ def install_package(
         )
         return False
     else:
-        logging.getLogger(__name__).info(f"Successfully installed {package}")
+        logging.getLogger(__name__).info("Successfully installed " + package)
 
     return True
 
@@ -93,8 +95,8 @@ kwargs = pip_kwargs(None)
 
 try:
     import fhempy.lib.fhem_pythonbinding as fpb
-except ImportError as exc:
-    logging.getLogger(__name__).warning(f"Failed to load fhempy: {exc}")
+except ImportError:
+    logging.getLogger(__name__).exception("Failed to load fhempy")
     if install_package("fhempy>=0.1.12") == False:
         logging.getLogger(__name__).error("Failed to install fhempy, exit now...")
         time.sleep(60)
@@ -106,8 +108,8 @@ except ImportError as exc:
             logging.getLogger(__name__).error("Failed to import fhempy, exit now...")
             time.sleep(60)
             sys.exit(1)
-except Exception as exc:
-    logging.getLogger(__name__).exception(f"Failed to load fhempy: {exc}")
+except Exception:
+    logging.getLogger(__name__).exception("Failed to load fhempy")
     sys.exit(1)
 
 fpb.run()
