@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.255 (2022-03-03)
+### Fix
+* **fhempy:** Fix python version error handling ([`f9c1d89`](https://github.com/dominikkarall/fhempy/commit/f9c1d899ac312d3e70a5c4d3dffa21124f91d407))
+
 ## v0.1.254 (2022-03-02)
 ### Fix
 * **tuya_cloud:** Fix logging ([`f384975`](https://github.com/dominikkarall/fhempy/commit/f38497553e662633c139b7825fe3c047b0bf932f))
