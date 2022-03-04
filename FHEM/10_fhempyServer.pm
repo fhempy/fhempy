@@ -5,6 +5,7 @@ package main;
 
 use strict;
 use warnings;
+use version;
 
 use CoProcess;
 
@@ -54,6 +55,18 @@ sub fhempyServer_getCmd($)
   return "FHEM/bindings/python/bin/fhempy --local";
 }
 
+sub fhempyServer_checkPythonVersion($)
+{
+  my ($hash) = @_;
+  my $ver = qx(python3 -V|sed "s/.*\ //");
+  if ($ver eq "" || version->declare($ver) < version->declare("3.7.2")) {
+    readingsSingleUpdate($hash, "state", "Python 3.7.2 or higher required", 1);
+    return 1;
+  }
+  readingsSingleUpdate($hash, "python", $ver, 1);
+  return 0;
+}
+
 sub fhempyServer_Define($$$)
 {
   my ($hash, $a, $h) = @_;
@@ -68,7 +81,7 @@ sub fhempyServer_Define($$$)
 
   chmod(0744, "FHEM/bindings/python/bin/fhempy");
 
-  if ($init_done) {
+  if ($init_done && fhempyServer_checkPythonVersion($hash)) {
     CoProcess::start($hash);
   }
 
@@ -118,7 +131,9 @@ sub fhempyServer_Notify($$)
   return if($dev->{NAME} ne "global");
    
   if( grep(m/^INITIALIZED|REREADCFG$/, @{$dev->{CHANGED}}) ) {
-    CoProcess::start($hash);
+    if (hempyServer_checkPythonVersion($hash)) {
+      CoProcess::start($hash);
+    }
     return undef;
   }
    
@@ -164,6 +179,10 @@ sub fhempyServer_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
+  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 1) {
+    return undef;
+  }
+
   return CoProcess::setCommands($hash, "", @$a[1], @$a);
 }
 
@@ -185,7 +204,9 @@ sub fhempyServer_Attr($$$)
 
     $attr{$name}{$attrName} = $attrVal;
 
-    CoProcess::start($hash);
+    if (fhempyServer_checkPythonVersion($hash)) {
+      CoProcess::start($hash);
+    }
   }
 
   return undef;
