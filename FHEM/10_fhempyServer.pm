@@ -59,6 +59,7 @@ sub fhempyServer_checkPythonVersion($)
 {
   my ($hash) = @_;
   my $ver = qx(python3 -V|sed "s/.*\ //");
+  $ver = chomp($ver)
   if ($ver eq "" || version->declare($ver) < version->declare("3.7.2")) {
     readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
     return 1;
@@ -131,7 +132,7 @@ sub fhempyServer_Notify($$)
   return if($dev->{NAME} ne "global");
    
   if( grep(m/^INITIALIZED|REREADCFG$/, @{$dev->{CHANGED}}) ) {
-    if (hempyServer_checkPythonVersion($hash)) {
+    if (fhempyServer_checkPythonVersion($hash)) {
       CoProcess::start($hash);
     }
     return undef;
