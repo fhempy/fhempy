@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.259 (2022-03-04)
+### Fix
+* **fhempy:** Fix reading ([`5bbba76`](https://github.com/dominikkarall/fhempy/commit/5bbba76743abe5ec6089fc603ed134001b4d8841))
+
 ## v0.1.258 (2022-03-04)
 ### Fix
 * **fhempy:** Add python version check to perl code ([`2452f37`](https://github.com/dominikkarall/fhempy/commit/2452f37fa7a0312fb480d8b078dd06b22d6b1b02))
