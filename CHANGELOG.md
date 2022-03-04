@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.257 (2022-03-04)
+### Fix
+* **fhempy:** Fix installation errors ([`b3dfa34`](https://github.com/dominikkarall/fhempy/commit/b3dfa3446dceb2cce4d7be5a9c3c06d564f1b19e))
+
 ## v0.1.256 (2022-03-03)
 ### Feature
 * **rct_power:** Support ext_power_reduction ([`3d72be9`](https://github.com/dominikkarall/fhempy/commit/3d72be98c9d6348413f32086aeea2c184b8516dc))
