@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.260 (2022-03-04)
+### Fix
+* **fhempy:** Fix sartup ([`5d23162`](https://github.com/dominikkarall/fhempy/commit/5d2316218912c8e51cbd970a0f3de3c13d85e255))
+
 ## v0.1.259 (2022-03-04)
 ### Fix
 * **fhempy:** Fix reading ([`5bbba76`](https://github.com/dominikkarall/fhempy/commit/5bbba76743abe5ec6089fc603ed134001b4d8841))
