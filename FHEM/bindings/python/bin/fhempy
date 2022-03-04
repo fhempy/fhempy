@@ -18,13 +18,16 @@ if sys.hexversion < MIN_PYTHON_VERSION_HEX:
     logging.getLogger(__name__).error(
         "fhempy requires Python " + MIN_PYTHON_VERSION_STR
     )
-    logging.getLogger(__name__).error("You are running: " + sys.version.replace("\n",""))
+    logging.getLogger(__name__).error(
+        "You are running: " + sys.version.replace("\n", "")
+    )
     time.sleep(60)
     logging.getLogger(__name__).error("Exiting now")
     sys.exit(1)
 
 # Python 3 can start here
 from pathlib import Path
+
 
 def is_virtual_env():
     """Return if we run in a virtual environment."""
@@ -55,11 +58,11 @@ def pip_kwargs(config_dir):
 
 def install_package(
     package,
-    upgrade,
-    target,
-    constraints,
-    find_links,
-    no_cache_dir,
+    upgrade=True,
+    target=None,
+    constraints=None,
+    find_links=None,
+    no_cache_dir=False,
 ):
     """Install a package on PyPi. Accepts pip compatible package strings.
     Return boolean if install successful.
