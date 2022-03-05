@@ -235,17 +235,14 @@ class tuya_cloud_setup:
         if not device_exists:
             self.logger.info(
                 (
-                    f"create: {devname} PythonModule tuya_cloud "
+                    f"create: {devname} fhempy tuya_cloud "
                     f"{self.hash['NAME']} {device_id}"
                 )
             )
             # define each device (CommandDefine ... tuya_cloud_setup_dev deviceid
             await fhem.CommandDefine(
                 self.hash,
-                (
-                    f"{devname} PythonModule tuya_cloud "
-                    f"{self.hash['NAME']} {device_id}"
-                ),
+                (f"{devname} fhempy tuya_cloud " f"{self.hash['NAME']} {device_id}"),
             )
             await fhem.CommandAttr(self.hash, f"{devname} alias {devalias}")
             # wait for FHEM to handle CommandDefine

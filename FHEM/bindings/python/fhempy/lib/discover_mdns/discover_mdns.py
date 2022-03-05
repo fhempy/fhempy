@@ -61,7 +61,7 @@ class discover_mdns(FhemModule):
                         get_value("md").replace(" ", "_")
                         + "_"
                         + get_value("fn").replace(" ", "_")
-                        + " PythonModule googlecast '"
+                        + " fhempy googlecast '"
                         + get_value("fn")
                         + "'",
                     )
@@ -102,7 +102,7 @@ class discover_mdns(FhemModule):
                 ):
                     self.logger.debug("create spotify")
                     await fhem.CommandDefine(
-                        self.hash, "spotify_connect PythonModule spotify"
+                        self.hash, "spotify_connect fhempy spotify"
                     )
                 else:
                     self.logger.debug("device spotify exists already, do not create")

@@ -245,6 +245,13 @@ BindingsIo_Write($$$$$) {
   if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
+
+      my $attr_list = $devhash->{".AttrList"};
+      if ($attr_list eq ".*") {
+        my $fhempydev_str = BindingsIo_getIODevList($hash);
+        $attr_list = "IODev:$fhempydev_str";
+        setDevAttrList($devhash->{NAME}, $attr_list);
+      }
     }
     return undef;
   }
