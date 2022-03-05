@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.261 (2022-03-05)
+### Fix
+* **fhempy:** Fix startup ([`2145a4d`](https://github.com/dominikkarall/fhempy/commit/2145a4d5fc6fbc4731025625d1b081f389735842))
+
 ## v0.1.260 (2022-03-04)
 ### Fix
 * **fhempy:** Fix sartup ([`5d23162`](https://github.com/dominikkarall/fhempy/commit/5d2316218912c8e51cbd970a0f3de3c13d85e255))
