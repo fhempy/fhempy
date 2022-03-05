@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.263 (2022-03-05)
+### Fix
+* **fhempy:** Keep disconnected state for bindings ([`4f6621c`](https://github.com/dominikkarall/fhempy/commit/4f6621c2b38eeb5572bddb4cbf96549f4cbd8c8b))
+
 ## v0.1.262 (2022-03-05)
 ### Fix
 * **fhempy:** Python reading font correction ([`3284f3c`](https://github.com/dominikkarall/fhempy/commit/3284f3c332bef010dd00dad409fe69c00e09a80e))
