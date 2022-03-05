@@ -60,11 +60,12 @@ sub fhempyServer_checkPythonVersion($)
   my ($hash) = @_;
   my $ver = qx(python3 -V|sed "s/.*\ //");
   chomp($ver);
-  if ($ver eq "" || version->declare($ver) < version->declare("3.7.2")) {
+  my $ver_obj = version->declare($ver);
+  if ($ver eq "" || $ver_obj < version->declare("3.7.2")) {
     readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
     return 1;
   }
-  readingsSingleUpdate($hash, "python", $ver, 1);
+  readingsSingleUpdate($hash, "python", $ver_obj->normal, 1);
   return 0;
 }
 
