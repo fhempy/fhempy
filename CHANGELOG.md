@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.262 (2022-03-05)
+### Fix
+* **fhempy:** Python reading font correction ([`3284f3c`](https://github.com/dominikkarall/fhempy/commit/3284f3c332bef010dd00dad409fe69c00e09a80e))
+
 ## v0.1.261 (2022-03-05)
 ### Fix
 * **fhempy:** Fix startup ([`2145a4d`](https://github.com/dominikkarall/fhempy/commit/2145a4d5fc6fbc4731025625d1b081f389735842))
