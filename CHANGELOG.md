@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.264 (2022-03-05)
+### Fix
+* **fhempy:** Fix IODev missing when disconnected ([`9244dd3`](https://github.com/dominikkarall/fhempy/commit/9244dd366b137cb5270fe24eadf44b49b21b20a3))
+* **fhempy:** Use fhempy instead of PythonModule ([`8d8abb4`](https://github.com/dominikkarall/fhempy/commit/8d8abb485286945156d60b77f6ee6f128ee0e46d))
+
 ## v0.1.263 (2022-03-05)
 ### Fix
 * **fhempy:** Keep disconnected state for bindings ([`4f6621c`](https://github.com/dominikkarall/fhempy/commit/4f6621c2b38eeb5572bddb4cbf96549f4cbd8c8b))
