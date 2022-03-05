@@ -67,7 +67,7 @@ class discover_ble(FhemModule):
                                 d.name
                                 + "_"
                                 + d.address.replace(":", "")
-                                + " PythonModule eq3bt '"
+                                + " fhempy eq3bt '"
                                 + d.address
                                 + "'",
                             )
@@ -97,7 +97,7 @@ class discover_ble(FhemModule):
                                 d.name
                                 + "_"
                                 + d.address.replace(":", "")
-                                + " PythonModule nespresso_ble '"
+                                + " fhempy nespresso_ble '"
                                 + d.address
                                 + "'",
                             )

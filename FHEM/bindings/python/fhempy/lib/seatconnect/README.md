@@ -4,7 +4,7 @@ This module connects to your Seat/Cupra Connect accounts and retrieves data from
 
 ## Usage
 ```
-define my_seat PythonModule seatconnect my@account.com PaSSwOrD SPIN
+define my_seat fhempy seatconnect my@account.com PaSSwOrD SPIN
 ```
 
 If you have more than one car, set the attribute `vin` to the car you want to connect to.

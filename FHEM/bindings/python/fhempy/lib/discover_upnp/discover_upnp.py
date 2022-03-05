@@ -46,7 +46,7 @@ class discover_upnp(FhemModule):
         #     if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "dlna_dmr", "UDN", upnp_device.udn)):
         #         devname = devname = upnp_device.friendly_name + "_" + upnp_device.model_name
         #         devname = ''.join(filter(str.isalnum, devname))
-        #         await fhem.CommandDefine(self.hash, devname + " PythonModule dlna_dmr " + upnp_device.udn)
+        #         await fhem.CommandDefine(self.hash, devname + " fhempy dlna_dmr " + upnp_device.udn)
 
     async def removed_device(self, upnp_device):
         return
@@ -67,7 +67,7 @@ class discover_upnp(FhemModule):
             if self.create_devs[udn]["name"] == params["device"]:
                 await fhem.CommandDefine(
                     self.hash,
-                    self.create_devs[udn]["devname"] + " PythonModule dlna_dmr " + udn,
+                    self.create_devs[udn]["devname"] + " fhempy dlna_dmr " + udn,
                 )
 
     # FHEM Undefine

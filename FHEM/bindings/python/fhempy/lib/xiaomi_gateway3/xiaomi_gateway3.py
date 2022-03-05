@@ -160,7 +160,7 @@ class xiaomi_gateway3(generic.FhemModule):
             await fhem.CommandDefine(
                 self.hash,
                 devname
-                + " PythonModule xiaomi_gateway3_device "
+                + " fhempy xiaomi_gateway3_device "
                 + self.hash["NAME"]
                 + " "
                 + did,

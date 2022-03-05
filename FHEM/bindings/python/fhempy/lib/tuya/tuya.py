@@ -550,7 +550,7 @@ class tuya(generic.FhemModule):
                 await fhem.CommandDefine(
                     self.hash,
                     (
-                        f"{name}_{id} PythonModule tuya "
+                        f"{name}_{id} fhempy tuya "
                         f"{productid} {id} {ip} {local_key} "
                         f"{ver} {self.tt_key} {self.tt_secret}"
                     ),

@@ -78,28 +78,28 @@ class xiaomi_tokens(FhemModule):
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_vacuum_{did} PythonModule miio vacuum {ip} {token}",
+                    f"miio_vacuum_{did} fhempy miio vacuum {ip} {token}",
                 )
             )
         elif "viomi" in model:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_vacuum_{did} PythonModule miio viomivacuum {ip} {token}",
+                    f"miio_vacuum_{did} fhempy miio viomivacuum {ip} {token}",
                 )
             )
         elif "chuangmi" in model or "camera" in model:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_camera_{did} PythonModule miio chuangmicamera {ip} {token}",
+                    f"miio_camera_{did} fhempy miio chuangmicamera {ip} {token}",
                 )
             )
         else:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_device_{did} PythonModule miio device {ip} {token}",
+                    f"miio_device_{did} fhempy miio device {ip} {token}",
                 )
             )
 
@@ -113,7 +113,7 @@ class xiaomi_tokens(FhemModule):
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"xiaomigw3_{did} PythonModule xiaomi_gateway3 {ip} {token}",
+                    f"xiaomigw3_{did} fhempy xiaomi_gateway3 {ip} {token}",
                 )
             )
 
