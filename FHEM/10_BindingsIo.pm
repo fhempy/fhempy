@@ -243,7 +243,7 @@ BindingsIo_Write($$$$$) {
   }
 
   if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
-    if ($init_done == 1) {
+    if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
     }
     return undef;
