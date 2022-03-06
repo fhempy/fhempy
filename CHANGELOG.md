@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.267 (2022-03-06)
+### Fix
+* **tuya_cloud:** Fix circular import ([`48b0d5d`](https://github.com/dominikkarall/fhempy/commit/48b0d5dfe7a48219af74d0379e1ce4d553b57523))
+
 ## v0.1.266 (2022-03-06)
 ### Feature
 * **fhempy:** Add more info about peer ([`54c320d`](https://github.com/dominikkarall/fhempy/commit/54c320d050cb2ce200b39a405ac413350d28603c))
