@@ -63,10 +63,10 @@ sub fhempyServer_checkPythonVersion($)
   my $ver_obj = version->declare($ver);
   if ($ver eq "" || $ver_obj < version->declare("3.7.2")) {
     readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
-    return 1;
+    return 0;
   }
   readingsSingleUpdate($hash, "python", $ver_obj->normal, 1);
-  return 0;
+  return 1;
 }
 
 sub fhempyServer_Define($$$)
@@ -181,7 +181,7 @@ sub fhempyServer_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
-  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 1) {
+  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash)) {
     return undef;
   }
 
