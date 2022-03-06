@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.266 (2022-03-06)
+### Feature
+* **fhempy:** Add more info about peer ([`54c320d`](https://github.com/dominikkarall/fhempy/commit/54c320d050cb2ce200b39a405ac413350d28603c))
+
 ## v0.1.265 (2022-03-06)
 ### Fix
 * **fhempy:** Fix restart ([`04ac131`](https://github.com/dominikkarall/fhempy/commit/04ac13107deda0eb044daba1dbf98ad2960b8dba))
