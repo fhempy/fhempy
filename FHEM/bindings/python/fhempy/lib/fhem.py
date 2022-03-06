@@ -2,6 +2,9 @@ import asyncio
 import concurrent.futures
 from datetime import datetime
 import json
+import socket
+import os
+import platform
 import logging
 import random
 import traceback
@@ -270,6 +273,11 @@ async def send_version():
     msg = {
         "msgtype": "version",
         "version": __version__,
+        "python": platform.python_version(),
+        "os": os.name,
+        "system": platform.system(),
+        "release": platform.release(),
+        "hostname": socket.gethostname(),
     }
     msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)

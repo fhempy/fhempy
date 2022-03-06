@@ -458,7 +458,12 @@ sub BindingsIo_processMessage($$$$) {
       $devhash->{$key} = $json->{$key};
     }
   } elsif ($json->{msgtype} eq "version") {
-    readingsSingleUpdate($hash, "version", $json->{version}, 1);
+    foreach my $key (keys %$json) {
+      if ($key eq "msgtype") {
+        next;
+      }
+      readingsSingleUpdate($hash, $key, $json->{$key}, 1);
+    }
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
