@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.265 (2022-03-06)
+### Fix
+* **fhempy:** Fix restart ([`04ac131`](https://github.com/dominikkarall/fhempy/commit/04ac13107deda0eb044daba1dbf98ad2960b8dba))
+
 ## v0.1.264 (2022-03-05)
 ### Fix
 * **fhempy:** Fix IODev missing when disconnected ([`9244dd3`](https://github.com/dominikkarall/fhempy/commit/9244dd366b137cb5270fe24eadf44b49b21b20a3))
