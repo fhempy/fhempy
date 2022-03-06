@@ -2,7 +2,6 @@ import asyncio
 import functools
 import json
 import colorsys
-from tuya_iot.device import TuyaDevice
 from fhempy.lib.generic import FhemModule
 from fhempy.lib import fhem, fhem_pythonbinding, utils
 
@@ -262,7 +261,7 @@ class tuya_cloud_device:
         await asyncio.sleep(timeout)
         await fhem.readingsSingleUpdate(self.fhemdev.hash, reading, resetvalue, 1)
 
-    async def update(self, device: TuyaDevice):
+    async def update(self, device):
         await self.update_readings_dict(device.status)
 
     async def update_readings_arr(self, status_arr):
