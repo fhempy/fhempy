@@ -2,15 +2,7 @@ import asyncio
 import functools
 import json
 
-from tuya_iot import (
-    AuthType,
-    TuyaDevice,
-    TuyaDeviceListener,
-    TuyaDeviceManager,
-    TuyaHomeManager,
-    TuyaOpenAPI,
-    TuyaOpenMQ,
-)
+import tuya_iot
 from tuya_connector import (
     TuyaOpenPulsar,
     TuyaCloudPulsarTopic,
@@ -71,8 +63,8 @@ class tuya_cloud_setup:
             await self._init_devices()
 
     async def _init_tuya_sdk(self) -> bool:
-        auth_type = AuthType(0)
-        api = TuyaOpenAPI(
+        auth_type = tuya_iot.AuthType(0)
+        api = tuya_iot.TuyaOpenAPI(
             self._get_region_url(self._t_region),
             self._t_apikey,
             self._t_apisecret,
@@ -85,7 +77,7 @@ class tuya_cloud_setup:
             await utils.run_blocking(
                 functools.partial(api.connect, self._t_username, self._t_password)
             )
-            if auth_type == AuthType.CUSTOM
+            if auth_type == tuya_iot.AuthType.CUSTOM
             else await utils.run_blocking(
                 functools.partial(
                     api.connect,
@@ -134,26 +126,28 @@ class tuya_cloud_setup:
         else:
             self.logger.info("Tuya Open Pulsar connected")
 
-        self.tuya_mq = TuyaOpenMQ(api)
+        self.tuya_mq = tuya_iot.TuyaOpenMQ(api)
         self.tuya_mq.start()
 
-        self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
+        self.device_manager = tuya_iot.TuyaDeviceManager(api, self.tuya_mq)
 
         # Get device list
-        self.home_manager = TuyaHomeManager(api, self.tuya_mq, self.device_manager)
+        self.home_manager = tuya_iot.TuyaHomeManager(
+            api, self.tuya_mq, self.device_manager
+        )
         await utils.run_blocking(
             functools.partial(self.home_manager.update_device_cache)
         )
         t_cloud_setup = self
 
-        class DeviceListener(TuyaDeviceListener):
+        class DeviceListener(tuya_iot.TuyaDeviceListener):
             """Device Update Listener."""
 
             def __init__(self, logger) -> None:
                 super().__init__()
                 self.logger = logger
 
-            def update_device(self, device: TuyaDevice):
+            def update_device(self, device: tuya_iot.TuyaDevice):
                 self.logger.debug(f"update_device received for {device.id}")
                 for dev in t_cloud_setup.tuya_devices:
                     if dev.id == device.id:
@@ -164,7 +158,7 @@ class tuya_cloud_setup:
                         except Exception:
                             self.logger.exception("Failed to update device")
 
-            def add_device(self, device: TuyaDevice):
+            def add_device(self, device: tuya_iot.TuyaDevice):
                 self.logger.info(f"add_device received for {device.id}")
                 try:
                     asyncio.run_coroutine_threadsafe(
@@ -173,13 +167,13 @@ class tuya_cloud_setup:
                 except Exception:
                     self.logger.exception("Failed to add device")
 
-            async def add_fhem_device(self, device: TuyaDevice):
+            async def add_fhem_device(self, device: tuya_iot.TuyaDevice):
                 await t_cloud_setup._create_fhem_device(device.name, device.id)
                 try:
                     self.tuya_mq.stop()
                 except Exception:
                     pass
-                self.tuya_mq = TuyaOpenMQ(
+                self.tuya_mq = tuya_iot.TuyaOpenMQ(
                     t_cloud_setup.device_manager.device_manager.api
                 )
                 self.tuya_mq.start()
