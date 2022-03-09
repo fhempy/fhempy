@@ -7,9 +7,8 @@ from tuya_connector import (
     TuyaOpenPulsar,
     TuyaCloudPulsarTopic,
 )
-from fhempy.lib import fhem, utils
-
-from fhempy.lib.generic import FhemModule
+import fhempy.lib.fhem as fhem
+import fhempy.lib.utils as utils
 
 from .const import (
     TUYA_ENDPOINT,
@@ -17,7 +16,7 @@ from .const import (
 
 
 class tuya_cloud_setup:
-    def __init__(self, logger, fhemdevice: FhemModule):
+    def __init__(self, logger, fhemdevice):
         self.logger = logger
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
