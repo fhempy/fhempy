@@ -2,12 +2,14 @@ import asyncio
 import functools
 import json
 import colorsys
-from fhempy.lib.generic import FhemModule
-from fhempy.lib import fhem, fhem_pythonbinding, utils
+
+import fhempy.lib.fhem as fhem
+import fhempy.lib.utils as utils
+import fhempy.lib.fhem_pythonbinding as fpb
 
 
 class tuya_cloud_device:
-    def __init__(self, logger, fhemdevice: FhemModule):
+    def __init__(self, logger, fhemdevice):
         self.logger = logger
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
@@ -33,7 +35,7 @@ class tuya_cloud_device:
     async def _connect_to_setup_device(self):
         while self.tuyaiot is None or self.tuyaiot.ready is False:
             await asyncio.sleep(1)
-            self.tuyaiot = fhem_pythonbinding.getFhemPyDeviceByName(self._t_setupdev)
+            self.tuyaiot = fpb.getFhemPyDeviceByName(self._t_setupdev)
             if self.tuyaiot is not None:
                 self.tuyaiot = self.tuyaiot.tuya_cloud_device
 
