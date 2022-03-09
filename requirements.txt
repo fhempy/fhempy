@@ -5,3 +5,4 @@ zeroconf==0.36.12
 aiohttp[speedups]==3.7.4.post0
 markdown2==2.4.2
 dbus-python==1.2.18
+requests==2.26.0
