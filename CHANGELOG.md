@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.270 (2022-03-09)
+### Fix
+* **fhempy:** Downgrade requests to fix errors ([`82a5eb5`](https://github.com/dominikkarall/fhempy/commit/82a5eb566601a1e18118914cf8c65fb5ab596027))
+
 ## v0.1.269 (2022-03-09)
 ### Fix
 * **tuya_cloud:** Try to fix circular import ([`7187a88`](https://github.com/dominikkarall/fhempy/commit/7187a88bf401c531419cda3bbe2251f66ff783fa))
