@@ -79,6 +79,9 @@ attr_settings = {
         "stateFormat": "temperature °C, humidity %",
         "icon": "temp_temperature",
     },
+    "2455": {
+        "icon": "secur_smoke_detector",
+    },
 }
 
 
@@ -100,15 +103,16 @@ class BaseDevice(FhemModule):
 
     async def initialize(self, device):
         self._xg3_device = device
-        for attr in attr_settings[str(device["model"])]:
-            if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
-                await fhem.CommandAttr(
-                    self.hash,
-                    (
-                        f"{self.hash['NAME']} {attr} "
-                        f"{attr_settings[str(self._xg3_device['model'])][attr]}"
-                    ),
-                )
+        if str(device["model"]) in attr_settings:
+            for attr in attr_settings[str(device["model"])]:
+                if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
+                    await fhem.CommandAttr(
+                        self.hash,
+                        (
+                            f"{self.hash['NAME']} {attr} "
+                            f"{attr_settings[str(self._xg3_device['model'])][attr]}"
+                        ),
+                    )
 
         for reading in device:
             # following attributes are not readings
