@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.274 (2022-04-10)
+### Fix
+* **fhempy:** Update cryptography ([`52afbf7`](https://github.com/dominikkarall/fhempy/commit/52afbf71510ad985d156d19941336319032c0fab))
+
 ## v0.1.273 (2022-04-10)
 ### Fix
 * **ring:** Fix Undefine endless loop ([`e1ce34f`](https://github.com/dominikkarall/fhempy/commit/e1ce34fb1d20757ac4d4a4e4fe566ae0a20388fa))
