@@ -17,7 +17,7 @@ class esphome(FhemModule):
         self.set_set_config(self._set_list)
         self._attr_list = {
             "disable": {"default": "0", "options": "0,1"},
-            "port_dashboard": {"default": "6052", "format": "int"},
+            "port_dashboard": {"default": "6052", "help": "Default port ist 6052"},
         }
         self.set_attr_config(self._attr_list)
 
@@ -48,6 +48,7 @@ class esphome(FhemModule):
         try:
             self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
         except Exception:
+            self.logger.exception("Failed to execute esphome")
             try:
                 self._esphomeargs = [
                     "esphome",
@@ -58,6 +59,7 @@ class esphome(FhemModule):
                 ]
                 self.proc = subprocess.Popen(self._esphomeargs)
             except Exception:
+                self.logger.exception("Failed to execute esphome")
                 return "Failed to execute esphome"
 
         await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
