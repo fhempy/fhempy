@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.275 (2022-04-10)
+### Feature
+* **erelax_vaillant:** Use vaillant-netatmo-api ([`f138b6b`](https://github.com/dominikkarall/fhempy/commit/f138b6b1a9e852a70ba545a1afb5a11224c8842c))
+
 ## v0.1.274 (2022-04-10)
 ### Fix
 * **fhempy:** Update cryptography ([`52afbf7`](https://github.com/dominikkarall/fhempy/commit/52afbf71510ad985d156d19941336319032c0fab))
