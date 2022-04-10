@@ -152,8 +152,6 @@ class ring(FhemModule):
                 except Exception:
                     self.logger.exception("Failed to poll devices")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
-        except CancelledError:
-            pass
         except Exception:
             self.logger.exception("Failed to update devices")
 
