@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.277 (2022-04-10)
+
+
 ## v0.1.276 (2022-04-10)
 ### Fix
 * **ring:** Fix Undefine ([`56ceda2`](https://github.com/dominikkarall/fhempy/commit/56ceda2b38528f89bf63c649d7279e425ffa4b63))
