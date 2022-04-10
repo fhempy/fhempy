@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.272 (2022-04-10)
+### Feature
+* **xiaomi_gateway3:** Support ble smoke detector ([`3dee86f`](https://github.com/dominikkarall/fhempy/commit/3dee86f38fd2550fc0f30b88cccfbe8c79cfc832))
+* **fhempy:** Support git+https requirements ([`7987489`](https://github.com/dominikkarall/fhempy/commit/7987489abbaf31cfc9b8bd2305609e4e460f39c7))
+
 ## v0.1.271 (2022-04-10)
 ### Fix
 * **esphome:** Fix esphome start ([`e4c1697`](https://github.com/dominikkarall/fhempy/commit/e4c1697cc62aa4734c2ca5879a35207889e641e7))
