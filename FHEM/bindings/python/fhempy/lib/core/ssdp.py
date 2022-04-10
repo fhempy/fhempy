@@ -26,7 +26,7 @@ class ssdp:
         self.logger = logger
         self.listeners = []
         self.listener = None
-        self.search_task = None
+        self.search_tasks = []
         self.advertisement_task = None
         self.nr_started_searches = 0
 
@@ -38,22 +38,24 @@ class ssdp:
 
     async def start_search(self):
         self.nr_started_searches += 1
-        self.search_task = asyncio.create_task(self.search())
+        self.search_tasks.append(asyncio.create_task(self.search()))
 
         if self.advertisement_task is None:
             self.advertisement_task = asyncio.create_task(self.advertisements())
 
     async def stop_search(self):
-        self.nr_started_searches -= 1
+        if self.nr_started_searches > 0:
+            self.nr_started_searches -= 1
         # stop search only when last client stops it
         if self.nr_started_searches == 0:
-            await self.session.close()
-            if self.search_task is not None:
-                self.search_task.cancel()
+            if len(self.search_tasks) > 0:
+                for task in self.search_tasks:
+                    task.cancel()
             if self.advertisement_task is not None:
                 self.advertisement_task.cancel()
             if self.listener is not None:
                 await self.listener.async_stop()
+            await self.session.close()
 
     def register_listener(self, listener, ssdp_filter={"service_type": "ssdp:all"}):
         listenerFilter = {

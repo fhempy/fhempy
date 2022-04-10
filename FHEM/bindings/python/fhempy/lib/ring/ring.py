@@ -194,6 +194,8 @@ class ring(FhemModule):
                         self.update_readings(), self.loop
                     ).result()
             except Exception:
+                if self.stop_dings_loop.is_set():
+                    return
                 self.logger.exception("Failed to poll dings...")
                 self.blocking_login()
             time.sleep(self._attr_dingPollInterval)
@@ -387,7 +389,7 @@ class ring(FhemModule):
         self.create_async_task(self.ring_login())
 
     async def Undefine(self, hash):
+        self.stop_dings_loop.set()
         if self.update_dings_thread:
             self.update_dings_thread.cancel()
-        self.stop_dings_loop.set()
         await super().Undefine(hash)
