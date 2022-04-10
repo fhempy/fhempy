@@ -10,6 +10,7 @@ import os
 import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
+from urllib.parse import urlparse
 
 import pkg_resources
 
@@ -137,13 +138,24 @@ def is_installed(package: str) -> bool:
     Returns False when the package is not installed or doesn't meet req.
     """
     try:
+        pkg_resources.get_distribution(package)
+        return True
+    except (pkg_resources.ResolutionError, pkg_resources.ExtractionError):
         req = pkg_resources.Requirement.parse(package)
     except ValueError:
-        raise
+        # This is a zip file. We no longer use this in Home Assistant,
+        # leaving it in for custom components.
+        req = pkg_resources.Requirement.parse(urlparse(package).fragment)
 
     try:
-        ret = version(req.project_name) in req
-        return ret
+        installed_version = version(req.project_name)
+        # This will happen when an install failed or
+        # was aborted while in progress see
+        # https://github.com/home-assistant/core/issues/47699
+        if installed_version is None:
+            logger.error("Installed version for %s resolved to None", req.project_name)  # type: ignore[unreachable]
+            return False
+        return installed_version in req
     except PackageNotFoundError:
         return False
 
