@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.273 (2022-04-10)
+### Fix
+* **ring:** Fix Undefine endless loop ([`e1ce34f`](https://github.com/dominikkarall/fhempy/commit/e1ce34fb1d20757ac4d4a4e4fe566ae0a20388fa))
+
 ## v0.1.272 (2022-04-10)
 ### Feature
 * **xiaomi_gateway3:** Support ble smoke detector ([`3dee86f`](https://github.com/dominikkarall/fhempy/commit/3dee86f38fd2550fc0f30b88cccfbe8c79cfc832))
