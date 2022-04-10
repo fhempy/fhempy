@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.271 (2022-04-10)
+### Fix
+* **esphome:** Fix esphome start ([`e4c1697`](https://github.com/dominikkarall/fhempy/commit/e4c1697cc62aa4734c2ca5879a35207889e641e7))
+
 ## v0.1.270 (2022-03-09)
 ### Fix
 * **fhempy:** Downgrade requests to fix errors ([`82a5eb5`](https://github.com/dominikkarall/fhempy/commit/82a5eb566601a1e18118914cf8c65fb5ab596027))
