@@ -130,7 +130,6 @@ class dlna_dmr(FhemModule):
 
     # FHEM Function
     async def Undefine(self, hash):
-        await super().Undefine(hash)
         await ssdp.getInstance(self.logger).stop_search()
         if self.server:
             await self.server.stop_server()
@@ -138,6 +137,7 @@ class dlna_dmr(FhemModule):
             await self.device.cleanup()
             del self.device
             self.device = None
+        await super().Undefine(hash)
 
     # FHEM Function
     async def Define(self, hash, args, argsh):
