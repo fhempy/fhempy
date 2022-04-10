@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.276 (2022-04-10)
+### Fix
+* **ring:** Fix Undefine ([`56ceda2`](https://github.com/dominikkarall/fhempy/commit/56ceda2b38528f89bf63c649d7279e425ffa4b63))
+* **ring:** Fix test ([`b637c09`](https://github.com/dominikkarall/fhempy/commit/b637c092e03f5b233f0b64c34d242c7d1729aa11))
+* **fhempy:** Fix ssdp stop_search ([`5d998d6`](https://github.com/dominikkarall/fhempy/commit/5d998d65c39c7e262551255d88b67361e0ffb56e))
+
 ## v0.1.275 (2022-04-10)
 ### Feature
 * **erelax_vaillant:** Use vaillant-netatmo-api ([`f138b6b`](https://github.com/dominikkarall/fhempy/commit/f138b6b1a9e852a70ba545a1afb5a11224c8842c))
