@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.279 (2022-04-11)
+### Fix
+* **fhempy:** Cryptography 3.4.8 ([`0bf5665`](https://github.com/dominikkarall/fhempy/commit/0bf56652a74ad231c4c3b9cbb9b281f68971c44d))
+
 ## v0.1.278 (2022-04-10)
 
 
