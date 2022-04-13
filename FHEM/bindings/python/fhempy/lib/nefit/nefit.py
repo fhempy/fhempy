@@ -446,7 +446,10 @@ class nefit(generic.FhemModule):
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update readings")
-            await asyncio.sleep(self._attr_interval)
+            try:
+                await asyncio.sleep(self._attr_interval)
+            except asyncio.CancelledError:
+                pass
 
     async def update_dayassunday(self, day=None):
         if day is None:
