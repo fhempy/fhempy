@@ -134,6 +134,9 @@ class gfprobt(generic.FhemModule):
             HANDLE_RW_INCREASEREDUCE, duration_hex + percentage_hex
         )
 
+        self.write_offset()
+        self.commit_code()
+
     async def update_loop(self):
         while True:
             try:
@@ -202,8 +205,8 @@ class gfprobt(generic.FhemModule):
         )[0]
         self._devmac = str(self._conn.read_characteristic(HANDLE_R_MAC))
         self._increasereduce = self._conn.read_characteristic(HANDLE_RW_INCREASEREDUCE)
-        self._adjust_hours = self._increasereduce[0:3]
-        self._adjust_perc = self._increasereduce[4:5]
+        self._adjust_hours = struct.unpack("<I", self._increasereduce[0:3])/3600
+        self._adjust_perc = struct.unpack("<h", self._increasereduce[4:5])
         self._raw_timers = {}
         for handle_timer in HANDLE_RW_TIMERS:
             self._raw_timers[handle_timer] = self._conn.read_characteristic(
