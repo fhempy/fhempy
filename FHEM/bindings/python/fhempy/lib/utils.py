@@ -1,8 +1,8 @@
 import asyncio
 import base64
 import concurrent.futures
-import socket
 import json
+import socket
 from codecs import decode, encode
 from functools import partial, reduce
 
@@ -109,13 +109,13 @@ async def handle_define_attr(attr_list, obj, hash):
         setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
 
         # call set_attr_....
-        #fct_name = "set_attr_" + attr
-        #if "function" in attr_list[attr]:
+        # fct_name = "set_attr_" + attr
+        # if "function" in attr_list[attr]:
         #    fct_name = attr_list[attr]["function"]
-        #try:
+        # try:
         #    fct_call = getattr(obj, fct_name)
         #    await fct_call(hash)
-        #except AttributeError:
+        # except AttributeError:
         #    pass
 
     return
