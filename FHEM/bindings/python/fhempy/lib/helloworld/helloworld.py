@@ -1,6 +1,6 @@
 import asyncio
 
-from .. import fhem, utils
+from .. import fhem
 from .. import generic
 
 
