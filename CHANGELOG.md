@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.281 (2022-04-20)
+### Fix
+* **eq3bt:** Fix possible infinite loop ([`7c21c2a`](https://github.com/dominikkarall/fhempy/commit/7c21c2a49bb645a7071259799b22c4c85f96dae5))
+* **discover_mdns:** Fix exception handling ([`f2bb640`](https://github.com/dominikkarall/fhempy/commit/f2bb6409005b3d7bac9ae6d2db05dbd3f9264ef3))
+* **fhempy:** Fix exception handling ([`db7c74b`](https://github.com/dominikkarall/fhempy/commit/db7c74b9d9810d4ee3a9b9cdb0e2be4fb2318f59))
+* **gfprobt:** Fix invalid type ([`93f2873`](https://github.com/dominikkarall/fhempy/commit/93f28736e577d69e489ce680904c0a596b7fe61f))
+
 ## v0.1.280 (2022-04-20)
 ### Feature
 * **rct_power:** Update commands ([#71](https://github.com/dominikkarall/fhempy/issues/71)) ([`ee8ea0d`](https://github.com/dominikkarall/fhempy/commit/ee8ea0d5b8aa3622a9aec43f24090aef1fa48d27))
