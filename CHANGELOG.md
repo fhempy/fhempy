@@ -2,6 +2,19 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.280 (2022-04-20)
+### Feature
+* **rct_power:** Update commands ([#71](https://github.com/dominikkarall/fhempy/issues/71)) ([`ee8ea0d`](https://github.com/dominikkarall/fhempy/commit/ee8ea0d5b8aa3622a9aec43f24090aef1fa48d27))
+* **esphome:** Update to 2022.3.1 ([`3abba2f`](https://github.com/dominikkarall/fhempy/commit/3abba2f6b02c52a252b5705b6d0226a121c2e4cd))
+* **gfprobt:** Prepare adjust ([`115fc60`](https://github.com/dominikkarall/fhempy/commit/115fc6060a78d3949dd2d5a022429b2dac0f1219))
+
+### Fix
+* **fhempy:** Code cleanup ([`9e123cf`](https://github.com/dominikkarall/fhempy/commit/9e123cfea795629f8e2c52a6e2e88a93bcb62c2b))
+* **fhempy:** Code style fixes ([`23db77b`](https://github.com/dominikkarall/fhempy/commit/23db77bee65481d844c3fc6fcc66f8e43f1050c6))
+* **helloworld:** Remove unused import ([`ebe9245`](https://github.com/dominikkarall/fhempy/commit/ebe92454e0658c8f420fa6f65c767a22486dc4cf))
+* **gfprobt:** Prepare adjust ([`51cc4bb`](https://github.com/dominikkarall/fhempy/commit/51cc4bb5fd369d124a2a3c84ffe639b4a0bf5c8c))
+* **nefit:** Fix Undefine ([`e9b0168`](https://github.com/dominikkarall/fhempy/commit/e9b016828cc5fb00254d538cc5a11fd2d9925c6d))
+
 ## v0.1.279 (2022-04-11)
 ### Fix
 * **fhempy:** Cryptography 3.4.8 ([`0bf5665`](https://github.com/dominikkarall/fhempy/commit/0bf56652a74ad231c4c3b9cbb9b281f68971c44d))
