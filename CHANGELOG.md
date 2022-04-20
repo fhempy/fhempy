@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.284 (2022-04-20)
+### Feature
+* **esphome:** Update to 2022.4.0 ([`59683c2`](https://github.com/dominikkarall/fhempy/commit/59683c2f7c0bc125334320ae0dfa8ae198cbafa7))
+
 ## v0.1.283 (2022-04-20)
 
 
