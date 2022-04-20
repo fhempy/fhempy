@@ -150,285 +150,273 @@ class PyBinding:
             fct_timeout = 10
 
         try:
-            if "awaitId" in hash and len(self.msg_listeners) > 0:
-                removeElement = None
-                for listener in self.msg_listeners:
-                    if listener["awaitId"] == hash["awaitId"]:
-                        listener["func"](msg)
-                        removeElement = listener
-                if removeElement:
-                    self.msg_listeners.remove(removeElement)
-            else:
-                ret = ""
-                if hash["msgtype"] == "update":
-                    await fhem.readingsSingleUpdate(
-                        hash, "version", "update started...", 1
-                    )
-                    await pkg_installer.force_update_package("fhempy")
-                    await fhem.readingsSingleUpdate(
-                        hash,
-                        "version",
-                        "update finished...please wait",
-                        1,
-                    )
-                    os._exit(1)
-                if hash["msgtype"] == "function":
-                    # this is needed to avoid 2 replies on dep installation
-                    fhem_reply_done = False
-                    fhem.setFunctionActive(hash)
-                    # load module
-                    nmInstance = None
-                    if hash["function"] == "Rename":
-                        if hash["NAME"] in loadedModuleInstances:
-                            loadedModuleInstances[
-                                hash["args"][1]
-                            ] = loadedModuleInstances[hash["args"][0]]
-                            del loadedModuleInstances[hash["args"][0]]
-                            await self.sendBackReturn(hash, "")
-                            return 0
-
-                    if hash["function"] != "Undefine":
-                        # Load module and execute Define
-                        # if Define isn't called right now
-                        if not (hash["NAME"] in loadedModuleInstances):
-                            if hash["NAME"] in moduleLoadingRunning:
-                                await self.sendBackReturn(hash, "")
-                                return 0
-
-                            moduleLoadingRunning[hash["NAME"]] = True
-
-                            # loading a module might take some time,
-                            # therefore sendBackReturn now
-                            await self.sendBackReturn(hash, "")
-                            fhem_reply_done = True
-
-                            try:
-                                # check dependencies
-                                deps_ok = await utils.run_blocking(
-                                    functools.partial(
-                                        pkg_installer.check_dependencies,
-                                        hash["FHEMPYTYPE"],
-                                    )
-                                )
-                                if deps_ok is False:
-                                    # readingsSingleUpdate inform about dep installation
-                                    await fhem.readingsSingleUpdate(
-                                        hash, "state", "Installing updates...", 1
-                                    )
-                                    # run only one installation and do depcheck
-                                    # before any other installation
-                                    async with pip_lock:
-                                        # make sure that all import caches
-                                        # are up2date before check
-                                        importlib.invalidate_caches()
-                                        # check again if something
-                                        # changed for dependencies
-                                        deps_ok = pkg_installer.check_dependencies(
-                                            hash["FHEMPYTYPE"]
-                                        )
-                                        if deps_ok is False:
-                                            # start installation in
-                                            # a separate asyncio thread
-                                            await pkg_installer.check_and_install_dependencies(
-                                                hash["FHEMPYTYPE"]
-                                            )
-                                            # update cache again after install
-                                            if (
-                                                not site.getusersitepackages()
-                                                in sys.path
-                                            ):
-                                                logger.debug(
-                                                    "add pip path: "
-                                                    + site.getusersitepackages()
-                                                )
-                                                sys.path.append(
-                                                    site.getusersitepackages()
-                                                )
-                                            importlib.invalidate_caches()
-                                    # when installation finished, inform user
-                                    await fhem.readingsSingleUpdate(
-                                        hash,
-                                        "state",
-                                        "Installation finished. Please wait...",
-                                        1,
-                                    )
-                                    # wait 3s so that user can read
-                                    # the msg about installation
-                                    await asyncio.sleep(3)
-                                    # continue define
-
-                                # import module
-                                pymodule = (
-                                    "fhempy.lib."
-                                    + hash["FHEMPYTYPE"]
-                                    + "."
-                                    + hash["FHEMPYTYPE"]
-                                )
-                                # import might take a long time, therefore run_blocking
-                                module_object = await utils.run_blocking(
-                                    functools.partial(importlib.import_module, pymodule)
-                                )
-                                # create instance of class with logger
-                                target_class = getattr(
-                                    module_object, hash["FHEMPYTYPE"]
-                                )
-                                moduleLogger = logging.getLogger(hash["NAME"])
-                                moduleLogger.setLevel(
-                                    self.getLogLevel(
-                                        await fhem.AttrVal(hash["NAME"], "verbose", "3")
-                                    )
-                                )
-                                loadedModuleInstances[hash["NAME"]] = target_class(
-                                    moduleLogger
-                                )
-                                del moduleLoadingRunning[hash["NAME"]]
-                                if hash["function"] != "Define":
-                                    func = getattr(
-                                        loadedModuleInstances[hash["NAME"]],
-                                        "Define",
-                                        "nofunction",
-                                    )
-                                    await asyncio.wait_for(
-                                        func(hash, hash["defargs"], hash["defargsh"]),
-                                        fct_timeout,
-                                    )
-                            except asyncio.TimeoutError:
-                                errorMsg = (
-                                    f"Function execution >{fct_timeout}s, "
-                                    f"cancelled: {hash['NAME']} Define"
-                                )
-                                if fhem_reply_done:
-                                    await fhem.readingsSingleUpdate(
-                                        hash, "state", errorMsg, 1
-                                    )
-                                else:
-                                    await self.sendBackError(hash, errorMsg)
-                                return 0
-                            except ModuleNotFoundError:
-                                errorMsg = (
-                                    f"Module failed to load: {hash['FHEMPYTYPE']}\n"
-                                    f"Maybe you need to update fhempy "
-                                    f"on this or remote peer."
-                                )
-                                errorMsg += "\n\nStacktrace:\n" + traceback.format_exc()
-                                if fhem_reply_done:
-                                    await fhem.readingsSingleUpdate(
-                                        hash, "state", errorMsg, 1
-                                    )
-                                else:
-                                    await self.sendBackError(hash, errorMsg)
-                                return 0
-                            except Exception:
-                                errorMsg = (
-                                    "Failed to load module "
-                                    + hash["FHEMPYTYPE"]
-                                    + ": "
-                                    + traceback.format_exc()
-                                )
-                                if fhem_reply_done:
-                                    await fhem.readingsSingleUpdate(
-                                        hash, "state", errorMsg, 1
-                                    )
-                                else:
-                                    await self.sendBackError(hash, errorMsg)
-                                return 0
-
-                    try:
-                        nmInstance = loadedModuleInstances[hash["NAME"]]
-                    except Exception:
-                        if hash["function"] != "Undefine":
-                            logging.getLogger(hash["NAME"]).exception(
-                                f"Couldn't handle {msg}"
-                            )
-                        nmInstance = None
-
-                    if nmInstance is not None:
-                        try:
-                            # handle verbose level of logging
-                            if (
-                                hash["function"] == "Attr"
-                                and hash["args"][2] == "verbose"
-                            ):
-                                moduleLogger = logging.getLogger(hash["NAME"])
-                                if hash["args"][0] == "set":
-                                    moduleLogger.setLevel(
-                                        self.getLogLevel(hash["args"][3])
-                                    )
-                                else:
-                                    moduleLogger.setLevel(logging.ERROR)
-                            else:
-                                # call Set/Attr/Define/...
-                                func = getattr(
-                                    nmInstance, hash["function"], "nofunction"
-                                )
-                                if func != "nofunction":
-                                    logger.debug(
-                                        (
-                                            f"Start function {hash['NAME']}:"
-                                            f"{hash['function']}"
-                                        )
-                                    )
-                                    if hash["function"] == "Undefine":
-                                        try:
-                                            ret = await asyncio.wait_for(
-                                                func(hash), fct_timeout
-                                            )
-                                        except Exception:
-                                            logger.exception("Undefine failed")
-                                    else:
-                                        ret = await asyncio.wait_for(
-                                            func(hash, hash["args"], hash["argsh"]),
-                                            fct_timeout,
-                                        )
-                                    logger.debug(
-                                        (
-                                            f"End function {hash['NAME']}:"
-                                            f"{hash['function']}"
-                                        )
-                                    )
-                                    if ret is None:
-                                        ret = ""
-                                    if fhem_reply_done:
-                                        await self.updateHash(hash)
-                        except asyncio.TimeoutError:
-                            errorMsg = (
-                                f"Function execution >{fct_timeout}s, "
-                                f"cancelled: {hash['NAME']} - {hash['function']}"
-                            )
-                            if fhem_reply_done:
-                                await fhem.readingsSingleUpdate(
-                                    hash, "state", errorMsg, 1
-                                )
-                            else:
-                                await self.sendBackError(hash, errorMsg)
-                            return 0
-                        except Exception:
-                            errorMsg = (
-                                "Failed to execute function "
-                                + hash["function"]
-                                + ": "
-                                + traceback.format_exc()
-                            )
-                            if fhem_reply_done:
-                                await fhem.readingsSingleUpdate(
-                                    hash, "state", errorMsg, 1
-                                )
-                            else:
-                                await self.sendBackError(hash, errorMsg)
-                            return 0
-
-                    if fhem_reply_done is False:
-                        await self.sendBackReturn(hash, ret)
-
-                    if hash["function"] == "Undefine":
-                        if hash["NAME"] in loadedModuleInstances:
-                            del loadedModuleInstances[hash["NAME"]]
+            await self.handle_message(msg, hash)
 
         except SystemExit as se:
             raise se
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
             await self.sendBackError(hash, "fhempy failed to handle message")
+
+    async def handle_message(self, msg, hash):
+        if "awaitId" in hash and len(self.msg_listeners) > 0:
+            removeElement = None
+            for listener in self.msg_listeners:
+                if listener["awaitId"] == hash["awaitId"]:
+                    listener["func"](msg)
+                    removeElement = listener
+            if removeElement:
+                self.msg_listeners.remove(removeElement)
+        else:
+            if hash["msgtype"] == "update":
+                await self.update_and_exit(hash)
+            if hash["msgtype"] == "function":
+                await self.handle_function(hash, msg)
+
+    async def handle_function(self, hash, msg):
+        ret = ""
+        # this is needed to avoid 2 replies on dep installation
+        fhem_reply_done = False
+        fhem.setFunctionActive(hash)
+        # load module
+        nmInstance = None
+        if hash["function"] == "Rename":
+            old_name = hash["args"][0]
+            new_name = hash["args"][1]
+            if old_name in loadedModuleInstances:
+                await self.rename_device(hash, old_name, new_name)
+                return 0
+
+        if hash["function"] != "Undefine":
+            # Load module and execute Define
+            # if Define isn't called right now
+            if not (hash["NAME"] in loadedModuleInstances):
+                if hash["NAME"] in moduleLoadingRunning:
+                    await self.sendBackReturn(hash, "")
+                    return 0
+
+                moduleLoadingRunning[hash["NAME"]] = True
+
+                # loading a module might take some time,
+                # therefore sendBackReturn now
+                await self.sendBackReturn(hash, "")
+                fhem_reply_done = True
+
+                try:
+                    await self.check_and_install_dependencies(hash)
+
+                    module_object = await self.import_module(hash)
+
+                    await self.define_module(hash, module_object)
+                except asyncio.TimeoutError:
+                    errorMsg = (
+                        f"Function execution >{fct_timeout}s, "
+                        f"cancelled: {hash['NAME']} Define"
+                    )
+                    if fhem_reply_done:
+                        await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                    else:
+                        await self.sendBackError(hash, errorMsg)
+                    return 0
+                except ModuleNotFoundError:
+                    errorMsg = (
+                        f"Module failed to load: {hash['FHEMPYTYPE']}\n"
+                        f"Maybe you need to update fhempy "
+                        f"on this or remote peer."
+                    )
+                    errorMsg += "\n\nStacktrace:\n" + traceback.format_exc()
+                    if fhem_reply_done:
+                        await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                    else:
+                        await self.sendBackError(hash, errorMsg)
+                    return 0
+                except Exception:
+                    errorMsg = (
+                        "Failed to load module "
+                        + hash["FHEMPYTYPE"]
+                        + ": "
+                        + traceback.format_exc()
+                    )
+                    if fhem_reply_done:
+                        await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                    else:
+                        await self.sendBackError(hash, errorMsg)
+                    return 0
+
+        try:
+            nmInstance = loadedModuleInstances[hash["NAME"]]
+        except Exception:
+            if hash["function"] != "Undefine":
+                logging.getLogger(hash["NAME"]).exception(f"Couldn't handle {msg}")
+            nmInstance = None
+
+        if nmInstance is not None:
+            try:
+                ret = await self.execute_function(hash, fhem_reply_done, nmInstance)
+            except asyncio.TimeoutError:
+                errorMsg = (
+                    f"Function execution >{fct_timeout}s, "
+                    f"cancelled: {hash['NAME']} - {hash['function']}"
+                )
+                if fhem_reply_done:
+                    await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                else:
+                    await self.sendBackError(hash, errorMsg)
+                return 0
+            except Exception:
+                errorMsg = (
+                    "Failed to execute function "
+                    + hash["function"]
+                    + ": "
+                    + traceback.format_exc()
+                )
+                if fhem_reply_done:
+                    await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)
+                else:
+                    await self.sendBackError(hash, errorMsg)
+                return 0
+
+        if fhem_reply_done is False:
+            await self.sendBackReturn(hash, ret)
+
+        if hash["function"] == "Undefine":
+            if hash["NAME"] in loadedModuleInstances:
+                del loadedModuleInstances[hash["NAME"]]
+
+    async def define_module(self, hash, module_object):
+        # create instance of class with logger
+        target_class = getattr(module_object, hash["FHEMPYTYPE"])
+        moduleLogger = logging.getLogger(hash["NAME"])
+        moduleLogger.setLevel(
+            self.getLogLevel(await fhem.AttrVal(hash["NAME"], "verbose", "3"))
+        )
+        loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
+        del moduleLoadingRunning[hash["NAME"]]
+        if hash["function"] != "Define":
+            func = getattr(
+                loadedModuleInstances[hash["NAME"]],
+                "Define",
+                "nofunction",
+            )
+            await asyncio.wait_for(
+                func(hash, hash["defargs"], hash["defargsh"]),
+                fct_timeout,
+            )
+
+    async def execute_function(self, hash, fhem_reply_done, nmInstance):
+        ret = ""
+        # handle verbose level of logging
+        if hash["function"] == "Attr" and hash["args"][2] == "verbose":
+            moduleLogger = logging.getLogger(hash["NAME"])
+            if hash["args"][0] == "set":
+                moduleLogger.setLevel(self.getLogLevel(hash["args"][3]))
+            else:
+                moduleLogger.setLevel(logging.ERROR)
+        else:
+            # call Set/Attr/Define/...
+            func = getattr(nmInstance, hash["function"], "nofunction")
+            if func != "nofunction":
+                logger.debug((f"Start function {hash['NAME']}:" f"{hash['function']}"))
+                if hash["function"] == "Undefine":
+                    try:
+                        ret = await asyncio.wait_for(func(hash), fct_timeout)
+                    except Exception:
+                        logger.exception("Undefine failed")
+                else:
+                    ret = await asyncio.wait_for(
+                        func(hash, hash["args"], hash["argsh"]),
+                        fct_timeout,
+                    )
+                logger.debug((f"End function {hash['NAME']}:" f"{hash['function']}"))
+                if ret is None:
+                    ret = ""
+                if fhem_reply_done:
+                    await self.updateHash(hash)
+        return ret
+
+    async def rename_device(self, hash, old_name, new_name):
+        loadedModuleInstances[new_name] = loadedModuleInstances[old_name]
+        del loadedModuleInstances[old_name]
+        await self.sendBackReturn(hash, "")
+        loadedModuleInstances[new_name].hash["NAME"] = new_name
+
+    async def update_and_exit(self, hash):
+        await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)
+        await pkg_installer.force_update_package("fhempy")
+        await fhem.readingsSingleUpdate(
+            hash,
+            "version",
+            "update finished...please wait",
+            1,
+        )
+        await self.restart(hash)
+
+    async def restart(self, hash):
+        await self.undefine_all(hash)
+        os._exit(1)
+
+    async def undefine_all(self, hash):
+        for dev_instance in loadedModuleInstances:
+            func = getattr(dev_instance, "Undefine", "nofunction")
+            if func != "nofunction":
+                try:
+                    await asyncio.wait_for(func(hash), 10)
+                except Exception:
+                    logger.exception("Undefine failed")
+
+    async def import_module(self, hash):
+        # import module
+        pymodule = "fhempy.lib." + hash["FHEMPYTYPE"] + "." + hash["FHEMPYTYPE"]
+
+        # import might take a long time, therefore run_blocking
+        module_object = await utils.run_blocking(
+            functools.partial(importlib.import_module, pymodule)
+        )
+
+        return module_object
+
+    async def check_and_install_dependencies(self, hash):
+        # check dependencies
+        deps_ok = await utils.run_blocking(
+            functools.partial(
+                pkg_installer.check_dependencies,
+                hash["FHEMPYTYPE"],
+            )
+        )
+        if deps_ok is False:
+            # readingsSingleUpdate inform about dep installation
+            await fhem.readingsSingleUpdate(hash, "state", "Installing updates...", 1)
+            # run only one installation and do depcheck
+            # before any other installation
+            async with pip_lock:
+                # make sure that all import caches
+                # are up2date before check
+                importlib.invalidate_caches()
+                # check again if something
+                # changed for dependencies
+                deps_ok = pkg_installer.check_dependencies(hash["FHEMPYTYPE"])
+                if deps_ok is False:
+                    # start installation in
+                    # a separate asyncio thread
+                    await pkg_installer.check_and_install_dependencies(
+                        hash["FHEMPYTYPE"]
+                    )
+                    # update cache again after install
+                    if not site.getusersitepackages() in sys.path:
+                        logger.debug("add pip path: " + site.getusersitepackages())
+                        sys.path.append(site.getusersitepackages())
+                    importlib.invalidate_caches()
+                    # when installation finished, inform user
+            await fhem.readingsSingleUpdate(
+                hash,
+                "state",
+                "Installation finished. Please wait...",
+                1,
+            )
+            # wait 3s so that user can read
+            # the msg about installation
+            await asyncio.sleep(3)
+            # continue define
 
 
 def usage():
@@ -455,9 +443,26 @@ async def async_main():
         usage()
         sys.exit(2)
 
+    ip, port, local = handle_cmdline_options(opts)
+
+    logger.info("Starting fhempy...")
+
+    await pkg_installer.check_and_install_dependencies("core")
+
+    if not local:
+        await advertise_fhempy(ip, port)
+
+    logger.info("Waiting for FHEM connection")
+    await websockets.serve(
+        pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
+    )
+
+
+def handle_cmdline_options(opts):
     ip = None
     port = 15733
     local = False
+
     for o, a in opts:
         if o in ("-v", "--version"):
             print("fhempy " + str(version.__version__))
@@ -473,30 +478,23 @@ async def async_main():
             local = True
         elif o in ("-d", "--debug"):
             logging.getLogger("").setLevel(logging.DEBUG)
+    return ip, port, local
 
-    logger.info("Starting fhempy...")
 
-    await pkg_installer.check_and_install_dependencies("core")
-
-    if not local:
-        logger.info("Advertise fhempy on local network")
-        # running on remote peer, start zeroconf for autodiscovery
-        if ip is None:
-            local_ip = utils.get_local_ip()
-        else:
-            local_ip = ip
-        zc = zeroconf.get_instance(logger)
-        global zc_info
-        zc_info = await zc.register_service(
-            "_http",
-            "fhempy (" + local_ip + ")",
-            port,
-            {"port": port, "ip": local_ip},
-        )
-
-    logger.info("Waiting for FHEM connection")
-    await websockets.serve(
-        pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
+async def advertise_fhempy(ip, port):
+    logger.info("Advertise fhempy on local network")
+    # running on remote peer, start zeroconf for autodiscovery
+    if ip is None:
+        local_ip = utils.get_local_ip()
+    else:
+        local_ip = ip
+    zc = zeroconf.get_instance(logger)
+    global zc_info
+    zc_info = await zc.register_service(
+        "_http",
+        "fhempy (" + local_ip + ")",
+        port,
+        {"port": port, "ip": local_ip},
     )
 
 
