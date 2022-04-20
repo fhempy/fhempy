@@ -15,7 +15,7 @@ class rct_power(generic.FhemModule):
         "battery.soc",
         "battery.cycles",
         "battery.soh",
-        "battery.soc_target",
+        "battery.soc_target_high",
         "battery.soc_target_low",
         "battery.temperature",
         "battery.efficiency",
@@ -117,33 +117,33 @@ class rct_power(generic.FhemModule):
                 "function": "set_rct_write",
                 "function_param": 0x1156DFD0,
             },
-            "min_soc_target": {
+            "batt_soc_min": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
                 "help": "Decimal values from 0.00 - 1.00 are allowed.",
                 "function": "set_rct_write",
-                "function_param": 0xCE266F0F,
+                "function_param": 0xA616B022,
             },
-            "max_soc_target": {
+            "batt_soc_max": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
                 "help": "Decimal values from 0.00 - 1.00 are allowed.",
                 "function": "set_rct_write",
-                "function_param": 0x97997C93,
+                "function_param": 0xB84A38AB,
             },
-            "max_discharge_current": {
+            "conv_max_dischargecurrent": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "help": "Decimal values from 0.00 - 20.00 are allowed.",
+                "help": "Decimal values from 0.00 - 25.00 are allowed.",
                 "function": "set_rct_write",
-                "function_param": 0xDF0A735C,
+                "function_param": 0xC642B9D6,
             },
-            "max_charge_current": {
+            "conv_max_chargecurrent": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "help": "Decimal values from 0.00 - 20.00 are allowed.",
+                "help": "Decimal values from 0.00 - 25.00 are allowed.",
                 "function": "set_rct_write",
-                "function_param": 0x1E5FCA70,
+                "function_param": 0xB0FA4D23,
             },
             "max_power_ac": {
                 "args": ["value"],

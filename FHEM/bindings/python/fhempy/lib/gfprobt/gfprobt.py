@@ -55,13 +55,18 @@ class gfprobt(generic.FhemModule):
                     "onseconds": {"default": 0, "format": "int", "optional": True}
                 },
                 "help": (
-                    "Turn on watering. You can use seconds as parameter to define the duration.<br>"
+                    "Turn on watering. You can use seconds as parameter to set the duration.<br>"
                     "Duration will be set directly on the device to have a safe switch off even if connectivity is broken"
                 ),
             },
             "devicename": {"help": "Set the devicename of the irrigation control"},
             "adjust": {
-                "help": "Adjust the timings with parameters:<br>percent<br>duration in minutes"
+                "args": ["percentage", "duration"],
+                "params": {
+                    "percentage": {"default": 0, "format": "int"},
+                    "duration": {"default": 360, "format": " int", "optional": True},
+                },
+                "help": "Adjust the timings with parameters:<br>percentage<br>duration in hours",
             },
             "eco": {"help": "Activate/decactivate eco mode"},
         }
@@ -99,6 +104,13 @@ class gfprobt(generic.FhemModule):
     async def set_toggle(self, hash, params):
         utils.run_blocking_task(functools.partial(self.blocking_toggle))
 
+    async def set_adjust(self, hash, params):
+        utils.run_blocking_task(
+            functools.partial(
+                self.blocking_adjust, params["percentage"], params["duration"]
+            )
+        )
+
     def blocking_on(self, onseconds):
         self.blocking_update_watering()
         if self._watering == 0:
@@ -113,6 +125,18 @@ class gfprobt(generic.FhemModule):
         self._conn.write_characteristic(HANDLE_W_WATERING, b"\x00")
         self._conn.write_characteristic(HANDLE_W_WATERING, b"\x01")
 
+    def blocking_adjust(self, percentage, duration):
+        duration_sec = duration * 60 * 60
+
+        duration_hex = struct.pack("<I", duration_sec)
+        percentage_hex = struct.pack("<I", percentage & 0xFFFF)[0:2]
+        self._conn.writeCharacteristic(
+            HANDLE_RW_INCREASEREDUCE, duration_hex + percentage_hex
+        )
+
+        self.write_offset()
+        self.commit_code()
+
     async def update_loop(self):
         while True:
             try:
@@ -124,8 +148,16 @@ class gfprobt(generic.FhemModule):
     async def update_once(self):
         await utils.run_blocking(functools.partial(self.blocking_update))
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", self._watering)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "state", "on" if self._watering == 1 else "off"
+        )
         await fhem.readingsBulkUpdateIfChanged(self.hash, "watering", self._watering)
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "adjust_hours", self._adjust_hours
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "adjust_percentage", self._adjust_perc
+        )
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "batteryVoltage", self._battery
         )
@@ -173,6 +205,8 @@ class gfprobt(generic.FhemModule):
         )[0]
         self._devmac = str(self._conn.read_characteristic(HANDLE_R_MAC))
         self._increasereduce = self._conn.read_characteristic(HANDLE_RW_INCREASEREDUCE)
+        self._adjust_hours = struct.unpack("<I", self._increasereduce[0:3])/3600
+        self._adjust_perc = struct.unpack("<h", self._increasereduce[4:5])
         self._raw_timers = {}
         for handle_timer in HANDLE_RW_TIMERS:
             self._raw_timers[handle_timer] = self._conn.read_characteristic(
