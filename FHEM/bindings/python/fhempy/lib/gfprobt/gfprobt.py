@@ -205,8 +205,8 @@ class gfprobt(generic.FhemModule):
         )[0]
         self._devmac = str(self._conn.read_characteristic(HANDLE_R_MAC))
         self._increasereduce = self._conn.read_characteristic(HANDLE_RW_INCREASEREDUCE)
-        self._adjust_hours = struct.unpack("<I", self._increasereduce[0:3])/3600
-        self._adjust_perc = struct.unpack("<h", self._increasereduce[4:5])
+        self._adjust_hours = struct.unpack("<I", self._increasereduce[0:3])[0] / 3600
+        self._adjust_perc = struct.unpack("<h", self._increasereduce[4:5])[0]
         self._raw_timers = {}
         for handle_timer in HANDLE_RW_TIMERS:
             self._raw_timers[handle_timer] = self._conn.read_characteristic(

@@ -112,7 +112,7 @@ class discover_mdns(FhemModule):
             # wait for the devices to initialize
             await asyncio.sleep(10)
         except Exception:
-            self.logger.error(traceback.print_exc())
+            self.logger.exception("Failed to handle foundDevice")
 
     async def runZeroconfScan(self):
         # await here to finish define before zeroconf object is created

@@ -506,7 +506,7 @@ class FhemThermostat(eq3.Thermostat):
         )
 
     def set_max_retries(self, max_retries):
-        self.set_max_retries(max_retries)
+        super().set_max_retries(max_retries)
 
     def set_keep_connection(self, new_state):
         self.set_keep_connected(new_state)
