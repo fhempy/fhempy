@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.282 (2022-04-20)
+
+
 ## v0.1.281 (2022-04-20)
 ### Fix
 * **eq3bt:** Fix possible infinite loop ([`7c21c2a`](https://github.com/dominikkarall/fhempy/commit/7c21c2a49bb645a7071259799b22c4c85f96dae5))
