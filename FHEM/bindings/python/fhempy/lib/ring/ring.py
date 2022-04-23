@@ -152,8 +152,9 @@ class ring(FhemModule):
                 except Exception:
                     self.logger.exception("Failed to poll devices")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
-        except Exception:
+        except Exception as ex:
             self.logger.exception("Failed to update devices")
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", ex, 1)
 
     async def update_dings_loop(self):
         try:
@@ -333,7 +334,10 @@ class ring(FhemModule):
             )
             if self._lastrecording_url is False:
                 self.blocking_login()
-            # self._snapshot = self._rdevice.get_snapshot(retries=10)
+            # try:
+            #    self._snapshot = self._rdevice.get_snapshot(retries=10)
+            # except Exception:
+            #    self._snapshot = None
 
     def blocking_login(self):
         def token_updater(token):
@@ -382,6 +386,9 @@ class ring(FhemModule):
         await fhem.readingsSingleUpdateIfChanged(
             self.hash, "password", encrypted_password, 1
         )
+        self._token = ""
+        self._2facode = None
+        await fhem.CommandDeleteReading(self.hash, self.hash["NAME"] + " token")
         self.create_async_task(self.ring_login())
 
     async def set_2fa_code(self, hash, params):
