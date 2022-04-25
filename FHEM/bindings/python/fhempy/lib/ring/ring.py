@@ -318,8 +318,8 @@ class ring(FhemModule):
         self._ring.update_dings()
 
     def poll_device(self):
-        self._rdevice.update_health_data()
         self._ring.update_data()
+        self._rdevice.update_health_data()
         self._history = []
         if (
             self._rdevice.family == "doorbots"
