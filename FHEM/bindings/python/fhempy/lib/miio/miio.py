@@ -150,6 +150,8 @@ class miio(generic.FhemModule):
                 args.append(params[par_name] == "on")
             elif ann == typing.List:
                 args.append(json.loads(params[par_name]))
+            elif ann == typing.Tuple:
+                args.append(tuple(params[par_name]))
             elif ann == inspect.Signature.empty:
                 if self.is_number(params[par_name]):
                     args.append(float(params[par_name]))
