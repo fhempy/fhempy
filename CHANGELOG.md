@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.285 (2022-04-25)
+### Feature
+* **rct_power:** Further readings and commands ([#72](https://github.com/dominikkarall/fhempy/issues/72)) ([`85981f4`](https://github.com/dominikkarall/fhempy/commit/85981f430b18c7d2821861ce1af014a231c9002d))
+
+### Fix
+* **ring:** Change update order ([`75016f6`](https://github.com/dominikkarall/fhempy/commit/75016f6e263420eb9fb24e58bf529d638d2a05a7))
+* **miio:** Support Tuple data type ([`3b8dce5`](https://github.com/dominikkarall/fhempy/commit/3b8dce51f65a6c0b9f47ea9397ec7ee81162ef65))
+* **ring:** Show errors in state ([`32d2a4b`](https://github.com/dominikkarall/fhempy/commit/32d2a4b39de821895407157352e6cfb2a79c8ddf))
+
 ## v0.1.284 (2022-04-20)
 ### Feature
 * **esphome:** Update to 2022.4.0 ([`59683c2`](https://github.com/dominikkarall/fhempy/commit/59683c2f7c0bc125334320ae0dfa8ae198cbafa7))
