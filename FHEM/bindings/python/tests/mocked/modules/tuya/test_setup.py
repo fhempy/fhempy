@@ -69,7 +69,7 @@ async def test_setup(mocker):
     await fhempy_device.Set(testhash, ["testdevice", "scan_devices"], {})
 
     await asyncio.sleep(0.2)
-    assert mock_fhem.readings["testdevice"]["state"] == "done, created 2 devices"
+    assert mock_fhem.readings["testdevice"]["state"] == "2 devices found localy"
 
     assert (
         mock_fhem.readings["testdevice"]["239823982398239823_localkey"]
