@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.287 (2022-04-26)
+### Fix
+* **tuya:** Fix for existing mappings ([`1d5d301`](https://github.com/dominikkarall/fhempy/commit/1d5d301dd69d0cef8b7b84655d01dc325c161375))
+
 ## v0.1.286 (2022-04-26)
 ### Feature
 * **tuya:** Support tuya local real-time updates ([`9104867`](https://github.com/dominikkarall/fhempy/commit/9104867f51edb1a22ec3d8d34ff0dda4fbabfaf6))
