@@ -9,16 +9,18 @@ from tinytuya import wizard as tt_wizard
 
 from .. import fhem, utils
 from .. import generic
-from . import mappings
+from . import pytuya, mappings
 
 
-class tuya(generic.FhemModule):
+class tuya(generic.FhemModule, pytuya.TuyaListener):
     def __init__(self, logger):
         super().__init__(logger)
-        self.tt_device = None
+        self._connected_device = None
+        self.tuya_cloud = None
         self.tt_key = None
         self.tt_secret = None
         self.last_status = None
+        self.create_device_list = []
         self.update_lock = asyncio.Lock()
 
     # FHEM FUNCTION
@@ -49,42 +51,53 @@ class tuya(generic.FhemModule):
             hash["API_KEY"] = self.tt_key
             hash["API_SECRET"] = self.tt_secret
             hash["REGION"] = self.tt_region
+            await self.setup_cloud()
+            return
+
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
+        self.tt_region = "eu"
+        self.tt_did = args[4]
+        self.tt_ip = args[5]
+        self.tt_localkey = args[6]
+        if len(args) >= 8:
+            self.tt_version = float(args[7])
         else:
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
-            self.tt_region = "eu"
-            self.tt_did = args[4]
-            self.tt_ip = args[5]
-            self.tt_localkey = args[6]
-            if len(args) >= 8:
-                self.tt_version = float(args[7])
-            else:
-                self.tt_version = 3.3
-            if len(args) == 10:
-                self.tt_key = args[8]
-                self.tt_secret = args[9]
-            # set internal
-            hash["DEVICEID"] = self.tt_did
-            # set attributes
-            self.attr_config = {
-                "interval": {
-                    "default": 15,
-                    "format": "int",
-                    "help": "Change status update interval, default is 15.",
-                },
-                "tuya_spec_functions": {"default": ""},
-                "tuya_spec_status": {"default": ""},
-                "keep_connected": {
-                    "options": "on,off",
-                    "format": "bool",
-                    "default": "off",
-                },
-            }
-            self.set_attr_config(self.attr_config)
-            # this is needed to set default values
-            await utils.handle_define_attr(self.attr_config, self, hash)
-            # create device
-            await self.create_device()
-            self.create_async_task(self.update_loop())
+            self.tt_version = 3.3
+        if len(args) == 10:
+            self.tt_key = args[8]
+            self.tt_secret = args[9]
+        # set internal
+        hash["DEVICEID"] = self.tt_did
+        # set attributes
+        self.attr_config = {
+            "interval": {
+                "default": 15,
+                "format": "int",
+                "help": "Change status update interval, default is 15.",
+            },
+            "tuya_spec_functions": {"default": ""},
+            "tuya_spec_status": {"default": ""},
+            "keep_connected": {
+                "options": "on,off",
+                "format": "bool",
+                "default": "off",
+            },
+        }
+        self.set_attr_config(self.attr_config)
+        # this is needed to set default values
+        await utils.handle_define_attr(self.attr_config, self, hash)
+
+        await self.setup_cloud()
+
+        # create device
+        self.create_async_task(self.create_device())
+
+    async def setup_cloud(self):
+        # create cloud device for cloud calls
+        if self.tt_key and self.tt_secret:
+            self.tuya_cloud = tinytuya.Cloud(
+                self.tt_region, self.tt_key, self.tt_secret, self.tt_did
+            )
 
     async def _create_mapping_dev(self):
         self.tuya_spec_functions = []
@@ -111,9 +124,6 @@ class tuya(generic.FhemModule):
                 self.tuya_spec_functions.append(schema_part)
 
         await self._generate_set()
-
-    async def set_attr_keep_connected(self, hash):
-        self.tt_device.set_socketPersistent(self._attr_keep_connected)
 
     async def set_attr_dp(self, hash):
         # check defined dp_Xs and their value
@@ -162,32 +172,46 @@ class tuya(generic.FhemModule):
                 options = json.loads(fct["values"])["range"]
                 set_conf[fct["code"]] = {
                     "options": ",".join(options),
-                    "args": ["selected_val"],
+                    "args": ["new_val"],
                     "help": fct["desc"],
                     "function_param": fct,
-                    "function": "set_enum",
+                    "function": "set_other_types",
                 }
             elif fct["type"] == "Integer":
                 spec = json.loads(fct["values"])
                 slider = f"slider,{spec['min']},{spec['step']},{spec['max']}"
                 set_conf[fct["code"]] = {
                     "options": slider,
-                    "args": ["selected_val"],
-                    "params": {"selected_val": {"format": "int"}},
+                    "args": ["new_val"],
+                    "params": {"new_val": {"format": "int"}},
                     "help": fct["desc"],
                     "function_param": fct,
-                    "function": "set_integer",
+                    "function": "set_other_types",
                 }
             elif fct["type"] == "String":
                 set_conf[fct["code"]] = {
                     "args": ["new_val"],
                     "help": fct["desc"],
                     "function_param": fct,
-                    "function": "set_string",
+                    "function": "set_other_types",
                 }
             elif fct["type"] == "Json":
                 pass
+
         self.set_set_config(set_conf)
+
+    async def set_create_device(self, hash, params):
+        nameid = params["name"]
+        for dev in self.create_device_list:
+            if nameid == dev["name_esc"] + "_" + dev["id"]:
+                await fhem.CommandDefine(
+                    self.hash,
+                    (
+                        f"{dev['name_esc']}_{dev['id']} fhempy tuya "
+                        f"{dev['productid']} {dev['device_id']} {dev['ip']} {dev['local_key']} "
+                        f"{dev['version']} {self.tt_key} {self.tt_secret}"
+                    ),
+                )
 
     async def set_boolean(self, hash, params):
         switch_id = params["function_param"]["id"]
@@ -198,34 +222,14 @@ class tuya(generic.FhemModule):
         else:
             if params["cmd"] == "on":
                 onoff = True
-        func = self.tt_device.set_status
-        self.create_async_task(
-            self._call_fct_upd_reading(functools.partial(func, onoff, switch=switch_id))
-        )
+        if self._connected_device:
+            await self._connected_device.set_dp(onoff, switch_id)
 
-    async def set_integer(self, hash, params):
-        index = params["function_param"]["id"]
-        new_val = params["selected_val"]
-        func = self.tt_device.set_value
-        self.create_async_task(
-            self._call_fct_upd_reading(functools.partial(func, index, new_val))
-        )
-
-    async def set_enum(self, hash, params):
-        index = params["function_param"]["id"]
-        new_val = params["selected_val"]
-        func = self.tt_device.set_status
-        self.create_async_task(
-            self._call_fct_upd_reading(functools.partial(func, new_val, index))
-        )
-
-    async def set_string(self, hash, params):
+    async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
         new_val = params["new_val"]
-        func = self.tt_device.set_status
-        self.create_async_task(
-            self._call_fct_upd_reading(functools.partial(func, new_val, index))
-        )
+        if self._connected_device:
+            await self._connected_device.set_dp(new_val, index)
 
     # check if tuya_spec_functions and tuya_spec_status attr is set?
     async def check_tuya_attributes(self):
@@ -239,21 +243,32 @@ class tuya(generic.FhemModule):
         self.tuya_spec_status = ast.literal_eval(self.tuya_spec_status)
 
     # get functions/status from tuya
-    async def get_tuya_dev_specification(self, token):
+    async def get_tuya_dev_specification(self):
         # Get specification
-        uri = f"devices/{self.tt_did}/specifications"
-        response_dict = await self._request_tuyacloud(uri, token)
-        return response_dict["result"]
+        resp = await utils.run_blocking(
+            functools.partial(self.tuya_cloud.getdps, self.tt_did)
+        )
+        return resp["result"]
 
-    async def get_tuya_dev_description(self, token):
+    async def get_tuya_dev_description(self):
         # Get function description
-        uri = f"devices/{self.tt_did}/functions"
-        response_dict = await self._request_tuyacloud(uri, token)
+        response_dict = await utils.run_blocking(
+            functools.partial(self.tuya_cloud.getfunctions, self.tt_did)
+        )
         fct_desc = response_dict["result"]["functions"]
         fct_code_desc = {}
         for fct in fct_desc:
             fct_code_desc[fct["code"]] = fct["desc"]
         return fct_code_desc
+
+    async def async_status_updated(self, status):
+        await self.update_readings(status)
+
+    def status_updated(self, status):
+        self.create_async_task(self.async_status_updated(status))
+
+    def disconnected(self):
+        self.create_async_task(self.async_disconnected())
 
     async def _add_desc_to_spec(self, spec_fcts, desc):
         for spec in spec_fcts:
@@ -275,17 +290,10 @@ class tuya(generic.FhemModule):
         await self.check_tuya_attributes()
         if len(self.tuya_spec_functions) == 0 and len(self.tuya_spec_status) == 0:
             # retrieve cloud codes
-            token = await self._obtain_token()
-            if token is None:
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, "state", "Login failed", 1
-                )
-                return
-
-            spec = await self.get_tuya_dev_specification(token)
+            spec = await self.get_tuya_dev_specification()
             self.tuya_spec_functions = spec["functions"]
             self.tuya_spec_status = spec["status"]
-            desc = await self.get_tuya_dev_description(token)
+            desc = await self.get_tuya_dev_description()
             self.tuya_spec_functions = await self._add_desc_to_spec(
                 self.tuya_spec_functions, desc
             )
@@ -301,33 +309,19 @@ class tuya(generic.FhemModule):
                 f"{self.hash['NAME']} tuya_spec_status {str(self.tuya_spec_status)}",
             )
 
-        await fhem.readingsSingleUpdate(
-            self.hash, "state", "Localscan...please wait...", 1
-        )
-        # retrieve local dp_s
-        self.local_dev = None
-        devices = await utils.run_blocking(
-            functools.partial(tinytuya.deviceScan, False, 20)
-        )
-
-        for ip in devices:
-            if devices[ip]["gwId"] == self.tt_did:
-                self.local_dev = devices[ip]
-
         # create attributes dp_1...X
         # add options to attributes to select cloud codes
         # e.g.
         # dp_1 = "switch_1"
         # dp_42 = "switch_overcharge"
-        if self.local_dev is not None:
-            dev = tinytuya.OutletDevice(self.tt_did, self.tt_ip, self.tt_localkey)
-            dev.set_version(self.tt_version)
-            self.local_dev["dps"] = await utils.run_blocking(
-                functools.partial(dev.status)
-            )
-            dps = []
-            for dp in self.local_dev["dps"]["dps"]:
-                dps.append(f"dp_{int(dp):02d}")
+        # connect to device
+        await self.setup_connection()
+
+        status = await self._connected_device.status()
+
+        dps = []
+        for dp in list(status):
+            dps.append(f"dp_{int(dp):02d}")
 
             options = []
             for opt in self.tuya_spec_status:
@@ -343,35 +337,55 @@ class tuya(generic.FhemModule):
             self.set_attr_config(self.attr_config)
             await utils.handle_define_attr(self.attr_config, self, self.hash)
 
-        await fhem.readingsSingleUpdate(
-            self.hash, "state", "Ready to configure dp_ attributes", 1
-        )
+        # if spec contains dp_id
+        for spec in self.tuya_spec_status:
+            if "dp_id" in spec:
+                dp = spec["dp_id"]
+                code = spec["code"]
+                val = await fhem.AttrVal(self.hash["NAME"], f"dp_{int(dp):02d}", "")
+                if val == "":
+                    await fhem.CommandAttr(
+                        self.hash,
+                        f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
+                    )
+        for spec in self.tuya_spec_functions:
+            if "dp_id" in spec:
+                dp = spec["dp_id"]
+                code = spec["code"]
+                val = await fhem.AttrVal(self.hash["NAME"], f"dp_{int(dp):02d}", "")
+                if val == "":
+                    await fhem.CommandAttr(
+                        self.hash,
+                        f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
+                    )
+        await self.set_attr_dp(self.hash)
+        await self.update_readings(status)
+
+    async def setup_connection(self):
+        while True:
+            try:
+                self._connected_device = await pytuya.connect(
+                    self.tt_ip, self.tt_did, self.tt_localkey, self.tt_version, self
+                )
+                break
+            except Exception:
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "Failed to connect to device", 1
+                )
+                self.logger.exception("Failed to connect to device")
+                await asyncio.sleep(10)
 
     async def create_device(self):
-        self.tt_device = tinytuya.Device(self.tt_did, self.tt_ip, self.tt_localkey)
-        self.tt_device.set_version(self.tt_version)
         if self.tt_type in mappings.knownSchemas:
             await self._create_mapping_dev()
         else:
-            self.create_async_task(self._create_cloudmapping_dev())
+            await self._create_cloudmapping_dev()
 
-    async def update_loop(self):
-        while True:
-            await self.update_once()
-            await asyncio.sleep(self._attr_interval)
-
-    async def update_once(self):
-        async with self.update_lock:
-            try:
-                status = await utils.run_blocking(
-                    functools.partial(self.tt_device.status)
-                )
-                if self.last_status != status:
-                    await self.update_readings(status)
-            except (ValueError, TypeError):
-                pass
-            except Exception:
-                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+    async def async_disconnected(self):
+        await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+        self._connected_device = None
+        await asyncio.sleep(5)
+        await self.setup_connection()
 
     def convert(self, value, schema):
         if schema["type"] == "Integer":
@@ -384,7 +398,6 @@ class tuya(generic.FhemModule):
         return value
 
     async def update_readings(self, status):
-        status = status["dps"]
         await fhem.readingsBeginUpdate(self.hash)
         try:
             stateused = False
@@ -424,48 +437,21 @@ class tuya(generic.FhemModule):
         await self.update_once()
 
     async def Undefine(self, hash):
-        if self.tt_device:
-            del self.tt_device
+        if self._connected_device:
+            await self._connected_device.close()
+            self._connected_device = None
         await super().Undefine(hash)
 
     # The following code is only for setup/scan process via tuya cloud
     async def set_scan_devices(self, hash, params):
         self.create_async_task(self._scan_devices())
 
-    async def _request_tuyacloud(self, uri, token=None):
-        return await utils.run_blocking(
-            functools.partial(
-                tt_wizard.tuyaPlatform,
-                self.tt_region,
-                self.tt_key,
-                self.tt_secret,
-                uri,
-                token,
-            )
+    async def _scan_devices(self):
+        json_data = await utils.run_blocking(
+            functools.partial(self.tuya_cloud.getdevices, verbose=True)
         )
 
-    async def _obtain_token(self):
-        # Get Oauth Token from tuyaPlatform
-        uri = "token?grant_type=1"
-        response_dict = await self._request_tuyacloud(uri)
-        if "result" in response_dict:
-            token = response_dict["result"]["access_token"]
-            return token
-        return None
-
-    async def _scan_devices(self):
-        token = await self._obtain_token()
-
-        # Get UID from sample Device ID
-        uri = "devices/%s" % self.tt_did
-        response_dict = await self._request_tuyacloud(uri, token)
-        uid = response_dict["result"]["uid"]
-
-        # Use UID to get list of all Devices for User
-        uri = "users/%s/devices" % uid
-        json_data = await self._request_tuyacloud(uri, token)
-
-        # Filter to only Name, ID and Key
+        # Filter to only Name, ID and Key, product_id, icon
         tuyadevices = []
         for i in json_data["result"]:
             item = {}
@@ -539,27 +525,32 @@ class tuya(generic.FhemModule):
                 self.hash, f"{id}_version", str(ver), 1
             )
 
-            # do not create a device if unknown
-            # if productid not in mappings.knownSchemas:
-            #    continue
+            # create FHEM device
+            self.create_device_list.append(
+                {
+                    "name": name,
+                    "name_esc": name.replace(" ", "_"),
+                    "device_id": id,
+                    "productid": productid,
+                    "ip": ip,
+                    "local_key": local_key,
+                    "version": ver,
+                }
+            )
+            count_created += 1
 
-            if not await fhem.checkIfDeviceExists(
-                self.hash, "PYTHONTYPE", "tuya", "DEVICEID", id
-            ):
-                # create FHEM device
-                await fhem.CommandDefine(
-                    self.hash,
-                    (
-                        f"{name}_{id} fhempy tuya "
-                        f"{productid} {id} {ip} {local_key} "
-                        f"{ver} {self.tt_key} {self.tt_secret}"
-                    ),
-                )
-                count_created += 1
+        # devices which can be created from setup
+        set_conf = {"scan_devices": {}}
+        set_conf["create_device"] = {"args": ["name"]}
+        options = []
+        for dev in self.create_device_list:
+            options.append(dev["name_esc"] + "_" + dev["id"])
+        set_conf["create_device"]["options"] = ",".join(options)
+        self.set_set_config({"scan_devices": {}})
 
         await fhem.readingsSingleUpdate(
             self.hash,
             "state",
-            f"done, created {count_created} devices",
+            f"{count_created} devices found localy",
             1,
         )

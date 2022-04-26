@@ -41,8 +41,8 @@ This repository includes following working modules:
 |[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
 |[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
 |[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your skoda car|
-|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Not recommended: Control tuya devices via local key|
-|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Recommended: Control all tuya devices via cloud incl. real-time updates|
+|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Control tuya devices localy incl. real-time updates|
+|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control tuya devices via cloud incl. real-time updates|
 |[warema](FHEM/bindings/python/fhempy/lib/warema/)|Control Warema devices|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3\!)|
