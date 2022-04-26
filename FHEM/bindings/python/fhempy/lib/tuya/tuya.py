@@ -510,8 +510,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         self.logger.debug("Polling local devices...")
         count_created = 0
+        self.create_device_list = []
         for i in tuyadevices:
-            name = i["name"].replace(" ", "_")
+            name = i["name"]
             id = i["id"]
             (ip, ver) = getIP(devices, i["id"])
             local_key = i["key"]
@@ -548,7 +549,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         set_conf["create_device"] = {"args": ["name"], "options": ""}
         options = []
         for dev in self.create_device_list:
-            options.append(dev["name_esc"] + "_" + dev["id"])
+            options.append(dev["name_esc"] + "_" + dev["device_id"])
         set_conf["create_device"]["options"] = ",".join(options)
         self.set_set_config(set_conf)
 
