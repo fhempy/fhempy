@@ -545,12 +545,12 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         # devices which can be created from setup
         set_conf = {"scan_devices": {}}
-        set_conf["create_device"] = {"args": ["name"]}
+        set_conf["create_device"] = {"args": ["name"], "options": ""}
         options = []
         for dev in self.create_device_list:
             options.append(dev["name_esc"] + "_" + dev["id"])
         set_conf["create_device"]["options"] = ",".join(options)
-        self.set_set_config({"scan_devices": {}})
+        self.set_set_config(set_conf)
 
         await fhem.readingsSingleUpdate(
             self.hash,
