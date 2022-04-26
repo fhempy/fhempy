@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.292 (2022-04-26)
+### Fix
+* **tuya:** Fix tests ([`fd7c390`](https://github.com/dominikkarall/fhempy/commit/fd7c390aece3c7477203c1e78d516a4680a7dbf4))
+
 ## v0.1.291 (2022-04-26)
 ### Feature
 * **tuya:** Add info readings ([`f1817ad`](https://github.com/dominikkarall/fhempy/commit/f1817ada60d07a83f1274b38f240694298d929b4))
