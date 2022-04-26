@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.291 (2022-04-26)
+### Feature
+* **tuya:** Add info readings ([`f1817ad`](https://github.com/dominikkarall/fhempy/commit/f1817ada60d07a83f1274b38f240694298d929b4))
+
 ## v0.1.290 (2022-04-26)
 ### Fix
 * **tuya:** Fix local scan ([`6a850d4`](https://github.com/dominikkarall/fhempy/commit/6a850d4ced3cb3bf573943e9269383ce930ce728))
