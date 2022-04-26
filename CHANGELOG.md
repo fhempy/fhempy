@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.290 (2022-04-26)
+### Fix
+* **tuya:** Fix local scan ([`6a850d4`](https://github.com/dominikkarall/fhempy/commit/6a850d4ced3cb3bf573943e9269383ce930ce728))
+
 ## v0.1.289 (2022-04-26)
 ### Fix
 * **gfprobt:** Deactivate not working adjust values ([`73c5aae`](https://github.com/dominikkarall/fhempy/commit/73c5aae511e5e28a4c250e0d45c074e6597ee92c))
