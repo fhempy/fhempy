@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.293 (2022-04-26)
+### Fix
+* **tuya:** Fix create device ([`6b4c524`](https://github.com/dominikkarall/fhempy/commit/6b4c5247dd052ba42f766268b92253c9d1d49561))
+
 ## v0.1.292 (2022-04-26)
 ### Fix
 * **tuya:** Fix tests ([`fd7c390`](https://github.com/dominikkarall/fhempy/commit/fd7c390aece3c7477203c1e78d516a4680a7dbf4))
