@@ -254,6 +254,15 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         )
         return resp["result"]
 
+    async def get_tuya_dev_info(self):
+        resp = await utils.run_blocking(
+            functools.partial(self.tuya_cloud.getdevices, True)
+        )
+        for dev in resp["result"]:
+            if dev["id"] == self.tt_did:
+                return dev
+        return {}
+
     async def get_tuya_dev_description(self):
         # Get function description
         response_dict = await utils.run_blocking(
@@ -365,6 +374,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await self.set_attr_dp(self.hash)
         await self.update_readings(status)
 
+        info = await self.get_tuya_dev_info()
+        await self.update_info_readings(info)
+
     async def setup_connection(self):
         while True:
             try:
@@ -400,6 +412,19 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 return "on"
             return "off"
         return value
+
+    async def update_info_readings(self, info_dict):
+        await fhem.readingsBeginUpdate(self.hash)
+        try:
+            for reading in info_dict:
+                if reading == "status":
+                    continue
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, reading, info_dict[reading]
+                )
+        except Exception:
+            self.logger.exception("Failed to update info readings")
+        await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings(self, status):
         await fhem.readingsBeginUpdate(self.hash)
