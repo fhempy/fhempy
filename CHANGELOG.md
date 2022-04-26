@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.286 (2022-04-26)
+### Feature
+* **tuya:** Support tuya local real-time updates ([`9104867`](https://github.com/dominikkarall/fhempy/commit/9104867f51edb1a22ec3d8d34ff0dda4fbabfaf6))
+
 ## v0.1.285 (2022-04-25)
 ### Feature
 * **rct_power:** Further readings and commands ([#72](https://github.com/dominikkarall/fhempy/issues/72)) ([`85981f4`](https://github.com/dominikkarall/fhempy/commit/85981f430b18c7d2821861ce1af014a231c9002d))
