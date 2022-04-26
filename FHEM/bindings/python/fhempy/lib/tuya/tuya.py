@@ -207,11 +207,11 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
     async def set_create_device(self, hash, params):
         nameid = params["name"]
         for dev in self.create_device_list:
-            if nameid == dev["name_esc"] + "_" + dev["id"]:
+            if nameid == dev["name_esc"] + "_" + dev["device_id"]:
                 await fhem.CommandDefine(
                     self.hash,
                     (
-                        f"{dev['name_esc']}_{dev['id']} fhempy tuya "
+                        f"{dev['name_esc']}_{dev['device_id']} fhempy tuya "
                         f"{dev['productid']} {dev['device_id']} {dev['ip']} {dev['local_key']} "
                         f"{dev['version']} {self.tt_key} {self.tt_secret}"
                     ),
