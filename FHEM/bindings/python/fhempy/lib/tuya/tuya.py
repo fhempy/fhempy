@@ -125,6 +125,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         await self._generate_set()
 
+        await self.setup_connection()
+        status = await self._connected_device.status()
+        await self.update_readings(status)
+
     async def set_attr_dp(self, hash):
         # check defined dp_Xs and their value
         # set set_conf based on the set dp_Xs
