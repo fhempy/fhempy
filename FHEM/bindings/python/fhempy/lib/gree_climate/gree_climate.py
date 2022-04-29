@@ -74,7 +74,7 @@ class gree_climate(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        if len(args) > 4:
+        if len(args) != 4:
             return "Usage: define gree_scan fhempy gree_climate scan/name"
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
 
