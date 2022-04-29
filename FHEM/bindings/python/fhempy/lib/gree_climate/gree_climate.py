@@ -35,7 +35,7 @@ class gree_climate(generic.FhemModule):
                 "options": "Auto,Cool,Dry,Fan,Heat",
             },
             "desiredTemp": {"args": ["temperature"], "options": "slider,8,1,30"},
-            "fanspeed": {
+            "fan_speed": {
                 "args": ["speed"],
                 "options": "Auto,Low,MediumLow,Medium,MediumHigh,High",
             },
@@ -181,6 +181,9 @@ class gree_climate(generic.FhemModule):
                 self.hash, "steady_heat", "on" if self.device.steady_heat else "off"
             )
             await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "power_save", "on" if self.device.power_save else "off"
+            )
+            await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "state", "on" if self.device.power else "off"
             )
             # device info
@@ -221,7 +224,7 @@ class gree_climate(generic.FhemModule):
         self.device.target_temperature = params["temperature"]
         self.create_async_task(self.send_command())
 
-    async def set_fanspeed(self, hash, params):
+    async def set_fan_speed(self, hash, params):
         self.device.fan_speed = FanSpeed[params["speed"]]
         self.create_async_task(self.send_command())
 
