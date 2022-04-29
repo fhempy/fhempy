@@ -118,7 +118,7 @@ class gree_climate(generic.FhemModule):
             await self.update_readings()
         except Exception:
             self.logger.exception("Failed to update readings")
-            await self.connect_device(self.name)
+            await self.connect_device()
 
     async def update_loop(self):
         while True:
