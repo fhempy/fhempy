@@ -114,16 +114,14 @@ class rct_power(generic.FhemModule):
             "battmng_kreserve": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "help": "Reserve coefficent for battery power management [-] Higher values = lower battery SoC (higher reserve). bat_mng_struct.k_reserve",
-                "options": "slider,0,0.1,2",
+                "help": "Reserve coefficent for battery power management [-] Higher values = lower battery SoC (higher reserve). bat_mng_struct.k_reserve. Decimal values from 0.00 - 2.00 are allowed.",
                 "function": "set_rct_write",
                 "function_param": 0xF644DCA7,
             },      
             "battmng_ktrust": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "help": "Time constant for battery power management [Seconds] Lower values = faster reaction on weather prediction. bat_mng_struct.k_trust",
-                "options": "slider,0,1,1000",
+                "help": "Time constant for battery power management [Seconds] Lower values = faster reaction on weather prediction. bat_mng_struct.k_trust. Decimal values from 0.00 - 1000 are allowed.",
                 "function": "set_rct_write",
                 "function_param": 0xB2FB9A90,
             },               
