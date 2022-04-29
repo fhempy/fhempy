@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.297 (2022-04-29)
+### Fix
+* **gree_climate:** Fix usage ([`0023119`](https://github.com/dominikkarall/fhempy/commit/00231192441a53284e3789a9b540242c8753ee08))
+
 ## v0.1.296 (2022-04-29)
 ### Fix
 * **gree_climate:** Fix set temperature ([`fcc825f`](https://github.com/dominikkarall/fhempy/commit/fcc825fe177f0bb35163d65473cb76ae32a7525d))
