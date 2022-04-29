@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.294 (2022-04-29)
+### Feature
+* **gree_climate:** Add to readme ([`7ed6b1e`](https://github.com/dominikkarall/fhempy/commit/7ed6b1eae89690f2576115c396eb4e8fb8ac70da))
+* **gree_climate:** First release ([`c526e10`](https://github.com/dominikkarall/fhempy/commit/c526e10a6e38d07793ffc0d3584730c763528a1c))
+* **rct_power:** Update help ([#73](https://github.com/dominikkarall/fhempy/issues/73)) ([`b67e0a6`](https://github.com/dominikkarall/fhempy/commit/b67e0a606a8abaacf19ac1c529ee23def8746fbd))
+
 ## v0.1.293 (2022-04-26)
 ### Fix
 * **tuya:** Fix create device ([`6b4c524`](https://github.com/dominikkarall/fhempy/commit/6b4c5247dd052ba42f766268b92253c9d1d49561))
