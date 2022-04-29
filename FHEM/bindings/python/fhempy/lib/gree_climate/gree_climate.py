@@ -77,6 +77,7 @@ class gree_climate(generic.FhemModule):
         self.name = args[3]
         if self.name == "scan":
             self.create_async_task(self.scan_devices())
+            self.set_set_config({})
         else:
             self.create_async_task(self.connect_device())
 
