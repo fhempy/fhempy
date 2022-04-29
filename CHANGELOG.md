@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.295 (2022-04-29)
+### Fix
+* **rct_power:** Remove slider ([#74](https://github.com/dominikkarall/fhempy/issues/74)) ([`e45006d`](https://github.com/dominikkarall/fhempy/commit/e45006d7d04fce3768a90830a83492e316ab758e))
+* **gree_climate:** Fix function call on error ([`0bcedbe`](https://github.com/dominikkarall/fhempy/commit/0bcedbe75c8b0ab4f062edd2c2448b689826a4c9))
+
 ## v0.1.294 (2022-04-29)
 ### Feature
 * **gree_climate:** Add to readme ([`7ed6b1e`](https://github.com/dominikkarall/fhempy/commit/7ed6b1eae89690f2576115c396eb4e8fb8ac70da))
