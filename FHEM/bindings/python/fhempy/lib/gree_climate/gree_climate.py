@@ -34,7 +34,11 @@ class gree_climate(generic.FhemModule):
                 "params": {"mode": {"default": "Auto"}},
                 "options": "Auto,Cool,Dry,Fan,Heat",
             },
-            "desiredTemp": {"args": ["temperature"], "options": "slider,8,1,30"},
+            "desiredTemp": {
+                "args": ["temperature"],
+                "params": {"temperature": {"format": "int"}},
+                "options": "slider,8,1,30",
+            },
             "fan_speed": {
                 "args": ["speed"],
                 "options": "Auto,Low,MediumLow,Medium,MediumHigh,High",
