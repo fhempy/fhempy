@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.296 (2022-04-29)
+### Fix
+* **gree_climate:** Fix set temperature ([`fcc825f`](https://github.com/dominikkarall/fhempy/commit/fcc825fe177f0bb35163d65473cb76ae32a7525d))
+* **gree_climate:** Fix commands ([`1f2779a`](https://github.com/dominikkarall/fhempy/commit/1f2779a9e71954ddddfc53a75272398dcb5e91fd))
+* **gree_climate:** Remove set cmds for scan device ([`45c2d2f`](https://github.com/dominikkarall/fhempy/commit/45c2d2fe1afa5953cb6d6eeb36c55e7cedb06240))
+
 ## v0.1.295 (2022-04-29)
 ### Fix
 * **rct_power:** Remove slider ([#74](https://github.com/dominikkarall/fhempy/issues/74)) ([`e45006d`](https://github.com/dominikkarall/fhempy/commit/e45006d7d04fce3768a90830a83492e316ab758e))
