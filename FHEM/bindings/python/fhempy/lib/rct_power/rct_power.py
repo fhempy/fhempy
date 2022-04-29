@@ -90,41 +90,41 @@ class rct_power(generic.FhemModule):
             "display_brightness": {
                 "args": ["value"],
                 "params": {"value": {"format": "int"}},
+                "help": "Display brightness [-] display_struct.brightness",                
                 "options": "slider,0,1,255",
                 "function": "set_rct_write",
-                # 0x29BDA75F = display_struct.brightness
                 "function_param": 0x29BDA75F,
             },
             "display_contrast": {
                 "args": ["value"],
                 "params": {"value": {"format": "int"}},
+                "help": "Display contrast [-] display_struct.contrast", 
                 "options": "slider,0,1,255",
                 "function": "set_rct_write",
-                # 0xF247BB16 = display_struct.contrast
                 "function_param": 0xF247BB16,
             },
             "max_compensation_power": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
+                "help": "Maximum compensation power from battery [W] p_rec_lim[0]",
                 "options": "slider,0,1,10000",
                 "function": "set_rct_write",
-                # 0x85886E2E = p_rec_lim[0]
                 "function_param": 0x85886E2E,
             },
             "battmng_kreserve": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
+                "help": "Reserve coefficent for battery power management [-] Higher values = lower battery SoC (higher reserve). bat_mng_struct.k_reserve",
                 "options": "slider,0,0.1,2",
                 "function": "set_rct_write",
-                # 0xF644DCA7 = bat_mng_struct.k_reserve
                 "function_param": 0xF644DCA7,
             },      
             "battmng_ktrust": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
+                "help": "Time constant for battery power management [Seconds] Lower values = faster reaction on weather prediction. bat_mng_struct.k_trust",
                 "options": "slider,0,1,1000",
                 "function": "set_rct_write",
-                # 0xB2FB9A90 = bat_mng_struct.k_trust
                 "function_param": 0xB2FB9A90,
             },               
             "batt_soc_min": {
