@@ -7,7 +7,7 @@ You need to setup a Tuya IoT project on the tuya development platform. It also r
 
 Please follow the instructions here:
 
-https://github.com/tuya/tuya-home-assistant/wiki/Tuya-IoT-Platform-Configuration-Guide-Using-Smart-Home-PaaS
+https://github.com/tuya/tuya-home-assistant/wiki/Tuya-IoT-Platform-Configuration-Guide
 
 
 ## Usage
