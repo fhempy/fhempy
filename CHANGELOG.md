@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.304 (2022-05-01)
+### Fix
+* **nespresso_ble:** Remove unused requirement ([`889e582`](https://github.com/dominikkarall/fhempy/commit/889e582813c225f481db4fbfc5110f263e57cbc3))
+
 ## v0.1.303 (2022-05-01)
 ### Fix
 * **fhempy:** Remove Python 3.7 test ([`d1c2b7b`](https://github.com/dominikkarall/fhempy/commit/d1c2b7b2438c4429d05b4c329d8c8c3440f48ad8))
