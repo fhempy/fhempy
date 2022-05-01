@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.298 (2022-05-01)
+### Fix
+* **tuya:** Update tuya cloud instructions ([`84dd50c`](https://github.com/dominikkarall/fhempy/commit/84dd50cce90cb990ac727459a5e263c74d26bd8b))
+* **tuya_cloud:** Update README link ([`507ffb0`](https://github.com/dominikkarall/fhempy/commit/507ffb038daa1e033f2b80293a39dab40a5c8ddc))
+
 ## v0.1.297 (2022-04-29)
 ### Fix
 * **gree_climate:** Fix usage ([`0023119`](https://github.com/dominikkarall/fhempy/commit/00231192441a53284e3789a9b540242c8753ee08))
