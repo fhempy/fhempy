@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.300 (2022-05-01)
+### Fix
+* **rct_power:** Fix commands ([#76](https://github.com/dominikkarall/fhempy/issues/76)) ([`bf88baa`](https://github.com/dominikkarall/fhempy/commit/bf88baaed7f13a63956baa3e68e7bf91e3e83c36))
+
 ## v0.1.299 (2022-05-01)
 ### Fix
 * **tuya:** Optimize define runtime ([`2109d7a`](https://github.com/dominikkarall/fhempy/commit/2109d7a7273c1ba857b32ee50d5cf9b70b18a3fc))
