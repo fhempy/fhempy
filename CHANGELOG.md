@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.302 (2022-05-01)
+### Fix
+* **rct_power:** Fix commands ([`4efb800`](https://github.com/dominikkarall/fhempy/commit/4efb8002ab923878c761aabf65e95263c7a44d77))
+
 ## v0.1.301 (2022-05-01)
 ### Fix
 * **rct_power:** Fix commands ([`5753a35`](https://github.com/dominikkarall/fhempy/commit/5753a35bc2f67bcb58af0ae6cf8fd0dde570bc97))
