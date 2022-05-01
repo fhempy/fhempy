@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.303 (2022-05-01)
+### Fix
+* **fhempy:** Remove Python 3.7 test ([`d1c2b7b`](https://github.com/dominikkarall/fhempy/commit/d1c2b7b2438c4429d05b4c329d8c8c3440f48ad8))
+
 ## v0.1.302 (2022-05-01)
 ### Fix
 * **rct_power:** Fix commands ([`4efb800`](https://github.com/dominikkarall/fhempy/commit/4efb8002ab923878c761aabf65e95263c7a44d77))
