@@ -9,15 +9,15 @@ First of all it is required to get the local key of your devices. Please follow 
  3. Login with your account here: https://auth.tuya.com/
  4. Create a new project here (name, etc. doesn't matter): https://iot.tuya.com/cloud/ (upper right corner)
  5. Copy API key and API secret to a text editor, we are going to need in within FHEM
- 6. Click link device within your project
- 7. Select "Link devices by App Account"
+ 6. Go to "Devices"
+ 7. Select "Link Tuya App Account"
  8. "Add App Account"
  9. Open SmartLife app, select profile and scan QR code (upper right corner) with the app
- 10. Open "API Groups" on the tuya portal
- 11. Click "Apply" for
-  - Authorization management
-  - Device management
-  - Device Control
+ 10. Click on "Service API" within your project
+ 11. Click "Go To Authorize" and add the following APIs
+  - IoT Core
+  - Authorization
+  - Device Status Notification
 
 
 ## Usage
