@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.299 (2022-05-01)
+### Fix
+* **tuya:** Optimize define runtime ([`2109d7a`](https://github.com/dominikkarall/fhempy/commit/2109d7a7273c1ba857b32ee50d5cf9b70b18a3fc))
+* **gree_climate:** Fix missing off cmd ([`fdcb422`](https://github.com/dominikkarall/fhempy/commit/fdcb422e3c8e473596217ef5bd0656de7ec1521f))
+
 ## v0.1.298 (2022-05-01)
 ### Fix
 * **tuya:** Update tuya cloud instructions ([`84dd50c`](https://github.com/dominikkarall/fhempy/commit/84dd50cce90cb990ac727459a5e263c74d26bd8b))
