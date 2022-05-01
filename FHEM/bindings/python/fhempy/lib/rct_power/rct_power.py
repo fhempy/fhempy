@@ -151,7 +151,10 @@ class rct_power(generic.FhemModule):
             "batt_soc_max": {
                 "args": ["value"],
                 "params": {"value": {"format": "float"}},
-                "help": "Maximum battery SoC target [-]. Decimal values from 0.00 - 1.00 are allowed.<br>Registry: power_mng.soc_max",
+                "help": (
+                    "Maximum battery SoC target [-]. Decimal values from 0.00 - 1.00 are allowed."
+                    "<br>Registry: power_mng.soc_max"
+                ),
                 "function": "set_rct_write",
                 "function_param": 0x97997C93,
             },
