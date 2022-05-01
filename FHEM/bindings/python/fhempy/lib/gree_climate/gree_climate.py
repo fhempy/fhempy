@@ -220,6 +220,10 @@ class gree_climate(generic.FhemModule):
         self.device.power = True
         self.create_async_task(self.send_command())
 
+    async def set_off(self, hash, params):
+        self.device.power = False
+        self.create_async_task(self.send_command())
+
     async def set_mode(self, hash, params):
         self.device.power = Mode[params["mode"]]
         self.create_async_task(self.send_command())

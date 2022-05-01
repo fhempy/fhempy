@@ -51,7 +51,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             hash["API_KEY"] = self.tt_key
             hash["API_SECRET"] = self.tt_secret
             hash["REGION"] = self.tt_region
-            await self.setup_cloud()
+            self.create_async_task(self.setup_cloud())
             return
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
