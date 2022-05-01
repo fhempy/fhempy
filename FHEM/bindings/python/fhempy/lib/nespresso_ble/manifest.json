@@ -1,3 +1,6 @@
 {
-  "requirements": ["pygatt", "pybluez", "pexpect"]
+  "requirements": [
+    "pygatt",
+    "pexpect"
+  ]
 }
