@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.305 (2022-05-02)
+### Feature
+* **tuya:** Try to support water leak sensor ([`b3229d6`](https://github.com/dominikkarall/fhempy/commit/b3229d6790cfcb73be963490d2f641c374bc02d0))
+
 ## v0.1.304 (2022-05-01)
 ### Fix
 * **nespresso_ble:** Remove unused requirement ([`889e582`](https://github.com/dominikkarall/fhempy/commit/889e582813c225f481db4fbfc5110f263e57cbc3))
