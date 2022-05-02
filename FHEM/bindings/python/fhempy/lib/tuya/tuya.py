@@ -5,7 +5,6 @@ import json
 import re
 
 import tinytuya
-from tinytuya import wizard as tt_wizard
 
 from .. import fhem, utils
 from .. import generic
@@ -381,7 +380,12 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         while True:
             try:
                 self._connected_device = await pytuya.connect(
-                    self.tt_ip, self.tt_did, self.tt_localkey, self.tt_version, self
+                    self.tt_ip,
+                    self.tt_did,
+                    self.tt_localkey,
+                    self.tt_version,
+                    self,
+                    timeout=15,
                 )
                 break
             except Exception:
@@ -389,7 +393,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     self.hash, "state", "Failed to connect to device", 1
                 )
                 self.logger.exception("Failed to connect to device")
-                await asyncio.sleep(10)
+                await asyncio.sleep(1)
 
     async def create_device(self):
         if self.tt_type in mappings.knownSchemas:
