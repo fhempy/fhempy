@@ -331,23 +331,24 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         status = await self._connected_device.status()
 
+        options = []
+        for opt in self.tuya_spec_status:
+            options.append(opt["code"])
+
         dps = []
         for dp in list(status):
             dps.append(f"dp_{int(dp):02d}")
 
-            options = []
-            for opt in self.tuya_spec_status:
-                options.append(opt["code"])
-            attr_conf = {}
-            for dp in dps:
-                attr_conf[dp] = {
-                    "function": "set_attr_dp",
-                    "default": "",
-                    "options": ",".join(options),
-                }
-            self.attr_config.update(attr_conf)
-            self.set_attr_config(self.attr_config)
-            await utils.handle_define_attr(self.attr_config, self, self.hash)
+        attr_conf = {}
+        for dp in dps:
+            attr_conf[dp] = {
+                "function": "set_attr_dp",
+                "default": "",
+                "options": ",".join(options),
+            }
+        self.attr_config.update(attr_conf)
+        self.set_attr_config(self.attr_config)
+        await utils.handle_define_attr(self.attr_config, self, self.hash)
 
         # if spec contains dp_id
         for spec in self.tuya_spec_status:
@@ -389,17 +390,20 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 )
                 break
             except Exception:
-                await fhem.readingsSingleUpdate(
-                    self.hash, "state", "Failed to connect to device", 1
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "offline", 1
                 )
                 self.logger.exception("Failed to connect to device")
                 await asyncio.sleep(1)
 
     async def create_device(self):
-        if self.tt_type in mappings.knownSchemas:
-            await self._create_mapping_dev()
-        else:
-            await self._create_cloudmapping_dev()
+        try:
+            if self.tt_type in mappings.knownSchemas:
+                await self._create_mapping_dev()
+            else:
+                await self._create_cloudmapping_dev()
+        except Exception:
+            self.logger.exception("Failed create_device")
 
     async def async_disconnected(self):
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
