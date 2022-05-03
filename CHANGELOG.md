@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.306 (2022-05-03)
+### Fix
+* **tuya:** Handle exception ([`0b3c77b`](https://github.com/dominikkarall/fhempy/commit/0b3c77b29caf58aa18257e763664237cac9a36f8))
+
 ## v0.1.305 (2022-05-02)
 ### Feature
 * **tuya:** Try to support water leak sensor ([`b3229d6`](https://github.com/dominikkarall/fhempy/commit/b3229d6790cfcb73be963490d2f641c374bc02d0))
