@@ -466,13 +466,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
-    async def _call_fct_upd_reading(self, function):
-        try:
-            await utils.run_blocking(function)
-        except Exception:
-            self.logger.exception("Failed to execute function")
-        await self.update_once()
-
     async def Undefine(self, hash):
         if self._connected_device:
             await self._connected_device.close()
