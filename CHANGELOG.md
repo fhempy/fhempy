@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.307 (2022-05-05)
+### Fix
+* **tuya:** Get info before connection setup ([`fd5edcc`](https://github.com/dominikkarall/fhempy/commit/fd5edcc20ff04ee7cf7c3f6523168cb7372b0453))
+
 ## v0.1.306 (2022-05-03)
 ### Fix
 * **tuya:** Handle exception ([`0b3c77b`](https://github.com/dominikkarall/fhempy/commit/0b3c77b29caf58aa18257e763664237cac9a36f8))
