@@ -327,6 +327,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         # dp_1 = "switch_1"
         # dp_42 = "switch_overcharge"
         # connect to device
+        info = await self.get_tuya_dev_info()
+        await self.update_info_readings(info)
+
         await self.setup_connection()
 
         status = await self._connected_device.status()
@@ -373,9 +376,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     )
         await self.set_attr_dp(self.hash)
         await self.update_readings(status)
-
-        info = await self.get_tuya_dev_info()
-        await self.update_info_readings(info)
 
     async def setup_connection(self):
         while True:
