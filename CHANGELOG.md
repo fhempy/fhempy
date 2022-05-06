@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.309 (2022-05-06)
+### Fix
+* **fhempy:** Fix task exception handling ([`81225c1`](https://github.com/dominikkarall/fhempy/commit/81225c12840754ea691b7d9624c1fd3446babd89))
+
 ## v0.1.308 (2022-05-06)
 ### Fix
 * **fhempy:** Handle exceptions in asyncio tasks ([`6708650`](https://github.com/dominikkarall/fhempy/commit/670865014807e9aceb636b03f81106fca466ba88))
