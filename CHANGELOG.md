@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.308 (2022-05-06)
+### Fix
+* **fhempy:** Handle exceptions in asyncio tasks ([`6708650`](https://github.com/dominikkarall/fhempy/commit/670865014807e9aceb636b03f81106fca466ba88))
+* **tuya:** Remove unused function ([`3b8b785`](https://github.com/dominikkarall/fhempy/commit/3b8b785d459a815bc9890227a572f554857b8a3a))
+
 ## v0.1.307 (2022-05-05)
 ### Fix
 * **tuya:** Get info before connection setup ([`fd5edcc`](https://github.com/dominikkarall/fhempy/commit/fd5edcc20ff04ee7cf7c3f6523168cb7372b0453))
