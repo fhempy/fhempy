@@ -174,7 +174,7 @@ class FhemModule:
 
     def create_async_task(self, coro):
         task = asyncio.create_task(coro)
-        task.add_done_callback(self._handle_task_result())
+        task.add_done_callback(self._handle_task_result)
         self._tasks.append(task)
         return task
 
