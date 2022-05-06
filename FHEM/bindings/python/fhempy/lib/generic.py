@@ -174,8 +174,17 @@ class FhemModule:
 
     def create_async_task(self, coro):
         task = asyncio.create_task(coro)
+        task.add_done_callback(self._handle_task_result())
         self._tasks.append(task)
         return task
+
+    def _handle_task_result(self, task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            self.logger.exception("Exception raised by task: %r", task)
 
     def cancel_async_task(self, task):
         self._tasks.remove(task)
