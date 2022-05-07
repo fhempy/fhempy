@@ -30,7 +30,7 @@ class fusionsolar(generic.FhemModule):
         if len(args) >= 4:
             self._stationid = list(argsh)[1] + "=" + argsh[list(argsh)[1]]
             self._sessionid = args[3]
-            self._region = args[4] if len(args) > 4 else "region01eu05"
+            self._region = args[4] if len(args) > 4 else "region01eu5"
             self.restapi = FusionSolarRestApi(
                 self.logger, self._stationid, self._sessionid, self._region
             )
