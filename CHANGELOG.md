@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.315 (2022-05-07)
+### Feature
+* **fusionsolar:** Add further readings ([`f3432af`](https://github.com/dominikkarall/fhempy/commit/f3432af9b8bbfa9708747680b91adac1eaf6a0b7))
+
 ## v0.1.314 (2022-05-07)
 ### Fix
 * **fusionsolar:** Fix define ([`f421b51`](https://github.com/dominikkarall/fhempy/commit/f421b51e741e7e042e4dd38906c515ad7fd56191))
