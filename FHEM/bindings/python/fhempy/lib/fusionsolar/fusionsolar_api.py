@@ -142,7 +142,7 @@ class FusionSolarRestApi:
         return self._stationdetail["yearEnergy"]
 
     @property
-    def grid_connection_time(self):
+    def grid_connected_time(self):
         return self._stationdetail["gridConnectedTime"]
 
     @property
@@ -158,7 +158,7 @@ class FusionSolarRestApi:
         return self._stationdetail["dailyUseEnergy"]
 
     @property
-    def daily_self_use_ration(self):
+    def daily_self_use_ratio(self):
         return float(self.daily_self_use_energy()) / float(self.daily_use_energy)
 
     @property
