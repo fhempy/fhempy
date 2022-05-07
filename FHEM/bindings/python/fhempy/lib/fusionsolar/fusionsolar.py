@@ -126,4 +126,4 @@ class fusionsolar(generic.FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
                 self.logger.exception("Failed to update readings")
             await fhem.readingsEndUpdate(self.hash, 1)
-            await asyncio.sleep(300)
+            await asyncio.sleep(150)
