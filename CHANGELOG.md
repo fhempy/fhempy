@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.313 (2022-05-07)
+### Feature
+* **fusionsolar:** BREAKING: no more kiosk mode, all values are taken from REST API. See README for details ([`221e88c`](https://github.com/dominikkarall/fhempy/commit/221e88c67bc6697c4a1f45144a321467b4ca7912))
+
 ## v0.1.312 (2022-05-07)
 ### Fix
 * **fusionsolar:** Fix wrong default region ([`bea81bf`](https://github.com/dominikkarall/fhempy/commit/bea81bf0ea2f84871b34ee1af9aadad8321fc9a6))
