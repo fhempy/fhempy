@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.310 (2022-05-07)
+### Feature
+* **fusionsolar:** Support from/to_grid, electrical_load, grid_power and inverter_output_power ([`3c73b83`](https://github.com/dominikkarall/fhempy/commit/3c73b8312ae71d9fa74e23d7d9299e40ece61951))
+
 ## v0.1.309 (2022-05-06)
 ### Fix
 * **fhempy:** Fix task exception handling ([`81225c1`](https://github.com/dominikkarall/fhempy/commit/81225c12840754ea691b7d9624c1fd3446babd89))
