@@ -356,13 +356,19 @@ class PyBinding:
         os._exit(1)
 
     async def undefine_all(self, hash):
+        tasks = []
         for dev_instance in loadedModuleInstances:
             func = getattr(dev_instance, "Undefine", "nofunction")
             if func != "nofunction":
                 try:
-                    await asyncio.wait_for(func(hash), 10)
+                    task = asyncio.create_task(asyncio.wait_for(func(hash), 10))
+                    tasks.append(task)
                 except Exception:
                     logger.exception("Undefine failed")
+        try:
+            await asyncio.gather(*tasks)
+        except Exception:
+            logger.exception("Undefined failed")
 
     async def import_module(self, hash):
         # import module
