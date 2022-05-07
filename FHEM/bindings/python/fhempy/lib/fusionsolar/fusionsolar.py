@@ -88,6 +88,11 @@ class fusionsolar(generic.FhemModule):
                 )
                 await fhem.readingsBulkUpdate(
                     self.hash,
+                    "daily_self_use_solar_ratio",
+                    self.restapi.daily_self_use_solar_ratio,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
                     "daily_use_energy",
                     self.restapi.daily_use_energy,
                 )
