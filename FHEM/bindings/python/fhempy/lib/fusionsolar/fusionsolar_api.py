@@ -159,12 +159,18 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_ratio(self):
+        if self.daily_self_use_energy == 0:
+            return 0
+
         return round(
             float(self.daily_self_use_energy) / float(self.daily_use_energy) * 100, 2
         )
 
     @property
     def daily_self_use_solar_ratio(self):
+        if self.total_current_day_energy == 0:
+            return 0
+
         return round(
             float(self.daily_self_use_energy)
             / float(self.total_current_day_energy)
