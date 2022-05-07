@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.318 (2022-05-07)
+### Feature
+* **fusionsolar:** Add daily_self_use_solar_ratio reading ([`4abd020`](https://github.com/dominikkarall/fhempy/commit/4abd02016a99e319afcb04ab0c99fe3668a255ff))
+
 ## v0.1.317 (2022-05-07)
 ### Fix
 * **fusionsolar:** Fix daily_self_use_ratio ([`84ea1e0`](https://github.com/dominikkarall/fhempy/commit/84ea1e0ab36a2a66a5e6caabe86c9aff92ed71d4))
