@@ -55,10 +55,10 @@ class fusionsolar(generic.FhemModule):
                     await self.restapi.update()
 
                     await fhem.readingsBulkUpdate(
-                        self.hash, "from_grid", self.restapi.from_grid
+                        self.hash, "from_grid_power", self.restapi.from_grid_power
                     )
                     await fhem.readingsBulkUpdate(
-                        self.hash, "to_grid", self.restapi.to_grid
+                        self.hash, "to_grid_power", self.restapi.to_grid_power
                     )
                     await fhem.readingsBulkUpdate(
                         self.hash, "electrical_load", self.restapi.electrical_load
