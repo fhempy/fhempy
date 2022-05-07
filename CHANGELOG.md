@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.319 (2022-05-07)
+### Fix
+* **fhempy:** Wait max 10s for restart ([`896d80b`](https://github.com/dominikkarall/fhempy/commit/896d80bd065e4f3670e0b66df706bc64ccd2fb32))
+
 ## v0.1.318 (2022-05-07)
 ### Feature
 * **fusionsolar:** Add daily_self_use_solar_ratio reading ([`4abd020`](https://github.com/dominikkarall/fhempy/commit/4abd02016a99e319afcb04ab0c99fe3668a255ff))
