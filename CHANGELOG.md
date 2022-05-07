@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.320 (2022-05-07)
+### Fix
+* **miio:** Fix tuple type ([`4282a99`](https://github.com/dominikkarall/fhempy/commit/4282a995425efc1940d4a27ca11cd1fd08dac692))
+
 ## v0.1.319 (2022-05-07)
 ### Fix
 * **fhempy:** Wait max 10s for restart ([`896d80b`](https://github.com/dominikkarall/fhempy/commit/896d80bd065e4f3670e0b66df706bc64ccd2fb32))
