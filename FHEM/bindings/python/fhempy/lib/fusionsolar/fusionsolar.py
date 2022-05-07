@@ -17,7 +17,7 @@ class fusionsolar(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        if len(argsh) > 0:
+        if len(argsh) > 0 and argsh[list(argsh)[0]][:4] == "http":
             await fhem.readingsSingleUpdate(
                 hash, "state", "Please read HELP to change define", 1
             )
@@ -27,8 +27,8 @@ class fusionsolar(generic.FhemModule):
             return "Usage: define my_solar fhempy fusionsolar [SESSIONID] [STATIONNAME] [REGION]"
 
         self._sessionid = args[3]
-        self._stationname = args[4]
-        self._region = args[5] if len(args) > 5 else "region01eu5"
+        self._stationname = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
+        self._region = args[4] if len(args) > 5 else "region01eu5"
 
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.update())
