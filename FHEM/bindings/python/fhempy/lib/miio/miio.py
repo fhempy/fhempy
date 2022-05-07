@@ -151,7 +151,7 @@ class miio(generic.FhemModule):
             elif ann == typing.List:
                 args.append(json.loads(params[par_name]))
             elif ann == typing.Tuple:
-                args.append(tuple(params[par_name]))
+                args.append(tuple(map(int, params[par_name].split(","))))
             elif ann == inspect.Signature.empty:
                 if self.is_number(params[par_name]):
                     args.append(float(params[par_name]))
