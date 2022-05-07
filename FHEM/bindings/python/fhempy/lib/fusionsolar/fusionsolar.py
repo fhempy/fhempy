@@ -68,6 +68,41 @@ class fusionsolar(generic.FhemModule):
                 )
                 await fhem.readingsBulkUpdate(
                     self.hash,
+                    "daily_self_use_ratio",
+                    self.restapi.daily_self_use_ratio,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "station",
+                    self.restapi.station,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "co2_saved",
+                    self.restapi.co2_saved,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "daily_self_use_energy",
+                    self.restapi.daily_self_use_energy,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "daily_use_energy",
+                    self.restapi.daily_use_energy,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "grid_connected_time",
+                    self.restapi.grid_connected_time,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
+                    "installed_capacity",
+                    self.restapi.installed_capacity,
+                )
+                await fhem.readingsBulkUpdate(
+                    self.hash,
                     "total_current_day_energy",
                     self.restapi.total_current_day_energy,
                 )
