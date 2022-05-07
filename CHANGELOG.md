@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.314 (2022-05-07)
+### Fix
+* **fusionsolar:** Fix define ([`f421b51`](https://github.com/dominikkarall/fhempy/commit/f421b51e741e7e042e4dd38906c515ad7fd56191))
+
 ## v0.1.313 (2022-05-07)
 ### Feature
 * **fusionsolar:** BREAKING: no more kiosk mode, all values are taken from REST API. See README for details ([`221e88c`](https://github.com/dominikkarall/fhempy/commit/221e88c67bc6697c4a1f45144a321467b4ca7912))
