@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.312 (2022-05-07)
+### Fix
+* **fusionsolar:** Fix wrong default region ([`bea81bf`](https://github.com/dominikkarall/fhempy/commit/bea81bf0ea2f84871b34ee1af9aadad8321fc9a6))
+
 ## v0.1.311 (2022-05-07)
 ### Fix
 * **fusionsolar:** Fix from/to_grid_power ([`fe7bea1`](https://github.com/dominikkarall/fhempy/commit/fe7bea111b286e6c3cf8287cbe09f51c9c8ae456))
