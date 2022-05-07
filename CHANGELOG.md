@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.311 (2022-05-07)
+### Fix
+* **fusionsolar:** Fix from/to_grid_power ([`fe7bea1`](https://github.com/dominikkarall/fhempy/commit/fe7bea111b286e6c3cf8287cbe09f51c9c8ae456))
+
 ## v0.1.310 (2022-05-07)
 ### Feature
 * **fusionsolar:** Support from/to_grid, electrical_load, grid_power and inverter_output_power ([`3c73b83`](https://github.com/dominikkarall/fhempy/commit/3c73b8312ae71d9fa74e23d7d9299e40ece61951))
