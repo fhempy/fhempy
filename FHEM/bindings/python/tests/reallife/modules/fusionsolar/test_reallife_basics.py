@@ -25,10 +25,7 @@ async def test_everything(mocker):
             os.environ["FUSIONSOLAR_SESSIONID"],
             os.environ["FUSIONSOLAR_REGION"],
         ],
-        {
-            os.environ["FUSIONSOLAR_KIOSKURL1"]: os.environ["FUSIONSOLAR_KIOSKURL2"],
-            os.environ["FUSIONSOLAR_STATIONID1"]: os.environ["FUSIONSOLAR_STATIONID2"],
-        },
+        {},
     )
 
     # send command
@@ -38,5 +35,7 @@ async def test_everything(mocker):
     #    {},
     # )
     await asyncio.sleep(10)
+
+    assert mock_fhem.readings["testdevice"]["state"] == "connected"
 
     await asyncio.sleep(30)
