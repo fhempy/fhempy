@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.316 (2022-05-07)
+### Fix
+* **fusionsolar:** Small fixes ([`cdbd06c`](https://github.com/dominikkarall/fhempy/commit/cdbd06ced4a2bcfedd43dd70fce916a4cab30ea9))
+
 ## v0.1.315 (2022-05-07)
 ### Feature
 * **fusionsolar:** Add further readings ([`f3432af`](https://github.com/dominikkarall/fhempy/commit/f3432af9b8bbfa9708747680b91adac1eaf6a0b7))
