@@ -19,4 +19,4 @@ define my_solar fhempy fusionsolar SESSIONID STATIONID REGION
 
  - SESSIONID: The bspsession content, yes it's long
  - STATIONID: NE=xxxxxxxx (include NE=)
- - REGION: Default region01eu5, copy it from the first part of the KIOSK_URL
+ - REGION: Default region01eu5, copy it from the first part of the URL
