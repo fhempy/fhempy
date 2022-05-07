@@ -151,15 +151,26 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_energy(self):
-        return self._stationdetail["dailySelfUseEnergy"]
+        return round(self._stationdetail["dailySelfUseEnergy"], 2)
 
     @property
     def daily_use_energy(self):
-        return self._stationdetail["dailyUseEnergy"]
+        return round(self._stationdetail["dailyUseEnergy"], 2)
 
     @property
     def daily_self_use_ratio(self):
-        return float(self.daily_self_use_energy) / float(self.daily_use_energy)
+        return round(
+            float(self.daily_self_use_energy) / float(self.daily_use_energy) * 100, 2
+        )
+
+    @property
+    def daily_self_use_solar_ratio(self):
+        return round(
+            float(self.daily_self_use_energy)
+            / float(self.total_current_day_energy)
+            * 100,
+            2,
+        )
 
     @property
     def inverter_output_power(self):
