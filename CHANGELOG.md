@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.325 (2022-05-08)
+### Fix
+* **tuya:** Always use cloud specs when APIKEY and APISECRET is provided ([`d9d3812`](https://github.com/dominikkarall/fhempy/commit/d9d381292fe731fccf4b04a11dcc06dfe0514d7c))
+
 ## v0.1.324 (2022-05-08)
 ### Fix
 * **fusionsolar:** Update takes a bit longer, extend to full 5min + 30s ([`79cb26a`](https://github.com/dominikkarall/fhempy/commit/79cb26a08008f6b30c00598244e0117a39f2b4b6))
