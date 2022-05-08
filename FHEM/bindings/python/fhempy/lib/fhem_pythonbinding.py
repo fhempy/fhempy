@@ -62,7 +62,10 @@ async def pybinding(websocket, path):
     logger.info("Incoming FHEM connection: " + websocket.remote_address[0])
     pb = PyBinding(websocket)
     # handle SIGTERM to shutdown gracefuly
-    signal.signal(signal.SIGTERM, pb.shutdown)
+    loop = asyncio.get_event_loop()
+    loop.add_signal_handler(
+        getattr(signal, "SIGTERM"), lambda: asyncio.create_task(pb.shutdown())
+    )
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
