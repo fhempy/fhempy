@@ -551,7 +551,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             return (0, 0)
 
         self.logger.debug("Polling local devices...")
-        count_created = 0
+        count_found = 0
         self.create_device_list = []
         for i in tuyadevices:
             name = i["name"]
@@ -571,6 +571,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 # device not discovered
                 ip = "offline"
                 ver = "3.3"
+            else:
+                count_found += 1
 
             await fhem.readingsSingleUpdateIfChanged(self.hash, f"{id}_ip", ip, 1)
             await fhem.readingsSingleUpdateIfChanged(
@@ -589,7 +591,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     "version": ver,
                 }
             )
-            count_created += 1
 
         # devices which can be created from setup
         set_conf = {"scan_devices": {}}
@@ -603,6 +604,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await fhem.readingsSingleUpdate(
             self.hash,
             "state",
-            f"{count_created} devices found localy",
+            f"{count_found} devices found localy",
             1,
         )
