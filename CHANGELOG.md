@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.328 (2022-05-08)
+### Feature
+* **fhempy:** Log version on startup ([`63ecc62`](https://github.com/dominikkarall/fhempy/commit/63ecc627966b3aaa8647f6eb06e2b6bf1dd51fda))
+
+### Fix
+* **fhempy:** Fix shutdown again ([`6e0e1f1`](https://github.com/dominikkarall/fhempy/commit/6e0e1f1a4cf13a30803087f2f337dfc3e46728a1))
+
 ## v0.1.327 (2022-05-08)
 ### Fix
 * **fhempy:** Fix shutdown handler ([`d246ca8`](https://github.com/dominikkarall/fhempy/commit/d246ca8cdb7aa44c1a7e7c2b0f17e217b24836dc))
