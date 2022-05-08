@@ -218,8 +218,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     self.hash,
                     (
                         f"{dev['name_esc']}_{dev['device_id']} fhempy tuya "
-                        f"{dev['productid']} {dev['device_id']} {dev['ip']} {dev['local_key']} "
-                        f"{dev['version']} {self.tt_key} {self.tt_secret}"
+                        f"{dev['productid']} {dev['device_id']} {dev['ip']} "
+                        f"{dev['local_key']} {dev['version']} "
+                        f"{self.tt_key} {self.tt_secret}"
                     ),
                 )
 
@@ -295,6 +296,27 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 spec["desc"] = desc[spec["code"]]
         return spec_fcts
 
+    async def retrieve_tuya_specs(self):
+        # retrieve cloud codes
+        spec = await self.get_tuya_dev_specification()
+        self.tuya_spec_functions = spec["functions"]
+        self.tuya_spec_status = spec["status"]
+        desc = await self.get_tuya_dev_description()
+        self.tuya_spec_functions = await self._add_desc_to_spec(
+            self.tuya_spec_functions, desc
+        )
+        await fhem.CommandAttr(
+            self.hash,
+            (
+                f"{self.hash['NAME']} tuya_spec_functions "
+                f"{str(self.tuya_spec_functions)}"
+            ),
+        )
+        await fhem.CommandAttr(
+            self.hash,
+            f"{self.hash['NAME']} tuya_spec_status {str(self.tuya_spec_status)}",
+        )
+
     async def _create_cloudmapping_dev(self):
         if self.tt_key == "" or self.tt_secret == "":
             await fhem.readingsSingleUpdateIfChanged(
@@ -308,25 +330,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         # check if attributes are set
         await self.check_tuya_attributes()
         if len(self.tuya_spec_functions) == 0 and len(self.tuya_spec_status) == 0:
-            # retrieve cloud codes
-            spec = await self.get_tuya_dev_specification()
-            self.tuya_spec_functions = spec["functions"]
-            self.tuya_spec_status = spec["status"]
-            desc = await self.get_tuya_dev_description()
-            self.tuya_spec_functions = await self._add_desc_to_spec(
-                self.tuya_spec_functions, desc
-            )
-            await fhem.CommandAttr(
-                self.hash,
-                (
-                    f"{self.hash['NAME']} tuya_spec_functions "
-                    f"{str(self.tuya_spec_functions)}"
-                ),
-            )
-            await fhem.CommandAttr(
-                self.hash,
-                f"{self.hash['NAME']} tuya_spec_status {str(self.tuya_spec_status)}",
-            )
+            await self.retrieve_tuya_specs()
 
         # create attributes dp_1...X
         # add options to attributes to select cloud codes
@@ -341,6 +345,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         status = await self._connected_device.status()
 
+        await self.prepare_attributes(status)
+        await self.update_readings(status)
+
+    async def prepare_attributes(self, status):
         options = []
         for opt in self.tuya_spec_status:
             options.append(opt["code"])
@@ -382,7 +390,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
                     )
         await self.set_attr_dp(self.hash)
-        await self.update_readings(status)
 
     async def setup_connection(self):
         while True:
