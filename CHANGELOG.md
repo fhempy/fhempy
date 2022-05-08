@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.323 (2022-05-08)
+### Fix
+* **tuya:** Fix local found counter ([`a8b708c`](https://github.com/dominikkarall/fhempy/commit/a8b708cfa13d6266966ce27b70cdc98216594dc1))
+
 ## v0.1.322 (2022-05-08)
 ### Fix
 * **wienerlinien:** Code style improvements ([`c5207f4`](https://github.com/dominikkarall/fhempy/commit/c5207f47970d689a7b4ed5c0ee9fa8356072f6fe))
