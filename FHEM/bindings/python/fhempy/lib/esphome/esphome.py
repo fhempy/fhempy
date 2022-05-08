@@ -124,6 +124,7 @@ Click here to easily install ESPHome on a new devices
     async def Undefine(self, hash):
         if self.proc:
             self.proc.terminate()
+            self.proc = None
         return await super().Undefine(hash)
 
     async def set_attr_disable(self, hash):
