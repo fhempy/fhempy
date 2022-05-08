@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.321 (2022-05-08)
+### Feature
+* **tuya:** Support wifi devices which are not online all the time (e.g. water leak sensor, smoke detector, ...) ([`035429c`](https://github.com/dominikkarall/fhempy/commit/035429ceab4508ba94c4e9e2253f2ba736e62bea))
+* **fusionsolar:** Update on fusionsolar update (every full 5min) ([`b338277`](https://github.com/dominikkarall/fhempy/commit/b338277d1e42e93b681dd8e1344d72d13d97c032))
+
+### Fix
+* **fusionsolar:** Fix div/0 ([`57bbc51`](https://github.com/dominikkarall/fhempy/commit/57bbc51ad9e51637d70bbba57902aa73ddd3937f))
+* **fusionsolar:** Delete unused file ([`45f7bb8`](https://github.com/dominikkarall/fhempy/commit/45f7bb8ad4d4ca2882d7c9b4cce0c13dd9a04ad9))
+
 ## v0.1.320 (2022-05-07)
 ### Fix
 * **miio:** Fix tuple type ([`4282a99`](https://github.com/dominikkarall/fhempy/commit/4282a995425efc1940d4a27ca11cd1fd08dac692))
