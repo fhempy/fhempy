@@ -134,7 +134,7 @@ class fusionsolar(generic.FhemModule):
             await fhem.readingsEndUpdate(self.hash, 1)
             # calculate next full 5min+10s
             next_5min = (
-                (5 - time.localtime().tm_min % 5) * 60
+                (4 - time.localtime().tm_min % 5) * 60
                 + 60
                 - time.localtime().tm_sec
                 + 10
