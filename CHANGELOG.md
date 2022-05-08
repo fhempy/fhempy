@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.324 (2022-05-08)
+### Fix
+* **fusionsolar:** Update takes a bit longer, extend to full 5min + 30s ([`79cb26a`](https://github.com/dominikkarall/fhempy/commit/79cb26a08008f6b30c00598244e0117a39f2b4b6))
+
 ## v0.1.323 (2022-05-08)
 ### Fix
 * **tuya:** Fix local found counter ([`a8b708c`](https://github.com/dominikkarall/fhempy/commit/a8b708cfa13d6266966ce27b70cdc98216594dc1))
