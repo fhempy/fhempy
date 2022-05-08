@@ -65,6 +65,13 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         if len(args) == 10:
             self.tt_key = args[8]
             self.tt_secret = args[9]
+
+        if self.tt_ip == "offline":
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", "Specify IP address in define instead of offline", 1
+            )
+            return
+
         # set internal
         hash["DEVICEID"] = self.tt_did
         # set attributes
@@ -487,6 +494,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             item = {}
             item["name"] = i["name"].strip()
             item["id"] = i["id"]
+            item["ip"] = i["ip"]
+            item["sub"] = i["sub"]
             item["key"] = i["local_key"]
             item["product_id"] = i["product_id"]
             item["icon"] = i["icon"]
@@ -545,11 +554,16 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             productid = i["product_id"]
 
             # do not create device if no IP was discovered
-            if ver == 0:
+            if ver == 0 and i["sub"] is True:
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, f"{id}_ip", "offline", 1
                 )
                 continue
+
+            if ver == 0:
+                # device not discovered
+                ip = "offline"
+                ver = "3.3"
 
             await fhem.readingsSingleUpdateIfChanged(self.hash, f"{id}_ip", ip, 1)
             await fhem.readingsSingleUpdateIfChanged(
