@@ -355,10 +355,12 @@ class PyBinding:
         await self.restart(hash)
 
     async def restart(self, hash):
+        logger.info("Restart initiated...")
         await self.undefine_all()
         os._exit(1)
 
-    async def shutdown(self):
+    async def shutdown(self, *args):
+        logger.info("Shutdown initiated...")
         await self.undefine_all()
         os._exit(0)
 
@@ -376,6 +378,7 @@ class PyBinding:
                     logger.exception("Undefine failed")
         try:
             await asyncio.gather(*tasks)
+            logger.info("All modules successfully undefined!")
         except Exception:
             logger.exception("Undefined failed")
 
