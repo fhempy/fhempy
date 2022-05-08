@@ -124,6 +124,10 @@ class tuya_cloud_device:
                     set_conf[fct["code"]]["function"] = "set_colour_data_v2"
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
+        set_conf = self.prepare_onoff_usage(set_conf)
+        self.fhemdev.set_set_config(set_conf)
+
+    def prepare_onoff_usage(self, set_conf):
         self.default_code = None
         if "switch" in set_conf:
             self.default_code = "switch"
@@ -142,7 +146,7 @@ class tuya_cloud_device:
                 "function": "set_boolean",
             }
             del set_conf[self.default_code]
-        self.fhemdev.set_set_config(set_conf)
+        return set_conf
 
     async def set_boolean(self, hash, params):
         code = params["function_param"]["code"]

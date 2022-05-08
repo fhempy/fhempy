@@ -25,7 +25,10 @@ class fusionsolar(generic.FhemModule):
             return
 
         if not (len(args) == 4 or len(args) == 5):
-            return "Usage: define my_solar fhempy fusionsolar [SESSIONID] [STATIONNAME] [REGION]"
+            return (
+                "Usage: define my_solar fhempy fusionsolar "
+                "[SESSIONID] [STATIONNAME] [REGION]"
+            )
 
         self._sessionid = args[3]
         self._stationname = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
@@ -134,7 +137,7 @@ class fusionsolar(generic.FhemModule):
             await fhem.readingsEndUpdate(self.hash, 1)
             # calculate next full 5min+10s
             next_5min = (
-                (5 - time.localtime().tm_min % 5) * 60
+                (4 - time.localtime().tm_min % 5) * 60
                 + 60
                 - time.localtime().tm_sec
                 + 10

@@ -1,4 +1,3 @@
-import asyncio
 import site
 import socket
 import subprocess
@@ -6,7 +5,7 @@ import os
 
 from fhempy.lib.generic import FhemModule
 
-from .. import fhem, utils
+from .. import fhem
 
 
 class esphome(FhemModule):
@@ -83,7 +82,10 @@ class esphome(FhemModule):
         )
         await fhem.CommandAttr(
             self.hash,
-            "esphome_dashboard htmlattr width='900' height='700' frameborder='0' marginheight='0' marginwidth='0'",
+            (
+                "esphome_dashboard htmlattr width='900' height='700' "
+                "frameborder='0' marginheight='0' marginwidth='0'"
+            ),
         )
         await fhem.CommandAttr(self.hash, "esphome_dashboard room ESPHome")
         await fhem.CommandAttr(self.hash, "esphome_dashboard sortby 2")
