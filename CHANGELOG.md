@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.329 (2022-05-08)
+### Fix
+* **miio:** Fix tuple usage ([`d97751a`](https://github.com/dominikkarall/fhempy/commit/d97751ad8c7c0ca31fc2bce6f7991a14f4f3c6a3))
+* **tuya:** Fix tests ([`dd9ce3c`](https://github.com/dominikkarall/fhempy/commit/dd9ce3cda1f98ed73c743051f2ea1abe72d62721))
+
 ## v0.1.328 (2022-05-08)
 ### Feature
 * **fhempy:** Log version on startup ([`63ecc62`](https://github.com/dominikkarall/fhempy/commit/63ecc627966b3aaa8647f6eb06e2b6bf1dd51fda))
