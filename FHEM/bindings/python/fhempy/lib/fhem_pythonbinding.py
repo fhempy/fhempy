@@ -463,7 +463,7 @@ async def async_main():
 
     ip, port, local = handle_cmdline_options(opts)
 
-    logger.info("Starting fhempy...")
+    logger.info(f"Starting fhempy {version.__version__}...")
 
     await pkg_installer.check_and_install_dependencies("core")
 
