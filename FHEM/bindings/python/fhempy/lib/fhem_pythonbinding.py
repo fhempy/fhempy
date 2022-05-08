@@ -9,6 +9,7 @@ import sys
 import os
 import time
 import traceback
+import signal
 
 import websockets
 
@@ -60,6 +61,8 @@ async def pybinding(websocket, path):
     connection_start = time.time()
     logger.info("Incoming FHEM connection: " + websocket.remote_address[0])
     pb = PyBinding(websocket)
+    # handle SIGTERM to shutdown gracefuly
+    signal.signal(signal.SIGTERM, pb.shutdown)
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
@@ -352,16 +355,22 @@ class PyBinding:
         await self.restart(hash)
 
     async def restart(self, hash):
-        await self.undefine_all(hash)
+        await self.undefine_all()
         os._exit(1)
 
-    async def undefine_all(self, hash):
+    async def shutdown(self):
+        await self.undefine_all()
+        os._exit(0)
+
+    async def undefine_all(self):
         tasks = []
         for dev_instance in loadedModuleInstances:
             func = getattr(dev_instance, "Undefine", "nofunction")
             if func != "nofunction":
                 try:
-                    task = asyncio.create_task(asyncio.wait_for(func(hash), 10))
+                    task = asyncio.create_task(
+                        asyncio.wait_for(func(dev_instance.hash), 10)
+                    )
                     tasks.append(task)
                 except Exception:
                     logger.exception("Undefine failed")
