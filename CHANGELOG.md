@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.322 (2022-05-08)
+### Fix
+* **wienerlinien:** Code style improvements ([`c5207f4`](https://github.com/dominikkarall/fhempy/commit/c5207f47970d689a7b4ed5c0ee9fa8356072f6fe))
+* **tuya_cloud:** Code style improvements ([`46c90ca`](https://github.com/dominikkarall/fhempy/commit/46c90ca41b62a2bd24d46dff20a333bb3ced5f00))
+* **esphome:** Code style improvements ([`f8a091b`](https://github.com/dominikkarall/fhempy/commit/f8a091be9dd6505c4416217309e1307246b81abc))
+* **fusionnsolar:** Code style improvements ([`dd01e29`](https://github.com/dominikkarall/fhempy/commit/dd01e29c433ab4593536060a9d8f829cb452c6d2))
+* **tuya:** Code style improvements ([`b014060`](https://github.com/dominikkarall/fhempy/commit/b01406066a0b460ee0d63a011755f96423263a06))
+* **fusionsolar:** Fix update interval ([`a33dc00`](https://github.com/dominikkarall/fhempy/commit/a33dc005daf44920d921c4283a824feb859b6eff))
+
 ## v0.1.321 (2022-05-08)
 ### Feature
 * **tuya:** Support wifi devices which are not online all the time (e.g. water leak sensor, smoke detector, ...) ([`035429c`](https://github.com/dominikkarall/fhempy/commit/035429ceab4508ba94c4e9e2253f2ba736e62bea))
