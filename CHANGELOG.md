@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.326 (2022-05-08)
+### Fix
+* **fhempy:** Handle SIGTERM for graceful shutdown ([`35dff0a`](https://github.com/dominikkarall/fhempy/commit/35dff0aac289f97fceb15ceff3f7b51469b2e778))
+* **zigbee2mqtt:** Call stop_process on Undefine ([`e3626e5`](https://github.com/dominikkarall/fhempy/commit/e3626e518b171b0610dd0d95f5356a9ac72e7a89))
+* **esphome:** Call stop_process on Undefine ([`8402760`](https://github.com/dominikkarall/fhempy/commit/84027609c91ff675634165f8c0a25511b32541b1))
+* **esphome:** Set proc None when terminated ([`81f10b0`](https://github.com/dominikkarall/fhempy/commit/81f10b0f8c68a0b3ad424201574aa9d2b50c0920))
+* **zigbee2mqtt:** Fix blocking calls ([`a980bf3`](https://github.com/dominikkarall/fhempy/commit/a980bf3000341e43ffd83dec9c8b1b4784f971dc))
+
 ## v0.1.325 (2022-05-08)
 ### Fix
 * **tuya:** Always use cloud specs when APIKEY and APISECRET is provided ([`d9d3812`](https://github.com/dominikkarall/fhempy/commit/d9d381292fe731fccf4b04a11dcc06dfe0514d7c))
