@@ -140,6 +140,6 @@ class fusionsolar(generic.FhemModule):
                 (4 - time.localtime().tm_min % 5) * 60
                 + 60
                 - time.localtime().tm_sec
-                + 10
+                + 30
             )
             await asyncio.sleep(next_5min)
