@@ -25,7 +25,10 @@ class fusionsolar(generic.FhemModule):
             return
 
         if not (len(args) == 4 or len(args) == 5):
-            return "Usage: define my_solar fhempy fusionsolar [SESSIONID] [STATIONNAME] [REGION]"
+            return (
+                "Usage: define my_solar fhempy fusionsolar "
+                "[SESSIONID] [STATIONNAME] [REGION]"
+            )
 
         self._sessionid = args[3]
         self._stationname = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
