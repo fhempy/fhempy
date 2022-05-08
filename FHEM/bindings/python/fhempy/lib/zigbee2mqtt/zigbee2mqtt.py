@@ -179,7 +179,9 @@ class zigbee2mqtt(FhemModule):
 
     async def check_node_installation(self):
         try:
-            ver = subprocess.check_output(["node", "--version"])
+            ver = await utils.run_blocking(
+                functools.partial(subprocess.check_output, ["node", "--version"])
+            )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "node", ver.decode("ascii").rstrip(), 1
             )
@@ -192,7 +194,9 @@ class zigbee2mqtt(FhemModule):
 
     async def check_npm_installation(self):
         try:
-            ver = subprocess.check_output(["npm", "--version"])
+            ver = await utils.run_blocking(
+                functools.partial(subprocess.check_output, ["npm", "--version"])
+            )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "npm", ver.decode("ascii").rstrip(), 1
             )
