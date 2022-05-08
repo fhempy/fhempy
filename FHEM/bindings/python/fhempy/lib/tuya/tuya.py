@@ -101,8 +101,14 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
     async def setup_cloud(self):
         # create cloud device for cloud calls
         if self.tt_key and self.tt_secret:
-            self.tuya_cloud = tinytuya.Cloud(
-                self.tt_region, self.tt_key, self.tt_secret, self.tt_did
+            self.tuya_cloud = await utils.run_blocking(
+                functools.partial(
+                    tinytuya.Cloud,
+                    self.tt_region,
+                    self.tt_key,
+                    self.tt_secret,
+                    self.tt_did,
+                )
             )
 
     async def _create_mapping_dev(self):
@@ -318,14 +324,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         )
 
     async def _create_cloudmapping_dev(self):
-        if self.tt_key == "" or self.tt_secret == "":
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash,
-                "state",
-                "Please use API_KEY and API_SECRET",
-            )
-            return
-
         await fhem.readingsSingleUpdate(self.hash, "state", "Initializing...", 1)
         # check if attributes are set
         await self.check_tuya_attributes()
@@ -412,10 +410,16 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     async def create_device(self):
         try:
-            if self.tt_type in mappings.knownSchemas:
+            if self.tt_key != "" and self.tt_secret != "":
+                await self._create_cloudmapping_dev()
+            elif self.tt_type in mappings.knownSchemas:
                 await self._create_mapping_dev()
             else:
-                await self._create_cloudmapping_dev()
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash,
+                    "state",
+                    "Please use API_KEY and API_SECRET",
+                )
         except Exception:
             self.logger.exception("Failed create_device")
 
