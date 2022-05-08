@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.327 (2022-05-08)
+### Fix
+* **fhempy:** Fix shutdown handler ([`d246ca8`](https://github.com/dominikkarall/fhempy/commit/d246ca8cdb7aa44c1a7e7c2b0f17e217b24836dc))
+
 ## v0.1.326 (2022-05-08)
 ### Fix
 * **fhempy:** Handle SIGTERM for graceful shutdown ([`35dff0a`](https://github.com/dominikkarall/fhempy/commit/35dff0aac289f97fceb15ceff3f7b51469b2e778))
