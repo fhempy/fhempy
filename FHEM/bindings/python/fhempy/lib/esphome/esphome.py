@@ -122,8 +122,7 @@ Click here to easily install ESPHome on a new devices
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        if self.proc:
-            self.proc.terminate()
+        await self.stop_process()
         return await super().Undefine(hash)
 
     async def set_attr_disable(self, hash):
