@@ -6,9 +6,8 @@ import re
 
 import tinytuya
 
-from .. import fhem, utils
-from .. import generic
-from . import pytuya, mappings
+from .. import fhem, generic, utils
+from . import mappings, pytuya
 
 
 class tuya(generic.FhemModule, pytuya.TuyaListener):
