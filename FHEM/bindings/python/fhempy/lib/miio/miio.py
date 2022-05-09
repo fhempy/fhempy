@@ -7,8 +7,7 @@ import typing
 
 from miio.click_common import DeviceGroupMeta
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic, utils
 
 
 class miio(generic.FhemModule):
@@ -150,7 +149,7 @@ class miio(generic.FhemModule):
                 args.append(params[par_name] == "on")
             elif ann == typing.List:
                 args.append(json.loads(params[par_name]))
-            elif ann._name == "Tuple":
+            elif hasattr(ann, "_name") and ann._name == "Tuple":
                 args.append(tuple(map(int, params[par_name].split(","))))
             elif ann == inspect.Signature.empty:
                 if self.is_number(params[par_name]):
