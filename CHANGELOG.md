@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.330 (2022-05-09)
+### Fix
+* **fhempy:** Better restart/shutdown handling ([`4e97c58`](https://github.com/dominikkarall/fhempy/commit/4e97c58b02573cdee0ee9dd11fee30667abb7ad8))
+* **tuya:** Import only Cloud, deviceScan ([`3f92df2`](https://github.com/dominikkarall/fhempy/commit/3f92df2412409541f55a70e49d26b1fe0dbc5337))
+* **tuya:** Remove unused attributes ([`1beab02`](https://github.com/dominikkarall/fhempy/commit/1beab02553dcee4c265cc49131e1afe93fe0c0b0))
+* **miio:** Fix send_command, sort imports ([`737eeef`](https://github.com/dominikkarall/fhempy/commit/737eeefbbf37f9a263ea4527248834ef351cef3c))
+* **tuya:** Sort imports ([`1a3acfd`](https://github.com/dominikkarall/fhempy/commit/1a3acfd020c853e08ad3f8a93915a7682c5b9844))
+
 ## v0.1.329 (2022-05-08)
 ### Fix
 * **miio:** Fix tuple usage ([`d97751a`](https://github.com/dominikkarall/fhempy/commit/d97751ad8c7c0ca31fc2bce6f7991a14f4f3c6a3))
