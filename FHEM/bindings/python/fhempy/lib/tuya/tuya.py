@@ -4,11 +4,10 @@ import functools
 import json
 import re
 
-import tinytuya
+from tinytuya import Cloud, deviceScan
 
-from .. import fhem, utils
-from .. import generic
-from . import pytuya, mappings
+from .. import fhem, generic, utils
+from . import mappings, pytuya
 
 
 class tuya(generic.FhemModule, pytuya.TuyaListener):
@@ -76,18 +75,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         hash["DEVICEID"] = self.tt_did
         # set attributes
         self.attr_config = {
-            "interval": {
-                "default": 15,
-                "format": "int",
-                "help": "Change status update interval, default is 15.",
-            },
             "tuya_spec_functions": {"default": ""},
             "tuya_spec_status": {"default": ""},
-            "keep_connected": {
-                "options": "on,off",
-                "format": "bool",
-                "default": "off",
-            },
         }
         self.set_attr_config(self.attr_config)
         # this is needed to set default values
@@ -103,7 +92,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         if self.tt_key and self.tt_secret:
             self.tuya_cloud = await utils.run_blocking(
                 functools.partial(
-                    tinytuya.Cloud,
+                    Cloud,
                     self.tt_region,
                     self.tt_key,
                     self.tt_secret,
@@ -544,9 +533,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         # scan local devices to get IP
         self.logger.debug("Scan local devices...")
-        devices = await utils.run_blocking(
-            functools.partial(tinytuya.deviceScan, False, 20)
-        )
+        devices = await utils.run_blocking(functools.partial(deviceScan, False, 20))
 
         def getIP(d, gwid):
             for ip in d:

@@ -27,6 +27,9 @@ pip_lock = asyncio.Lock()
 connection_start = 0
 fct_timeout = 60
 
+stop_event = asyncio.Event()
+exit_code = 0
+
 # internal modules
 active_internal_modules = []
 conf = {"internal_modules": ["discover_fhempy"]}
@@ -63,9 +66,7 @@ async def pybinding(websocket, path):
     pb = PyBinding(websocket)
     # handle SIGTERM to shutdown gracefuly
     loop = asyncio.get_event_loop()
-    loop.add_signal_handler(
-        getattr(signal, "SIGTERM"), lambda: asyncio.create_task(pb.shutdown())
-    )
+    loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
@@ -358,14 +359,18 @@ class PyBinding:
         await self.restart(hash)
 
     async def restart(self, hash):
+        global exit_code
         logger.info("Restart initiated...")
         await self.undefine_all()
-        os._exit(1)
+        exit_code = 1
+        stop_event.set()
 
     async def shutdown(self, *args):
+        global exit_code
         logger.info("Shutdown initiated...")
         await self.undefine_all()
-        os._exit(0)
+        exit_code = 0
+        stop_event.set()
 
     async def undefine_all(self):
         tasks = []
@@ -478,6 +483,8 @@ async def async_main():
         pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
     )
 
+    await stop_event.wait()
+
 
 def handle_cmdline_options(opts):
     ip = None
@@ -521,6 +528,8 @@ async def advertise_fhempy(ip, port):
 
 def run():
     logging.getLogger("asyncio").setLevel(logging.WARNING)
-    asyncio.get_event_loop().set_debug(True)
-    asyncio.get_event_loop().run_until_complete(async_main())
-    asyncio.get_event_loop().run_forever()
+    loop = asyncio.get_event_loop()
+    loop.set_debug(True)
+    loop.run_until_complete(async_main())
+
+    return exit_code
