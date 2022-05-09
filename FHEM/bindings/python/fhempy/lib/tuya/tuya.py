@@ -75,18 +75,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         hash["DEVICEID"] = self.tt_did
         # set attributes
         self.attr_config = {
-            "interval": {
-                "default": 15,
-                "format": "int",
-                "help": "Change status update interval, default is 15.",
-            },
             "tuya_spec_functions": {"default": ""},
             "tuya_spec_status": {"default": ""},
-            "keep_connected": {
-                "options": "on,off",
-                "format": "bool",
-                "default": "off",
-            },
         }
         self.set_attr_config(self.attr_config)
         # this is needed to set default values
