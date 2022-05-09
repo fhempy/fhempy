@@ -1,7 +1,7 @@
+import os
 import site
 import socket
 import subprocess
-import os
 
 from fhempy.lib.generic import FhemModule
 
@@ -65,7 +65,7 @@ class esphome(FhemModule):
 
     async def stop_process(self):
         if self.proc:
-            self.proc.terminate()
+            self.proc.kill()
             self.proc = None
         await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 

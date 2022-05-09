@@ -1,12 +1,12 @@
 import asyncio
 import functools
-import shutil
-import netifaces
-import subprocess
 import os
-from git import Repo
+import shutil
+import subprocess
 
+import netifaces
 from fhempy.lib.generic import FhemModule
+from git import Repo
 
 from .. import fhem, utils
 
@@ -221,27 +221,30 @@ class zigbee2mqtt(FhemModule):
 
     async def check_process(self):
         while True:
-            if self.proc is not None:
-                poll = self.proc.poll()
-                if poll is None:
-                    await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "state", "running", 1
-                    )
-                elif poll != 0:
-                    await fhem.readingsSingleUpdate(
-                        self.hash, "state", "error, check log file", 1
-                    )
-                    await asyncio.sleep(10)
-                    await self.start_process()
-                elif poll == 0:
-                    await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
-                    await asyncio.sleep(10)
-                    await self.start_process()
-            await asyncio.sleep(10)
+            try:
+                if self.proc is not None:
+                    poll = self.proc.poll()
+                    if poll is None:
+                        await fhem.readingsSingleUpdateIfChanged(
+                            self.hash, "state", "running", 1
+                        )
+                    elif poll != 0:
+                        await fhem.readingsSingleUpdate(
+                            self.hash, "state", "error, check log file", 1
+                        )
+                        await asyncio.sleep(10)
+                        await self.start_process()
+                    elif poll == 0:
+                        await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
+                        await asyncio.sleep(10)
+                        await self.start_process()
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                pass
 
     async def stop_process(self):
         if self.proc:
-            self.proc.terminate()
+            self.proc.kill()
             self.proc = None
         if self.check_process_task:
             self.cancel_async_task(self.check_process_task)
