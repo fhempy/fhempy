@@ -4,12 +4,11 @@ import getopt
 import importlib
 import json
 import logging
+import signal
 import site
 import sys
-import os
 import time
 import traceback
-import signal
 
 import websockets
 
