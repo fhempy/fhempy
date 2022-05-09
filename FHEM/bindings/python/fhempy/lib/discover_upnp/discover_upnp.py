@@ -39,7 +39,6 @@ class discover_upnp(FhemModule):
                 set_devs = []
                 for dev in self.create_devs:
                     set_devs.append(self.create_devs[dev]["name"])
-                set_list = ""
                 set_config["create"]["options"] = ",".join(set_devs)
                 self.set_set_config(set_config)
         # if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
