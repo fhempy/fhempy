@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.331 (2022-05-09)
+### Fix
+* **zigbee2mqtt:** Kill instead of terminate ([`dbeeb36`](https://github.com/dominikkarall/fhempy/commit/dbeeb36a77981fe360f70149c97f7b619c0b0ba5))
+* **esphome:** Kill instead of terminate ([`0040297`](https://github.com/dominikkarall/fhempy/commit/0040297d934398a3027059c090cac0a31cc908e9))
+* **discover_upnp:** Delete unused variable ([`e30f2c6`](https://github.com/dominikkarall/fhempy/commit/e30f2c692496cc4980f9bd0995654a14f72a2c11))
+
 ## v0.1.330 (2022-05-09)
 ### Fix
 * **fhempy:** Better restart/shutdown handling ([`4e97c58`](https://github.com/dominikkarall/fhempy/commit/4e97c58b02573cdee0ee9dd11fee30667abb7ad8))
