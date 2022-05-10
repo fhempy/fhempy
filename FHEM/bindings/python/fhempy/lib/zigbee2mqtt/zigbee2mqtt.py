@@ -2,6 +2,7 @@ import asyncio
 import functools
 import os
 import shutil
+import signal
 import subprocess
 
 import netifaces
@@ -212,7 +213,7 @@ class zigbee2mqtt(FhemModule):
         z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
 
         try:
-            self.proc = subprocess.Popen(["npm", "start"], cwd=z2m_directory)
+            self.proc = subprocess.Popen(["node", "./index.js"], cwd=z2m_directory)
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:
                 self.check_process_task = self.create_async_task(self.check_process())
@@ -244,7 +245,7 @@ class zigbee2mqtt(FhemModule):
 
     async def stop_process(self):
         if self.proc:
-            self.proc.kill()
+            self.proc.send_signal(signal.SIGINT)
             self.proc = None
         if self.check_process_task:
             self.cancel_async_task(self.check_process_task)
