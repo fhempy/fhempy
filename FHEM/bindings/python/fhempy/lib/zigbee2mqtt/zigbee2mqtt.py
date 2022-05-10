@@ -241,7 +241,7 @@ class zigbee2mqtt(FhemModule):
                         await self.start_process()
                 await asyncio.sleep(10)
             except asyncio.CancelledError:
-                pass
+                return
 
     async def stop_process(self):
         if self.proc:
