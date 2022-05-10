@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.333 (2022-05-10)
+### Fix
+* **zigbee2mqtt:** Fix stop zigbee2mqtt process ([`ab44052`](https://github.com/dominikkarall/fhempy/commit/ab44052bf25e64fa8d84685c152d43aeb877080a))
+
 ## v0.1.332 (2022-05-10)
 ### Fix
 * **fhempy:** Log exit code ([`7dee7c8`](https://github.com/dominikkarall/fhempy/commit/7dee7c8914a420aab8c4c6185d395859c572a6d8))
