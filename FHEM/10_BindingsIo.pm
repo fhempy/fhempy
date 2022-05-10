@@ -280,6 +280,9 @@ BindingsIo_Write($$$$$) {
   if ($function eq "update") {
     $msg{"msgtype"} = "update";
     $waitforresponse = 0;
+  } elsif ($function eq "restart") {
+    $msg{"msgtype"} = "restart";
+    $waitforresponse = 0;
   }
 
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
@@ -371,10 +374,12 @@ BindingsIo_Set($$$)
 {
   my ($hash, $a, $h) = @_;
   my $cmd = @$a[1];
-  my $list = "update:noArg";
+  my $list = "update:noArg restart:noArg";
 
   if ($cmd eq 'update') {
     return BindingsIo_Write($hash, $hash, "update", [], {});
+  } elsif ($cmd eq 'restart') {
+    return BindingsIo_Write($hash, $hash, "restart", [], {});
   }
 
   return "Unknown argument $cmd, choose one of $list";
