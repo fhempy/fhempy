@@ -262,7 +262,10 @@ class zigbee2mqtt(FhemModule):
         )
         await fhem.CommandAttr(
             self.hash,
-            "z2m_frontend htmlattr width='100%' height='90%' frameborder='0' marginheight='0' marginwidth='0'",
+            (
+                "z2m_frontend htmlattr width='100%' height='90%' "
+                "frameborder='0' marginheight='0' marginwidth='0'"
+            ),
         )
         await fhem.CommandAttr(self.hash, "z2m_frontend room Zigbee2MQTT")
 

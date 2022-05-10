@@ -4,12 +4,11 @@ import getopt
 import importlib
 import json
 import logging
+import signal
 import site
 import sys
-import os
 import time
 import traceback
-import signal
 
 import websockets
 
@@ -73,10 +72,14 @@ async def pybinding(websocket, path):
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
+    except asyncio.CancelledError:
+        pass
     except websockets.exceptions.ConnectionClosedError:
         logger.error("Connection closed error", exc_info=True)
         logger.info("Restart binding")
-        sys.exit(1)
+        global exit_code
+        exit_code = 1
+        stop_event.set()
 
 
 class PyBinding:
@@ -134,8 +137,6 @@ class PyBinding:
     async def onMessage(self, payload):
         try:
             await self._onMessage(payload)
-        except SystemExit:
-            sys.exit(1)
         except Exception:
             logger.exception("Failed to handle message: " + str(payload))
 
@@ -158,9 +159,6 @@ class PyBinding:
 
         try:
             await self.handle_message(msg, hash)
-
-        except SystemExit as se:
-            raise se
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
             await self.sendBackError(hash, "fhempy failed to handle message")
@@ -467,7 +465,7 @@ async def async_main():
     except getopt.GetoptError as err:
         logger.error(err)
         usage()
-        sys.exit(2)
+        return
 
     ip, port, local = handle_cmdline_options(opts)
 
@@ -526,10 +524,52 @@ async def advertise_fhempy(ip, port):
     )
 
 
+# from Home Assistant runner.py
+def _cancel_all_tasks_with_timeout(
+    loop: asyncio.AbstractEventLoop, timeout: int
+) -> None:
+    """Adapted _cancel_all_tasks from python 3.9 with a timeout."""
+    to_cancel = asyncio.all_tasks(loop)
+    if not to_cancel:
+        return
+
+    for task in to_cancel:
+        task.cancel()
+
+    loop.run_until_complete(asyncio.wait(to_cancel, timeout=timeout))
+
+    for task in to_cancel:
+        if task.cancelled():
+            continue
+        if not task.done():
+            logger.warning(
+                "Task could not be canceled and was still running after shutdown: %s",
+                task,
+            )
+            continue
+        if task.exception() is not None:
+            loop.call_exception_handler(
+                {
+                    "message": "unhandled exception during shutdown",
+                    "exception": task.exception(),
+                    "task": task,
+                }
+            )
+
+
 def run():
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
-    loop.run_until_complete(async_main())
+    try:
+        loop.run_until_complete(async_main())
+    finally:
+        try:
+            _cancel_all_tasks_with_timeout(loop, 10)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+        finally:
+            asyncio.set_event_loop(None)
+            loop.close()
 
     return exit_code
