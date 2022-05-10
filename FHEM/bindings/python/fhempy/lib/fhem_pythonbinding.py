@@ -176,6 +176,10 @@ class PyBinding:
         else:
             if hash["msgtype"] == "update":
                 await self.update_and_exit(hash)
+                return
+            if hash["msgtype"] == "restart":
+                await self.restart(hash)
+                return
             if hash["msgtype"] == "function":
                 await self.handle_function(hash, msg)
 
