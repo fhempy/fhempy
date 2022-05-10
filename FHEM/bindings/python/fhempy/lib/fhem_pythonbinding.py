@@ -348,6 +348,7 @@ class PyBinding:
 
     async def update_and_exit(self, hash):
         await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)
+        logger.info("Start update...")
         await pkg_installer.force_update_package("fhempy")
         await fhem.readingsSingleUpdate(
             hash,
