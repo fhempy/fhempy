@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.334 (2022-05-10)
+### Fix
+* **fhempy:** Fix stash for release script ([`ef9fada`](https://github.com/dominikkarall/fhempy/commit/ef9fadad91908550ac7bac17d381266b67fa887e))
+* **fhempy:** Add update info log ([`920d4c9`](https://github.com/dominikkarall/fhempy/commit/920d4c9fddd911a0fa0dc872d7bcd5b9ea61bb07))
+* **fhempy:** Update websockets to 10.3 ([`b0313d0`](https://github.com/dominikkarall/fhempy/commit/b0313d03148f35e45858e8ffd7ee0a0c772dc4bc))
+* **fhempy:** Close websockets on restart ([`729a65e`](https://github.com/dominikkarall/fhempy/commit/729a65e83f8d322ecaf05b2dbef1818fdfc96935))
+* **zigbee2mqtt:** Stop task on restart ([`6fea8af`](https://github.com/dominikkarall/fhempy/commit/6fea8af00f58e2f83117ca1c8051ad06d155c4ad))
+
 ## v0.1.333 (2022-05-10)
 ### Fix
 * **zigbee2mqtt:** Fix stop zigbee2mqtt process ([`ab44052`](https://github.com/dominikkarall/fhempy/commit/ab44052bf25e64fa8d84685c152d43aeb877080a))
