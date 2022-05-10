@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.332 (2022-05-10)
+### Fix
+* **fhempy:** Log exit code ([`7dee7c8`](https://github.com/dominikkarall/fhempy/commit/7dee7c8914a420aab8c4c6185d395859c572a6d8))
+* **fhempy:** Asyncio improvements ([`7d2e005`](https://github.com/dominikkarall/fhempy/commit/7d2e00579b1b3d85ce7004381c0055b1f2ef02b4))
+* **tuya:** Fix usage without api key/secret ([`4e716d7`](https://github.com/dominikkarall/fhempy/commit/4e716d7163b216a1a1555612626fd6c5ee456a1f))
+* **fhempy:** Code style improvements ([`1c6744c`](https://github.com/dominikkarall/fhempy/commit/1c6744c3220852f45cf0246492c774640fc9aa33))
+* **discover_upnp:** Code style improvements ([`b0eb47b`](https://github.com/dominikkarall/fhempy/commit/b0eb47bc0a301581cbc03652366a0654d446df04))
+* **fhempy:** Import cleanup ([`427f826`](https://github.com/dominikkarall/fhempy/commit/427f8267ae8dcd4a12e376c82e59d33cb5e8b154))
+* **zigbee2mqtt:** Code style improvements ([`560d061`](https://github.com/dominikkarall/fhempy/commit/560d06133996aa34bd1cc50b1531845e90cf11b5))
+
 ## v0.1.331 (2022-05-09)
 ### Fix
 * **zigbee2mqtt:** Kill instead of terminate ([`dbeeb36`](https://github.com/dominikkarall/fhempy/commit/dbeeb36a77981fe360f70149c97f7b619c0b0ba5))
