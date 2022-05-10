@@ -75,11 +75,12 @@ async def pybinding(websocket, path):
     except asyncio.CancelledError:
         pass
     except websockets.exceptions.ConnectionClosedError:
-        logger.error("Connection closed error", exc_info=True)
-        logger.info("Restart binding")
-        global exit_code
-        exit_code = 1
-        stop_event.set()
+        if not stop_event.is_set():
+            logger.error("Connection closed error", exc_info=True)
+            logger.info("Restart binding")
+            global exit_code
+            exit_code = 1
+            stop_event.set()
 
 
 class PyBinding:
@@ -477,11 +478,10 @@ async def async_main():
         await advertise_fhempy(ip, port)
 
     logger.info("Waiting for FHEM connection")
-    await websockets.serve(
+    async with websockets.serve(
         pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
-    )
-
-    await stop_event.wait()
+    ):
+        await stop_event.wait()
 
 
 def handle_cmdline_options(opts):
