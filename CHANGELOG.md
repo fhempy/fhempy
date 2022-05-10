@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.335 (2022-05-10)
+### Feature
+* **fhempy:** Support peer restart from FHEM ([`ce7803a`](https://github.com/dominikkarall/fhempy/commit/ce7803a9672f460e6599cec899b0d1787f69dfea))
+
+### Fix
+* **spotify:** Update spotipy to 2.19.0 ([`77d8ee2`](https://github.com/dominikkarall/fhempy/commit/77d8ee2589e14b32132a7458bad745c78118a829))
+
 ## v0.1.334 (2022-05-10)
 ### Fix
 * **fhempy:** Fix stash for release script ([`ef9fada`](https://github.com/dominikkarall/fhempy/commit/ef9fadad91908550ac7bac17d381266b67fa887e))
