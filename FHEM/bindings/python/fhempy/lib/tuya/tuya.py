@@ -15,8 +15,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         super().__init__(logger)
         self._connected_device = None
         self.tuya_cloud = None
-        self.tt_key = None
-        self.tt_secret = None
+        self.tt_key = ""
+        self.tt_secret = ""
         self.last_status = None
         self.create_device_list = []
         self.update_lock = asyncio.Lock()
