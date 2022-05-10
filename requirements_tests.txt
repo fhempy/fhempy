@@ -5,7 +5,7 @@ pytest-mock
 pytest-asyncio
 requests-mock
 async-upnp-client
-websockets==10.0
+websockets==10.3
 importlib_metadata==4.8.1
 cryptography==3.4.8
 zeroconf==0.36.12
