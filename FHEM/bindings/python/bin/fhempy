@@ -115,4 +115,6 @@ except Exception:
     logging.getLogger(__name__).exception("Failed to load fhempy")
     sys.exit(1)
 
-sys.exit(fpb.run())
+exit_code = fpb.run()
+logging.getLogger(__name__).info(f"Exit {exit_code}")
+sys.exit(exit_code)
