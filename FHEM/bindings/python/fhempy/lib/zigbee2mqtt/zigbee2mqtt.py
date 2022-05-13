@@ -311,7 +311,7 @@ class zigbee2mqtt(FhemModule):
     async def set_restart(self, hash, params):
         self.create_async_task(self._restart())
 
-    async def _restart(self, hash):
+    async def _restart(self):
         await self.stop_process()
         await self.start_process()
 
