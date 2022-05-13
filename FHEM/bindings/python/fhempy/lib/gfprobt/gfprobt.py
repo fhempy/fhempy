@@ -146,6 +146,8 @@ class gfprobt(generic.FhemModule):
         while True:
             try:
                 await self.update_once()
+            except asyncio.CancelledError:
+                break
             except Exception:
                 self.logger.exception("Failed to update readings")
             await asyncio.sleep(60)
