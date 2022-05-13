@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.342 (2022-05-14)
+### Fix
+* **fhempy:** Use os._exit again ([`9c64c08`](https://github.com/dominikkarall/fhempy/commit/9c64c081f52edfe957cbcabec115021313a98c22))
+* **zigbee2mqtt:** Some restart fixes, z2m takes about 15s to shutdown correctly ([`20d6761`](https://github.com/dominikkarall/fhempy/commit/20d676147c21a241f1beb9e28a853978d607b28b))
+
 ## v0.1.341 (2022-05-14)
 ### Fix
 * **zigbee2mqtt:** Fix possible zombie process ([`bc8102b`](https://github.com/dominikkarall/fhempy/commit/bc8102b2768685494080a1329c83c54baca0b1ce))
