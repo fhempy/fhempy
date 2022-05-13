@@ -1,3 +1,4 @@
+import asyncio
 import os
 import site
 import socket
@@ -65,9 +66,24 @@ class esphome(FhemModule):
 
     async def stop_process(self):
         if self.proc:
+            await fhem.readingsSingleUpdate(self.hash, "state", "stopping", 1)
             self.proc.kill()
+
+            stop_tries = 0
+            # give zigbee2mqtt some time to stop
+            await asyncio.sleep(3)
+            while self.proc.poll is None and stop_tries < 5:
+                await asyncio.sleep(5)
+                self.proc.terminate()
+                stop_tries += 1
+
+            if self.proc.poll is None:
+                self.logger.error("Failed to stop esphome process")
+                await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
+            else:
+                self.proc = None
+                await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
             self.proc = None
-        await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
     async def create_weblink(self):
         if await fhem.checkIfDeviceExists(
