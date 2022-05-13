@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.336 (2022-05-13)
+### Fix
+* **zigbee2mqtt:** Better stop process handling ([`46ac614`](https://github.com/dominikkarall/fhempy/commit/46ac6143c1c85cde01365eaa62ee1d34d5088ef3))
+* **esphome:** Better stop process handling ([`8efa358`](https://github.com/dominikkarall/fhempy/commit/8efa3588f8565d1070054f439c4cfc17f0f14dfd))
+* **zigbee2mqtt:** Code style improvement ([`39f6bca`](https://github.com/dominikkarall/fhempy/commit/39f6bcace4074195741973593e369c05737befbd))
+
 ## v0.1.335 (2022-05-10)
 ### Feature
 * **fhempy:** Support peer restart from FHEM ([`ce7803a`](https://github.com/dominikkarall/fhempy/commit/ce7803a9672f460e6599cec899b0d1787f69dfea))
