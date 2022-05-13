@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.338 (2022-05-13)
+### Fix
+* **fhempy:** Fix Undefine calls when stopped ([`2f62033`](https://github.com/dominikkarall/fhempy/commit/2f620330e70c28d77137db840fd0570b0c56adf5))
+* **eq3bt:** Fix Undefine when not yet connected ([`ebdbe92`](https://github.com/dominikkarall/fhempy/commit/ebdbe92dcbbb1f3d5e57a6c311e8ef6a25b31900))
+
 ## v0.1.337 (2022-05-13)
 ### Fix
 * **eq3bt:** Disconnect on Undefine ([`bbd52d0`](https://github.com/dominikkarall/fhempy/commit/bbd52d0a3b91f0e0fe2088231e9a361fd152db86))
