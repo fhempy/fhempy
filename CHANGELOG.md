@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.344 (2022-05-14)
+### Fix
+* **esphome:** Fix long running set functions ([`48fbf28`](https://github.com/dominikkarall/fhempy/commit/48fbf28f7b0b7bc38137d4ad13ea6604064d9587))
+* **gfprobt:** Fix loop on asyncio cancel ([`7fc9075`](https://github.com/dominikkarall/fhempy/commit/7fc9075e9cea31cd4609ad7b77446579e8c1b0dd))
+
 ## v0.1.343 (2022-05-14)
 ### Fix
 * **zigbee2mqtt:** Fix function arguments ([`790b00a`](https://github.com/dominikkarall/fhempy/commit/790b00a646581eab4c1739814c2e6ee78fadca6b))
