@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.337 (2022-05-13)
+### Fix
+* **eq3bt:** Disconnect on Undefine ([`bbd52d0`](https://github.com/dominikkarall/fhempy/commit/bbd52d0a3b91f0e0fe2088231e9a361fd152db86))
+
 ## v0.1.336 (2022-05-13)
 ### Fix
 * **zigbee2mqtt:** Better stop process handling ([`46ac614`](https://github.com/dominikkarall/fhempy/commit/46ac6143c1c85cde01365eaa62ee1d34d5088ef3))
