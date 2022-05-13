@@ -255,7 +255,7 @@ class zigbee2mqtt(FhemModule):
 
             stop_tries = 0
             # give zigbee2mqtt some time to stop
-            await asyncio.sleep(3)
+            await asyncio.sleep(10)
             while self.proc.poll is None and stop_tries < 5:
                 await asyncio.sleep(5)
                 self.proc.terminate()
