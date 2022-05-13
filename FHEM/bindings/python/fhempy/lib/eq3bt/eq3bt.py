@@ -8,8 +8,7 @@ from enum import IntEnum
 
 from dbus import DBusException
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic, utils
 from . import eq3btsmart as eq3
 from .connection import BTLEConnection
 
@@ -150,6 +149,10 @@ class eq3bt(generic.FhemModule):
         self.create_async_task(self.check_online())
         self.create_async_task(self.consumption_rotate())
         return ""
+
+    async def Undefine(self, hash):
+        self.thermostat.disconnect()
+        return await super().Undefine(hash)
 
     def seconds_till_midnight(self):
         """Get the number of seconds until midnight."""
@@ -504,6 +507,9 @@ class FhemThermostat(eq3.Thermostat):
             keep_connection=self._keep_conection,
             max_retries=self._max_retries,
         )
+
+    def disconnect(self):
+        super().set_keep_connected(False)
 
     def set_max_retries(self, max_retries):
         super().set_max_retries(max_retries)
