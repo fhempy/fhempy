@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.341 (2022-05-14)
+### Fix
+* **zigbee2mqtt:** Fix possible zombie process ([`bc8102b`](https://github.com/dominikkarall/fhempy/commit/bc8102b2768685494080a1329c83c54baca0b1ce))
+* **esphome:** Fix possible zombie process ([`8140d62`](https://github.com/dominikkarall/fhempy/commit/8140d62cbb122e53f69770e9deffa64a1ec4cbd4))
+
 ## v0.1.340 (2022-05-14)
 ### Fix
 * **zigbee2mqtt:** Wait longer for z2m to stop ([`7bab4d9`](https://github.com/dominikkarall/fhempy/commit/7bab4d97c208e18d637bb22b90c19e7ef1e2ea0f))
