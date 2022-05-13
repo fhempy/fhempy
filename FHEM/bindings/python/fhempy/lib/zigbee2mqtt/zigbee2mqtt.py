@@ -236,7 +236,9 @@ class zigbee2mqtt(FhemModule):
                         await asyncio.sleep(10)
                         await self.start_process()
                     elif poll == 0:
-                        await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
+                        await fhem.readingsSingleUpdate(
+                            self.hash, "state", "stopped", 1
+                        )
                         await asyncio.sleep(10)
                         await self.start_process()
                 await asyncio.sleep(10)
