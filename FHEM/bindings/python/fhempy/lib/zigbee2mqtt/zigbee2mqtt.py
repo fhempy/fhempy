@@ -255,10 +255,10 @@ class zigbee2mqtt(FhemModule):
 
             stop_tries = 0
             # give zigbee2mqtt some time to stop
-            await asyncio.sleep(10)
+            await asyncio.sleep(15)
             while self.proc.poll is None and stop_tries < 5:
                 await asyncio.sleep(5)
-                self.proc.terminate()
+                self.proc.kill()
                 stop_tries += 1
 
             if self.proc.poll is None:
@@ -296,21 +296,24 @@ class zigbee2mqtt(FhemModule):
 
     async def set_attr_disable(self, hash):
         if self._attr_disable == 0:
-            await self.start_process()
+            self.create_async_task(self.start_process())
         else:
-            await self.stop_process()
+            self.create_async_task(self.stop_process())
 
     async def set_start(self, hash, params):
-        await self.stop_process()
-        await self.start_process()
+        self.create_async_task(self._restart())
         return ""
 
     async def set_stop(self, hash, params):
-        await self.stop_process()
+        self.create_async_task(self.stop_process())
         return ""
 
     async def set_restart(self, hash, params):
-        return await self.set_start(hash, None)
+        self.create_async_task(self._restart())
+
+    async def _restart(self, hash):
+        await self.stop_process()
+        await self.start_process()
 
     async def set_update(self, hash, params):
         self.create_async_task(self.update_z2m())
