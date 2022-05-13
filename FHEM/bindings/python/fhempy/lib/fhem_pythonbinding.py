@@ -591,7 +591,5 @@ def run():
 
     logging.getLogger(__name__).info(f"Exit {exit_code}")
 
-    if exit_code == 2:
-        os._exit(exit_code)
-    else:
-        sys.exit(exit_code)
+    # sys.exit doesn't work well, therefore os._exit is used
+    os._exit(exit_code)
