@@ -99,6 +99,7 @@ class eq3bt(generic.FhemModule):
 
         self._last_update = 0
         self._mac = None
+        self.thermostat = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -151,7 +152,8 @@ class eq3bt(generic.FhemModule):
         return ""
 
     async def Undefine(self, hash):
-        self.thermostat.disconnect()
+        if self.thermostat:
+            self.thermostat.disconnect()
         return await super().Undefine(hash)
 
     def seconds_till_midnight(self):

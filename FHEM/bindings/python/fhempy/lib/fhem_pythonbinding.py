@@ -378,7 +378,8 @@ class PyBinding:
 
     async def undefine_all(self):
         tasks = []
-        for dev_instance in loadedModuleInstances:
+        for name in loadedModuleInstances:
+            dev_instance = loadedModuleInstances[name]
             func = getattr(dev_instance, "Undefine", "nofunction")
             if func != "nofunction":
                 try:
