@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.343 (2022-05-14)
+### Fix
+* **zigbee2mqtt:** Fix function arguments ([`790b00a`](https://github.com/dominikkarall/fhempy/commit/790b00a646581eab4c1739814c2e6ee78fadca6b))
+
 ## v0.1.342 (2022-05-14)
 ### Fix
 * **fhempy:** Use os._exit again ([`9c64c08`](https://github.com/dominikkarall/fhempy/commit/9c64c081f52edfe957cbcabec115021313a98c22))
