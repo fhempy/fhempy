@@ -265,6 +265,9 @@ class zigbee2mqtt(FhemModule):
                 self.logger.error("Failed to stop zigbee2mqtt process")
                 await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
             else:
+                # this should never block, as poll says process finished already
+                # this should prevent zombie processes
+                self.proc.wait(0.1)
                 self.proc = None
                 await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
 
