@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.339 (2022-05-14)
+### Fix
+* **gfprobt:** Disconnect on Undefine ([`8ab7a81`](https://github.com/dominikkarall/fhempy/commit/8ab7a81f3ff80ed55a0d699171e92666b4abeac9))
+
 ## v0.1.338 (2022-05-13)
 ### Fix
 * **fhempy:** Fix Undefine calls when stopped ([`2f62033`](https://github.com/dominikkarall/fhempy/commit/2f620330e70c28d77137db840fd0570b0c56adf5))
