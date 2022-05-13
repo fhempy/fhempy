@@ -151,13 +151,14 @@ Click here to easily install ESPHome on a new devices
             await self.stop_process()
 
     async def set_start(self, hash, params):
-        await self.stop_process()
-        await self.start_process()
-        return ""
+        self.create_async_task(self._restart())
 
     async def set_stop(self, hash, params):
+        self.create_async_task(self.stop_process())
+
+    async def _restart(self):
         await self.stop_process()
-        return ""
+        await self.start_process()
 
     async def set_restart(self, hash, params):
-        return await self.set_start(hash, None)
+        self.create_async_task(self._restart())
