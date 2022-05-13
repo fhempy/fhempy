@@ -3,9 +3,8 @@ import functools
 import struct
 import time
 
-from .. import fhem, utils
+from .. import fhem, generic, utils
 from ..core.ble import BTLEConnection
-from .. import generic
 
 DEFAULT_TIMEOUT = 1
 
@@ -45,6 +44,7 @@ HANDLE_RW_TIMERS = [
 class gfprobt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._conn = None
         set_conf = {
             "update": {"help": "Retrieve values from GF Pro BT"},
             "off": {"help": "Turn off watering"},
@@ -86,6 +86,11 @@ class gfprobt(generic.FhemModule):
             connection_established_callback=self.write_password,
         )
         self.create_async_task(self.update_loop())
+
+    async def Undefine(self, hash):
+        if self._conn:
+            self._conn.set_keep_connected(False)
+        return await super().Undefine(self.hash)
 
     # write_password is running in another thread
     def write_password(self, mac):
