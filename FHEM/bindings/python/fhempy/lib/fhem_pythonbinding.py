@@ -4,6 +4,7 @@ import getopt
 import importlib
 import json
 import logging
+import os
 import signal
 import site
 import sys
@@ -66,6 +67,7 @@ async def pybinding(websocket, path):
     # handle SIGTERM to shutdown gracefuly
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
+    # loop.add_signal_handler(signal.SIGKILL, lambda: asyncio.create_task(pb.shutdown()))
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
@@ -89,6 +91,7 @@ class PyBinding:
 
     def __init__(self, websocket):
         self.wsconnection = websocket
+        self.shutdown_started = 0
 
     def registerMsgListener(self, listener, awaitid):
         self.msg_listeners.append({"func": listener, "awaitId": awaitid})
@@ -364,17 +367,22 @@ class PyBinding:
 
     async def restart(self, hash):
         global exit_code
+        exit_code = 1
         logger.info("Restart initiated...")
         await self.undefine_all()
-        exit_code = 1
         stop_event.set()
 
     async def shutdown(self, *args):
         global exit_code
-        logger.info("Shutdown initiated...")
-        await self.undefine_all()
         exit_code = 0
-        stop_event.set()
+        if self.shutdown_started == 0:
+            self.shutdown_started = 1
+            logger.info("Shutdown initiated...")
+            await self.undefine_all()
+            stop_event.set()
+        else:
+            logger.info("Shutdown is already running, keep calm.")
+            asyncio.get_event_loop().remove_signal_handler(signal.SIGKILL)
 
     async def undefine_all(self):
         tasks = []
@@ -384,10 +392,12 @@ class PyBinding:
             if func != "nofunction":
                 try:
                     task = asyncio.create_task(
-                        asyncio.wait_for(func(dev_instance.hash), 10)
+                        asyncio.wait_for(func(dev_instance.hash), 60)
                     )
                     tasks.append(task)
                 except Exception:
+                    global exit_code
+                    exit_code = 2
                     logger.exception("Undefine failed")
         try:
             await asyncio.gather(*tasks)
@@ -564,6 +574,7 @@ def _cancel_all_tasks_with_timeout(
 
 
 def run():
+    global exit_code
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     loop = asyncio.get_event_loop()
     loop.set_debug(True)
@@ -578,4 +589,9 @@ def run():
             asyncio.set_event_loop(None)
             loop.close()
 
-    return exit_code
+    logging.getLogger(__name__).info(f"Exit {exit_code}")
+
+    if exit_code == 2:
+        os._exit(exit_code)
+    else:
+        sys.exit(exit_code)
