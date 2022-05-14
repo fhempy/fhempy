@@ -67,7 +67,7 @@ async def pybinding(websocket, path):
     # handle SIGTERM to shutdown gracefuly
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
-    # loop.add_signal_handler(signal.SIGKILL, lambda: asyncio.create_task(pb.shutdown()))
+    loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(pb.shutdown()))
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
@@ -382,7 +382,8 @@ class PyBinding:
             stop_event.set()
         else:
             logger.info("Shutdown is already running, keep calm.")
-            asyncio.get_event_loop().remove_signal_handler(signal.SIGKILL)
+            asyncio.get_event_loop().remove_signal_handler(signal.SIGTERM)
+            asyncio.get_event_loop().remove_signal_handler(signal.SIGINT)
 
     async def undefine_all(self):
         tasks = []
