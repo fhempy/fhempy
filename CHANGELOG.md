@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.345 (2022-05-15)
+### Feature
+* **fhempy:** Support FHEM events (register_event_listener) ([`1c4e38b`](https://github.com/dominikkarall/fhempy/commit/1c4e38bc830b5a6bd9b3c2e05bd55ae7d041ff93))
+
+### Fix
+* **fhempy:** Add SIGINT handling ([`c2ab429`](https://github.com/dominikkarall/fhempy/commit/c2ab42979241cce82cd250a72046023855330427))
+
 ## v0.1.344 (2022-05-14)
 ### Fix
 * **esphome:** Fix long running set functions ([`48fbf28`](https://github.com/dominikkarall/fhempy/commit/48fbf28f7b0b7bc38137d4ad13ea6604064d9587))
