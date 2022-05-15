@@ -1,13 +1,13 @@
 import asyncio
 import concurrent.futures
-from datetime import datetime
 import json
-import socket
+import logging
 import os
 import platform
-import logging
 import random
+import socket
 import traceback
+from datetime import datetime
 
 import websockets
 
@@ -301,7 +301,7 @@ async def send_and_wait(name, cmd):
             logger.error("Failed to set result, received: " + rmsg)
 
     global wsconnection
-    wsconnection.registerMsgListener(listener, msg["awaitId"])
+    wsconnection.register_msg_listener(listener, msg["awaitId"])
     msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
     try:

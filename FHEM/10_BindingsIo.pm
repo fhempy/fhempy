@@ -181,8 +181,6 @@ sub
 BindingsIo_Notify($)
 {
   my ($hash, $dev) = @_;
-  # TODO send everything to fhempy and do not wait on feedback
-  return if($dev->{NAME} ne "global");
 
   return "" if(IsDisabled($hash->{NAME})); # Return without any further action if the module is disabled
 
@@ -194,10 +192,12 @@ BindingsIo_Notify($)
   foreach my $event (@{$events}) {
     $event = "" if(!defined($event));
 
-    if ($event eq "INITIALIZED") {
+    if ($dev->{NAME} eq "global" && $event eq "INITIALIZED") {
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
-    } elsif ($event eq "UPDATE") {
+    } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
+    } else {
+      BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
@@ -242,7 +242,7 @@ BindingsIo_Write($$$$$) {
     $function = "Define";
   }
 
-  if($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash)) {
+  if($function ne "event" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
 
@@ -282,6 +282,9 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   } elsif ($function eq "restart") {
     $msg{"msgtype"} = "restart";
+    $waitforresponse = 0;
+  } elsif ($function eq "event") {
+    $msg{"msgtype"} = "event";
     $waitforresponse = 0;
   }
 

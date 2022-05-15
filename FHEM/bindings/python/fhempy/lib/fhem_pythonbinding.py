@@ -86,15 +86,14 @@ async def pybinding(websocket, path):
 
 
 class PyBinding:
-
-    msg_listeners = []
-
     def __init__(self, websocket):
         self.wsconnection = websocket
         self.shutdown_started = 0
+        self._event_listener = []
+        self._msg_listeners = []
 
-    def registerMsgListener(self, listener, awaitid):
-        self.msg_listeners.append({"func": listener, "awaitId": awaitid})
+    def register_msg_listener(self, listener, awaitid):
+        self._msg_listeners.append({"func": listener, "awaitId": awaitid})
 
     async def send(self, msg):
         await self.wsconnection.send(msg.encode("utf-8"))
@@ -168,23 +167,60 @@ class PyBinding:
             await self.sendBackError(hash, "fhempy failed to handle message")
 
     async def handle_message(self, msg, hash):
-        if "awaitId" in hash and len(self.msg_listeners) > 0:
+        if "awaitId" in hash and len(self._msg_listeners) > 0:
             removeElement = None
-            for listener in self.msg_listeners:
+            for listener in self._msg_listeners:
                 if listener["awaitId"] == hash["awaitId"]:
                     listener["func"](msg)
                     removeElement = listener
             if removeElement:
-                self.msg_listeners.remove(removeElement)
+                self._msg_listeners.remove(removeElement)
         else:
             if hash["msgtype"] == "update":
                 await self.update_and_exit(hash)
-                return
-            if hash["msgtype"] == "restart":
+            elif hash["msgtype"] == "restart":
                 await self.restart(hash)
-                return
-            if hash["msgtype"] == "function":
+            elif hash["msgtype"] == "function":
                 await self.handle_function(hash, msg)
+            elif hash["msgtype"] == "event":
+                await self.handle_event(hash, msg)
+
+    def register_event_listener(self, event_device, event_name, callback):
+        self._event_listener.append(
+            {
+                "event_device": event_device,
+                "event_name": event_name,
+                "callback": callback,
+            }
+        )
+
+    def unregister_event_listener(self, event_device, event_name, callback):
+        self._event_listener.remove(
+            {
+                "event_device": event_device,
+                "event_name": event_name,
+                "callback": callback,
+            }
+        )
+
+    async def handle_event(self, hash, msg):
+        event = hash["args"][0]
+        event_device = hash["NAME"]
+        event_arr = event.split(": ")
+        event_name = event_arr[0]
+        if len(event_arr) > 1:
+            event_value = event_arr[1]
+        else:
+            event_value = ""
+
+        for listener in self._event_listener:
+            if (
+                event_device == listener["event_device"]
+                or listener["event_device"] is None
+            ) and (
+                event_name == listener["event_name"] or listener["event_name"] is None
+            ):
+                await listener["callback"](event_device, event_name, event_value)
 
     async def handle_function(self, hash, msg):
         ret = ""
