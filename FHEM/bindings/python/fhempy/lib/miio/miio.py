@@ -111,12 +111,13 @@ class miio(generic.FhemModule):
             try:
                 async with self._cmd_lock:
                     await asyncio.sleep(1)
-                    await self.send_command(fct_name, None)
+                    await self.send_command(fct_name, None, raise_exc=True)
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
             except Exception:
-                self.logger.error(f"Failed to send_command: {fct_name}")
+                if fct_name != "status":
+                    self.logger.error(f"Failed to send_command: {fct_name}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )
@@ -133,7 +134,7 @@ class miio(generic.FhemModule):
         except ValueError:
             return False
 
-    async def send_command(self, fct_name, params):
+    async def send_command(self, fct_name, params, raise_exc=False):
         fct = self._device._device_group_commands[fct_name].func
         sig = inspect.signature(fct)
         args = []
@@ -162,7 +163,9 @@ class miio(generic.FhemModule):
         call_fct = getattr(self._device, fct_name)
         try:
             reply = await utils.run_blocking(functools.partial(call_fct, *args))
-        except Exception:
+        except Exception as exc:
+            if raise_exc:
+                raise exc
             self.logger.exception(f"Failed to call {fct_name}")
             return
 
