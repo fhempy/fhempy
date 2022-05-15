@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.346 (2022-05-15)
+### Fix
+* **miio:** Set offline when no reply on status call ([`57c4908`](https://github.com/dominikkarall/fhempy/commit/57c49089e49119770b1ef673fcbbe30f2a98fef1))
+
 ## v0.1.345 (2022-05-15)
 ### Feature
 * **fhempy:** Support FHEM events (register_event_listener) ([`1c4e38b`](https://github.com/dominikkarall/fhempy/commit/1c4e38bc830b5a6bd9b3c2e05bd55ae7d041ff93))
