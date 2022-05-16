@@ -196,9 +196,10 @@ BindingsIo_Notify($)
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
-    } else {
-      BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
+    # else {
+    #  BindingsIo_Write($hash, $dev, "event", [$event], {});
+    #}
   }
 
   return undef;
