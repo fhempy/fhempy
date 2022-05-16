@@ -63,7 +63,7 @@ async def pybinding(websocket, path):
     global connection_start
     connection_start = time.time()
     logger.info("Incoming FHEM connection: " + websocket.remote_address[0])
-    pb = PyBinding(websocket)
+    pb = fhempy(websocket)
     # handle SIGTERM to shutdown gracefuly
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
@@ -85,7 +85,7 @@ async def pybinding(websocket, path):
             stop_event.set()
 
 
-class PyBinding:
+class fhempy:
     def __init__(self, websocket):
         self.wsconnection = websocket
         self.shutdown_started = 0
