@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.347 (2022-05-16)
+### Fix
+* **fhempy:** Fix for non string events ([`fdccd1f`](https://github.com/dominikkarall/fhempy/commit/fdccd1f41a17ae0e41904bcff7dc7a7ec7466923))
+
 ## v0.1.346 (2022-05-15)
 ### Fix
 * **miio:** Set offline when no reply on status call ([`57c4908`](https://github.com/dominikkarall/fhempy/commit/57c49089e49119770b1ef673fcbbe30f2a98fef1))
