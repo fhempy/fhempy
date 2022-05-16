@@ -204,14 +204,15 @@ class PyBinding:
         )
 
     async def handle_event(self, hash, msg):
-        event = hash["args"][0]
+        event = f"{hash['args'][0]}"
         event_device = hash["NAME"]
         event_arr = event.split(": ")
-        event_name = event_arr[0]
         if len(event_arr) > 1:
+            event_name = event_arr[0]
             event_value = event_arr[1]
         else:
-            event_value = ""
+            event_name = "state"
+            event_value = event_arr[0]
 
         for listener in self._event_listener:
             if (
