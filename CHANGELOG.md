@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.348 (2022-05-16)
+### Fix
+* **fhempy:** Deactivate events as long as encoding issues are not fixed ([`55353e9`](https://github.com/dominikkarall/fhempy/commit/55353e922902a655d4efda95b9897e467bf56689))
+* **fhempy:** Rename PyBinding class to fhempy ([`259507d`](https://github.com/dominikkarall/fhempy/commit/259507d668c101778f58a03bd22ba95632e05652))
+
 ## v0.1.347 (2022-05-16)
 ### Fix
 * **fhempy:** Fix for non string events ([`fdccd1f`](https://github.com/dominikkarall/fhempy/commit/fdccd1f41a17ae0e41904bcff7dc7a7ec7466923))
