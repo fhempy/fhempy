@@ -24,7 +24,7 @@ async def test_update(mocker):
 
     mock_fhem.mock_module(mocker)
     websocket = MagicMock()
-    fhempy = fhem_pythonbinding.PyBinding(websocket)
+    fhempy = fhem_pythonbinding.fhempy(websocket)
 
     update_msg = {
         "id": "123",
