@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.351 (2022-05-18)
+### Feature
+* **fusionsolar:** Support battery values ([`f0a67cd`](https://github.com/dominikkarall/fhempy/commit/f0a67cd9362c324cf73cf413f2fa4a9a3b15fe5f))
+
 ## v0.1.350 (2022-05-18)
 ### Fix
 * **fusionsolar:** Fix if battery in use ([`ad7c12f`](https://github.com/dominikkarall/fhempy/commit/ad7c12f6970b92a49bab10999498ef11daed3847))
