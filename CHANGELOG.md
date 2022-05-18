@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.350 (2022-05-18)
+### Fix
+* **fusionsolar:** Fix if battery in use ([`ad7c12f`](https://github.com/dominikkarall/fhempy/commit/ad7c12f6970b92a49bab10999498ef11daed3847))
+
 ## v0.1.349 (2022-05-18)
 ### Fix
 * **fusionsolar:** Fix region usage in define ([`d388160`](https://github.com/dominikkarall/fhempy/commit/d38816072464b140ef774f0d003820935c640b8a))
