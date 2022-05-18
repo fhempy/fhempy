@@ -21,6 +21,10 @@ class FusionSolarRestApi:
         self._from_grid = 0
         self._to_grid = 0
         self._electrical_load = 0
+        self._battery_soc = None
+        self._battery_battery_power = None
+        self._battery_charge_capacity = None
+        self._battery_discharge_capacity = None
 
     async def _get_rest_data(self, path):
         url = (
@@ -86,6 +90,17 @@ class FusionSolarRestApi:
                     self._electrical_load = float(
                         node["description"]["value"].replace(" kW", "")
                     )
+                elif node["name"] == "neteco.pvms.devTypeLangKey.energy_store":
+                    self._battery_soc = float(node["deviceTips"]["SOC"])
+                    self._battery_charge_capacity = float(
+                        node["deviceTips"]["CHARGE_CAPACITY"]
+                    )
+                    self._battery_battery_power = float(
+                        node["deviceTips"]["BATTERY_POWER"]
+                    )
+                    self._battery_discharge_capacity = float(
+                        node["deviceTips"]["DISCHARGE_CAPACITY"]
+                    )
             for node in result["flow"]["links"]:
                 if "description" in node and "label" in node["description"]:
                     if (
@@ -128,6 +143,22 @@ class FusionSolarRestApi:
     @property
     def co2_saved(self):
         return self._stationdetail["co2"]
+
+    @property
+    def battery_soc(self):
+        return self._battery_soc
+
+    @property
+    def battery_charge_capacity(self):
+        return self._battery_charge_capacity
+
+    @property
+    def battery_power(self):
+        return self._battery_battery_power
+
+    @property
+    def battery_discharge_capacity(self):
+        return self._battery_discharge_capacity
 
     @property
     def total_lifetime_energy(self):
