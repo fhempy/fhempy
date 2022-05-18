@@ -1,12 +1,9 @@
 import asyncio
 import time
 
-from fhempy.lib.fusionsolar.fusionsolar_api import (
-    FusionSolarRestApi,
-)
+from fhempy.lib.fusionsolar.fusionsolar_api import FusionSolarRestApi
 
-from .. import fhem
-from .. import generic
+from .. import fhem, generic
 
 
 class fusionsolar(generic.FhemModule):
@@ -32,7 +29,7 @@ class fusionsolar(generic.FhemModule):
 
         self._sessionid = args[3]
         self._stationname = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
-        self._region = args[4] if len(args) > 5 else "region01eu5"
+        self._region = args[4] if len(args) == 5 else "region01eu5"
 
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.update())
