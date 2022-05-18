@@ -87,26 +87,30 @@ class FusionSolarRestApi:
                         node["description"]["value"].replace(" kW", "")
                     )
             for node in result["flow"]["links"]:
-                if node["description"]["label"] == "neteco.pvms.energy.flow.buy.power":
-                    self._from_grid = float(
-                        node["description"]["value"].replace(" kW", "")
-                    )
-                    self._to_grid = 0
-                elif (
-                    node["description"]["label"]
-                    == "neteco.pvms.KPI.kpiView.onGridPower"
-                ):
-                    self._to_grid = float(
-                        node["description"]["value"].replace(" kW", "")
-                    )
-                    self._from_grid = 0
-                elif (
-                    node["description"]["label"]
-                    == "neteco.pvms.basicUnifSignal.optimizer.outputPower"
-                ):
-                    self._inverter_output_power = float(
-                        node["description"]["value"].replace(" kW", "")
-                    )
+                if "description" in node and "label" in node["description"]:
+                    if (
+                        node["description"]["label"]
+                        == "neteco.pvms.energy.flow.buy.power"
+                    ):
+                        self._from_grid = float(
+                            node["description"]["value"].replace(" kW", "")
+                        )
+                        self._to_grid = 0
+                    elif (
+                        node["description"]["label"]
+                        == "neteco.pvms.KPI.kpiView.onGridPower"
+                    ):
+                        self._to_grid = float(
+                            node["description"]["value"].replace(" kW", "")
+                        )
+                        self._from_grid = 0
+                    elif (
+                        node["description"]["label"]
+                        == "neteco.pvms.basicUnifSignal.optimizer.outputPower"
+                    ):
+                        self._inverter_output_power = float(
+                            node["description"]["value"].replace(" kW", "")
+                        )
 
     async def update_energy_balance(self):
         pass
