@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.349 (2022-05-18)
+### Fix
+* **fusionsolar:** Fix region usage in define ([`d388160`](https://github.com/dominikkarall/fhempy/commit/d38816072464b140ef774f0d003820935c640b8a))
+
 ## v0.1.348 (2022-05-16)
 ### Fix
 * **fhempy:** Deactivate events as long as encoding issues are not fixed ([`55353e9`](https://github.com/dominikkarall/fhempy/commit/55353e922902a655d4efda95b9897e467bf56689))
