@@ -127,6 +127,30 @@ class fusionsolar(generic.FhemModule):
                     "total_lifetime_energy",
                     self.restapi.total_lifetime_energy,
                 )
+
+                # battery values
+                if self.restapi.battery_soc is not None:
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        "battery_soc",
+                        self.restapi.battery_soc,
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        "battery_power",
+                        self.restapi.battery_power,
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        "battery_charge_capacity",
+                        self.restapi.battery_charge_capacity,
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        "battery_discharge_capacity",
+                        self.restapi.battery_discharge_capacity,
+                    )
+
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
             except Exception:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
