@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.357 (2022-05-19)
+### Fix
+* **fhempy:** Revert aiohttp version ([`905dfe0`](https://github.com/dominikkarall/fhempy/commit/905dfe01af0aeb3a7894aa945b855370e2486ec5))
+
 ## v0.1.356 (2022-05-19)
 ### Fix
 * **fhempy:** Update libraries ([`20f40b8`](https://github.com/dominikkarall/fhempy/commit/20f40b86fbccc160f254cf2d184e301eccb8e8fe))
