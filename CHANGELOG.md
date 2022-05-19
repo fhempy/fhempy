@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.354 (2022-05-19)
+### Fix
+* **fhempy:** Deactivate events ([`40bd9a4`](https://github.com/dominikkarall/fhempy/commit/40bd9a44c42ea9081f9db00c8b0e785dd4fcb21d))
+
 ## v0.1.353 (2022-05-19)
 ### Fix
 * **fhempy:** Revert event handling ([`f020c34`](https://github.com/dominikkarall/fhempy/commit/f020c34d1c790ce831bf50db86f1ddd950735d82))
