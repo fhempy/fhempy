@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.355 (2022-05-19)
+### Fix
+* **fhempy:** Update zeroconf to 0.38.6 ([`4f60df8`](https://github.com/dominikkarall/fhempy/commit/4f60df8a79f804b97016588aefb80d3575e7bb5f))
+
 ## v0.1.354 (2022-05-19)
 ### Fix
 * **fhempy:** Deactivate events ([`40bd9a4`](https://github.com/dominikkarall/fhempy/commit/40bd9a44c42ea9081f9db00c8b0e785dd4fcb21d))
