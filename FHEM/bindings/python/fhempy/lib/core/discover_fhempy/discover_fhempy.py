@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 
 from fhempy.lib import fhem
 from fhempy.lib.core.zeroconf import zeroconf as fzeroconf
