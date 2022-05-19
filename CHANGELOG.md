@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.353 (2022-05-19)
+### Fix
+* **fhempy:** Revert event handling ([`f020c34`](https://github.com/dominikkarall/fhempy/commit/f020c34d1c790ce831bf50db86f1ddd950735d82))
+
 ## v0.1.352 (2022-05-19)
 ### Fix
 * **fhempy:** Fix event handling (?) ([`ba5e9c4`](https://github.com/dominikkarall/fhempy/commit/ba5e9c42f3a28ded54d31ec6d2fb2e8a8291ecfe))
