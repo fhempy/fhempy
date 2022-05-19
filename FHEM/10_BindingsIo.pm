@@ -77,6 +77,7 @@ BindingsIo_Define($$$)
     $hash->{localBinding} = 0;
   }
   $hash->{nextOpenDelay} = 10;
+  $hash->{binary} = 1;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
@@ -197,9 +198,9 @@ BindingsIo_Notify($)
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
     }
-    # else {
-    #  BindingsIo_Write($hash, $dev, "event", [$event], {});
-    #}
+    else {
+      BindingsIo_Write($hash, $dev, "event", [$event], {});
+    }
   }
 
   return undef;
