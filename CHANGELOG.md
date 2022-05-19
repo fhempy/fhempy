@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.352 (2022-05-19)
+### Fix
+* **fhempy:** Fix event handling (?) ([`ba5e9c4`](https://github.com/dominikkarall/fhempy/commit/ba5e9c42f3a28ded54d31ec6d2fb2e8a8291ecfe))
+
 ## v0.1.351 (2022-05-18)
 ### Feature
 * **fusionsolar:** Support battery values ([`f0a67cd`](https://github.com/dominikkarall/fhempy/commit/f0a67cd9362c324cf73cf413f2fa4a9a3b15fe5f))
