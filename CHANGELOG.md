@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.356 (2022-05-19)
+### Fix
+* **fhempy:** Update libraries ([`20f40b8`](https://github.com/dominikkarall/fhempy/commit/20f40b86fbccc160f254cf2d184e301eccb8e8fe))
+* **fhempy:** Cleanup imports ([`d66b01a`](https://github.com/dominikkarall/fhempy/commit/d66b01a6e0ff1d70feb6b34b12910066dd558a0b))
+
 ## v0.1.355 (2022-05-19)
 ### Fix
 * **fhempy:** Update zeroconf to 0.38.6 ([`4f60df8`](https://github.com/dominikkarall/fhempy/commit/4f60df8a79f804b97016588aefb80d3575e7bb5f))
