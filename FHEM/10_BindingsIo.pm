@@ -77,7 +77,6 @@ BindingsIo_Define($$$)
     $hash->{localBinding} = 0;
   }
   $hash->{nextOpenDelay} = 10;
-  $hash->{binary} = 1;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
@@ -285,10 +284,10 @@ BindingsIo_Write($$$$$) {
   } elsif ($function eq "restart") {
     $msg{"msgtype"} = "restart";
     $waitforresponse = 0;
-  } elsif ($function eq "event") {
-    $msg{"msgtype"} = "event";
-    $waitforresponse = 0;
-  }
+  } #elsif ($function eq "event") {
+    #$msg{"msgtype"} = "event";
+    #$waitforresponse = 0;
+  #}
 
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
