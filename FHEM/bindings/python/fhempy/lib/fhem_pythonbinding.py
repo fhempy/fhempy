@@ -58,7 +58,9 @@ async def pybinding(websocket, path):
         # FHEM discovered us, stop zeroconf
         await zeroconf.get_instance(logger).unregister_service(zc_info)
         zc_info = None
-        await zeroconf.get_instance(logger).stop()
+        # do not stop zeroconf, as it is needed to discover other fhempy
+        # instances on the network in discover_fhempy
+        # await zeroconf.get_instance(logger).stop()
 
     global connection_start
     connection_start = time.time()
