@@ -196,9 +196,8 @@ BindingsIo_Notify($)
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
-    }
-    else {
-      BindingsIo_Write($hash, $dev, "event", [$event], {});
+    } else {
+      #BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
@@ -284,10 +283,10 @@ BindingsIo_Write($$$$$) {
   } elsif ($function eq "restart") {
     $msg{"msgtype"} = "restart";
     $waitforresponse = 0;
-  } #elsif ($function eq "event") {
-    #$msg{"msgtype"} = "event";
-    #$waitforresponse = 0;
-  #}
+  } elsif ($function eq "event") {
+    $msg{"msgtype"} = "event";
+    $waitforresponse = 0;
+  }
 
   my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
