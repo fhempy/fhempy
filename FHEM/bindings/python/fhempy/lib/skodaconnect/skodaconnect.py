@@ -27,6 +27,11 @@ class skodaconnect(generic.FhemModule):
                 "options": "always,onchange",
                 "help": "Update readings only on value change or always (default onchange).",
             },
+            "EV_Type": {
+                "default": "none",
+                "options": "EV,other",
+                "help": "Type of vehicle. Electriv Vehicle or other.",
+            },
         }
         self.set_attr_config(self.attr_config)
 
@@ -50,6 +55,7 @@ class skodaconnect(generic.FhemModule):
             while await connection.doLogin() is False:
                 await asyncio.sleep(5)
 
+            await fhem.readingsSingleUpdate(self.hash, "state", "getting vehicles", 1)
             await connection.get_vehicles()
 
             self.connection = connection
@@ -71,6 +77,8 @@ class skodaconnect(generic.FhemModule):
                 # no car identified
                 await fhem.readingsSingleUpdate(self.hash, "state", "no cars found", 1)
                 return
+
+            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
 
             self.prepare_set_commands()
 
@@ -113,18 +121,35 @@ class skodaconnect(generic.FhemModule):
             },
         }
         if self.vehicle.is_charging_supported:
-            self.set_config["charger"] = {
-                "args": ["onoff"],
-                "options": "on,off",
-            }
-            self.set_config["charger_current"] = {
-                "args": ["current"],
-                "options": "slider,1,1,254",
-            }
-            self.set_config["charge_limit"] = {
-                "args": ["limit"],
-                "options": "0,10,20,30,40,50",
-            }
+
+            if self._attr_EV_Type == "EV":
+                self.set_config["charger"] = {
+                    "args": ["onoff"],
+                    "options": "start,stop",
+                }
+                self.set_config["charge_limit"] = {
+                    "args": ["limit"],
+                    "options": "50,60,70,80,90,100",
+                }
+                self.set_config["charger_current"] = {
+                    "args": ["current"],
+                    "options": "Reduced,Maximum",
+                }
+                
+            else:
+                self.set_config["charger"] = {
+                    "args": ["onoff"],
+                    "options": "on,off",
+                }
+                self.set_config["charge_limit"] = {
+                    "args": ["limit"],
+                    "options": "0,10,20,30,40,50",
+                }
+                self.set_config["charger_current"] = {
+                    "args": ["current"],
+                    "options": "252,254",
+                }
+
         if self.vehicle.is_electric_climatisation_supported:
             self.set_config["battery_climatisation"] = {
                 "args": ["onoff"],
@@ -201,7 +226,7 @@ class skodaconnect(generic.FhemModule):
         self.create_async_task(self.vehicle.set_charger_current(params["current"]))
 
     async def set_charge_limit(self, hash, params):
-        self.create_async_task(self.vehicle.set_charge_limit(params["limit"]))
+        self.create_async_task(self.vehicle.set_charge_limit(int(params["limit"])))
 
     async def set_battery_climatisation(self, hash, params):
         self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
