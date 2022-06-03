@@ -162,19 +162,19 @@ class FusionSolarRestApi:
 
     @property
     def total_lifetime_energy(self):
-        return self._stationdetail["cumulativeEnergy"]
+        return float(self._stationdetail["cumulativeEnergy"])
 
     @property
     def total_current_day_energy(self):
-        return self._stationdetail["dailyEnergy"]
+        return float(self._stationdetail["dailyEnergy"])
 
     @property
     def total_current_month_energy(self):
-        return self._stationdetail["monthEnergy"]
+        return float(self._stationdetail["monthEnergy"])
 
     @property
     def total_current_year_energy(self):
-        return self._stationdetail["yearEnergy"]
+        return float(self._stationdetail["yearEnergy"])
 
     @property
     def grid_connected_time(self):
@@ -197,9 +197,7 @@ class FusionSolarRestApi:
         if self.daily_self_use_energy == 0:
             return 0
 
-        return round(
-            float(self.daily_self_use_energy) / float(self.daily_use_energy) * 100, 2
-        )
+        return round(self.daily_self_use_energy / self.daily_use_energy * 100, 2)
 
     @property
     def daily_self_use_solar_ratio(self):
@@ -207,9 +205,7 @@ class FusionSolarRestApi:
             return 0
 
         return round(
-            float(self.daily_self_use_energy)
-            / float(self.total_current_day_energy)
-            * 100,
+            self.daily_self_use_energy / self.total_current_day_energy * 100,
             2,
         )
 
