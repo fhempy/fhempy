@@ -67,7 +67,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         if self.tt_ip == "offline":
             await fhem.readingsSingleUpdate(
-                self.hash, "state", "Specify IP address in define instead of offline", 1
+                self.hash, "state", "Change DEF and use IP instead of 'offline'", 1
             )
             return
 
