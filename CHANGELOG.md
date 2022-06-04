@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.359 (2022-06-04)
+### Fix
+* **tuya:** Improve state text when device couldn't be discovered ([`2db8add`](https://github.com/dominikkarall/fhempy/commit/2db8addc3bcd993f6294b8211c72a2b065a0eab4))
+* **fusionsolar:** Fix division by zero exception ([`765982c`](https://github.com/dominikkarall/fhempy/commit/765982c9401c08aa1d400b23128888a3c4acaa19))
+
 ## v0.1.358 (2022-05-23)
 ### Fix
 * **fhempy:** Downgrade libraries to working versions ([`8ba4662`](https://github.com/dominikkarall/fhempy/commit/8ba46629905c6233ef3a79ae204e0d7dc468fd8d))
