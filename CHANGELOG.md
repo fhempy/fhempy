@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.360 (2022-06-04)
+### Fix
+* **googlecast:** Update lib and fix protobuf ([`bf73a18`](https://github.com/dominikkarall/fhempy/commit/bf73a182363dc39bcafc9570ec0b3579f484c814))
+
 ## v0.1.359 (2022-06-04)
 ### Fix
 * **tuya:** Improve state text when device couldn't be discovered ([`2db8add`](https://github.com/dominikkarall/fhempy/commit/2db8addc3bcd993f6294b8211c72a2b065a0eab4))
