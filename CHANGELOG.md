@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.361 (2022-06-10)
+### Fix
+* **fusionsolar:** Add idle call ([`987a88a`](https://github.com/dominikkarall/fhempy/commit/987a88ab4f91e68f96e745db2acebb0a59f3bc28))
+* **fhempy:** Fix local restart ([`3842026`](https://github.com/dominikkarall/fhempy/commit/38420261e3176d6cc43b32f73c219833706efe50))
+
 ## v0.1.360 (2022-06-04)
 ### Fix
 * **googlecast:** Update lib and fix protobuf ([`bf73a18`](https://github.com/dominikkarall/fhempy/commit/bf73a182363dc39bcafc9570ec0b3579f484c814))
