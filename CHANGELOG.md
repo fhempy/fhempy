@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.362 (2022-06-10)
+### Feature
+* **fusionsolar:** Add string_output_power ([`84bdaa1`](https://github.com/dominikkarall/fhempy/commit/84bdaa155871bd199c21a46e87af5e690c803484))
+
 ## v0.1.361 (2022-06-10)
 ### Fix
 * **fusionsolar:** Add idle call ([`987a88a`](https://github.com/dominikkarall/fhempy/commit/987a88ab4f91e68f96e745db2acebb0a59f3bc28))
