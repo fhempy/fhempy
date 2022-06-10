@@ -172,6 +172,13 @@ class FusionSolarRestApi:
                         self._inverter_output_power = float(
                             node["description"]["value"].replace(" kW", "")
                         )
+                    elif (
+                        node["description"]["label"]
+                        == "neteco.pvms.devTypeLangKey.string"
+                    ):
+                        self._string_output_power = float(
+                            node["description"]["value"].replace(" kW", "")
+                        )
 
     async def update_energy_balance(self):
         pass
@@ -258,6 +265,10 @@ class FusionSolarRestApi:
     @property
     def inverter_output_power(self):
         return self._inverter_output_power
+
+    @property
+    def string_output_power(self):
+        return self._string_output_power
 
     @property
     def electrical_load(self):
