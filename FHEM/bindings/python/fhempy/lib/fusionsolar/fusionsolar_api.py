@@ -58,6 +58,51 @@ class FusionSolarRestApi:
             "upgrade-insecure-requests": "1",
             "cookie": f"bspsession={self._sessionid}",
         }
+        await self._send(url, headers)
+
+    async def send_idle(self):
+        url = (
+            "https://"
+            + self._region
+            + ".fusionsolar.huawei.com/rest/plat/smapp/v1/idle"
+        )
+
+        headers = {
+            "accept": "application/json",
+            "accept-language": (
+                "en-AT,en;q=0.9,de-AT;q=0.8," "de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
+            ),
+            "content-type": "application/json",
+            "sec-ch-ua": (
+                '".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"'
+            ),
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"ChromeOS"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-non-renewal-active": "true",
+            "x-non-renewal-session": "false",
+            "x-requested-with": "XMLHttpRequest",
+            "cookie": (
+                "locale=en-us; user_time_a_lang=; "
+                "user_digital_format=%2C%23%230.00; "
+                "timezone=Europe%2FAmsterdam; delimiter=-; "
+                "format=yyyy-MM-dd%20HH%3Amm%3Ass; "
+                "timemode=client; timezoneoffset=60; user_time_show_dst=1; "
+                "supportlang=en; lang=en; esc_first_visit_time=1654870587; "
+                "__hau=HuaweiConnect.1654870589.1486370478; "
+                f"bspsession={self._sessionid}"
+            ),
+            "Referer": (
+                f"https://{self._region}.fusionsolar.huawei.com"
+                "/pvmswebsite/assets/build/index.html"
+            ),
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+        }
+        await self._send(url, headers)
+
+    async def _send(self, url, headers):
         try:
             response = {}
             async with aiohttp.ClientSession(headers=headers) as session:
@@ -71,13 +116,14 @@ class FusionSolarRestApi:
 
             return response
         except Exception:
-            self.logger.exception(f"Failed to get data from {path}")
+            self.logger.exception(f"Failed to get data from {url}: {response}")
             return {}
 
     async def update(self):
         await self.update_station_detail()
         await self.update_energy_balance()
         await self.update_energy_flow()
+        await self.send_idle()
 
     async def update_energy_flow(self):
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_
