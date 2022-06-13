@@ -44,6 +44,7 @@ HANDLE_RW_TIMERS = [
 class gfprobt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._ble_lock = asyncio.Lock()
         self._conn = None
         set_conf = {
             "update": {"help": "Retrieve values from GF Pro BT"},
@@ -101,20 +102,30 @@ class gfprobt(generic.FhemModule):
 
     async def set_on(self, hash, params):
         onseconds = params["onseconds"]
-        utils.run_blocking_task(functools.partial(self.blocking_on, onseconds))
+        self.create_async_task(
+            self._blocking_set(functools.partial(self.blocking_on, onseconds))
+        )
 
     async def set_off(self, hash, params):
-        utils.run_blocking_task(functools.partial(self.blocking_off))
+        self.create_async_task(self._blocking_set(functools.partial(self.blocking_off)))
 
     async def set_toggle(self, hash, params):
-        utils.run_blocking_task(functools.partial(self.blocking_toggle))
+        self.create_async_task(
+            self._blocking_set(functools.partial(self.blocking_toggle))
+        )
 
     async def set_adjust(self, hash, params):
-        utils.run_blocking_task(
-            functools.partial(
-                self.blocking_adjust, params["percentage"], params["duration"]
+        self.create_async_task(
+            self._blocking_set(
+                functools.partial(
+                    self.blocking_adjust, params["percentage"], params["duration"]
+                )
             )
         )
+
+    async def _blocking_set(self, fct):
+        async with self._ble_lock:
+            utils.run_blocking(fct)
 
     def blocking_on(self, onseconds):
         self.blocking_update_watering()
@@ -153,7 +164,8 @@ class gfprobt(generic.FhemModule):
             await asyncio.sleep(60)
 
     async def update_once(self):
-        await utils.run_blocking(functools.partial(self.blocking_update))
+        async with self._ble_lock:
+            await utils.run_blocking(functools.partial(self.blocking_update))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "state", "on" if self._watering == 1 else "off"
