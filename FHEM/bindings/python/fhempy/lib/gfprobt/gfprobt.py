@@ -133,8 +133,8 @@ class gfprobt(generic.FhemModule):
     def blocking_adjust(self, percentage, duration):
         duration_sec = duration * 60 * 60
 
-        duration_hex = struct.pack("<I", duration_sec)
-        percentage_hex = struct.pack("<I", percentage & 0xFFFF)[0:2]
+        duration_hex = duration_sec.to_bytes(6, "little")
+        percentage_hex = percentage.to_bytes(2, "little")
         self._conn.writeCharacteristic(
             HANDLE_RW_INCREASEREDUCE, duration_hex + percentage_hex
         )
@@ -205,17 +205,15 @@ class gfprobt(generic.FhemModule):
         self._devname = self._conn.read_characteristic(HANDLE_RW_DEVNAME).decode(
             "utf-8"
         )
-        self._eco = str(self._conn.read_characteristic(HANDLE_RW_ECO_PART1))
-        self._eco += " " + str(self._conn.read_characteristic(HANDLE_RW_ECO_PART2))
+        self._eco = self._conn.read_characteristic(HANDLE_RW_ECO_PART1)
+        self._eco += self._conn.read_characteristic(HANDLE_RW_ECO_PART2)
         self._timeoffset = struct.unpack(
             "<I", self._conn.read_characteristic(HANDLE_RW_TIME_OFFSET)
         )[0]
         self._devmac = str(self._conn.read_characteristic(HANDLE_R_MAC))
         self._increasereduce = self._conn.read_characteristic(HANDLE_RW_INCREASEREDUCE)
-        # self._adjust_hours = struct.unpack("<I", self._increasereduce[0:3])[0] / 3600
-        # self._adjust_perc = struct.unpack("<h", self._increasereduce[4:5])[0]
-        self._adjust_hours = 0
-        self._adjust_perc = 0
+        self._adjust_hours = struct.unpack("<I", self._increasereduce[0:4])[0] / 3600
+        self._adjust_perc = struct.unpack("<h", self._increasereduce[4:])[0]
         self._raw_timers = {}
         for handle_timer in HANDLE_RW_TIMERS:
             self._raw_timers[handle_timer] = self._conn.read_characteristic(
@@ -228,9 +226,9 @@ class gfprobt(generic.FhemModule):
         sec_since_mon = (
             now.tm_wday * 3600 * 24 + now.tm_hour * 3600 + now.tm_min * 60 + now.tm_sec
         )
-        sec_since_mon = struct.pack("<I", sec_since_mon)
+        sec_since_mon = sec_since_mon.to_byte(4, "little")
         self._conn.writeCharacteristic(HANDLE_RW_TIME_OFFSET, sec_since_mon)
 
     def commit_code(self):
-        self._conn.writeCharacteristic(HANDLE_W_COMMITCODE, b"00")
-        self._conn.writeCharacteristic(HANDLE_W_COMMITCODE, b"01")
+        self._conn.writeCharacteristic(HANDLE_W_COMMITCODE, b"\x00")
+        self._conn.writeCharacteristic(HANDLE_W_COMMITCODE, b"\x01")
