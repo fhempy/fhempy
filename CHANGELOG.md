@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.363 (2022-06-13)
+### Fix
+* **fusionsolar:** Prevent token to expire ([`9629bfb`](https://github.com/dominikkarall/fhempy/commit/9629bfb16133595248c6b5d3df856483c546e67b))
+* **gfprobt:** Do not send parallel commands ([`3f1e504`](https://github.com/dominikkarall/fhempy/commit/3f1e504cf6992337abb0886d4f19316dd42c2915))
+* **gfprobt:** Fix adjust ([`54427b2`](https://github.com/dominikkarall/fhempy/commit/54427b2e3f9aade0ba6400b58cbeea48574d1c95))
+
 ## v0.1.362 (2022-06-10)
 ### Feature
 * **fusionsolar:** Add string_output_power ([`84bdaa1`](https://github.com/dominikkarall/fhempy/commit/84bdaa155871bd199c21a46e87af5e690c803484))
