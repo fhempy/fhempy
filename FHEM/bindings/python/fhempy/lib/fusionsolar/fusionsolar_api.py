@@ -58,6 +58,51 @@ class FusionSolarRestApi:
             "upgrade-insecure-requests": "1",
             "cookie": f"bspsession={self._sessionid}",
         }
+        await self._send(url, headers)
+
+    async def send_idle(self):
+        url = (
+            "https://"
+            + self._region
+            + ".fusionsolar.huawei.com/rest/plat/smapp/v1/idle"
+        )
+
+        headers = {
+            "accept": "application/json",
+            "accept-language": (
+                "en-AT,en;q=0.9,de-AT;q=0.8," "de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
+            ),
+            "content-type": "application/json",
+            "sec-ch-ua": (
+                '".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"'
+            ),
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"ChromeOS"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-non-renewal-active": "true",
+            "x-non-renewal-session": "false",
+            "x-requested-with": "XMLHttpRequest",
+            "cookie": (
+                "locale=en-us; user_time_a_lang=; "
+                "user_digital_format=%2C%23%230.00; "
+                "timezone=Europe%2FAmsterdam; delimiter=-; "
+                "format=yyyy-MM-dd%20HH%3Amm%3Ass; "
+                "timemode=client; timezoneoffset=60; user_time_show_dst=1; "
+                "supportlang=en; lang=en; esc_first_visit_time=1654870587; "
+                "__hau=HuaweiConnect.1654870589.1486370478; "
+                f"bspsession={self._sessionid}"
+            ),
+            "Referer": (
+                f"https://{self._region}.fusionsolar.huawei.com"
+                "/pvmswebsite/assets/build/index.html"
+            ),
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+        }
+        await self._send(url, headers)
+
+    async def _send(self, url, headers):
         try:
             response = {}
             async with aiohttp.ClientSession(headers=headers) as session:
@@ -71,13 +116,14 @@ class FusionSolarRestApi:
 
             return response
         except Exception:
-            self.logger.exception(f"Failed to get data from {path}")
+            self.logger.exception(f"Failed to get data from {url}: {response}")
             return {}
 
     async def update(self):
         await self.update_station_detail()
         await self.update_energy_balance()
         await self.update_energy_flow()
+        await self.send_idle()
 
     async def update_energy_flow(self):
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_
@@ -126,6 +172,13 @@ class FusionSolarRestApi:
                         self._inverter_output_power = float(
                             node["description"]["value"].replace(" kW", "")
                         )
+                    elif (
+                        node["description"]["label"]
+                        == "neteco.pvms.devTypeLangKey.string"
+                    ):
+                        self._string_output_power = float(
+                            node["description"]["value"].replace(" kW", "")
+                        )
 
     async def update_energy_balance(self):
         pass
@@ -162,19 +215,19 @@ class FusionSolarRestApi:
 
     @property
     def total_lifetime_energy(self):
-        return self._stationdetail["cumulativeEnergy"]
+        return float(self._stationdetail["cumulativeEnergy"])
 
     @property
     def total_current_day_energy(self):
-        return self._stationdetail["dailyEnergy"]
+        return float(self._stationdetail["dailyEnergy"])
 
     @property
     def total_current_month_energy(self):
-        return self._stationdetail["monthEnergy"]
+        return float(self._stationdetail["monthEnergy"])
 
     @property
     def total_current_year_energy(self):
-        return self._stationdetail["yearEnergy"]
+        return float(self._stationdetail["yearEnergy"])
 
     @property
     def grid_connected_time(self):
@@ -197,9 +250,7 @@ class FusionSolarRestApi:
         if self.daily_self_use_energy == 0:
             return 0
 
-        return round(
-            float(self.daily_self_use_energy) / float(self.daily_use_energy) * 100, 2
-        )
+        return round(self.daily_self_use_energy / self.daily_use_energy * 100, 2)
 
     @property
     def daily_self_use_solar_ratio(self):
@@ -207,15 +258,17 @@ class FusionSolarRestApi:
             return 0
 
         return round(
-            float(self.daily_self_use_energy)
-            / float(self.total_current_day_energy)
-            * 100,
+            self.daily_self_use_energy / self.total_current_day_energy * 100,
             2,
         )
 
     @property
     def inverter_output_power(self):
         return self._inverter_output_power
+
+    @property
+    def string_output_power(self):
+        return self._string_output_power
 
     @property
     def electrical_load(self):

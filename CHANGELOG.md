@@ -2,6 +2,30 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.363 (2022-06-13)
+### Fix
+* **fusionsolar:** Prevent token to expire ([`9629bfb`](https://github.com/dominikkarall/fhempy/commit/9629bfb16133595248c6b5d3df856483c546e67b))
+* **gfprobt:** Do not send parallel commands ([`3f1e504`](https://github.com/dominikkarall/fhempy/commit/3f1e504cf6992337abb0886d4f19316dd42c2915))
+* **gfprobt:** Fix adjust ([`54427b2`](https://github.com/dominikkarall/fhempy/commit/54427b2e3f9aade0ba6400b58cbeea48574d1c95))
+
+## v0.1.362 (2022-06-10)
+### Feature
+* **fusionsolar:** Add string_output_power ([`84bdaa1`](https://github.com/dominikkarall/fhempy/commit/84bdaa155871bd199c21a46e87af5e690c803484))
+
+## v0.1.361 (2022-06-10)
+### Fix
+* **fusionsolar:** Add idle call ([`987a88a`](https://github.com/dominikkarall/fhempy/commit/987a88ab4f91e68f96e745db2acebb0a59f3bc28))
+* **fhempy:** Fix local restart ([`3842026`](https://github.com/dominikkarall/fhempy/commit/38420261e3176d6cc43b32f73c219833706efe50))
+
+## v0.1.360 (2022-06-04)
+### Fix
+* **googlecast:** Update lib and fix protobuf ([`bf73a18`](https://github.com/dominikkarall/fhempy/commit/bf73a182363dc39bcafc9570ec0b3579f484c814))
+
+## v0.1.359 (2022-06-04)
+### Fix
+* **tuya:** Improve state text when device couldn't be discovered ([`2db8add`](https://github.com/dominikkarall/fhempy/commit/2db8addc3bcd993f6294b8211c72a2b065a0eab4))
+* **fusionsolar:** Fix division by zero exception ([`765982c`](https://github.com/dominikkarall/fhempy/commit/765982c9401c08aa1d400b23128888a3c4acaa19))
+
 ## v0.1.358 (2022-05-23)
 ### Fix
 * **fhempy:** Downgrade libraries to working versions ([`8ba4662`](https://github.com/dominikkarall/fhempy/commit/8ba46629905c6233ef3a79ae204e0d7dc468fd8d))

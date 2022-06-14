@@ -181,7 +181,7 @@ sub fhempyServer_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
-  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash)) {
+  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 0) {
     return undef;
   }
 
