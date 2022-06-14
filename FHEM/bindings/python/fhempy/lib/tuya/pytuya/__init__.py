@@ -583,7 +583,11 @@ class TuyaProtocol(asyncio.Protocol, ContextualLogger):
             raise Exception(f"Unexpected payload={payload}")
 
         if not isinstance(payload, str):
-            payload = payload.decode()
+            try:
+                payload = payload.decode()
+            except Exception as ex:
+                self.error(f"Failed to decode: {payload}")
+                raise ex
         self.debug("Decrypted payload: %s", payload)
         return json.loads(payload)
 
