@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.364 (2022-06-14)
+### Fix
+* **tuya:** Add logging if payload decoding fails ([`79953c5`](https://github.com/dominikkarall/fhempy/commit/79953c5de67e1f1e950336cbec6d32903af8da67))
+
 ## v0.1.363 (2022-06-13)
 ### Fix
 * **fusionsolar:** Prevent token to expire ([`9629bfb`](https://github.com/dominikkarall/fhempy/commit/9629bfb16133595248c6b5d3df856483c546e67b))
