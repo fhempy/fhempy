@@ -79,7 +79,7 @@ class skodaconnect(generic.FhemModule):
                 return
 
             await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
-
+                
             self.prepare_set_commands()
 
             await self.update_readings()
@@ -207,42 +207,37 @@ class skodaconnect(generic.FhemModule):
         self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
-        self.create_async_task(self.vehicle.set_pheater(params["mode"], self.spin))
+        self.create_async_task(self._set_pheater(hash, params))
 
     async def set_pheater_duration(self, hash, params):
-        self.vehicle.pheater_duration = params["duration"]
-        self.create_async_task(self.update_readings_once())
+        self.create_async_task(self._set_pheater_duration(hash, params))
 
     async def set_lock(self, hash, params):
-        self.create_async_task(self.vehicle.set_lock(params["lockunlock"], self.spin))
+        self.create_async_task(self._set_lock(hash, params))
 
     async def set_honkandflash(self, hash, params):
-        self.create_async_task(self.vehicle.set_honkandflash(params["honkandflash"]))
+        self.create_async_task(self._set_honkandflash(hash, params))
 
     async def set_charger(self, hash, params):
-        self.create_async_task(self.vehicle.set_charger(params["onoff"]))
+        self.create_async_task(self._set_charger(hash, params))
 
     async def set_charger_current(self, hash, params):
-        self.create_async_task(self.vehicle.set_charger_current(params["current"]))
+        self.create_async_task(self._set_charger_current(hash, params))
 
     async def set_charge_limit(self, hash, params):
-        self.create_async_task(self.vehicle.set_charge_limit(int(params["limit"])))
+        self.create_async_task(self._set_charge_limit(hash, params))
 
     async def set_battery_climatisation(self, hash, params):
-        self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
+        self.create_async_task(self._set_battery_climatisation(hash, params))
 
     async def set_climatisation(self, hash, params):
-        self.create_async_task(
-            self.vehicle.set_climatisation(params["mode"], spin=self.spin)
-        )
+        self.create_async_task(self._set_climatisation(hash, params))
 
     async def set_climatisation_target_temperature(self, hash, params):
-        self.create_async_task(
-            self.vehicle.set_climatisation_temp(params["temperature"])
-        )
+        self.create_async_task(self._set_climatisation_temp(hash, params))
 
     async def set_window_heating(self, hash, params):
-        self.create_async_task(self.vehicle.set_window_heating(params["startstop"]))
+        self.create_async_task(self._set_window_heating(hash, params))
 
     async def set_force_update(self, hash, params):
         self.create_async_task(self.vehicle.set_refresh())
@@ -286,3 +281,76 @@ class skodaconnect(generic.FhemModule):
                         )
         except Exception:
             self.logger.exception("Failed to update readings")
+
+
+    async def _set_pheater(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_pheater()", 1)
+        t=await self.create_async_task(self.vehicle.set_pheater(params["mode"], self.spin))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_pheater_duration(self, hash, params):
+        self.vehicle.pheater_duration = params["duration"]
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_pheater_duration()", 1)
+        t=await self.create_async_task(self.update_readings_once())
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+
+    async def _set_lock(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_lock()", 1)
+        t=await self.create_async_task(self.vehicle.set_lock(params["lockunlock"], self.spin))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_honkandflash(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_honkandflash()", 1)
+        t=await self.create_async_task(self.vehicle.set_honkandflash(params["honkandflash"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_charger(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_charger()", 1)
+        t=await self.create_async_task(self.vehicle.set_charger(params["onoff"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_charger_current(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_charger_current()", 1)
+        t=await self.create_async_task(self.vehicle.set_charger_current(params["current"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_charge_limit(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_charge_limit()", 1)
+        t=await self.vehicle.set_charge_limit(int(params["limit"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5)
+        await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+
+    async def _set_battery_climatisation(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_battery_climatisation()", 1)
+        t=await self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_climatisation(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_climatisation()", 1)
+        t=await self.create_async_task(self.vehicle.set_climatisation(params["mode"], spin=self.spin))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+    async def _set_climatisation_target_temperature(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_climatisation_target_temperature()", 1)
+        t=await self.create_async_task(self.vehicle.set_climatisation_temp(params["temperature"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+
+    async def _set_window_heating(self, hash, params):
+        await fhem.readingsSingleUpdate(self.hash, "state", "set_window_heating()", 1)
+        t=await self.create_async_task(self.vehicle.set_window_heating(params["startstop"]))
+        await fhem.readingsSingleUpdate(self.hash, "state", t, 1)
+        await asyncio.sleep(5); await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        
+
+
+        
