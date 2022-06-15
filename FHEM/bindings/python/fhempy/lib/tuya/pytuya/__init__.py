@@ -1,6 +1,9 @@
 # PyTuya Module
 # -*- coding: utf-8 -*-
 """
+This file was taken from
+https://github.com/rospogrigio/localtuya/tree/master/custom_components/localtuya/pytuya
+
 Python module to interface with Tuya WiFi smart devices.
 
 Mostly derived from Shenzhen Xenon ESP8266MOD WiFi smart devices
@@ -585,9 +588,9 @@ class TuyaProtocol(asyncio.Protocol, ContextualLogger):
         if not isinstance(payload, str):
             try:
                 payload = payload.decode()
-            except Exception as ex:
+            except Exception:
                 self.error(f"Failed to decode: {payload}")
-                raise ex
+                return {}
         self.debug("Decrypted payload: %s", payload)
         return json.loads(payload)
 
