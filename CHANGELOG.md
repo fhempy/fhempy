@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.365 (2022-06-15)
+### Fix
+* **tuya:** Do not raise exception if decoding fails ([`1371ca4`](https://github.com/dominikkarall/fhempy/commit/1371ca4376c5365b940d94074363796286cf418e))
+
 ## v0.1.364 (2022-06-14)
 ### Fix
 * **tuya:** Add logging if payload decoding fails ([`79953c5`](https://github.com/dominikkarall/fhempy/commit/79953c5de67e1f1e950336cbec6d32903af8da67))
