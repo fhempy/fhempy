@@ -58,7 +58,8 @@ class FusionSolarRestApi:
             "upgrade-insecure-requests": "1",
             "cookie": f"bspsession={self._sessionid}",
         }
-        await self._send(url, headers)
+        resp = await self._send(url, headers)
+        return resp
 
     async def send_idle(self):
         url = (
