@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.366 (2022-06-16)
+### Fix
+* **fusionsolar:** Fix NoneType exception ([`9cc40c3`](https://github.com/dominikkarall/fhempy/commit/9cc40c3bc188b8a4deb1ed7c2193828b7f0a7264))
+
 ## v0.1.365 (2022-06-15)
 ### Fix
 * **tuya:** Do not raise exception if decoding fails ([`1371ca4`](https://github.com/dominikkarall/fhempy/commit/1371ca4376c5365b940d94074363796286cf418e))
