@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.367 (2022-06-17)
+### Fix
+* **fusionsolar:** Fix string_output_power ([`4f83d8a`](https://github.com/dominikkarall/fhempy/commit/4f83d8ab6b3a04820ce7dc75b10a11d23f0a743c))
+
 ## v0.1.366 (2022-06-16)
 ### Fix
 * **fusionsolar:** Fix NoneType exception ([`9cc40c3`](https://github.com/dominikkarall/fhempy/commit/9cc40c3bc188b8a4deb1ed7c2193828b7f0a7264))
