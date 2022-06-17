@@ -25,6 +25,7 @@ class FusionSolarRestApi:
         self._battery_battery_power = None
         self._battery_charge_capacity = None
         self._battery_discharge_capacity = None
+        self._string_output_power = 0
 
     async def _get_rest_data(self, path):
         url = (
