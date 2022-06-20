@@ -81,7 +81,7 @@ async def pybinding(websocket, path):
     except websockets.exceptions.ConnectionClosedError:
         if not stop_event.is_set():
             logger.error("Connection closed error", exc_info=True)
-            logger.info("Restart binding")
+            logger.info("Restart fhempy")
             global exit_code
             exit_code = 1
             stop_event.set()
