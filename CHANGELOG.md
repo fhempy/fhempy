@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.368 (2022-06-20)
+### Fix
+* **fhempy:** Fix ble disconnect failure ([`1142d94`](https://github.com/dominikkarall/fhempy/commit/1142d94de4a365449b531acdc71995045149fe35))
+* **fhempy:** Fix naming ([`6b7ddc2`](https://github.com/dominikkarall/fhempy/commit/6b7ddc2dc71483d0b08bc3d9a38c354746ce4818))
+* **fusionsolar:** Fix string energy ([`f015ac7`](https://github.com/dominikkarall/fhempy/commit/f015ac71d4b7c0908ecbaa74bc6f7ab29f020788))
+
 ## v0.1.367 (2022-06-17)
 ### Fix
 * **fusionsolar:** Fix string_output_power ([`4f83d8a`](https://github.com/dominikkarall/fhempy/commit/4f83d8ab6b3a04820ce7dc75b10a11d23f0a743c))
