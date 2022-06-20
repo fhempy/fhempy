@@ -85,10 +85,11 @@ class BTLEConnection(btle.DefaultDelegate):
 
     def set_keep_connected(self, new_state):
         self._keep_connected = new_state
-        if new_state == False:
+        if new_state is False:
             if self._conn:
                 try:
                     self._conn.disconnect()
+                    self._conn = None
                 except Exception:
                     pass
 

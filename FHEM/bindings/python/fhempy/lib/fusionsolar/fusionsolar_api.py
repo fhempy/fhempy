@@ -149,6 +149,10 @@ class FusionSolarRestApi:
                     self._battery_discharge_capacity = float(
                         node["deviceTips"]["DISCHARGE_CAPACITY"]
                     )
+                elif node["name"] == "neteco.pvms.devTypeLangKey.string":
+                    self._string_output_power = float(
+                        node["description"]["value"].replace(" kW", "")
+                    )
             for node in result["flow"]["links"]:
                 if "description" in node and "label" in node["description"]:
                     if (
@@ -172,13 +176,6 @@ class FusionSolarRestApi:
                         == "neteco.pvms.basicUnifSignal.optimizer.outputPower"
                     ):
                         self._inverter_output_power = float(
-                            node["description"]["value"].replace(" kW", "")
-                        )
-                    elif (
-                        node["description"]["label"]
-                        == "neteco.pvms.devTypeLangKey.string"
-                    ):
-                        self._string_output_power = float(
                             node["description"]["value"].replace(" kW", "")
                         )
 
