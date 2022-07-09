@@ -254,12 +254,14 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         resp = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdps, self.tt_did)
         )
+        self.logger.debug("getdps: f{resp}")
         return resp["result"]
 
     async def get_tuya_dev_info(self):
         resp = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, True)
         )
+        self.logger.debug("getdevices: f{resp}")
         for dev in resp["result"]:
             if dev["id"] == self.tt_did:
                 return dev
@@ -270,6 +272,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         response_dict = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getfunctions, self.tt_did)
         )
+        self.logger.debug("getfunctions: f{response_dict}")
         fct_desc = response_dict["result"]["functions"]
         fct_code_desc = {}
         for fct in fct_desc:
@@ -356,26 +359,22 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await utils.handle_define_attr(self.attr_config, self, self.hash)
 
         # if spec contains dp_id
-        for spec in self.tuya_spec_status:
+        for spec in self.tuya_spec_status + self.tuya_spec_functions:
             if "dp_id" in spec:
                 dp = spec["dp_id"]
                 code = spec["code"]
                 val = await fhem.AttrVal(self.hash["NAME"], f"dp_{int(dp):02d}", "")
                 if val == "":
-                    await fhem.CommandAttr(
-                        self.hash,
-                        f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
-                    )
-        for spec in self.tuya_spec_functions:
-            if "dp_id" in spec:
-                dp = spec["dp_id"]
-                code = spec["code"]
-                val = await fhem.AttrVal(self.hash["NAME"], f"dp_{int(dp):02d}", "")
-                if val == "":
-                    await fhem.CommandAttr(
-                        self.hash,
-                        f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
-                    )
+                    if f"dp_{int(dp):02d}" in self.attr_config:
+                        await fhem.CommandAttr(
+                            self.hash,
+                            f"{self.hash['NAME']} dp_{int(dp):02d} {code}",
+                        )
+                    else:
+                        self.logger.warning(
+                            f"dp_{int(dp):02d} in spec but not found locally."
+                            " This should be reported to TuYa"
+                        )
         await self.set_attr_dp(self.hash)
 
     async def setup_connection(self):
