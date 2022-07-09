@@ -197,7 +197,7 @@ BindingsIo_Notify($)
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
     } else {
-      #BindingsIo_Write($hash, $dev, "event", [$event], {});
+      BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
@@ -288,7 +288,7 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   }
 
-  my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%msg)));
+  my $utf8msg = to_json(\%msg);
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
