@@ -128,12 +128,27 @@ class FusionSolarRestApi:
         await self.send_idle()
 
     async def update_energy_flow(self):
+        self._inverter_output_power = "-"
+        self._from_grid = "-"
+        self._to_grid = "-"
+        self._electrical_load = "-"
+        self._string_output_power = "-"
+        self._battery_soc = None
+        self._battery_battery_power = None
+        self._battery_charge_capacity = None
+        self._battery_discharge_capacity = None
+
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_
         result = await self._get_rest_data(FusionSolarRestApi.ENERGY_FLOW_PATH)
         if "flow" in result:
             for node in result["flow"]["nodes"]:
                 if node["name"] == "neteco.pvms.devTypeLangKey.inverter":
-                    pass  # inverter values
+                    if node["deviceTips"]["ACTIVE_POWER"] == "--":
+                        self._inverter_output_power = 0
+                    else:
+                        self._inverter_output_power = float(
+                            node["deviceTips"]["ACTIVE_POWER"]
+                        )
                 elif node["name"] == "neteco.pvms.KPI.kpiView.electricalLoad":
                     self._electrical_load = float(
                         node["description"]["value"].replace(" kW", "")
@@ -159,25 +174,18 @@ class FusionSolarRestApi:
                         node["description"]["label"]
                         == "neteco.pvms.energy.flow.buy.power"
                     ):
-                        self._from_grid = float(
-                            node["description"]["value"].replace(" kW", "")
-                        )
-                        self._to_grid = 0
-                    elif (
-                        node["description"]["label"]
-                        == "neteco.pvms.KPI.kpiView.onGridPower"
-                    ):
-                        self._to_grid = float(
-                            node["description"]["value"].replace(" kW", "")
-                        )
-                        self._from_grid = 0
-                    elif (
-                        node["description"]["label"]
-                        == "neteco.pvms.basicUnifSignal.optimizer.outputPower"
-                    ):
-                        self._inverter_output_power = float(
-                            node["description"]["value"].replace(" kW", "")
-                        )
+                        if node["fromNode"] == "3":
+                            # from grid is fromNode 3
+                            self._from_grid = float(
+                                node["description"]["value"].replace(" kW", "")
+                            )
+                            self._to_grid = 0
+                        else:
+                            # to grid is fromNode 2
+                            self._to_grid = float(
+                                node["description"]["value"].replace(" kW", "")
+                            )
+                            self._from_grid = 0
 
     async def update_energy_balance(self):
         pass
@@ -238,11 +246,11 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_energy(self):
-        return round(self._stationdetail["dailySelfUseEnergy"], 2)
+        return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2)
 
     @property
     def daily_use_energy(self):
-        return round(self._stationdetail["dailyUseEnergy"], 2)
+        return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
 
     @property
     def daily_self_use_ratio(self):
