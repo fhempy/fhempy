@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.369 (2022-07-09)
+### Feature
+* **volvo_software_update:** New module which notifies about volvo software updates ([`aada589`](https://github.com/dominikkarall/fhempy/commit/aada58901979f5c79d2ddbc8640890cd21e6e957))
+
+### Fix
+* **fhempy:** Fix event handling ([`8649e04`](https://github.com/dominikkarall/fhempy/commit/8649e04cda8fde246a0ee4c187af1f74a4b3c79a))
+* **tuya:** Prevent error when attr dp_xx is not available localy ([`30ebebf`](https://github.com/dominikkarall/fhempy/commit/30ebebff1af3aaede5a8ff01ad96642229c970a0))
+* **fusionsolar:** Support new web api ([`31423a8`](https://github.com/dominikkarall/fhempy/commit/31423a8f1309eb4c46607c70e4608dbca13dab82))
+* **googlecast:** Update pychromecast lib ([`d30c288`](https://github.com/dominikkarall/fhempy/commit/d30c288f020978b525ea2ef8d27f3d02b6afaa0c))
+
 ## v0.1.368 (2022-06-20)
 ### Fix
 * **fhempy:** Fix ble disconnect failure ([`1142d94`](https://github.com/dominikkarall/fhempy/commit/1142d94de4a365449b531acdc71995045149fe35))
