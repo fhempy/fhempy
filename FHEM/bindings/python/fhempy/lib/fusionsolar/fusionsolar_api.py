@@ -11,11 +11,11 @@ class FusionSolarRestApi:
         "/rest/pvms/web/station/v1/overview/station-detail?stationDn=STATION&_="
     )
 
-    def __init__(self, logger, sessionid, stationname, region="region01eu5"):
+    def __init__(self, logger, username, password, region="region01eu5"):
         self.logger = logger
         self._region = region
-        self._stationname = stationname
-        self._sessionid = sessionid
+        self._username = username
+        self._password = password
         self._stationdetail = None
         self._inverter_output_power = 0
         self._from_grid = 0
@@ -26,6 +26,135 @@ class FusionSolarRestApi:
         self._battery_charge_capacity = None
         self._battery_discharge_capacity = None
         self._string_output_power = 0
+
+    async def login(self):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://" + self._region + ".fusionsolar.huawei.com/"
+                ) as resp:
+                    self._regionhost = resp.host
+
+                    if self._regionhost is None:
+                        self.logger.error(f"Failed to get region host: {resp}")
+                        return False
+
+            url = (
+                "https://"
+                + self._regionhost
+                + "/unisso/v2/"
+                + "validateUser.action?service="
+                + "%2Funisess%2Fv1%2Fauth%3Fservice%3D%252F"
+                + "netecowebext%252Fhome%252Findex.html"
+            )
+
+            headers = {
+                "accept": "application/json, text/javascript, */*; q=0.01",
+                "accept-language": "en-AT,en;q=0.9",
+                "content-type": "application/json",
+                "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"Chrome OS"',
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "x-requested-with": "XMLHttpRequest",
+                "Referer": "https://"
+                + self._regionhost
+                + "/unisso/login.action?service=%2Funisess%2Fv1%2Fauth%3Fservice%3D%252Fnetecowebext%252Fhome%252Findex.html",
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+            }
+            body = {
+                "organizationName": "",
+                "username": self._username,
+                "password": self._password,
+            }
+
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.post(url, json=body) as resp:
+                    response = resp.cookies
+
+            headers = {
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                "accept-language": "en-AT,en;q=0.9",
+                "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"Chrome OS"',
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "same-site",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "Referer": "https://" + self._regionhost + "/",
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+            }
+
+            async with aiohttp.ClientSession(
+                headers=headers, cookies=response
+            ) as session:
+                async with session.get(
+                    "https://" + self._region + ".fusionsolar.huawei.com/",
+                    max_redirects=20,
+                ) as resp2:
+                    if resp2.status == 200:
+                        self._cookies = session.cookie_jar
+                    else:
+                        self.logger.error(f"Failed to retrieve cookies: {resp2}")
+                        return False
+
+                async with session.get(
+                    "https://"
+                    + self._region
+                    + ".fusionsolar.huawei.com/unisess/v1/auth/session"
+                ) as resp3:
+                    response = await resp3.json()
+                    csrfToken = response["csrfToken"]
+
+                headers = {
+                    "accept": "application/json, text/javascript, */*; q=0.01",
+                    "accept-language": "en-AT,en;q=0.9",
+                    "content-type": "application/json",
+                    "roarand": csrfToken,
+                    "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+                    "sec-ch-ua-mobile": "?0",
+                    "sec-ch-ua-platform": '"Chrome OS"',
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                    "x-non-renewal-session": "true",
+                    "x-requested-with": "XMLHttpRequest",
+                    "x-timezone-offset": "120",
+                    "cookie": "locale=en-us; theme=lightday; user_time_a_lang=; user_digital_format=%2C%23%230.00; timezone=Europe%2FAmsterdam; delimiter=-; format=yyyy-MM-dd%20HH%3Amm%3Ass; timemode=client; timezoneoffset=60; user_time_show_dst=1; bspsession=x-44nw7ypi2kthmmpenu8a2m08o6fwun89df7smmk77vns471c1fphapqnk72maomp7xk6qp2meo492lhio9hd3sdeakvthj9e2q0584gaullhc7vt09mk1gpj1cfvtj07; JSESSIONID=F0C8E876D1FAD634CDAB0898621667FB",
+                    "Referer": "https://"
+                    + self._region
+                    + ".fusionsolar.huawei.com/pvmswebsite/assets/build/index.html",
+                    "Referrer-Policy": "strict-origin-when-cross-origin",
+                }
+                body = {
+                    "curPage": 1,
+                    "pageSize": 10,
+                    "gridConnectionTime": "",
+                    "queryTime": 1657404000000,
+                    "timeZone": 2,
+                    "sortId": "createTime",
+                    "sortDir": "DESC",
+                    "locale": "en_US",
+                }
+                async with session.post(
+                    "https://"
+                    + self._region
+                    + ".fusionsolar.huawei.com/rest/pvms/web/station/v1/station/station-list",
+                    json=body,
+                    headers=headers,
+                ) as resp3:
+                    response = await resp3.json()
+                    self._stationname = response["data"]["list"][0]["dn"]
+
+            return True
+
+        except Exception as ex:
+            self.logger.exception(f"Failed to get data from {url}: {ex}")
+            return False
 
     async def _get_rest_data(self, path):
         url = (
@@ -57,9 +186,8 @@ class FusionSolarRestApi:
             "sec-fetch-site": "none",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
-            "cookie": f"bspsession={self._sessionid}",
         }
-        resp = await self._send(url, headers)
+        resp = await self._get(url, headers)
         return resp
 
     async def send_idle(self):
@@ -86,29 +214,25 @@ class FusionSolarRestApi:
             "x-non-renewal-active": "true",
             "x-non-renewal-session": "false",
             "x-requested-with": "XMLHttpRequest",
-            "cookie": (
-                "locale=en-us; user_time_a_lang=; "
-                "user_digital_format=%2C%23%230.00; "
-                "timezone=Europe%2FAmsterdam; delimiter=-; "
-                "format=yyyy-MM-dd%20HH%3Amm%3Ass; "
-                "timemode=client; timezoneoffset=60; user_time_show_dst=1; "
-                "supportlang=en; lang=en; esc_first_visit_time=1654870587; "
-                "__hau=HuaweiConnect.1654870589.1486370478; "
-                f"bspsession={self._sessionid}"
-            ),
             "Referer": (
                 f"https://{self._region}.fusionsolar.huawei.com"
                 "/pvmswebsite/assets/build/index.html"
             ),
             "Referrer-Policy": "strict-origin-when-cross-origin",
         }
-        await self._send(url, headers)
+        await self._get(url, headers)
 
-    async def _send(self, url, headers):
+    async def _get(self, url, headers):
         try:
             response = {}
-            async with aiohttp.ClientSession(headers=headers) as session:
+            async with aiohttp.ClientSession(
+                headers=headers, cookie_jar=self._cookies
+            ) as session:
                 async with session.get(url) as resp:
+                    if resp.status != 200:
+                        await self.login()
+                        return {}
+
                     response = await resp.json()
 
             if "success" in response and response["success"] is True:
@@ -117,8 +241,8 @@ class FusionSolarRestApi:
                 return response
 
             return response
-        except Exception:
-            self.logger.exception(f"Failed to get data from {url}: {response}")
+        except Exception as ex:
+            self.logger.exception(f"Failed to get data from {url}: {ex}")
             return {}
 
     async def update(self):
