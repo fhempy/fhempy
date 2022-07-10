@@ -24,12 +24,12 @@ class fusionsolar(generic.FhemModule):
         if not (len(args) == 4 or len(args) == 5):
             return (
                 "Usage: define my_solar fhempy fusionsolar "
-                "[SESSIONID] [STATIONNAME] [REGION]"
+                "USERNAME PASSWORD [REGION]"
             )
 
-        self._sessionid = args[3]
-        self._stationname = list(argsh)[0] + "=" + argsh[list(argsh)[0]]
-        self._region = args[4] if len(args) == 5 else "region01eu5"
+        self._username = args[3]
+        self._password = args[4]
+        self._region = args[5] if len(args) == 6 else "region01eu5"
 
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.update())
@@ -37,12 +37,14 @@ class fusionsolar(generic.FhemModule):
     async def update(self):
         self.restapi = FusionSolarRestApi(
             self.logger,
-            self._sessionid,
-            self._stationname,
+            self._username,
+            self._password,
             self._region,
         )
-
-        await self.update_readings()
+        if await self.restapi.login():
+            await self.update_readings()
+        else:
+            await fhem.readingsSingleUpdate(self.hash, "state", "login failed", 1)
 
     async def update_readings(self):
         while True:
