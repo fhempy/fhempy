@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.370 (2022-07-10)
+### Feature
+* **fusionsolar:** BREAKING CHANGE, see README. Username/password support instead of sessionid. ([`0a3d94d`](https://github.com/dominikkarall/fhempy/commit/0a3d94de9fa15d854e28076684fbf033039f0c0c))
+
 ## v0.1.369 (2022-07-09)
 ### Feature
 * **volvo_software_update:** New module which notifies about volvo software updates ([`aada589`](https://github.com/dominikkarall/fhempy/commit/aada58901979f5c79d2ddbc8640890cd21e6e957))
