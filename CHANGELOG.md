@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.372 (2022-07-12)
+### Fix
+* **fhempy:** Fix aiohttp bug ([`2cd64fd`](https://github.com/dominikkarall/fhempy/commit/2cd64fd25819b47a749d6accd6741d1e22584625))
+
 ## v0.1.371 (2022-07-12)
 ### Fix
 * **fhempy:** Disable events because of utf-8 bug ([`3a3bf25`](https://github.com/dominikkarall/fhempy/commit/3a3bf25f2535ff2fadc490c7a917c40b9e11b94e))
