@@ -2,10 +2,10 @@ import asyncio
 import sys
 from ipaddress import IPv4Address
 
-import aiohttp
-from async_upnp_client import UpnpFactory
-from async_upnp_client.advertisement import UpnpAdvertisementListener
+from aiohttp import ClientSession
+from async_upnp_client.advertisement import SsdpAdvertisementListener
 from async_upnp_client.aiohttp import AiohttpSessionRequester
+from async_upnp_client.client_factory import UpnpFactory
 from async_upnp_client.search import async_search as async_ssdp_search
 
 
@@ -31,7 +31,7 @@ class ssdp:
         self.nr_started_searches = 0
 
         # build upnp/aiohttp requester
-        self.session = aiohttp.ClientSession()
+        self.session = ClientSession()
         self.requester = AiohttpSessionRequester(self.session, True)
         # create upnp device
         self.factory = UpnpFactory(self.requester)
@@ -177,7 +177,7 @@ class ssdp:
             async def on_update(data):
                 return
 
-            self.listener = UpnpAdvertisementListener(
+            self.listener = SsdpAdvertisementListener(
                 on_alive=on_alive,
                 on_byebye=on_byebye,
                 on_update=on_update,
