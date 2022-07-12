@@ -6,10 +6,10 @@ import logging
 import time
 from datetime import timedelta
 
-import aiohttp
+from aiohttp import ClientError, ClientSession
 from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
-from async_upnp_client.utils import async_get_local_ip
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
+from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem
@@ -29,7 +29,7 @@ def catch_request_errors():
             """Catch asyncio.TimeoutError, aiohttp.ClientError errors."""
             try:
                 return await func(self, *args, **kwargs)
-            except (asyncio.TimeoutError, aiohttp.ClientError):
+            except (asyncio.TimeoutError, ClientError):
                 self.logger.error("Error during call %s", func.__name__)
 
         return wrapper
@@ -79,7 +79,7 @@ class dlna_dmr(FhemModule):
 
         self.upnp_device = upnp_device
         # build upnp/aiohttp requester
-        session = aiohttp.ClientSession()
+        session = ClientSession()
         requester = AiohttpSessionRequester(session, True)
         # ensure event handler has been started
         server_host = await async_get_local_ip()
