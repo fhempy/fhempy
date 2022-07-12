@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.376 (2022-07-12)
+### Fix
+* **fhempy:** Fix ssdp ([`95febe2`](https://github.com/dominikkarall/fhempy/commit/95febe2d1b9f79d0ab8d267d77d8e683d7adec19))
+
 ## v0.1.375 (2022-07-12)
 ### Fix
 * **fhempy:** Update cryptography, aiohttp, async-upnp-client ([`7d7f654`](https://github.com/dominikkarall/fhempy/commit/7d7f65438335d5efaee9a2cc1cd113486562bd5d))
