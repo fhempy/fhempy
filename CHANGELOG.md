@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.373 (2022-07-12)
+### Fix
+* **wienerlinien:** Fix requirements ([`85679d4`](https://github.com/dominikkarall/fhempy/commit/85679d48a1c970f0824b7f0aaeaced057fc7a136))
+
 ## v0.1.372 (2022-07-12)
 ### Fix
 * **fhempy:** Fix aiohttp bug ([`2cd64fd`](https://github.com/dominikkarall/fhempy/commit/2cd64fd25819b47a749d6accd6741d1e22584625))
