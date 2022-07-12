@@ -197,7 +197,7 @@ BindingsIo_Notify($)
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
     } else {
-      BindingsIo_Write($hash, $dev, "event", [$event], {});
+      #BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
