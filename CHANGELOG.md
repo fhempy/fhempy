@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.371 (2022-07-12)
+### Fix
+* **fhempy:** Disable events because of utf-8 bug ([`3a3bf25`](https://github.com/dominikkarall/fhempy/commit/3a3bf25f2535ff2fadc490c7a917c40b9e11b94e))
+
 ## v0.1.370 (2022-07-10)
 ### Feature
 * **fusionsolar:** BREAKING CHANGE, see README. Username/password support instead of sessionid. ([`0a3d94d`](https://github.com/dominikkarall/fhempy/commit/0a3d94de9fa15d854e28076684fbf033039f0c0c))
