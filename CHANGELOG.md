@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.375 (2022-07-12)
+### Fix
+* **fhempy:** Update cryptography, aiohttp, async-upnp-client ([`7d7f654`](https://github.com/dominikkarall/fhempy/commit/7d7f65438335d5efaee9a2cc1cd113486562bd5d))
+
 ## v0.1.374 (2022-07-12)
 ### Fix
 * **dlna_dmr:** Fix manifest ([`98a7f03`](https://github.com/dominikkarall/fhempy/commit/98a7f036650546c7fc55303e568398569918d960))
