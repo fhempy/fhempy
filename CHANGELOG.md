@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.374 (2022-07-12)
+### Fix
+* **dlna_dmr:** Fix manifest ([`98a7f03`](https://github.com/dominikkarall/fhempy/commit/98a7f036650546c7fc55303e568398569918d960))
+
 ## v0.1.373 (2022-07-12)
 ### Fix
 * **wienerlinien:** Fix requirements ([`85679d4`](https://github.com/dominikkarall/fhempy/commit/85679d48a1c970f0824b7f0aaeaced057fc7a136))
