@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.378 (2022-07-13)
+### Fix
+* **fusionsolar:** Fix login procedure ([`a2387c1`](https://github.com/dominikkarall/fhempy/commit/a2387c12f9ba53a5ac1b6d79b5785f41441aaf98))
+
 ## v0.1.377 (2022-07-13)
 ### Fix
 * **fusionsolar:** Add debug output ([`ba2c97f`](https://github.com/dominikkarall/fhempy/commit/ba2c97f52e0fded216cfb2231175a54bce1fe7c5))
