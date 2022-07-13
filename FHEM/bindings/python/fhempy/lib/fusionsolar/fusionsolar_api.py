@@ -30,9 +30,9 @@ class FusionSolarRestApi:
     async def login(self):
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://" + self._region + ".fusionsolar.huawei.com/"
-                ) as resp:
+                url = "https://" + self._region + ".fusionsolar.huawei.com/"
+                async with session.get(url) as resp:
+                    self.logger.debug(f"response from {url}: {resp}")
                     self._regionhost = resp.host
 
                     if self._regionhost is None:
@@ -72,6 +72,7 @@ class FusionSolarRestApi:
 
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.post(url, json=body) as resp:
+                    self.logger.debug(f"response from {url}: {resp}")
                     response = resp.cookies
 
             headers = {
@@ -92,21 +93,25 @@ class FusionSolarRestApi:
             async with aiohttp.ClientSession(
                 headers=headers, cookies=response
             ) as session:
+                url = "https://" + self._region + ".fusionsolar.huawei.com/"
                 async with session.get(
-                    "https://" + self._region + ".fusionsolar.huawei.com/",
+                    url,
                     max_redirects=20,
                 ) as resp2:
+                    self.logger.debug(f"response from {url}: {resp2}")
                     if resp2.status == 200:
                         self._cookies = session.cookie_jar
                     else:
                         self.logger.error(f"Failed to retrieve cookies: {resp2}")
                         return False
 
-                async with session.get(
+                url = (
                     "https://"
                     + self._region
                     + ".fusionsolar.huawei.com/unisess/v1/auth/session"
-                ) as resp3:
+                )
+                async with session.get(url) as resp3:
+                    self.logger.debug(f"response from {url}: {resp3}")
                     response = await resp3.json()
                     csrfToken = response["csrfToken"]
 
@@ -140,13 +145,17 @@ class FusionSolarRestApi:
                     "sortDir": "DESC",
                     "locale": "en_US",
                 }
-                async with session.post(
+                url = (
                     "https://"
                     + self._region
-                    + ".fusionsolar.huawei.com/rest/pvms/web/station/v1/station/station-list",
+                    + ".fusionsolar.huawei.com/rest/pvms/web/station/v1/station/station-list"
+                )
+                async with session.post(
+                    url,
                     json=body,
                     headers=headers,
                 ) as resp3:
+                    self.logger.debug(f"response from {url}: {resp3}")
                     response = await resp3.json()
                     self._stationname = response["data"]["list"][0]["dn"]
 
