@@ -21,7 +21,7 @@ class fusionsolar(generic.FhemModule):
             )
             return
 
-        if not (len(args) == 4 or len(args) == 5):
+        if not (len(args) == 5 or len(args) == 6):
             return (
                 "Usage: define my_solar fhempy fusionsolar "
                 "USERNAME PASSWORD [REGION]"
