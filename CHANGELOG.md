@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.377 (2022-07-13)
+### Fix
+* **fusionsolar:** Add debug output ([`ba2c97f`](https://github.com/dominikkarall/fhempy/commit/ba2c97f52e0fded216cfb2231175a54bce1fe7c5))
+
 ## v0.1.376 (2022-07-12)
 ### Fix
 * **fhempy:** Fix ssdp ([`95febe2`](https://github.com/dominikkarall/fhempy/commit/95febe2d1b9f79d0ab8d267d77d8e683d7adec19))
