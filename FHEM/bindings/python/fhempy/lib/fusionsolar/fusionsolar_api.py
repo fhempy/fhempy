@@ -1,4 +1,6 @@
 """API client for FusionSolar Kiosk."""
+import time
+
 import aiohttp
 
 
@@ -129,7 +131,6 @@ class FusionSolarRestApi:
                     "x-non-renewal-session": "true",
                     "x-requested-with": "XMLHttpRequest",
                     "x-timezone-offset": "120",
-                    "cookie": "locale=en-us; theme=lightday; user_time_a_lang=; user_digital_format=%2C%23%230.00; timezone=Europe%2FAmsterdam; delimiter=-; format=yyyy-MM-dd%20HH%3Amm%3Ass; timemode=client; timezoneoffset=60; user_time_show_dst=1; bspsession=x-44nw7ypi2kthmmpenu8a2m08o6fwun89df7smmk77vns471c1fphapqnk72maomp7xk6qp2meo492lhio9hd3sdeakvthj9e2q0584gaullhc7vt09mk1gpj1cfvtj07; JSESSIONID=F0C8E876D1FAD634CDAB0898621667FB",
                     "Referer": "https://"
                     + self._region
                     + ".fusionsolar.huawei.com/pvmswebsite/assets/build/index.html",
@@ -139,7 +140,7 @@ class FusionSolarRestApi:
                     "curPage": 1,
                     "pageSize": 10,
                     "gridConnectionTime": "",
-                    "queryTime": 1657404000000,
+                    "queryTime": round(time.time() * 1000),
                     "timeZone": 2,
                     "sortId": "createTime",
                     "sortDir": "DESC",
