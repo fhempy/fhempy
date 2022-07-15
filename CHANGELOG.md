@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.379 (2022-07-15)
+### Fix
+* **gree_climate:** Retry to establish connection on startup ([`4a8141c`](https://github.com/dominikkarall/fhempy/commit/4a8141c47d4a6829ac50e700df59d3ab358d3df3))
+
 ## v0.1.378 (2022-07-13)
 ### Fix
 * **fusionsolar:** Fix login procedure ([`a2387c1`](https://github.com/dominikkarall/fhempy/commit/a2387c12f9ba53a5ac1b6d79b5785f41441aaf98))
