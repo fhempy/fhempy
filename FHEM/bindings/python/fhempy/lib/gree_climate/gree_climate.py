@@ -1,17 +1,16 @@
 import asyncio
 
-from .. import fhem
-from .. import generic
-
 from greeclimate.device import (
     Device,
-    Mode,
     FanSpeed,
     HorizontalSwing,
-    VerticalSwing,
+    Mode,
     TemperatureUnits,
+    VerticalSwing,
 )
 from greeclimate.discovery import Discovery
+
+from .. import fhem, generic
 
 
 class gree_climate(generic.FhemModule):
@@ -127,6 +126,11 @@ class gree_climate(generic.FhemModule):
 
     async def update_loop(self):
         while True:
+            if self.device is None:
+                # try to connect to device every 10s
+                await asyncio.sleep(10)
+                await self.connect_device()
+                continue
             await self.update_once()
             await asyncio.sleep(self._attr_interval)
 
