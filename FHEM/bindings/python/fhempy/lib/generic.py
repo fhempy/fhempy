@@ -1,10 +1,10 @@
 import asyncio
+import functools
 import inspect
 import json
 import os
-import markdown2
-import functools
 
+import markdown2
 from fhempy.lib import fhem
 
 from . import utils
@@ -173,10 +173,16 @@ class FhemModule:
         return await utils.handle_set(self._conf_set, self, hash, args, argsh)
 
     def create_async_task(self, coro):
-        task = asyncio.create_task(coro)
+        task = asyncio.create_task(self._run_coro(coro))
         task.add_done_callback(self._handle_task_result)
         self._tasks.append(task)
         return task
+
+    async def _run_coro(self, coro):
+        try:
+            await coro
+        except asyncio.CancelledError:
+            pass
 
     def _handle_task_result(self, task):
         try:

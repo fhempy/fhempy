@@ -242,6 +242,19 @@ class fhempy:
         if hash["function"] != "Undefine":
             # Load module and execute Define
             # if Define isn't called right now
+
+            if hash["function"] == "Define" and hash["NAME"] in loadedModuleInstances:
+                # this code is called on defmod
+                # if module is loaded and Define is called, do Undefine first
+                # call undefine
+                hash["function"] = "Undefine"
+                await self.execute_function(
+                    hash, fhem_reply_done, loadedModuleInstances[hash["NAME"]]
+                )
+                # delete module from loadedModuleInstances
+                del loadedModuleInstances[hash["NAME"]]
+                hash["function"] = "Define"
+
             if not (hash["NAME"] in loadedModuleInstances):
                 if hash["NAME"] in moduleLoadingRunning:
                     await self.sendBackReturn(hash, "")
