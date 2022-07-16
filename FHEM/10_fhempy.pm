@@ -65,8 +65,12 @@ fhempy_Define($$$)
   AssignIoPort($hash, "local_pybinding");
 
   if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 4, "fhempy: fhempy not yet connected! Define will continue after connect...";
-    return undef;
+    if (!defined($hash->{OLDDEF})) {
+      Log3 $hash, 4, "fhempy: fhempy not yet connected! Define will continue after connect...";
+      return undef;
+    } else {
+      return IOWrite($hash, $hash, "Define", $a, $h);
+    }
   }
 
   return IOWrite($hash, $hash, "Define", $a, $h);
