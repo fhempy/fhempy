@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.380 (2022-07-16)
+### Fix
+* **fhempy:** Handle defmod/modify properly ([`c0e29df`](https://github.com/dominikkarall/fhempy/commit/c0e29df6ac8cb38c8c12bfe1185414bb3d85daf4))
+
 ## v0.1.379 (2022-07-15)
 ### Fix
 * **gree_climate:** Retry to establish connection on startup ([`4a8141c`](https://github.com/dominikkarall/fhempy/commit/4a8141c47d4a6829ac50e700df59d3ab358d3df3))
