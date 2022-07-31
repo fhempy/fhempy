@@ -1,5 +1,6 @@
-import setuptools
 from distutils.util import convert_path
+
+import setuptools
 
 main_ns = {}
 ver_path = convert_path("FHEM/bindings/python/fhempy/lib/version.py")
@@ -20,7 +21,7 @@ setuptools.setup(
     description="Python binding for FHEM to support Python modules",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dominikkarall/fhempy/",
+    url="https://github.com/fhempy/fhempy/",
     package_dir={"": "FHEM/bindings/python"},
     packages=setuptools.find_packages(where="FHEM/bindings/python"),
     install_requires=required,

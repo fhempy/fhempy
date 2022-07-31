@@ -6,12 +6,12 @@ from .. import generic
 
 # imports for dynamical usage, do NOT remove
 from .devices.gateway import Gateway  # noqa: F401
-from .devices.sensor import (  # noqa: F401
+from .devices.sensor import (
     ContactSensor,
-    HTSensor,
+    HTSensor,  # noqa: F401
     MotionSensor,
-    WaterLeakSensor,
     SmokeSensor,
+    WaterLeakSensor,
 )
 
 device_type_mapping = {
@@ -93,7 +93,7 @@ class xiaomi_gateway3_device(generic.FhemModule):
         if str(device["model"]) not in device_type_mapping:
             self.logger.error(
                 f"{device['model']} not yet supported, please report an issue here: "
-                f"https://github.com/dominikkarall/fhempy/issues"
+                f"https://github.com/fhempy/fhempy/issues"
             )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "state", f"unsupported device: {device['model']}", 1

@@ -1,7 +1,7 @@
 [![Download](https://img.shields.io/pypi/dm/fhempy)](https://pypistats.org/packages/fhempy)
-[![python](https://img.shields.io/badge/python-3.7+-critical)](https://github.com/dominikkarall/fhempy)
+[![python](https://img.shields.io/badge/python-3.7+-critical)](https://github.com/fhempy/fhempy)
 [![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
-[![LastCommit](https://img.shields.io/github/last-commit/dominikkarall/fhempy)](https://github.com/dominikkarall/fhempy/commits/master)
+[![LastCommit](https://img.shields.io/github/last-commit/fhempy/fhempy)](https://github.com/fhempy/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
 # fhempy
@@ -72,7 +72,7 @@ sudo cpan Protocol::WebSocket
 
 ### FHEM
 ```
-update add https://raw.githubusercontent.com/dominikkarall/fhempy/master/controls_pythonbinding.txt
+update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt
 ```
 ```
 update
@@ -100,7 +100,7 @@ Only on remote peers, do not run this commands on the FHEM instance. Run this co
 ### WARNING: DO THIS COMMAND ONLY ON REMOTE PEER, NOT ON YOUR FHEM INSTANCE ###
 pip3 install --upgrade fhempy
 # systemd service installation
-curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
+curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
 ```
 
 ### Peer setup (long version)
@@ -110,7 +110,7 @@ Only needed if you didn't run Peer setup (short version). The following steps ar
 - Make sure your main fhempy instance (within FHEM) is running
 - Test fhempy by just running it with user pi, type `fhempy` and enter. Wait a few seconds until it gets discovered and you see the incoming FHEM connection.
 - Systemd configuration for autostart
-  - `curl -sL https://raw.githubusercontent.com/dominikkarall/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
+  - `curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
   - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
 - FHEM configuration
   - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_peer_192_168_1_50

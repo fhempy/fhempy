@@ -1,5 +1,5 @@
 
-# $Id: 10_fhempy.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_fhempy.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;
 
@@ -157,7 +157,7 @@ fhempy_detailFn($$$)
 <h3>fhempy</h3>
 <ul>
   This module provides the interface for python modules.<br><br>
-  <a href="https://github.com/dominikkarall/fhempy#readme">Click here for online README</a>
+  <a href="https://github.com/fhempy/fhempy#readme">Click here for online README</a>
 </ul><br>
 
 =end html
