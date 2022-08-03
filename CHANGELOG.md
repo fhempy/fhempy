@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.381 (2022-08-03)
+### Feature
+* **google_weather:** Add google weather ([`6a45ff5`](https://github.com/dominikkarall/fhempy/commit/6a45ff5f23a2fc545075ee22186507d44e0cf3a6))
+
+### Fix
+* **zigbee2mqtt:** Fix restart ([`d872abd`](https://github.com/dominikkarall/fhempy/commit/d872abd0581c045a4beac6c5f11a4bcc1fcbf1bc))
+* **gree_climate:** Update greeclimate lib ([`db874ed`](https://github.com/dominikkarall/fhempy/commit/db874ed9a002ecf6ba4906501a08fbf09ad4370c))
+
 ## v0.1.380 (2022-07-16)
 ### Fix
 * **fhempy:** Handle defmod/modify properly ([`c0e29df`](https://github.com/dominikkarall/fhempy/commit/c0e29df6ac8cb38c8c12bfe1185414bb3d85daf4))
