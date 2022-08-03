@@ -313,6 +313,8 @@ class zigbee2mqtt(FhemModule):
 
     async def _restart(self):
         await self.stop_process()
+        # wait for z2m to release hardware connection
+        await asyncio.sleep(10)
         await self.start_process()
 
     async def set_update(self, hash, params):
