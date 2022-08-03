@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.382 (2022-08-03)
+
+
 ## v0.1.381 (2022-08-03)
 ### Feature
 * **google_weather:** Add google weather ([`6a45ff5`](https://github.com/dominikkarall/fhempy/commit/6a45ff5f23a2fc545075ee22186507d44e0cf3a6))
