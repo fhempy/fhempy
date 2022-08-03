@@ -1,5 +1,5 @@
 
-# $Id: 10_fhempyServer.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_fhempyServer.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;
 
@@ -182,7 +182,7 @@ sub fhempyServer_Set($$$)
   my ($hash, $a, $h) = @_;
 
   if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 0) {
-    return undef;
+    return "Python 3.7.2 or higher required (recommended: 3.8)";
   }
 
   return CoProcess::setCommands($hash, "", @$a[1], @$a);

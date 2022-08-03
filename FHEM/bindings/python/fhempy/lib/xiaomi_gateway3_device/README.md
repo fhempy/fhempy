@@ -14,6 +14,6 @@ define xiaomi_gw3 fhempy xiaomi_gateway3 IP TOKEN
 
  - TOKEN: Token can be easily extracted via xiaomi_tokens module:
 
-https://github.com/dominikkarall/fhempy/blob/master/FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md
+https://github.com/fhempy/fhempy/blob/master/FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md
 
 The device automatically creates the sensors/devices connected to the gateway within FHEM. Just check for new devices after a few seconds.
