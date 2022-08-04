@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.384 (2022-08-04)
+### Feature
+* **geizhals:** Retrieve best prices from geizhals ([`b6c935e`](https://github.com/dominikkarall/fhempy/commit/b6c935e75521d9432b18541aa9c2d55f86c19b6d))
+
+### Fix
+* **google_weather:** Fix replace command ([`311ee9c`](https://github.com/dominikkarall/fhempy/commit/311ee9c9adc10d481b89819be532d1b212c905ec))
+
 ## v0.1.383 (2022-08-04)
 ### Feature
 * **google_weather:** Add hourly weather data ([`65101c3`](https://github.com/dominikkarall/fhempy/commit/65101c33101c5a8996d3ab07cbccd1728fff8580))
