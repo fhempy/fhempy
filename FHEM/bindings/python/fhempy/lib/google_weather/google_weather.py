@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import json
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -137,18 +138,23 @@ class google_weather(generic.FhemModule):
         self.next_days = self.get_next_days(soup)
         self.last_update = self.get_last_update(soup)
         self.location = self.get_location_name(soup)
-        # wind alle 3h
-        self.next_windspeed = []
-        for x in soup.find("div", {"id": "wob_wg"}):
-            self.next_windspeed.append((x.find("span", {"class": "wob_t"})))
-            if len(self.next_windspeed) > 4:
-                break
 
-        # regen stuendlich
-        self.next_precipitation = []
-        for x in soup.find("div", {"id": "wob_pg"}):
-            self.next_precipitation.append(x.find("div"))
-            if len(self.next_precipitation) > 9:
+        wdata = None
+        for script in soup.find_all("script"):
+            if script.text.find("\\x22wobnm\\x22") > -1:
+                wdata = script.text
+                break
+        if wdata is not None:
+            start_json = wdata.find("\\x22wobnm\\x22")
+            end_json = wdata.find("';google.pmc=")
+            weather_json = json.loads(
+                "{" + wdata[start_json:end_json].replace("\\x22", '"')
+            )
+
+        self.next_hours = []
+        for x in weather_json["wobnm"]["wobhl"]:
+            self.next_hours.append(x)
+            if len(self.next_hours) > 24:
                 break
 
     async def handle_response(self, response):
@@ -181,41 +187,48 @@ class google_weather(generic.FhemModule):
         i = 0
         for day in self.next_days:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_day_{i}_name", day["name"]
+                self.hash, f"next_days_{i}_name", day["name"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_day_{i}_weather", day["weather"]
+                self.hash, f"next_days_{i}_weather", day["weather"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_day_{i}_weather_img", f"<html>{day['image']}</html>"
+                self.hash, f"next_days_{i}_weather_img", f"<html>{day['image']}</html>"
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_day_{i}_max_temp", day["max_temp"]
+                self.hash, f"next_days_{i}_max_temp", day["max_temp"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_day_{i}_min_temp", day["min_temp"]
-            )
-            i += 1
-
-        i = 0
-        for wind in self.next_windspeed:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_windspeed_{i}_long", wind["aria-label"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_windspeed_{i}", wind.text
+                self.hash, f"next_days_{i}_min_temp", day["min_temp"]
             )
             i += 1
 
         i = 0
-        for precipitation in self.next_precipitation:
+        for nh in self.next_hours:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_precipitation_{i}_long", precipitation["aria-label"]
+                self.hash, f"next_hours_{i:02d}_condition", nh["c"]
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, f"next_hours_{i:02d}_time", nh["dts"]
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, f"next_hours_{i:02d}_humidity", nh["h"].replace("%")
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
-                f"next_precipitation_{i}",
-                precipitation["aria-label"].split(" ")[0],
+                f"next_hours_{i:02d}_img",
+                '<html><img src="' + nh["iu"] + '"/></html>',
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, f"next_hours_{i:02d}_precipitation", nh["p"].replace("%", "")
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, f"next_hours_{i:02d}_temperature", nh["tm"]
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash,
+                f"next_hours_{i:02d}_windspeed",
+                nh["ws"].replace(" km/h", ""),
             )
             i += 1
 
