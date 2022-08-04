@@ -24,6 +24,7 @@ This repository includes following working modules:
 |[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management|
 |[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve values from FusionSolar Kiosk|
+|[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |gfprobt|Control GF Pro Bluetooth irrigation control|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
