@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.385 (2022-08-04)
+### Feature
+* **geizhals:** Add geizhals module ([`dda5f09`](https://github.com/dominikkarall/fhempy/commit/dda5f0989f2adb395c1ac9b3be9157f2a4421512))
+
 ## v0.1.384 (2022-08-04)
 ### Feature
 * **geizhals:** Retrieve best prices from geizhals ([`b6c935e`](https://github.com/dominikkarall/fhempy/commit/b6c935e75521d9432b18541aa9c2d55f86c19b6d))
