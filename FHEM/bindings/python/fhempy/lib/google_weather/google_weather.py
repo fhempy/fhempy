@@ -212,7 +212,7 @@ class google_weather(generic.FhemModule):
                 self.hash, f"next_hours_{i:02d}_time", nh["dts"]
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_humidity", nh["h"].replace("%")
+                self.hash, f"next_hours_{i:02d}_humidity", nh["h"].replace("%", "")
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
