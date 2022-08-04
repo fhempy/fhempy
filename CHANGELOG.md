@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.383 (2022-08-04)
+### Feature
+* **google_weather:** Add hourly weather data ([`65101c3`](https://github.com/dominikkarall/fhempy/commit/65101c33101c5a8996d3ab07cbccd1728fff8580))
+
 ## v0.1.382 (2022-08-03)
 
 
