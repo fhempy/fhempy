@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.386 (2022-08-05)
+### Feature
+* **tuya:** Split json into multiple readings ([`366d729`](https://github.com/dominikkarall/fhempy/commit/366d729267d27c9603bef1bbe1a929ef5cca9f97))
+
+### Fix
+* **fusionsolar:** Better error handling ([`03d67f3`](https://github.com/dominikkarall/fhempy/commit/03d67f3e0b191be42d8c08f7b2e3d949624bbb85))
+* **fhempy:** Support string format for flatten_json ([`d7457a8`](https://github.com/dominikkarall/fhempy/commit/d7457a851d0374fc1fda76ece0fa775f7c3234f0))
+
 ## v0.1.385 (2022-08-04)
 ### Feature
 * **geizhals:** Add geizhals module ([`dda5f09`](https://github.com/dominikkarall/fhempy/commit/dda5f0989f2adb395c1ac9b3be9157f2a4421512))
