@@ -1,4 +1,5 @@
 """API client for FusionSolar Kiosk."""
+import asyncio
 import time
 
 import aiohttp
@@ -31,7 +32,7 @@ class FusionSolarRestApi:
 
     async def login(self):
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 url = "https://" + self._region + ".fusionsolar.huawei.com/"
                 async with session.get(url) as resp:
                     self.logger.debug(f"response from {url}: {resp}")
@@ -72,7 +73,9 @@ class FusionSolarRestApi:
                 "password": self._password,
             }
 
-            async with aiohttp.ClientSession(headers=headers) as session:
+            async with aiohttp.ClientSession(
+                trust_env=True, headers=headers
+            ) as session:
                 async with session.post(url, json=body) as resp:
                     self.logger.debug(f"response from {url}: {resp}")
                     response = resp.cookies
@@ -93,7 +96,7 @@ class FusionSolarRestApi:
             }
 
             async with aiohttp.ClientSession(
-                headers=headers, cookies=response
+                trust_env=True, headers=headers, cookies=response
             ) as session:
                 url = "https://" + self._region + ".fusionsolar.huawei.com/"
                 async with session.get(
@@ -198,6 +201,9 @@ class FusionSolarRestApi:
             "upgrade-insecure-requests": "1",
         }
         resp = await self._get(url, headers)
+        if len(resp) == 0:
+            # try again
+            resp = await self._get(url, headers)
         return resp
 
     async def send_idle(self):
@@ -236,10 +242,12 @@ class FusionSolarRestApi:
         try:
             response = {}
             async with aiohttp.ClientSession(
-                headers=headers, cookie_jar=self._cookies
+                trust_env=True, headers=headers, cookie_jar=self._cookies
             ) as session:
                 async with session.get(url) as resp:
                     if resp.status != 200:
+                        # wait a few seconds before login
+                        await asyncio.sleep(5)
                         await self.login()
                         return {}
 
@@ -263,8 +271,8 @@ class FusionSolarRestApi:
 
     async def update_energy_flow(self):
         self._inverter_output_power = "-"
-        self._from_grid = "-"
-        self._to_grid = "-"
+        self._from_grid = 0
+        self._to_grid = 0
         self._electrical_load = "-"
         self._string_output_power = "-"
         self._battery_soc = None
