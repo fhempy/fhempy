@@ -453,11 +453,20 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         if st["code"] == "switch_1":
                             reading = "state"
                             stateused = True
-                        await fhem.readingsBulkUpdateIfChanged(
-                            self.hash,
-                            reading,
-                            self.convert(status[dp], st),
-                        )
+                        if st["type"] == "Json":
+                            flat_json = utils.flatten_json(status[dp])
+                            for name in flat_json:
+                                await fhem.readingsBulkUpdateIfChanged(
+                                    self.hash,
+                                    reading + "_" + name,
+                                    flat_json[name],
+                                )
+                        else:
+                            await fhem.readingsBulkUpdateIfChanged(
+                                self.hash,
+                                reading,
+                                self.convert(status[dp], st),
+                            )
                         break
 
                 if not found:
