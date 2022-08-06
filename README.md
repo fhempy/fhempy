@@ -30,6 +30,7 @@ This repository includes following working modules:
 |[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
 |helloworld|Hello World example for developers to start writing their own module|
+|[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor|
