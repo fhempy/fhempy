@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.388 (2022-08-06)
+### Feature
+* **kia_hyundai:** Initial release for Kia / Hyundai cars ([`08987cb`](https://github.com/dominikkarall/fhempy/commit/08987cbeedcf8ed235e952950a6f0d5cf13606eb))
+
 ## v0.1.387 (2022-08-06)
 ### Feature
 * **tuya:** Support Json for category zndb devices ([`53209ff`](https://github.com/dominikkarall/fhempy/commit/53209ff361fabfe3d8b6dc4014753234cbbe0487))
