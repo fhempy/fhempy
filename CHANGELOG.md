@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.390 (2022-08-06)
+### Fix
+* **tuya:** Add debug msgs ([`53732a9`](https://github.com/dominikkarall/fhempy/commit/53732a97581df0b4e55037d751ebc92677b5d236))
+
 ## v0.1.389 (2022-08-06)
 ### Feature
 * **kia_hyundai:** Support commands ([`4fa92bf`](https://github.com/dominikkarall/fhempy/commit/4fa92bfc36fc030b24a8ec8d19ea9deae1611119))
