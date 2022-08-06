@@ -490,6 +490,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         if st["code"] == "switch_1":
                             reading = "state"
                             stateused = True
+                        self.logger.debug(
+                            f"handle type {st['type']} for dp_id {st['dp_id']} with value {status[dp]}"
+                        )
                         if st["type"] == "Json":
                             flat_json = self.convert_json(status[dp], st)
                             for name in flat_json:
