@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.389 (2022-08-06)
+### Feature
+* **kia_hyundai:** Support commands ([`4fa92bf`](https://github.com/dominikkarall/fhempy/commit/4fa92bfc36fc030b24a8ec8d19ea9deae1611119))
+
 ## v0.1.388 (2022-08-06)
 ### Feature
 * **kia_hyundai:** Initial release for Kia / Hyundai cars ([`08987cb`](https://github.com/dominikkarall/fhempy/commit/08987cbeedcf8ed235e952950a6f0d5cf13606eb))
