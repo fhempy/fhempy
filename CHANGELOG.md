@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.387 (2022-08-06)
+### Feature
+* **tuya:** Support Json for category zndb devices ([`53209ff`](https://github.com/dominikkarall/fhempy/commit/53209ff361fabfe3d8b6dc4014753234cbbe0487))
+
 ## v0.1.386 (2022-08-05)
 ### Feature
 * **tuya:** Split json into multiple readings ([`366d729`](https://github.com/dominikkarall/fhempy/commit/366d729267d27c9603bef1bbe1a929ef5cca9f97))
