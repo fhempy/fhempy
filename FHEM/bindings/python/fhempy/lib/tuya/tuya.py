@@ -427,7 +427,44 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             return "off"
         return value
 
+    def alpha_to_dec(self, s):
+        o = ord(s)
+        if o >= ord("A") and o <= ord("Z"):
+            return o - ord("A")
+        if o >= ord("a") and o <= ord("z"):
+            return o - ord("a") + 26
+        if o >= ord("0") and o <= ord("9"):
+            return o - ord("0") + 26 + 26
+        if o == ord("/"):
+            return 63
+        return o
+
+    def string_to_hexarr(self, s):
+        resarr = []
+        alphaarr = []
+        for x in s:
+            alphaarr.append(self.alpha_to_dec(x))
+        x = 0
+        while x < len(alphaarr):
+            resarr.append(alphaarr[x] >> 2)
+            resarr.append((alphaarr[x] & 0x03) << 2 | ((alphaarr[x + 1] & 0x30) >> 4))
+            resarr.append(alphaarr[x + 1] & 0x0F)
+            x += 2
+        return resarr
+
+    def convert_json(self, value, schema):
+        flat_json = {}
+        if "category" in self.info_dict and self.info_dict["category"] == "zndb":
+            if schema["dp_id"] == 6:
+                hexarr = self.string_to_hexarr(value)
+                if len(hexarr) > 15:
+                    flat_json["voltage"] = hexarr[1] << 8 | hexarr[2] << 4 | hexarr[3]
+                    flat_json["current"] = hexarr[7] << 8 | hexarr[8] << 4 | hexarr[9]
+                    flat_json["power"] = hexarr[13] << 8 | hexarr[14] << 4 | hexarr[15]
+        return flat_json
+
     async def update_info_readings(self, info_dict):
+        self.info_dict = info_dict
         await fhem.readingsBeginUpdate(self.hash)
         try:
             for reading in info_dict:
@@ -454,7 +491,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                             reading = "state"
                             stateused = True
                         if st["type"] == "Json":
-                            flat_json = utils.flatten_json(status[dp])
+                            flat_json = self.convert_json(status[dp], st)
                             for name in flat_json:
                                 await fhem.readingsBulkUpdateIfChanged(
                                     self.hash,
