@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.391 (2022-08-07)
+### Fix
+* **tuya:** Fix dp readings when locally not detected ([`e4b5f92`](https://github.com/dominikkarall/fhempy/commit/e4b5f928d6dc9e8f61bd6ebd35200016f51aa0fc))
+
 ## v0.1.390 (2022-08-06)
 ### Fix
 * **tuya:** Add debug msgs ([`53732a9`](https://github.com/dominikkarall/fhempy/commit/53732a97581df0b4e55037d751ebc92677b5d236))
