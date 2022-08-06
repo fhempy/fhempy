@@ -484,7 +484,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             for dp in status:
                 found = False
                 for st in self.tuya_spec_status:
-                    if "id" in st and st["id"] == int(dp):
+                    if "dp_id" in st and st["dp_id"] == int(dp):
                         found = True
                         reading = st["code"]
                         if st["code"] == "switch_1":
