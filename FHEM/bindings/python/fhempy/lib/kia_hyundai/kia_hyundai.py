@@ -1,6 +1,8 @@
 import asyncio
 import functools
 
+from fhempy.lib.kia_hyundai.const import VEHICLE_LOCK_ACTION
+
 from .. import fhem, generic, utils
 from .utils import get_implementation_by_region_brand
 from .Vehicle import Vehicle
@@ -28,7 +30,14 @@ class kia_hyundai(generic.FhemModule):
             "unlock": {},
             "start_climate": {
                 "args": ["set_temp", "duration", "defrost", "climate", "heating"],
-                "help": "Params: Temperature Duration Defrost Climate Heating",
+                "help": "Params: Temperature Duration Defrost(on/off) Climate(on/off) Heating(on/off)",
+                "params": {
+                    "set_temp": {"default": 21, "format": "int"},
+                    "duration": {"default": 5, "format": "int"},
+                    "defrost": {"default": False, "format": "bool"},
+                    "climate": {"default": True, "format": "bool"},
+                    "heating": {"default": False, "format": "bool"},
+                },
             },
             "stop_climate": {},
             "start_charge": {},
@@ -92,22 +101,32 @@ class kia_hyundai(generic.FhemModule):
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
     async def set_lock(self, hash, params):
-        pass
+        self.create_async_task(self.vehicle.lock_action(VEHICLE_LOCK_ACTION.LOCK))
 
     async def set_unlock(self, hash, params):
-        pass
+        self.create_async_task(self.vehicle.lock_action(VEHICLE_LOCK_ACTION.UNLOCK))
 
     async def set_start_climate(self, hash, params):
-        pass
+        self.create_async_task(
+            self.vehicle.start_climate(
+                params["set_temp"],
+                params["duration"],
+                params["defrost"],
+                params["climate"],
+                params["heating"],
+            )
+        )
 
     async def set_stop_climate(self, hash, params):
-        pass
+        self.create_async_task(self.vehicle.stop_climate())
 
     async def set_start_charge(self, hash, params):
-        pass
+        self.create_async_task(self.vehicle.start_charge())
 
     async def set_stop_charge(self, hash, params):
-        pass
+        self.create_async_task(self.vehicle.stop_charge())
 
     async def set_charge_limits(self, hash, params):
-        pass
+        self.create_async_task(
+            self.vehicle.set_charge_limits(params["ac_limit"], params["dc_limit"])
+        )
