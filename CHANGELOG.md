@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.392 (2022-08-07)
+### Fix
+* **tuya:** Correct current, power values ([`229d549`](https://github.com/dominikkarall/fhempy/commit/229d54968dd365662ccde90bc81207715a638991))
+* **warema:** Add README ([`f836930`](https://github.com/dominikkarall/fhempy/commit/f8369301590ee560fa25beeeeecdc3ad79aac107))
+
 ## v0.1.391 (2022-08-07)
 ### Fix
 * **tuya:** Fix dp readings when locally not detected ([`e4b5f92`](https://github.com/dominikkarall/fhempy/commit/e4b5f928d6dc9e8f61bd6ebd35200016f51aa0fc))
