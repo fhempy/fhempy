@@ -458,8 +458,12 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             if schema["dp_id"] == 6:
                 hexarr = self.string_to_hexarr(value)
                 if len(hexarr) > 15:
-                    flat_json["voltage"] = hexarr[1] << 8 | hexarr[2] << 4 | hexarr[3]
-                    flat_json["current"] = hexarr[7] << 8 | hexarr[8] << 4 | hexarr[9]
+                    flat_json["voltage"] = (
+                        hexarr[1] << 8 | hexarr[2] << 4 | hexarr[3]
+                    ) / 10
+                    flat_json["current"] = (
+                        hexarr[7] << 8 | hexarr[8] << 4 | hexarr[9]
+                    ) / 1000
                     flat_json["power"] = hexarr[13] << 8 | hexarr[14] << 4 | hexarr[15]
         return flat_json
 
