@@ -24,9 +24,20 @@ class geizhals(generic.FhemModule):
         if len(args) != 4:
             return "Usage: define gh.pixel fhempy geizhals URL"
 
-        url = args[3]
-        self.product_id = url[url.rfind("-a") + 2 : url.rfind(".html")]
-        self.location = url[url.find("geizhals") + 9 : url.find("geizhals") + 11]
+        self.url = args[3]
+        self.product_id = self.url[self.url.rfind("-a") + 2 : self.url.rfind(".html")]
+        self.location = self.url[
+            self.url.find("geizhals") + 9 : self.url.find("geizhals") + 11
+        ]
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash,
+            "link",
+            '<html><a href="'
+            + self.url
+            + '" target="_blank">Open geizhals '
+            + "(new window/tab)</a><br></html>",
+            1,
+        )
 
         self.create_async_task(self.update_loop())
 
