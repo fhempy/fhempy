@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.393 (2022-08-08)
+### Feature
+* **geizhals:** Add link reading ([`fd9ee3a`](https://github.com/dominikkarall/fhempy/commit/fd9ee3a876fe624d2a6f8e14690b670521dd546c))
+
 ## v0.1.392 (2022-08-07)
 ### Fix
 * **tuya:** Correct current, power values ([`229d549`](https://github.com/dominikkarall/fhempy/commit/229d54968dd365662ccde90bc81207715a638991))
