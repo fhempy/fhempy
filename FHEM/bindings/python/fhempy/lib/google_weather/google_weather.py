@@ -15,9 +15,9 @@ class google_weather(generic.FhemModule):
 
         attr_config = {
             "interval": {
-                "default": 1800,
+                "default": 61,
                 "format": "int",
-                "help": "Change interval, default is 1800s.",
+                "help": "Change interval in minutes, default is 61.",
             }
         }
         self.set_attr_config(attr_config)
@@ -35,10 +35,41 @@ class google_weather(generic.FhemModule):
 
     async def update_loop(self):
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/75.0.3770.100 Safari/537.36"
+            "accept": (
+                "text/html,application/xhtml+xml,application/xml;"
+                "q=0.9,image/avif,image/webp,image/apng,*/*;"
+                "q=0.8,application/signed-exchange;v=b3;q=0.9"
+            ),
+            "accept-language": (
+                "en-DE,en;q=0.9,de-DE;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
+            ),
+            "user-agent": (
+                "Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
+            ),
+            "sec-ch-ua": (
+                '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"'
+            ),
+            "sec-ch-ua-arch": '"x86"',
+            "sec-ch-ua-bitness": '"64"',
+            "sec-ch-ua-full-version": '"104.0.5112.83"',
+            "sec-ch-ua-full-version-list": (
+                '"Chromium";v="104.0.5112.83", " Not A;Brand";v="99.0.0.0", '
+                '"Google Chrome";v="104.0.5112.83"'
+            ),
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-model": '""',
+            "sec-ch-ua-platform": '"Chrome OS"',
+            "sec-ch-ua-platform-version": '"14909.100.0"',
+            "sec-ch-ua-wow64": "?0",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "none",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "x-chrome-connected": (
+                "source=Chrome,mode=0,enable_account_consistency=true,"
+                "supervised=false,consistency_enabled_by_default=false"
             ),
         }
         while True:
@@ -61,7 +92,7 @@ class google_weather(generic.FhemModule):
                             )
             except Exception:
                 self.logger.exception("Failed to update")
-            await asyncio.sleep(self._attr_interval)
+            await asyncio.sleep(self._attr_interval * 60)
 
     def soup_extract(self, soup, element, search_obj):
         element = soup.find(element, search_obj)
