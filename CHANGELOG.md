@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.394 (2022-08-09)
+### Fix
+* **fhempy:** Fix restart/shutdown issues ([`8198930`](https://github.com/dominikkarall/fhempy/commit/8198930a92ca50c86db8c91e8e12a3466dd98447))
+* **geizhals:** Change default update interval ([`e11770e`](https://github.com/dominikkarall/fhempy/commit/e11770e95aa05cb509db6604572ae8f9941360a6))
+* **google_weather:** Add headers ([`5b0d423`](https://github.com/dominikkarall/fhempy/commit/5b0d4237cd37df7bbf71d963f5cd834273969d66))
+
 ## v0.1.393 (2022-08-08)
 ### Feature
 * **geizhals:** Add link reading ([`fd9ee3a`](https://github.com/dominikkarall/fhempy/commit/fd9ee3a876fe624d2a6f8e14690b670521dd546c))
