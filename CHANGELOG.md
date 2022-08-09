@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.395 (2022-08-10)
+### Feature
+* **fhem_forum:** Check FHEM forum for updates ([`4e843e0`](https://github.com/dominikkarall/fhempy/commit/4e843e024fb8cd7ad6f14a48f4c58b0929b9b33a))
+
 ## v0.1.394 (2022-08-09)
 ### Fix
 * **fhempy:** Fix restart/shutdown issues ([`8198930`](https://github.com/dominikkarall/fhempy/commit/8198930a92ca50c86db8c91e8e12a3466dd98447))
