@@ -452,8 +452,22 @@ class fhempy:
                     global exit_code
                     exit_code = 2
                     logger.exception("Undefine failed")
+
+        if len(tasks) == 0:
+            return
+
         try:
-            await asyncio.gather(*tasks)
+            await asyncio.wait(tasks, timeout=10)
+            for task in tasks:
+                if task.cancelled():
+                    continue
+                if not task.done():
+                    logger.error(f"Task {task} couldn't be cancelled.")
+                    continue
+                if task.exception() is not None:
+                    logger.error(
+                        f"Failed to cancel task {task}, exception: {task.exception()}"
+                    )
             logger.info("All modules successfully undefined!")
         except Exception:
             logger.exception("Undefined failed")
