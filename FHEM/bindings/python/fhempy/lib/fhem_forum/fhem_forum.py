@@ -130,11 +130,11 @@ class fhem_forum(generic.FhemModule):
             if i > self._attr_max_topics:
                 break
 
-        if stateset is False:
+        if stateset is False and url == fhem_forum.URL_UNREADREPLIES:
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
                 "state",
-                f"-",
+                "-",
             )
 
         while i <= self._attr_max_topics:
