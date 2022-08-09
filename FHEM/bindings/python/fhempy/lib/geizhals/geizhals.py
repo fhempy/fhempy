@@ -11,9 +11,9 @@ class geizhals(generic.FhemModule):
 
         attr_config = {
             "interval": {
-                "default": 3600,
+                "default": 3,
                 "format": "int",
-                "help": "Change interval, default is 3600s.",
+                "help": "Change interval in hours, default is 3 hours.",
             }
         }
         self.set_attr_config(attr_config)
@@ -80,7 +80,7 @@ class geizhals(generic.FhemModule):
                             )
             except Exception:
                 self.logger.exception("Failed to update")
-            await asyncio.sleep(self._attr_interval)
+            await asyncio.sleep(self._attr_interval * 60 * 60)
 
     async def handle_response(self, response):
         await fhem.readingsBeginUpdate(self.hash)
