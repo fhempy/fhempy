@@ -109,7 +109,8 @@ BindingsIo_Define($$$)
     CommandAttr(undef, "$name group fhempy");
   }
   # set devStateIcon
-  if (AttrVal($name, "devStateIcon", "") eq "") {
+  my $devstateicon_val = AttrVal($name, "devStateIcon", "");
+  if ($devstateicon_val eq "" || index($devstateicon_val, "ver_available") == -1) {
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
@@ -118,7 +119,14 @@ BindingsIo_Define($$$)
         $status_txt = "disconnected";;
       }
       my $ver = ReadingsVal($name, "version", "-");;
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a><a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start update\">".FW_makeImage("refresh")."</a></div>"
+      my $ver_available = ReadingsVal($name, "version_available", $ver);;
+      my $update_icon = "";;
+      if ($ver_available ne $ver) {
+        $status_img = "10px-kreis-gelb";;
+        $status_txt = "Version ".$ver_available." available for update";;
+        $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
+      }
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
     }';
     $devstate_cmd =~ tr/\n//d;
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");

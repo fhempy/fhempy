@@ -9,6 +9,7 @@ import socket
 import traceback
 from datetime import datetime
 
+import aiohttp
 import websockets
 
 from .version import __version__
@@ -269,7 +270,22 @@ def convertValue(value):
     return str(value)
 
 
+async def get_github_data():
+    res_json = {}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.github.com/repos/fhempy/fhempy/releases/latest"
+            ) as resp:
+                res_json = await resp.json()
+    except Exception:
+        logger.exception("Failed to get github fhempy data")
+    return res_json
+
+
 async def send_version():
+    github_data = await get_github_data()
+
     msg = {
         "msgtype": "version",
         "version": __version__,
@@ -279,6 +295,12 @@ async def send_version():
         "release": platform.release(),
         "hostname": socket.gethostname(),
     }
+    if "name" in github_data:
+        msg["version_available"] = github_data["name"][1:]
+        msg["version_release_notes"] = (
+            '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
+            "Release Notes</a></html>"
+        )
     msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
     global wsconnection
