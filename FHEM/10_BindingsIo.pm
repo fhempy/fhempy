@@ -114,16 +114,16 @@ BindingsIo_Define($$$)
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
-      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-        $status_img = "10px-kreis-rot";;
-        $status_txt = "disconnected";;
-      }
       my $ver = ReadingsVal($name, "version", "-");;
       my $ver_available = ReadingsVal($name, "version_available", $ver);;
       my $update_icon = "";;
       if ($ver_available ne $ver) {
         $status_img = "10px-kreis-gelb";;
         $status_txt = "Version ".$ver_available." available for update";;
+      }
+      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+        $status_img = "10px-kreis-rot";;
+        $status_txt = "disconnected";;
       }
       $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
       "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
