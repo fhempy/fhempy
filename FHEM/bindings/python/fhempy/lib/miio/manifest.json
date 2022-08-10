@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "python-miio==0.5.10"
+    "python-miio==0.5.12"
   ]
 }
