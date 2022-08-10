@@ -1,11 +1,28 @@
 import asyncio
+import functools
 
 import aiohttp
+from bs4 import BeautifulSoup
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class geizhals(generic.FhemModule):
+
+    headers = {
+        "accept": "application/json",
+        "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+        "content-type": "application/json",
+        "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Chrome OS"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "Referer": "https://geizhals.at/",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+    }
+
     def __init__(self, logger):
         super().__init__(logger)
 
@@ -41,28 +58,47 @@ class geizhals(generic.FhemModule):
 
         self.create_async_task(self.update_loop())
 
+    async def update_product_page_infos(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                self.url,
+                headers=geizhals.headers,
+            ) as resp:
+                if resp.status == 200:
+                    html = await resp.text()
+                    await utils.run_blocking(
+                        functools.partial(self.handle_product_page, html)
+                    )
+
+    def handle_product_page(self, html):
+        soup = BeautifulSoup(html, "html.parser")
+        self.product_name = soup.find(
+            "h1", {"class": "variant__header__headline"}
+        ).text[1:-1]
+        self.store = soup.find("span", {"class": "notrans"}).text[1:-1]
+        self.store_availability = (
+            soup.find("div", {"id": "offer__0"})
+            .find("div", {"class": "offer__delivery-time"})
+            .text
+        )
+
     async def update_loop(self):
+        # get product page infos
+        await self.update_product_page_infos()
+        if await fhem.AttrVal(self.hash["NAME"], "alias", "") == "":
+            await fhem.CommandAttr(
+                self.hash, f"{self.hash['NAME']} alias {self.product_name}"
+            )
+
         while True:
             # aiohttp post
-            headers = {
-                "accept": "application/json",
-                "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
-                "content-type": "application/json",
-                "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Chrome OS"',
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-origin",
-                "Referer": "https://geizhals.at/",
-                "Referrer-Policy": "strict-origin-when-cross-origin",
-            }
             data = {"id": self.product_id, "params": {"days": 31, "loc": self.location}}
             try:
+                await fhem.readingsBeginUpdate(self.hash)
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
                         "https://geizhals.at/api/gh0/price_history",
-                        headers=headers,
+                        headers=geizhals.headers,
                         json=data,
                     ) as resp:
                         if resp.status == 200:
@@ -78,12 +114,20 @@ class geizhals(generic.FhemModule):
                                 f"Failed to fetch from geizhals, "
                                 f"failed with status {resp.status}"
                             )
+
+                await self.update_product_page_infos()
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "store", self.store)
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "store_availability", self.store_availability
+                )
+
             except Exception:
                 self.logger.exception("Failed to update")
+
+            await fhem.readingsEndUpdate(self.hash, 1)
             await asyncio.sleep(self._attr_interval * 60 * 60)
 
     async def handle_response(self, response):
-        await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "last_update", response["meta"]["last_formatted"]
         )
@@ -106,4 +150,3 @@ class geizhals(generic.FhemModule):
             + str(response["meta"]["max"])
             + " €)",
         )
-        await fhem.readingsEndUpdate(self.hash, 1)
