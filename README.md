@@ -151,4 +151,4 @@ At any time within the functions FHEM functons like readingsSingleUpdate(...) ca
 ![Flow Chart](/flowchart.png)
 
 ## Write your own module
-Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use run_in_executor (see googlecast code).
+Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.
