@@ -141,12 +141,13 @@ class fhem_forum(generic.FhemModule):
                 )
 
                 if i == 1 and ret is not None:
-                    stateset = True
                     await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
                         "state",
                         f"<html>{link_to_new}<br>{last_post}</html>",
                     )
+
+                stateset = True
 
                 i += 1
                 if i > self._attr_max_topics:
