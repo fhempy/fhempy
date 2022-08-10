@@ -124,8 +124,8 @@ BindingsIo_Define($$$)
       if ($ver_available ne $ver) {
         $status_img = "10px-kreis-gelb";;
         $status_txt = "Version ".$ver_available." available for update";;
-        $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
       }
+      $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
       "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
     }';
     $devstate_cmd =~ tr/\n//d;
