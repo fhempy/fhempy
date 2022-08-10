@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.397 (2022-08-10)
+### Feature
+* **miio:** Update python-miio lib ([`b5b65ac`](https://github.com/dominikkarall/fhempy/commit/b5b65acab2ceabeb25b25eeab190021ccbfc7e0a))
+
 ## v0.1.396 (2022-08-10)
 ### Feature
 * **geizhals:** Add alias attr, best store reading and store availability ([`874d5c9`](https://github.com/dominikkarall/fhempy/commit/874d5c9b6c437b2128d0131c0135e9457b3bd363))
