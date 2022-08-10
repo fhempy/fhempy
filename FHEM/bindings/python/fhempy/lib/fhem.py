@@ -283,9 +283,28 @@ async def get_github_data():
     return res_json
 
 
-async def send_version():
-    github_data = await get_github_data()
+async def send_latest_release():
+    while True:
+        try:
+            github_data = await get_github_data()
+            msg = {
+                "msgtype": "version",
+                "version_available": github_data["name"][1:],
+                "version_release_notes": (
+                    '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
+                    "Release Notes</a></html>"
+                ),
+            }
+            msg = json.dumps(msg, ensure_ascii=False)
+            logger.debug("<<< WS: " + msg)
+            global wsconnection
+            await wsconnection.send(msg)
+        except Exception:
+            logger.exception("Failed to update latest release infos")
+        await asyncio.sleep(3600 * 12)
 
+
+async def send_version():
     msg = {
         "msgtype": "version",
         "version": __version__,
@@ -295,12 +314,6 @@ async def send_version():
         "release": platform.release(),
         "hostname": socket.gethostname(),
     }
-    if "name" in github_data:
-        msg["version_available"] = github_data["name"][1:]
-        msg["version_release_notes"] = (
-            '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
-            "Release Notes</a></html>"
-        )
     msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
     global wsconnection
