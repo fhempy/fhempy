@@ -73,6 +73,7 @@ async def pybinding(websocket, path):
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
+    asyncio.create_task(fhem.send_latest_release())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
