@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.398 (2022-08-10)
+### Fix
+* **fhempy:** Fix README for blocking code ([`81e332f`](https://github.com/dominikkarall/fhempy/commit/81e332fcad42a8c00f8ab2a270d4c65bca3b7a5b))
+* **fhem_forum:** Fix state reading ([`e0abe40`](https://github.com/dominikkarall/fhempy/commit/e0abe40e32ffe4b842e6f83252f00846c9159e8c))
+
 ## v0.1.397 (2022-08-10)
 ### Feature
 * **miio:** Update python-miio lib ([`b5b65ac`](https://github.com/dominikkarall/fhempy/commit/b5b65acab2ceabeb25b25eeab190021ccbfc7e0a))
