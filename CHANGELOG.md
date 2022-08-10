@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.401 (2022-08-10)
+### Fix
+* **fhempy:** Update available fhempy version every 12 hours ([`8af8092`](https://github.com/dominikkarall/fhempy/commit/8af8092ff0a76b39e3827b97a54223324967f441))
+
 ## v0.1.400 (2022-08-10)
 ### Fix
 * **fhempy:** Always show update icon in BindingsIo device ([`cb322da`](https://github.com/dominikkarall/fhempy/commit/cb322da3014d80f3f17686d81594eee54eaa4621))
