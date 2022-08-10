@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.399 (2022-08-10)
+### Feature
+* **fhempy:** Add info about available update ([`23fd613`](https://github.com/dominikkarall/fhempy/commit/23fd613b9f6430b85c8371e1edbcdb4dd3f2f0f3))
+
 ## v0.1.398 (2022-08-10)
 ### Fix
 * **fhempy:** Fix README for blocking code ([`81e332f`](https://github.com/dominikkarall/fhempy/commit/81e332fcad42a8c00f8ab2a270d4c65bca3b7a5b))
