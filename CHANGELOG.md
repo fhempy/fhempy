@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.396 (2022-08-10)
+### Feature
+* **geizhals:** Add alias attr, best store reading and store availability ([`874d5c9`](https://github.com/dominikkarall/fhempy/commit/874d5c9b6c437b2128d0131c0135e9457b3bd363))
+
+### Fix
+* **fhempy:** Change timeout to 60s on shutdown/restart ([`0b87dbf`](https://github.com/dominikkarall/fhempy/commit/0b87dbfef46fcdc5b44ab7f9f6e44ccdbb297ba0))
+* **fhem_forum:** Fix keyword handling and state reading ([`a6af955`](https://github.com/dominikkarall/fhempy/commit/a6af955e48fbed5457f18ceed794526856be6e23))
+* **fhem_forum:** Fix state ([`7371bf4`](https://github.com/dominikkarall/fhempy/commit/7371bf40b6860ac585d606aa1812c1babc99668d))
+
 ## v0.1.395 (2022-08-10)
 ### Feature
 * **fhem_forum:** Check FHEM forum for updates ([`4e843e0`](https://github.com/dominikkarall/fhempy/commit/4e843e024fb8cd7ad6f14a48f4c58b0929b9b33a))
