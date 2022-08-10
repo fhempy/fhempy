@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.400 (2022-08-10)
+### Fix
+* **fhempy:** Always show update icon in BindingsIo device ([`cb322da`](https://github.com/dominikkarall/fhempy/commit/cb322da3014d80f3f17686d81594eee54eaa4621))
+
 ## v0.1.399 (2022-08-10)
 ### Feature
 * **fhempy:** Add info about available update ([`23fd613`](https://github.com/dominikkarall/fhempy/commit/23fd613b9f6430b85c8371e1edbcdb4dd3f2f0f3))
