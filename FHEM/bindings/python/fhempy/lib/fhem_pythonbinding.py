@@ -457,7 +457,7 @@ class fhempy:
             return
 
         try:
-            await asyncio.wait(tasks, timeout=10)
+            await asyncio.wait(tasks, timeout=60)
             for task in tasks:
                 if task.cancelled():
                     continue

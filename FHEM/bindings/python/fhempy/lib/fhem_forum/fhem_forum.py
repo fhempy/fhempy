@@ -1,9 +1,10 @@
 import asyncio
+import functools
 
 import aiohttp
 from bs4 import BeautifulSoup
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class fhem_forum(generic.FhemModule):
@@ -28,10 +29,12 @@ class fhem_forum(generic.FhemModule):
             "keywords_unread_replies": {
                 "default": "",
                 "help": "Only topics with this keywords will be listed.",
+                "function": "set_attr_keywords",
             },
             "keywords_unread": {
                 "default": "",
                 "help": "Only topics with this keywords will be listed.",
+                "function": "set_attr_keywords",
             },
         }
         self.set_attr_config(attr_config)
@@ -46,11 +49,19 @@ class fhem_forum(generic.FhemModule):
 
         self.create_async_task(self.update_loop())
 
+    async def set_attr_keywords(self, hash):
+        self.create_async_task(self.update_once())
+
+    async def update_once(self):
+        stateset_ur = await self.get_fhem_data(fhem_forum.URL_UNREADREPLIES)
+        stateset_u = await self.get_fhem_data(fhem_forum.URL_UNREAD)
+        if stateset_ur is False and stateset_u is False:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "-", 1)
+
     async def update_loop(self):
         while True:
             # aiohttp get
-            await self.get_fhem_data(fhem_forum.URL_UNREADREPLIES)
-            await self.get_fhem_data(fhem_forum.URL_UNREAD)
+            await self.update_once()
             await asyncio.sleep(self._attr_interval * 60)
 
     async def get_fhem_data(self, url):
@@ -61,7 +72,7 @@ class fhem_forum(generic.FhemModule):
                     headers={"cookie": "FHEM-Forum588=" + self.cookie},
                 ) as resp:
                     if resp.status == 200:
-                        await self.handle_response(await resp.text(), url)
+                        return await self.handle_response(await resp.text(), url)
                     else:
                         await fhem.readingsSingleUpdate(
                             self.hash,
@@ -85,62 +96,72 @@ class fhem_forum(generic.FhemModule):
                 return True
         return False
 
-    async def handle_response(self, response, url):
-        # bs4
-        reading = "unread_replies"
-        keywords = self._attr_keywords_unread_replies
-        if url == fhem_forum.URL_UNREAD:
-            reading = "unread"
-            keywords = self._attr_keywords_unread
-
+    def get_soup_entries(self, response):
         soup = BeautifulSoup(response, "html.parser")
         tbody = soup.find("tbody")
         entries = tbody.findAll("tr")
-        i = 1
+        return entries
+
+    async def handle_response(self, response, url):
+        # bs4
         stateset = False
         await fhem.readingsBeginUpdate(self.hash)
-        for entry in entries:
-            subject = entry.find("td", {"class": "subject windowbg2"})
-            if not self.contains_keyword(subject.find("span").text, keywords):
-                continue
+        try:
+            reading = "unread_replies"
+            keywords = self._attr_keywords_unread_replies
+            if url == fhem_forum.URL_UNREAD:
+                reading = "unread"
+                keywords = self._attr_keywords_unread
 
-            link_to_new = subject.findAll("a")[1]
-            link_to_new.next_element.replace_with(subject.find("span").text)
-            link_to_new.attrs["target"] = "_blank"
-
-            last_post = " ".join(
-                entry.find("td", {"class": "lastpost windowbg2"}).text.split()
+            entries = await utils.run_blocking(
+                functools.partial(self.get_soup_entries, response)
             )
 
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                f"topic_{reading}_{i:02d}",
-                f"<html>{link_to_new}<br>{last_post}</html>",
-            )
+            i = 1
+            for entry in entries:
+                subject = entry.find("td", {"class": "subject windowbg2"})
+                if subject is None:
+                    continue
 
-            if i == 1 and url == fhem_forum.URL_UNREADREPLIES:
-                stateset = True
-                await fhem.readingsBulkUpdateIfChanged(
+                if not self.contains_keyword(subject.find("span").text, keywords):
+                    continue
+
+                link_to_new = subject.findAll("a")[1]
+                link_to_new.next_element.replace_with(subject.find("span").text)
+                link_to_new.attrs["target"] = "_blank"
+
+                last_post = " ".join(
+                    entry.find("td", {"class": "lastpost windowbg2"}).text.split()
+                )
+
+                ret = await fhem.readingsBulkUpdateIfChanged(
                     self.hash,
-                    "state",
+                    f"topic_{reading}_{i:02d}",
                     f"<html>{link_to_new}<br>{last_post}</html>",
                 )
 
-            i += 1
-            if i > self._attr_max_topics:
-                break
+                if i == 1 and ret is not None:
+                    stateset = True
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash,
+                        "state",
+                        f"<html>{link_to_new}<br>{last_post}</html>",
+                    )
 
-        if stateset is False:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                "state",
-                f"-",
-            )
+                i += 1
+                if i > self._attr_max_topics:
+                    break
 
-        while i <= self._attr_max_topics:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"topic_{reading}_{i:02d}", "-"
-            )
-            i += 1
+            while i <= self._attr_max_topics:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, f"topic_{reading}_{i:02d}", "-"
+                )
+                i += 1
+
+        except Exception as ex:
+            self.logger.exception(f"Failed to handle data from {url}")
+            await fhem.readingsBulkUpdate(self.hash, "state", {ex}, 1)
 
         await fhem.readingsEndUpdate(self.hash, 1)
+
+        return stateset
