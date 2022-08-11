@@ -80,6 +80,8 @@ BindingsIo_Define($$$)
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
+  # send binary data via websocket
+  $hash->{binary} = 1;
 
   if ($init_done && $localServer == 1) {
     my $foundServer = 0;
