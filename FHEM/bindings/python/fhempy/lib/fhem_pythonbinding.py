@@ -160,6 +160,7 @@ class fhempy:
                 hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
         except Exception:
             logger.error("Websocket JSON couldn't be decoded")
+            await self.sendBackError(hash, "JSON decode error")
             return
 
         global fct_timeout, connection_start
