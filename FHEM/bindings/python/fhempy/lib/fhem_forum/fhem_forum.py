@@ -46,6 +46,7 @@ class fhem_forum(generic.FhemModule):
             return "Usage: define fhem.forum fhempy fhem_forum FHEM_COOKIE"
 
         self.cookie = args[3]
+        self.first_run = True
 
         self.create_async_task(self.update_loop())
 
@@ -99,6 +100,8 @@ class fhem_forum(generic.FhemModule):
     def get_soup_entries(self, response):
         soup = BeautifulSoup(response, "html.parser")
         tbody = soup.find("tbody")
+        if tbody is None:
+            return []
         entries = tbody.findAll("tr")
         return entries
 
@@ -140,7 +143,8 @@ class fhem_forum(generic.FhemModule):
                     f"<html>{link_to_new}<br>{last_post}</html>",
                 )
 
-                if i == 1 and ret is not None:
+                if i == 1 and (ret is not None or self.first_run is True):
+                    self.first_run = False
                     await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
                         "state",

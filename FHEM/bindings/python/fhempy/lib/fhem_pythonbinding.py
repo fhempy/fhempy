@@ -145,8 +145,11 @@ class fhempy:
             await self._onMessage(payload)
         except Exception:
             logger.exception("Failed to handle message: " + str(payload))
+            await self.sendBackError(hash, "fhempy failed to handle message")
 
     async def _onMessage(self, payload):
+        if payload is not str:
+            payload = payload.decode("utf-8")
         msg = payload
         logger.debug(">>> WS: " + msg)
         hash = None
