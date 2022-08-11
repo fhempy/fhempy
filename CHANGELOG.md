@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.404 (2022-08-11)
+### Fix
+* **fhempy:** Fix message handling ([`6c3a835`](https://github.com/dominikkarall/fhempy/commit/6c3a8351ac1c6269d0208f4ea27a9d81c687a363))
+
 ## v0.1.403 (2022-08-11)
 ### Feature
 * **fhempy:** Support binary messages from fhem ([`63d8b92`](https://github.com/dominikkarall/fhempy/commit/63d8b92ecb6a0aa6eb08720eb6e20b9b43438176))
