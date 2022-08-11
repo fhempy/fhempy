@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.405 (2022-08-11)
+### Fix
+* **fhempy:** Send back error on json error ([`7d951d1`](https://github.com/dominikkarall/fhempy/commit/7d951d1dc87f4d8a879ffd0d785dc1440367e81e))
+* **fhempy:** Send binary data via websocket ([`912f15f`](https://github.com/dominikkarall/fhempy/commit/912f15f06d08c9ced432ae2a6760d65c0d27ea80))
+
 ## v0.1.404 (2022-08-11)
 ### Fix
 * **fhempy:** Fix message handling ([`6c3a835`](https://github.com/dominikkarall/fhempy/commit/6c3a8351ac1c6269d0208f4ea27a9d81c687a363))
