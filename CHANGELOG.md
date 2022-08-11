@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.403 (2022-08-11)
+### Feature
+* **fhempy:** Support binary messages from fhem ([`63d8b92`](https://github.com/dominikkarall/fhempy/commit/63d8b92ecb6a0aa6eb08720eb6e20b9b43438176))
+
+### Fix
+* **esphome:** Update esphome lib ([`6cff272`](https://github.com/dominikkarall/fhempy/commit/6cff2724203a6ae50feaf909c59dce2dac7da3ad))
+* **fhem_forum:** Fix state reading ([`6f42906`](https://github.com/dominikkarall/fhempy/commit/6f42906e7436303df50dd086d1cfb9e968b502aa))
+
 ## v0.1.402 (2022-08-10)
 ### Fix
 * **fhempy:** Fix disconnected icon ([`05994b9`](https://github.com/dominikkarall/fhempy/commit/05994b970a69b032abf2b8a35e213f2fcc11eb8f))
