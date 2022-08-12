@@ -30,13 +30,15 @@ class xiaomi_tokens(FhemModule):
         self._uniqueid = await fhem.getUniqueId(self.hash)
         self._enc_username = await fhem.ReadingsVal(
             self.hash["NAME"], "xiaomi_username", ""
-        ).rstrip()
+        )
+        self._enc_username = self._enc_username.rstrip()
         if self._enc_username != "":
             self._username = utils.decrypt_string(self._enc_username, self._uniqueid)
 
         self._enc_password = await fhem.ReadingsVal(
             self.hash["NAME"], "xiaomi_password", ""
-        ).rstrip()
+        )
+        self._enc_password = self._enc_password.rstrip()
         if self._enc_password != "":
             self._password = utils.decrypt_string(self._enc_password, self._uniqueid)
 
