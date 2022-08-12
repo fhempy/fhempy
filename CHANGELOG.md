@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.410 (2022-08-12)
+### Fix
+* **xiaomi_tokens:** Fix newline from readings ([`4bba6f3`](https://github.com/dominikkarall/fhempy/commit/4bba6f3398d5b6e95e29c6be637c4b73aaa67ae9))
+
 ## v0.1.409 (2022-08-12)
 ### Fix
 * **xiaomi_tokens:** Fix rstrip ([`9e5bc0d`](https://github.com/dominikkarall/fhempy/commit/9e5bc0dfc486b9815c5b1dd8c614c1d04f2d40a8))
