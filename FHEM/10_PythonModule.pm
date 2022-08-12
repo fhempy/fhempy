@@ -43,6 +43,9 @@ PythonModule_Define($$$)
   $hash->{FHEMPYTYPE} = @$a[2];
   $hash->{PYTHONTYPE} = @$a[2];
 
+  # automatically migrate to fhempy module
+  $hash->{TYPE} = "fhempy";
+
   setDevAttrList($hash->{NAME}, ".*");
   
   # check if BindingsIo exists
