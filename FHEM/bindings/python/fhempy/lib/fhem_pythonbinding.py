@@ -112,11 +112,12 @@ class fhempy:
         fhem.setFunctionInactive(hash)
 
     async def sendBackError(self, hash, error):
-        logger.error(error + "(id: {})".format(hash["id"]))
+        logger.error(error + f" with hash: {hash}")
         retHash = hash.copy()
         retHash["finished"] = 1
         retHash["error"] = error
-        retHash["id"] = hash["id"]
+        if "id" in hash:
+            retHash["id"] = hash["id"]
         msg = json.dumps(retHash, ensure_ascii=False)
         logger.debug("<<< WS: " + msg)
         await self.wsconnection.send(msg.encode("utf-8"))
