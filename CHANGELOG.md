@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.411 (2022-08-12)
+### Feature
+* **fhempy:** Receive all fhem events in fhempy ([`0aad85a`](https://github.com/dominikkarall/fhempy/commit/0aad85a1dccb1efb514fb2925175f7ee60199e67))
+
+### Fix
+* **fhempy:** Skip non-utf8 messages ([`c1abfd1`](https://github.com/dominikkarall/fhempy/commit/c1abfd1662af378e15c70e753fdbaf4b79336e4b))
+* **fhempy:** Fix continue in some cases and fix devStateIcon ([`5c98ef5`](https://github.com/dominikkarall/fhempy/commit/5c98ef5c987c5076debf5324bd26f9ba4bb1e310))
+* **fhempy:** Set devio log level to 5 ([`f5d9492`](https://github.com/dominikkarall/fhempy/commit/f5d94928e67a54c68c6348509505feb1b34ee9f9))
+
 ## v0.1.410 (2022-08-12)
 ### Fix
 * **xiaomi_tokens:** Fix newline from readings ([`4bba6f3`](https://github.com/dominikkarall/fhempy/commit/4bba6f3398d5b6e95e29c6be637c4b73aaa67ae9))
