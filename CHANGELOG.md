@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.409 (2022-08-12)
+### Fix
+* **xiaomi_tokens:** Fix rstrip ([`9e5bc0d`](https://github.com/dominikkarall/fhempy/commit/9e5bc0dfc486b9815c5b1dd8c614c1d04f2d40a8))
+
 ## v0.1.408 (2022-08-12)
 ### Fix
 * **fhempy:** Migrate to fhempyServer ([`710f79e`](https://github.com/dominikkarall/fhempy/commit/710f79e281b522eec6a1de3ffeaefc04f2bca429))
