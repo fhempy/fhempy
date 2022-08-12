@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.408 (2022-08-12)
+### Fix
+* **fhempy:** Migrate to fhempyServer ([`710f79e`](https://github.com/dominikkarall/fhempy/commit/710f79e281b522eec6a1de3ffeaefc04f2bca429))
+* **fhempy:** Migrate to fhempy ([`33ad82a`](https://github.com/dominikkarall/fhempy/commit/33ad82ae0c0f3f212af442d6075c2b05beb8ce8a))
+* **xiaomi_tokens:** Remove newline from username, password ([`1e5ef64`](https://github.com/dominikkarall/fhempy/commit/1e5ef642e94df0d10e29fc118bbbc862b6332d97))
+
 ## v0.1.407 (2022-08-12)
 ### Fix
 * **fhempy:** Log utf-8 decode error ([`5249cee`](https://github.com/dominikkarall/fhempy/commit/5249ceeb5b4fb966018be6815863cf918e4eedcd))
