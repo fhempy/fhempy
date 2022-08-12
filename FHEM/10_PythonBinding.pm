@@ -61,6 +61,9 @@ sub PythonBinding_Define($$$)
 
   Log3 $hash, 3, "PythonBinding v1.0.0";
 
+  # automatically migrate to fhempyServer
+  $hash->{TYPE} = "fhempyServer";
+
   $hash->{logfile} = "./log/fhempy-%Y-%m-%d.log";
   $hash->{CoProcess} = {  name => 'fhempy',
                           cmdFn => 'PythonBinding_getCmd',
