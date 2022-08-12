@@ -149,7 +149,14 @@ class fhempy:
 
     async def _onMessage(self, payload):
         if type(payload) is bytes:
-            payload = payload.decode("utf-8")
+            try:
+                payload = payload.decode("utf-8")
+            except Exception:
+                # currently there is no need to handle
+                # none utf-8 messages
+                # images in readings might cause too many error msgs
+                # therefore we just skip it at the moment
+                return
         msg = payload
         logger.debug(">>> WS: " + msg)
         hash = None
