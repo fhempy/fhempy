@@ -76,6 +76,7 @@ BindingsIo_Define($$$)
     $localServer = 0;
     $hash->{localBinding} = 0;
   }
+  $hash->{devioLoglevel} = 5;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
