@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.407 (2022-08-12)
+### Fix
+* **fhempy:** Log utf-8 decode error ([`5249cee`](https://github.com/dominikkarall/fhempy/commit/5249ceeb5b4fb966018be6815863cf918e4eedcd))
+
 ## v0.1.406 (2022-08-12)
 ### Fix
 * **fhempy:** Fix sendBackError without id ([`c32c271`](https://github.com/dominikkarall/fhempy/commit/c32c271fdc63b4d9303a250af8c32f150f80e118))
