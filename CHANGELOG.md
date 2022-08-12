@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.406 (2022-08-12)
+### Fix
+* **fhempy:** Fix sendBackError without id ([`c32c271`](https://github.com/dominikkarall/fhempy/commit/c32c271fdc63b4d9303a250af8c32f150f80e118))
+
 ## v0.1.405 (2022-08-11)
 ### Fix
 * **fhempy:** Send back error on json error ([`7d951d1`](https://github.com/dominikkarall/fhempy/commit/7d951d1dc87f4d8a879ffd0d785dc1440367e81e))
