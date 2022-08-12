@@ -63,7 +63,7 @@ BindingsIo_Define($$$)
 
   my $port = 0;
   my $localServer = 1;
-  if ($bindingType eq "Python" || $bindingType eq "fhempy") {
+  if ($bindingType eq "Python" or $bindingType eq "fhempy") {
     $hash->{DeviceName} = "ws:127.0.0.1:15733";
     $hash->{IP} = "127.0.0.1";
     $hash->{PORT} = "15733";
@@ -76,6 +76,7 @@ BindingsIo_Define($$$)
     $localServer = 0;
     $hash->{localBinding} = 0;
   }
+  $hash->{devioLoglevel} = 5;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
@@ -112,7 +113,7 @@ BindingsIo_Define($$$)
   }
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, "devStateIcon", "");
-  if ($devstateicon_val eq "" || index($devstateicon_val, "ver_available") == -1) {
+  if ($devstateicon_val eq "" or index($devstateicon_val, "ver_available") == -1) {
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
@@ -207,7 +208,7 @@ BindingsIo_Notify($)
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
     } else {
-      #BindingsIo_Write($hash, $dev, "event", [$event], {});
+      BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
@@ -346,6 +347,8 @@ BindingsIo_Write($$$$$) {
     if ($returnval ne "empty" && $returnval ne "continue") {
       $timeouts = 0;
       last;
+    } else {
+      $returnval = "";
     }
   }
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
