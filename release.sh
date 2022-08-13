@@ -15,7 +15,7 @@ git checkout -q master
 git merge development -m "Merge branch 'development'"
 
 # touch to update timestamp
-touch FHEM/10_PythonModule.pm
+touch FHEM/10_BindingsIo.pm
 # update controls to force update
 perl prepare_update.pl > controls_pythonbinding.txt
 git commit -m "chore: update controls" controls_pythonbinding.txt
