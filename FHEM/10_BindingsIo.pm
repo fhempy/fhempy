@@ -207,6 +207,7 @@ BindingsIo_Notify($)
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
     } else {
       BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
