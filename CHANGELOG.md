@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.424 (2022-08-13)
+### Fix
+* **fhempy:** Fix restart ([`4f7d452`](https://github.com/dominikkarall/fhempy/commit/4f7d45216fb967a69215d3b9ea20b0b9dcb62e69))
+
 ## v0.1.423 (2022-08-13)
 ### Fix
 * **fhempy:** Stop sending msgs on shutdown ([`f1c9041`](https://github.com/dominikkarall/fhempy/commit/f1c90415e1af54b9dc07ed2ea303464f1abbf555))
