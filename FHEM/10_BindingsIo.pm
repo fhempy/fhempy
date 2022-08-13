@@ -225,7 +225,8 @@ BindingsIo_Callback($$) {
   }
   
   if (defined($error) and $hash->{prev_error} ne $error) {
-    Log3 $name, 1, "BindingsIo ($hash->{NAME}) ERROR: Connection setup error: $error"; 
+    Log3 $name, 1, "BindingsIo ($hash->{NAME}): ERROR during connection setup: $error"; 
+    $hash->{prev_error} = $error;
   }
 }
 
