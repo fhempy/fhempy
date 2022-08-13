@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.420 (2022-08-13)
+### Fix
+* **fhempy:** Add more details to readme ([`402735e`](https://github.com/dominikkarall/fhempy/commit/402735ec9274ecfd756eeecfc225dc705b3b8342))
+
 ## v0.1.419 (2022-08-13)
 ### Fix
 * **fhempy:** Logging seems to block fhempy ([`15872ee`](https://github.com/dominikkarall/fhempy/commit/15872eef3e5a3166d6d2c6982cab14cfc317a04e))
