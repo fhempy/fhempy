@@ -99,6 +99,9 @@ class fhempy:
         self._msg_listeners.append({"func": listener, "awaitId": awaitid})
 
     async def send(self, msg):
+        if stop_event.is_set():
+            return
+
         await self.wsconnection.send(msg.encode("utf-8"))
 
     async def sendBackReturn(self, hash, ret):
