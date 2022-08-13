@@ -147,7 +147,7 @@ class fhempy:
             await self._onMessage(payload)
             time_finished = time.time()
             time_duration = (time_finished - time_received) * 1000
-            if time_duration > 100:
+            if time_duration > 10000:
                 logger.error(f"fhempy took {time_duration:.0f}ms for {payload}")
         except Exception:
             logger.exception(f"Failed to handle message: {payload}")

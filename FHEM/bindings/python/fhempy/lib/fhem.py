@@ -334,7 +334,7 @@ async def send_and_wait(name, cmd):
         try:
             recv_time = time.time()
             fhem_time = (recv_time - sent_time) * 1000
-            if fhem_time > 200:
+            if fhem_time > 20000:
                 # log error message if fhem took too long to handle cmd
                 logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
             fut.set_result(rmsg)
