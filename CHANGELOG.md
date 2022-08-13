@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.422 (2022-08-13)
+### Fix
+* **fhempy:** Handle close frame ([`d8e5b44`](https://github.com/dominikkarall/fhempy/commit/d8e5b44e5a37dce52d1ae531bf8f289637e7a00b))
+
 ## v0.1.421 (2022-08-13)
 ### Fix
 * **fhempy:** Fix long running set on define ([`24f99f8`](https://github.com/dominikkarall/fhempy/commit/24f99f8a21bc38e0dab396f816d40dc650a46b01))
