@@ -81,9 +81,13 @@ update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pytho
 update
 ```
 ```
+shutdown restart
+```
+```
 define fhempy_local BindingsIo fhempy
 ```
 
+Wait a few minutes until fhempy is installed. **This might take up to 15 minutes!** fhempy_local will show up with a green circle when finished.
 All further requirements are installed automatically via pip as soon as the specific module is used the first time.
  
 ## Usage in FHEM (examples)
