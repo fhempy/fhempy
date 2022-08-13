@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.416 (2022-08-13)
+### Feature
+* **fhempy:** Log error when fhempy takes over 100ms to reply to fhem ([`0649ec7`](https://github.com/dominikkarall/fhempy/commit/0649ec7c392da8b90dc5acecb8db864453fa4dd9))
+
 ## v0.1.415 (2022-08-13)
 ### Feature
 * **fhempy:** Log error if fhem took longer than 200ms to handle cmd ([`2767776`](https://github.com/dominikkarall/fhempy/commit/27677769cb7372055ebdff5255771ca31203fad5))
