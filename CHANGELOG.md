@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.415 (2022-08-13)
+### Feature
+* **fhempy:** Log error if fhem took longer than 200ms to handle cmd ([`2767776`](https://github.com/dominikkarall/fhempy/commit/27677769cb7372055ebdff5255771ca31203fad5))
+
+### Fix
+* **xiaomi_tokens:** Fix logging ([`2859f1f`](https://github.com/dominikkarall/fhempy/commit/2859f1f0ac0c966401e21d3b482333d3975301d6))
+
 ## v0.1.414 (2022-08-13)
 
 
