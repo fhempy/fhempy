@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.412 (2022-08-13)
+### Feature
+* **fhempy:** Add fhem log entry on update ([`dc89f94`](https://github.com/dominikkarall/fhempy/commit/dc89f9428dec62ab6d49a9ef002fa25dc995d63f))
+
+### Fix
+* **fhempy:** Better error handling ([`9331279`](https://github.com/dominikkarall/fhempy/commit/933127998e0f1c1ca69ff0d647f18631e786fb2e))
+* **fhempy:** Deactivate MOV for controls file ([`4bb248b`](https://github.com/dominikkarall/fhempy/commit/4bb248bac3e7956dbefa7667d9403f4d788d75ca))
+
 ## v0.1.411 (2022-08-12)
 ### Feature
 * **fhempy:** Receive all fhem events in fhempy ([`0aad85a`](https://github.com/dominikkarall/fhempy/commit/0aad85a1dccb1efb514fb2925175f7ee60199e67))
