@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.421 (2022-08-13)
+### Fix
+* **fhempy:** Fix long running set on define ([`24f99f8`](https://github.com/dominikkarall/fhempy/commit/24f99f8a21bc38e0dab396f816d40dc650a46b01))
+
 ## v0.1.420 (2022-08-13)
 ### Fix
 * **fhempy:** Add more details to readme ([`402735e`](https://github.com/dominikkarall/fhempy/commit/402735ec9274ecfd756eeecfc225dc705b3b8342))
