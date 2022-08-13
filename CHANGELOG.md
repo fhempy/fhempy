@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.419 (2022-08-13)
+### Fix
+* **fhempy:** Logging seems to block fhempy ([`15872ee`](https://github.com/dominikkarall/fhempy/commit/15872eef3e5a3166d6d2c6982cab14cfc317a04e))
+
 ## v0.1.418 (2022-08-13)
 ### Feature
 * **fhempy:** Add long running log again ([`69ab9bc`](https://github.com/dominikkarall/fhempy/commit/69ab9bcb4c02f7fc5566a5dbdb7779c1d423b0e1))
