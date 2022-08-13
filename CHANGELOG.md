@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.418 (2022-08-13)
+### Feature
+* **fhempy:** Add long running log again ([`69ab9bc`](https://github.com/dominikkarall/fhempy/commit/69ab9bcb4c02f7fc5566a5dbdb7779c1d423b0e1))
+
+### Fix
+* **fhempy:** Reduce timeout, fix hangup ([`f90b516`](https://github.com/dominikkarall/fhempy/commit/f90b5165d7157558024fbced8459b4e908fc7fae))
+
 ## v0.1.417 (2022-08-13)
 ### Fix
 * **fhempy:** Fix hang on startup ([`d943ddd`](https://github.com/dominikkarall/fhempy/commit/d943ddd2ebf2fb542a06ba124a5ce409e841a17e))
