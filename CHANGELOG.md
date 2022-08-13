@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.423 (2022-08-13)
+### Fix
+* **fhempy:** Stop sending msgs on shutdown ([`f1c9041`](https://github.com/dominikkarall/fhempy/commit/f1c90415e1af54b9dc07ed2ea303464f1abbf555))
+
 ## v0.1.422 (2022-08-13)
 ### Fix
 * **fhempy:** Handle close frame ([`d8e5b44`](https://github.com/dominikkarall/fhempy/commit/d8e5b44e5a37dce52d1ae531bf8f289637e7a00b))
