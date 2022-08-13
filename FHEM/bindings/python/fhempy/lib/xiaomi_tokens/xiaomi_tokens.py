@@ -123,7 +123,8 @@ class xiaomi_tokens(FhemModule):
         try:
             await utils.run_blocking(functools.partial(self.thread_get_tokens))
         except Exception as ex:
-            await fhem.readingsSingleUpdateIfChanged(f"Failed to get tokens: {ex}")
+            await self.logger.error(f"Failed to get tokens: {ex}")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"{ex}", 1)
             return
 
         self._miio_devices = []

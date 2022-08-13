@@ -1,11 +1,11 @@
 import asyncio
-import concurrent.futures
 import json
 import logging
 import os
 import platform
 import random
 import socket
+import time
 import traceback
 from datetime import datetime
 
@@ -328,9 +328,15 @@ async def send_and_wait(name, cmd):
         "msgtype": "command",
         "command": cmd,
     }
+    sent_time = time.time()
 
     def listener(rmsg):
         try:
+            recv_time = time.time()
+            fhem_time = (recv_time - sent_time) * 1000
+            if fhem_time > 200:
+                # log error message if fhem took too long to handle cmd
+                logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
             fut.set_result(rmsg)
         except Exception:
             logger.error("Failed to set result, received: " + rmsg)
@@ -366,8 +372,8 @@ async def sendCommandName(name, cmd, hash=None):
     except asyncio.TimeoutError:
         logger.error("Timeout - NO RESPONSE for command: " + cmd)
         ret = ""
-    except concurrent.futures.CancelledError:
-        # function timeout
+    except asyncio.CancelledError:
+        # task was cancelled
         pass
     except Exception as e:
         logger.error("Exception while waiting for reply: " + e)
