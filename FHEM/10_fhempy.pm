@@ -62,16 +62,7 @@ fhempy_Define($$$)
 
   Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.")";
 
-  AssignIoPort($hash, "local_pybinding");
-
-  if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    if (!defined($hash->{OLDDEF})) {
-      Log3 $hash, 4, "fhempy: fhempy not yet connected! Define will continue after connect...";
-      return undef;
-    } else {
-      return IOWrite($hash, $hash, "Define", $a, $h);
-    }
-  }
+  AssignIoPort($hash, "fhempy_local");
 
   return IOWrite($hash, $hash, "Define", $a, $h);
 }
