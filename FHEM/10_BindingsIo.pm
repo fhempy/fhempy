@@ -353,6 +353,8 @@ BindingsIo_Write($$$$$) {
     if ($returnval ne "empty" && $returnval ne "continue") {
       $timeouts = 0;
       last;
+    } else {
+      $returnval = "";
     }
   }
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
