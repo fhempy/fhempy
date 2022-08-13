@@ -546,6 +546,10 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
         my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
         return $bufws;
       } else {
+        my $op = (ord(substr($buf,0,1)) & 0x0F);
+        if ($op == 8) {
+          return undef;
+        }
         return $buf;
       }
     }
