@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.414 (2022-08-13)
+
+
 ## v0.1.413 (2022-08-13)
 ### Fix
 * **fhempy:** Better error handling for fhempy connection ([`a1fb108`](https://github.com/dominikkarall/fhempy/commit/a1fb10858b348f57fc6748af8e25ffc3b6444b53))
