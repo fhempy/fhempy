@@ -669,9 +669,12 @@ def run():
         loop.run_until_complete(async_main())
     finally:
         try:
-            _cancel_all_tasks_with_timeout(loop, 10)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
+            pass
+            # the code below currently doesn't work
+            # loop.run_until_complete doesn't end, therefore deactivated
+            # _cancel_all_tasks_with_timeout(loop, 10)
+            # loop.run_until_complete(loop.shutdown_asyncgens())
+            # loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             asyncio.set_event_loop(None)
             loop.close()
