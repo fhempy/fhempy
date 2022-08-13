@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.413 (2022-08-13)
+### Fix
+* **fhempy:** Better error handling for fhempy connection ([`a1fb108`](https://github.com/dominikkarall/fhempy/commit/a1fb10858b348f57fc6748af8e25ffc3b6444b53))
+
 ## v0.1.412 (2022-08-13)
 ### Feature
 * **fhempy:** Add fhem log entry on update ([`dc89f94`](https://github.com/dominikkarall/fhempy/commit/dc89f9428dec62ab6d49a9ef002fa25dc995d63f))
