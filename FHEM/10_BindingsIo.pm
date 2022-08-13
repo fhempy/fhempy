@@ -223,7 +223,7 @@ BindingsIo_Callback($$) {
   if (!defined($hash->{prev_error})) {
     $hash->{prev_error} = "";
   }
-  
+
   if (defined($error) and $hash->{prev_error} ne $error) {
     Log3 $name, 1, "BindingsIo ($hash->{NAME}): ERROR during connection setup: $error"; 
     $hash->{prev_error} = $error;
@@ -314,10 +314,10 @@ BindingsIo_Write($$$$$) {
     }
   }
 
-  my $py_timeout = 2500;
+  my $py_timeout = 1000;
   if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
     # wait 10s on Define, this might happen on startup
-    $py_timeout = 10000;
+    $py_timeout = 1000;
   }
   my $returnval = "";
   my $t1 = time * 1000;
@@ -353,8 +353,6 @@ BindingsIo_Write($$$$$) {
     if ($returnval ne "empty" && $returnval ne "continue") {
       $timeouts = 0;
       last;
-    } else {
-      $returnval = "";
     }
   }
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
