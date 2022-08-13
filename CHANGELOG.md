@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.417 (2022-08-13)
+### Fix
+* **fhempy:** Fix hang on startup ([`d943ddd`](https://github.com/dominikkarall/fhempy/commit/d943ddd2ebf2fb542a06ba124a5ce409e841a17e))
+
 ## v0.1.416 (2022-08-13)
 ### Feature
 * **fhempy:** Log error when fhempy takes over 100ms to reply to fhem ([`0649ec7`](https://github.com/dominikkarall/fhempy/commit/0649ec7c392da8b90dc5acecb8db864453fa4dd9))
