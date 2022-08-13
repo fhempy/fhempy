@@ -207,6 +207,7 @@ BindingsIo_Notify($)
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
     } else {
       BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
@@ -219,8 +220,12 @@ sub
 BindingsIo_Callback($$) {
   my ($hash, $error) = @_;
   my $name = $hash->{NAME};
-  if (defined($error)) {
-    Log3 $name, 1, "BindingsIo ($hash->{NAME}): ERROR $name - error while connecting: $error"; 
+  if (!defined($hash->{prev_error})) {
+    $hash->{prev_error} = "";
+  }
+  
+  if (defined($error) and $hash->{prev_error} ne $error) {
+    Log3 $name, 1, "BindingsIo ($hash->{NAME}) ERROR: Connection setup error: $error"; 
   }
 }
 
