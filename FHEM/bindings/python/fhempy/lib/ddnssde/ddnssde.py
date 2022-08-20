@@ -44,9 +44,9 @@ class ddnssde(generic.FhemModule):
 
         attr_config = {
             "ip_check_interval": {
-                "default": 30,
+                "default": 15,
                 "format": "int",
-                "help": "Change interval in minutes, default is 30.",
+                "help": "Change interval in minutes, default is 15.",
             },
             "hostname": {
                 "default": "-",
@@ -212,7 +212,7 @@ class ddnssde(generic.FhemModule):
             await self.update_key_ready.wait()
             if await self.is_ip_updated():
                 await self.set_ddnss_ip()
-            await asyncio.sleep(self._attr_ip_check_interval)
+            await asyncio.sleep(self._attr_ip_check_interval * 60)
 
     async def set_attr_hostname(self, hash):
         if self._attr_hostname != "-":
