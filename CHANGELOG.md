@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.430 (2022-08-20)
+### Fix
+* **geizhals:** Add missing dependency ([`1bab5a8`](https://github.com/dominikkarall/fhempy/commit/1bab5a8c0cc77d00545ccd5f70001d4bfd9a3999))
+
 ## v0.1.429 (2022-08-20)
 
 
