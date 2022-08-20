@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.434 (2022-08-20)
+### Fix
+* **object_detection:** Fix import ([`a815b68`](https://github.com/dominikkarall/fhempy/commit/a815b6854e6ebffe04d1c8017d24cdba28d5ec18))
+
 ## v0.1.433 (2022-08-20)
 ### Fix
 * **object_detection:** Fix import ([`7fc674e`](https://github.com/dominikkarall/fhempy/commit/7fc674e55a44302d3060e9f85d24ebdc91903c62))
