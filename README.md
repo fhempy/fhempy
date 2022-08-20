@@ -16,6 +16,7 @@ This repository includes following working modules:
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
 |[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
+|[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for free ddnss.de service|
 |discover_mdns|Discover mDNS (e.g. googlecast) devices|
 |discover_ble|Discover Bluetooth LE devices|
 |discover_upnp|Discover UPnP devices|
