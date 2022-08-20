@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.431 (2022-08-20)
+### Fix
+* **object_detection:** Update opencv lib ([`192f91d`](https://github.com/dominikkarall/fhempy/commit/192f91dd70f3396be52f3ad3627bc8b9187ff7f9))
+* **object_detection:** Update tflite-runtime ([`b2f5880`](https://github.com/dominikkarall/fhempy/commit/b2f588005d9257a1252bdadcfdef9591105a9aa7))
+
 ## v0.1.430 (2022-08-20)
 ### Fix
 * **geizhals:** Add missing dependency ([`1bab5a8`](https://github.com/dominikkarall/fhempy/commit/1bab5a8c0cc77d00545ccd5f70001d4bfd9a3999))
