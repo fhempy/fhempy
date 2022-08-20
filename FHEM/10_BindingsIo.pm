@@ -76,7 +76,7 @@ BindingsIo_Define($$$)
     $localServer = 0;
     $hash->{localBinding} = 0;
   }
-  $hash->{devioLoglevel} = 5;
+  $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
@@ -317,7 +317,7 @@ BindingsIo_Write($$$$$) {
   my $py_timeout = 1000;
   if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
     # wait 10s on Define, this might happen on startup
-    $py_timeout = 1000;
+    $py_timeout = 10000;
   }
   my $returnval = "";
   my $t1 = time * 1000;
