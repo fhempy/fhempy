@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.425 (2022-08-20)
+### Feature
+* **ddnssde:** Add ddnss.de IP updater ([`5ec7e04`](https://github.com/dominikkarall/fhempy/commit/5ec7e0413af4aae2bc8e777ff86a5c3cc2fe81f8))
+
 ## v0.1.424 (2022-08-13)
 ### Fix
 * **fhempy:** Fix restart ([`4f7d452`](https://github.com/dominikkarall/fhempy/commit/4f7d45216fb967a69215d3b9ea20b0b9dcb62e69))
