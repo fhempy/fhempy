@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.432 (2022-08-20)
+### Fix
+* **ddnssde:** Fix ip_check_interval attr ([`5ebca91`](https://github.com/dominikkarall/fhempy/commit/5ebca91b068b857a1d0da5f5a47fdc562c513e6b))
+
 ## v0.1.431 (2022-08-20)
 ### Fix
 * **object_detection:** Update opencv lib ([`192f91d`](https://github.com/dominikkarall/fhempy/commit/192f91dd70f3396be52f3ad3627bc8b9187ff7f9))
