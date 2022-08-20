@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.433 (2022-08-20)
+### Fix
+* **object_detection:** Fix import ([`7fc674e`](https://github.com/dominikkarall/fhempy/commit/7fc674e55a44302d3060e9f85d24ebdc91903c62))
+
 ## v0.1.432 (2022-08-20)
 ### Fix
 * **ddnssde:** Fix ip_check_interval attr ([`5ebca91`](https://github.com/dominikkarall/fhempy/commit/5ebca91b068b857a1d0da5f5a47fdc562c513e6b))
