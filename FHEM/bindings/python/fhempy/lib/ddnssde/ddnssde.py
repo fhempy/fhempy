@@ -10,9 +10,12 @@ from .. import fhem, generic
 class ddnssde(generic.FhemModule):
 
     headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        + "image/avif,image/webp,image/apng,*/*;"
+        + "q=0.8,application/signed-exchange;v=b3;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+        "Accept-Language": "en-AT,en;q=0.9,de-AT;q=0.8,de;"
+        + "q=0.7,en-GB;q=0.6,en-US;q=0.5",
         "Cache-Control": "max-age=0",
         "Connection": "keep-alive",
         "Content-Length": "58",
@@ -25,7 +28,8 @@ class ddnssde(generic.FhemModule):
         "Sec-Fetch-Site": "same-origin",
         "Sec-Fetch-User": "?1",
         "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.36.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14989.36.0) "
+        + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
         "sec-ch-ua": '"Google Chrome";v="105", "Not)A;Brand";v="8", "Chromium";v="105"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "Chrome OS",
