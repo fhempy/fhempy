@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.435 (2022-08-20)
+### Feature
+* **ddnssde:** Add ddnssde ([`2c706ab`](https://github.com/dominikkarall/fhempy/commit/2c706ab5ecd73db20f110e0b472dcfa76245aefd))
+
+### Fix
+* **fhempy:** Fix log level which caused delays ([`0b26f20`](https://github.com/dominikkarall/fhempy/commit/0b26f209e275e51834ffb7e55d6ea30e02635f2d))
+
 ## v0.1.434 (2022-08-20)
 ### Fix
 * **object_detection:** Fix import ([`a815b68`](https://github.com/dominikkarall/fhempy/commit/a815b6854e6ebffe04d1c8017d24cdba28d5ec18))
