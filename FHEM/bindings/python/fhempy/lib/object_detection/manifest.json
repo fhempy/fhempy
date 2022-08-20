@@ -1,6 +1,6 @@
 {
   "requirements": [
     "opencv-python-headless",
-    "tflit==0.1.2"
+    "tflite-runtime==2.9.1"
   ]
 }
