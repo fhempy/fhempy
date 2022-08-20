@@ -1,16 +1,12 @@
 import asyncio
 import concurrent
 import functools
-import glob
-import os
 import time
-from threading import Thread
 
 import cv2
 import numpy as np
-import tflit
 from fhempy.lib.generic import FhemModule
-from tflite_runtime.interpreter import Interpreter, load_delegate
+from tflite_runtime.interpreter import Interpreter
 
 from .. import fhem, utils
 
