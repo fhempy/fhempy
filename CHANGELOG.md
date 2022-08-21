@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.438 (2022-08-21)
+### Fix
+* **github_backup:** Fix do_backup call ([`0a83c07`](https://github.com/dominikkarall/fhempy/commit/0a83c070aa99353543d17448978ce7923904e1c0))
+
 ## v0.1.437 (2022-08-21)
 ### Fix
 * **github_backup:** Fix set backup_now ([`e28e7af`](https://github.com/dominikkarall/fhempy/commit/e28e7afb8523ba6533b20afd3eca9ab54c5719a2))
