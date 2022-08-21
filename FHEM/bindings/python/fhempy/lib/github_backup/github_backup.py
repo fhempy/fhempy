@@ -55,6 +55,9 @@ class github_backup(generic.FhemModule):
         await self.set_attr_github_token(hash)
 
         self.create_async_task(self.update_static_readings())
+        self.create_async_task(self.backup_loop())
+
+    async def set_backup_now(self, hash, params):
         self.create_async_task(self.do_backup())
 
     async def set_attr_github_token(self, hash):
@@ -140,6 +143,9 @@ class github_backup(generic.FhemModule):
             await asyncio.sleep(self._attr_backup_interval * 3600)
 
     async def do_backup(self):
+        if self._attr_github_token == "":
+            return
+
         for file in self._attr_backup_files.split(","):
             if await self.upload_file(file):
                 await self.update_readings(file)
