@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.436 (2022-08-21)
+### Feature
+* **github_backup:** New github_backup module ([`6bff115`](https://github.com/dominikkarall/fhempy/commit/6bff115b9825aeecad6eab2af0ddf9eb0a192a83))
+
 ## v0.1.435 (2022-08-20)
 ### Feature
 * **ddnssde:** Add ddnssde ([`2c706ab`](https://github.com/dominikkarall/fhempy/commit/2c706ab5ecd73db20f110e0b472dcfa76245aefd))
