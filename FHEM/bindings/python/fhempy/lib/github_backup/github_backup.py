@@ -96,10 +96,10 @@ class github_backup(generic.FhemModule):
         return False
 
     async def b64encode_file(self, filename):
-        fh = open(filename)
+        fh = open(filename, "rb")
         f_content = fh.read()
         fh.close()
-        b64_bytes = base64.b64encode(f_content.encode("ascii"))
+        b64_bytes = base64.b64encode(f_content)
         return b64_bytes.decode("ascii")
 
     async def get_sha_from_file(self, filename):
