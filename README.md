@@ -27,6 +27,7 @@ This repository includes following working modules:
 |[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve values from FusionSolar Kiosk|
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |gfprobt|Control GF Pro Bluetooth irrigation control|
+|[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to github|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
