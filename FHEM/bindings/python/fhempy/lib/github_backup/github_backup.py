@@ -139,7 +139,7 @@ class github_backup(generic.FhemModule):
     async def backup_loop(self):
         await self.gh_token_ready.wait()
         while True:
-            await self.do_backup(self)
+            await self.do_backup()
             await asyncio.sleep(self._attr_backup_interval * 3600)
 
     async def do_backup(self):
