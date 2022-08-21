@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.439 (2022-08-21)
+### Feature
+* **github_backup:** Support binary files ([`c94bb7f`](https://github.com/dominikkarall/fhempy/commit/c94bb7fbd1ad1e1a6f046a67a038de917b92ab37))
+
 ## v0.1.438 (2022-08-21)
 ### Fix
 * **github_backup:** Fix do_backup call ([`0a83c07`](https://github.com/dominikkarall/fhempy/commit/0a83c070aa99353543d17448978ce7923904e1c0))
