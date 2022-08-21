@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.437 (2022-08-21)
+### Fix
+* **github_backup:** Fix set backup_now ([`e28e7af`](https://github.com/dominikkarall/fhempy/commit/e28e7afb8523ba6533b20afd3eca9ab54c5719a2))
+
 ## v0.1.436 (2022-08-21)
 ### Feature
 * **github_backup:** New github_backup module ([`6bff115`](https://github.com/dominikkarall/fhempy/commit/6bff115b9825aeecad6eab2af0ddf9eb0a192a83))
