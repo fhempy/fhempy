@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.440 (2022-08-22)
+### Feature
+* **fhempy:** Support time format in set/attr ([`ecc84a3`](https://github.com/dominikkarall/fhempy/commit/ecc84a303d35afc1edcc636c071f8e6867106491))
+* **github_backup:** New attr backup_time, support directories ([`2e26689`](https://github.com/dominikkarall/fhempy/commit/2e266895281081be544fe81ab5c8a2799e1d3d91))
+
 ## v0.1.439 (2022-08-21)
 ### Feature
 * **github_backup:** Support binary files ([`c94bb7f`](https://github.com/dominikkarall/fhempy/commit/c94bb7fbd1ad1e1a6f046a67a038de917b92ab37))
