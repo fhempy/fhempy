@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import socket
 from codecs import decode, encode
+from datetime import datetime
 from functools import partial, reduce
 
 from cryptography.fernet import Fernet
@@ -195,6 +196,11 @@ def convert2format(value, list_def):
             return json.loads(value)
         except Exception:
             return {}
+    elif target_format == "time":
+        try:
+            return datetime.strptime(value, "%H:%M")
+        except Exception:
+            return None
     elif target_format == "array":
         return value.split(",")
     return value
