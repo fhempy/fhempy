@@ -1,5 +1,8 @@
 import asyncio
 import base64
+import hashlib
+import pathlib
+from datetime import datetime
 
 import aiohttp
 
@@ -19,15 +22,25 @@ class github_backup(generic.FhemModule):
         self.gh_token_ready = asyncio.Event()
 
         attr_config = {
-            "backup_interval": {
-                "default": 24,
-                "format": "int",
-                "help": "Change interval in hours, default is 24.",
+            "backup_time": {
+                "default": "03:38",
+                "format": "time",
+                "help": "Daily backup at a specific time. Format HH:MM, default 03:38.",
             },
             "github_token": {"default": "", "help": "Personal github token"},
             "backup_files": {
-                "default": "fhem.cfg,configDB.db,configDB.conf",
-                "help": "Comma separated list of files to backup",
+                "default": (
+                    "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
+                    + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
+                    + "esphome_config/*.yaml"
+                ),
+                "help": (
+                    "Comma separated list of files to backup.<br>"
+                    + "Default:<br>"
+                    + "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
+                    + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
+                    + "esphome_config/*.yaml"
+                ),
             },
         }
         self.set_attr_config(attr_config)
@@ -50,6 +63,15 @@ class github_backup(generic.FhemModule):
         self.gh_user = self.url.split("/")[-2]
         self.gh_repo = self.url.split("/")[-1]
         self.directory = args[4]
+
+        icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
+        if icon == "":
+            await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} icon system_backup")
+            await fhem.CommandAttr(
+                self.hash,
+                f"{self.hash['NAME']} devStateIcon "
+                + "failed:message_attention ok:message_ok",
+            )
 
         # do this to check if gh token is set
         await self.set_attr_github_token(hash)
@@ -99,8 +121,9 @@ class github_backup(generic.FhemModule):
         fh = open(filename, "rb")
         f_content = fh.read()
         fh.close()
+        sha = hashlib.sha1(f_content)
         b64_bytes = base64.b64encode(f_content)
-        return b64_bytes.decode("ascii")
+        return b64_bytes.decode("ascii"), sha
 
     async def get_sha_from_file(self, filename):
         resp = await self.github_get(
@@ -116,7 +139,11 @@ class github_backup(generic.FhemModule):
             # get current sha
             f_sha = await self.get_sha_from_file(filename)
 
-            content = await self.b64encode_file(filename)
+            content, sha = await self.b64encode_file(filename)
+
+            if f_sha == sha:
+                # no update required
+                return True
 
             # upload file
             data_msg = {"message": "fhempy backup", "content": content}
@@ -140,15 +167,25 @@ class github_backup(generic.FhemModule):
         await self.gh_token_ready.wait()
         while True:
             await self.do_backup()
-            await asyncio.sleep(self._attr_backup_interval * 3600)
+            now = datetime.today()
+            seconds_till_time = (self._attr_backup_time - now).seconds
+            await asyncio.sleep(seconds_till_time)
 
     async def do_backup(self):
         if self._attr_github_token == "":
             return
 
+        state_val = "ok"
         for file in self._attr_backup_files.split(","):
-            if await self.upload_file(file):
-                await self.update_readings(file)
+            filepaths = pathlib.Path(".").glob(file)
+            for filepath in filepaths:
+                if not filepath.is_file():
+                    continue
+
+                if not await self.upload_file(filepath):
+                    state_val = "failed"
+
+        await fhem.readingsSingleUpdate(self.hash, "state", state_val, 1)
 
     async def update_static_readings(self):
         await fhem.readingsSingleUpdateIfChanged(
@@ -158,8 +195,3 @@ class github_backup(generic.FhemModule):
             + "Open repository (new tab/window)</a></html>",
             1,
         )
-
-    async def update_readings(self, file):
-        await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(self.hash, f"{file}_backup", "ok")
-        await fhem.readingsEndUpdate(self.hash, 1)
