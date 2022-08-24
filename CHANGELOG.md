@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.441 (2022-08-24)
+### Fix
+* **tuya:** Fix use API_KEY and API_SECRET reading ([`ad8db6c`](https://github.com/dominikkarall/fhempy/commit/ad8db6c5d34087c2ad10e3468f77f50b022ef5c6))
+
 ## v0.1.440 (2022-08-22)
 ### Feature
 * **fhempy:** Support time format in set/attr ([`ecc84a3`](https://github.com/dominikkarall/fhempy/commit/ecc84a303d35afc1edcc636c071f8e6867106491))
