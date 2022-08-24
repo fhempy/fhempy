@@ -404,9 +404,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 await self._create_mapping_dev()
             else:
                 await fhem.readingsSingleUpdateIfChanged(
-                    self.hash,
-                    "state",
-                    "Please use API_KEY and API_SECRET",
+                    self.hash, "state", "Please use API_KEY and API_SECRET", 1
                 )
         except Exception:
             self.logger.exception("Failed create_device")
