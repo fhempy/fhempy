@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.442 (2022-08-28)
+### Feature
+* **meross:** Support channels ([`7c89512`](https://github.com/dominikkarall/fhempy/commit/7c89512d10636da3f7e3f521120e31d6b6258828))
+
 ## v0.1.441 (2022-08-24)
 ### Fix
 * **tuya:** Fix use API_KEY and API_SECRET reading ([`ad8db6c`](https://github.com/dominikkarall/fhempy/commit/ad8db6c5d34087c2ad10e3468f77f50b022ef5c6))
