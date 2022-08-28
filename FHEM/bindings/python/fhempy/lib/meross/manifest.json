@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "meross-iot==0.4.4.4"
+    "meross-iot==0.4.5.0"
   ]
 }

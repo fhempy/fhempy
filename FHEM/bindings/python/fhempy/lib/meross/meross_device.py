@@ -1,12 +1,13 @@
 import asyncio
-from fhempy.lib.generic import FhemModule
+
 from fhempy.lib import fhem, fhem_pythonbinding
-from meross_iot.model.enums import OnlineStatus, Namespace, SprayMode
-from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
+from fhempy.lib.generic import FhemModule
 from meross_iot.controller.mixins.garage import GarageOpenerMixin
 from meross_iot.controller.mixins.light import LightMixin
 from meross_iot.controller.mixins.roller_shutter import RollerShutterTimerMixin
 from meross_iot.controller.mixins.spray import SprayMixin
+from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
+from meross_iot.model.enums import Namespace, OnlineStatus, SprayMode
 
 
 class meross_device:
@@ -31,9 +32,24 @@ class meross_device:
         if isinstance(self._device, ToggleXMixin) or isinstance(
             self._device, ToggleMixin
         ):
-            set_conf["on"] = {}
-            set_conf["off"] = {}
-            set_conf["toggle"] = {}
+            for channel in self._device.channels():
+                if channel.is_master_channel():
+                    set_conf["on"] = {"function_param": channel.index}
+                    set_conf["off"] = {"function_param": channel.index}
+                    set_conf["toggle"] = {"function_param": channel.index}
+                else:
+                    set_conf[f"on_{channel.index}"] = {
+                        "function": "set_on",
+                        "function_param": channel.index,
+                    }
+                    set_conf[f"off_{channel.index}"] = {
+                        "function": "set_off",
+                        "function_param": channel.index,
+                    }
+                    set_conf[f"toggle_{channel.index}"] = {
+                        "function": "set_toggle",
+                        "function_param": channel.index,
+                    }
 
         if isinstance(self._device, RollerShutterTimerMixin):
             set_conf["open"] = {}
@@ -87,16 +103,16 @@ class meross_device:
         await self._device.async_set_light_color(temperature=ct)
 
     async def set_on(self, hash, params):
-        await self._device.async_turn_on()
+        await self._device.async_turn_on(params["function_param"])
 
     async def set_off(self, hash, params):
         if isinstance(self._device, SprayMixin):
             await self._device.async_set_mode(SprayMode.OFF)
         else:
-            await self._device.async_turn_off()
+            await self._device.async_turn_off(params["function_param"])
 
     async def set_toggle(self, hash, params):
-        await self._device.async_toggle()
+        await self._device.async_toggle(params["function_param"])
 
     async def set_open(self, hash, params):
         await self._device.async_open()
