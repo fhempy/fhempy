@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.444 (2022-08-30)
+### Fix
+* **meross:** Fix channel support ([`a94020d`](https://github.com/dominikkarall/fhempy/commit/a94020db5358c84640297f6548dc02957ee705f9))
+
 ## v0.1.443 (2022-08-29)
 ### Feature
 * **fhempy:** Report error when fhempy takes longer than 5s to send back answer to fhem ([`9825a67`](https://github.com/dominikkarall/fhempy/commit/9825a67608b33d2108295c23a7c026a748f8b1e8))
