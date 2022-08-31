@@ -33,7 +33,7 @@ class meross_device:
             self._device, ToggleMixin
         ):
             for channel in self._device.channels:
-                if channel.is_master_channel():
+                if channel.is_master_channel:
                     set_conf["on"] = {"function_param": channel.index}
                     set_conf["off"] = {"function_param": channel.index}
                     set_conf["toggle"] = {"function_param": channel.index}
