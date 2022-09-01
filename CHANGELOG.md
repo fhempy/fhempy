@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.446 (2022-09-01)
+### Fix
+* **meross:** Fix on/off ([`fe931dc`](https://github.com/dominikkarall/fhempy/commit/fe931dca53ae4a520d3e617cae53103c328c98ca))
+
 ## v0.1.445 (2022-08-31)
 ### Fix
 * **meross:** Fix channel handling again ([`c48c59e`](https://github.com/dominikkarall/fhempy/commit/c48c59efb130598dc2cf29b35edfc09adb2e3cf9))
