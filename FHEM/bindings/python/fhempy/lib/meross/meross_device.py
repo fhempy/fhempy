@@ -34,9 +34,18 @@ class meross_device:
         ):
             for channel in self._device.channels:
                 if channel.is_master_channel:
-                    set_conf["on"] = {"function_param": channel.index}
-                    set_conf["off"] = {"function_param": channel.index}
-                    set_conf["toggle"] = {"function_param": channel.index}
+                    set_conf["on"] = {
+                        "function": "set_on",
+                        "function_param": channel.index,
+                    }
+                    set_conf["off"] = {
+                        "function": "set_off",
+                        "function_param": channel.index,
+                    }
+                    set_conf["toggle"] = {
+                        "function": "set_toggle",
+                        "function_param": channel.index,
+                    }
                 else:
                     set_conf[f"on_{channel.index}"] = {
                         "function": "set_on",
@@ -76,7 +85,10 @@ class meross_device:
 
         if isinstance(self._device, SprayMixin):
             set_conf["intermittent"] = {}
-            set_conf["off"] = {}
+            set_conf["off"] = {
+                "function": "set_off",
+                "function_param": 0,
+            }
             set_conf["continuous"] = {}
 
         self.fhemdev.set_set_config(set_conf)
