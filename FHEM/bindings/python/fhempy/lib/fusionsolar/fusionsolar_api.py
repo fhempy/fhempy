@@ -1,6 +1,7 @@
 """API client for FusionSolar Kiosk."""
 import asyncio
 import time
+from datetime import datetime
 
 import aiohttp
 
@@ -8,10 +9,18 @@ import aiohttp
 class FusionSolarRestApi:
 
     ENERGY_FLOW_PATH = (
-        "/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_"
+        "/rest/pvms/web/station/v1/overview/energy-flow?"
+        + "stationDn=STATION&_=CURRENT_UTC_TIME"
     )
     STATION_DETAIL_PATH = (
-        "/rest/pvms/web/station/v1/overview/station-detail?stationDn=STATION&_="
+        "/rest/pvms/web/station/v1/overview/station-detail?"
+        + "stationDn=STATION&_=CURRENT_UTC_TIME"
+    )
+    ENERGY_BALANCE = (
+        "/rest/pvms/web/station/"
+        + "v1/overview/energy-balance?stationDn=STATION&"
+        + "timeDim=2&queryTime=CURRENT_UTC_TIME&timeZone=2&"
+        + "timeZoneStr=Europe%2FBerlin&_=CURRENT_UTC_TIME"
     )
 
     def __init__(self, logger, username, password, region="region01eu5"):
@@ -20,6 +29,7 @@ class FusionSolarRestApi:
         self._username = username
         self._password = password
         self._stationdetail = None
+        self._energy_balance = None
         self._inverter_output_power = 0
         self._from_grid = 0
         self._to_grid = 0
@@ -170,12 +180,11 @@ class FusionSolarRestApi:
             return False
 
     async def _get_rest_data(self, path):
-        url = (
-            "https://"
-            + self._region
-            + ".fusionsolar.huawei.com"
-            + path.replace("STATION", self._stationname)
+        current_utc_time = int(datetime.utcnow().timestamp() * 1000)
+        path = path.replace("STATION", self._stationname).replace(
+            "CURRENT_UTC_TIME", str(current_utc_time)
         )
+        url = "https://" + self._region + ".fusionsolar.huawei.com" + path
 
         headers = {
             "accept": (
@@ -330,7 +339,9 @@ class FusionSolarRestApi:
                             self._from_grid = 0
 
     async def update_energy_balance(self):
-        pass
+        self._energy_balance = await self._get_rest_data(
+            FusionSolarRestApi.ENERGY_BALANCE
+        )
 
     async def update_station_detail(self):
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/station-detail?stationDn=STATION&_=
@@ -396,20 +407,11 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_ratio(self):
-        if self.daily_self_use_energy == 0:
-            return 0
-
-        return round(self.daily_self_use_energy / self.daily_use_energy * 100, 2)
+        return self._energy_balance["selfUsePowerRatioByUse"]
 
     @property
     def daily_self_use_solar_ratio(self):
-        if self.total_current_day_energy == 0:
-            return 0
-
-        return round(
-            self.daily_self_use_energy / self.total_current_day_energy * 100,
-            2,
-        )
+        return self._energy_balance["selfUsePowerRatioByProduct"]
 
     @property
     def inverter_output_power(self):
