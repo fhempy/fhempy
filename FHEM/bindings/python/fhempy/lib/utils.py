@@ -278,11 +278,9 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
                         )
 
             # call function with params
+            if "function_param" in set_list_conf[cmd]:
+                final_params["function_param"] = set_list_conf[cmd]["function_param"]
             if "function" in set_list_conf[cmd]:
-                if "function_param" in set_list_conf[cmd]:
-                    final_params["function_param"] = set_list_conf[cmd][
-                        "function_param"
-                    ]
                 fct_name = set_list_conf[cmd]["function"]
                 final_params["cmd"] = cmd
             else:
