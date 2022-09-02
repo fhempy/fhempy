@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.447 (2022-09-02)
+### Feature
+* **fusionsolar:** Correct ratio values when battery is used ([`6d190ba`](https://github.com/dominikkarall/fhempy/commit/6d190bad0579d4382fe09f70d3064a0088b6630a))
+
+### Fix
+* **fhempy:** Support function_param also without function parameter in set_conf ([`2c5bb67`](https://github.com/dominikkarall/fhempy/commit/2c5bb670b97721fb9b1a3093334d8d5b0e5fa8a3))
+
 ## v0.1.446 (2022-09-01)
 ### Fix
 * **meross:** Fix on/off ([`fe931dc`](https://github.com/dominikkarall/fhempy/commit/fe931dca53ae4a520d3e617cae53103c328c98ca))
