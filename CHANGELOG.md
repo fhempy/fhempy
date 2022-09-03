@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.448 (2022-09-03)
+### Feature
+* **fusionsolar:** Add string voltage/current ([`f7d4b3d`](https://github.com/dominikkarall/fhempy/commit/f7d4b3da7703d460b45ec5403ddb8eb6b12dba8f))
+
 ## v0.1.447 (2022-09-02)
 ### Feature
 * **fusionsolar:** Correct ratio values when battery is used ([`6d190ba`](https://github.com/dominikkarall/fhempy/commit/6d190bad0579d4382fe09f70d3064a0088b6630a))
