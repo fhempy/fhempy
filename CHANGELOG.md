@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.449 (2022-09-03)
+### Feature
+* **tuya:** Add kettle support ([`92d5a09`](https://github.com/dominikkarall/fhempy/commit/92d5a09428946a43a957fd982d2ca1457973db87))
+
 ## v0.1.448 (2022-09-03)
 ### Feature
 * **fusionsolar:** Add string voltage/current ([`f7d4b3d`](https://github.com/dominikkarall/fhempy/commit/f7d4b3da7703d460b45ec5403ddb8eb6b12dba8f))
