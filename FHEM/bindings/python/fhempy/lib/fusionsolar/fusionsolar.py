@@ -158,6 +158,16 @@ class fusionsolar(generic.FhemModule):
                         self.restapi.battery_discharge_capacity,
                     )
 
+                # string details
+                for string in self.restapi.string_details:
+                    string_detail = self.restapi.string_details[string]
+                    await fhem.readingsBulkUpdate(
+                        self.hash, f"{string}_voltage", string_detail["voltage"]
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash, f"{string}_current", string_detail["current"]
+                    )
+
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
             except Exception:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
