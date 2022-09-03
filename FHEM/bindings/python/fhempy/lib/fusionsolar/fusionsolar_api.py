@@ -10,17 +10,45 @@ class FusionSolarRestApi:
 
     ENERGY_FLOW_PATH = (
         "/rest/pvms/web/station/v1/overview/energy-flow?"
-        + "stationDn=STATION&_=CURRENT_UTC_TIME"
+        + "stationDn=%STATION%&_=%CURRENT_UTC_TIME%"
     )
     STATION_DETAIL_PATH = (
         "/rest/pvms/web/station/v1/overview/station-detail?"
-        + "stationDn=STATION&_=CURRENT_UTC_TIME"
+        + "stationDn=%STATION%&_=%CURRENT_UTC_TIME%"
     )
     ENERGY_BALANCE = (
         "/rest/pvms/web/station/"
-        + "v1/overview/energy-balance?stationDn=STATION&"
-        + "timeDim=2&queryTime=CURRENT_UTC_TIME&timeZone=2&"
-        + "timeZoneStr=Europe%2FBerlin&_=CURRENT_UTC_TIME"
+        + "v1/overview/energy-balance?stationDn=%STATION%&"
+        + "timeDim=2&queryTime=%CURRENT_UTC_TIME%&timeZone=2&"
+        + "timeZoneStr=Europe%2FBerlin&_=%CURRENT_UTC_TIME%"
+    )
+    DEVICE_SIGNALS = (
+        "/rest/pvms/web/device/v1/device-real-kpi?"
+        + "signalIds=10025&signalIds=10032&signalIds=10029&signalIds=10019&"
+        + "signalIds=10022&signalIds=10006&signalIds=10020&signalIds=10021&"
+        + "signalIds=10027&signalIds=10028&signalIds=21029&signalIds=10018&"
+        + "signalIds=10008&signalIds=10009&signalIds=10010&signalIds=10011&"
+        + "signalIds=10012&signalIds=10013&signalIds=10014&signalIds=10015&"
+        + "signalIds=10016&signalIds=11002&signalIds=11005&signalIds=11008&"
+        + "signalIds=11011&signalIds=11014&signalIds=11017&signalIds=11020&"
+        + "signalIds=11023&signalIds=11026&signalIds=11029&signalIds=11032&"
+        + "signalIds=11035&signalIds=11038&signalIds=11041&signalIds=11044&"
+        + "signalIds=11047&signalIds=11050&signalIds=11053&signalIds=11056&"
+        + "signalIds=11059&signalIds=11062&signalIds=11065&signalIds=11068&"
+        + "signalIds=11071&signalIds=11001&signalIds=11004&signalIds=11007&"
+        + "signalIds=11010&signalIds=11013&signalIds=11016&signalIds=11019&"
+        + "signalIds=11022&signalIds=11025&signalIds=11028&signalIds=11031&"
+        + "signalIds=11034&signalIds=11037&signalIds=11040&signalIds=11043&"
+        + "signalIds=11046&signalIds=11049&signalIds=11052&signalIds=11055&"
+        + "signalIds=11058&signalIds=11061&signalIds=11064&signalIds=11067&"
+        + "signalIds=11070&signalIds=14001&signalIds=14002&signalIds=14003&"
+        + "signalIds=14004&signalIds=14005&signalIds=14006&signalIds=14007&"
+        + "signalIds=14008&signalIds=14009&signalIds=14010&signalIds=14011&"
+        + "signalIds=14012&signalIds=14013&signalIds=14014&signalIds=14015&"
+        + "signalIds=14016&signalIds=14017&signalIds=14018&signalIds=14019&"
+        + "signalIds=14020&signalIds=14021&signalIds=14022&signalIds=14023&"
+        + "signalIds=14024&signalIds=10047&signalIds=10051&"
+        + "deviceDn=%INVERTER_STATION%&_=%CURRENT_UTC_TIME%"
     )
 
     def __init__(self, logger, username, password, region="region01eu5"):
@@ -30,6 +58,8 @@ class FusionSolarRestApi:
         self._password = password
         self._stationdetail = None
         self._energy_balance = None
+        self._device_signals = None
+        self._inverter_station = None
         self._inverter_output_power = 0
         self._from_grid = 0
         self._to_grid = 0
@@ -181,11 +211,13 @@ class FusionSolarRestApi:
 
     async def _get_rest_data(self, path):
         current_utc_time = int(datetime.utcnow().timestamp() * 1000)
-        path = path.replace("STATION", self._stationname).replace(
-            "CURRENT_UTC_TIME", str(current_utc_time)
+        path = path.replace("%STATION%", self._stationname).replace(
+            "%CURRENT_UTC_TIME%", str(current_utc_time)
         )
-        url = "https://" + self._region + ".fusionsolar.huawei.com" + path
+        if self._inverter_station:
+            path = path.replace("%INVERTER_STATION%", self._inverter_station)
 
+        url = "https://" + self._region + ".fusionsolar.huawei.com" + path
         headers = {
             "accept": (
                 "text/html,application/xhtml+xml,application/xml;q=0.9,"
@@ -276,6 +308,7 @@ class FusionSolarRestApi:
         await self.update_station_detail()
         await self.update_energy_balance()
         await self.update_energy_flow()
+        await self.update_device_signals()
         await self.send_idle()
 
     async def update_energy_flow(self):
@@ -300,6 +333,7 @@ class FusionSolarRestApi:
                         self._inverter_output_power = float(
                             node["deviceTips"]["ACTIVE_POWER"]
                         )
+                    self._inverter_station = node["devIds"][0]
                 elif node["name"] == "neteco.pvms.KPI.kpiView.electricalLoad":
                     self._electrical_load = float(
                         node["description"]["value"].replace(" kW", "")
@@ -341,6 +375,11 @@ class FusionSolarRestApi:
     async def update_energy_balance(self):
         self._energy_balance = await self._get_rest_data(
             FusionSolarRestApi.ENERGY_BALANCE
+        )
+
+    async def update_device_signals(self):
+        self._device_signals = await self._get_rest_data(
+            FusionSolarRestApi.DEVICE_SIGNALS
         )
 
     async def update_station_detail(self):
@@ -442,3 +481,13 @@ class FusionSolarRestApi:
     @property
     def from_grid_power(self):
         return self._from_grid
+
+    @property
+    def string_details(self):
+        string_details = {}
+        for signal in (11001, 11004):
+            string_details[f"string_pv{int((signal-11001)/3+1)}"] = {
+                "voltage": self._device_signals["signals"][str(signal)]["value"],
+                "current": self._device_signals["signals"][str(signal)]["value"],
+            }
+        return string_details
