@@ -174,7 +174,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         "function": "set_boolean",
                     }
             elif fct["type"] == "Enum":
-                options = json.loads(fct["values"])["range"]
+                values = json.loads(fct["values"])
+                options = list(values["translation"].values())
                 set_conf[fct["code"]] = {
                     "options": ",".join(options),
                     "args": ["new_val"],
@@ -233,6 +234,13 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
+        if "translation" in params["function_param"]["values"]:
+            for val in params["function_param"]["values"]["translation"]:
+                if (
+                    params["function_param"]["values"]["translation"][val]
+                    == params["new_val"]
+                ):
+                    params["new_val"] = val
         new_val = params["new_val"]
         if self._connected_device:
             await self._connected_device.set_dp(new_val, index)
@@ -423,6 +431,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             if value is True:
                 return "on"
             return "off"
+        elif schema["type"] == "Enum":
+            if "translation" in schema:
+                if value in schema["translation"]:
+                    return schema["translation"][value]
         return value
 
     def alpha_to_dec(self, s):
