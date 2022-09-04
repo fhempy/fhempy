@@ -488,6 +488,6 @@ class FusionSolarRestApi:
         for signal in (11001, 11004):
             string_details[f"string_pv{int((signal-11001)/3+1)}"] = {
                 "voltage": self._device_signals["signals"][str(signal)]["value"],
-                "current": self._device_signals["signals"][str(signal)]["value"],
+                "current": self._device_signals["signals"][str(signal + 1)]["value"],
             }
         return string_details
