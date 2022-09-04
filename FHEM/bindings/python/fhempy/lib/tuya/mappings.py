@@ -8217,6 +8217,15 @@ knownSchemas = {
                 "property": {
                     "range": ["0", "1", "2", "3", "4", "5", "6"],
                     "type": "enum",
+                    "translation": {
+                        "0": "45_degrees",
+                        "1": "60_degrees",
+                        "2": "85_degrees",
+                        "3": "100_degrees",
+                        "4": "start",
+                        "5": "keep_warm",
+                        "6": "cancel",
+                    },
                 },
                 "id": 101,
                 "type": "obj",
@@ -95373,7 +95382,10 @@ knownSchemas = {
                 "mode": "rw",
                 "code": "Mode",
                 "name": "模式",
-                "property": {"range": ["auto", "50_per", "100_per", "off"], "type": "enum"},
+                "property": {
+                    "range": ["auto", "50_per", "100_per", "off"],
+                    "type": "enum",
+                },
                 "iconname": "icon-dp_mode",
                 "id": 4,
                 "type": "obj",
