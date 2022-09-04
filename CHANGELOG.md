@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.450 (2022-09-04)
+### Fix
+* **fusionsolar:** Fix pv string current reading ([`1e94c42`](https://github.com/dominikkarall/fhempy/commit/1e94c428b7dcafdaea057d6a0f139530fecfc276))
+* **github_backup:** Fix sha compare ([`96a7c07`](https://github.com/dominikkarall/fhempy/commit/96a7c072f0146bbe1bba3e3a859038a12734f10e))
+
 ## v0.1.449 (2022-09-03)
 ### Feature
 * **tuya:** Add kettle support ([`92d5a09`](https://github.com/dominikkarall/fhempy/commit/92d5a09428946a43a957fd982d2ca1457973db87))
