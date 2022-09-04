@@ -121,7 +121,7 @@ class github_backup(generic.FhemModule):
         fh = open(filename, "rb")
         f_content = fh.read()
         fh.close()
-        sha = hashlib.sha1(f_content)
+        sha = hashlib.sha256(f_content)
         b64_bytes = base64.b64encode(f_content)
         return b64_bytes.decode("ascii"), sha
 
