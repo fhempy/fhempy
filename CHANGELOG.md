@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.451 (2022-09-04)
+### Feature
+* **tuya:** Support translation in mappings ([`2875c31`](https://github.com/dominikkarall/fhempy/commit/2875c31507712241f14e64af6da3d4aee499d85e))
+
 ## v0.1.450 (2022-09-04)
 ### Fix
 * **fusionsolar:** Fix pv string current reading ([`1e94c42`](https://github.com/dominikkarall/fhempy/commit/1e94c428b7dcafdaea057d6a0f139530fecfc276))
