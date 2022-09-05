@@ -237,9 +237,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
-        params["function_param"]["values"] = json.loads(
-            params["function_param"]["values"]
-        )
+        if type(params["function_param"]["values"]) is str:
+            params["function_param"]["values"] = json.loads(
+                params["function_param"]["values"]
+            )
         if "translation" in params["function_param"]["values"]:
             for val in params["function_param"]["values"]["translation"].keys():
                 if (
