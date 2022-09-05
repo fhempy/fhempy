@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.454 (2022-09-05)
+### Feature
+* **skodaconnect:** Update base lib ([`811efce`](https://github.com/dominikkarall/fhempy/commit/811efce3ff4e6c906b3b9de05c6beae4edd6ec55))
+
 ## v0.1.453 (2022-09-05)
 ### Fix
 * **tuya:** Fix translation error for local devices ([`7fd5dcb`](https://github.com/dominikkarall/fhempy/commit/7fd5dcbca46f47f852dbeaae4122ad33356a527f))
