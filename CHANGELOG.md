@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.456 (2022-09-05)
+### Fix
+* **tuya:** Fix json loads ([`5037a89`](https://github.com/dominikkarall/fhempy/commit/5037a89b300e2220c2a01b398101f345838c8552))
+
 ## v0.1.455 (2022-09-05)
 ### Fix
 * **tuya:** Fix translation again ([`754061d`](https://github.com/dominikkarall/fhempy/commit/754061dbd2ee2eba7c46eb4b0df13a38085077ed))
