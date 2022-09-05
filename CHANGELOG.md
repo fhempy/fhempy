@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.452 (2022-09-05)
+### Fix
+* **tuya:** Fix set translation ([`6aac36d`](https://github.com/dominikkarall/fhempy/commit/6aac36d1fb1cea1a11d6bb5128e15dbcdaefa779))
+
 ## v0.1.451 (2022-09-04)
 ### Feature
 * **tuya:** Support translation in mappings ([`2875c31`](https://github.com/dominikkarall/fhempy/commit/2875c31507712241f14e64af6da3d4aee499d85e))
