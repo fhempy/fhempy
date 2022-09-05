@@ -235,7 +235,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
         if "translation" in params["function_param"]["values"]:
-            for val in params["function_param"]["values"]["translation"]:
+            for val in params["function_param"]["values"]["translation"].keys():
                 if (
                     params["function_param"]["values"]["translation"][val]
                     == params["new_val"]
