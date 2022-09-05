@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.453 (2022-09-05)
+### Fix
+* **tuya:** Fix translation error for local devices ([`7fd5dcb`](https://github.com/dominikkarall/fhempy/commit/7fd5dcbca46f47f852dbeaae4122ad33356a527f))
+
 ## v0.1.452 (2022-09-05)
 ### Fix
 * **tuya:** Fix set translation ([`6aac36d`](https://github.com/dominikkarall/fhempy/commit/6aac36d1fb1cea1a11d6bb5128e15dbcdaefa779))
