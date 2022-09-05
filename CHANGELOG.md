@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.455 (2022-09-05)
+### Fix
+* **tuya:** Fix translation again ([`754061d`](https://github.com/dominikkarall/fhempy/commit/754061dbd2ee2eba7c46eb4b0df13a38085077ed))
+
 ## v0.1.454 (2022-09-05)
 ### Feature
 * **skodaconnect:** Update base lib ([`811efce`](https://github.com/dominikkarall/fhempy/commit/811efce3ff4e6c906b3b9de05c6beae4edd6ec55))
