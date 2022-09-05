@@ -175,7 +175,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     }
             elif fct["type"] == "Enum":
                 values = json.loads(fct["values"])
-                options = list(values["translation"].values())
+                if "translation" in values:
+                    options = list(values["translation"].values())
+                else:
+                    options = values["range"]
                 set_conf[fct["code"]] = {
                     "options": ",".join(options),
                     "args": ["new_val"],
