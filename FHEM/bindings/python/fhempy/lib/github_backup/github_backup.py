@@ -146,7 +146,10 @@ class github_backup(generic.FhemModule):
                 return True
 
             # upload file
-            data_msg = {"message": "fhempy backup", "content": content}
+            data_msg = {
+                "message": f"{self.directory} - {filename} backup",
+                "content": content,
+            }
             if f_sha:
                 data_msg["sha"] = f_sha
 
