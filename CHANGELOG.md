@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.457 (2022-09-06)
+### Fix
+* **fhempy:** Fix memory leak ([`45f8909`](https://github.com/dominikkarall/fhempy/commit/45f89092b95a7335322897f8d832970a875d9646))
+
 ## v0.1.456 (2022-09-05)
 ### Fix
 * **tuya:** Fix json loads ([`5037a89`](https://github.com/dominikkarall/fhempy/commit/5037a89b300e2220c2a01b398101f345838c8552))
