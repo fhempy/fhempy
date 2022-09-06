@@ -155,8 +155,18 @@ class fhempy:
                 time_finished = time.time()
                 time_duration = (time_finished - time_received) * 1000
                 if time_duration > 5000:
-                    logger.error(f"fhempy took {time_duration:.0f}ms for {payload}")
+                    logger.warning(f"fhempy took {time_duration:.0f}ms for {payload}")
                 del self.msg_received_time[hash["id"]]
+
+                # cleanup old messages
+                for id in self.msg_received_time:
+                    time_received = self.msg_received_time[id]["time"]
+                    time_duration = (time_finished - time_received) * 1000
+                    if time_duration > 60000:
+                        logger.error(
+                            f"fhempy didn't send response for {time_duration}ms"
+                        )
+                        del self.msg_received_time[id]
 
     async def onMessage(self, payload):
         try:
@@ -192,12 +202,6 @@ class fhempy:
             fct_timeout = 10
 
         try:
-            if "id" in hash:
-                time_received = time.time()
-                self.msg_received_time[hash["id"]] = {
-                    "time": time_received,
-                    "payload": payload,
-                }
             await self.handle_message(msg, hash)
         except Exception:
             logger.error("Failed to handle message: ", exc_info=True)
@@ -218,6 +222,12 @@ class fhempy:
             elif hash["msgtype"] == "restart":
                 await self.restart(hash)
             elif hash["msgtype"] == "function":
+                if "id" in hash:
+                    time_received = time.time()
+                    self.msg_received_time[hash["id"]] = {
+                        "time": time_received,
+                        "payload": msg,
+                    }
                 await self.handle_function(hash, msg)
             elif hash["msgtype"] == "event":
                 await self.handle_event(hash, msg)
