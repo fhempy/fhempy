@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.458 (2022-09-08)
+### Feature
+* **github_backup:** Improve commit message ([`dfb29ed`](https://github.com/dominikkarall/fhempy/commit/dfb29ed138ad4631e907c20c7a88af47c9ce1eb2))
+
+### Fix
+* **skodaconnect:** Update Base Lib ([#88](https://github.com/dominikkarall/fhempy/issues/88)) ([`b2d2c8f`](https://github.com/dominikkarall/fhempy/commit/b2d2c8f14676cd3ab12374ef6981cd57942faa16))
+
 ## v0.1.457 (2022-09-06)
 ### Fix
 * **fhempy:** Fix memory leak ([`45f8909`](https://github.com/dominikkarall/fhempy/commit/45f89092b95a7335322897f8d832970a875d9646))
