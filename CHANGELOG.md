@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.460 (2022-09-09)
+### Fix
+* **kia_hyundai:** Fix name of dateutil ([`ad28c6b`](https://github.com/dominikkarall/fhempy/commit/ad28c6bd7195fe5c3c8a24fe0f62d954f933c166))
+
 ## v0.1.459 (2022-09-09)
 ### Fix
 * **kia_hyundai:** Add dateutil ([`da3d112`](https://github.com/dominikkarall/fhempy/commit/da3d1125d4da5963024b32a5fc3fb8ded5f88171))
