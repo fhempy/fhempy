@@ -3,6 +3,6 @@
     "push_receiver==0.1.1",
     "curlify",
     "bs4",
-    "python-dateuti==2.8.2"
+    "python-dateutil==2.8.2"
   ]
 }
