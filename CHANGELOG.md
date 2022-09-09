@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.461 (2022-09-09)
+### Fix
+* **github_backup:** Only update file if sha1 sum changes ([`3cc7b7a`](https://github.com/dominikkarall/fhempy/commit/3cc7b7a2e9c68500ea556f5c51ea39aea134640c))
+* **kia_hyundai:** Add pytz dependency ([`21eac89`](https://github.com/dominikkarall/fhempy/commit/21eac89b19f46af95e772b4925873cd78d813639))
+
 ## v0.1.460 (2022-09-09)
 ### Fix
 * **kia_hyundai:** Fix name of dateutil ([`ad28c6b`](https://github.com/dominikkarall/fhempy/commit/ad28c6bd7195fe5c3c8a24fe0f62d954f933c166))
