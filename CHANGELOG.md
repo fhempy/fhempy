@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.462 (2022-09-12)
+### Fix
+* **fhempy:** Fix docker installation? ([`31417aa`](https://github.com/dominikkarall/fhempy/commit/31417aa12d2dc4fa8ce71c069c0ca5064a14e433))
+
 ## v0.1.461 (2022-09-09)
 ### Fix
 * **github_backup:** Only update file if sha1 sum changes ([`3cc7b7a`](https://github.com/dominikkarall/fhempy/commit/3cc7b7a2e9c68500ea556f5c51ea39aea134640c))
