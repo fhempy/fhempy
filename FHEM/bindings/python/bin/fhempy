@@ -100,7 +100,7 @@ try:
     import fhempy.lib.fhem_pythonbinding as fpb
 except ImportError:
     logging.getLogger(__name__).exception("Failed to load fhempy")
-    if install_package("fhempy>=0.1.12") is False:
+    if install_package("fhempy>=0.1.12", **kwargs) is False:
         logging.getLogger(__name__).error("Failed to install fhempy, exit now...")
         time.sleep(60)
         sys.exit(1)
