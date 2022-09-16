@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.463 (2022-09-16)
+### Feature
+* **blue_connect:** Initial version ([`fa0b3fd`](https://github.com/dominikkarall/fhempy/commit/fa0b3fd6a156bffab9a740d7016a5e167780c5e8))
+* **fhempy:** Force version update ([`4ac7a31`](https://github.com/dominikkarall/fhempy/commit/4ac7a31dd5cf792d9ede472928b4c7f2a1d447a4))
+
+### Fix
+* **blue_connect:** Add retries ([`49a8833`](https://github.com/dominikkarall/fhempy/commit/49a88330c07754631c990d8b86c74f111629cdcc))
+
 ## v0.1.462 (2022-09-12)
 ### Fix
 * **fhempy:** Fix docker installation? ([`31417aa`](https://github.com/dominikkarall/fhempy/commit/31417aa12d2dc4fa8ce71c069c0ca5064a14e433))
