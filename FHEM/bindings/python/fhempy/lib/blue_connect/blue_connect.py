@@ -24,7 +24,7 @@ class blue_connect(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        if len(args) < 4:
+        if len(args) != 4:
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
@@ -54,10 +54,15 @@ class blue_connect(generic.FhemModule):
         self.water_orp = float(raw_orp) / 4
 
     def blocking_measure(self):
-        # enable notifications
-        self._conn.write_characteristic(0x0014, b"\x01\x00")
-        # start measuring
-        self._conn.write_characteristic(0x0012, b"\x01")
+        for cnt in range(0, 5):
+            try:
+                # enable notifications
+                self._conn.write_characteristic(0x0014, b"\x01\x00")
+                # start measuring
+                self._conn.write_characteristic(0x0012, b"\x01")
+                break
+            except Exception:
+                self.logger.exception("Failed to write characteristics")
 
     async def update_loop(self):
         while True:
