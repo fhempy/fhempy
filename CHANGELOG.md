@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.464 (2022-09-18)
+### Fix
+* **blue_connect:** Fix blue connect ([`63a0356`](https://github.com/dominikkarall/fhempy/commit/63a0356e36b242dad06c52cfca7f95a982d4aae2))
+
 ## v0.1.463 (2022-09-16)
 ### Feature
 * **blue_connect:** Initial version ([`fa0b3fd`](https://github.com/dominikkarall/fhempy/commit/fa0b3fd6a156bffab9a740d7016a5e167780c5e8))
