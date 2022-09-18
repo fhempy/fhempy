@@ -1,5 +1,7 @@
 import asyncio
+import codecs
 import functools
+import time
 
 from .. import fhem, generic, utils
 from ..core.ble import BTLEConnection
@@ -43,7 +45,8 @@ class blue_connect(generic.FhemModule):
     async def set_measure(self, hash, params):
         self.create_async_task(self.measure_once())
 
-    def received_notification(self, raw_measurement):
+    def received_notification(self, data):
+        raw_measurement = codecs.encode(data, "hex")
         raw_temp = int(raw_measurement[4:6] + raw_measurement[2:4], 16)
         self.water_temp = float(raw_temp) / 100
 
@@ -59,10 +62,11 @@ class blue_connect(generic.FhemModule):
                 # enable notifications
                 self._conn.write_characteristic(0x0014, b"\x01\x00")
                 # start measuring
-                self._conn.write_characteristic(0x0012, b"\x01")
+                self._conn.write_characteristic(0x0012, b"\x01", 60)
                 break
             except Exception:
                 self.logger.exception("Failed to write characteristics")
+                time.sleep(5)
 
     async def update_loop(self):
         while True:
