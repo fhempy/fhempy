@@ -1,7 +1,6 @@
 import asyncio
 import codecs
 import functools
-import time
 
 from .. import fhem, generic, utils
 from ..core.ble import BTLEConnection
@@ -32,7 +31,7 @@ class blue_connect(generic.FhemModule):
         self.hash["MAC"] = self._mac
         self._conn = BTLEConnection(
             self._mac,
-            keep_connected=True,
+            keep_connected=False,
         )
         self._conn.set_callback("all", self.received_notification)
         self.create_async_task(self.update_loop())
@@ -51,10 +50,10 @@ class blue_connect(generic.FhemModule):
         self.water_temp = float(raw_temp) / 100
 
         raw_ph = int(raw_measurement[8:10] + raw_measurement[6:8], 16)
-        self.water_ph = (float(0x0800) - float(raw_ph)) / 232 + 7
+        self.water_ph = round((float(0x0800) - float(raw_ph)) / 232 + 7, 2)
 
         raw_orp = int(raw_measurement[12:14] + raw_measurement[10:12], 16)
-        self.water_orp = float(raw_orp) / 4
+        self.water_orp = round(float(raw_orp) / 4)
 
     def blocking_measure(self):
         for cnt in range(0, 5):
@@ -85,4 +84,37 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
+
+        state = []
+        if self.water_ph < 7.2:
+            state.append(
+                f"Ph: {self.water_ph} too low, diff {round(7.2-self.water_ph, 2)}"
+            )
+            await fhem.readingsBulkUpdate(self.hash, "ph_state", "low")
+        elif self.water_ph > 7.7:
+            state.append(
+                f"Ph: {self.water_ph} too high, diff {round(7.7-self.water_ph, 2)}"
+            )
+            await fhem.readingsBulkUpdate(self.hash, "ph_state", "high")
+        else:
+            await fhem.readingsBulkUpdate(self.hash, "ph_state", "ok")
+
+        if self.water_orp < 550:
+            state.append(
+                f"ORP: {self.water_orp} too low, diff {round(550-self.water_orp)}"
+            )
+            await fhem.readingsBulkUpdate(self.hash, "orp_state", "low")
+        elif self.water_orp > 650:
+            state.append(
+                f"ORP: {self.water_orp} too high, diff {round(650-self.water_orp)}"
+            )
+            await fhem.readingsBulkUpdate(self.hash, "orp_state", "high")
+        else:
+            await fhem.readingsBulkUpdate(self.hash, "orp_state", "ok")
+
+        if len(state) == 0:
+            state = ["ok"]
+
+        await fhem.readingsBulkUpdate(self.hash, "state", ", ".join(state))
+
         await fhem.readingsEndUpdate(self.hash, 1)
