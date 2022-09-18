@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.467 (2022-09-18)
+### Fix
+* **blue_connect:** Fix retry ([`14e29d8`](https://github.com/dominikkarall/fhempy/commit/14e29d8fccaf97b4ea55ae9ab9bcc349a324aadd))
+
 ## v0.1.466 (2022-09-18)
 ### Feature
 * **esphome:** Update to 2022.8.3 ([`eb93ae9`](https://github.com/dominikkarall/fhempy/commit/eb93ae95cf9451fbb239f73ea399f5e70ec734f7))
