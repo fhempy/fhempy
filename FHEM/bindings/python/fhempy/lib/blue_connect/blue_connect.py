@@ -1,6 +1,7 @@
 import asyncio
 import codecs
 import functools
+import time
 
 from .. import fhem, generic, utils
 from ..core.ble import BTLEConnection
