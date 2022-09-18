@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.465 (2022-09-18)
+### Feature
+* **blue_connect:** Add state reading and ph/orp_state reading ([`fd682b8`](https://github.com/dominikkarall/fhempy/commit/fd682b865d40ccba5073120e528b6e91990cf2b3))
+
 ## v0.1.464 (2022-09-18)
 ### Fix
 * **blue_connect:** Fix blue connect ([`63a0356`](https://github.com/dominikkarall/fhempy/commit/63a0356e36b242dad06c52cfca7f95a982d4aae2))
