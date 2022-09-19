@@ -46,14 +46,14 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(self.measure_once())
 
     def received_notification(self, data):
-        raw_measurement = codecs.encode(data, "hex")
-        raw_temp = int(raw_measurement[4:6] + raw_measurement[2:4], 16)
+        self.raw_measurement = codecs.encode(data, "hex")
+        raw_temp = int(self.raw_measurement[4:6] + self.raw_measurement[2:4], 16)
         self.water_temp = float(raw_temp) / 100
 
-        raw_ph = int(raw_measurement[8:10] + raw_measurement[6:8], 16)
+        raw_ph = int(self.raw_measurement[8:10] + self.raw_measurement[6:8], 16)
         self.water_ph = round((float(0x0800) - float(raw_ph)) / 232 + 7, 2)
 
-        raw_orp = int(raw_measurement[12:14] + raw_measurement[10:12], 16)
+        raw_orp = int(self.raw_measurement[12:14] + self.raw_measurement[10:12], 16)
         self.water_orp = round(float(raw_orp) / 4)
 
     def blocking_measure(self):
@@ -85,6 +85,7 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
+        await fhem.readingsBulkUpdate(self.hash, "raw", self.raw_measurement)
 
         state = []
         if self.water_ph < 7.2:
