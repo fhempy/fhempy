@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.468 (2022-09-19)
+### Feature
+* **blue_connect:** Add raw data reading ([`2d6b32c`](https://github.com/dominikkarall/fhempy/commit/2d6b32cee3dcc735baf68b2f047c1ce4510b2389))
+
 ## v0.1.467 (2022-09-18)
 ### Fix
 * **blue_connect:** Fix retry ([`14e29d8`](https://github.com/dominikkarall/fhempy/commit/14e29d8fccaf97b4ea55ae9ab9bcc349a324aadd))
