@@ -4,7 +4,7 @@ import functools
 import time
 
 from .. import fhem, generic, utils
-from ..core.ble import BTLEConnection
+from ..core import ble
 
 DEFAULT_TIMEOUT = 1
 
@@ -30,7 +30,7 @@ class blue_connect(generic.FhemModule):
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
-        self._conn = BTLEConnection(
+        self._conn = ble.BTLEConnection(
             self._mac,
             keep_connected=False,
         )

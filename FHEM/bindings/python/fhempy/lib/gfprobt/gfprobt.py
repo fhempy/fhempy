@@ -4,7 +4,7 @@ import struct
 import time
 
 from .. import fhem, generic, utils
-from ..core.ble import BTLEConnection
+from ..core import ble
 
 DEFAULT_TIMEOUT = 1
 
@@ -81,7 +81,7 @@ class gfprobt(generic.FhemModule):
             return "Usage: define irrigation_control fhempy gfprobt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
-        self._conn = BTLEConnection(
+        self._conn = ble.BTLEConnection(
             self._mac,
             keep_connected=True,
             connection_established_callback=self.write_password,
