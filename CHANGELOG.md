@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.470 (2022-09-20)
+### Fix
+* **blue_connect:** Do not round battery reading ([`b7a5ccb`](https://github.com/dominikkarall/fhempy/commit/b7a5ccb3ef1d4043dea4d0c3f753a8ed713296d2))
+
 ## v0.1.469 (2022-09-20)
 ### Feature
 * **blue_connect:** Support battery ([`f8d1360`](https://github.com/dominikkarall/fhempy/commit/f8d13603662a53ef6b19bf24fd0080c47c2a00ef))
