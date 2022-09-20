@@ -82,9 +82,10 @@ class blue_connect(generic.FhemModule):
             await asyncio.sleep(7200)
 
     async def measure_once(self):
-        self.water_temp = "0"
-        self.water_orp = "0"
-        self.water_ph = "0"
+        self.water_temp = 0
+        self.water_orp = 0
+        self.water_ph = 0
+        self.battery = 0
 
         async with self._ble_lock:
             await utils.run_blocking(functools.partial(self.blocking_measure))
