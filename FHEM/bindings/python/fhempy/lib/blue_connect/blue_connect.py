@@ -57,7 +57,7 @@ class blue_connect(generic.FhemModule):
         self.water_orp = round(float(raw_orp) / 4)
 
         raw_battery = int(self.raw_measurement[20:22] + self.raw_measurement[18:20], 16)
-        self.battery = round(float(raw_battery) / 1000)
+        self.battery = float(raw_battery) / 1000
 
     def blocking_measure(self):
         for cnt in range(0, 5):
