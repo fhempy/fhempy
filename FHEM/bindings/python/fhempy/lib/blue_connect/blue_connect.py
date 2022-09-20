@@ -14,9 +14,9 @@ class blue_connect(generic.FhemModule):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
         self._conn = None
-        self.water_temp = "-"
-        self.water_orp = "-"
-        self.water_ph = "-"
+        self.water_temp = "0"
+        self.water_orp = "0"
+        self.water_ph = "0"
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
         }
@@ -56,6 +56,9 @@ class blue_connect(generic.FhemModule):
         raw_orp = int(self.raw_measurement[12:14] + self.raw_measurement[10:12], 16)
         self.water_orp = round(float(raw_orp) / 4)
 
+        raw_battery = int(self.raw_measurement[20:22] + self.raw_measurement[18:20], 16)
+        self.battery = round(float(raw_battery) / 1000)
+
     def blocking_measure(self):
         for cnt in range(0, 5):
             try:
@@ -79,6 +82,10 @@ class blue_connect(generic.FhemModule):
             await asyncio.sleep(7200)
 
     async def measure_once(self):
+        self.water_temp = "0"
+        self.water_orp = "0"
+        self.water_ph = "0"
+
         async with self._ble_lock:
             await utils.run_blocking(functools.partial(self.blocking_measure))
         await fhem.readingsBeginUpdate(self.hash)
@@ -86,6 +93,7 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
         await fhem.readingsBulkUpdate(self.hash, "raw", self.raw_measurement)
+        await fhem.readingsBulkUpdate(self.hash, "battery", self.battery)
 
         state = []
         if self.water_ph < 7.2:
