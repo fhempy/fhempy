@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.469 (2022-09-20)
+### Feature
+* **blue_connect:** Support battery ([`f8d1360`](https://github.com/dominikkarall/fhempy/commit/f8d13603662a53ef6b19bf24fd0080c47c2a00ef))
+
+### Fix
+* **blue_connect:** Set readings 0 on errors ([`7d8d27c`](https://github.com/dominikkarall/fhempy/commit/7d8d27ccfd929b120e717b61176db9485f0ca496))
+
 ## v0.1.468 (2022-09-19)
 ### Feature
 * **blue_connect:** Add raw data reading ([`2d6b32c`](https://github.com/dominikkarall/fhempy/commit/2d6b32cee3dcc735baf68b2f047c1ce4510b2389))
