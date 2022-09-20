@@ -56,6 +56,9 @@ class blue_connect(generic.FhemModule):
         raw_orp = int(self.raw_measurement[12:14] + self.raw_measurement[10:12], 16)
         self.water_orp = round(float(raw_orp) / 4)
 
+        raw_battery = int(self.raw_measurement[20:22] + self.raw_measurement[18:20], 16)
+        self.battery = round(float(raw_battery) / 1000)
+
     def blocking_measure(self):
         for cnt in range(0, 5):
             try:
@@ -90,6 +93,7 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
         await fhem.readingsBulkUpdate(self.hash, "raw", self.raw_measurement)
+        await fhem.readingsBulkUpdate(self.hash, "battery", self.battery)
 
         state = []
         if self.water_ph < 7.2:
