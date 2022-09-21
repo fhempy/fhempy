@@ -636,12 +636,12 @@ def handle_cmdline_options(opts):
 
 
 async def advertise_fhempy(ip, port):
-    logger.info("Advertise fhempy on local network")
     # running on remote peer, start zeroconf for autodiscovery
     if ip is None:
         local_ip = utils.get_local_ip()
     else:
         local_ip = ip
+    logger.info(f"Advertise fhempy on local network with {local_ip}:{port}")
     zc = zeroconf.get_instance(logger)
     global zc_info
     zc_info = await zc.register_service(

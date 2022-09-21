@@ -108,6 +108,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             # rename to values
             schema_part["values"] = schema_part["property"]
             schema_part["type"] = schema_part["values"]["type"]
+            schema_part["dp_id"] = schema_part["id"]
             schema_part["desc"] = ""
             schema_part["values"] = json.dumps(schema_part["values"])
             if schema_part["type"] == "bool":
@@ -393,6 +394,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await self.set_attr_dp(self.hash)
 
     async def setup_connection(self):
+        state_set = False
         while True:
             try:
                 self._connected_device = await pytuya.connect(
@@ -405,10 +407,13 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 )
                 break
             except Exception:
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, "state", "offline", 1
-                )
-                self.logger.exception("Failed to connect to device")
+                if not state_set:
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "offline", 1
+                    )
+                    state_set = True
+                    self.logger.error("Failed to connect to device")
+                # short sleep is required for passive devices
                 await asyncio.sleep(1)
 
     async def create_device(self):
