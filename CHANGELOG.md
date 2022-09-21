@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.473 (2022-09-21)
+### Feature
+* **tuya:** Support productid utzgmksz7zj66als ([`af599ff`](https://github.com/dominikkarall/fhempy/commit/af599ffa664085f34ce29aeb86195763f6d7e840))
+
+### Fix
+* **tuya:** Fix readings for local mapping ([`5f557cc`](https://github.com/dominikkarall/fhempy/commit/5f557cc3a453be89103707487cc2d667a459ace8))
+* **zigbee2mqtt:** Start z2m after update ([`f6687aa`](https://github.com/dominikkarall/fhempy/commit/f6687aa7a566b748469d88d4e62fbbbc42a4ee55))
+* **fhempy:** Better log when advertising fhempy on local network ([`bdff568`](https://github.com/dominikkarall/fhempy/commit/bdff5686eb9402e18c74aa733dba9fe7ee8021ed))
+
 ## v0.1.472 (2022-09-20)
 ### Fix
 * **gfprobt:** Fix circular import ([`5b4670b`](https://github.com/dominikkarall/fhempy/commit/5b4670b7a06c1ff14f651eb0f1c142fceb3e6188))
