@@ -95,6 +95,7 @@ class zigbee2mqtt(FhemModule):
                     )
 
             await fhem.readingsSingleUpdate(self.hash, "update", "successful", 1)
+            await self.start_process()
         except Exception:
             self.logger.exception("Failed to update")
             await fhem.readingsSingleUpdate(
