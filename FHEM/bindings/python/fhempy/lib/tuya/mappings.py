@@ -95176,6 +95176,77 @@ knownSchemas = {
             },
         ],
     },
+    "utzgmksz7zj66als": {
+        "schema": [
+            {
+                "mode": "rw",
+                "code": "Power",
+                "name": "开关",
+                "property": {"type": "bool"},
+                "iconname": "icon-dp_power2",
+                "id": 1,
+                "type": "obj",
+                "desc": "",
+            },
+            {
+                "mode": "rw",
+                "code": "TempSet",
+                "name": "目标温度",
+                "property": {
+                    "unit": "℃",
+                    "min": 10,
+                    "max": 49,
+                    "scale": 0,
+                    "step": 1,
+                    "type": "value",
+                },
+                "iconname": "icon-dp_temp",
+                "id": 2,
+                "type": "obj",
+                "desc": "",
+            },
+            {
+                "mode": "ro",
+                "code": "TempCurrent",
+                "name": "当前温度",
+                "property": {
+                    "unit": "℃",
+                    "min": 0,
+                    "max": 50,
+                    "scale": 0,
+                    "step": 1,
+                    "type": "value",
+                },
+                "iconname": "icon-dp_sun",
+                "id": 3,
+                "type": "obj",
+                "desc": "",
+            },
+            {
+                "mode": "rw",
+                "code": "Mode",
+                "name": "模式",
+                "property": {
+                    "range": ["auto", "50_per", "100_per", "off"],
+                    "type": "enum",
+                },
+                "iconname": "icon-dp_mode",
+                "id": 4,
+                "type": "obj",
+                "desc": "",
+            },
+            {
+                "mode": "rw",
+                "code": "Shake",
+                "name": "摇头",
+                "property": {"type": "bool"},
+                "iconname": "icon-dp_shake",
+                "id": 7,
+                "type": "obj",
+                "desc": "",
+            },
+        ]
+    },
     "QgDtdkPRBJ9g360K": {
         "schema": [
             {
