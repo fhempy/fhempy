@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.476 (2022-09-24)
+### Feature
+* **meross:** Support thermostat ([`842ad75`](https://github.com/dominikkarall/fhempy/commit/842ad750590a47b3a518b4c7e3f8d939af79f60b))
+
 ## v0.1.475 (2022-09-24)
 ### Fix
 * **fhempy:** Fix max_payload_size websocket issues, add state info on first define ([`896ed11`](https://github.com/dominikkarall/fhempy/commit/896ed11ed34b1d6aed8db3522f06a5684c4937e0))
