@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.475 (2022-09-24)
+### Fix
+* **fhempy:** Fix max_payload_size websocket issues, add state info on first define ([`896ed11`](https://github.com/dominikkarall/fhempy/commit/896ed11ed34b1d6aed8db3522f06a5684c4937e0))
+
 ## v0.1.474 (2022-09-24)
 ### Fix
 * **tuya:** Fix values wrong format ([`8c44946`](https://github.com/dominikkarall/fhempy/commit/8c44946b1aafbf7ffb96183794a4d0a4d8d9082d))
