@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.474 (2022-09-24)
+### Fix
+* **tuya:** Fix values wrong format ([`8c44946`](https://github.com/dominikkarall/fhempy/commit/8c44946b1aafbf7ffb96183794a4d0a4d8d9082d))
+* **fhempy:** Recommend Python 3.8 or higher ([`1d44b53`](https://github.com/dominikkarall/fhempy/commit/1d44b538e79a2f01cca0e5ec96f66cc9ebe18aeb))
+
 ## v0.1.473 (2022-09-21)
 ### Feature
 * **tuya:** Support productid utzgmksz7zj66als ([`af599ff`](https://github.com/dominikkarall/fhempy/commit/af599ffa664085f34ce29aeb86195763f6d7e840))
