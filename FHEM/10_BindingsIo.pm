@@ -81,6 +81,8 @@ BindingsIo_Define($$$)
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
+  $hash->{frame}->{max_fragments_amount} = 1000;
+  $hash->{frame}->{max_payload_size} = 0;
   # send binary data via websocket
   $hash->{binary} = 1;
 
@@ -97,6 +99,12 @@ BindingsIo_Define($$$)
   }
   if ($init_done && $localServer == 0) {
     InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
+  }
+
+  if ($init_done == 0 && $localServer == 1) {
+    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)...", 1);
+    $hash->{installing} = 0;
+    InternalTimer(gettimeofday()+2, "BindingsIo_installing", $hash, 0);
   }
 
   # put in fhempy room
@@ -136,6 +144,24 @@ BindingsIo_Define($$$)
   }
 
   return undef;
+}
+
+sub
+BindingsIo_installing($) {
+  my ($hash) = @_;
+  my $state_reading = ReadingsVal($hash->{NAME}, "version", "");
+  if ($state_reading ne "") {
+    return undef;
+  }
+  if ($hash->{installing} == 0) {
+    readingsSingleUpdate($hash, "state", "Installing fhempy (15min).", 1);
+  } elsif ($hash->{installing} == 1) {
+    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)..", 1);
+  } elsif ($hash->{installing} == 2) {
+    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)...", 1);
+  }
+  $hash->{installing} = ($hash->{installing} + 1) % 3;
+  InternalTimer(gettimeofday()+2, "BindingsIo_installing", $hash, 0);
 }
 
 sub
