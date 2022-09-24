@@ -6,8 +6,9 @@ from meross_iot.controller.mixins.garage import GarageOpenerMixin
 from meross_iot.controller.mixins.light import LightMixin
 from meross_iot.controller.mixins.roller_shutter import RollerShutterTimerMixin
 from meross_iot.controller.mixins.spray import SprayMixin
+from meross_iot.controller.mixins.thermostat import ThermostatModeMixin
 from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
-from meross_iot.model.enums import Namespace, OnlineStatus, SprayMode
+from meross_iot.model.enums import Namespace, OnlineStatus, SprayMode, ThermostatMode
 
 
 class meross_device:
@@ -69,6 +70,20 @@ class meross_device:
             set_conf["open"] = {}
             set_conf["close"] = {}
 
+        if isinstance(self._device, ThermostatModeMixin):
+            set_conf["mode"] = {
+                "args": ["value"],
+                "options": "heat,cool,economy,auto,manual",
+                "function": "set_thermostat_mod",
+            }
+            set_conf["desiredTemp"] = {
+                "args": ["value"],
+                "options": "slider,5,0.5,30,1",
+                "format": "float",
+            }
+            set_conf["on"] = {"function": "set_thermostat_on"}
+            set_conf["off"] = {"function": "set_thermostat_off"}
+
         if isinstance(self._device, LightMixin):
             if self._device.get_supports_rgb():
                 set_conf["rgb"] = {"args": ["value"], "options": "colorpicker,RGB"}
@@ -92,6 +107,21 @@ class meross_device:
             set_conf["continuous"] = {}
 
         self.fhemdev.set_set_config(set_conf)
+
+    async def set_thermostat_mode(self, hash, params):
+        new_mode = ThermostatMode(params["value"].upper())
+        await self._device.async_set_thermostat_config(mode=new_mode)
+
+    async def set_thermostat_on(self, hash, params):
+        await self._device.async_set_thermostat_config(on_not_off=True)
+
+    async def set_thermostat_off(self, hash, params):
+        await self._device.async_set_thermostat_config(on_not_off=False)
+
+    async def set_desiredTemp(self, hash, params):
+        await self._device.async_set_thermostat_config(
+            manual_temperature_celsius=params["value"]
+        )
 
     async def set_intermittent(self, hash, params):
         await self._device.async_set_mode(SprayMode.INTERMITTENT)
@@ -258,6 +288,36 @@ class meross_device:
             rgb_tuple = self._device.get_rgb_color()
             rgb = f"{rgb_tuple[0]:02x}{rgb_tuple[1]:02x}{rgb_tuple[2]:02x}"
             await fhem.readingsBulkUpdateIfChanged(self.hash, "rgb", rgb)
+
+        if isinstance(self._device, ThermostatModeMixin):
+            thermostat_state = self._device.get_thermostat_state()
+            state_val = "on" if thermostat_state.is_on else "off"
+            mode = thermostat_state.mode
+            if mode:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "mode", mode.name.lower()
+                )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "desiredTemp", thermostat_state.target_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "min_temp", thermostat_state.min_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "max_temp", thermostat_state.max_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "heat_temp", thermostat_state.heat_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "cool_temp", thermostat_state.cool_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "eco_temp", thermostat_state.eco_temperature_celsius
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "manual_temp", thermostat_state.manual_temperature_celsius
+            )
 
         if isinstance(self._device, SprayMixin):
             mode = self._device.get_current_mode()
