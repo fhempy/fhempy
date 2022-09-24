@@ -110,7 +110,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             schema_part["type"] = schema_part["values"]["type"]
             schema_part["dp_id"] = schema_part["id"]
             schema_part["desc"] = ""
-            schema_part["values"] = json.dumps(schema_part["values"])
             if schema_part["type"] == "bool":
                 schema_part["type"] = "Boolean"
             elif schema_part["type"] == "value":
@@ -175,7 +174,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         "function": "set_boolean",
                     }
             elif fct["type"] == "Enum":
-                values = json.loads(fct["values"])
+                values = fct["values"]
                 if "translation" in values:
                     options = list(values["translation"].values())
                 else:
@@ -188,7 +187,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     "function": "set_other_types",
                 }
             elif fct["type"] == "Integer":
-                spec = json.loads(fct["values"])
+                spec = fct["values"]
                 slider = f"slider,{spec['min']},{spec['step']},{spec['max']}"
                 set_conf[fct["code"]] = {
                     "options": slider,
@@ -238,10 +237,6 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
-        if type(params["function_param"]["values"]) is str:
-            params["function_param"]["values"] = json.loads(
-                params["function_param"]["values"]
-            )
         if "translation" in params["function_param"]["values"]:
             for val in params["function_param"]["values"]["translation"].keys():
                 if (
@@ -263,6 +258,12 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         )
         self.tuya_spec_functions = ast.literal_eval(self.tuya_spec_functions)
         self.tuya_spec_status = ast.literal_eval(self.tuya_spec_status)
+
+        self._convert_values_to_json()
+
+    def _convert_values_to_json(self):
+        for spec in self.tuya_spec_functions + self.tuya_spec_status:
+            spec["values"] = json.loads(spec["values"])
 
     # get functions/status from tuya
     async def get_tuya_dev_specification(self):
@@ -315,6 +316,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         spec = await self.get_tuya_dev_specification()
         self.tuya_spec_functions = spec["functions"]
         self.tuya_spec_status = spec["status"]
+        self._convert_values_to_json()
         desc = await self.get_tuya_dev_description()
         self.tuya_spec_functions = await self._add_desc_to_spec(
             self.tuya_spec_functions, desc
@@ -437,7 +439,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     def convert(self, value, schema):
         if schema["type"] == "Integer":
-            values = json.loads(schema["values"])
+            values = schema["values"]
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
