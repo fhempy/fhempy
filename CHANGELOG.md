@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.477 (2022-09-25)
+### Feature
+* **fhempy:** Add healthcheck possibility ([`11e2ef8`](https://github.com/dominikkarall/fhempy/commit/11e2ef8b700e5be56d0014bfb328c94948e3378f))
+
+### Fix
+* **tuya:** Do not rais exception on CancelledError ([`f9fe2f9`](https://github.com/dominikkarall/fhempy/commit/f9fe2f9a61c87d872c20a05254cc57f34489d937))
+* **google_weather:** Use several user agent strings ([`7b0730c`](https://github.com/dominikkarall/fhempy/commit/7b0730c93ecff146a0df39d0a46c201e1303fef0))
+* **fhempy:** Improve log message ([`47598df`](https://github.com/dominikkarall/fhempy/commit/47598df0563c069983c73b5543280df2610d9c4f))
+* **blue_connect:** Try to connect 10 times every 10s on failure ([`2571ab1`](https://github.com/dominikkarall/fhempy/commit/2571ab175d6eb29814ebc4bbadbdab7aa1acd2b0))
+
 ## v0.1.476 (2022-09-24)
 ### Feature
 * **meross:** Support thermostat ([`842ad75`](https://github.com/dominikkarall/fhempy/commit/842ad750590a47b3a518b4c7e3f8d939af79f60b))
