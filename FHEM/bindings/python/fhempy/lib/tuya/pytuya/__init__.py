@@ -394,7 +394,7 @@ class TuyaProtocol(asyncio.Protocol, ContextualLogger):
                     await asyncio.sleep(HEARTBEAT_INTERVAL)
                 except asyncio.CancelledError:
                     self.debug("Stopped heartbeat loop")
-                    raise
+                    break
                 except asyncio.TimeoutError:
                     self.debug("Heartbeat failed due to timeout, disconnecting")
                     break

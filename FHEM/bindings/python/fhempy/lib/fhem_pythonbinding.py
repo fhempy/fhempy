@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import getopt
+import http
 import importlib
 import json
 import logging
@@ -189,6 +190,7 @@ class fhempy:
         logger.debug(">>> WS: " + msg)
         hash = None
         try:
+            await asyncio.sleep(0)
             hash = json.loads(msg)
             # keep this for one year (written on 11.10.2021)
             if "PYTHONTYPE" in hash:
@@ -431,7 +433,7 @@ class fhempy:
                     try:
                         ret = await asyncio.wait_for(func(hash), fct_timeout)
                     except Exception:
-                        logger.exception("Undefine failed")
+                        logger.exception(f"Undefine failed for {hash['NAME']}")
                 else:
                     ret = await asyncio.wait_for(
                         func(hash, hash["args"], hash["argsh"]),
@@ -584,6 +586,11 @@ def usage():
     print("  --help    This help text")
 
 
+async def health_check(path, request_headers):
+    if path == "/healthcheck":
+        return http.HTTPStatus.OK, [], b"OK\n"
+
+
 async def async_main():
     try:
         opts, args = getopt.getopt(
@@ -607,7 +614,12 @@ async def async_main():
 
     logger.info("Waiting for FHEM connection")
     async with websockets.serve(
-        pybinding, "0.0.0.0", port, ping_timeout=None, ping_interval=None
+        pybinding,
+        "0.0.0.0",
+        port,
+        ping_timeout=None,
+        ping_interval=None,
+        process_request=health_check,
     ):
         await stop_event.wait()
 

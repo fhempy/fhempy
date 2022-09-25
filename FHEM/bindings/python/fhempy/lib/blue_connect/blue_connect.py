@@ -60,7 +60,7 @@ class blue_connect(generic.FhemModule):
         self.battery = float(raw_battery) / 1000
 
     def blocking_measure(self):
-        for cnt in range(0, 5):
+        for cnt in range(0, 10):
             try:
                 # enable notifications
                 self._conn.write_characteristic(0x0014, b"\x01\x00")
@@ -69,7 +69,7 @@ class blue_connect(generic.FhemModule):
                 break
             except Exception:
                 self.logger.exception("Failed to write characteristics")
-                time.sleep(5)
+                time.sleep(10)
 
     async def update_loop(self):
         while True:

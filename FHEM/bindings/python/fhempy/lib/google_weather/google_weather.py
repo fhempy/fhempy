@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+from random import randrange
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -33,6 +34,46 @@ class google_weather(generic.FhemModule):
 
         self.create_async_task(self.update_loop())
 
+    def set_user_agent(self, headers):
+        user_agent = [
+            (
+                "Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
+            ),
+            (
+                "Mozilla/5.0 (X11; CrOS x86_64 15054.63.0) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+            ),
+        ]
+        sec_ch_ua = [
+            '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
+            '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+        ]
+        sec_ch_full_version = ['"104.0.5112.83"', '"106.0.5249.49"']
+        sec_ch_full_version_list = [
+            (
+                '"Chromium";v="104.0.5112.83", " Not A;Brand";v="99.0.0.0", '
+                '"Google Chrome";v="104.0.5112.83"'
+            ),
+            (
+                '"Chromium";v="106.0.5249.49", "Google Chrome";v="106.0.5249.49",'
+                ' "Not;A=Brand";v="99.0.0.0"'
+            ),
+        ]
+        sec_ch_ua_platform_version = ['"14909.100.0"', '"15054.63.0"']
+        ua_id = randrange(len(user_agent))
+        headers["user-agent"] = user_agent[ua_id]
+        headers["sec-ch-ua"] = sec_ch_ua[ua_id]
+        headers["sec-ch-ua-full-version"] = sec_ch_full_version[ua_id]
+        headers["sec-ch-ua-full-version-list"] = sec_ch_full_version_list[ua_id]
+        headers["sec-ch-ua-platform-version"] = sec_ch_ua_platform_version[ua_id]
+        headers["sec-ch-ua-arch"] = '"x86"'
+        headers["sec-ch-ua-bitness"] = '"64"'
+        headers["sec-ch-ua-mobile"] = "?0"
+        headers["sec-ch-ua-model"] = '""'
+        headers["sec-ch-ua-platform"] = '"Chrome OS"'
+        headers["sec-ch-ua-wow64"] = "?0"
+
     async def update_loop(self):
         headers = {
             "accept": (
@@ -43,25 +84,6 @@ class google_weather(generic.FhemModule):
             "accept-language": (
                 "en-DE,en;q=0.9,de-DE;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
             ),
-            "user-agent": (
-                "Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36"
-                " (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
-            ),
-            "sec-ch-ua": (
-                '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"'
-            ),
-            "sec-ch-ua-arch": '"x86"',
-            "sec-ch-ua-bitness": '"64"',
-            "sec-ch-ua-full-version": '"104.0.5112.83"',
-            "sec-ch-ua-full-version-list": (
-                '"Chromium";v="104.0.5112.83", " Not A;Brand";v="99.0.0.0", '
-                '"Google Chrome";v="104.0.5112.83"'
-            ),
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-model": '""',
-            "sec-ch-ua-platform": '"Chrome OS"',
-            "sec-ch-ua-platform-version": '"14909.100.0"',
-            "sec-ch-ua-wow64": "?0",
             "sec-fetch-dest": "document",
             "sec-fetch-mode": "navigate",
             "sec-fetch-site": "none",
@@ -72,6 +94,8 @@ class google_weather(generic.FhemModule):
                 "supervised=false,consistency_enabled_by_default=false"
             ),
         }
+        self.set_user_agent(headers)
+
         while True:
             # aiohttp get
             try:

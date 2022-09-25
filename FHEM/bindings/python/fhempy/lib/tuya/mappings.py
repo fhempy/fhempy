@@ -1,3 +1,5 @@
+# file contents from https://github.com/Apollon77/ioBroker.tuya/blob/master/lib/schema.json
+
 knownSchemas = {
     "8FAPq5h6gdV51Vcr": {
         "schema": [
