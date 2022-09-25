@@ -359,6 +359,7 @@ async def send_and_wait(name, cmd):
 
 async def sendCommandName(name, cmd, hash=None):
     ret = ""
+    timeout = 60
     try:
         logger.debug("sendCommandName START")
         while len(function_active) != 0:
@@ -366,11 +367,11 @@ async def sendCommandName(name, cmd, hash=None):
                 break
             await asyncio.sleep(0.001)
         # wait max 60s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 60)
+        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
         logger.debug("sendCommandName END")
         ret = json.loads(jsonmsg)["result"]
     except asyncio.TimeoutError:
-        logger.error("Timeout - NO RESPONSE for command: " + cmd)
+        logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
     except asyncio.CancelledError:
         # task was cancelled
