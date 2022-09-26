@@ -348,12 +348,8 @@ BindingsIo_Write($$$$$) {
   my $returnval = "";
   my $t1 = time * 1000;
   while (1) {
-    if (!DevIo_IsOpen($hash)) {
-      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Connection closed while waiting for function to finish (id: $waitingForId)";
-      while (my ($key, $value) = each (%msg))
-      {
-        Log3 $hash, 1, "  $key =>  $msg{$key}";
-      }
+    if (not defined(DevIo_IsOpen($hash))) {
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): WARNING: Connection closed while waiting for function to finish (id: $waitingForId)";
       last;
     }
     my $t2 = time * 1000;
