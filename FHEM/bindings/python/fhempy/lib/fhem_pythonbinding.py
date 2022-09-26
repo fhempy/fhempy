@@ -78,6 +78,7 @@ async def pybinding(websocket, path):
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
+            await asyncio.sleep(0)
     except asyncio.CancelledError:
         pass
     except websockets.exceptions.ConnectionClosedError:
