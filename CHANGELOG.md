@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.479 (2022-09-26)
+### Fix
+* **fhempy:** Make DevIo_IsOpen call more clear ([`2216284`](https://github.com/dominikkarall/fhempy/commit/2216284cfed0159cf991ebd06fab4d391e00b6ae))
+* **fhempy:** Better connection closed handling ([`c59119f`](https://github.com/dominikkarall/fhempy/commit/c59119fec1dc26963898c93d2e9e7ee221b32c2e))
+
 ## v0.1.478 (2022-09-26)
 ### Fix
 * **fhempy:** Fix asyncio warnings for WebSocketServerProtocol.handler() ([`cf11e97`](https://github.com/dominikkarall/fhempy/commit/cf11e97054c43d701ad9a864e834540ab6236ff7))
