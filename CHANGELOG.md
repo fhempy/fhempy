@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.478 (2022-09-26)
+### Fix
+* **fhempy:** Fix asyncio warnings for WebSocketServerProtocol.handler() ([`cf11e97`](https://github.com/dominikkarall/fhempy/commit/cf11e97054c43d701ad9a864e834540ab6236ff7))
+
 ## v0.1.477 (2022-09-25)
 ### Feature
 * **fhempy:** Add healthcheck possibility ([`11e2ef8`](https://github.com/dominikkarall/fhempy/commit/11e2ef8b700e5be56d0014bfb328c94948e3378f))
