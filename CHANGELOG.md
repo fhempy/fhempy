@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.481 (2022-09-27)
+### Feature
+* **tuya:** Add translation for kettle state ([`eafac0c`](https://github.com/dominikkarall/fhempy/commit/eafac0c06c4ff3e9a17decd2f4c3b9c52edd1596))
+
+### Fix
+* **tuya:** Use online reading for online/offline state ([`dd75bf3`](https://github.com/dominikkarall/fhempy/commit/dd75bf33a4e9bb9986ffe6009cde25d3e0d974c4))
+
 ## v0.1.480 (2022-09-27)
 ### Fix
 * **fhempy:** Support ws msgs up to 10MiB ([`87bfd3e`](https://github.com/dominikkarall/fhempy/commit/87bfd3e8baf6a6974ce6fe3caec617d7726877da))
