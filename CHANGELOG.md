@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.483 (2022-09-27)
+### Fix
+* **tuya:** Fix translation for enums ([`348e176`](https://github.com/dominikkarall/fhempy/commit/348e176c67360efcda6855305901a668f1afe850))
+
 ## v0.1.482 (2022-09-27)
 ### Fix
 * **googlecast:** Update youtube_dl/spotipy ([`6d94d69`](https://github.com/dominikkarall/fhempy/commit/6d94d697e86d2448c45606e096116af274500b67))
