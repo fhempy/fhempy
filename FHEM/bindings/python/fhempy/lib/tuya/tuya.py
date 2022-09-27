@@ -52,7 +52,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             self.create_async_task(self.setup_cloud())
             return
 
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1)
         self.tt_region = "eu"
         self.tt_did = args[4]
         self.tt_ip = args[5]
@@ -411,7 +411,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             except Exception:
                 if not state_set:
                     await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "state", "offline", 1
+                        self.hash, "online", "0", 1
                     )
                     state_set = True
                     self.logger.error("Failed to connect to device")
@@ -432,7 +432,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             self.logger.exception("Failed create_device")
 
     async def async_disconnected(self):
-        await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+        await fhem.readingsSingleUpdate(self.hash, "online", "0", 1)
         self._connected_device = None
         await asyncio.sleep(5)
         await self.setup_connection()
@@ -519,7 +519,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                             reading = "state"
                             stateused = True
                         self.logger.debug(
-                            f"handle type {st['type']} for dp_id {st['dp_id']} with value {status[dp]}"
+                            f"handle type {st['type']} for dp_id "
+                            f"{st['dp_id']} with value {status[dp]}"
                         )
                         if st["type"] == "Json":
                             flat_json = self.convert_json(status[dp], st)
@@ -544,7 +545,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         status[dp],
                     )
             if not stateused:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "online", "1")
         except Exception:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
