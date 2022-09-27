@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.482 (2022-09-27)
+### Fix
+* **googlecast:** Update youtube_dl/spotipy ([`6d94d69`](https://github.com/dominikkarall/fhempy/commit/6d94d697e86d2448c45606e096116af274500b67))
+* **spotify:** Update spotipy lib ([`bbd9ae8`](https://github.com/dominikkarall/fhempy/commit/bbd9ae82c8366e37792cab4e9c432d05d990c304))
+
 ## v0.1.481 (2022-09-27)
 ### Feature
 * **tuya:** Add translation for kettle state ([`eafac0c`](https://github.com/dominikkarall/fhempy/commit/eafac0c06c4ff3e9a17decd2f4c3b9c52edd1596))
