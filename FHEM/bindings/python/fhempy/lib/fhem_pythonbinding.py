@@ -621,6 +621,7 @@ async def async_main():
         ping_timeout=None,
         ping_interval=None,
         process_request=health_check,
+        max_size=10485760,
     ):
         await stop_event.wait()
 
