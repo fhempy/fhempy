@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.480 (2022-09-27)
+### Fix
+* **fhempy:** Support ws msgs up to 10MiB ([`87bfd3e`](https://github.com/dominikkarall/fhempy/commit/87bfd3e8baf6a6974ce6fe3caec617d7726877da))
+* **blue_connect:** Keep BLE connection ([`7e89afd`](https://github.com/dominikkarall/fhempy/commit/7e89afd0f47132ed462e7e6d7c28b29b59106a92))
+
 ## v0.1.479 (2022-09-26)
 ### Fix
 * **fhempy:** Make DevIo_IsOpen call more clear ([`2216284`](https://github.com/dominikkarall/fhempy/commit/2216284cfed0159cf991ebd06fab4d391e00b6ae))
