@@ -32,7 +32,7 @@ class blue_connect(generic.FhemModule):
         self.hash["MAC"] = self._mac
         self._conn = ble.BTLEConnection(
             self._mac,
-            keep_connected=False,
+            keep_connected=True,
         )
         self._conn.set_callback("all", self.received_notification)
         self.create_async_task(self.update_loop())
