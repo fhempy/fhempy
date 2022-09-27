@@ -1,8 +1,8 @@
 {
   "requirements": [
     "pychromecast==12.1.4",
-    "youtube_dl>=2020.12.22",
-    "spotipy==2.19.0",
+    "youtube_dl==2021.12.17",
+    "spotipy==2.20.0",
     "requests>=2.0"
   ]
 }
