@@ -447,7 +447,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             return "off"
         elif schema["type"] == "Enum":
             if "translation" in schema:
-                if value in schema["translation"]:
+                if str(value) in schema["translation"]:
                     return schema["translation"][value]
         return value
 
