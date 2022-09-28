@@ -70,8 +70,11 @@ class websitetests(generic.FhemModule):
                             self.hash, "response_status", resp.status, 1
                         )
                         if resp.status == 200:
+                            text = await resp.text()
+                            if len(text) > 5000:
+                                text = text[0:5000] + "..."
                             await fhem.readingsSingleUpdate(
-                                self.hash, "response", await resp.text(), 1
+                                self.hash, "response", text, 1
                             )
                         else:
                             await fhem.readingsSingleUpdate(
