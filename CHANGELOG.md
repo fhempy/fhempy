@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.484 (2022-09-28)
+### Fix
+* **tuya:** Fix translation for enum ([`31ddac2`](https://github.com/dominikkarall/fhempy/commit/31ddac209e2894c8b20809610337e697149d00a9))
+
 ## v0.1.483 (2022-09-27)
 ### Fix
 * **tuya:** Fix translation for enums ([`348e176`](https://github.com/dominikkarall/fhempy/commit/348e176c67360efcda6855305901a668f1afe850))
