@@ -381,7 +381,7 @@ BindingsIo_Write($$$$$) {
   }
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
 
-  if ($returnval eq "") {
+  if ($returnval eq "" || $returnval eq "continue") {
     $returnval = undef;
   }
 
