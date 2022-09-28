@@ -446,9 +446,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 return "on"
             return "off"
         elif schema["type"] == "Enum":
-            if "translation" in schema:
-                if str(value) in schema["translation"]:
-                    return schema["translation"][value]
+            if "translation" in schema["values"]:
+                if str(value) in schema["values"]["translation"]:
+                    return schema["values"]["translation"][value]
         return value
 
     def alpha_to_dec(self, s):
