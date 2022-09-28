@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.486 (2022-09-28)
+### Feature
+* **websitetests:** Small module to test speed of web responses ([`48e5c4e`](https://github.com/dominikkarall/fhempy/commit/48e5c4e8c3d741006b9a49a1e73aa7072f866c7a))
+
+### Fix
+* **websitetests:** Limit response reading to 5000 characters ([`f350798`](https://github.com/dominikkarall/fhempy/commit/f3507988b4b9776fffde807ef2609313ca79d8a1))
+
 ## v0.1.485 (2022-09-28)
 ### Fix
 * **fhempy:** Fix "continue" response to FHEM ([`d63f0dd`](https://github.com/dominikkarall/fhempy/commit/d63f0dd1517d197ac56ead22007f2b439d304962))
