@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.485 (2022-09-28)
+### Fix
+* **fhempy:** Fix "continue" response to FHEM ([`d63f0dd`](https://github.com/dominikkarall/fhempy/commit/d63f0dd1517d197ac56ead22007f2b439d304962))
+
 ## v0.1.484 (2022-09-28)
 ### Fix
 * **tuya:** Fix translation for enum ([`31ddac2`](https://github.com/dominikkarall/fhempy/commit/31ddac209e2894c8b20809610337e697149d00a9))
