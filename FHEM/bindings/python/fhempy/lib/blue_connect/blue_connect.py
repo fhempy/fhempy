@@ -17,6 +17,7 @@ class blue_connect(generic.FhemModule):
         self.water_temp = "0"
         self.water_orp = "0"
         self.water_ph = "0"
+        self.other_18 = ""
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
         }
@@ -36,6 +37,7 @@ class blue_connect(generic.FhemModule):
         )
         self._conn.set_callback("all", self.received_notification)
         self.create_async_task(self.update_loop())
+        self.create_async_task(self.keep_connected())
 
     async def Undefine(self, hash):
         if self._conn:
@@ -71,6 +73,14 @@ class blue_connect(generic.FhemModule):
                 self.logger.exception("Failed to write characteristics")
                 time.sleep(10)
 
+    def blocking_read_others(self):
+        for cnt in range(0, 10):
+            try:
+                self.other_18 = self._conn.read_characteristic(0x18)
+            except Exception:
+                self.logger.exception("Failed to read characteristics")
+                time.sleep(10)
+
     async def update_loop(self):
         while True:
             try:
@@ -81,6 +91,19 @@ class blue_connect(generic.FhemModule):
                 self.logger.exception("Failed to update readings")
             await asyncio.sleep(7200)
 
+    async def keep_connected(self):
+        while True:
+            try:
+                async with self._ble_lock:
+                    await utils.run_blocking(
+                        functools.partial(self.blocking_read_others)
+                    )
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                self.logger.exception("Failed to update readings")
+            await asyncio.sleep(60)
+
     async def measure_once(self):
         self.water_temp = 0
         self.water_orp = 0
@@ -90,6 +113,7 @@ class blue_connect(generic.FhemModule):
         async with self._ble_lock:
             await utils.run_blocking(functools.partial(self.blocking_measure))
         await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdate(self.hash, "unknown_handle_18", self.other_18)
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
