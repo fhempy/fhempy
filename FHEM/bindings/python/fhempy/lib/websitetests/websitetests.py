@@ -46,6 +46,10 @@ class websitetests(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        if len(argsh) > 0:
+            k = list(argsh)[0]
+            url = k + "=" + argsh[k]
+            args.append(url)
         if len(args) != 4:
             return "Usage: define webtest fhempy websitetests URL"
 
