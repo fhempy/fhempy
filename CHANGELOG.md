@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.487 (2022-09-29)
+### Fix
+* **websitetests:** Support URLs with = ([`97a4cce`](https://github.com/dominikkarall/fhempy/commit/97a4cce3a3b0074d50699516c297a3d2033f76ac))
+* **blue_connect:** Keep connection active ([`88f6f49`](https://github.com/dominikkarall/fhempy/commit/88f6f491be7d08aa78ad421949fc725931b2a6c1))
+
 ## v0.1.486 (2022-09-28)
 ### Feature
 * **websitetests:** Small module to test speed of web responses ([`48e5c4e`](https://github.com/dominikkarall/fhempy/commit/48e5c4e8c3d741006b9a49a1e73aa7072f866c7a))
