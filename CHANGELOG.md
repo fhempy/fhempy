@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.490 (2022-10-01)
+### Fix
+* **gree_climate:** Add missing self.device = None ([`2a7657f`](https://github.com/dominikkarall/fhempy/commit/2a7657ff21d2d1f20ed943c726a708fc86e41f26))
+
 ## v0.1.489 (2022-10-01)
 ### Fix
 * **gree_climate:** Retry connect if first connection attempt fails ([`1eee34a`](https://github.com/dominikkarall/fhempy/commit/1eee34af7fc6bfc06ef6f7c8c440b4afd35643f0))
