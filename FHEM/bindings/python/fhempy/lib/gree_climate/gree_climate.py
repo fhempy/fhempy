@@ -82,7 +82,7 @@ class gree_climate(generic.FhemModule):
             self.create_async_task(self.scan_devices())
             self.set_set_config({})
         else:
-            self.create_async_task(self.connect_device())
+            self.create_async_task(self.update_loop())
 
     async def scan_devices(self, name=None):
         discovery = Discovery()
@@ -110,11 +110,6 @@ class gree_climate(generic.FhemModule):
 
     async def connect_device(self):
         self.device = await self.scan_devices(self.name)
-        if self.device is None:
-            self.logger.error("Couldn't find device")
-            return
-
-        await self.update_loop()
 
     async def update_once(self):
         try:
@@ -127,9 +122,11 @@ class gree_climate(generic.FhemModule):
     async def update_loop(self):
         while True:
             if self.device is None:
-                # try to connect to device every 10s
-                await asyncio.sleep(10)
                 await self.connect_device()
+                if self.device is None:
+                    self.logger.error("Couldn't find device, retry in 60s")
+                    # try to connect to device every 60s
+                    await asyncio.sleep(60)
                 continue
             await self.update_once()
             await asyncio.sleep(self._attr_interval)
