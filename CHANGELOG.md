@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.488 (2022-10-01)
+### Feature
+* **kia_hyundai:** Update to latest kia_uvo code ([`638a7c8`](https://github.com/dominikkarall/fhempy/commit/638a7c808d6537e998deace600814e327fbd4a6f))
+* **kia_hyundai:** Support update_data command ([`7b4876b`](https://github.com/dominikkarall/fhempy/commit/7b4876bf6f8466d2287b21819a3dda058e9e6a43))
+
+### Fix
+* **fusionsolar:** Better logging on data errors ([`adb5902`](https://github.com/dominikkarall/fhempy/commit/adb590267127e277a6932f01d56be129f56e7e78))
+* **websitetests:** Fix reading response_status ([`a0371a8`](https://github.com/dominikkarall/fhempy/commit/a0371a854d12ddeea1b0b087f34fa5035dd2a021))
+
 ## v0.1.487 (2022-09-29)
 ### Fix
 * **websitetests:** Support URLs with = ([`97a4cce`](https://github.com/dominikkarall/fhempy/commit/97a4cce3a3b0074d50699516c297a3d2033f76ac))
