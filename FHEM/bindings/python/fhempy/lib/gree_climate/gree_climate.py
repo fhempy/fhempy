@@ -17,6 +17,8 @@ class gree_climate(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+        self.device = None
+
         attr_config = {
             "interval": {
                 "default": 60,
