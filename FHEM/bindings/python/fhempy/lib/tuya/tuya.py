@@ -263,6 +263,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     def _convert_values_to_json(self):
         for spec in self.tuya_spec_functions + self.tuya_spec_status:
+            if spec["values"] == "":
+                spec["values"] = "{}"
             spec["values"] = json.loads(spec["values"])
 
     # get functions/status from tuya
