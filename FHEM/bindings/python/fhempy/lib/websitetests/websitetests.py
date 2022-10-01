@@ -70,7 +70,7 @@ class websitetests(generic.FhemModule):
                     ) as resp:
                         status = resp.status
                         end_time = time.time()
-                        await fhem.readingsBulkUpdate(
+                        await fhem.readingsSingleUpdate(
                             self.hash, "response_status", resp.status, 1
                         )
                         if resp.status == 200:

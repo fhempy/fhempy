@@ -321,9 +321,11 @@ class FusionSolarRestApi:
         self._battery_battery_power = None
         self._battery_charge_capacity = None
         self._battery_discharge_capacity = None
+        self._energyflowdata = None
 
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_
         result = await self._get_rest_data(FusionSolarRestApi.ENERGY_FLOW_PATH)
+        self._energyflowdata = result
         if "flow" in result:
             for node in result["flow"]["nodes"]:
                 if node["name"] == "neteco.pvms.devTypeLangKey.inverter":
@@ -359,18 +361,19 @@ class FusionSolarRestApi:
                         node["description"]["label"]
                         == "neteco.pvms.energy.flow.buy.power"
                     ):
-                        if node["fromNode"] == "3":
-                            # from grid is fromNode 3
-                            self._from_grid = float(
-                                node["description"]["value"].replace(" kW", "")
-                            )
+                        if node["description"]["value"] == "--":
                             self._to_grid = 0
-                        else:
-                            # to grid is fromNode 2
-                            self._to_grid = float(
-                                node["description"]["value"].replace(" kW", "")
-                            )
                             self._from_grid = 0
+                        else:
+                            if node["fromNode"] == "3":
+                                # from grid is fromNode 3
+                                self._from_grid = float(
+                                    node["description"]["value"].replace(" kW", "")
+                                )
+                                self._to_grid = 0
+                            else:
+                                # to grid is fromNode 2
+                                self._from_grid = 0
 
     async def update_energy_balance(self):
         self._energy_balance = await self._get_rest_data(
@@ -491,3 +494,12 @@ class FusionSolarRestApi:
                 "current": self._device_signals["signals"][str(signal + 1)]["value"],
             }
         return string_details
+
+    @property
+    def data_string(self):
+        return (
+            f"Stationdetail Data:\n{self._stationdetail}\n\n"
+            f"Energyflow Data:\n{self._energyflowdata}\n\n"
+            f"Energybalance Data:\n{self._energy_balance}\n\n"
+            f"Device Signals Data:\n{self._device_signals}\n"
+        )

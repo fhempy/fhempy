@@ -120,7 +120,7 @@ class KiaUvoApiEU(KiaUvoApiImpl):
         self.authorization_code = None
         try:
             self.authorization_code = self.get_authorization_code_with_redirect_url()
-        except Exception:
+        except Exception as ex1:
             self.authorization_code = self.get_authorization_code_with_form()
 
         (
@@ -449,7 +449,55 @@ class KiaUvoApiEU(KiaUvoApiImpl):
         response = requests.get(url, headers=headers)
         response = response.json()
         _LOGGER.debug(f"{DOMAIN} - get_cached_vehicle_status response {response}")
+
+        try:
+            response["resMsg"]["vehicleStatusInfo"][
+                "drvhistory"
+            ] = self.get_driving_info(token)
+        except Exception:
+            _LOGGER.warning("Unable to get drivingInfo")
+
         return response["resMsg"]["vehicleStatusInfo"]
+
+    def get_driving_info(self, token: Token):
+        url = self.SPA_API_URL + "vehicles/" + token.vehicle_id + "/drvhistory"
+        headers = {
+            "Authorization": token.access_token,
+            "ccsp-service-id": self.CCSP_SERVICE_ID,
+            "ccsp-application-id": self.APP_ID,
+            "Stamp": self.get_stamp(),
+            "ccsp-device-id": token.device_id,
+            "Host": self.BASE_URL,
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "User-Agent": USER_AGENT_OK_HTTP,
+        }
+
+        responseAlltime = requests.post(url, json={"periodTarget": 1}, headers=headers)
+        responseAlltime = responseAlltime.json()
+        _LOGGER.debug(f"{DOMAIN} - get_driving_info responseAlltime {responseAlltime}")
+
+        response30d = requests.post(url, json={"periodTarget": 0}, headers=headers)
+        response30d = response30d.json()
+        _LOGGER.debug(f"{DOMAIN} - get_driving_info response30d {response30d}")
+
+        drivingInfo = {}
+
+        try:
+            drivingInfo = responseAlltime["resMsg"]["drivingInfoDetail"][0]
+
+            for drivingInfoItem in response30d["resMsg"]["drivingInfo"]:
+                if drivingInfoItem["drivingPeriod"] == 0:
+                    drivingInfo["consumption30d"] = round(
+                        drivingInfoItem["totalPwrCsp"]
+                        / drivingInfoItem["calculativeOdo"]
+                    )
+                    break
+
+        except Exception:
+            _LOGGER.warning("Unable to parse drivingInfo")
+
+        return drivingInfo
 
     def get_geocoded_location(self, lat, lon):
         email_parameter = ""
@@ -629,3 +677,31 @@ class KiaUvoApiEU(KiaUvoApiImpl):
         _LOGGER.debug(f"{DOMAIN} - Stop Charge Action Request {payload}")
         response = requests.post(url, json=payload, headers=headers).json()
         _LOGGER.debug(f"{DOMAIN} - Stop Charge Action Response {response}")
+
+    def set_charge_limits(self, token: Token, ac_limit: int, dc_limit: int):
+        url = self.SPA_API_URL + "vehicles/" + token.vehicle_id + "/charge/target"
+        headers = {
+            "Authorization": token.access_token,
+            "ccsp-service-id": self.CCSP_SERVICE_ID,
+            "ccsp-application-id": self.APP_ID,
+            "Stamp": self.get_stamp(),
+            "ccsp-device-id": token.device_id,
+            "Host": self.BASE_URL,
+            "Connection": "Keep-Alive",
+            "Accept-Encoding": "gzip",
+            "User-Agent": USER_AGENT_OK_HTTP,
+        }
+
+        body = {
+            "targetSOClist": [
+                {
+                    "plugType": 0,
+                    "targetSOClevel": dc_limit,
+                },
+                {
+                    "plugType": 1,
+                    "targetSOClevel": ac_limit,
+                },
+            ]
+        }
+        response = requests.post(url, json=body, headers=headers)

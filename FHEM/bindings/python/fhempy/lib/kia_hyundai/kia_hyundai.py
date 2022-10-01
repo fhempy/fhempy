@@ -50,6 +50,7 @@ class kia_hyundai(generic.FhemModule):
                     "dc_limit": {"default": 90, "format": "int"},
                 },
             },
+            "update_data": {},
         }
         self.set_set_config(set_config)
 
@@ -85,12 +86,15 @@ class kia_hyundai(generic.FhemModule):
 
     async def update_loop(self):
         while True:
-            try:
-                await self.vehicle.update()
-                await self.update_readings()
-            except Exception:
-                self.logger.exception("Failed to update car data")
+            await self.update_once()
             await asyncio.sleep(self._attr_update_interval * 60)
+
+    async def update_once(self):
+        try:
+            await self.vehicle.update()
+            await self.update_readings()
+        except Exception:
+            self.logger.exception("Failed to update car data")
 
     async def update_readings(self):
         flat_json = utils.flatten_json(self.vehicle.vehicle_data)
@@ -100,6 +104,9 @@ class kia_hyundai(generic.FhemModule):
         await fhem.readingsEndUpdate(self.hash, 1)
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
+    async def set_update_data(self, hash, params):
+        self.create_async_task(self.update_once())
+
     async def set_lock(self, hash, params):
         self.create_async_task(self.vehicle.lock_action(VEHICLE_LOCK_ACTION.LOCK))
 

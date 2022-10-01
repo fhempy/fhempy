@@ -172,6 +172,7 @@ class fusionsolar(generic.FhemModule):
             except Exception:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
                 self.logger.exception("Failed to update readings")
+                self.logger.error(f"Received data:\n{self.restapi.data_string}")
             await fhem.readingsEndUpdate(self.hash, 1)
             # calculate next full 5min+30s
             next_sec = (
