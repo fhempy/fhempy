@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.491 (2022-10-02)
+### Fix
+* **tuya:** Fix issue with boolean specs ([`7b3910f`](https://github.com/dominikkarall/fhempy/commit/7b3910fe285a300e300bcdd2fdc942ed06ac9fdf))
+
 ## v0.1.490 (2022-10-01)
 ### Fix
 * **gree_climate:** Add missing self.device = None ([`2a7657f`](https://github.com/dominikkarall/fhempy/commit/2a7657ff21d2d1f20ed943c726a708fc86e41f26))
