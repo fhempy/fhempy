@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.489 (2022-10-01)
+### Fix
+* **gree_climate:** Retry connect if first connection attempt fails ([`1eee34a`](https://github.com/dominikkarall/fhempy/commit/1eee34af7fc6bfc06ef6f7c8c440b4afd35643f0))
+
 ## v0.1.488 (2022-10-01)
 ### Feature
 * **kia_hyundai:** Update to latest kia_uvo code ([`638a7c8`](https://github.com/dominikkarall/fhempy/commit/638a7c808d6537e998deace600814e327fbd4a6f))
