@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.493 (2022-10-02)
+### Fix
+* **tuya:** Fix non-str spec values ([`baa5977`](https://github.com/dominikkarall/fhempy/commit/baa59774279d1e54a1ef4c4e06a8e2993fde917b))
+
 ## v0.1.492 (2022-10-02)
 ### Feature
 * **kia_hyundai:** Set state readings to online/error ([`dd5190d`](https://github.com/dominikkarall/fhempy/commit/dd5190d946d861dbd97514a07ced6b20b78a298f))
