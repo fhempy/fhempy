@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.495 (2022-10-02)
+### Fix
+* **fhempy:** Fix some websocket issues ([`587d0f0`](https://github.com/dominikkarall/fhempy/commit/587d0f0f78f7c4ba794a161eb0df19705cdbef75))
+
 ## v0.1.494 (2022-10-02)
 ### Fix
 * **fusionsolar:** Fix to_grid values ([`12e57eb`](https://github.com/dominikkarall/fhempy/commit/12e57eb08afec8088197d44659974b65a778f12c))
