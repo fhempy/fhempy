@@ -265,7 +265,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         for spec in self.tuya_spec_functions + self.tuya_spec_status:
             if spec["values"] == "":
                 spec["values"] = "{}"
-            spec["values"] = json.loads(spec["values"])
+            if isinstance(spec["values"], str):
+                spec["values"] = json.loads(spec["values"])
 
     # get functions/status from tuya
     async def get_tuya_dev_specification(self):
@@ -416,7 +417,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         self.hash, "online", "0", 1
                     )
                     state_set = True
-                    self.logger.error("Failed to connect to device")
+                    self.logger.exception("Failed to connect to device")
                 # short sleep is required for passive devices
                 await asyncio.sleep(1)
 
