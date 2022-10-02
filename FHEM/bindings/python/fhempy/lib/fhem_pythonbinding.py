@@ -191,7 +191,6 @@ class fhempy:
         logger.debug(">>> WS: " + msg)
         hash = None
         try:
-            await asyncio.sleep(0)
             hash = json.loads(msg)
             # keep this for one year (written on 11.10.2021)
             if "PYTHONTYPE" in hash:
@@ -621,7 +620,7 @@ async def async_main():
         ping_timeout=None,
         ping_interval=None,
         process_request=health_check,
-        max_size=10485760,  # 10MB
+        max_size=None,
     ):
         await stop_event.wait()
 
