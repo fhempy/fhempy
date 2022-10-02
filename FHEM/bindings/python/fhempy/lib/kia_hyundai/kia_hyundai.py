@@ -95,12 +95,17 @@ class kia_hyundai(generic.FhemModule):
             await self.update_readings()
         except Exception:
             self.logger.exception("Failed to update car data")
+            await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
 
     async def update_readings(self):
         flat_json = utils.flatten_json(self.vehicle.vehicle_data)
         await fhem.readingsBeginUpdate(self.hash)
-        for name in flat_json:
-            await fhem.readingsBulkUpdate(self.hash, name, flat_json[name])
+        try:
+            for name in flat_json:
+                await fhem.readingsBulkUpdate(self.hash, name, flat_json[name])
+            await fhem.readingsBulkUpdate(self.hash, "state", "online")
+        except Exception:
+            self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
