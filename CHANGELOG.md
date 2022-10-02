@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.494 (2022-10-02)
+### Fix
+* **fusionsolar:** Fix to_grid values ([`12e57eb`](https://github.com/dominikkarall/fhempy/commit/12e57eb08afec8088197d44659974b65a778f12c))
+
 ## v0.1.493 (2022-10-02)
 ### Fix
 * **tuya:** Fix non-str spec values ([`baa5977`](https://github.com/dominikkarall/fhempy/commit/baa59774279d1e54a1ef4c4e06a8e2993fde917b))
