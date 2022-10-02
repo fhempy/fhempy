@@ -100,7 +100,7 @@ class kia_hyundai(generic.FhemModule):
         flat_json = utils.flatten_json(self.vehicle.vehicle_data)
         await fhem.readingsBeginUpdate(self.hash)
         for name in flat_json:
-            await fhem.readingsBulkUpdateIfChanged(self.hash, name, flat_json[name])
+            await fhem.readingsBulkUpdate(self.hash, name, flat_json[name])
         await fhem.readingsEndUpdate(self.hash, 1)
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
