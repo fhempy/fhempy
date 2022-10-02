@@ -373,6 +373,9 @@ class FusionSolarRestApi:
                                 self._to_grid = 0
                             else:
                                 # to grid is fromNode 2
+                                self._to_grid = float(
+                                    node["description"]["value"].replace(" kW", "")
+                                )
                                 self._from_grid = 0
 
     async def update_energy_balance(self):
