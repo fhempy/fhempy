@@ -81,7 +81,7 @@ BindingsIo_Define($$$)
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
   $hash->{frame} = Protocol::WebSocket::Frame->new;
-  $hash->{frame}->{max_fragments_amount} = 1000;
+  #$hash->{frame}->{max_fragments_amount} = 1000;
   $hash->{frame}->{max_payload_size} = 0;
   # send binary data via websocket
   $hash->{binary} = 1;
