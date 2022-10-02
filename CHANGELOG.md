@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.492 (2022-10-02)
+### Feature
+* **kia_hyundai:** Set state readings to online/error ([`dd5190d`](https://github.com/dominikkarall/fhempy/commit/dd5190d946d861dbd97514a07ced6b20b78a298f))
+
+### Fix
+* **kia_hyundai:** Always update readings ([`e221894`](https://github.com/dominikkarall/fhempy/commit/e2218944d2d6231fe35394b84a70e2272ca7133c))
+
 ## v0.1.491 (2022-10-02)
 ### Fix
 * **tuya:** Fix issue with boolean specs ([`7b3910f`](https://github.com/dominikkarall/fhempy/commit/7b3910fe285a300e300bcdd2fdc942ed06ac9fdf))
