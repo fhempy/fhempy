@@ -362,10 +362,15 @@ async def sendCommandName(name, cmd, hash=None):
     timeout = 60
     try:
         logger.debug("sendCommandName START")
+        start = time.time()
         while len(function_active) != 0:
             if function_active[-1] == name:
                 break
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0.1)
+        end = time.time()
+        duration = end - start
+        if duration > 5:
+            logger.error(f"sendCommandName took {duration}s to send: {cmd}")
         # wait max 60s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
         logger.debug("sendCommandName END")
