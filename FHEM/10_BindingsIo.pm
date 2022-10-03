@@ -80,9 +80,6 @@ BindingsIo_Define($$$)
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   $hash->{ReceiverQueue} = Thread::Queue->new();
-  $hash->{frame} = Protocol::WebSocket::Frame->new;
-  #$hash->{frame}->{max_fragments_amount} = 1000;
-  $hash->{frame}->{max_payload_size} = 0;
   # send binary data via websocket
   $hash->{binary} = 1;
 
@@ -147,6 +144,14 @@ BindingsIo_Define($$$)
 }
 
 sub
+BindingsIo_initFrame($) {
+  my ($hash) = @_;
+  $hash->{frame} = Protocol::WebSocket::Frame->new;
+  #$hash->{frame}->{max_fragments_amount} = 1000;
+  $hash->{frame}->{max_payload_size} = 0;
+}
+
+sub
 BindingsIo_installing($) {
   my ($hash) = @_;
   my $state_reading = ReadingsVal($hash->{NAME}, "version", "");
@@ -201,6 +206,10 @@ BindingsIo_getIODevList($) {
 sub
 BindingsIo_doInit($) {
   my ($hash) = @_;
+
+  $hash->{connecttime} = time;
+
+  BindingsIo_initFrame($hash);
 
   # initialize all devices (send Define)
   my $bindingType = uc($hash->{BindingType})."TYPE";
@@ -340,10 +349,14 @@ BindingsIo_Write($$$$$) {
     }
   }
 
-  my $py_timeout = 1000;
+  my $py_timeout = 3000;
+  my $cur_time = time;
+  if (($cur_time - $hash->{connecttime}) < 120) {
+    $py_timeout = 60000;
+  }
   if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
     # wait 10s on Define, this might happen on startup
-    $py_timeout = 10000;
+    $py_timeout = 30000;
   }
   my $returnval = "";
   my $t1 = time * 1000;
@@ -465,6 +478,8 @@ sub BindingsIo_processMessage($$$$) {
   if ($@) {
     Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
     Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: ".$response;
+    # reset frames
+    BindingsIo_initFrame($hash);
     return "error";
   }
 

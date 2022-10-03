@@ -116,7 +116,7 @@ class FhemModule:
         )
 
         # add readme as help
-        if self.readme_str is not None:
+        if False and self.readme_str is not None:
             ret = ret.replace(
                 "###README_HELP_STRING###",
                 self.readme_str.replace("\n", "<br>")
@@ -150,6 +150,8 @@ class FhemModule:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        self._defargs = args
+        self._defargsh = argsh
         check_init_done = await fhem.init_done(self.hash)
         if check_init_done == 1:
             if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
