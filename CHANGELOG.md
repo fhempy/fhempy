@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.496 (2022-10-03)
+### Fix
+* **fhempy:** Fix websocket write_limit ([`3023385`](https://github.com/dominikkarall/fhempy/commit/302338574c0c2a6eba329c91df2d51b7e2bc1e2b))
+
 ## v0.1.495 (2022-10-02)
 ### Fix
 * **fhempy:** Fix some websocket issues ([`587d0f0`](https://github.com/dominikkarall/fhempy/commit/587d0f0f78f7c4ba794a161eb0df19705cdbef75))
