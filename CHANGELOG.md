@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.497 (2022-10-03)
+### Fix
+* **fhempy:** Disable readme help for the moment due to websocket issues ([`30eb51f`](https://github.com/dominikkarall/fhempy/commit/30eb51f92edb34924c2de62f34a7c51b9d5ba88a))
+* **fhempy:** Add logging if sending to fhem needs to wait too long ([`36f12ec`](https://github.com/dominikkarall/fhempy/commit/36f12ec66e3972bdb122d8c6426c7ba514b2508a))
+* **fhempy:** Reinit frames on error ([`ccbb284`](https://github.com/dominikkarall/fhempy/commit/ccbb284035bd03c384b5ab066ada4a914ec6ab66))
+
 ## v0.1.496 (2022-10-03)
 ### Fix
 * **fhempy:** Fix websocket write_limit ([`3023385`](https://github.com/dominikkarall/fhempy/commit/302338574c0c2a6eba329c91df2d51b7e2bc1e2b))
