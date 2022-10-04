@@ -425,8 +425,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         try:
             if self.tt_key != "" and self.tt_secret != "":
                 await self._create_cloudmapping_dev()
+                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
             elif self.tt_type in mappings.knownSchemas:
                 await self._create_mapping_dev()
+                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
             else:
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "Please use API_KEY and API_SECRET", 1
