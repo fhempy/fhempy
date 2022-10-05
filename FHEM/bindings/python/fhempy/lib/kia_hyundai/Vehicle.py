@@ -52,6 +52,7 @@ class Vehicle:
 
     async def update(self):
         try:
+            await self.refresh_token()
             previous_vehicle_status = self.get_child_value("vehicleStatus")
             previous_vehicle_location = self.get_child_value("vehicleLocation")
             self.vehicle_data = await run_blocking(
