@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.501 (2022-10-05)
+### Feature
+* **skodaconnect:** New sensors for Enyaq iV ([#98](https://github.com/dominikkarall/fhempy/issues/98)) ([`a157ab9`](https://github.com/dominikkarall/fhempy/commit/a157ab9d24ebcd84eb4efcd5fdb02937a5b93dac))
+
 ## v0.1.500 (2022-10-05)
 ### Fix
 * **kia_hyundai:** Check refresh token before update ([`041c732`](https://github.com/dominikkarall/fhempy/commit/041c732d5ee12977f91c3600592b33db825ad46a))
