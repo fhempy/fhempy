@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.500 (2022-10-05)
+### Fix
+* **kia_hyundai:** Check refresh token before update ([`041c732`](https://github.com/dominikkarall/fhempy/commit/041c732d5ee12977f91c3600592b33db825ad46a))
+
 ## v0.1.499 (2022-10-05)
 ### Feature
 * **tuya:** Support led colours ([`852f522`](https://github.com/dominikkarall/fhempy/commit/852f522533e97c00421ffddfc36595906d48f3b2))
