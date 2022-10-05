@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.499 (2022-10-05)
+### Feature
+* **tuya:** Support led colours ([`852f522`](https://github.com/dominikkarall/fhempy/commit/852f522533e97c00421ffddfc36595906d48f3b2))
+
 ## v0.1.498 (2022-10-04)
 ### Fix
 * **tuya:** Set tuya state reading to ready when finished initializing ([`79c247e`](https://github.com/dominikkarall/fhempy/commit/79c247e4a133e2f8d974f361c720eccb4804c882))
