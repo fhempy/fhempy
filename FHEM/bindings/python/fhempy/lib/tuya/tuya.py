@@ -4,7 +4,7 @@ import functools
 import json
 import re
 
-from tinytuya import Cloud, deviceScan
+from tinytuya import BulbDevice, Cloud, deviceScan
 
 from .. import fhem, generic, utils
 from . import mappings, pytuya
@@ -205,7 +205,17 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     "function": "set_other_types",
                 }
             elif fct["type"] == "Json":
-                pass
+                set_conf[fct["code"]] = {
+                    "args": ["new_val"],
+                    "function_param": fct,
+                    "function": "set_json",
+                }
+                if fct["code"] == "colour_data":
+                    set_conf[fct["code"]]["function"] = "set_colour_data"
+                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
+                elif fct["code"] == "colour_data_v2":
+                    set_conf[fct["code"]]["function"] = "set_colour_data_v2"
+                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
         self.set_set_config(set_conf)
 
@@ -216,11 +226,14 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                 await fhem.CommandDefine(
                     self.hash,
                     (
-                        f"{dev['name_esc']}_{dev['device_id']} fhempy tuya "
+                        f"tuya_local_{dev['device_id']} fhempy tuya "
                         f"{dev['productid']} {dev['device_id']} {dev['ip']} "
                         f"{dev['local_key']} {dev['version']} "
                         f"{self.tt_key} {self.tt_secret}"
                     ),
+                )
+                await fhem.CommandAttr(
+                    self.hash, f"tuya_local_{dev['device_id']} alias {dev['name']}"
                 )
 
     async def set_boolean(self, hash, params):
@@ -247,6 +260,31 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         new_val = params["new_val"]
         if self._connected_device:
             await self._connected_device.set_dp(new_val, index)
+
+    async def set_colour_data(self, hash, params):
+        index = params["function_param"]["id"]
+        rgb = self.fhemrgb2rgb(params["new_val"])
+        if self._t_info["category"] == "dj":
+            hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
+        else:
+            hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
+        await self._connected_device.set_dp(hexvalue, index)
+
+    async def set_colour_data_v2(self, hash, params):
+        index = params["function_param"]["id"]
+        rgb = self.fhemrgb2rgb(params["new_val"])
+        hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
+        await self._connected_device.set_dp(hexvalue, index)
+
+    def fhemrgb2rgb(self, rgb):
+        red = int(rgb[0:2], base=16)
+        green = int(rgb[2:4], base=16)
+        blue = int(rgb[4:6], base=16)
+        return {
+            "r": red,
+            "g": green,
+            "b": blue,
+        }
 
     # check if tuya_spec_functions and tuya_spec_status attr is set?
     async def check_tuya_attributes(self):
