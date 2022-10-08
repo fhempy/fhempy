@@ -244,7 +244,7 @@ BindingsIo_Notify($)
       BindingsIo_Write($hash, $hash, "update", [], {});
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
     } else {
-      BindingsIo_Write($hash, $dev, "event", [$event], {});
+      #BindingsIo_Write($hash, $dev, "event", [$event], {});
     }
   }
 
