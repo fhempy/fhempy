@@ -75,9 +75,6 @@ class zigbee2mqtt(FhemModule):
                 )
 
             rep = Repo(z2m_directory)
-            await utils.run_blocking(
-                functools.partial(rep.git.checkout, "HEAD", "--", "npm-shrinkwrap.json")
-            )
             o = rep.remotes.origin
             await utils.run_blocking(functools.partial(o.pull))
 
