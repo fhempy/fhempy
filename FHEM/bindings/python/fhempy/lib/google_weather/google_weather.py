@@ -44,12 +44,17 @@ class google_weather(generic.FhemModule):
                 "Mozilla/5.0 (X11; CrOS x86_64 15054.63.0) AppleWebKit/537.36"
                 " (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
             ),
+            (
+                "Mozilla/5.0 (X11; CrOS x86_64 15117.28.0) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+            ),
         ]
         sec_ch_ua = [
             '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
             '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+            '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
         ]
-        sec_ch_full_version = ['"104.0.5112.83"', '"106.0.5249.49"']
+        sec_ch_full_version = ['"104.0.5112.83"', '"106.0.5249.49"', '"107.0.5304.22"']
         sec_ch_full_version_list = [
             (
                 '"Chromium";v="104.0.5112.83", " Not A;Brand";v="99.0.0.0", '
@@ -59,8 +64,12 @@ class google_weather(generic.FhemModule):
                 '"Chromium";v="106.0.5249.49", "Google Chrome";v="106.0.5249.49",'
                 ' "Not;A=Brand";v="99.0.0.0"'
             ),
+            (
+                '"Google Chrome";v="107.0.5304.22", "Chromium";v="107.0.5304.22",'
+                ' "Not=A?Brand";v="24.0.0.0"'
+            ),
         ]
-        sec_ch_ua_platform_version = ['"14909.100.0"', '"15054.63.0"']
+        sec_ch_ua_platform_version = ['"14909.100.0"', '"15054.63.0"', '"15117.28.0"']
         ua_id = randrange(len(user_agent))
         headers["user-agent"] = user_agent[ua_id]
         headers["sec-ch-ua"] = sec_ch_ua[ua_id]
