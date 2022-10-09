@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.504 (2022-10-09)
+### Fix
+* **zigbee2mqtt:** Fix update ([`7c4bb66`](https://github.com/dominikkarall/fhempy/commit/7c4bb663aefc102d911ab1cfdbd535a565a6aadb))
+
 ## v0.1.503 (2022-10-09)
 ### Fix
 * **tuya:** Add dp_ attributes even if they are not detected ([`fe295dc`](https://github.com/dominikkarall/fhempy/commit/fe295dc74c34312244626e621fd73e8171a49e62))
