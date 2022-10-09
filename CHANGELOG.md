@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.503 (2022-10-09)
+### Fix
+* **tuya:** Add dp_ attributes even if they are not detected ([`fe295dc`](https://github.com/dominikkarall/fhempy/commit/fe295dc74c34312244626e621fd73e8171a49e62))
+* **esphome:** Update esphome==2022.9.4 ([`ed2e4d0`](https://github.com/dominikkarall/fhempy/commit/ed2e4d08bc7ed2b774dc72793c97d3da8bc56211))
+
 ## v0.1.502 (2022-10-09)
 ### Fix
 * **tuya:** Update tinytuya==1.7.1 ([`d8e2c66`](https://github.com/dominikkarall/fhempy/commit/d8e2c66c3e8744171360a255dff10b10de526129))
