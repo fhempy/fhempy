@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.502 (2022-10-09)
+### Fix
+* **tuya:** Update tinytuya==1.7.1 ([`d8e2c66`](https://github.com/dominikkarall/fhempy/commit/d8e2c66c3e8744171360a255dff10b10de526129))
+* **fusionsolar:** Retry login if it fails ([`de70e9c`](https://github.com/dominikkarall/fhempy/commit/de70e9c26f00f8c954a30fbeb3ae2bfc1e1a90e8))
+* **fhempy:** Disable events for the moment ([`5c6dee0`](https://github.com/dominikkarall/fhempy/commit/5c6dee08151f2b33e87fa14101915e542ecacc89))
+* **google_weather:** Add further user agent ([`5c8ecaa`](https://github.com/dominikkarall/fhempy/commit/5c8ecaa4df6fb56c9e30bf17e63af45ea53e5fec))
+
 ## v0.1.501 (2022-10-05)
 ### Feature
 * **skodaconnect:** New sensors for Enyaq iV ([#98](https://github.com/dominikkarall/fhempy/issues/98)) ([`a157ab9`](https://github.com/dominikkarall/fhempy/commit/a157ab9d24ebcd84eb4efcd5fdb02937a5b93dac))
