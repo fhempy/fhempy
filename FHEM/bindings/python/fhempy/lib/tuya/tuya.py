@@ -399,15 +399,16 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
     async def prepare_attributes(self, status):
         options = []
+        dps = {}
         for opt in self.tuya_spec_status:
             options.append(opt["code"])
+            dps[f"dp_{int(opt['dp_id']):02d}"] = ""
 
-        dps = []
         for dp in list(status):
-            dps.append(f"dp_{int(dp):02d}")
+            dps[f"dp_{int(dp):02d}"] = ""
 
         attr_conf = {}
-        for dp in dps:
+        for dp in list(dps):
             attr_conf[dp] = {
                 "function": "set_attr_dp",
                 "default": "",
