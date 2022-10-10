@@ -264,7 +264,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
     async def set_colour_data(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
-        if self._t_info["category"] == "dj":
+        if "category" in self.info_dict and self.info_dict["category"] == "dj":
             hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
         else:
             hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
@@ -464,10 +464,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         try:
             if self.tt_key != "" and self.tt_secret != "":
                 await self._create_cloudmapping_dev()
-                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
             elif self.tt_type in mappings.knownSchemas:
                 await self._create_mapping_dev()
-                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
             else:
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "Please use API_KEY and API_SECRET", 1
@@ -550,6 +548,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings(self, status):
+        state_set = False
         await fhem.readingsBeginUpdate(self.hash)
         try:
             stateused = False
@@ -575,6 +574,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                                     flat_json[name],
                                 )
                         else:
+                            if reading == "state":
+                                state_set = True
                             await fhem.readingsBulkUpdateIfChanged(
                                 self.hash,
                                 reading,
@@ -590,6 +591,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     )
             if not stateused:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "online", "1")
+            if not state_set:
+                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         except Exception:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
