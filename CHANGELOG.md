@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.505 (2022-10-10)
+### Fix
+* **tuya:** Fix colour_data ([`2dc4f07`](https://github.com/dominikkarall/fhempy/commit/2dc4f075adbec7fb6eafb25293920d15f0779246))
+* **tuya:** Set state on startup only if there is no state reading ([`68c7f65`](https://github.com/dominikkarall/fhempy/commit/68c7f65c2201e85b07b6c8fc594681679304e206))
+
 ## v0.1.504 (2022-10-09)
 ### Fix
 * **zigbee2mqtt:** Fix update ([`7c4bb66`](https://github.com/dominikkarall/fhempy/commit/7c4bb663aefc102d911ab1cfdbd535a565a6aadb))
