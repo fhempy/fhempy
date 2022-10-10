@@ -264,7 +264,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
     async def set_colour_data(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
-        if self._t_info["category"] == "dj":
+        if "category" in self.info_dict and self.info_dict["category"] == "dj":
             hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
         else:
             hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
