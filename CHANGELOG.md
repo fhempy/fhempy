@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.506 (2022-10-11)
+### Feature
+* **arp_presence:** Check presene based on arp table, works also for iOS devices ([`7608dcd`](https://github.com/dominikkarall/fhempy/commit/7608dcd16bcc46d877973a05176bee5b655ac609))
+
+### Fix
+* **fhempy:** Fix description ([`57cc650`](https://github.com/dominikkarall/fhempy/commit/57cc65063900db746152f0b4fa0d38b19b8c3abe))
+* **kia_hyundai:** Retry login every 2min if it fails ([`e5a1005`](https://github.com/dominikkarall/fhempy/commit/e5a10059707386fbccf223ebfcdaf22b5c7b9ca8))
+* **fusionsolar:** Fix issues when some values are not reported by fusionsolar api ([`9018cb9`](https://github.com/dominikkarall/fhempy/commit/9018cb937ce2738f1cbc9a33e253764e01282948))
+* **esphome:** Remove insaller link, it's part of esphome dashboard now ([`7657c38`](https://github.com/dominikkarall/fhempy/commit/7657c3814271a1b30166a96cedce4328910e4385))
+
 ## v0.1.505 (2022-10-10)
 ### Fix
 * **tuya:** Fix colour_data ([`2dc4f07`](https://github.com/dominikkarall/fhempy/commit/2dc4f075adbec7fb6eafb25293920d15f0779246))
