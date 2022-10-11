@@ -75,14 +75,18 @@ class kia_hyundai(generic.FhemModule):
             self.region_code, self.car_brand, self.username, self.password
         )
         while self.token is None:
-            self.token = await utils.run_blocking(functools.partial(kh_impl.login))
-            if self.token is not None:
-                self.vehicle = Vehicle(
-                    self.token, kh_impl, "km", False, str(self.region_code)
-                )
-                self.create_async_task(self.update_loop())
-                break
-            await asyncio.sleep(60)
+            try:
+                self.token = await utils.run_blocking(functools.partial(kh_impl.login))
+                if self.token is not None:
+                    self.vehicle = Vehicle(
+                        self.token, kh_impl, "km", False, str(self.region_code)
+                    )
+                    self.create_async_task(self.update_loop())
+                    break
+                await asyncio.sleep(60)
+            except Exception:
+                self.logger.exception("Failed to login to server, retry in 120s")
+                await asyncio.sleep(120)
 
     async def update_loop(self):
         while True:
