@@ -8,7 +8,7 @@
 #
 
 [Unit]
-Description=FHEM PythonBinding
+Description=fhempy
 Wants=network.target
 After=network.target
 
