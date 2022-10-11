@@ -387,6 +387,11 @@ class FusionSolarRestApi:
         self._device_signals = await self._get_rest_data(
             FusionSolarRestApi.DEVICE_SIGNALS
         )
+        if "signals" not in self._device_signals:
+            await asyncio.sleep(10)
+            self._device_signals = await self._get_rest_data(
+                FusionSolarRestApi.DEVICE_SIGNALS
+            )
 
     async def update_station_detail(self):
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/station-detail?stationDn=STATION&_=
@@ -444,11 +449,15 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_energy(self):
-        return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2)
+        if "selfUseNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
+            return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2)
+        return 0
 
     @property
     def daily_use_energy(self):
-        return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
+        if "useNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
+            return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
+        return 0
 
     @property
     def daily_self_use_ratio(self):
@@ -491,11 +500,14 @@ class FusionSolarRestApi:
     @property
     def string_details(self):
         string_details = {}
-        for signal in (11001, 11004):
-            string_details[f"string_pv{int((signal-11001)/3+1)}"] = {
-                "voltage": self._device_signals["signals"][str(signal)]["value"],
-                "current": self._device_signals["signals"][str(signal + 1)]["value"],
-            }
+        if "signals" in self._device_signals:
+            for signal in (11001, 11004):
+                string_details[f"string_pv{int((signal-11001)/3+1)}"] = {
+                    "voltage": self._device_signals["signals"][str(signal)]["value"],
+                    "current": self._device_signals["signals"][str(signal + 1)][
+                        "value"
+                    ],
+                }
         return string_details
 
     @property
