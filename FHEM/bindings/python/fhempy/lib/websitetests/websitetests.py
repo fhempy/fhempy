@@ -40,6 +40,11 @@ class websitetests(generic.FhemModule):
                     "}"
                 ),
             },
+            "response_contains": {
+                "default": "",
+                "options": "textField-long",
+                "help": "Response must contain this text.",
+            },
         }
         self.set_attr_config(attr_config)
 
@@ -63,6 +68,7 @@ class websitetests(generic.FhemModule):
             start_time = time.time()
             end_time = 0
             status = 0
+            response_contains = -1
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(
@@ -80,6 +86,11 @@ class websitetests(generic.FhemModule):
                             await fhem.readingsSingleUpdate(
                                 self.hash, "response", text, 1
                             )
+                            response_contains = text.find(self._attr_response_contains)
+                            await fhem.readingsSingleUpdate(
+                                self.hash, "response_contains", response_contains, 1
+                            )
+
                         else:
                             await fhem.readingsSingleUpdate(
                                 self.hash,
@@ -107,6 +118,10 @@ class websitetests(generic.FhemModule):
                         "state",
                         "duration too long: " + str(int(duration)),
                         1,
+                    )
+                if response_contains == -1:
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "state", "incorrect response", 1
                     )
 
             await asyncio.sleep(self._attr_interval)
