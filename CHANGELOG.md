@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.507 (2022-10-14)
+### Feature
+* **websitetests:** Add simple response check ([`84ecf90`](https://github.com/dominikkarall/fhempy/commit/84ecf90fe248a093cb11731dba9f8ced108d530a))
+* **arp_presence:** Add update command ([`48ef150`](https://github.com/dominikkarall/fhempy/commit/48ef150eff0d5fa339788e45de8cbf5f918d5517))
+
+### Fix
+* **ddnss:** Fix connection issues ([`bca55e3`](https://github.com/dominikkarall/fhempy/commit/bca55e372654085c2c91e55d39f8f934ad915238))
+
 ## v0.1.506 (2022-10-11)
 ### Feature
 * **arp_presence:** Check presene based on arp table, works also for iOS devices ([`7608dcd`](https://github.com/dominikkarall/fhempy/commit/7608dcd16bcc46d877973a05176bee5b655ac609))
