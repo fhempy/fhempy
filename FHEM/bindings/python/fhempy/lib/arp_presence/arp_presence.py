@@ -72,6 +72,9 @@ class arp_presence(generic.FhemModule):
         await self.setup_scanner()
         self.create_async_task(self.update_loop())
 
+    async def set_update(self, hash, params):
+        await self.update_once()
+
     def ping_device(self):
         """Send UDP message to probe device."""
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
