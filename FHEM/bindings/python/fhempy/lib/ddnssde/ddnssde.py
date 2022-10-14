@@ -117,8 +117,12 @@ class ddnssde(generic.FhemModule):
 
     async def update_ddnss_data_loop(self):
         while True:
-            await self.update_ddnss_data()
-            await asyncio.sleep(7500)
+            try:
+                await self.update_ddnss_data()
+                await asyncio.sleep(7500)
+            except Exception:
+                self.logger.exception("Failed to update ddnss, retry")
+                await asyncio.sleep(30)
 
     async def update_ddnss_readings(self):
         readings = {
@@ -210,9 +214,13 @@ class ddnssde(generic.FhemModule):
                 await self.hostname_ready.wait()
 
             await self.update_key_ready.wait()
-            if await self.is_ip_updated():
-                await self.set_ddnss_ip()
-            await asyncio.sleep(self._attr_ip_check_interval * 60)
+            try:
+                if await self.is_ip_updated():
+                    await self.set_ddnss_ip()
+                await asyncio.sleep(self._attr_ip_check_interval * 60)
+            except Exception:
+                self.logger.exception("Failed to check ip")
+                await asyncio.sleep(30)
 
     async def set_attr_hostname(self, hash):
         if self._attr_hostname != "-":
