@@ -52,6 +52,7 @@ This repository includes following working modules:
 |[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Control tuya devices localy incl. real-time updates (only WiFi devices)|
 |[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
 |[warema](FHEM/bindings/python/fhempy/lib/warema/)|Control Warema devices|
+|[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3\!)|
 |[xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud|
