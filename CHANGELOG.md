@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.508 (2022-10-16)
+### Feature
+* **blue_connect:** Reconnect on BrokenPipeError ([`533d218`](https://github.com/dominikkarall/fhempy/commit/533d21803699f17d257471f89b8e04901e0704c0))
+* **fhempy:** Support stop BLE helper to reconnect ([`5edf2da`](https://github.com/dominikkarall/fhempy/commit/5edf2dab63d8ddbe5123d760504e86f928c7aeaf))
+* **websitetests:** Add websitetests ([`6482aca`](https://github.com/dominikkarall/fhempy/commit/6482acac6a62d873da1bbc122a47d70b0a33d130))
+* **fusionsolar:** Retry get request if it fails ([`975e787`](https://github.com/dominikkarall/fhempy/commit/975e7872b601a0e4e25bbf04bfab57d3e62d4d48))
+
 ## v0.1.507 (2022-10-14)
 ### Feature
 * **websitetests:** Add simple response check ([`84ecf90`](https://github.com/dominikkarall/fhempy/commit/84ecf90fe248a093cb11731dba9f8ced108d530a))
