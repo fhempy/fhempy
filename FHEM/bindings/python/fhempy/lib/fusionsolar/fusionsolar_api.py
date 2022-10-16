@@ -279,20 +279,28 @@ class FusionSolarRestApi:
         }
         await self._get(url, headers)
 
-    async def _get(self, url, headers):
+    async def _get(self, url, headers, max_retries=5):
         try:
             response = {}
             async with aiohttp.ClientSession(
                 trust_env=True, headers=headers, cookie_jar=self._cookies
             ) as session:
-                async with session.get(url) as resp:
-                    if resp.status != 200:
-                        # wait a few seconds before login
-                        await asyncio.sleep(5)
-                        await self.login()
-                        return {}
+                retry = 1
+                while retry < max_retries:
+                    retry += 1
+                    async with session.get(url) as resp:
+                        if resp.status != 200:
+                            # wait a few seconds before login
+                            self.logger.error(
+                                f"Response from {url} was {resp.status}, try to relogin"
+                            )
+                            await asyncio.sleep(30)
+                            await self.login()
+                            continue
+                        else:
+                            break
 
-                    response = await resp.json()
+                response = await resp.json()
 
             if "success" in response and response["success"] is True:
                 if "data" in response:

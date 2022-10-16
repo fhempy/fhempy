@@ -202,6 +202,10 @@ class BTLEConnection(btle.DefaultDelegate):
         with self:
             return self._conn.readCharacteristic(handle)
 
+    def stop_helper(self):
+        self._conn._stopHelper()
+        self._conn = None
+
     def write_characteristic(
         self, handle, value, timeout=DEFAULT_TIMEOUT, with_response=True
     ):

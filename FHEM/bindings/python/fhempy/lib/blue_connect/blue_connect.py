@@ -69,6 +69,9 @@ class blue_connect(generic.FhemModule):
                 # start measuring
                 self._conn.write_characteristic(0x0012, b"\x01", 60)
                 break
+            except BrokenPipeError:
+                self.logger.error("BrokenPipeError, reconnect BLE")
+                self._conn.stop_helper()
             except Exception:
                 self.logger.exception("Failed to write characteristics")
                 time.sleep(10)
@@ -76,7 +79,11 @@ class blue_connect(generic.FhemModule):
     def blocking_read_others(self):
         for cnt in range(0, 10):
             try:
-                self.other_18 = self._conn.read_characteristic(0x18)
+                data = self._conn.read_characteristic(0x18)
+                self.other_18 = codecs.encode(data, "hex")
+            except BrokenPipeError:
+                self.logger.error("BrokenPipeError, reconnect BLE")
+                self._conn.stop_helper()
             except Exception:
                 self.logger.exception("Failed to read characteristics")
                 time.sleep(10)
