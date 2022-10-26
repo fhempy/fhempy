@@ -18,6 +18,8 @@ use JSON;
 use Time::HiRes qw(time);
 
 our $init_done;
+our $modules;
+
 
 my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
@@ -71,6 +73,21 @@ sub BindingsIo_Define {
 
   ( undef, $hash->{IP},$hash->{PORT} ) = split ':', $hash->{DeviceName};
 
+
+  if ( $hash->{IP} !~ m/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ )
+  {
+     my $ip= gethostbyname($hash->{IP});
+     if (defined $ip ) { $hash->{IP} =  inet_ntoa($ip) };
+     Log3 $name, 3, qq[found IP $hash->{IP}];
+  }
+  my @BindingsIoDevices = devspec2array(qq[i:TYPE=BindingsIo:FILTER=i:IP=$hash->{IP}:FILTER=i:PORT=$hash->{PORT}]); 
+  if ( IsDevice($BindingsIoDevices[1]) )  
+  {
+    Log3 $name, 5, qq[found hostname $BindingsIoDevices[0] defined];
+    return qq[Device $BindingsIoDevices[0] with IP=$hash->{IP} is already defined and using the same port, aborting define];
+  }
+  
+  
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
