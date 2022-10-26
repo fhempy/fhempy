@@ -1,4 +1,3 @@
-
 # $Id: 10_BindingsIo.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;

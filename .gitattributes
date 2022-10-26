@@ -1,3 +1,6 @@
 * text=auto
 
-*.pm text eol=crlf
+*.pm text
+*.t text
+
+*.png=binary
