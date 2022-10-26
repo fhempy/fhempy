@@ -17,6 +17,8 @@ use CoProcess;
 use JSON;
 use Time::HiRes qw(time);
 
+our $init_done;
+
 my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
 
@@ -82,7 +84,7 @@ sub BindingsIo_Define {
     # use devspec2array to find existing fhempy server device
     my @fhempyDevices;
     @fhempyDevices = ::devspec2array(qq[i:TYPE=$bindingType(Binding|Server)]);
-    if ( ::IsDevice($fhempyDevices[0]) )     {  $foundServer = 1;   }
+    $foundServer = ::IsDevice($fhempyDevices[0]);
 
     if ($foundServer == 0) 
     {
