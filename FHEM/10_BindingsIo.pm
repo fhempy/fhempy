@@ -18,64 +18,60 @@ use CoProcess;
 use JSON;
 use Time::HiRes qw(time);
 
-sub Log($$);
-sub Log3($$$);
-
 my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
 
 sub
-BindingsIo_Initialize($)
+BindingsIo_Initialize
 {
   my ($hash) = @_;
 
   $hash->{parseParams} = 1;
 
-  $hash->{DefFn}    = 'BindingsIo_Define';
-  $hash->{UndefFn}  = 'BindingsIo_Undefine';
-  $hash->{GetFn}    = 'BindingsIo_Get';
-  $hash->{SetFn}    = 'BindingsIo_Set';
-  $hash->{AttrFn}   = 'BindingsIo_Attr';
+  $hash->{DefFn}    = \&BindingsIo_Define;
+  $hash->{UndefFn}  = \&BindingsIo_Undefine;
+  $hash->{GetFn}    = \&BindingsIo_Get;
+  $hash->{SetFn}    = \&BindingsIo_Set;
+  $hash->{AttrFn}   = \&BindingsIo_Attr;
   $hash->{AttrList} = $readingFnAttributes;
-  $hash->{NotifyFn}   = 'BindingsIo_Notify';
+  $hash->{NotifyFn}   = \&BindingsIo_Notify;
 
-  $hash->{ReadFn}   = 'BindingsIo_Read';
-  $hash->{ReadyFn}  = 'BindingsIo_Ready';
-  $hash->{WriteFn}  = 'BindingsIo_Write';
+  $hash->{ReadFn}   = \&BindingsIo_Read;
+  $hash->{ReadyFn}  = \&BindingsIo_Ready;
+  $hash->{WriteFn}  = \&BindingsIo_Write;
 
   $hash->{Clients} = "PythonModule:fhempy"; # NodeModule
 
-  return undef;
-}
+  return ;
 
 sub
-BindingsIo_Define($$$)
+BindingsIo_Define
 {
-  my ($hash, $a, $h) = @_;
+  my ($hash, $def) = @_;
+  my @a =split m{\s+}xms, $def;
   my $name = $hash->{NAME};
 
-  Log3 $hash, 3, "BindingsIo v1.0.0";
+  Log3 $hash, 3, q[BindingsIo v1.0.0];
 
-  my $bindingType = @$a[2];
+  my $bindingType = $a[2] // $a[1];
 
   $hash->{args} = $a;
-  $hash->{argsh} = $h;
+  # $hash->{argsh} = $h; // Todo: Delete other code references
 
   my $port = 0;
   my $localServer = 1;
-  if ($bindingType eq "Python" or $bindingType eq "fhempy") {
-    $hash->{DeviceName} = "ws:127.0.0.1:15733";
-    $hash->{IP} = "127.0.0.1";
-    $hash->{PORT} = "15733";
-    $hash->{localBinding} = 1;
-  } else {
-    $hash->{DeviceName} = "ws:".@$a[2];
-    $hash->{IP} = substr($hash->{DeviceName}, 0, index($hash->{DeviceName}, ":"));
-    $hash->{PORT} = substr($hash->{DeviceName}, index($hash->{DeviceName}, ":")+1);
-    $bindingType = @$a[3];
+  
+  if ($#a == 2) {
+    $hash->{DeviceName} = "ws:".@$a[1];
     $localServer = 0;
     $hash->{localBinding} = 0;
+  } elseif ($#a == 1) {
+    $hash->{DeviceName} = "ws:localhost:15733";
+    $hash->{localBinding} = 1;
   }
+
+  ($hash->{IP},$hash->{PORT}) = split ':', $hash->{DeviceName};
+
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
@@ -85,40 +81,41 @@ BindingsIo_Define($$$)
 
   if ($init_done && $localServer == 1) {
     my $foundServer = 0;
-    foreach my $fhem_dev (sort keys %main::defs) {
-      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Binding");
-      $foundServer = 1 if($main::defs{$fhem_dev}{TYPE} eq $bindingType."Server");
-    }
+    
+    # use devspec2array to find existing fhempy server device
+    $fhempyDevices = devspec2array(qq[i:TYPE=$bindingType(Binding|Server])
+    if (IsDevice ($fhempyDevices[0]))  { $foundServer = 1 };
+
     if ($foundServer == 0) {
-      CommandDefine(undef, $bindingType."server_".$hash->{PORT}." ".$bindingType."Server ".$port);
-      InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
+      CommandDefine(undef, $bindingType.'server_'.$hash->{PORT}.' '.$bindingType.qq[Server $port]);
+      InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
     }
   }
-  if ($init_done && $localServer == 0) {
-    InternalTimer(gettimeofday()+3, "BindingsIo_connectDev", $hash, 0);
+  elsif ($init_done && $localServer == 0) {
+    InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
   }
 
   if ($init_done == 0 && $localServer == 1) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)...", 1);
+    readingsSingleUpdate($hash, 'state', 'Installing fhempy (15min)...', 1);
     $hash->{installing} = 0;
-    InternalTimer(gettimeofday()+2, "BindingsIo_installing", $hash, 0);
+    InternalTimer(gettimeofday()+2, 'BindingsIo_installing', $hash, 0);
   }
 
   # put in fhempy room
-  if (AttrVal($name, "room", "") eq "") {
-    CommandAttr(undef, "$name room fhempy");
+  if ($init_done && AttrVal($name, q[room], q[]) eq q[]) {
+    CommandAttr(undef, qq[$name room fhempy]);
   }
   # set icon
-  if (AttrVal($name, "icon", "") eq "") {
-    CommandAttr(undef, "$name icon file_json-ld2");
+  if ($init_done && AttrVal($name, q[icon], q[]) eq q[]) {
+    CommandAttr(undef, qq[$name icon file_json-ld2]);
   }
   # set group
-  if (AttrVal($name, "group", "") eq "") {
-    CommandAttr(undef, "$name group fhempy");
+  if ($init_done && AttrVal($name, q[group], q[]) eq q[]) {
+    CommandAttr(undef, qq[$name group fhempy]);
   }
   # set devStateIcon
-  my $devstateicon_val = AttrVal($name, "devStateIcon", "");
-  if ($devstateicon_val eq "" or index($devstateicon_val, "ver_available") == -1) {
+  my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
+  if ($init_done && $devstateicon_val eq q[] or index($devstateicon_val, "ver_available") == -1) {
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
@@ -140,7 +137,7 @@ BindingsIo_Define($$$)
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");
   }
 
-  return undef;
+  return ;
 }
 
 sub
