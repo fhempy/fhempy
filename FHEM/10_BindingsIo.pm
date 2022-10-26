@@ -21,9 +21,7 @@ use Time::HiRes qw(time);
 my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
 
-sub
-BindingsIo_Initialize
-{
+sub BindingsIo_Initialize {
   my ($hash) = @_;
 
   $hash->{parseParams} = 1;
@@ -43,34 +41,34 @@ BindingsIo_Initialize
   $hash->{Clients} = "PythonModule:fhempy"; # NodeModule
 
   return ;
+}
 
-sub
-BindingsIo_Define
-{
-  my ($hash, $def) = @_;
-  my @a =split m{\s+}xms, $def;
+sub BindingsIo_Define {
+  my ( $hash, $a ) = @_;
+ 
   my $name = $hash->{NAME};
+  Log3 $name, 3, q[BindingsIo v1.0.1];
 
-  Log3 $hash, 3, q[BindingsIo v1.0.0];
-
-  my $bindingType = $a[2] // $a[1];
+  my $bindingType = $a->[3] // $a->[2];
 
   $hash->{args} = $a;
   # $hash->{argsh} = $h; // Todo: Delete other code references
 
   my $port = 0;
   my $localServer = 1;
-  
-  if ($#a == 2) {
-    $hash->{DeviceName} = "ws:".@$a[1];
+
+  if ($#{$a} == 3) {
+    $hash->{DeviceName} = "ws:".$a->[2];
     $localServer = 0;
     $hash->{localBinding} = 0;
-  } elseif ($#a == 1) {
+  } elsif ($#{$a} == 2) {
     $hash->{DeviceName} = "ws:localhost:15733";
     $hash->{localBinding} = 1;
+  } else {  
+    return q[to few parameters given for define];
   }
 
-  ($hash->{IP},$hash->{PORT}) = split ':', $hash->{DeviceName};
+  ( undef, $hash->{IP},$hash->{PORT} ) = split ':', $hash->{DeviceName};
 
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
@@ -83,15 +81,16 @@ BindingsIo_Define
     my $foundServer = 0;
     
     # use devspec2array to find existing fhempy server device
-    $fhempyDevices = devspec2array(qq[i:TYPE=$bindingType(Binding|Server])
-    if (IsDevice ($fhempyDevices[0]))  { $foundServer = 1 };
+    my @fhempyDevices;
+    @fhempyDevices = ::devspec2array(qq[i:TYPE=$bindingType(Binding|Server)]);
+    if ( ::IsDevice($fhempyDevices[0]) )     {  $foundServer = 1;   }
 
-    if ($foundServer == 0) {
+    if ($foundServer == 0) 
+    {
       CommandDefine(undef, $bindingType.'server_'.$hash->{PORT}.' '.$bindingType.qq[Server $port]);
       InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
     }
-  }
-  elsif ($init_done && $localServer == 0) {
+  } elsif ($init_done && $localServer == 0)  {
     InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
   }
 

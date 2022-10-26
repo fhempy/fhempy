@@ -12,6 +12,11 @@ use CoProcess;
 sub Log($$);
 sub Log3($$$);
 
+#
+# Predeclare Variables from other modules may be loaded later from fhem
+#
+our $FW_ME;
+
 sub fhempyServer_Initialize($)
 {
   my ($hash) = @_;
