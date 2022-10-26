@@ -28,9 +28,6 @@ jobs:
     steps: 
     - name: Checkout Repostory
       uses: actions/checkout@v3
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        ref: ${{ github.event.pull_request.head.ref }}
 
     - uses: shogo82148/actions-setup-perl@v1.18.0
       with:
@@ -54,12 +51,23 @@ jobs:
     - name: run prove on fhem with perl ${{ matrix.perl }}
       run: |
         cp -R ${GITHUB_WORKSPACE}/FHEM/*.pm ${FHEM_DIR}/FHEM/
-        prove -j2 --exec 'perl -MDevel::Cover=-silent,1 fhem.pl -t' -I FHEM -vv -r ${GITHUB_WORKSPACE}/t/FHEM/
+        prove -j1 --exec 'perl -MDevel::Cover=-silent,1 fhem.pl -t' -I FHEM -vv -r ${GITHUB_WORKSPACE}/t/FHEM/
       shell: bash
       working-directory: /opt/fhem/
       env:
         FHEM_DIR: /opt/fhem
- 
+   
+  update_controls:
+    needs: [runtest]
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout Repostory
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+
     - name: update controls file for FHEM Module
       uses: fhem/fhem-controls-actions@v2.1.0
       with:

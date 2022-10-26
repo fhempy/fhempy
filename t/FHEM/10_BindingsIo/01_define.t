@@ -7,7 +7,7 @@ use Test2::Tools::Compare qw{is};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-
+	plan(3);
 
 	subtest 'define fhempy_local BindingsIo fhempy' => sub {
 		plan(4);
