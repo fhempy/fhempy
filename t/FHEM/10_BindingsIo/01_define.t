@@ -2,15 +2,15 @@
 use strict;
 use warnings;
 use Test2::V0;
-use Test2::Tools::Compare qw{is};
+use Test2::Tools::Compare qw{is like};
 use Test2::Mock;
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(4);
+	plan(6);
 
 	subtest 'define fhempy_local BindingsIo fhempy' => sub {
-		plan(5);
+		plan(6);
 		
         my $deviceName=q[fhempy_local];
         my $ret = CommandDefine(undef,qq[$deviceName BindingsIo fhempy]); 
@@ -19,8 +19,8 @@ InternalTimer(time()+0.5, sub {
 		is ($defs{$deviceName}{IP}, q[127.0.0.1], q[check IP] );
 		is ($defs{$deviceName}{localBinding},1, q[check localBinding] );
 		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindingtype] );
-
-		
+		is (IsDevice(q[fhempyserver_15733]),T(), q[check fhempyserver created] );
+	
 	};
 
 
@@ -46,7 +46,7 @@ InternalTimer(time()+0.5, sub {
         is (IsDevice($deviceName), 1, q[check device created with define]);
 		is ($defs{$deviceName}{IP}, q[fhempy-server], q[check IP ] );
 		is ($defs{$deviceName}{localBinding},0, q[check localBinding] );
-		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindigtype] );
+		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindingtype] );
 	};
 
 
@@ -72,6 +72,27 @@ InternalTimer(time()+0.5, sub {
 		is (IsDevice($deviceName_ip), 0, q[check device with ip is not created]);
 
 	};
+
+	subtest 'define fhempy_3 BindingsIo | to few parameters' => sub {
+		plan(2);
+		
+        my $deviceName=q[fhempy_3];
+        my $ret = CommandDefine(undef,qq[$deviceName BindingsIo]); 
+        like ($ret,qr/to few parameters/ , q[check return from define]);
+		is (IsDevice($deviceName), 0, q[check device is not created with define]);
+	};
+
+	subtest 'define fhempy_3 BindingsIo wrongtype | wrong binding type' => sub {
+		plan(2);
+		
+        my $deviceName=q[fhempy_3];
+        my $ret = CommandDefine(undef,qq[$deviceName BindingsIo wrongtype]); 
+        like ($ret,qr/unsupported parameters given/ , q[check return from define]);
+		is (IsDevice($deviceName), 0, q[check device is not created with define]);
+
+	};
+
+
 
 	done_testing();
 	exit(0);

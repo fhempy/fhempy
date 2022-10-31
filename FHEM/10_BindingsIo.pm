@@ -60,15 +60,17 @@ sub BindingsIo_Define {
   my $port = 0;
   my $localServer = 1;
 
-  if ($#{$a} == 3) {
-    $hash->{DeviceName} = "ws:".$a->[2];
+  if ($#{$a} == 3 && $bindingType eq q[fhempy])  {
+    $hash->{DeviceName} = qq{ws:$a->[2]};
     $localServer = 0;
     $hash->{localBinding} = 0;
-  } elsif ($#{$a} == 2) {
-    $hash->{DeviceName} = "ws:localhost:15733";
+  } elsif ($#{$a} == 2 && ($bindingType eq q[fhempy] || $bindingType eq q[python]) )   {
+    $hash->{DeviceName} = q[ws:localhost:15733];
     $hash->{localBinding} = 1;
-  } else {  
+  } elsif ($#{$a} < 2) {  
     return q[to few parameters given for define];
+  } else {  
+    return q[unsupported parameters given for define];
   }
 
   ( undef, $hash->{IP},$hash->{PORT} ) = split ':', $hash->{DeviceName};
@@ -118,40 +120,43 @@ sub BindingsIo_Define {
     InternalTimer(gettimeofday()+2, 'BindingsIo_installing', $hash, 0);
   }
 
-  # put in fhempy room
-  if ($init_done && AttrVal($name, q[room], q[]) eq q[]) {
-    CommandAttr(undef, qq[$name room fhempy]);
-  }
-  # set icon
-  if ($init_done && AttrVal($name, q[icon], q[]) eq q[]) {
-    CommandAttr(undef, qq[$name icon file_json-ld2]);
-  }
-  # set group
-  if ($init_done && AttrVal($name, q[group], q[]) eq q[]) {
-    CommandAttr(undef, qq[$name group fhempy]);
-  }
-  # set devStateIcon
-  my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($init_done && $devstateicon_val eq q[] or index($devstateicon_val, "ver_available") == -1) {
-    my $devstate_cmd = '{
-      my $status_img = "10px-kreis-gruen";;
-      my $status_txt = "connected";;
-      my $ver = ReadingsVal($name, "version", "-");;
-      my $ver_available = ReadingsVal($name, "version_available", $ver);;
-      my $update_icon = "";;
-      if ($ver_available ne $ver) {
-        $status_img = "10px-kreis-gelb";;
-        $status_txt = "Version ".$ver_available." available for update";;
-      }
-      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-        $status_img = "10px-kreis-rot";;
-        $status_txt = "disconnected";;
-      }
-      $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
-    }';
-    $devstate_cmd =~ tr/\n//d;
-    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+  if ($init_done)
+  {
+    # put in fhempy room
+    if (AttrVal($name, q[room], q[]) eq q[]) {
+      CommandAttr(undef, qq[$name room fhempy]);
+    }
+    # set icon
+    if (AttrVal($name, q[icon], q[]) eq q[]) {
+      CommandAttr(undef, qq[$name icon file_json-ld2]);
+    }
+    # set group
+    if (AttrVal($name, q[group], q[]) eq q[]) {
+      CommandAttr(undef, qq[$name group fhempy]);
+    }
+    # set devStateIcon
+    my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
+    if ($devstateicon_val eq q[] or index($devstateicon_val, "ver_available") == -1) {
+      my $devstate_cmd = '{
+        my $status_img = "10px-kreis-gruen";;
+        my $status_txt = "connected";;
+        my $ver = ReadingsVal($name, "version", "-");;
+        my $ver_available = ReadingsVal($name, "version_available", $ver);;
+        my $update_icon = "";;
+        if ($ver_available ne $ver) {
+          $status_img = "10px-kreis-gelb";;
+          $status_txt = "Version ".$ver_available." available for update";;
+        }
+        if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+          $status_img = "10px-kreis-rot";;
+          $status_txt = "disconnected";;
+        }
+        $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage("refresh")."</a>";;
+        "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
+      }';
+      $devstate_cmd =~ tr/\n//d;
+      CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+    }
   }
 
   return ;
