@@ -59,12 +59,15 @@ sub BindingsIo_Define {
 
   my $port = 0;
   my $localServer = 1;
+  
+  # Support legacy define via Python instead of fhempy statement
+  $bindingType = ($bindingType eq q[Python]) ? q[fhempy] : $bindingType;
 
   if ($#{$a} == 3 && $bindingType eq q[fhempy])  {
     $hash->{DeviceName} = qq{ws:$a->[2]};
     $localServer = 0;
     $hash->{localBinding} = 0;
-  } elsif ($#{$a} == 2 && ($bindingType eq q[fhempy] || $bindingType eq q[python]) )   {
+  } elsif ($#{$a} == 2 && ($bindingType eq q[fhempy]) )   {
     $hash->{DeviceName} = q[ws:localhost:15733];
     $hash->{localBinding} = 1;
   } elsif ($#{$a} < 2) {  

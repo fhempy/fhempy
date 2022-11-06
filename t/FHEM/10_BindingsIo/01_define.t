@@ -7,7 +7,22 @@ use Test2::Mock;
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(6);
+	plan(7);
+
+	subtest 'define fhempy_local_2 BindingsIo Python (legacy define)' => sub {
+		plan(6);
+		
+        my $deviceName=q[fhempy_local_2];
+        my $ret = CommandDefine(undef,qq[$deviceName BindingsIo fhempy]); 
+        is ($ret, U(), q[check return from define]);
+		is (IsDevice($deviceName), 1, q[check device created with define]);
+		is ($defs{$deviceName}{IP}, q[127.0.0.1], q[check IP] );
+		is ($defs{$deviceName}{localBinding},1, q[check localBinding] );
+		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindingtype] );
+		is (IsDevice(q[fhempyserver_15733]),T(), q[check fhempyserver created] );
+		CommandDelete(undef,$deviceName);
+	};
+
 
 	subtest 'define fhempy_local BindingsIo fhempy' => sub {
 		plan(6);
@@ -20,7 +35,6 @@ InternalTimer(time()+0.5, sub {
 		is ($defs{$deviceName}{localBinding},1, q[check localBinding] );
 		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindingtype] );
 		is (IsDevice(q[fhempyserver_15733]),T(), q[check fhempyserver created] );
-	
 	};
 
 
