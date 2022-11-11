@@ -208,6 +208,14 @@ class rct_power(generic.FhemModule):
                 "function": "set_rct_write",
                 "function_param": 0x54829753,
             },
+            "island_only": {
+                "args": ["value"],
+                "params": {"value": {"format": "int"}},
+                "help": "Island only mode without RCT Power Switch (normally 0). Boolean value 0 (Grid) or 1 (Island only without Powerswitch) allowed.<br>!!!!! WARNING: Grid must be disconnected before activation. Read manual !!!!!<br>Registry: power_mng.is_island_only",
+                "options": "slider,0,1,1",
+                "function": "set_rct_write",
+                "function_param": 0xC9900716,
+            },            
         }
         self.set_set_config(set_config)
 
