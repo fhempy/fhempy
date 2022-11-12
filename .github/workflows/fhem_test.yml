@@ -73,6 +73,15 @@ jobs:
       with:
         filename: controls_pythonbinding.txt 
 
+    - name: update controls file for python binary
+      uses: fhem/fhem-controls-actions@v2.1.0
+      with:
+        filename: controls_pythonbinding.txt 
+        directory: FHEM/bindings/python/bin
+        writemode: a
+        extension: ''
+
+
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
       with:
