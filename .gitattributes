@@ -1,0 +1,6 @@
+* text=auto
+
+*.pm text
+*.t text
+
+*.png=binary
