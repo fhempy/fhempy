@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.509 (2022-11-12)
+### Fix
+* **fhempy:** Fix innerHTML error ([`23c95b8`](https://github.com/dominikkarall/fhempy/commit/23c95b87bb5c739f6793e15e47f3bf33f09e146c))
+* **fhempy:** Fix ble stop_helper ([`5e48356`](https://github.com/dominikkarall/fhempy/commit/5e483568919f90425a14be65b0423a4eafcd3969))
+
 ## v0.1.508 (2022-10-16)
 ### Feature
 * **blue_connect:** Reconnect on BrokenPipeError ([`533d218`](https://github.com/dominikkarall/fhempy/commit/533d21803699f17d257471f89b8e04901e0704c0))
