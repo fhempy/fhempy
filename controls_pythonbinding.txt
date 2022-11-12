@@ -1,9 +1,6 @@
-DIR FHEM/bindings
-DIR FHEM/bindings/python
-DIR FHEM/bindings/python/bin
-UPD 2022-11-12_12:05:25 20913  FHEM/10_BindingsIo.pm
-UPD 2022-11-12_12:05:25 4663   FHEM/10_PythonBinding.pm
-UPD 2022-11-12_12:05:25 3253   FHEM/10_PythonModule.pm
-UPD 2022-11-12_12:05:25 2898   FHEM/10_fhempy.pm
-UPD 2022-11-12_12:05:25 6281   FHEM/10_fhempyServer.pm
-UPD 2022-11-12_12:05:25 4504   FHEM/bindings/python/bin/fhempy
+UPD 2022-11-12_13:20:45 20913  FHEM/10_BindingsIo.pm
+UPD 2022-11-12_13:20:45 4663   FHEM/10_PythonBinding.pm
+UPD 2022-11-12_13:20:45 3253   FHEM/10_PythonModule.pm
+UPD 2022-11-12_13:20:45 2898   FHEM/10_fhempy.pm
+UPD 2022-11-12_13:20:45 6281   FHEM/10_fhempyServer.pm
+UPD 2022-11-12_13:20:45 4504   FHEM/bindings/python/bin/fhempy
