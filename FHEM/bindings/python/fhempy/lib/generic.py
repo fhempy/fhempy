@@ -82,8 +82,14 @@ class FhemModule:
           helpAttrAction();
 
           var helpLink = document.getElementById("content")
-            .getElementsByClassName("detLink devSpecHelp");
-          helpLink[0].innerHTML = '<div class="detLink devSpecHelp"><a href="#" onclick="displayHelp();return false;">Device specific help</a></div>';
+            .getElementsByClassName("detLink");
+          if (helpLink.length == 0) {
+            helpLink = document.getElementById("content")
+              .getElementsByClassName("detLink devSpecHelp");
+            helpLink[0].innerHTML = '<div class="detLink devSpecHelp"><a href="#" onclick="displayHelp();return false;">Device specific help</a></div>';
+          } else {
+            helpLink[0].innerHTML = '<div class="detLink"><a href="#" onclick="displayHelp();return false;">Help for fhempy device ###DEVICETYPE###</a></div>';
+          }
         });
         </script>"""
         js_set_conf = {}
@@ -113,6 +119,11 @@ class FhemModule:
         ret = ret.replace(
             "###ATTR_CONFIG_STRING###",
             json.dumps(js_attr_conf),
+        )
+
+        ret = ret.replace(
+            "###DEVICETYPE###",
+            self.hash["FHEMPYTYPE"],
         )
 
         # add readme as help
