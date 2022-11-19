@@ -35,7 +35,9 @@ class fusionsolar(generic.FhemModule):
         self.create_async_task(self.update())
 
     async def update(self):
-        while True:
+        max_retries = 10
+        retry = 0
+        while retry < max_retries:
             self.restapi = FusionSolarRestApi(
                 self.logger,
                 self._username,
@@ -45,9 +47,14 @@ class fusionsolar(generic.FhemModule):
             if await self.restapi.login():
                 # we never come back from update_readings
                 await self.update_readings()
+                retry = 0
             else:
+                retry += 1
                 await fhem.readingsSingleUpdate(self.hash, "state", "login failed", 1)
                 await asyncio.sleep(10)
+        await fhem.readingsSingleUpdate(
+            self.hash, "state", "login failed, no more retry", 1
+        )
 
     async def update_readings(self):
         while True:
