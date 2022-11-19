@@ -57,7 +57,7 @@ class FusionSolarRestApi:
         + "deviceDn=%INVERTER_STATION%&_=%CURRENT_UTC_TIME%"
     )
 
-    def __init__(self, logger, username, password, region="region01eu5"):
+    def __init__(self, logger, username, password, region="eu5"):
         self.logger = logger
         self._region = region
         self._username = username
@@ -115,6 +115,7 @@ class FusionSolarRestApi:
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
             "x-requested-with": "XMLHttpRequest",
+            "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
 
         async with session.post(
@@ -136,8 +137,10 @@ class FusionSolarRestApi:
 
     async def login_redirect(self, session, redurl):
         headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+            "Connection": "keep-alive",
             "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Chrome OS"',
@@ -146,14 +149,18 @@ class FusionSolarRestApi:
             "sec-fetch-site": "same-site",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
+            "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
-        url = "https://" + self._region + ".fusionsolar.huawei.com" + redurl
+        if redurl[0:4] == "http":
+            url = redurl
+        else:
+            url = "https://" + self._region + ".fusionsolar.huawei.com" + redurl
         async with session.get(url, max_redirects=20, headers=headers) as resp:
             return resp
 
     async def get_jsessionid(self, session):
-        url = "https://eu5.fusionsolar.huawei.com/rest/pvms/web/demouser/v1/region-list"
-        async with session.get(url) as resp:
+        url = "https://" + self._region + ".fusionsolar.huawei.com/"
+        async with session.get(url, max_redirects=20) as resp:
             return resp
 
     async def login(self):
@@ -192,8 +199,21 @@ class FusionSolarRestApi:
                 if redurl:
                     resp = await self.login_redirect(session, redurl)
 
-                url = "https://" + self._region + ".fusionsolar.huawei.com"
-                async with session.get(url, max_redirects=20) as resp2:
+                headers = {
+                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                    "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+                    "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+                    "sec-ch-ua-mobile": "?0",
+                    "sec-ch-ua-platform": '"Chrome OS"',
+                    "sec-fetch-dest": "document",
+                    "sec-fetch-mode": "navigate",
+                    "sec-fetch-site": "same-site",
+                    "sec-fetch-user": "?1",
+                    "upgrade-insecure-requests": "1",
+                    "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+                }
+                url = "https://" + self._regionhost + "/#/LOGIN"
+                async with session.get(url, max_redirects=20, headers=headers) as resp2:
                     self.logger.debug(f"response from {url}: {resp2}")
                     if resp2.status == 200:
                         self._cookies = session.cookie_jar
