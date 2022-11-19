@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.518 (2022-11-19)
+### Fix
+* **fusionsolar:** Finally support v3 auth ([`af63a3c`](https://github.com/dominikkarall/fhempy/commit/af63a3cde738aa49be5d599bcefb0c234734cd0f))
+
 ## v0.1.517 (2022-11-19)
 ### Fix
 * **fusionsolar:** Try again to fix v3 auth ([`8e27c6c`](https://github.com/dominikkarall/fhempy/commit/8e27c6c6e6a9d3ad4bd19d194bc4f436ea63edf2))
