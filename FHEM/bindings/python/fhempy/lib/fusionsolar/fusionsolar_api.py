@@ -165,9 +165,7 @@ class FusionSolarRestApi:
 
     async def login(self):
         try:
-            async with aiohttp.ClientSession(
-                trust_env=True, cookies={"locale": "en-us"}
-            ) as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 resp = await self.get_jsessionid(session)
 
                 fusion_pubkey_json = await self.get_pubkey(session)
@@ -200,28 +198,6 @@ class FusionSolarRestApi:
                     resp = await self.login_redirect(session, redurl)
 
                 headers = {
-                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                    "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
-                    "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
-                    "sec-ch-ua-mobile": "?0",
-                    "sec-ch-ua-platform": '"Chrome OS"',
-                    "sec-fetch-dest": "document",
-                    "sec-fetch-mode": "navigate",
-                    "sec-fetch-site": "same-site",
-                    "sec-fetch-user": "?1",
-                    "upgrade-insecure-requests": "1",
-                    "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
-                }
-                url = "https://" + self._regionhost + "/#/LOGIN"
-                async with session.get(url, max_redirects=20, headers=headers) as resp2:
-                    self.logger.debug(f"response from {url}: {resp2}")
-                    if resp2.status == 200:
-                        self._cookies = session.cookie_jar
-                    else:
-                        self.logger.error(f"Failed to retrieve cookies: {resp2}")
-                        return False
-
-                headers = {
                     "accept": "application/json",
                     "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
                     "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
@@ -231,10 +207,11 @@ class FusionSolarRestApi:
                     "sec-fetch-mode": "cors",
                     "sec-fetch-site": "same-origin",
                     "x-requested-with": "XMLHttpRequest",
+                    "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
                 }
 
                 url = (
-                    "https://"
+                    "https://region01"
                     + self._region
                     + ".fusionsolar.huawei.com/unisess/v1/auth/session"
                 )
