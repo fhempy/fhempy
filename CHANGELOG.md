@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.520 (2022-11-20)
+### Fix
+* **fhempy:** Downgrade cryptography due to installation errors with newer version ([`7f2f14c`](https://github.com/dominikkarall/fhempy/commit/7f2f14c7a75feb8b73231dd496c43afcb21e3594))
+* **blue_connect:** Handle broken pipe ([`256acae`](https://github.com/dominikkarall/fhempy/commit/256acae7159666f7ae031a63e11a2e4404e4cb6a))
+
 ## v0.1.519 (2022-11-20)
 ### Feature
 * **meross:** Add state per channel ([`ad734d8`](https://github.com/dominikkarall/fhempy/commit/ad734d8b78b155469b8437eaf5f89a065cf57471))
