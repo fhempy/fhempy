@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.515 (2022-11-19)
+### Fix
+* **volvo_software_update:** Fix headers to prevent blocking ([`09a7bdf`](https://github.com/dominikkarall/fhempy/commit/09a7bdf40053dac3b0273602f895bd0b0f9e9c4a))
+
 ## v0.1.514 (2022-11-19)
 
 
