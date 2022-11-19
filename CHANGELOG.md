@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.517 (2022-11-19)
+### Fix
+* **fusionsolar:** Try again to fix v3 auth ([`8e27c6c`](https://github.com/dominikkarall/fhempy/commit/8e27c6c6e6a9d3ad4bd19d194bc4f436ea63edf2))
+
 ## v0.1.516 (2022-11-19)
 ### Fix
 * **fusionsolar:** Fix region usage ([`a90746a`](https://github.com/dominikkarall/fhempy/commit/a90746ad3d12d02ad3b6c6e1174ef03a00f5b414))
