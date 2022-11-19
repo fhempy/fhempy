@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.510 (2022-11-19)
+### Fix
+* **fusionsolar:** Try to implement v3 authentication ([`ddb7283`](https://github.com/dominikkarall/fhempy/commit/ddb72838fe4ece4d5b98e93b5debad87096a2948))
+* **fhempy:** Fix DefineFn and some other fixes by @side79 ([#100](https://github.com/dominikkarall/fhempy/issues/100)) ([`f896ea4`](https://github.com/dominikkarall/fhempy/commit/f896ea438888ec32f1198f13a65d328c31161431))
+
 ## v0.1.509 (2022-11-12)
 ### Fix
 * **fhempy:** Fix innerHTML error ([`23c95b8`](https://github.com/dominikkarall/fhempy/commit/23c95b87bb5c739f6793e15e47f3bf33f09e146c))
