@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.511 (2022-11-19)
+### Fix
+* **fusionsolar:** Retry login max 10 times ([`4f7c619`](https://github.com/dominikkarall/fhempy/commit/4f7c61980ed1ba16dd21a28fbdc801dff5312efa))
+
 ## v0.1.510 (2022-11-19)
 ### Fix
 * **fusionsolar:** Try to implement v3 authentication ([`ddb7283`](https://github.com/dominikkarall/fhempy/commit/ddb72838fe4ece4d5b98e93b5debad87096a2948))
