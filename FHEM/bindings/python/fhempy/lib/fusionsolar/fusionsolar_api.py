@@ -81,7 +81,6 @@ class FusionSolarRestApi:
         url = "https://" + self._region + ".fusionsolar.huawei.com/unisso/pubkey"
         async with session.get(url) as resp:
             self.logger.debug(f"response from {url}: {resp}")
-            self._regionhost = resp.host
             j = await resp.json()
             return j
 
@@ -152,6 +151,7 @@ class FusionSolarRestApi:
             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
         if redurl[0:4] == "http":
+            self.api_base = redurl
             url = redurl
         else:
             url = "https://" + self._region + ".fusionsolar.huawei.com" + redurl
@@ -196,6 +196,7 @@ class FusionSolarRestApi:
 
                 if redurl:
                     resp = await self.login_redirect(session, redurl)
+                    self._cookies = session.cookie_jar
 
                 headers = {
                     "accept": "application/json",
@@ -210,21 +211,17 @@ class FusionSolarRestApi:
                     "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
                 }
 
-                url = (
-                    "https://region01"
-                    + self._region
-                    + ".fusionsolar.huawei.com/unisess/v1/auth/session"
-                )
+                url = self.api_base + "/unisess/v1/auth/session"
                 async with session.get(url, headers=headers) as resp3:
                     self.logger.debug(f"response from {url}: {resp3}")
                     response = await resp3.json()
-                    csrfToken = response["csrfToken"]
+                    self._csrftoken = response["csrfToken"]
 
                 headers = {
                     "accept": "application/json, text/javascript, */*; q=0.01",
                     "accept-language": "en-AT,en;q=0.9",
                     "content-type": "application/json",
-                    "roarand": csrfToken,
+                    "roarand": self._csrftoken,
                     "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
                     "sec-ch-ua-mobile": "?0",
                     "sec-ch-ua-platform": '"Chrome OS"',
@@ -244,16 +241,12 @@ class FusionSolarRestApi:
                     "pageSize": 10,
                     "gridConnectionTime": "",
                     "queryTime": round(time.time() * 1000),
-                    "timeZone": 2,
+                    "timeZone": 1,
                     "sortId": "createTime",
                     "sortDir": "DESC",
                     "locale": "en_US",
                 }
-                url = (
-                    "https://"
-                    + self._region
-                    + ".fusionsolar.huawei.com/rest/pvms/web/station/v1/station/station-list"
-                )
+                url = self.api_base + "/rest/pvms/web/station/v1/station/station-list"
                 async with session.post(
                     url,
                     json=body,
@@ -277,7 +270,7 @@ class FusionSolarRestApi:
         if self._inverter_station:
             path = path.replace("%INVERTER_STATION%", self._inverter_station)
 
-        url = "https://" + self._region + ".fusionsolar.huawei.com" + path
+        url = self.api_base + path
         headers = {
             "accept": (
                 "text/html,application/xhtml+xml,application/xml;q=0.9,"
@@ -288,6 +281,7 @@ class FusionSolarRestApi:
             "accept-language": (
                 "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
             ),
+            "roarand": self._csrftoken,
             "cache-control": "max-age=0",
             "content-type": "application/json",
             "sec-ch-ua": (
@@ -300,6 +294,7 @@ class FusionSolarRestApi:
             "sec-fetch-site": "none",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
+            "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
         resp = await self._get(url, headers)
         if len(resp) == 0:
@@ -308,11 +303,7 @@ class FusionSolarRestApi:
         return resp
 
     async def send_idle(self):
-        url = (
-            "https://"
-            + self._region
-            + ".fusionsolar.huawei.com/rest/plat/smapp/v1/idle"
-        )
+        url = self.api_base + "/rest/plat/smapp/v1/idle"
 
         headers = {
             "accept": "application/json",
@@ -331,11 +322,6 @@ class FusionSolarRestApi:
             "x-non-renewal-active": "true",
             "x-non-renewal-session": "false",
             "x-requested-with": "XMLHttpRequest",
-            "Referer": (
-                f"https://{self._region}.fusionsolar.huawei.com"
-                "/pvmswebsite/assets/build/index.html"
-            ),
-            "Referrer-Policy": "strict-origin-when-cross-origin",
         }
         await self._get(url, headers)
 
@@ -358,9 +344,8 @@ class FusionSolarRestApi:
                             await self.login()
                             continue
                         else:
+                            response = await resp.json()
                             break
-
-                response = await resp.json()
 
             if "success" in response and response["success"] is True:
                 if "data" in response:
