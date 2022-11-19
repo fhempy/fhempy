@@ -254,9 +254,16 @@ class meross_device:
         if isinstance(self._device, ToggleXMixin) or isinstance(
             self._device, ToggleMixin
         ):
-            state_val = "off"
-            if self._device.is_on():
-                state_val = "on"
+            for channel in self._device.channels:
+                if channel.is_master_channel:
+                    state_val = "off"
+                    if self._device.is_on(channel.index):
+                        state_val = "on"
+                else:
+                    state = "on" if self._device.is_on(channel.index) else "off"
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, f"switch_{channel.index}", state
+                    )
 
         if isinstance(self._device, GarageOpenerMixin):
             state_val = "closed"
