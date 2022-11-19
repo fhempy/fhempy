@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.519 (2022-11-20)
+### Feature
+* **meross:** Add state per channel ([`ad734d8`](https://github.com/dominikkarall/fhempy/commit/ad734d8b78b155469b8437eaf5f89a065cf57471))
+
 ## v0.1.518 (2022-11-19)
 ### Fix
 * **fusionsolar:** Finally support v3 auth ([`af63a3c`](https://github.com/dominikkarall/fhempy/commit/af63a3cde738aa49be5d599bcefb0c234734cd0f))
