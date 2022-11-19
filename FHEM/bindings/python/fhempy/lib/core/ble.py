@@ -202,6 +202,11 @@ class BTLEConnection(btle.DefaultDelegate):
         with self:
             return self._conn.readCharacteristic(handle)
 
+    def disconnect(self):
+        if self._conn:
+            self._conn.disconnect()
+            self._conn = None
+
     def stop_helper(self):
         self._conn._helper.kill()
         self._conn._helper = None

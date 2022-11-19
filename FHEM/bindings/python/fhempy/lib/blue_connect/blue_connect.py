@@ -71,6 +71,7 @@ class blue_connect(generic.FhemModule):
                 break
             except BrokenPipeError:
                 self.logger.error("BrokenPipeError, reconnect BLE")
+                self._conn.disconnect()
                 self._conn.stop_helper()
             except Exception:
                 self.logger.exception("Failed to write characteristics")
