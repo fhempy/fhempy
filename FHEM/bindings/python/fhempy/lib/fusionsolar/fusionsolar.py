@@ -29,7 +29,7 @@ class fusionsolar(generic.FhemModule):
 
         self._username = args[3]
         self._password = args[4]
-        self._region = args[5] if len(args) == 6 else "region01eu5"
+        self._region = args[5] if len(args) == 6 else "eu5"
 
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.create_async_task(self.update())
