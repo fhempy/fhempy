@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.516 (2022-11-19)
+### Fix
+* **fusionsolar:** Fix region usage ([`a90746a`](https://github.com/dominikkarall/fhempy/commit/a90746ad3d12d02ad3b6c6e1174ef03a00f5b414))
+
 ## v0.1.515 (2022-11-19)
 ### Fix
 * **volvo_software_update:** Fix headers to prevent blocking ([`09a7bdf`](https://github.com/dominikkarall/fhempy/commit/09a7bdf40053dac3b0273602f895bd0b0f9e9c4a))
