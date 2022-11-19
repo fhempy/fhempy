@@ -1,9 +1,15 @@
 """API client for FusionSolar Kiosk."""
 import asyncio
+import codecs
+import json
+import os
 import time
 from datetime import datetime
 
 import aiohttp
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 class FusionSolarRestApi:
@@ -70,79 +76,124 @@ class FusionSolarRestApi:
         self._battery_discharge_capacity = None
         self._string_output_power = 0
 
+    async def get_pubkey(self, session):
+        # pubkey to get pubkey
+        url = "https://" + self._region + ".fusionsolar.huawei.com/unisso/pubkey"
+        async with session.get(url) as resp:
+            self.logger.debug(f"response from {url}: {resp}")
+            self._regionhost = resp.host
+            j = await resp.json()
+            return j
+
+    async def validate_user(self, session):
+        url = (
+            "https://"
+            + self._region
+            + ".fusionsolar.huawei.com"
+            + "/unisso/"
+            + self._validate_user_ver
+            + "/validateUser.action"
+        )
+
+        body = {
+            "multiRegionName": "",
+            "organizationName": "",
+            "username": self._username,
+            "password": self._password_encrypted
+            if self._validate_user_ver == "v3"
+            else self._password,
+        }
+
+        headers = {
+            "accept": "application/json, text/javascript, */*; q=0.01",
+            "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+            "content-type": "application/json",
+            "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Chrome OS"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-requested-with": "XMLHttpRequest",
+        }
+
+        async with session.post(
+            url,
+            json=body,
+            headers=headers,
+            max_redirects=20,
+            params={
+                "service": "/unisess/v1/auth?service=%2Fnetecowebext%2Fhome%2Findex.html",
+                "decision": 1,
+                "actionErrors": 465,
+                "timeStamp": self._timestamp,
+                "nonce": codecs.encode(os.urandom(16), "hex").decode(),
+            },
+        ) as resp:
+            self.logger.debug(f"response from {url}: {resp}")
+            j = await resp.json()
+            return j
+
+    async def login_redirect(self, session, redurl):
+        headers = {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+            "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+            "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Chrome OS"',
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "same-site",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+        }
+        url = "https://" + self._region + ".fusionsolar.huawei.com" + redurl
+        async with session.get(url, max_redirects=20, headers=headers) as resp:
+            return resp
+
+    async def get_jsessionid(self, session):
+        url = "https://eu5.fusionsolar.huawei.com/rest/pvms/web/demouser/v1/region-list"
+        async with session.get(url) as resp:
+            return resp
+
     async def login(self):
         try:
-            async with aiohttp.ClientSession(trust_env=True) as session:
-                url = "https://" + self._region + ".fusionsolar.huawei.com/"
-                async with session.get(url) as resp:
-                    self.logger.debug(f"response from {url}: {resp}")
-                    self._regionhost = resp.host
-
-                    if self._regionhost is None:
-                        self.logger.error(f"Failed to get region host: {resp}")
-                        return False
-
-            url = (
-                "https://"
-                + self._regionhost
-                + "/unisso/v2/"
-                + "validateUser.action?service="
-                + "%2Funisess%2Fv1%2Fauth%3Fservice%3D%252F"
-                + "netecowebext%252Fhome%252Findex.html"
-            )
-
-            headers = {
-                "accept": "application/json, text/javascript, */*; q=0.01",
-                "accept-language": "en-AT,en;q=0.9",
-                "content-type": "application/json",
-                "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Chrome OS"',
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-origin",
-                "x-requested-with": "XMLHttpRequest",
-                "Referer": "https://"
-                + self._regionhost
-                + "/unisso/login.action?service=%2Funisess%2Fv1%2Fauth%3Fservice%3D%252Fnetecowebext%252Fhome%252Findex.html",
-                "Referrer-Policy": "strict-origin-when-cross-origin",
-            }
-            body = {
-                "organizationName": "",
-                "username": self._username,
-                "password": self._password,
-            }
-
             async with aiohttp.ClientSession(
-                trust_env=True, headers=headers
+                trust_env=True, cookies={"locale": "en-us"}
             ) as session:
-                async with session.post(url, json=body) as resp:
-                    self.logger.debug(f"response from {url}: {resp}")
-                    response = resp.cookies
+                resp = await self.get_jsessionid(session)
 
-            headers = {
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "accept-language": "en-AT,en;q=0.9",
-                "sec-ch-ua": '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Chrome OS"',
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "same-site",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1",
-                "Referer": "https://" + self._regionhost + "/",
-                "Referrer-Policy": "strict-origin-when-cross-origin",
-            }
+                fusion_pubkey_json = await self.get_pubkey(session)
+                self._validate_user_ver = "v2"
+                if fusion_pubkey_json["enableEncrypt"]:
+                    self._validate_user_ver = "v3"
+                    self.public_key = serialization.load_pem_public_key(
+                        fusion_pubkey_json["pubKey"].encode("UTF-8"),
+                        backend=default_backend(),
+                    )
+                    hex_pwd = self.public_key.encrypt(
+                        self._password.encode("UTF-8"),
+                        padding.OAEP(
+                            mgf=padding.MGF1(algorithm=hashes.SHA384()),
+                            algorithm=hashes.SHA384(),
+                            label=None,
+                        ),
+                    )
+                    self._password_encrypted = (
+                        codecs.encode(hex_pwd, "base64").decode().replace("\n", "")
+                        + fusion_pubkey_json["version"]
+                    )
+                    self._timestamp = fusion_pubkey_json["timeStamp"]
 
-            async with aiohttp.ClientSession(
-                trust_env=True, headers=headers, cookies=response
-            ) as session:
-                url = "https://" + self._region + ".fusionsolar.huawei.com/"
-                async with session.get(
-                    url,
-                    max_redirects=20,
-                ) as resp2:
+                # validateUser.action to get bspsessionid
+                json_resp = await self.validate_user(session)
+                redurl = json_resp["redirectURL"]
+
+                if redurl:
+                    resp = await self.login_redirect(session, redurl)
+
+                url = "https://" + self._region + ".fusionsolar.huawei.com"
+                async with session.get(url, max_redirects=20) as resp2:
                     self.logger.debug(f"response from {url}: {resp2}")
                     if resp2.status == 200:
                         self._cookies = session.cookie_jar
@@ -150,12 +201,24 @@ class FusionSolarRestApi:
                         self.logger.error(f"Failed to retrieve cookies: {resp2}")
                         return False
 
+                headers = {
+                    "accept": "application/json",
+                    "accept-language": "en-AT,en;q=0.9,de-AT;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+                    "sec-ch-ua": '"Not?A_Brand";v="8", "Chromium";v="108", "Google Chrome";v="108"',
+                    "sec-ch-ua-mobile": "?0",
+                    "sec-ch-ua-platform": '"Chrome OS"',
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                    "x-requested-with": "XMLHttpRequest",
+                }
+
                 url = (
                     "https://"
                     + self._region
                     + ".fusionsolar.huawei.com/unisess/v1/auth/session"
                 )
-                async with session.get(url) as resp3:
+                async with session.get(url, headers=headers) as resp3:
                     self.logger.debug(f"response from {url}: {resp3}")
                     response = await resp3.json()
                     csrfToken = response["csrfToken"]
@@ -206,7 +269,7 @@ class FusionSolarRestApi:
             return True
 
         except Exception as ex:
-            self.logger.exception(f"Failed to get data from {url}: {ex}")
+            self.logger.exception(f"Failed to get data: {ex}")
             return False
 
     async def _get_rest_data(self, path):
