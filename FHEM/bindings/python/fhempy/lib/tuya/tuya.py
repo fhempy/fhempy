@@ -437,6 +437,12 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         )
         await self.set_attr_dp(self.hash)
 
+    async def connection_check_loop(self):
+        while True:
+            await asyncio.sleep(60)
+            if self._connected_device and self._connected_device.transport is None:
+                await self.setup_connection()
+
     async def setup_connection(self):
         state_set = False
         while True:
@@ -449,6 +455,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     self,
                     timeout=15,
                 )
+                self.create_async_task(self.connection_check_loop())
                 break
             except Exception:
                 if not state_set:
