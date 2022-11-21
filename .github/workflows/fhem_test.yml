@@ -67,7 +67,8 @@ jobs:
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
-
+        fetch-depth: 0
+        
     - name: update controls file for FHEM Module
       uses: fhem/fhem-controls-actions@v2.1.0
       with:
@@ -80,7 +81,6 @@ jobs:
         directory: FHEM/bindings/python/bin
         writemode: a
         extension: ''
-
 
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
