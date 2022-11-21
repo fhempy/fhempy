@@ -1,15 +1,41 @@
 """API client for FusionSolar Kiosk."""
 import asyncio
 import codecs
-import json
 import os
 import time
+from dataclasses import dataclass
 from datetime import datetime
 
 import aiohttp
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+
+
+@dataclass
+class SignalSet:
+    signals: list
+
+    def __repr__(self):
+        return repr(self.signals)
+
+    def get_ids(self):
+        return [signal.id for signal in self.signals]
+
+    def get_name_by_id(self, id):
+        for signal in self.signals:
+            if signal.id == int(id):
+                return signal.name.lower().replace(" ", "_")
+
+
+@dataclass
+class Signal:
+    id: int
+    name: str
+    unit: str
+
+    def __repr__(self):
+        return f"{self.name} ({self.unit})"
 
 
 class FusionSolarRestApi:
@@ -28,34 +54,11 @@ class FusionSolarRestApi:
         + "timeDim=2&queryTime=%CURRENT_UTC_TIME%&timeZone=2&"
         + "timeZoneStr=Europe%2FBerlin&_=%CURRENT_UTC_TIME%"
     )
-    DEVICE_SIGNALS = (
-        "/rest/pvms/web/device/v1/device-real-kpi?"
-        + "signalIds=10025&signalIds=10032&signalIds=10029&signalIds=10019&"
-        + "signalIds=10022&signalIds=10006&signalIds=10020&signalIds=10021&"
-        + "signalIds=10027&signalIds=10028&signalIds=21029&signalIds=10018&"
-        + "signalIds=10008&signalIds=10009&signalIds=10010&signalIds=10011&"
-        + "signalIds=10012&signalIds=10013&signalIds=10014&signalIds=10015&"
-        + "signalIds=10016&signalIds=11002&signalIds=11005&signalIds=11008&"
-        + "signalIds=11011&signalIds=11014&signalIds=11017&signalIds=11020&"
-        + "signalIds=11023&signalIds=11026&signalIds=11029&signalIds=11032&"
-        + "signalIds=11035&signalIds=11038&signalIds=11041&signalIds=11044&"
-        + "signalIds=11047&signalIds=11050&signalIds=11053&signalIds=11056&"
-        + "signalIds=11059&signalIds=11062&signalIds=11065&signalIds=11068&"
-        + "signalIds=11071&signalIds=11001&signalIds=11004&signalIds=11007&"
-        + "signalIds=11010&signalIds=11013&signalIds=11016&signalIds=11019&"
-        + "signalIds=11022&signalIds=11025&signalIds=11028&signalIds=11031&"
-        + "signalIds=11034&signalIds=11037&signalIds=11040&signalIds=11043&"
-        + "signalIds=11046&signalIds=11049&signalIds=11052&signalIds=11055&"
-        + "signalIds=11058&signalIds=11061&signalIds=11064&signalIds=11067&"
-        + "signalIds=11070&signalIds=14001&signalIds=14002&signalIds=14003&"
-        + "signalIds=14004&signalIds=14005&signalIds=14006&signalIds=14007&"
-        + "signalIds=14008&signalIds=14009&signalIds=14010&signalIds=14011&"
-        + "signalIds=14012&signalIds=14013&signalIds=14014&signalIds=14015&"
-        + "signalIds=14016&signalIds=14017&signalIds=14018&signalIds=14019&"
-        + "signalIds=14020&signalIds=14021&signalIds=14022&signalIds=14023&"
-        + "signalIds=14024&signalIds=10047&signalIds=10051&"
-        + "deviceDn=%INVERTER_STATION%&_=%CURRENT_UTC_TIME%"
+    DEVICE_STATISTICS_SIGNALS = (
+        "/rest/pvms/web/device/v1/device-statistics-signal?"
+        + "deviceDn=%INVERTER_STATION%"
     )
+    DEVICE_SIGNALS = "/rest/pvms/web/device/v1/device-history-data"
 
     def __init__(self, logger, username, password, region="eu5"):
         self.logger = logger
@@ -70,11 +73,12 @@ class FusionSolarRestApi:
         self._from_grid = 0
         self._to_grid = 0
         self._electrical_load = 0
-        self._battery_soc = None
-        self._battery_battery_power = None
-        self._battery_charge_capacity = None
-        self._battery_discharge_capacity = None
+        self._battery_soc = 0
+        self._battery_battery_power = 0
+        self._battery_charge_capacity = 0
+        self._battery_discharge_capacity = 0
         self._string_output_power = 0
+        self._available_signals = None
 
     async def get_pubkey(self, session):
         # pubkey to get pubkey
@@ -262,7 +266,7 @@ class FusionSolarRestApi:
             self.logger.exception(f"Failed to get data: {ex}")
             return False
 
-    async def _get_rest_data(self, path):
+    async def _get_rest_data(self, path, params={}):
         current_utc_time = int(datetime.utcnow().timestamp() * 1000)
         path = path.replace("%STATION%", self._stationname).replace(
             "%CURRENT_UTC_TIME%", str(current_utc_time)
@@ -296,10 +300,10 @@ class FusionSolarRestApi:
             "upgrade-insecure-requests": "1",
             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
-        resp = await self._get(url, headers)
+        resp = await self._get(url, headers, params=params)
         if len(resp) == 0:
             # try again
-            resp = await self._get(url, headers)
+            resp = await self._get(url, headers, params=params)
         return resp
 
     async def send_idle(self):
@@ -325,7 +329,7 @@ class FusionSolarRestApi:
         }
         await self._get(url, headers)
 
-    async def _get(self, url, headers, max_retries=5):
+    async def _get(self, url, headers, max_retries=5, params={}):
         try:
             response = {}
             async with aiohttp.ClientSession(
@@ -334,7 +338,7 @@ class FusionSolarRestApi:
                 retry = 1
                 while retry < max_retries:
                     retry += 1
-                    async with session.get(url) as resp:
+                    async with session.get(url, params=params) as resp:
                         if resp.status != 200:
                             # wait a few seconds before login
                             self.logger.error(
@@ -370,10 +374,10 @@ class FusionSolarRestApi:
         self._to_grid = 0
         self._electrical_load = "-"
         self._string_output_power = "-"
-        self._battery_soc = None
-        self._battery_battery_power = None
-        self._battery_charge_capacity = None
-        self._battery_discharge_capacity = None
+        self._battery_soc = 0
+        self._battery_battery_power = 0
+        self._battery_charge_capacity = 0
+        self._battery_discharge_capacity = 0
         self._energyflowdata = None
 
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/energy-flow?stationDn=STATION&_
@@ -394,16 +398,17 @@ class FusionSolarRestApi:
                         node["description"]["value"].replace(" kW", "")
                     )
                 elif node["name"] == "neteco.pvms.devTypeLangKey.energy_store":
-                    self._battery_soc = float(node["deviceTips"]["SOC"])
-                    self._battery_charge_capacity = float(
-                        node["deviceTips"]["CHARGE_CAPACITY"]
-                    )
-                    self._battery_battery_power = float(
-                        node["deviceTips"]["BATTERY_POWER"]
-                    )
-                    self._battery_discharge_capacity = float(
-                        node["deviceTips"]["DISCHARGE_CAPACITY"]
-                    )
+                    if node["deviceTips"]["SOC"] != "--":
+                        self._battery_soc = float(node["deviceTips"]["SOC"])
+                        self._battery_charge_capacity = float(
+                            node["deviceTips"]["CHARGE_CAPACITY"]
+                        )
+                        self._battery_battery_power = float(
+                            node["deviceTips"]["BATTERY_POWER"]
+                        )
+                        self._battery_discharge_capacity = float(
+                            node["deviceTips"]["DISCHARGE_CAPACITY"]
+                        )
                 elif node["name"] == "neteco.pvms.devTypeLangKey.string":
                     self._string_output_power = float(
                         node["description"]["value"].replace(" kW", "")
@@ -436,15 +441,30 @@ class FusionSolarRestApi:
             FusionSolarRestApi.ENERGY_BALANCE
         )
 
-    async def update_device_signals(self):
-        self._device_signals = await self._get_rest_data(
-            FusionSolarRestApi.DEVICE_SIGNALS
+    async def update_available_device_signals(self):
+        available_signals = await self._get_rest_data(
+            FusionSolarRestApi.DEVICE_STATISTICS_SIGNALS
         )
-        if "signals" not in self._device_signals:
-            await asyncio.sleep(10)
-            self._device_signals = await self._get_rest_data(
-                FusionSolarRestApi.DEVICE_SIGNALS
-            )
+        data = available_signals["signalList"]
+        self._available_signals = SignalSet(
+            signals=[
+                Signal(row["id"], row["name"], row["unit"].get("unit", ""))
+                for row in data
+            ]
+        )
+
+    async def update_device_signals(self):
+        if self._available_signals is None:
+            await self.update_available_device_signals()
+
+        self._device_signals = await self._get_rest_data(
+            FusionSolarRestApi.DEVICE_SIGNALS,
+            params={
+                "deviceDn": self._inverter_station,
+                "signalIds": self._available_signals.get_ids(),
+                "date": int(datetime.now().timestamp() * 1000),
+            },
+        )
 
     async def update_station_detail(self):
         # https://region01eu5.fusionsolar.huawei.com/rest/pvms/web/station/v1/overview/station-detail?stationDn=STATION&_=
@@ -551,17 +571,18 @@ class FusionSolarRestApi:
         return self._from_grid
 
     @property
-    def string_details(self):
-        string_details = {}
-        if "signals" in self._device_signals:
-            for signal in (11001, 11004):
-                string_details[f"string_pv{int((signal-11001)/3+1)}"] = {
-                    "voltage": self._device_signals["signals"][str(signal)]["value"],
-                    "current": self._device_signals["signals"][str(signal + 1)][
-                        "value"
-                    ],
-                }
-        return string_details
+    def device_signals(self):
+        device_signals = {}
+        for sigid in self._device_signals:
+            sig_name = self._available_signals.get_name_by_id(sigid)
+            sig_value_history = self._device_signals[sigid]["pmDataList"]
+            last_val = "-"
+            for row in sig_value_history:
+                if "dnId" not in row:
+                    continue
+                last_val = row["counterValue"]
+            device_signals[sig_name] = last_val
+        return device_signals
 
     @property
     def data_string(self):
@@ -569,5 +590,4 @@ class FusionSolarRestApi:
             f"Stationdetail Data:\n{self._stationdetail}\n\n"
             f"Energyflow Data:\n{self._energyflowdata}\n\n"
             f"Energybalance Data:\n{self._energy_balance}\n\n"
-            f"Device Signals Data:\n{self._device_signals}\n"
         )

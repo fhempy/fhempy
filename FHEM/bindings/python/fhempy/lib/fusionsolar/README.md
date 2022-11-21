@@ -16,4 +16,4 @@ define my_solar fhempy fusionsolar USERNAME PASSWORD REGION
 
  - USERNAME: Fusionsolar username
  - PASSWORD: Fusionsolar password
- - REGION: Default region01eu5, copy it from the first part of the URL
+ - REGION: Default eu5, copy it from the first part of the URL
