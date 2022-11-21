@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.522 (2022-11-21)
+### Feature
+* **fusionsolar:** Add more signals data, fix empty battery error ([`07df9c1`](https://github.com/dominikkarall/fhempy/commit/07df9c10af8f7ce468a9c0016c2a04963386dbbd))
+
+### Fix
+* **fusionsolar:** Fix region ([`f1a49f0`](https://github.com/dominikkarall/fhempy/commit/f1a49f0b9ddaeb3e120962cc0469159548e508b2))
+
 ## v0.1.521 (2022-11-21)
 ### Fix
 * **tuya:** Add connection check loop ([`32942f4`](https://github.com/dominikkarall/fhempy/commit/32942f4dc3e2e022d8876e6c5d7898bf861a92d8))
