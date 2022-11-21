@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.521 (2022-11-21)
+### Fix
+* **tuya:** Add connection check loop ([`32942f4`](https://github.com/dominikkarall/fhempy/commit/32942f4dc3e2e022d8876e6c5d7898bf861a92d8))
+
 ## v0.1.520 (2022-11-20)
 ### Fix
 * **fhempy:** Downgrade cryptography due to installation errors with newer version ([`7f2f14c`](https://github.com/dominikkarall/fhempy/commit/7f2f14c7a75feb8b73231dd496c43afcb21e3594))
