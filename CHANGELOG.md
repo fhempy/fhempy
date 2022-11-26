@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.524 (2022-11-26)
+### Fix
+* **github_backup:** Handle upload error ([`d5d3a86`](https://github.com/dominikkarall/fhempy/commit/d5d3a8631dbb350603e4288fbac5dda66a06b98f))
+
 ## v0.1.523 (2022-11-26)
 ### Fix
 * **fusionsolar:** Use pycryptodome, re-login on error ([`1427342`](https://github.com/dominikkarall/fhempy/commit/1427342f2c547c411276e5821a7a37feadfea8df))
