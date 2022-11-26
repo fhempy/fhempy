@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import aiohttp
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Hash import SHA384
+from Crypto.PublicKey import RSA
 
 
 @dataclass
@@ -176,18 +176,11 @@ class FusionSolarRestApi:
                 self._validate_user_ver = "v2"
                 if fusion_pubkey_json["enableEncrypt"]:
                     self._validate_user_ver = "v3"
-                    self.public_key = serialization.load_pem_public_key(
-                        fusion_pubkey_json["pubKey"].encode("UTF-8"),
-                        backend=default_backend(),
+                    self.public_key = RSA.import_key(
+                        fusion_pubkey_json["pubKey"].encode("UTF-8")
                     )
-                    hex_pwd = self.public_key.encrypt(
-                        self._password.encode("UTF-8"),
-                        padding.OAEP(
-                            mgf=padding.MGF1(algorithm=hashes.SHA384()),
-                            algorithm=hashes.SHA384(),
-                            label=None,
-                        ),
-                    )
+                    cipher = PKCS1_OAEP.new(self.public_key, SHA384)
+                    hex_pwd = cipher.encrypt(self._password.encode("UTF-8"))
                     self._password_encrypted = (
                         codecs.encode(hex_pwd, "base64").decode().replace("\n", "")
                         + fusion_pubkey_json["version"]
@@ -301,9 +294,6 @@ class FusionSolarRestApi:
             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
         resp = await self._get(url, headers, params=params)
-        if len(resp) == 0:
-            # try again
-            resp = await self._get(url, headers, params=params)
         return resp
 
     async def send_idle(self):
@@ -348,8 +338,12 @@ class FusionSolarRestApi:
                             await self.login()
                             continue
                         else:
-                            response = await resp.json()
-                            break
+                            if resp.headers["Content-Type"].startswith("text/html"):
+                                await self.login()
+                                continue
+                            else:
+                                response = await resp.json()
+                                break
 
             if "success" in response and response["success"] is True:
                 if "data" in response:
