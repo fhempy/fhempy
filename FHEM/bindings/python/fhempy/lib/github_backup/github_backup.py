@@ -155,11 +155,14 @@ class github_backup(generic.FhemModule):
             if f_sha:
                 data_msg["sha"] = f_sha
 
-            await self.github_put(
+            upload_resp = await self.github_put(
                 f"https://api.github.com/repos/{self.gh_user}/"
                 + f"{self.gh_repo}/contents/{self.directory}/{filename}",
                 data_msg,
             )
+            if upload_resp is False:
+                raise Exception(f"Failed to upload file {filename}")
+
             return True
         except Exception:
             await fhem.readingsSingleUpdateIfChanged(
