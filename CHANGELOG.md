@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.523 (2022-11-26)
+### Fix
+* **fusionsolar:** Use pycryptodome, re-login on error ([`1427342`](https://github.com/dominikkarall/fhempy/commit/1427342f2c547c411276e5821a7a37feadfea8df))
+
 ## v0.1.522 (2022-11-21)
 ### Feature
 * **fusionsolar:** Add more signals data, fix empty battery error ([`07df9c1`](https://github.com/dominikkarall/fhempy/commit/07df9c10af8f7ce468a9c0016c2a04963386dbbd))
