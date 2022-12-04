@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.525 (2022-12-04)
+### Feature
+* **energie_gv_at:** Add module to retrieve hours for energy saving ([`0ab3689`](https://github.com/dominikkarall/fhempy/commit/0ab3689750842dc7834739cb72c83df9f073d9fe))
+
 ## v0.1.524 (2022-11-26)
 ### Fix
 * **github_backup:** Handle upload error ([`d5d3a86`](https://github.com/dominikkarall/fhempy/commit/d5d3a8631dbb350603e4288fbac5dda66a06b98f))
