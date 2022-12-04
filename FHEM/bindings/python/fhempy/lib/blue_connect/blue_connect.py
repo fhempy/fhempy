@@ -137,7 +137,7 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "conductivity", self.water_conductivity
         )
-        await fhem.readingsBulkUpdate(self.hash, "salt", self.water_salt)
+        await fhem.readingsBulkUpdate(self.hash, "salinity", self.water_salt)
 
         state = []
         if self.water_ph < 7.2:
