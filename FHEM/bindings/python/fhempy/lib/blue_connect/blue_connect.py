@@ -17,6 +17,8 @@ class blue_connect(generic.FhemModule):
         self.water_temp = "0"
         self.water_orp = "0"
         self.water_ph = "0"
+        self.water_salt = "0"
+        self.water_conductivity = "0"
         self.other_18 = ""
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
@@ -58,8 +60,13 @@ class blue_connect(generic.FhemModule):
         raw_orp = int(self.raw_measurement[12:14] + self.raw_measurement[10:12], 16)
         self.water_orp = round(float(raw_orp) / 4)
 
-        raw_battery = int(self.raw_measurement[20:22] + self.raw_measurement[18:20], 16)
-        self.battery = float(raw_battery) / 1000
+        raw_salt = int(self.raw_measurement[16:18] + self.raw_measurement[14:16], 16)
+        self.water_salt = round(float(raw_salt) / 25, 2)
+
+        raw_conductivity = int(
+            self.raw_measurement[20:22] + self.raw_measurement[18:20], 16
+        )
+        self.water_conductivity = round(float(raw_conductivity) / 0.4134)
 
     def blocking_measure(self):
         for cnt in range(0, 10):
@@ -116,7 +123,8 @@ class blue_connect(generic.FhemModule):
         self.water_temp = 0
         self.water_orp = 0
         self.water_ph = 0
-        self.battery = 0
+        self.water_conductivity = 0
+        self.water_salt = 0
 
         async with self._ble_lock:
             await utils.run_blocking(functools.partial(self.blocking_measure))
@@ -126,7 +134,10 @@ class blue_connect(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
         await fhem.readingsBulkUpdate(self.hash, "raw", self.raw_measurement)
-        await fhem.readingsBulkUpdate(self.hash, "battery", self.battery)
+        await fhem.readingsBulkUpdate(
+            self.hash, "conductivity", self.water_conductivity
+        )
+        await fhem.readingsBulkUpdate(self.hash, "salt", self.water_salt)
 
         state = []
         if self.water_ph < 7.2:
