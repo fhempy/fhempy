@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.526 (2022-12-05)
+### Feature
+* **blue_connect:** Support salt and conductivity ([`3e78ef7`](https://github.com/dominikkarall/fhempy/commit/3e78ef781555ae083f783b9ba23ec4489c3bf132))
+
+### Fix
+* **energie_gv_at:** Fix update interval ([`c02acd9`](https://github.com/dominikkarall/fhempy/commit/c02acd9422a6391fcd7d5ba22991270293a909ce))
+* **blue_connect:** Change salt to salinity ([`4880b33`](https://github.com/dominikkarall/fhempy/commit/4880b338ff1396d0c6b499e2e69ede0bd24827fc))
+
 ## v0.1.525 (2022-12-04)
 ### Feature
 * **energie_gv_at:** Add module to retrieve hours for energy saving ([`0ab3689`](https://github.com/dominikkarall/fhempy/commit/0ab3689750842dc7834739cb72c83df9f073d9fe))
