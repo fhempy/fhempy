@@ -75,7 +75,7 @@ class energie_gv_at(generic.FhemModule):
             utc = entry["utc"]
             entry_time = datetime.datetime.strptime(utc, "%Y-%m-%dT%H:%M:%S%z")
             entry_time_diff = (
-                datetime.datetime.now(datetime.timezone.utc) - entry_time
+                entry_time - datetime.datetime.now(datetime.timezone.utc)
             ).total_seconds()
 
             if self._next_change > entry_time_diff and entry_time_diff > 0:
