@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.527 (2022-12-11)
+### Fix
+* **fhempy:** Replace cryptography with pycryptodome ([`a4965a3`](https://github.com/dominikkarall/fhempy/commit/a4965a31877c4417007f13ab7bf8fed0a66cabaa))
+
 ## v0.1.526 (2022-12-05)
 ### Feature
 * **blue_connect:** Support salt and conductivity ([`3e78ef7`](https://github.com/dominikkarall/fhempy/commit/3e78ef781555ae083f783b9ba23ec4489c3bf132))
