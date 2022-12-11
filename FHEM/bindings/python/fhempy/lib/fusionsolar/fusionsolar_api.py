@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import aiohttp
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.Hash import SHA384
-from Crypto.PublicKey import RSA
+from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.Hash import SHA384
+from Cryptodome.PublicKey import RSA
 
 
 @dataclass
