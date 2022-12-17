@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.532 (2022-12-17)
+### Fix
+* **tuya:** Fix value scaling ([`fb32943`](https://github.com/dominikkarall/fhempy/commit/fb329431728c5830c3fcf84ae97829861638e4ec))
+
 ## v0.1.531 (2022-12-17)
 ### Fix
 * **tuya:** Fix step/scale usage for integer values ([`170181b`](https://github.com/dominikkarall/fhempy/commit/170181b10aa3bde9da015263da0fc404fa98fd81))
