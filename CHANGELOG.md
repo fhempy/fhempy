@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.530 (2022-12-17)
+### Fix
+* **tuya:** Fix cur_voltage scale ([`8220acb`](https://github.com/dominikkarall/fhempy/commit/8220acb1abcd8a6de2d961f2b7d685e03cf25482))
+
 ## v0.1.529 (2022-12-17)
 ### Fix
 * **fhempy:** Support kubernetes ([`e7be7ac`](https://github.com/dominikkarall/fhempy/commit/e7be7ac30b00e17a1796515e564e636f2a731bb2))
