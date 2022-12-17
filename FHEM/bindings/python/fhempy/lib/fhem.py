@@ -102,7 +102,13 @@ async def setDevAttrList(name, attr_list):
 async def readingsBeginUpdate(hash):
     if hash["NAME"] not in update_locks:
         update_locks[hash["NAME"]] = asyncio.Lock()
-    await update_locks[hash["NAME"]].acquire()
+    try:
+        await asyncio.wait_for(update_locks[hash["NAME"]].acquire(), 120)
+    except asyncio.TimeoutError:
+        logging.error(
+            f"{hash['NAME']}: readingsBeginUpdate couldn't acquire lock,"
+            + " caused by readingsBeginUpdate without End or Single update inbetween"
+        )
     cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
     return await sendCommandHash(hash, cmd)
 
