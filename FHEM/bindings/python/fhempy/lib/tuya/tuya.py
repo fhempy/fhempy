@@ -1,17 +1,20 @@
 import ast
 import asyncio
 import functools
+import importlib
 import json
 import re
 
-from tinytuya import BulbDevice, Cloud, deviceScan
-
 from .. import fhem, generic, utils
-from . import mappings, pytuya
+from . import mappings
 
 
-class tuya(generic.FhemModule, pytuya.TuyaListener):
+class tuya(generic.FhemModule):
     def __init__(self, logger):
+        # import needs to be here, otherwise we are in a thread without
+        # event loop which is required in tinytuya
+        self.tt = importlib.import_module("tinytuya")
+        self.tt.loop = asyncio.get_event_loop()
         super().__init__(logger)
         self._connected_device = None
         self.tuya_cloud = None
@@ -92,7 +95,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         if self.tt_key and self.tt_secret:
             self.tuya_cloud = await utils.run_blocking(
                 functools.partial(
-                    Cloud,
+                    self.tt.Cloud,
                     self.tt_region,
                     self.tt_key,
                     self.tt_secret,
@@ -127,8 +130,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         await self._generate_set()
 
         await self.setup_connection()
-        status = await self._connected_device.status()
-        await self.update_readings(status)
+        status = await self._connected_device.detect_available_dps()
+        await self.update_readings(status, set_ready=True)
 
     async def set_attr_dp(self, hash):
         # check defined dp_Xs and their value
@@ -265,15 +268,21 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
         if "category" in self.info_dict and self.info_dict["category"] == "dj":
-            hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
+            hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
+                rgb["r"], rgb["g"], rgb["b"], "A"
+            )
         else:
-            hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
+            hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
+                rgb["r"], rgb["g"], rgb["b"], "B"
+            )
         await self._connected_device.set_dp(hexvalue, index)
 
     async def set_colour_data_v2(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
-        hexvalue = BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
+        hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
+            rgb["r"], rgb["g"], rgb["b"], "A"
+        )
         await self._connected_device.set_dp(hexvalue, index)
 
     def fhemrgb2rgb(self, rgb):
@@ -312,14 +321,14 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
         resp = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdps, self.tt_did)
         )
-        self.logger.debug("getdps: f{resp}")
+        self.logger.debug(f"getdps: {resp}")
         return resp["result"]
 
     async def get_tuya_dev_info(self):
         resp = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, True)
         )
-        self.logger.debug("getdevices: f{resp}")
+        self.logger.debug(f"getdevices: {resp}")
         for dev in resp["result"]:
             if dev["id"] == self.tt_did:
                 return dev
@@ -392,10 +401,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         await self.setup_connection()
 
-        status = await self._connected_device.status()
+        status = await self._connected_device.detect_available_dps()
 
         await self.prepare_attributes(status)
-        await self.update_readings(status)
+        await self.update_readings(status, set_ready=True)
 
     async def prepare_attributes(self, status):
         options = []
@@ -437,17 +446,23 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                         )
         await self.set_attr_dp(self.hash)
 
-    async def connection_check_loop(self):
+    async def update_dps_loop(self):
+        while True:
+            await asyncio.sleep(5)
+            # this is required to force update measurements (power, current, voltage)
+            await self._connected_device.device.device.updatedps()
+
+    async def status_quick_loop(self):
         while True:
             await asyncio.sleep(60)
-            if self._connected_device and self._connected_device.transport is None:
-                await self.setup_connection()
+            # this loop just ensures that all dps are updated every 60s
+            await self._connected_device.device.device.status_quick()
 
     async def setup_connection(self):
         state_set = False
         while True:
             try:
-                self._connected_device = await pytuya.connect(
+                self._connected_device = await self.tt.connect(
                     self.tt_ip,
                     self.tt_did,
                     self.tt_localkey,
@@ -455,7 +470,8 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
                     self,
                     timeout=15,
                 )
-                self.create_async_task(self.connection_check_loop())
+                self.create_async_task(self.update_dps_loop())
+                self.create_async_task(self.status_quick_loop())
                 break
             except Exception:
                 if not state_set:
@@ -554,8 +570,10 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             self.logger.exception("Failed to update info readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
-    async def update_readings(self, status):
-        state_set = False
+    async def update_readings(self, status, set_ready=False):
+        if "dps" in status:
+            status = status["dps"]
+        state_set = not set_ready
         await fhem.readingsBeginUpdate(self.hash)
         try:
             stateused = False
@@ -599,7 +617,7 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
             if not stateused:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "online", "1")
             if not state_set:
-                await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "ready")
         except Exception:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
@@ -664,7 +682,9 @@ class tuya(generic.FhemModule, pytuya.TuyaListener):
 
         # scan local devices to get IP
         self.logger.debug("Scan local devices...")
-        devices = await utils.run_blocking(functools.partial(deviceScan, False, 20))
+        devices = await utils.run_blocking(
+            functools.partial(self.tt.deviceScan, False, 20)
+        )
 
         def getIP(d, gwid):
             for ip in d:
