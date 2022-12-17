@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.528 (2022-12-17)
+### Feature
+* **tuya:** Support v3.4 devices, fix "no reading updates" ([`cc1414b`](https://github.com/dominikkarall/fhempy/commit/cc1414b6b039e597ed659d7cb4a3e4e12bcbed56))
+
 ## v0.1.527 (2022-12-11)
 ### Fix
 * **fhempy:** Replace cryptography with pycryptodome ([`a4965a3`](https://github.com/dominikkarall/fhempy/commit/a4965a31877c4417007f13ab7bf8fed0a66cabaa))
