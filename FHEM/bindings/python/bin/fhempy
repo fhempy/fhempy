@@ -69,17 +69,24 @@ def is_virtual_env():
     )
 
 
-def is_docker_env():
-    """Return True if we run in a docker env."""
-    return Path("/.dockerenv").exists()
+def is_container_env():
+    if Path("/.dockerenv").exists():
+        """Return True if we run in a docker env."""
+        container = True
+    elif Path("/var/run/secrets/kubernetes.io").exists():
+        """Return True if we run in a Kubernetes env."""
+        container = True
+    else:
+        container = False
+    return container
 
 
 def pip_kwargs(config_dir):
     """Return keyword arguments for PIP install."""
-    is_docker = is_docker_env()
+    is_container = is_container_env()
     kwargs = {
         # "constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
-        "no_cache_dir": is_docker,
+        "no_cache_dir": is_container,
     }
     if "WHEELS_LINKS" in os.environ:
         kwargs["find_links"] = os.environ["WHEELS_LINKS"]
