@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.529 (2022-12-17)
+### Fix
+* **fhempy:** Support kubernetes ([`e7be7ac`](https://github.com/dominikkarall/fhempy/commit/e7be7ac30b00e17a1796515e564e636f2a731bb2))
+* **fhempy:** Expand Container Check for Kubernetes ([#108](https://github.com/dominikkarall/fhempy/issues/108)) ([`529f46c`](https://github.com/dominikkarall/fhempy/commit/529f46c956a0b6459271856e799511139714bbff))
+* **fhempy:** Release readingsBeginUpdate lock after 120s if no readingsEndUpdate received ([`3607d18`](https://github.com/dominikkarall/fhempy/commit/3607d18ececf487cf32c60882edd1b84000c4b66))
+
 ## v0.1.528 (2022-12-17)
 ### Feature
 * **tuya:** Support v3.4 devices, fix "no reading updates" ([`cc1414b`](https://github.com/dominikkarall/fhempy/commit/cc1414b6b039e597ed659d7cb4a3e4e12bcbed56))
