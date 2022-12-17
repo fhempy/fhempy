@@ -262,6 +262,11 @@ class tuya(generic.FhemModule):
                     == params["new_val"]
                 ):
                     params["new_val"] = val
+        if (
+            params["function_param"]["values"]["step"] != 1
+            and params["function_param"]["values"]["scale"] == 0
+        ):
+            params["new_val"] *= 10
         new_val = params["new_val"] / (
             params["function_param"]["values"]["step"]
             / (10 ** params["function_param"]["values"]["scale"])
@@ -523,6 +528,8 @@ class tuya(generic.FhemModule):
     def convert(self, value, schema):
         if schema["type"] == "Integer":
             values = schema["values"]
+            if values["scale"] == 0 and values["step"] != 1:
+                value = value / 10
             return value * values["step"] / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
