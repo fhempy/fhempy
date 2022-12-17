@@ -191,14 +191,16 @@ class tuya(generic.FhemModule):
                 }
             elif fct["type"] == "Integer":
                 spec = fct["values"]
-                slider = f"slider,{spec['min']},{spec['step']},{spec['max']}"
+                min = spec["min"] * spec["step"] / (10 ** spec["scale"])
+                max = spec["max"] * spec["step"] / (10 ** spec["scale"])
+                slider = f"slider,{min},1,{max}"
                 set_conf[fct["code"]] = {
                     "options": slider,
                     "args": ["new_val"],
                     "params": {"new_val": {"format": "int"}},
                     "help": fct["desc"],
                     "function_param": fct,
-                    "function": "set_other_types",
+                    "function": "set_integer",
                 }
             elif fct["type"] == "String":
                 set_conf[fct["code"]] = {
@@ -250,6 +252,22 @@ class tuya(generic.FhemModule):
                 onoff = True
         if self._connected_device:
             await self._connected_device.set_dp(onoff, switch_id)
+
+    async def set_integer(self, hash, params):
+        index = params["function_param"]["id"]
+        if "translation" in params["function_param"]["values"]:
+            for val in params["function_param"]["values"]["translation"].keys():
+                if (
+                    params["function_param"]["values"]["translation"][val]
+                    == params["new_val"]
+                ):
+                    params["new_val"] = val
+        new_val = params["new_val"] / (
+            params["function_param"]["values"]["step"]
+            / (10 ** params["function_param"]["values"]["scale"])
+        )
+        if self._connected_device:
+            await self._connected_device.set_dp(new_val, index)
 
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
@@ -505,7 +523,7 @@ class tuya(generic.FhemModule):
     def convert(self, value, schema):
         if schema["type"] == "Integer":
             values = schema["values"]
-            return value / (10 ** values["scale"])
+            return value * values["step"] / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
                 return "on"
