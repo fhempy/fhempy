@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.531 (2022-12-17)
+### Fix
+* **tuya:** Fix step/scale usage for integer values ([`170181b`](https://github.com/dominikkarall/fhempy/commit/170181b10aa3bde9da015263da0fc404fa98fd81))
+* **fhempy:** Create fhempy_log device ([`82e63b7`](https://github.com/dominikkarall/fhempy/commit/82e63b710de1045f822204d6a9fa8d8485cf717f))
+
 ## v0.1.530 (2022-12-17)
 ### Fix
 * **tuya:** Fix cur_voltage scale ([`8220acb`](https://github.com/dominikkarall/fhempy/commit/8220acb1abcd8a6de2d961f2b7d685e03cf25482))
