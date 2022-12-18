@@ -415,15 +415,8 @@ class tuya(generic.FhemModule):
         await self.check_tuya_attributes()
         if len(self.tuya_spec_functions) == 0 and len(self.tuya_spec_status) == 0:
             await self.retrieve_tuya_specs()
-
-        # create attributes dp_1...X
-        # add options to attributes to select cloud codes
-        # e.g.
-        # dp_1 = "switch_1"
-        # dp_42 = "switch_overcharge"
-        # connect to device
-        info = await self.get_tuya_dev_info()
-        await self.update_info_readings(info)
+            info = await self.get_tuya_dev_info()
+            await self.update_info_readings(info)
 
         await self.setup_connection()
 
