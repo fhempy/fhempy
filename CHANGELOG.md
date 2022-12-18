@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.533 (2022-12-18)
+### Fix
+* **tuya:** Fix thermostat productid IAYz2WK1th0cMLmL values ([`21cca36`](https://github.com/dominikkarall/fhempy/commit/21cca36d3bd41113780eeef27ecbd6d1ef3c4100))
+
 ## v0.1.532 (2022-12-17)
 ### Fix
 * **tuya:** Fix value scaling ([`fb32943`](https://github.com/dominikkarall/fhempy/commit/fb329431728c5830c3fcf84ae97829861638e4ec))
