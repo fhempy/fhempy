@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.534 (2022-12-18)
+### Fix
+* **tuya:** Connect to cloud only if no tuya attr available ([`b624b1e`](https://github.com/dominikkarall/fhempy/commit/b624b1e43add88c0ab9f085207eae28a265898d5))
+
 ## v0.1.533 (2022-12-18)
 ### Fix
 * **tuya:** Fix thermostat productid IAYz2WK1th0cMLmL values ([`21cca36`](https://github.com/dominikkarall/fhempy/commit/21cca36d3bd41113780eeef27ecbd6d1ef3c4100))
