@@ -56,6 +56,7 @@ class tuya(generic.FhemModule):
             return
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1)
+        self.tt_productid = self.tt_type
         self.tt_region = "eu"
         self.tt_did = args[4]
         self.tt_ip = args[5]
@@ -191,9 +192,14 @@ class tuya(generic.FhemModule):
                 }
             elif fct["type"] == "Integer":
                 spec = fct["values"]
-                min = spec["min"] * spec["step"] / (10 ** spec["scale"])
-                max = spec["max"] * spec["step"] / (10 ** spec["scale"])
-                slider = f"slider,{min},1,{max}"
+                step = spec["step"] / (10 ** spec["scale"])
+                if self.tt_productid == "IAYz2WK1th0cMLmL":
+                    min = spec["min"] / 2
+                    max = spec["max"] / 2
+                else:
+                    min = spec["min"] / (10 ** spec["scale"])
+                    max = spec["max"] / (10 ** spec["scale"])
+                slider = f"slider,{min},{step},{max}"
                 set_conf[fct["code"]] = {
                     "options": slider,
                     "args": ["new_val"],
@@ -261,16 +267,13 @@ class tuya(generic.FhemModule):
                     params["function_param"]["values"]["translation"][val]
                     == params["new_val"]
                 ):
-                    params["new_val"] = val
-        if (
-            params["function_param"]["values"]["step"] != 1
-            and params["function_param"]["values"]["scale"] == 0
-        ):
-            params["new_val"] *= 10
-        new_val = params["new_val"] / (
-            params["function_param"]["values"]["step"]
-            / (10 ** params["function_param"]["values"]["scale"])
-        )
+                    new_val = val
+        else:
+            if self.tt_productid == "IAYz2WK1th0cMLmL":
+                params["new_val"] *= 2
+            new_val = params["new_val"] * (
+                10 ** params["function_param"]["values"]["scale"]
+            )
         if self._connected_device:
             await self._connected_device.set_dp(new_val, index)
 
@@ -528,9 +531,9 @@ class tuya(generic.FhemModule):
     def convert(self, value, schema):
         if schema["type"] == "Integer":
             values = schema["values"]
-            if values["scale"] == 0 and values["step"] != 1:
-                value = value / 10
-            return value * values["step"] / (10 ** values["scale"])
+            if self.tt_productid == "IAYz2WK1th0cMLmL":
+                value /= 2
+            return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
                 return "on"
