@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.535 (2022-12-20)
+### Fix
+* **tuya:** Fix device IAYz2WK1th0cMLmL ([`500fcd1`](https://github.com/dominikkarall/fhempy/commit/500fcd175d602024ed9504870fef5d546a244b69))
+
 ## v0.1.534 (2022-12-18)
 ### Fix
 * **tuya:** Connect to cloud only if no tuya attr available ([`b624b1e`](https://github.com/dominikkarall/fhempy/commit/b624b1e43add88c0ab9f085207eae28a265898d5))
