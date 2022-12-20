@@ -270,7 +270,7 @@ class tuya(generic.FhemModule):
                     new_val = val
         else:
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                params["new_val"] *= 2
+                params["new_val"] *= 0.2
             new_val = params["new_val"] * (
                 10 ** params["function_param"]["values"]["scale"]
             )
@@ -525,7 +525,7 @@ class tuya(generic.FhemModule):
         if schema["type"] == "Integer":
             values = schema["values"]
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                value /= 2
+                value /= 0.2
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
