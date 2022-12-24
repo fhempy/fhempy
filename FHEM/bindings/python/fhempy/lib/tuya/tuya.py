@@ -270,9 +270,10 @@ class tuya(generic.FhemModule):
                     new_val = val
         else:
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                params["new_val"] *= 0.2
-            new_val = params["new_val"] * (
-                10 ** params["function_param"]["values"]["scale"]
+                if params["function_param"]["code"] == "temp_set":
+                    params["new_val"] *= 0.2
+            new_val = int(
+                params["new_val"] * (10 ** params["function_param"]["values"]["scale"])
             )
         if self._connected_device:
             await self._connected_device.set_dp(new_val, index)
@@ -525,7 +526,15 @@ class tuya(generic.FhemModule):
         if schema["type"] == "Integer":
             values = schema["values"]
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                value /= 0.2
+                if schema["code"] == "cur_voltage":
+                    value /= 0.2
+                elif schema["code"] == "upper_temp":
+                    value /= 10
+                elif schema["code"] == "temp_set":
+                    value /= 0.2
+            elif self.tt_productid == "wifvoilfrqeo6hvu":
+                if schema["code"] == "cur_voltage":
+                    value /= 10
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
