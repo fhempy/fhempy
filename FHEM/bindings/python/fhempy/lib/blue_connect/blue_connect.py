@@ -77,7 +77,7 @@ class blue_connect(generic.FhemModule):
                 self._conn.write_characteristic(0x0012, b"\x01", 60)
                 break
             except BrokenPipeError:
-                self.logger.error("BrokenPipeError, reconnect BLE")
+                self.logger.error("BLE error, reconnect BLE")
                 self._conn.disconnect()
                 self._conn.stop_helper()
             except Exception:
@@ -90,7 +90,7 @@ class blue_connect(generic.FhemModule):
                 data = self._conn.read_characteristic(0x18)
                 self.other_18 = codecs.encode(data, "hex")
             except BrokenPipeError:
-                self.logger.error("BrokenPipeError, reconnect BLE")
+                self.logger.error("BLE error, reconnect BLE")
                 self._conn.stop_helper()
             except Exception:
                 self.logger.exception("Failed to read characteristics")
@@ -129,7 +129,6 @@ class blue_connect(generic.FhemModule):
         async with self._ble_lock:
             await utils.run_blocking(functools.partial(self.blocking_measure))
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdate(self.hash, "unknown_handle_18", self.other_18)
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
