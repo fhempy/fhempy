@@ -2,6 +2,19 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.536 (2023-01-02)
+### Feature
+* **tuya:** Support colour_data reading ([`d7e3241`](https://github.com/dominikkarall/fhempy/commit/d7e3241b9bbd9f91fbc0c24d8e4b36324c152dc9))
+* **fhempy:** Add restart info in state reading ([`bf3b54d`](https://github.com/dominikkarall/fhempy/commit/bf3b54dc422692022a350255fcd260692dcccc4f))
+* **fhempy:** Add get_fhempy_root() ([`410fa8e`](https://github.com/dominikkarall/fhempy/commit/410fa8e6ddf0e5824095530c49bd4c6fcb687664))
+
+### Fix
+* **fhempy:** Use get_fhempy_root() ([`11bb24a`](https://github.com/dominikkarall/fhempy/commit/11bb24a23a28039f3a70f7221c53c6edc599890b))
+* **fhempy:** Create fhempy_log only if it doesn't exist ([`781adc1`](https://github.com/dominikkarall/fhempy/commit/781adc195159dbce5750053ef1c93603c2807246))
+* **gree_climate:** Fix discovery loop creating too many open udp sockets ([`edba7e9`](https://github.com/dominikkarall/fhempy/commit/edba7e962219eb155ccef3c6e1569563b565d416))
+* **blue_connect:** Remove unknown_handle_18 reading ([`729aac3`](https://github.com/dominikkarall/fhempy/commit/729aac323d986f532acaaf764bc8ec5ecd04afb6))
+* **tuya:** Fix incorrect scaled values ([`ac3c4a3`](https://github.com/dominikkarall/fhempy/commit/ac3c4a37491e876c78b09ee38e3d7fa98dfe1362))
+
 ## v0.1.535 (2022-12-20)
 ### Fix
 * **tuya:** Fix device IAYz2WK1th0cMLmL ([`500fcd1`](https://github.com/dominikkarall/fhempy/commit/500fcd175d602024ed9504870fef5d546a244b69))
