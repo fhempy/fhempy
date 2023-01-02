@@ -1,7 +1,9 @@
 import asyncio
 import binascii
 import concurrent.futures
+import inspect
 import json
+import os
 import socket
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from codecs import decode
@@ -52,6 +54,14 @@ def decrypt_fernet(token_b64, key_str):
         message = None
 
     return message
+
+
+def get_fhempy_root():
+    from fhempy import lib
+
+    initfile = inspect.getfile(lib)
+    fhempy_root = os.path.dirname(initfile)
+    return fhempy_root
 
 
 async def run_blocking(function):
