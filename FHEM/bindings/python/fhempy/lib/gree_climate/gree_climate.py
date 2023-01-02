@@ -79,6 +79,8 @@ class gree_climate(generic.FhemModule):
             return "Usage: define gree_scan fhempy gree_climate scan/name"
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
 
+        self.discovery = Discovery()
+
         self.name = args[3]
         if self.name == "scan":
             self.create_async_task(self.scan_devices())
@@ -87,8 +89,7 @@ class gree_climate(generic.FhemModule):
             self.create_async_task(self.update_loop())
 
     async def scan_devices(self, name=None):
-        discovery = Discovery()
-        device_infos = await discovery.scan(wait_for=5)
+        device_infos = await self.discovery.scan(wait_for=5)
         for device_info in device_infos:
             try:
                 device = Device(device_info)
