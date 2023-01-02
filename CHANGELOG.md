@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.537 (2023-01-02)
+### Fix
+* **fhempy:** Fix fhempy_log creation ([`b3d3f76`](https://github.com/dominikkarall/fhempy/commit/b3d3f766f0409e6441288a295229559bd965bf32))
+
 ## v0.1.536 (2023-01-02)
 ### Feature
 * **tuya:** Support colour_data reading ([`d7e3241`](https://github.com/dominikkarall/fhempy/commit/d7e3241b9bbd9f91fbc0c24d8e4b36324c152dc9))
