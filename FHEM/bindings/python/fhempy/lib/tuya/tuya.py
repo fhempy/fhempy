@@ -270,9 +270,10 @@ class tuya(generic.FhemModule):
                     new_val = val
         else:
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                params["new_val"] *= 0.2
-            new_val = params["new_val"] * (
-                10 ** params["function_param"]["values"]["scale"]
+                if params["function_param"]["code"] == "temp_set":
+                    params["new_val"] *= 0.2
+            new_val = int(
+                params["new_val"] * (10 ** params["function_param"]["values"]["scale"])
             )
         if self._connected_device:
             await self._connected_device.set_dp(new_val, index)
@@ -525,7 +526,15 @@ class tuya(generic.FhemModule):
         if schema["type"] == "Integer":
             values = schema["values"]
             if self.tt_productid == "IAYz2WK1th0cMLmL":
-                value /= 0.2
+                if schema["code"] == "cur_voltage":
+                    value /= 0.2
+                elif schema["code"] == "upper_temp":
+                    value /= 10
+                elif schema["code"] == "temp_set":
+                    value /= 0.2
+            elif self.tt_productid == "wifvoilfrqeo6hvu":
+                if schema["code"] == "cur_voltage":
+                    value /= 10
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
@@ -612,13 +621,18 @@ class tuya(generic.FhemModule):
                             f"{st['dp_id']} with value {status[dp]}"
                         )
                         if st["type"] == "Json":
-                            flat_json = self.convert_json(status[dp], st)
-                            for name in flat_json:
-                                await fhem.readingsBulkUpdateIfChanged(
-                                    self.hash,
-                                    reading + "_" + name,
-                                    flat_json[name],
+                            if st["code"] in ["colour_data", "colour_data_v2"]:
+                                await self.update_readings_colour(
+                                    st["code"], status[dp]
                                 )
+                            else:
+                                flat_json = self.convert_json(status[dp], st)
+                                for name in flat_json:
+                                    await fhem.readingsBulkUpdateIfChanged(
+                                        self.hash,
+                                        reading + "_" + name,
+                                        flat_json[name],
+                                    )
                         else:
                             if reading == "state":
                                 state_set = True
@@ -769,4 +783,18 @@ class tuya(generic.FhemModule):
             "state",
             f"{count_found} devices found localy",
             1,
+        )
+
+    async def update_readings_colour(self, code, hexcolour):
+        if code == "colour_data" and self.info_dict["category"] == "dj":
+            # only category dj (light) has old colour_data
+            (red, green, blue) = self.tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
+        else:
+            (red, green, blue) = self.tt.BulbDevice._hexvalue_to_rgb(hexcolour, "B")
+
+        rgb_hex = f"{red:02x}{green:02x}{blue:02x}"
+        await fhem.readingsBulkUpdate(
+            self.hash,
+            code,
+            rgb_hex,
         )

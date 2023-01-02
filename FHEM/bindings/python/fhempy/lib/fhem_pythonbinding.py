@@ -456,15 +456,15 @@ class fhempy:
         await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)
         logger.info("Start update...")
         await pkg_installer.force_update_package("fhempy")
-        await fhem.readingsSingleUpdate(
-            hash,
-            "version",
-            "update finished...please wait",
-            1,
-        )
         await self.restart(hash)
 
     async def restart(self, hash):
+        await fhem.readingsSingleUpdate(
+            hash,
+            "version",
+            "restart...please wait",
+            1,
+        )
         global exit_code
         exit_code = 1
         logger.info("Restart initiated...")

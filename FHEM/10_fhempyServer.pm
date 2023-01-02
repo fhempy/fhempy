@@ -200,7 +200,7 @@ sub fhempyServer_Attr($$$)
 
   if( $attrName eq 'logfile' ) {
     if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
-      fhem( "defmod fhempy_log FileLog $attrVal Logfile" );
+      fhem( "defmod fhempy_log FileLog $attrVal Logfile" ) if( !exists($defs{"fhempy_log"}) );
       CommandAttr( undef, 'fhempy_log room hidden' ) if( !AttrVal($name, 'room', undef ) );
       CommandAttr( undef, 'fhempy_log group fhempy' ) if( !AttrVal($name, 'group', undef ) );
       CommandAttr( undef, 'fhempy_log icon file_unknown' ) if( !AttrVal($name, 'icon', undef ) );
