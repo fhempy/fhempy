@@ -2,5 +2,5 @@ UPD 2022-11-12_13:23:55 20913  FHEM/10_BindingsIo.pm
 UPD 2022-08-12_18:31:17 4663   FHEM/10_PythonBinding.pm
 UPD 2022-08-12_18:30:57 3253   FHEM/10_PythonModule.pm
 UPD 2022-11-12_13:23:55 2898   FHEM/10_fhempy.pm
-UPD 2022-12-17_22:02:04 6517   FHEM/10_fhempyServer.pm
+UPD 2023-01-02_16:04:42 6552   FHEM/10_fhempyServer.pm
 UPD 2022-12-17_16:26:42 4739   FHEM/bindings/python/bin/fhempy
