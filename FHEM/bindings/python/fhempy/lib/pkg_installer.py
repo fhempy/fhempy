@@ -13,6 +13,7 @@ from subprocess import PIPE, Popen
 from urllib.parse import urlparse
 
 import pkg_resources
+from fhempy.lib import utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -70,10 +71,7 @@ def check_dependencies(module):
     of dependencies
     """
     try:
-        from fhempy import lib
-
-        initfile = inspect.getfile(lib)
-        fhempy_root = os.path.dirname(initfile)
+        fhempy_root = utils.get_fhempy_root()
         with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
             manifest = json.load(f)
 
