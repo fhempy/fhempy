@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.538 (2023-01-02)
+### Fix
+* **fhempy:** Fix fhempy_log ([`b5125ab`](https://github.com/dominikkarall/fhempy/commit/b5125abfcd4ecff0609d15453cbb335f6500afc2))
+
 ## v0.1.537 (2023-01-02)
 ### Fix
 * **fhempy:** Fix fhempy_log creation ([`b3d3f76`](https://github.com/dominikkarall/fhempy/commit/b3d3f766f0409e6441288a295229559bd965bf32))
