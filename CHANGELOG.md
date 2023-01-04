@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.539 (2023-01-04)
+### Fix
+* **fhempy:** Create fhempy_log only on first setup ([`309ce46`](https://github.com/dominikkarall/fhempy/commit/309ce46ef504f592d483c8ff625522f18f381141))
+
 ## v0.1.538 (2023-01-02)
 ### Fix
 * **fhempy:** Fix fhempy_log ([`b5125ab`](https://github.com/dominikkarall/fhempy/commit/b5125abfcd4ecff0609d15453cbb335f6500afc2))
