@@ -194,15 +194,13 @@ sub fhempyServer_Attr($$$)
   my $hash = $defs{$name};
 
   if( $attrName eq 'logfile' ) {
-    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
-      fhem( "define -temporary fhempy_log FileLog $attrVal fakelog" );
+    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' && $init_done ) {
+      fhem( "defmod fhempy_log FileLog $attrVal Logfile" ) if( !exists($defs{"fhempy_log"}) );
       CommandAttr( undef, 'fhempy_log room hidden' ) if( !AttrVal($name, 'room', undef ) );
       CommandAttr( undef, 'fhempy_log group fhempy' ) if( !AttrVal($name, 'group', undef ) );
       CommandAttr( undef, 'fhempy_log icon file_unknown' ) if( !AttrVal($name, 'icon', undef ) );
       CommandAttr( undef, 'fhempy_log nrarchive 10' ) if( !AttrVal($name, 'nrarchive', undef ) );
       $hash->{logfile} = $attrVal;
-    } else {
-      fhem( "delete fhempy_log" );
     }
 
     $attr{$name}{$attrName} = $attrVal;
