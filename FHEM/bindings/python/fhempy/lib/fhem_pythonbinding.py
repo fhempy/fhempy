@@ -280,8 +280,8 @@ class fhempy:
         # load module
         nmInstance = None
         if hash["function"] == "Rename":
-            old_name = hash["args"][0]
-            new_name = hash["args"][1]
+            new_name = hash["args"][0]
+            old_name = hash["args"][1]
             if old_name in loadedModuleInstances:
                 await self.rename_device(hash, old_name, new_name)
                 return 0
