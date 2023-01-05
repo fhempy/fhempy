@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.541 (2023-01-05)
+### Fix
+* **fhempy:** Fix device rename ([`4f1f5ea`](https://github.com/dominikkarall/fhempy/commit/4f1f5ea1979fd9810c3364696768dd627e35b238))
+
 ## v0.1.540 (2023-01-04)
 ### Fix
 * **skodaconnect:** Update BaseLib to 1.3.0 (New token handling URLs) ([#111](https://github.com/dominikkarall/fhempy/issues/111)) ([`8d4f53e`](https://github.com/dominikkarall/fhempy/commit/8d4f53e8a78f45669833a1db4c27f737b753ec8a))
