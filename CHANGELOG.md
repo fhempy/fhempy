@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.542 (2023-01-06)
+### Feature
+* **tuya:** Add error handling if getdevices returns error from tuya cloud ([`175d35a`](https://github.com/dominikkarall/fhempy/commit/175d35a7f6bd97400c2d5c7bf51c4fc0f8142dfe))
+
+### Fix
+* **skodaconnect:** Update BaseLib to 1.3.2 ([#115](https://github.com/dominikkarall/fhempy/issues/115)) ([`dbbb549`](https://github.com/dominikkarall/fhempy/commit/dbbb549d81dd876f1dead23fac0b2619cf03e6e6))
+
 ## v0.1.541 (2023-01-05)
 ### Fix
 * **fhempy:** Fix device rename ([`4f1f5ea`](https://github.com/dominikkarall/fhempy/commit/4f1f5ea1979fd9810c3364696768dd627e35b238))
