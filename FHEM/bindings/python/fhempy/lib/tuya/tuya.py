@@ -355,6 +355,10 @@ class tuya(generic.FhemModule):
         resp = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, True)
         )
+        if "Error" in resp:
+            self.logger.error(f"getdevices: {resp}")
+            return {}
+
         self.logger.debug(f"getdevices: {resp}")
         for dev in resp["result"]:
             if dev["id"] == self.tt_did:
