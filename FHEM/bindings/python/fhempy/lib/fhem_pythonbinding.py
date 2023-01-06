@@ -26,7 +26,7 @@ zc_info = None
 pip_lock = asyncio.Lock()
 
 connection_start = 0
-fct_timeout = 60
+fct_timeout = 100
 
 stop_event = asyncio.Event()
 exit_code = 0
@@ -201,7 +201,7 @@ class fhempy:
 
         global fct_timeout, connection_start
         if time.time() - connection_start > 120:
-            fct_timeout = 10
+            fct_timeout = 30
 
         try:
             await self.handle_message(msg, hash)
