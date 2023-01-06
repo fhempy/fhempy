@@ -7,6 +7,27 @@ from aiohttp import ClientSession
 from skodaconnect import Connection
 from skodaconnect.vehicle import Vehicle
 
+# If you wish to use stored tokens, this is an example on how to format data sent to restore_tokens method:
+TOKENS = {
+    'technical': {
+        'access_token': '...',
+        'refresh_token': '...',
+        'id_token': '...'
+    },
+    'connect': {
+        'access_token': '...',
+        'refresh_token': '...',
+        'id_token': '...'
+    },
+    'vwg': {
+        'access_token': '...',
+        'refresh_token': '...'
+    },
+    'cabs': None,   # Could be populated with access_token, refresh_token, id_token
+    'dcs': None,    # Could be populated with access_token, refresh_token, id_token
+}
+# Comment out the following line to use stored tokens above, set TOKENS=None to do fresh login
+TOKENS = None
 
 class skodaconnect(generic.FhemModule):
     def __init__(self, logger):
@@ -45,13 +66,22 @@ class skodaconnect(generic.FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
     async def start_login(self):
+        login_success = False
         async with ClientSession(headers={"Connection": "keep-alive"}) as session:
             connection = Connection(session, self.username, self.password, False)
-            while await connection.doLogin() is False:
-                await asyncio.sleep(5)
+            if TOKENS is not None:
+                print("Attempting restore of tokens")
+                if await connection.restore_tokens(TOKENS):
+                    print("Token restore succeeded")
+                    login_success = True
+            if not login_success:
+                print("Attempting to login to the Skoda Connect service")
+                while await connection.doLogin() is False:
+                    await asyncio.sleep(5)
 
             await connection.get_vehicles()
-
+            await connection.update_all()
+            
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
                 # there is more than one car
