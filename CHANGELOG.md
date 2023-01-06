@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.543 (2023-01-06)
+### Fix
+* **fhempy:** Increase timeouts for function handling as fhem answers sometimes take more time on high load ([`e3693a2`](https://github.com/dominikkarall/fhempy/commit/e3693a297cf05d5c7783c80c887193478bae0eb5))
+
 ## v0.1.542 (2023-01-06)
 ### Feature
 * **tuya:** Add error handling if getdevices returns error from tuya cloud ([`175d35a`](https://github.com/dominikkarall/fhempy/commit/175d35a7f6bd97400c2d5c7bf51c4fc0f8142dfe))
