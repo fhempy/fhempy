@@ -308,7 +308,7 @@ class tuya(generic.FhemModule):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
         hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
-            rgb["r"], rgb["g"], rgb["b"], "A"
+            rgb["r"], rgb["g"], rgb["b"], "B"
         )
         await self._connected_device.set_dp(hexvalue, index)
 
@@ -422,6 +422,10 @@ class tuya(generic.FhemModule):
             await self.retrieve_tuya_specs()
             info = await self.get_tuya_dev_info()
             await self.update_info_readings(info)
+        else:
+            self.info_dict = {
+                "category": await fhem.ReadingsVal(self.hash["NAME"], "category", "")
+            }
 
         await self.setup_connection()
 
