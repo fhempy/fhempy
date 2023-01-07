@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.544 (2023-01-07)
+### Fix
+* **meross:** Fix http api calls by meross-iot lib upgrade ([`f17047d`](https://github.com/dominikkarall/fhempy/commit/f17047d7fd8e40f478c503df3cd4b43e3d579a78))
+
 ## v0.1.543 (2023-01-06)
 ### Fix
 * **fhempy:** Increase timeouts for function handling as fhem answers sometimes take more time on high load ([`e3693a2`](https://github.com/dominikkarall/fhempy/commit/e3693a297cf05d5c7783c80c887193478bae0eb5))
