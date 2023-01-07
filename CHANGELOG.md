@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.545 (2023-01-07)
+### Fix
+* **tuya:** Fix RGB colour_data_v2 ([`c991e09`](https://github.com/dominikkarall/fhempy/commit/c991e0940ce8213ebac3b803d243dc0174e90257))
+
 ## v0.1.544 (2023-01-07)
 ### Fix
 * **meross:** Fix http api calls by meross-iot lib upgrade ([`f17047d`](https://github.com/dominikkarall/fhempy/commit/f17047d7fd8e40f478c503df3cd4b43e3d579a78))
