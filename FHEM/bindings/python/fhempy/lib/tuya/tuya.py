@@ -313,6 +313,7 @@ class tuya(generic.FhemModule):
             hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
                 rgb["r"], rgb["g"], rgb["b"], "B"
             )
+        await self.change_to_colour_mode()
         await self._connected_device.set_dp(hexvalue, index)
 
     async def set_colour_data_v2(self, hash, params):
@@ -321,7 +322,14 @@ class tuya(generic.FhemModule):
         hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
             rgb["r"], rgb["g"], rgb["b"], "B"
         )
+        await self.change_to_colour_mode()
         await self._connected_device.set_dp(hexvalue, index)
+
+    async def change_to_colour_mode(self):
+        if "work_mode" in self._conf_set:
+            await self._connected_device.set_dp(
+                "colour", self._conf_set["work_mode"]["function_param"]["id"]
+            )
 
     def fhemrgb2rgb(self, rgb):
         red = int(rgb[0:2], base=16)
