@@ -153,12 +153,23 @@ class tuya(generic.FhemModule):
 
     async def _generate_set(self):
         set_conf = {}
+
+        # identify master switch
+        self.master_switch = ""
+        for fct in self.tuya_spec_functions:
+            if fct["code"] == "switch_1":
+                self.master_switch = fct["code"]
+            elif fct["code"] == "switch_led" and self.master_switch == "":
+                self.master_switch = fct["code"]
+            elif fct["code"][0:6] == "switch" and self.master_switch == "":
+                self.master_switch = fct["code"]
+
         for fct in self.tuya_spec_functions:
             if "id" not in fct:
                 # no id configured for this function
                 continue
             if fct["type"] == "Boolean":
-                if fct["code"] == "switch_1":
+                if fct["code"] == self.master_switch:
                     set_conf["on"] = {
                         "help": fct["desc"],
                         "function_param": fct,
@@ -621,7 +632,7 @@ class tuya(generic.FhemModule):
                     if "dp_id" in st and st["dp_id"] == int(dp):
                         found = True
                         reading = st["code"]
-                        if st["code"] == "switch_1":
+                        if st["code"] == self.master_switch:
                             reading = "state"
                             stateused = True
                         self.logger.debug(
