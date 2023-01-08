@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.547 (2023-01-08)
+### Feature
+* **tuya:** Change to colour mode when changing colour data ([`5c64e4d`](https://github.com/dominikkarall/fhempy/commit/5c64e4d0fd9254b7178097b6460528e15c7d50bf))
+
 ## v0.1.546 (2023-01-08)
 ### Feature
 * **tuya:** Add generic master switch detection ([`65c4023`](https://github.com/dominikkarall/fhempy/commit/65c40239d381277e46bc417bdbc3f5f85f848e62))
