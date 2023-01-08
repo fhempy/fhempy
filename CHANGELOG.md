@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.546 (2023-01-08)
+### Feature
+* **tuya:** Add generic master switch detection ([`65c4023`](https://github.com/dominikkarall/fhempy/commit/65c40239d381277e46bc417bdbc3f5f85f848e62))
+
 ## v0.1.545 (2023-01-07)
 ### Fix
 * **tuya:** Fix RGB colour_data_v2 ([`c991e09`](https://github.com/dominikkarall/fhempy/commit/c991e0940ce8213ebac3b803d243dc0174e90257))
