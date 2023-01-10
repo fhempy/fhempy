@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.548 (2023-01-10)
+### Fix
+* **blue_connect:** Testing use of bleak instead of bluepy ([`0a6d93d`](https://github.com/dominikkarall/fhempy/commit/0a6d93dbc0f965b92cfb275f9a64bc6fdd8ff2e5))
+
 ## v0.1.547 (2023-01-08)
 ### Feature
 * **tuya:** Change to colour mode when changing colour data ([`5c64e4d`](https://github.com/dominikkarall/fhempy/commit/5c64e4d0fd9254b7178097b6460528e15c7d50bf))
