@@ -11,6 +11,9 @@ class blue_connect(generic.FhemModule):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
         self.task_update_loop = None
+
+        self.client = None
+        self.device = None
         self.water_temp = "0"
         self.water_orp = "0"
         self.water_ph = "0"
@@ -66,30 +69,31 @@ class blue_connect(generic.FhemModule):
         self.logger.error("Device disconnected")
 
     async def measure(self):
-        self.device = None
         for cnt in range(0, 20):
             try:
-                # find device
-                self.device = await BleakScanner.find_device_by_address(
-                    self._mac, timeout=30
-                )
-                if not self.device:
-                    self.logger.error("Couldn't find device")
+                if self.client is None or not self.client.is_connected:
+                    # find device
+                    self.device = await BleakScanner.find_device_by_address(
+                        self._mac, timeout=30
+                    )
+                    if not self.device:
+                        self.logger.error("Couldn't find device")
 
-                # connect to device
-                async with BleakClient(
-                    self.device, disconnected_callback=self.handle_disconnect
-                ) as client:
-                    # register notify
-                    await client.start_notify(
-                        "F3300003-F0A2-9B06-0C59-1BC4763B5C00",
-                        self.received_notification,
+                    # connect to device
+                    self.client = BleakClient(
+                        self.device, disconnected_callback=self.handle_disconnect
                     )
-                    # start measure
-                    await client.write_gatt_char(
-                        "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
-                    )
-                    break
+                    await self.client.connect()
+                # register notify
+                await self.client.start_notify(
+                    "F3300003-F0A2-9B06-0C59-1BC4763B5C00",
+                    self.received_notification,
+                )
+                # start measure
+                await self.client.write_gatt_char(
+                    "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
+                )
+                break
             except Exception:
                 self.logger.exception("Failed to measure")
                 await asyncio.sleep(10)
