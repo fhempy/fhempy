@@ -142,9 +142,9 @@ class blue_connect(generic.FhemModule):
                 f"Ph: {self.water_ph} too low, diff {round(7.2-self.water_ph, 2)}"
             )
             await fhem.readingsBulkUpdate(self.hash, "ph_state", "low")
-        elif self.water_ph > 7.7:
+        elif self.water_ph > 7.6:
             state.append(
-                f"Ph: {self.water_ph} too high, diff {round(7.7-self.water_ph, 2)}"
+                f"Ph: {self.water_ph} too high, diff {round(7.6-self.water_ph, 2)}"
             )
             await fhem.readingsBulkUpdate(self.hash, "ph_state", "high")
         else:
