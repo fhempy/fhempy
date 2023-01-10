@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.550 (2023-01-10)
+### Feature
+* **blue_connect:** Add connection reading ([`b3eddac`](https://github.com/dominikkarall/fhempy/commit/b3eddac38715039bdd972e35493beab5b5b2f713))
+
+### Fix
+* **blue_connect:** Fix max ph value ([`88d2333`](https://github.com/dominikkarall/fhempy/commit/88d23335e99e44618abbee30efbd1277bd601dac))
+* **blue_connect:** Set variable to None on disconnect, change exception logging ([`6e1957d`](https://github.com/dominikkarall/fhempy/commit/6e1957d5ffd85b9fe7aae797809ec36b4b8ab7d4))
+* **blue_connect:** Disconnect on Undefine, wait 30s if device couldn't be discovered ([`26ae0fe`](https://github.com/dominikkarall/fhempy/commit/26ae0fef29cbbd56e1c185a931905b67cd8c6155))
+
 ## v0.1.549 (2023-01-10)
 ### Fix
 * **tuya:** Fix master_switch error in log ([`c245438`](https://github.com/dominikkarall/fhempy/commit/c245438c58d37a62db9632cf9fecaa5631c26357))
