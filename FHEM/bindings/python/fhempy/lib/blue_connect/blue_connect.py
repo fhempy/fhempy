@@ -38,6 +38,8 @@ class blue_connect(generic.FhemModule):
     async def Undefine(self, hash):
         if self.task_update_loop:
             self.task_update_loop.cancel()
+        if self.client:
+            await self.client.disconnect()
         return await super().Undefine(self.hash)
 
     async def set_measure(self, hash, params):
@@ -78,6 +80,8 @@ class blue_connect(generic.FhemModule):
                     )
                     if not self.device:
                         self.logger.error("Couldn't find device")
+                        await asyncio.sleep(30)
+                        continue
 
                     # connect to device
                     self.client = BleakClient(
