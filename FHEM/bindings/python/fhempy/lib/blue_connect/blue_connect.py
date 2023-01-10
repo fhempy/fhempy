@@ -68,11 +68,15 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(self.update_readings())
 
     def handle_disconnect(self, _: BleakClient):
-        self.logger.debug("Device disconnected")
+        self.create_async_task(
+            fhem.readingsSingleUpdate(self.hash, "connection", "disconnected", 1)
+        )
+        self.logger.error("Device disconnected")
         self.client = None
         self.device = None
 
     async def measure(self):
+        await fhem.readingsSingleUpdate(self.hash, "connection", "start measure", 1)
         for cnt in range(0, 20):
             try:
                 if self.client is None or not self.client.is_connected:
@@ -81,13 +85,15 @@ class blue_connect(generic.FhemModule):
                         self._mac, timeout=30
                     )
                     if not self.device:
-                        self.logger.error("Couldn't find device")
-                        await asyncio.sleep(30)
-                        continue
+                        if cnt == 20:
+                            self.logger.error("Couldn't find device")
+                        raise Exception("Couldn't find device")
 
                     # connect to device
                     self.client = BleakClient(
-                        self.device, disconnected_callback=self.handle_disconnect
+                        self.device,
+                        disconnected_callback=self.handle_disconnect,
+                        timeout=30,
                     )
                     await self.client.connect()
                 # register notify
@@ -99,9 +105,16 @@ class blue_connect(generic.FhemModule):
                 await self.client.write_gatt_char(
                     "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
                 )
+                await fhem.readingsSingleUpdate(
+                    self.hash, "connection", "measuring now", 1
+                )
                 break
             except Exception as e:
-                self.logger.error(f"Failed to measure: {e}")
+                if cnt == 20:
+                    self.logger.error(f"Failed: {e}")
+                await fhem.readingsSingleUpdate(
+                    self.hash, "connection", f"failed measure {cnt}, retry", 1
+                )
                 await asyncio.sleep(10)
 
     async def update_loop(self):
@@ -126,6 +139,7 @@ class blue_connect(generic.FhemModule):
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdate(self.hash, "connection", "ok")
         await fhem.readingsBulkUpdate(self.hash, "rssi", self.rssi)
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
