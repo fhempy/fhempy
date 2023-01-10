@@ -1,3 +1,5 @@
 {
-  "requirements": ["bluepy", "dbus-python"]
+  "requirements": [
+    "bleak==0.19.5"
+  ]
 }
