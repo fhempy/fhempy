@@ -10,6 +10,7 @@ class blue_connect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
+        self.task_update_loop = None
         self.water_temp = "0"
         self.water_orp = "0"
         self.water_ph = "0"
@@ -32,7 +33,8 @@ class blue_connect(generic.FhemModule):
         self.task_update_loop = self.create_async_task(self.update_loop())
 
     async def Undefine(self, hash):
-        self.task_update_loop.cancel()
+        if self.task_update_loop:
+            self.task_update_loop.cancel()
         return await super().Undefine(self.hash)
 
     async def set_measure(self, hash, params):
