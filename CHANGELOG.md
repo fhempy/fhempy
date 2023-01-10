@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.549 (2023-01-10)
+### Fix
+* **tuya:** Fix master_switch error in log ([`c245438`](https://github.com/dominikkarall/fhempy/commit/c245438c58d37a62db9632cf9fecaa5631c26357))
+* **blue_connect:** Fix bleak connection ([`92beb09`](https://github.com/dominikkarall/fhempy/commit/92beb09a0d1afa9edd83014ec772d34052a830f4))
+* **blue_connect:** Fix Undefine if no task started yet ([`8ef8f5d`](https://github.com/dominikkarall/fhempy/commit/8ef8f5dcc2058a73ffe3c85451172cad269d9e0e))
+
 ## v0.1.548 (2023-01-10)
 ### Fix
 * **blue_connect:** Testing use of bleak instead of bluepy ([`0a6d93d`](https://github.com/dominikkarall/fhempy/commit/0a6d93dbc0f965b92cfb275f9a64bc6fdd8ff2e5))
