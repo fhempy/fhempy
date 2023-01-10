@@ -68,7 +68,9 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(self.update_readings())
 
     def handle_disconnect(self, _: BleakClient):
-        self.logger.error("Device disconnected")
+        self.logger.debug("Device disconnected")
+        self.client = None
+        self.device = None
 
     async def measure(self):
         for cnt in range(0, 20):
@@ -98,8 +100,8 @@ class blue_connect(generic.FhemModule):
                     "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
                 )
                 break
-            except Exception:
-                self.logger.exception("Failed to measure")
+            except Exception as e:
+                self.logger.error(f"Failed to measure: {e}")
                 await asyncio.sleep(10)
 
     async def update_loop(self):
