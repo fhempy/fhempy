@@ -23,6 +23,7 @@ class tuya(generic.FhemModule):
         self.last_status = None
         self.create_device_list = []
         self.update_lock = asyncio.Lock()
+        self.master_switch = ""
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -155,7 +156,6 @@ class tuya(generic.FhemModule):
         set_conf = {}
 
         # identify master switch
-        self.master_switch = ""
         for fct in self.tuya_spec_functions:
             if fct["code"] == "switch_1":
                 self.master_switch = fct["code"]
