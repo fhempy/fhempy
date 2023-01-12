@@ -1,9 +1,10 @@
 import asyncio
 import codecs
 
-from bleak import BleakClient, BleakScanner
+from bleak import BleakClient
 
 from .. import fhem, generic
+from ..core import bluetoothle
 
 
 class blue_connect(generic.FhemModule):
@@ -12,8 +13,6 @@ class blue_connect(generic.FhemModule):
         self._ble_lock = asyncio.Lock()
         self.task_update_loop = None
 
-        self.client = None
-        self.device = None
         self.water_temp = "0"
         self.water_orp = "0"
         self.water_ph = "0"
@@ -33,13 +32,19 @@ class blue_connect(generic.FhemModule):
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
+
+        self.ble_dev = bluetoothle.BluetoothLE(
+            self.logger, self._mac, keep_connected=True
+        )
+        self.ble_dev.register_disconnect_listener(self.handle_disconnect())
+
         self.task_update_loop = self.create_async_task(self.update_loop())
 
     async def Undefine(self, hash):
         if self.task_update_loop:
             self.task_update_loop.cancel()
-        if self.client:
-            await self.client.disconnect()
+        if self.ble_dev:
+            await self.ble_dev.disconnect()
         return await super().Undefine(self.hash)
 
     async def set_measure(self, hash, params):
@@ -63,7 +68,7 @@ class blue_connect(generic.FhemModule):
             self.raw_measurement[20:22] + self.raw_measurement[18:20], 16
         )
         self.water_conductivity = round(float(raw_conductivity) / 0.4134)
-        self.rssi = self.device.rssi
+        self.rssi = self.ble_dev.device.rssi
 
         self.create_async_task(self.update_readings())
 
@@ -71,51 +76,22 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(
             fhem.readingsSingleUpdate(self.hash, "connection", "disconnected", 1)
         )
-        self.logger.error("Device disconnected")
-        self.client = None
-        self.device = None
 
     async def measure(self):
-        await fhem.readingsSingleUpdate(self.hash, "connection", "start measure", 1)
-        for cnt in range(0, 20):
-            try:
-                if self.client is None or not self.client.is_connected:
-                    # find device
-                    self.device = await BleakScanner.find_device_by_address(
-                        self._mac, timeout=30
-                    )
-                    if not self.device:
-                        if cnt == 20:
-                            self.logger.error("Couldn't find device")
-                        raise Exception("Couldn't find device")
+        await fhem.readingsSingleUpdate(self.hash, "connection", "connecting", 1)
+        await self.ble_dev.connect()
 
-                    # connect to device
-                    self.client = BleakClient(
-                        self.device,
-                        disconnected_callback=self.handle_disconnect,
-                        timeout=30,
-                    )
-                    await self.client.connect()
-                # register notify
-                await self.client.start_notify(
-                    "F3300003-F0A2-9B06-0C59-1BC4763B5C00",
-                    self.received_notification,
-                )
-                # start measure
-                await self.client.write_gatt_char(
-                    "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
-                )
-                await fhem.readingsSingleUpdate(
-                    self.hash, "connection", "measuring now", 1
-                )
-                break
-            except Exception as e:
-                if cnt == 20:
-                    self.logger.error(f"Failed: {e}")
-                await fhem.readingsSingleUpdate(
-                    self.hash, "connection", f"failed measure {cnt}, retry", 1
-                )
-                await asyncio.sleep(10)
+        if self.ble_dev.is_connected:
+            # register notify
+            await self.ble_dev.client.start_notify(
+                "F3300003-F0A2-9B06-0C59-1BC4763B5C00",
+                self.received_notification,
+            )
+            # start measure
+            await self.ble_dev.client.write_gatt_char(
+                "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
+            )
+            await fhem.readingsSingleUpdate(self.hash, "connection", "connected", 1)
 
     async def update_loop(self):
         while True:
@@ -139,7 +115,6 @@ class blue_connect(generic.FhemModule):
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdate(self.hash, "connection", "ok")
         await fhem.readingsBulkUpdate(self.hash, "rssi", self.rssi)
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
