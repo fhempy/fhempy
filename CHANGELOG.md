@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.554 (2023-01-13)
+### Fix
+* **fhempy:** Fix bluetoothle core ([`5db91b5`](https://github.com/dominikkarall/fhempy/commit/5db91b53ebf85713c744253eebd3e5e11be28189))
+
 ## v0.1.553 (2023-01-13)
 
 
