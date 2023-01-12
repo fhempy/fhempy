@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.551 (2023-01-12)
+### Feature
+* **fhempy:** Add bleak bluetooth support ([`109d88f`](https://github.com/dominikkarall/fhempy/commit/109d88f767c61d29944d62ba137ef9c6c3bb4652))
+
+### Fix
+* **blue_connect:** Use fhempy bluetoothle core ([`2c31854`](https://github.com/dominikkarall/fhempy/commit/2c31854f4bab7bedfbc6b4a84789fc9511525406))
+
 ## v0.1.550 (2023-01-10)
 ### Feature
 * **blue_connect:** Add connection reading ([`b3eddac`](https://github.com/dominikkarall/fhempy/commit/b3eddac38715039bdd972e35493beab5b5b2f713))
