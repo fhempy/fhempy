@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.552 (2023-01-12)
+### Fix
+* **blue_connect:** Fix register_disconnect_listener ([`21d01fc`](https://github.com/dominikkarall/fhempy/commit/21d01fcb24e355e2eaab56e4b89f3fa5e1d3bd5b))
+
 ## v0.1.551 (2023-01-12)
 ### Feature
 * **fhempy:** Add bleak bluetooth support ([`109d88f`](https://github.com/dominikkarall/fhempy/commit/109d88f767c61d29944d62ba137ef9c6c3bb4652))
