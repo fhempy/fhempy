@@ -36,7 +36,7 @@ class blue_connect(generic.FhemModule):
         self.ble_dev = bluetoothle.BluetoothLE(
             self.logger, self._mac, keep_connected=True
         )
-        self.ble_dev.register_disconnect_listener(self.handle_disconnect())
+        self.ble_dev.register_disconnect_listener(self.handle_disconnect)
 
         self.task_update_loop = self.create_async_task(self.update_loop())
 
