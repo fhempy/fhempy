@@ -6,7 +6,7 @@
 
 # fhempy
 
-fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.8 or higher is required, therefore I recommend using bullseye.
+fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.9 or higher is required, therefore I recommend using bullseye.
 
 This repository includes following working modules:
 
