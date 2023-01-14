@@ -1,8 +1,6 @@
 import asyncio
 import codecs
 
-from bleak import BleakClient
-
 from .. import fhem, generic
 from ..core import bluetoothle
 
@@ -12,6 +10,7 @@ class blue_connect(generic.FhemModule):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
         self.task_update_loop = None
+        self.ble_dev = None
 
         self.water_temp = "0"
         self.water_orp = "0"
@@ -34,9 +33,8 @@ class blue_connect(generic.FhemModule):
         self.hash["MAC"] = self._mac
 
         self.ble_dev = bluetoothle.BluetoothLE(
-            self.logger, self._mac, keep_connected=True
+            self.logger, self.hash, self._mac, keep_connected=True
         )
-        self.ble_dev.register_disconnect_listener(self.handle_disconnect)
 
         self.task_update_loop = self.create_async_task(self.update_loop())
 
@@ -72,13 +70,7 @@ class blue_connect(generic.FhemModule):
 
         self.create_async_task(self.update_readings())
 
-    def handle_disconnect(self, _: BleakClient):
-        self.create_async_task(
-            fhem.readingsSingleUpdate(self.hash, "connection", "disconnected", 1)
-        )
-
     async def measure(self):
-        await fhem.readingsSingleUpdate(self.hash, "connection", "connecting", 1)
         await self.ble_dev.connect()
 
         if self.ble_dev.is_connected:
@@ -91,7 +83,6 @@ class blue_connect(generic.FhemModule):
             await self.ble_dev.client.write_gatt_char(
                 "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
             )
-            await fhem.readingsSingleUpdate(self.hash, "connection", "connected", 1)
 
     async def update_loop(self):
         while True:
