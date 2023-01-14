@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 
+import bluetooth_adapters
 from bluetooth_auto_recovery import recover_adapter
 from fhempy.lib.generic import FhemModule
 
