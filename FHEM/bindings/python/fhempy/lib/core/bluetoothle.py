@@ -128,7 +128,8 @@ class BluetoothLE:
 
     async def disconnect(self):
         self._disconnect_called = True
-        await self._client.disconnect()
+        if self._client and self._client.is_connected:
+            await self._client.disconnect()
 
     def _disconnect_callback(self, client: BleakClient):
         asyncio.create_task(self.async_disconnected(client))
