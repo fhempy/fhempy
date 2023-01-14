@@ -40,8 +40,6 @@ class BluetoothLE:
         self.adapter_details = adapters.adapters
 
     async def find_device(self, timeout=30, adapter=None):
-        await self.update_adapters()
-
         self._device = None
 
         try:
@@ -60,6 +58,9 @@ class BluetoothLE:
         self.connected_listener = connected_listener
 
     async def connect(self, timeout=30, max_retries=20):
+        # get latest adapter list
+        await self.update_adapters()
+
         await fhem.readingsSingleUpdate(self._dev_hash, "connection", "connecting", 1)
         self._disconnect_called = False
 
