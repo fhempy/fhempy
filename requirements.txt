@@ -4,7 +4,4 @@ pycryptodomex==3.16.0
 zeroconf==0.36.12
 aiohttp[speedups]==3.8.1
 markdown2==2.4.2
-dbus-python==1.2.18
 requests==2.26.0
-bleak==0.19.5
-bluetooth-adapters==0.15.2
