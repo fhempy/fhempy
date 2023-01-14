@@ -1,14 +1,10 @@
 import asyncio
-import concurrent
 import datetime
-import functools
-import re
-import subprocess
 
-import dbus
+from bluetooth_auto_recovery import recover_adapter
 from fhempy.lib.generic import FhemModule
 
-from .. import fhem, utils
+from .. import fhem
 
 
 class ble_reset(FhemModule):
@@ -24,20 +20,6 @@ class ble_reset(FhemModule):
         }
         self.set_set_config(set_list_conf)
         return
-
-    def get_hci_ifaces(self):
-        iface_list = []
-        bus = dbus.SystemBus()
-        manager = dbus.Interface(
-            bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager"
-        )
-        objects = manager.GetManagedObjects()
-        for path, interfaces in objects.items():
-            adapter = interfaces.get("org.bluez.Adapter1")
-            if adapter is None:
-                continue
-            iface_list.append(re.search(r"\d+$", path)[0])
-        return iface_list
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -95,22 +77,21 @@ class ble_reset(FhemModule):
                 return
 
     async def ble_reset_once(self):
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            await asyncio.get_event_loop().run_in_executor(
-                pool, functools.partial(self.do_ble_reset)
-            )
+        await self.do_ble_reset()
         now = datetime.datetime.now()
         await fhem.readingsSingleUpdate(
             self.hash, "lastreset", f"{now.hour:02}:{now.minute:02}", 1
         )
 
-    def do_ble_reset(self):
+    async def do_ble_reset(self):
         try:
-            ifaces = self.get_hci_ifaces()
-            subprocess.Popen(["sudo", "systemctl", "restart", "bluetooth"]).wait()
-            for iface in ifaces:
-                subprocess.Popen(["sudo", "hciconfig", "hci" + iface, "reset"]).wait()
-                subprocess.Popen(["sudo", "hciconfig", "hci" + iface, "up"]).wait()
+            adapter_list = await bluetooth_adapters.get_bluetooth_adapters()
+            adapters = bluetooth_adapters.get_adapters()
+            await adapters.refresh()
+            adapter_details = adapters.adapters
+
+            for adapter in adapter_list:
+                await recover_adapter(adapter[:-1], adapter_details[adapter]["address"])
         except Exception:
             self.logger.exception("Failed to reset bluetooth")
 
