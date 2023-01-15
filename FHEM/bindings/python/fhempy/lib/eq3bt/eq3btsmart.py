@@ -84,7 +84,9 @@ class TemperatureException(Exception):
 class Thermostat:
     """Representation of a EQ3 Bluetooth Smart thermostat."""
 
-    def __init__(self, logger, hash, _mac, keep_connection=True, notification_callback):
+    def __init__(
+        self, logger, hash, _mac, keep_connection=True, notification_callback=None
+    ):
         """Initialize the thermostat."""
         self.logger = logger
 
@@ -220,7 +222,8 @@ class Thermostat:
             self.logger.debug(
                 "Unknown notification %s (%s)", data[0], codecs.encode(data, "hex")
             )
-        asyncio.create_task(self._notification_callback())
+        if self._notification_callback:
+            asyncio.create_task(self._notification_callback())
 
     async def query_id(self):
         """Query device identification information, e.g. the serial number."""
