@@ -128,7 +128,7 @@ class eq3bt(generic.FhemModule):
 
     async def Undefine(self, hash):
         if self.thermostat:
-            self.thermostat.disconnect()
+            await self.thermostat.disconnect()
         return await super().Undefine(hash)
 
     def seconds_till_midnight(self):
