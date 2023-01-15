@@ -1,10 +1,32 @@
 import asyncio
 import codecs
 
-from bleak import BleakClient
-
 from .. import fhem, generic
 from ..core import bluetoothle
+
+# handle: 0x0002, char properties: 0x02, char value handle: 0x0003, uuid: 00002a00-0000-1000-8000-00805f9b34fb
+# handle: 0x0004, char properties: 0x02, char value handle: 0x0005, uuid: 00002a01-0000-1000-8000-00805f9b34fb
+# handle: 0x0006, char properties: 0x02, char value handle: 0x0007, uuid: 00002a04-0000-1000-8000-00805f9b34fb
+# handle: 0x0008, char properties: 0x02, char value handle: 0x0009, uuid: 00002aa6-0000-1000-8000-00805f9b34fb
+# handle: 0x000a, char properties: 0x02, char value handle: 0x000b, uuid: 00002ac9-0000-1000-8000-00805f9b34fb
+# handle: 0x000d, char properties: 0x20, char value handle: 0x000e, uuid: 00002a05-0000-1000-8000-00805f9b34fb
+# handle: 0x0011, char properties: 0x08, char value handle: 0x0012, uuid: f3300002-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0013, char properties: 0x10, char value handle: 0x0014, uuid: f3300003-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0016, char properties: 0x02, char value handle: 0x0017, uuid: f3300004-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0018, char properties: 0x08, char value handle: 0x0019, uuid: f3300005-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x001a, char properties: 0x10, char value handle: 0x001b, uuid: f3300006-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x001d, char properties: 0x08, char value handle: 0x001e, uuid: f3300007-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x001f, char properties: 0x0a, char value handle: 0x0020, uuid: f3300008-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0021, char properties: 0x0a, char value handle: 0x0022, uuid: f3300009-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0023, char properties: 0x0a, char value handle: 0x0024, uuid: f3300010-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0025, char properties: 0x02, char value handle: 0x0026, uuid: f3300011-0a29-b060-c591-bc4763b5c000
+# handle: 0x0027, char properties: 0x08, char value handle: 0x0028, uuid: f3300020-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x002a, char properties: 0x02, char value handle: 0x002b, uuid: f3320010-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x002c, char properties: 0x02, char value handle: 0x002d, uuid: f3320011-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x002e, char properties: 0x02, char value handle: 0x002f, uuid: f3320015-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0030, char properties: 0x02, char value handle: 0x0031, uuid: f3320016-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0032, char properties: 0x02, char value handle: 0x0033, uuid: f3320017-f0a2-9b06-0c59-1bc4763b5c00
+# handle: 0x0034, char properties: 0x0a, char value handle: 0x0035, uuid: f3320018-f0a2-9b06-0c59-1bc4763b5c00
 
 
 class blue_connect(generic.FhemModule):
@@ -12,6 +34,7 @@ class blue_connect(generic.FhemModule):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
         self.task_update_loop = None
+        self.ble_dev = None
 
         self.water_temp = "0"
         self.water_orp = "0"
@@ -34,9 +57,8 @@ class blue_connect(generic.FhemModule):
         self.hash["MAC"] = self._mac
 
         self.ble_dev = bluetoothle.BluetoothLE(
-            self.logger, self._mac, keep_connected=True
+            self.logger, self.hash, self._mac, keep_connected=True
         )
-        self.ble_dev.register_disconnect_listener(self.handle_disconnect)
 
         self.task_update_loop = self.create_async_task(self.update_loop())
 
@@ -72,14 +94,9 @@ class blue_connect(generic.FhemModule):
 
         self.create_async_task(self.update_readings())
 
-    def handle_disconnect(self, _: BleakClient):
-        self.create_async_task(
-            fhem.readingsSingleUpdate(self.hash, "connection", "disconnected", 1)
-        )
-
     async def measure(self):
-        await fhem.readingsSingleUpdate(self.hash, "connection", "connecting", 1)
-        await self.ble_dev.connect()
+        if not self.ble_dev.is_connected:
+            await self.ble_dev.connect()
 
         if self.ble_dev.is_connected:
             # register notify
@@ -91,14 +108,14 @@ class blue_connect(generic.FhemModule):
             await self.ble_dev.client.write_gatt_char(
                 "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
             )
-            await fhem.readingsSingleUpdate(self.hash, "connection", "connected", 1)
 
     async def update_loop(self):
         while True:
             try:
                 await self.measure_once()
             except asyncio.CancelledError:
-                break
+                self.logger.info("Stopping update loop")
+                return
             except Exception:
                 self.logger.exception("Failed to update readings")
             await asyncio.sleep(7200)

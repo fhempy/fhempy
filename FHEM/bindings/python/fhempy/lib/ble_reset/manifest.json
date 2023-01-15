@@ -1,3 +1,6 @@
 {
-  "requirements": ["dbus-python"]
+  "requirements": [
+    "bluetooth-auto-recovery==1.0.3",
+    "bluetooth-adapters==0.15.2"
+  ]
 }
