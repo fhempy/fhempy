@@ -29,7 +29,7 @@ from enum import IntEnum
 
 from construct import Byte
 
-from ..core.bluetoothle import BluetoothLE
+from ..core import bluetoothle
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status
 
 PROP_WRITE_HANDLE = "3fa4585a-ce4a-3bad-db4b-b8df8179ea09"
@@ -112,7 +112,7 @@ class Thermostat:
 
         self._notification_callback = notification_callback
 
-        self._conn = BluetoothLE(
+        self._conn = bluetoothle.BluetoothLE(
             self.logger, hash, _mac, keep_connected=keep_connection
         )
 
