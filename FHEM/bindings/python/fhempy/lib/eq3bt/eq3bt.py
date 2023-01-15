@@ -110,7 +110,6 @@ class eq3bt(generic.FhemModule):
             await fhem.CommandAttr(
                 self.hash, self.hash["NAME"] + " icon sani_heating_temp"
             )
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "offline", 1)
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting", 1)
 
         self.thermostat = FhemThermostat(
@@ -176,12 +175,12 @@ class eq3bt(generic.FhemModule):
             try:
                 if time.time() - self._last_update > (waittime * 4):
                     await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "presence", "offline", 1
-                    )
-                    await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "update", 1
                     )
                 await self.update_all()
+            except asyncio.CancelledError:
+                self.logger.info("Stopped update loop")
+                return
             except Exception:
                 self.logger.error(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
@@ -254,7 +253,6 @@ class eq3bt(generic.FhemModule):
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "windowOpenTime", self.thermostat.window_open_time
         )
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
         if (time.time() - self._last_update) < 400:
             consumption_diff = (
                 (old_valve_pos + self.thermostat.valve_state)
