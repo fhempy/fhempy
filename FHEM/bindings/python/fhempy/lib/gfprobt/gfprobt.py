@@ -3,7 +3,7 @@ import struct
 import time
 
 from .. import fhem, generic
-from ..core.bluetoothle import BluetoothLE
+from ..core import bluetoothle
 
 DEFAULT_TIMEOUT = 1
 
@@ -80,7 +80,7 @@ class gfprobt(generic.FhemModule):
             return "Usage: define irrigation_control fhempy gfprobt <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
-        self._conn = BluetoothLE(
+        self._conn = bluetoothle.BluetoothLE(
             self.logger,
             self.hash,
             self._mac,
