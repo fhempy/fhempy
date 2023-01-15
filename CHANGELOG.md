@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.556 (2023-01-15)
+
+
 ## v0.1.555 (2023-01-15)
 ### Feature
 * **fhempy:** Add restart icon and change colour of update icon if update available ([`ed8342d`](https://github.com/dominikkarall/fhempy/commit/ed8342dc4e742e94026f0c9055957c3663a1e244))
