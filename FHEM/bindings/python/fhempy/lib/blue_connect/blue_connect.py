@@ -114,7 +114,8 @@ class blue_connect(generic.FhemModule):
             try:
                 await self.measure_once()
             except asyncio.CancelledError:
-                break
+                self.logger.info("Stopping update loop")
+                return
             except Exception:
                 self.logger.exception("Failed to update readings")
             await asyncio.sleep(7200)
