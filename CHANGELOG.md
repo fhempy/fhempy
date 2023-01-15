@@ -2,6 +2,36 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.555 (2023-01-15)
+### Feature
+* **fhempy:** Add restart icon and change colour of update icon if update available ([`ed8342d`](https://github.com/dominikkarall/fhempy/commit/ed8342dc4e742e94026f0c9055957c3663a1e244))
+
+### Fix
+* **mitemp2:** Setup notify before write ([`5cb7ba1`](https://github.com/dominikkarall/fhempy/commit/5cb7ba10148dcc663875266176131b9d588a5ae2))
+* **gfprobt:** Fix circular import ([`c09a74c`](https://github.com/dominikkarall/fhempy/commit/c09a74c4eec0e32154467e48a20f856fc8356be0))
+* **mitemp2:** Fix circular import ([`3828bad`](https://github.com/dominikkarall/fhempy/commit/3828badb3af7c2bc18eefb57cbc703bf396fe090))
+* **blue_connect:** Stop loop when cancelled ([`380d9aa`](https://github.com/dominikkarall/fhempy/commit/380d9aa739a85d35a4cfbfeb61f555aa404c2ba7))
+* **eq3bt:** Remove presence reading, stop loop on cancel ([`5a3b1a1`](https://github.com/dominikkarall/fhempy/commit/5a3b1a12f2643d9e74e9b8a7824255737b48dc2e))
+* **eq3bt:** Wait a few seconds after each thermostat query, fix friday schedule query ([`fe0d183`](https://github.com/dominikkarall/fhempy/commit/fe0d18372c0cc596534c068e45b917e3625ad123))
+* **eq3bt:** Fix notification callback argument ([`c35c354`](https://github.com/dominikkarall/fhempy/commit/c35c354b25552f90b20ef65b41b081e4aad62bc5))
+* **eq3bt:** Fix circular import ([`f1240b2`](https://github.com/dominikkarall/fhempy/commit/f1240b2bc28526c78ce99560cd6b8c059b62d114))
+* **eq3bt:** Fix arguments ([`fe7d56c`](https://github.com/dominikkarall/fhempy/commit/fe7d56cdf259c5ee43d99a15786c943ff812b0f8))
+* **eq3bt:** Bleak fixes ([`56365a3`](https://github.com/dominikkarall/fhempy/commit/56365a3fe7f555a63faaa889bc4c5852aca82604))
+* **eq3bt:** Use uuid instead of handle ([`97947c2`](https://github.com/dominikkarall/fhempy/commit/97947c2b1e6285a83d1f8f4aa766268dbcbf13d2))
+* **eq3bt:** Add await for disconnect ([`80edfcc`](https://github.com/dominikkarall/fhempy/commit/80edfccc9b7ef49aa9f29178661b64cfaeeced67))
+* **blue_connect:** Connect only when not connected ([`5f2d39e`](https://github.com/dominikkarall/fhempy/commit/5f2d39e6db366c0eb771fb3f586b8e2656b62376))
+* **fhempy:** Ble disconnect only when connected ([`598b4f8`](https://github.com/dominikkarall/fhempy/commit/598b4f8e17f71ee66847e534bbedcc873e91adc7))
+* **fhempy:** Remove old bluepy library ([`6f8b046`](https://github.com/dominikkarall/fhempy/commit/6f8b0469d1b59ce83aba4901c757763909f50f7f))
+* **fhempy:** Add bluetooth libs to modules instead of fhempy installation requirement ([`a0d321e`](https://github.com/dominikkarall/fhempy/commit/a0d321edd045109eb50f0ecabaafd48055be37fb))
+* **discover_ble:** Update bleak library ([`3e46df8`](https://github.com/dominikkarall/fhempy/commit/3e46df892a52c9abfc8d8b70debe05732d747ddf))
+* **eq3bt:** Use bleak library ([`6de3ef2`](https://github.com/dominikkarall/fhempy/commit/6de3ef29648d839e369fb0b2ec40dfef29964b53))
+* **gfprobt:** Use bleak library ([`407eec6`](https://github.com/dominikkarall/fhempy/commit/407eec69cd5be79d0c3b0fc52cf3f766d89d4e8a))
+* **mitemp2:** Use bleak library ([`3ff7d74`](https://github.com/dominikkarall/fhempy/commit/3ff7d7478ecb78f6c67952045203ce91fad28d63))
+* **ble_reset:** Add missing import ([`c5f3c55`](https://github.com/dominikkarall/fhempy/commit/c5f3c55ccd0dab6cc6afbce5ff505ec619fa54e7))
+* **fhempy:** Fix BluetoothLE update_adapters ([`e6b91f8`](https://github.com/dominikkarall/fhempy/commit/e6b91f8f5af1d3308aaa9cf85ddc8d35e4beb217))
+* **ble_reset:** New ble reset based on bluetooth-auto-recovery lib ([`0fed3e7`](https://github.com/dominikkarall/fhempy/commit/0fed3e74c247a43136f99fa03d9404752de3b2d7))
+* **blue_connect:** BluetoothLE core fixes for reconnects ([`0cce921`](https://github.com/dominikkarall/fhempy/commit/0cce921a725dc0f9fca6a2c86beef9bc8d26342e))
+
 ## v0.1.554 (2023-01-13)
 ### Fix
 * **fhempy:** Fix bluetoothle core ([`5db91b5`](https://github.com/dominikkarall/fhempy/commit/5db91b53ebf85713c744253eebd3e5e11be28189))
