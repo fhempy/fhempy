@@ -449,16 +449,15 @@ class eq3bt(generic.FhemModule):
 
 
 class FhemThermostat(eq3.Thermostat):
-    def __init__(self, logger, hash, mac, keep_connection, max_retries):
+    def __init__(self, logger, hash, mac, keep_connection, notification_callback):
         self.logger = logger
         self._keep_conection = keep_connection
-        self._max_retries = max_retries
         super(FhemThermostat, self).__init__(
             logger,
             hash,
             mac,
             keep_connection=self._keep_conection,
-            max_retries=self._max_retries,
+            notification_callback=notification_callback,
         )
 
     async def disconnect(self):
