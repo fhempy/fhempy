@@ -21,6 +21,7 @@ Schedule needs to be requested with query_schedule() before accessing for simila
 # handle: 0xff04, char properties: 0x08, char value handle: 0xff05, uuid: 92e86c7a-d961-4091-b74f-2409e72efe36
 # handle: 0xff06, char properties: 0x02, char value handle: 0xff07, uuid: 347f7608-2e2d-47eb-913b-75d4edc4de3b
 
+import asyncio
 import codecs
 import struct
 from datetime import datetime, timedelta
@@ -83,7 +84,7 @@ class TemperatureException(Exception):
 class Thermostat:
     """Representation of a EQ3 Bluetooth Smart thermostat."""
 
-    def __init__(self, logger, hash, _mac, keep_connection=False, max_retries=5):
+    def __init__(self, logger, hash, _mac, keep_connection=True, notification_callback):
         """Initialize the thermostat."""
         self.logger = logger
 
@@ -106,6 +107,8 @@ class Thermostat:
 
         self._firmware_version = None
         self._device_serial = None
+
+        self._notification_callback = notification_callback
 
         self._conn = BluetoothLE(
             self.logger, hash, _mac, keep_connected=keep_connection
@@ -217,6 +220,7 @@ class Thermostat:
             self.logger.debug(
                 "Unknown notification %s (%s)", data[0], codecs.encode(data, "hex")
             )
+        asyncio.create_task(self._notification_callback())
 
     async def query_id(self):
         """Query device identification information, e.g. the serial number."""

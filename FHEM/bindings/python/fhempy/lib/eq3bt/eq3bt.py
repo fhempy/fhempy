@@ -1,5 +1,4 @@
 import asyncio
-import random
 import time
 from datetime import datetime
 from enum import IntEnum
@@ -119,7 +118,7 @@ class eq3bt(generic.FhemModule):
             self.hash,
             self._mac,
             keep_connection=self._attr_keep_connected == "on",
-            max_retries=self._attr_max_retries,
+            notification_callback=self.notification_received,
         )
 
         self.create_async_task(self.check_online())
@@ -173,7 +172,6 @@ class eq3bt(generic.FhemModule):
         waittime = 300
         if self._attr_keep_connected == "on":
             waittime = 60
-        await asyncio.sleep(int(random.random() * 100))
         while True:
             try:
                 if time.time() - self._last_update > (waittime * 4):
@@ -188,10 +186,12 @@ class eq3bt(generic.FhemModule):
                 self.logger.error(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
 
+    async def notification_received(self):
+        await self.update_all_readings()
+
     async def update_all(self):
         self.logger.debug("start update_all")
         await self.thermostat.update_all()
-        await self.update_all_readings()
 
     async def update_all_readings(self):
         await self.update_readings()
@@ -471,25 +471,25 @@ class FhemThermostat(eq3.Thermostat):
             await super().query_schedule(day)
 
     async def set_temperature_presets(self, comfort_temp, eco_temp):
-        await self.temperature_presets(comfort_temp, eco_temp)
+        await super().temperature_presets(comfort_temp, eco_temp)
 
     async def set_temperature_offset(self, temp):
-        await self.set_temperature_offset(temp)
+        await super().set_temperature_offset(temp)
 
     async def set_window_open_config(self, temperature, duration):
-        await self.window_open_config(temperature, duration)
+        await super().window_open_config(temperature, duration)
 
     async def set_target_temperature(self, temp):
-        await self.set_target_temperature(temp)
+        await super().set_target_temperature(temp)
 
     async def set_boost(self, state):
-        await self.set_boost(state)
+        await super().set_boost(state)
 
     async def set_locked(self, state):
-        await self.set_locked(state)
+        await super().set_locked(state)
 
     async def set_fhem_mode(self, mode):
-        await self.set_mode(mode)
+        await super().set_mode(mode)
 
     @property
     def fhem_mode(self):
