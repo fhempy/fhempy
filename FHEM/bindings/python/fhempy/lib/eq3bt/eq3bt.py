@@ -465,9 +465,12 @@ class FhemThermostat(eq3.Thermostat):
 
     async def update_all(self):
         await super().update()
+        await asyncio.sleep(3)
         await super().query_id()
-        for day in range(0, 6):
+        await asyncio.sleep(3)
+        for day in range(0, 7):
             await super().query_schedule(day)
+            await asyncio.sleep(3)
 
     async def set_temperature_presets(self, comfort_temp, eco_temp):
         await super().temperature_presets(comfort_temp, eco_temp)
