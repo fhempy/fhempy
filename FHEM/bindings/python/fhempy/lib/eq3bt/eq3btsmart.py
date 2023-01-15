@@ -7,6 +7,20 @@ To get the current state, update() has to be called for powersaving reasons.
 Schedule needs to be requested with query_schedule() before accessing for similar reasons.
 """
 
+# handle: 0x0110, char properties: 0x02, char value handle: 0x0111, uuid: 00002a00-0000-1000-8000-00805f9b34fb
+# handle: 0x0120, char properties: 0x02, char value handle: 0x0121, uuid: 00002a01-0000-1000-8000-00805f9b34fb
+# handle: 0x0130, char properties: 0x02, char value handle: 0x0131, uuid: 00002a02-0000-1000-8000-00805f9b34fb
+# handle: 0x0140, char properties: 0x08, char value handle: 0x0141, uuid: 00002a03-0000-1000-8000-00805f9b34fb
+# handle: 0x0150, char properties: 0x02, char value handle: 0x0151, uuid: 00002a04-0000-1000-8000-00805f9b34fb
+# handle: 0x0210, char properties: 0x22, char value handle: 0x0211, uuid: 00002a05-0000-1000-8000-00805f9b34fb
+# handle: 0x0310, char properties: 0x02, char value handle: 0x0311, uuid: 00002a29-0000-1000-8000-00805f9b34fb
+# handle: 0x0320, char properties: 0x02, char value handle: 0x0321, uuid: 00002a24-0000-1000-8000-00805f9b34fb
+# handle: 0x0410, char properties: 0x0a, char value handle: 0x0411, uuid: 3fa4585a-ce4a-3bad-db4b-b8df8179ea09
+# handle: 0x0420, char properties: 0x1a, char value handle: 0x0421, uuid: d0e8434d-cd29-0996-af41-6c90f4e0eb2a
+# handle: 0xff01, char properties: 0x38, char value handle: 0xff02, uuid: e3dd50bf-f7a7-4e99-838e-570a086c666b
+# handle: 0xff04, char properties: 0x08, char value handle: 0xff05, uuid: 92e86c7a-d961-4091-b74f-2409e72efe36
+# handle: 0xff06, char properties: 0x02, char value handle: 0xff07, uuid: 347f7608-2e2d-47eb-913b-75d4edc4de3b
+
 import codecs
 import struct
 from datetime import datetime, timedelta
@@ -17,8 +31,8 @@ from construct import Byte
 from ..core.bluetoothle import BluetoothLE
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status
 
-PROP_WRITE_HANDLE = 0x411
-PROP_NTFY_HANDLE = 0x421
+PROP_WRITE_HANDLE = "3fa4585a-ce4a-3bad-db4b-b8df8179ea09"
+PROP_NTFY_HANDLE = "d0e8434d-cd29-0996-af41-6c90f4e0eb2a"
 
 PROP_ID_QUERY = 0
 PROP_ID_RETURN = 1
