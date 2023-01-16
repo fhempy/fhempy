@@ -182,7 +182,7 @@ class eq3bt(generic.FhemModule):
                 self.logger.info("Stopped update loop")
                 return
             except Exception:
-                self.logger.error(f"Failed to update, retry in {waittime}s")
+                self.logger.exception(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
 
     async def notification_received(self):
