@@ -17,9 +17,7 @@ class BluetoothLE:
     # reset hci devices on errors
     # find by name
     # add bluetooth-auto-recovery
-    def __init__(
-        self, logger, device_hash, address=None, name=None, keep_connected=True
-    ) -> None:
+    def __init__(self, logger, device_hash, address=None, name=None) -> None:
         self._disconnect_called = False
         self._device = None
         self._client = None
@@ -31,7 +29,9 @@ class BluetoothLE:
         self.logger = logger
         self.addr = address
         self.name = name
-        self.keep_connected = keep_connected
+
+        self.connection_task = None
+        self.connected = asyncio.Event()
 
     async def update_adapters(self):
         self.adapters = await bluetooth_adapters.get_bluetooth_adapters()
@@ -57,15 +57,39 @@ class BluetoothLE:
     def register_connection_established_listener(self, connected_listener):
         self.connected_listener = connected_listener
 
+    def register_notification_listener(self, notification_listener):
+        self.notification_listener = notification_listener
+
     async def connect(self, timeout=30, max_retries=20):
+        if self._client and self._client.is_connected:
+            return
+
+        self.connection_task = asyncio.create_task(
+            self.connect_loop(timeout, max_retries)
+        )
+
+    async def connect_loop(self, timeout, max_retries):
+        while True:
+            try:
+                await self.connect_once(timeout, max_retries)
+                if self._client and self._client.is_connected:
+                    # loop is started again on disconnect
+                    self.connected.set()
+                    return
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                self.logger.exception("Failed to connect")
+
+            # wait 10s before next retry
+            await asyncio.sleep(10)
+
+    async def connect_once(self, timeout, max_retries):
         # get latest adapter list
         await self.update_adapters()
 
         await fhem.readingsSingleUpdate(self._dev_hash, "connection", "connecting", 1)
         self._disconnect_called = False
-
-        if self._client and self._client.is_connected:
-            return
 
         for i in range(0, max_retries):
             for adapter in self.adapters:
@@ -82,8 +106,9 @@ class BluetoothLE:
                     self._dev_hash,
                     "connection_adapter_details",
                     self.adapter_details[adapter]["manufacturer"]
-                    + ": "
-                    + self.adapter_details[adapter]["address"],
+                    + " ("
+                    + self.adapter_details[adapter]["address"]
+                    + ")",
                     1,
                 )
 
@@ -95,6 +120,7 @@ class BluetoothLE:
                 )
                 try:
                     await self._client.connect()
+                    await self._subscribe_notifies()
                 except (asyncio.TimeoutError, BleakError):
                     pass
                 if self._client.is_connected:
@@ -109,29 +135,41 @@ class BluetoothLE:
                     continue
 
         # connection failed
-        if self.keep_connected:
-            return await self.connect()
-        else:
-            self.logger.error("Device couldn't be found")
-            await fhem.readingsSingleUpdate(self._dev_hash, "connection", "failed", 1)
         return
 
+    async def _subscribe_notifies(self):
+        if not self.notification_listener:
+            return
+
+        services = await self._client.get_services()
+        for service in services:
+            for characteristic in service.characteristics:
+                if "notify" in characteristic.properties:
+                    await self._client.start_notify(
+                        characteristic, self.notification_listener
+                    )
+
     async def write_gatt_char(self, uuid, data):
-        if not self.is_connected:
-            await self.connect()
-        await self._client.write_gatt_char(uuid, data)
+        await asyncio.wait_for(self.connected.wait(), 10)
+        if self.connected.is_set():
+            await self._client.write_gatt_char(uuid, data)
 
     async def read_gatt_char(self, uuid):
-        if not self.is_connected:
-            await self.connect()
-        return await self._client.read_gatt_char(uuid)
+        await asyncio.wait_for(self.connected.wait(), 10)
+        if self.connected.is_set():
+            return await self._client.read_gatt_char(uuid)
 
     async def disconnect(self):
         self._disconnect_called = True
+
+        if self.connection_task:
+            self.connection_task.cancel()
+
         if self._client and self._client.is_connected:
             await self._client.disconnect()
 
     def _disconnect_callback(self, client: BleakClient):
+        self.connected.clear()
         asyncio.create_task(self.async_disconnected(client))
 
     async def async_disconnected(self, client: BleakClient):
@@ -142,7 +180,7 @@ class BluetoothLE:
         self._client = None
         self._device = None
 
-        if self.keep_connected and not self._disconnect_called:
+        if not self._disconnect_called:
             self.logger.error("Device disconnected, reconnect now")
             await self.connect()
         else:
