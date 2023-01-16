@@ -141,7 +141,7 @@ class BluetoothLE:
         if not self.notification_listener:
             return
 
-        services = await self._client.services
+        services = self._client.services
         for service in services:
             for characteristic in service.characteristics:
                 if "notify" in characteristic.properties:
