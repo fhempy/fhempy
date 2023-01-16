@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.559 (2023-01-16)
+### Fix
+* **fhempy:** Services not working, use get_services() ([`fbea26f`](https://github.com/dominikkarall/fhempy/commit/fbea26f3d15b7bdc5384b9c84fa18d3c75bfc2fa))
+
 ## v0.1.558 (2023-01-16)
 ### Fix
 * **fhempy:** Fix ble notification subscription ([`a3fc5e5`](https://github.com/dominikkarall/fhempy/commit/a3fc5e5f412a9cbd232ff70601ecbeb76b9d7660))
