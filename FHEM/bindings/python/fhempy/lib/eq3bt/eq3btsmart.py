@@ -113,15 +113,14 @@ class Thermostat:
         self._notification_callback = notification_callback
 
         self._conn = bluetoothle.BluetoothLE(
-            self.logger, hash, _mac, keep_connected=keep_connection
+            self.logger,
+            hash,
+            _mac,
         )
+        self._conn.register_notification_listener(self.handle_notification)
 
     async def connect(self):
         await self._conn.connect()
-        if self._conn.is_connected:
-            await self._conn.client.start_notify(
-                PROP_NTFY_HANDLE, self.handle_notification
-            )
 
     def __str__(self):
         away_end = "no"

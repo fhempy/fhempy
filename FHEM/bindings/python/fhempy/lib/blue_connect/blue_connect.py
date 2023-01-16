@@ -56,9 +56,8 @@ class blue_connect(generic.FhemModule):
         self._mac = args[3]
         self.hash["MAC"] = self._mac
 
-        self.ble_dev = bluetoothle.BluetoothLE(
-            self.logger, self.hash, self._mac, keep_connected=True
-        )
+        self.ble_dev = bluetoothle.BluetoothLE(self.logger, self.hash, self._mac)
+        self.ble_dev.register_notification_listener(self.received_notification)
 
         self.task_update_loop = self.create_async_task(self.update_loop())
 
@@ -99,11 +98,6 @@ class blue_connect(generic.FhemModule):
             await self.ble_dev.connect()
 
         if self.ble_dev.is_connected:
-            # register notify
-            await self.ble_dev.client.start_notify(
-                "F3300003-F0A2-9B06-0C59-1BC4763B5C00",
-                self.received_notification,
-            )
             # start measure
             await self.ble_dev.client.write_gatt_char(
                 "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
