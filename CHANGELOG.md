@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.557 (2023-01-16)
+### Fix
+* **eq3bt:** Handle timeout ([`c18783e`](https://github.com/dominikkarall/fhempy/commit/c18783e52f7c23a161e1f09ff4a415681e764171))
+* **fhempy:** Increase timeout ([`6c9166b`](https://github.com/dominikkarall/fhempy/commit/6c9166b81a956d2c88f55c84abf1cae46230ea2a))
+* **eq3bt:** Add exception instead of error logging ([`7a6c2bc`](https://github.com/dominikkarall/fhempy/commit/7a6c2bca20bae055b96fa8deaeff41dd37035375))
+* **fhempy:** Fix bluetooth reconnect ([`5a6b6bc`](https://github.com/dominikkarall/fhempy/commit/5a6b6bc94c998ac1ce8a027fe5d6622d5d0288e7))
+
 ## v0.1.556 (2023-01-15)
 
 
