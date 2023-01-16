@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.558 (2023-01-16)
+### Fix
+* **fhempy:** Fix ble notification subscription ([`a3fc5e5`](https://github.com/dominikkarall/fhempy/commit/a3fc5e5f412a9cbd232ff70601ecbeb76b9d7660))
+
 ## v0.1.557 (2023-01-16)
 ### Fix
 * **eq3bt:** Handle timeout ([`c18783e`](https://github.com/dominikkarall/fhempy/commit/c18783e52f7c23a161e1f09ff4a415681e764171))
