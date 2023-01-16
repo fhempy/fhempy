@@ -181,6 +181,8 @@ class eq3bt(generic.FhemModule):
             except asyncio.CancelledError:
                 self.logger.info("Stopped update loop")
                 return
+            except asyncio.TimeoutError:
+                self.logger.error(f"Timeout on update, retry in {waittime}s")
             except Exception:
                 self.logger.exception(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
