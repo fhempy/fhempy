@@ -141,7 +141,7 @@ class BluetoothLE:
         if not self.notification_listener:
             return
 
-        services = await self._client.get_services()
+        services = await self._client.services
         for service in services:
             for characteristic in service.characteristics:
                 if "notify" in characteristic.properties:
@@ -150,12 +150,12 @@ class BluetoothLE:
                     )
 
     async def write_gatt_char(self, uuid, data):
-        await asyncio.wait_for(self.connected.wait(), 10)
+        await asyncio.wait_for(self.connected.wait(), 30)
         if self.connected.is_set():
             await self._client.write_gatt_char(uuid, data)
 
     async def read_gatt_char(self, uuid):
-        await asyncio.wait_for(self.connected.wait(), 10)
+        await asyncio.wait_for(self.connected.wait(), 30)
         if self.connected.is_set():
             return await self._client.read_gatt_char(uuid)
 
