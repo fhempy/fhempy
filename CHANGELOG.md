@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.560 (2023-01-17)
+### Fix
+* **fhempy:** Disable asyncio debug ([`b08559b`](https://github.com/dominikkarall/fhempy/commit/b08559bc64382b26e91bd5aef984e0c78f2b8d2d))
+* **fhempy:** Bluetooth fixes ([`68db2d6`](https://github.com/dominikkarall/fhempy/commit/68db2d6e1bbfda46f3287a84cb457537cb224e6e))
+* **skodaconnect:** Skoda Connect Update BaseLib ([#121](https://github.com/dominikkarall/fhempy/issues/121)) ([`08a363f`](https://github.com/dominikkarall/fhempy/commit/08a363f989cf4cb399455c96cbd104633155b5cc))
+
 ## v0.1.559 (2023-01-16)
 ### Fix
 * **fhempy:** Services not working, use get_services() ([`fbea26f`](https://github.com/dominikkarall/fhempy/commit/fbea26f3d15b7bdc5384b9c84fa18d3c75bfc2fa))
