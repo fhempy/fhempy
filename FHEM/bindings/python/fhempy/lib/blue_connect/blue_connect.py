@@ -94,9 +94,6 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(self.update_readings())
 
     async def measure(self):
-        if not self.ble_dev.is_connected:
-            await self.ble_dev.connect()
-
         if self.ble_dev.is_connected:
             # start measure
             await self.ble_dev.client.write_gatt_char(
@@ -104,6 +101,10 @@ class blue_connect(generic.FhemModule):
             )
 
     async def update_loop(self):
+        if not self.ble_dev.is_connected:
+            await self.ble_dev.connect()
+        await self.ble_dev.connected.wait()
+
         while True:
             try:
                 await self.measure_once()

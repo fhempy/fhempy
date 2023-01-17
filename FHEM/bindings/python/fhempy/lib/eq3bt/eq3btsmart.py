@@ -90,9 +90,9 @@ class Thermostat:
         """Initialize the thermostat."""
         self.logger = logger
 
-        self._target_temperature = Mode.Unknown
+        self._target_temperature = 0
         self._mode = Mode.Unknown
-        self._valve_state = Mode.Unknown
+        self._valve_state = 0
         self._raw_mode = None
 
         self._schedule = {}
@@ -345,6 +345,8 @@ class Thermostat:
         """Return a readable representation of the mode.."""
         ret = ""
         mode = self._raw_mode
+        if mode is None:
+            return "unknown"
 
         if mode.MANUAL:
             ret = "manual"

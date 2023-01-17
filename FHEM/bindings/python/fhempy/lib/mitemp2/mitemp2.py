@@ -17,17 +17,16 @@ class mitemp2(generic.FhemModule):
             self.logger,
             self.hash,
             self._mac,
-            keep_connected=True,
         )
         self.create_async_task(self.async_connection_setup())
 
     async def async_connection_setup(self, mac):
         await self._conn.connect()
-        self._conn.client.start_notify(0x0038, self.received_notification)
+        self._conn.client.start_notify(0x0038 - 1, self.received_notification)
         # enable notifications
-        await self._conn.write_gatt_char(0x0038, b"\x01\x00")
+        await self._conn.write_gatt_char(0x0038 - 1, b"\x01\x00")
         # enable lower power mode
-        await self._conn.write_gatt_char(0x0046, b"\xf4\x01\x00")
+        await self._conn.write_gatt_char(0x0046 - 1, b"\xf4\x01\x00")
 
     def received_notification(self, uuid, data):
         self.create_async_task(self.update_data(data))
