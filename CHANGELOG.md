@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.561 (2023-01-17)
+### Feature
+* **blue_connect:** Support blue_connect restart ([`1d6cb45`](https://github.com/dominikkarall/fhempy/commit/1d6cb458451a5cdfbae03349b2a012a23f640f27))
+
+### Fix
+* **mitemp2:** Notifications are enabled in ble lib ([`75918bf`](https://github.com/dominikkarall/fhempy/commit/75918bfa09ec8c40be88c3fefa5b92b2ac558040))
+* **blue_connect:** Write gatt event when not connected - lib automatically reconnects ([`29b71c0`](https://github.com/dominikkarall/fhempy/commit/29b71c0714bcfdecce42a126488ecd64952b2a4c))
+
 ## v0.1.560 (2023-01-17)
 ### Fix
 * **fhempy:** Disable asyncio debug ([`b08559b`](https://github.com/dominikkarall/fhempy/commit/b08559bc64382b26e91bd5aef984e0c78f2b8d2d))
