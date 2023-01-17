@@ -22,7 +22,6 @@ class mitemp2(generic.FhemModule):
 
     async def async_connection_setup(self, mac):
         await self._conn.connect()
-        self._conn.client.start_notify(0x0038 - 1, self.received_notification)
         # enable notifications
         await self._conn.write_gatt_char(0x0038 - 1, b"\x01\x00")
         # enable lower power mode
