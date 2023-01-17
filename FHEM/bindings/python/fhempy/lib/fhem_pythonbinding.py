@@ -646,6 +646,7 @@ def handle_cmdline_options(opts):
             local = True
         elif o in ("-d", "--debug"):
             logging.getLogger("").setLevel(logging.DEBUG)
+            asyncio.get_event_loop().set_debug(True)
     return ip, port, local
 
 
@@ -703,7 +704,6 @@ def run():
     global exit_code
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     loop = asyncio.get_event_loop()
-    loop.set_debug(True)
     try:
         loop.run_until_complete(async_main())
     finally:

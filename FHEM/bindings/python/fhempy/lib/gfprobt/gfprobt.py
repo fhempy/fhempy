@@ -7,36 +7,36 @@ from ..core import bluetoothle
 
 DEFAULT_TIMEOUT = 1
 
-HANDLE_RW_PASSWORD = 0x0048
-HANDLE_R_WATERING = 0x0015
-HANDLE_W_WATERING = 0x0013
-HANDLE_R_BATTERY = 0x0039
-HANDLE_R_TEMPERATURE = 0x003B
-HANDLE_R_MIN_TEMP = 0x003D
-HANDLE_R_MAX_TEMP = 0x003F
-HANDLE_R_FIRMWARE = 0x004E
-HANDLE_RW_DEVNAME = 0x0052
-HANDLE_RW_ECO_PART1 = 0x0033
-HANDLE_RW_ECO_PART2 = 0x0045
-HANDLE_RW_TIME_OFFSET = 0x0035
-HANDLE_R_MAC = 0x004A
-HANDLE_RW_INCREASEREDUCE = 0x0043
-HANDLE_W_COMMITCODE = 0x0037
+HANDLE_RW_PASSWORD = 0x0048 - 1
+HANDLE_R_WATERING = 0x0015 - 1
+HANDLE_W_WATERING = 0x0013 - 1
+HANDLE_R_BATTERY = 0x0039 - 1
+HANDLE_R_TEMPERATURE = 0x003B - 1
+HANDLE_R_MIN_TEMP = 0x003D - 1
+HANDLE_R_MAX_TEMP = 0x003F - 1
+HANDLE_R_FIRMWARE = 0x004E - 1
+HANDLE_RW_DEVNAME = 0x0052 - 1
+HANDLE_RW_ECO_PART1 = 0x0033 - 1
+HANDLE_RW_ECO_PART2 = 0x0045 - 1
+HANDLE_RW_TIME_OFFSET = 0x0035 - 1
+HANDLE_R_MAC = 0x004A - 1
+HANDLE_RW_INCREASEREDUCE = 0x0043 - 1
+HANDLE_W_COMMITCODE = 0x0037 - 1
 HANDLE_RW_TIMERS = [
-    0x0017,
-    0x0019,
-    0x001B,
-    0x001D,
-    0x001F,
-    0x0021,
-    0x0023,
-    0x0031,
-    0x0025,
-    0x0027,
-    0x0029,
-    0x002B,
-    0x002D,
-    0x002F,
+    0x0017 - 1,
+    0x0019 - 1,
+    0x001B - 1,
+    0x001D - 1,
+    0x001F - 1,
+    0x0021 - 1,
+    0x0023 - 1,
+    0x0031 - 1,
+    0x0025 - 1,
+    0x0027 - 1,
+    0x0029 - 1,
+    0x002B - 1,
+    0x002D - 1,
+    0x002F - 1,
 ]
 
 
@@ -84,7 +84,6 @@ class gfprobt(generic.FhemModule):
             self.logger,
             self.hash,
             self._mac,
-            keep_connected=True,
         )
         self.create_async_task(self.update_loop())
 

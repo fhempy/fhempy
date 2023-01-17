@@ -210,71 +210,78 @@ class eq3bt(generic.FhemModule):
             await fhem.ReadingsVal(self.hash["NAME"], "consumptionToday", "0")
         )
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "battery", self.thermostat.battery
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "boost", self.thermostat.boost
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "childlock", self.thermostat.locked
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "desiredTemperature", self.thermostat.target_temperature
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "ecoTemperature", self.thermostat.eco_temperature
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "temperatureOffset", self.thermostat.temperature_offset
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "comfortTemperature", self.thermostat.comfort_temperature
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "mode", self.thermostat.fhem_mode
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "state", self.thermostat.state
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "completeState", self.thermostat.mode_readable
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "valvePosition", self.thermostat.valve_state
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "awayEnd", self.thermostat.away_end
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "windowOpen", self.thermostat.window_open
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "windowOpenTemperature", self.thermostat.window_open_temperature
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "windowOpenTime", self.thermostat.window_open_time
-        )
-        if (time.time() - self._last_update) < 400:
-            consumption_diff = (
-                (old_valve_pos + self.thermostat.valve_state)
-                / 2
-                / 100
-                * (time.time() - self._last_update)
-                / 60
+        try:
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "battery", self.thermostat.battery
             )
-        else:
-            consumption_diff = 0
-        new_consumption = round(old_consumption + consumption_diff, 2)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "consumption", new_consumption
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash,
-            "consumptionToday",
-            round(old_consumption_today + consumption_diff, 2),
-        )
-        await fhem.readingsEndUpdate(self.hash, 1)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "boost", self.thermostat.boost
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "childlock", self.thermostat.locked
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "desiredTemperature", self.thermostat.target_temperature
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "ecoTemperature", self.thermostat.eco_temperature
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "temperatureOffset", self.thermostat.temperature_offset
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "comfortTemperature", self.thermostat.comfort_temperature
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "mode", self.thermostat.fhem_mode
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "state", self.thermostat.state
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "completeState", self.thermostat.mode_readable
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "valvePosition", self.thermostat.valve_state
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "awayEnd", self.thermostat.away_end
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "windowOpen", self.thermostat.window_open
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash,
+                "windowOpenTemperature",
+                self.thermostat.window_open_temperature,
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "windowOpenTime", self.thermostat.window_open_time
+            )
+            if (time.time() - self._last_update) < 400:
+                consumption_diff = (
+                    (old_valve_pos + self.thermostat.valve_state)
+                    / 2
+                    / 100
+                    * (time.time() - self._last_update)
+                    / 60
+                )
+            else:
+                consumption_diff = 0
+            new_consumption = round(old_consumption + consumption_diff, 2)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "consumption", new_consumption
+            )
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash,
+                "consumptionToday",
+                round(old_consumption_today + consumption_diff, 2),
+            )
+        except Exception:
+            self.logger.exception("Failed to update_readings")
+            raise
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
         self._last_update = time.time()
 
     async def update_id_readings(self):
@@ -470,7 +477,7 @@ class FhemThermostat(eq3.Thermostat):
         await asyncio.sleep(3)
         for day in range(0, 7):
             await super().query_schedule(day)
-            await asyncio.sleep(3)
+            await asyncio.sleep(1)
 
     async def set_temperature_presets(self, comfort_temp, eco_temp):
         await super().temperature_presets(comfort_temp, eco_temp)

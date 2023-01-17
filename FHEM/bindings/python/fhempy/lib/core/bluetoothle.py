@@ -64,9 +64,10 @@ class BluetoothLE:
         if self._client and self._client.is_connected:
             return
 
-        self.connection_task = asyncio.create_task(
-            self.connect_loop(timeout, max_retries)
-        )
+        if self.connection_task is None or self.connection_task.done():
+            self.connection_task = asyncio.create_task(
+                self.connect_loop(timeout, max_retries)
+            )
 
     async def connect_loop(self, timeout, max_retries):
         while True:
@@ -121,7 +122,9 @@ class BluetoothLE:
                 try:
                     await self._client.connect()
                     await self._subscribe_notifies()
-                except (asyncio.TimeoutError, BleakError):
+                except BleakError:
+                    self.logger.exception("Failed to connect")
+                except asyncio.TimeoutError:
                     pass
                 if self._client.is_connected:
                     await fhem.readingsSingleUpdate(
@@ -145,8 +148,9 @@ class BluetoothLE:
         for service in services:
             for characteristic in service.characteristics:
                 if "notify" in characteristic.properties:
+                    self.logger.debug(f"start_notify for {characteristic.uuid}")
                     await self._client.start_notify(
-                        characteristic, self.notification_listener
+                        characteristic.uuid, self.notification_listener
                     )
 
     async def write_gatt_char(self, uuid, data):
