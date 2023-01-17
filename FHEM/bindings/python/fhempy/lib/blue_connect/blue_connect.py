@@ -44,6 +44,7 @@ class blue_connect(generic.FhemModule):
         self.rssi = ""
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
+            "restart": {"help": "Restart blue connect"},
         }
         self.set_set_config(set_conf)
         return
@@ -71,6 +72,9 @@ class blue_connect(generic.FhemModule):
     async def set_measure(self, hash, params):
         self.create_async_task(self.measure_once())
 
+    async def set_restart(self, hash, params):
+        self.create_async_task(self.restart())
+
     def received_notification(self, uuid, data):
         self.raw_measurement = codecs.encode(data, "hex")
         raw_temp = int(self.raw_measurement[4:6] + self.raw_measurement[2:4], 16)
@@ -94,11 +98,19 @@ class blue_connect(generic.FhemModule):
         self.create_async_task(self.update_readings())
 
     async def measure(self):
-        if self.ble_dev.is_connected:
-            # start measure
-            await self.ble_dev.client.write_gatt_char(
-                "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
-            )
+        # start measure
+        await self.ble_dev.write_gatt_char(
+            "F3300002-F0A2-9B06-0C59-1BC4763B5C00", b"\x01"
+        )
+
+    async def restart(self):
+        # start measure
+        await self.ble_dev.write_gatt_char(
+            "f3300020-f0a2-9b06-0c59-1bc4763b5c00", b"\x31"
+        )
+        await self.ble_dev.disconnect()
+        await asyncio.sleep(1)
+        await self.ble_dev.connect()
 
     async def update_loop(self):
         if not self.ble_dev.is_connected:
