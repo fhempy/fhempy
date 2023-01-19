@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.563 (2023-01-19)
+### Fix
+* **tuya:** Do not run update_readings in parallel ([`43a588e`](https://github.com/dominikkarall/fhempy/commit/43a588ef989f50f9b46526c8d4a1bfe50d57b793))
+
 ## v0.1.562 (2023-01-19)
 ### Feature
 * **tuya:** Show error message in state reading on getdevices error ([`f1ebfb2`](https://github.com/dominikkarall/fhempy/commit/f1ebfb2007e0c59aba768908b44eb7303de831b6))
