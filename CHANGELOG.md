@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.562 (2023-01-19)
+### Feature
+* **tuya:** Show error message in state reading on getdevices error ([`f1ebfb2`](https://github.com/dominikkarall/fhempy/commit/f1ebfb2007e0c59aba768908b44eb7303de831b6))
+
 ## v0.1.561 (2023-01-17)
 ### Feature
 * **blue_connect:** Support blue_connect restart ([`1d6cb45`](https://github.com/dominikkarall/fhempy/commit/1d6cb458451a5cdfbae03349b2a012a23f640f27))
