@@ -397,7 +397,8 @@ class tuya(generic.FhemModule):
         return fct_code_desc
 
     async def async_status_updated(self, status):
-        await self.update_readings(status)
+        async with self.update_lock:
+            await self.update_readings(status)
 
     def status_updated(self, status):
         self.create_async_task(self.async_status_updated(status))
