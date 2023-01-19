@@ -698,6 +698,10 @@ class tuya(generic.FhemModule):
         json_data = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, verbose=True)
         )
+        if "Error" in json_data:
+            self.logger.error(f"getdevices: {json_data}")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"{json_data}", 1)
+            return
 
         # Filter to only Name, ID and Key, product_id, icon
         tuyadevices = []
