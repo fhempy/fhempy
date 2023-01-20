@@ -761,7 +761,7 @@ class tuya(generic.FhemModule):
         # scan local devices to get IP
         self.logger.debug("Scan local devices...")
         devices = await utils.run_blocking(
-            functools.partial(self.tt.deviceScan, False, 20)
+            functools.partial(self.tt.deviceScan, False, 20, False, False)
         )
 
         def getIP(d, gwid):
