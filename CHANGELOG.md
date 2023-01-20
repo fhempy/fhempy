@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.566 (2023-01-20)
+### Fix
+* **tuya:** Do not poll device on scan ([`7540c16`](https://github.com/dominikkarall/fhempy/commit/7540c16b96255e1f0eebd68a37ceaa3fc216f8e7))
+
 ## v0.1.565 (2023-01-20)
 ### Fix
 * **tuya:** Fix another possible high load bug ([`735f0f0`](https://github.com/dominikkarall/fhempy/commit/735f0f0ff0ec06dfbf8f65faea084bad6af0e893))
