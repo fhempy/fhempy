@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.565 (2023-01-20)
+### Fix
+* **tuya:** Fix another possible high load bug ([`735f0f0`](https://github.com/dominikkarall/fhempy/commit/735f0f0ff0ec06dfbf8f65faea084bad6af0e893))
+
 ## v0.1.564 (2023-01-20)
 ### Feature
 * **esphome:** Update esphome library ([`5ba11a9`](https://github.com/dominikkarall/fhempy/commit/5ba11a9f2621b7623e49373f527a77a73ae761aa))
