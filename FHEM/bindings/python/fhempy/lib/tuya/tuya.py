@@ -24,6 +24,8 @@ class tuya(generic.FhemModule):
         self.create_device_list = []
         self.update_lock = asyncio.Lock()
         self.master_switch = ""
+        self.update_dps_loop_task = None
+        self.status_quick_loop_task = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -498,13 +500,15 @@ class tuya(generic.FhemModule):
         while True:
             await asyncio.sleep(5)
             # this is required to force update measurements (power, current, voltage)
-            await self._connected_device.device.device.updatedps()
+            if self._connected_device:
+                await self._connected_device.device.device.updatedps()
 
     async def status_quick_loop(self):
         while True:
             await asyncio.sleep(60)
             # this loop just ensures that all dps are updated every 60s
-            await self._connected_device.device.device.status_quick()
+            if self._connected_device:
+                await self._connected_device.device.device.status_quick()
 
     async def setup_connection(self):
         state_set = False
@@ -518,8 +522,14 @@ class tuya(generic.FhemModule):
                     self,
                     timeout=15,
                 )
-                self.create_async_task(self.update_dps_loop())
-                self.create_async_task(self.status_quick_loop())
+                if self.update_dps_loop_task is not None:
+                    self.update_dps_loop_task = self.create_async_task(
+                        self.update_dps_loop()
+                    )
+                if self.status_quick_loop_task is not None:
+                    self.status_quick_loop_task = self.create_async_task(
+                        self.status_quick_loop()
+                    )
                 break
             except Exception:
                 if not state_set:
