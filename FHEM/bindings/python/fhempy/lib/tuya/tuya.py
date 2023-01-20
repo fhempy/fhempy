@@ -512,7 +512,8 @@ class tuya(generic.FhemModule):
 
     async def setup_connection(self):
         state_set = False
-        while True:
+        connected = False
+        while not connected:
             try:
                 self._connected_device = await self.tt.connect(
                     self.tt_ip,
@@ -530,7 +531,7 @@ class tuya(generic.FhemModule):
                     self.status_quick_loop_task = self.create_async_task(
                         self.status_quick_loop()
                     )
-                break
+                connected = True
             except Exception:
                 if not state_set:
                     await fhem.readingsSingleUpdateIfChanged(
