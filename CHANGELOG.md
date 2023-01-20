@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.564 (2023-01-20)
+### Feature
+* **esphome:** Update esphome library ([`5ba11a9`](https://github.com/dominikkarall/fhempy/commit/5ba11a9f2621b7623e49373f527a77a73ae761aa))
+
+### Fix
+* **tuya:** Possible high load fix ([`f177628`](https://github.com/dominikkarall/fhempy/commit/f177628924616669e159d47f7482b2961fb32aa3))
+
 ## v0.1.563 (2023-01-19)
 ### Fix
 * **tuya:** Do not run update_readings in parallel ([`43a588e`](https://github.com/dominikkarall/fhempy/commit/43a588ef989f50f9b46526c8d4a1bfe50d57b793))
