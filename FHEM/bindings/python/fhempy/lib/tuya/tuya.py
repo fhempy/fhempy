@@ -571,7 +571,7 @@ class tuya(generic.FhemModule):
                     value /= 10
                 elif schema["code"] == "temp_set":
                     value /= 0.2
-            elif self.tt_productid == "wifvoilfrqeo6hvu":
+            elif self.tt_productid in ["wifvoilfrqeo6hvu", "37mnhia3pojleqfh"]:
                 if schema["code"] == "cur_voltage":
                     value /= 10
             return value / (10 ** values["scale"])
