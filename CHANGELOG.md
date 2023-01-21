@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.567 (2023-01-21)
+### Fix
+* **tuya:** Fix factor 10 for productid 37mnhia3pojleqfh ([`4e9f479`](https://github.com/dominikkarall/fhempy/commit/4e9f479d9c254a587450f81e93fd0038cf88a5f9))
+* **tuya_cloud:** Create device with tuya_cloud_DEVICEID ([`39b8bf0`](https://github.com/dominikkarall/fhempy/commit/39b8bf050271e477d7431c7d49ed36dd0cfc893d))
+
 ## v0.1.566 (2023-01-20)
 ### Fix
 * **tuya:** Do not poll device on scan ([`7540c16`](https://github.com/dominikkarall/fhempy/commit/7540c16b96255e1f0eebd68a37ceaa3fc216f8e7))
