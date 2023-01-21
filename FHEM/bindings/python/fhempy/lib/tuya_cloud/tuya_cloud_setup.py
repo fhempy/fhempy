@@ -2,17 +2,12 @@ import asyncio
 import functools
 import json
 
-import tuya_iot
-from tuya_connector import (
-    TuyaOpenPulsar,
-    TuyaCloudPulsarTopic,
-)
 import fhempy.lib.fhem as fhem
 import fhempy.lib.utils as utils
+import tuya_iot
+from tuya_connector import TuyaCloudPulsarTopic, TuyaOpenPulsar
 
-from .const import (
-    TUYA_ENDPOINT,
-)
+from .const import TUYA_ENDPOINT
 
 
 class tuya_cloud_setup:
@@ -223,7 +218,7 @@ class tuya_cloud_setup:
 
     async def _create_fhem_device(self, name, device_id):
         devalias = name
-        devname = name + "_" + device_id
+        devname = "tuya_cloud_" + device_id
         devname = utils.remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
         device_exists = await fhem.checkIfDeviceExists(
             self.hash, "PYTHONTYPE", "tuya_cloud", "DEVICEID", device_id
