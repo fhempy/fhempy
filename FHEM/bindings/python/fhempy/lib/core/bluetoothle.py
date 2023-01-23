@@ -103,10 +103,13 @@ class BluetoothLE:
                 await fhem.readingsSingleUpdateIfChanged(
                     self._dev_hash, "connection_adapter", adapter, 1
                 )
+                manufacturer = self.adapter_details[adapter]["manufacturer"]
+                if not manufacturer:
+                    manufacturer = "unknown"
                 await fhem.readingsSingleUpdateIfChanged(
                     self._dev_hash,
                     "connection_adapter_details",
-                    self.adapter_details[adapter]["manufacturer"]
+                    manufacturer
                     + " ("
                     + self.adapter_details[adapter]["address"]
                     + ")",
