@@ -14,6 +14,7 @@ class tuya(generic.FhemModule):
         # import needs to be here, otherwise we are in a thread without
         # event loop which is required in tinytuya
         self.tt = importlib.import_module("tinytuya")
+        self.tt.core.log = logger
         self.tt.loop = asyncio.get_event_loop()
         super().__init__(logger)
         self._connected_device = None
