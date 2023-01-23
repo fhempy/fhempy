@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.570 (2023-01-23)
+### Fix
+* **tuya:** Fix update loops ([`28b66c8`](https://github.com/dominikkarall/fhempy/commit/28b66c8076981c9af2251e4d7e19c4cf77dfc97f))
+
 ## v0.1.569 (2023-01-23)
 ### Feature
 * **esphome:** Update to 2022.12.5 ([`9007f0e`](https://github.com/dominikkarall/fhempy/commit/9007f0e606c9f6a73da82675acca2bad4eea26be))
