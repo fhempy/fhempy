@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.571 (2023-01-23)
+### Feature
+* **tuya:** Support logging in tt core ([`495a85a`](https://github.com/dominikkarall/fhempy/commit/495a85a24ff07d674ab1735799846c3532ff347d))
+
 ## v0.1.570 (2023-01-23)
 ### Fix
 * **tuya:** Fix update loops ([`28b66c8`](https://github.com/dominikkarall/fhempy/commit/28b66c8076981c9af2251e4d7e19c4cf77dfc97f))
