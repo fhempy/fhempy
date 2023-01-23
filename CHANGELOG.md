@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.568 (2023-01-23)
+### Fix
+* **fhempy:** Fix unknown bluetooth manufacturer error ([`376aaa1`](https://github.com/dominikkarall/fhempy/commit/376aaa14dca71fef5e29844916b8ab6aa319cb69))
+
 ## v0.1.567 (2023-01-21)
 ### Fix
 * **tuya:** Fix factor 10 for productid 37mnhia3pojleqfh ([`4e9f479`](https://github.com/dominikkarall/fhempy/commit/4e9f479d9c254a587450f81e93fd0038cf88a5f9))
