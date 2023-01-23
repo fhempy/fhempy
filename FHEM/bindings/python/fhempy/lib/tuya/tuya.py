@@ -523,11 +523,11 @@ class tuya(generic.FhemModule):
                     self,
                     timeout=15,
                 )
-                if self.update_dps_loop_task is not None:
+                if self.update_dps_loop_task is None:
                     self.update_dps_loop_task = self.create_async_task(
                         self.update_dps_loop()
                     )
-                if self.status_quick_loop_task is not None:
+                if self.status_quick_loop_task is None:
                     self.status_quick_loop_task = self.create_async_task(
                         self.status_quick_loop()
                     )
