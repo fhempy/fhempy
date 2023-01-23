@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.569 (2023-01-23)
+### Feature
+* **esphome:** Update to 2022.12.5 ([`9007f0e`](https://github.com/dominikkarall/fhempy/commit/9007f0e606c9f6a73da82675acca2bad4eea26be))
+
+### Fix
+* **fhempy:** Use services property as get_services is deprecated ([`6930105`](https://github.com/dominikkarall/fhempy/commit/6930105cb48097ae7decd040cbe5debc22e666bf))
+
 ## v0.1.568 (2023-01-23)
 ### Fix
 * **fhempy:** Fix unknown bluetooth manufacturer error ([`376aaa1`](https://github.com/dominikkarall/fhempy/commit/376aaa14dca71fef5e29844916b8ab6aa319cb69))
