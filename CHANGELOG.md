@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.572 (2023-01-24)
+### Fix
+* **eq3bt:** Fix set comfort ([`c4c0d57`](https://github.com/dominikkarall/fhempy/commit/c4c0d576c8d9578a1865ec721fbc9a1c3c09a97f))
+
 ## v0.1.571 (2023-01-23)
 ### Feature
 * **tuya:** Support logging in tt core ([`495a85a`](https://github.com/dominikkarall/fhempy/commit/495a85a24ff07d674ab1735799846c3532ff347d))
