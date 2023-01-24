@@ -1,9 +1,10 @@
 import ast
 import asyncio
 import functools
-import importlib
 import json
 import re
+
+import tinytuya as tt
 
 from .. import fhem, generic, utils
 from . import mappings
@@ -11,11 +12,6 @@ from . import mappings
 
 class tuya(generic.FhemModule):
     def __init__(self, logger):
-        # import needs to be here, otherwise we are in a thread without
-        # event loop which is required in tinytuya
-        self.tt = importlib.import_module("tinytuya")
-        self.tt.core.log = logger
-        self.tt.loop = asyncio.get_event_loop()
         super().__init__(logger)
         self._connected_device = None
         self.tuya_cloud = None
@@ -100,7 +96,7 @@ class tuya(generic.FhemModule):
         if self.tt_key and self.tt_secret:
             self.tuya_cloud = await utils.run_blocking(
                 functools.partial(
-                    self.tt.Cloud,
+                    tt.Cloud,
                     self.tt_region,
                     self.tt_key,
                     self.tt_secret,
@@ -309,22 +305,16 @@ class tuya(generic.FhemModule):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
         if "category" in self.info_dict and self.info_dict["category"] == "dj":
-            hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
-                rgb["r"], rgb["g"], rgb["b"], "A"
-            )
+            hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
         else:
-            hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
-                rgb["r"], rgb["g"], rgb["b"], "B"
-            )
+            hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
         await self.change_to_colour_mode()
         await self._connected_device.set_dp(hexvalue, index)
 
     async def set_colour_data_v2(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
-        hexvalue = self.tt.BulbDevice._rgb_to_hexvalue(
-            rgb["r"], rgb["g"], rgb["b"], "B"
-        )
+        hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
         await self.change_to_colour_mode()
         await self._connected_device.set_dp(hexvalue, index)
 
@@ -516,7 +506,7 @@ class tuya(generic.FhemModule):
         connected = False
         while not connected:
             try:
-                self._connected_device = await self.tt.connect(
+                self._connected_device = await tt.connect(
                     self.tt_ip,
                     self.tt_did,
                     self.tt_localkey,
@@ -762,7 +752,7 @@ class tuya(generic.FhemModule):
         # scan local devices to get IP
         self.logger.debug("Scan local devices...")
         devices = await utils.run_blocking(
-            functools.partial(self.tt.deviceScan, False, 20, False, False)
+            functools.partial(tt.deviceScan, False, 20, False, False)
         )
 
         def getIP(d, gwid):
@@ -832,9 +822,9 @@ class tuya(generic.FhemModule):
     async def update_readings_colour(self, code, hexcolour):
         if code == "colour_data" and self.info_dict["category"] == "dj":
             # only category dj (light) has old colour_data
-            (red, green, blue) = self.tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
+            (red, green, blue) = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
         else:
-            (red, green, blue) = self.tt.BulbDevice._hexvalue_to_rgb(hexcolour, "B")
+            (red, green, blue) = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "B")
 
         rgb_hex = f"{red:02x}{green:02x}{blue:02x}"
         await fhem.readingsBulkUpdate(
