@@ -506,7 +506,7 @@ class tuya(generic.FhemModule):
         connected = False
         while not connected:
             try:
-                self._connected_device = await tt.connect(
+                connect_fct = tt.connect(
                     self.tt_ip,
                     self.tt_did,
                     self.tt_localkey,
@@ -514,6 +514,7 @@ class tuya(generic.FhemModule):
                     self,
                     timeout=15,
                 )
+                self._connected_device = await asyncio.wait_for(connect_fct, timeout=15)
                 if self.update_dps_loop_task is None:
                     self.update_dps_loop_task = self.create_async_task(
                         self.update_dps_loop()
