@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.574 (2023-01-24)
+
+
 ## v0.1.573 (2023-01-24)
 ### Fix
 * **tuya:** Proper import of fhempy tinytuya ([`d9eb64b`](https://github.com/dominikkarall/fhempy/commit/d9eb64bbe783d23a34b78bc0850b3b731cd6a766))
