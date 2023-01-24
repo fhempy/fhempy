@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.575 (2023-01-24)
+### Fix
+* **tuya:** Try to reconnect every 15s ([`8f13ab2`](https://github.com/dominikkarall/fhempy/commit/8f13ab2b12639afc844ea594ade19653cb603cc1))
+
 ## v0.1.574 (2023-01-24)
 
 
