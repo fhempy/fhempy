@@ -443,7 +443,7 @@ class eq3bt(generic.FhemModule):
         self.create_async_task(self.set_and_update(self.thermostat.activate_eco()))
 
     async def set_comfort(self, hash, params):
-        self.create_async_task(self.set_and_update(self.thermostat.activate_comfort))
+        self.create_async_task(self.set_and_update(self.thermostat.activate_comfort()))
 
     async def set_childlock(self, hash, params):
         self.create_async_task(
