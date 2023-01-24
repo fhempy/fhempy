@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.573 (2023-01-24)
+### Fix
+* **tuya:** Proper import of fhempy tinytuya ([`d9eb64b`](https://github.com/dominikkarall/fhempy/commit/d9eb64bbe783d23a34b78bc0850b3b731cd6a766))
+
 ## v0.1.572 (2023-01-24)
 ### Fix
 * **eq3bt:** Fix set comfort ([`c4c0d57`](https://github.com/dominikkarall/fhempy/commit/c4c0d576c8d9578a1865ec721fbc9a1c3c09a97f))
