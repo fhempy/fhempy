@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.577 (2023-01-26)
+
+
 ## v0.1.576 (2023-01-26)
 ### Feature
 * **fhempy:** Update devStateIcon ([`69ba9e1`](https://github.com/dominikkarall/fhempy/commit/69ba9e1e521eca19bd5853e24f1953a20c4bb748))
