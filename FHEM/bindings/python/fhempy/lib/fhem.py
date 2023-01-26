@@ -15,7 +15,6 @@ import websockets
 from .version import __version__
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 function_active = []
 update_locks = {}
@@ -343,17 +342,18 @@ async def send_and_wait(name, cmd):
             if fhem_time > 20000:
                 # log error message if fhem took too long to handle cmd
                 logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
+            rmsg = json.loads(rmsg)
+            logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
             logger.error("Failed to set result, received: " + rmsg)
 
     global wsconnection
     wsconnection.register_msg_listener(listener, msg["awaitId"])
+    logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
     msg = json.dumps(msg, ensure_ascii=False)
-    logger.debug("<<< WS: " + msg)
     try:
         await wsconnection.send(msg)
-        logger.debug("message sent successfully")
     except websockets.exceptions.ConnectionClosed:
         logger.error("Connection closed, can't send message.")
     except Exception as e:
@@ -367,7 +367,6 @@ async def sendCommandName(name, cmd, hash=None):
     ret = ""
     timeout = 60
     try:
-        logger.debug("sendCommandName START")
         start = time.time()
         while len(function_active) != 0:
             if function_active[-1] == name:
@@ -379,8 +378,7 @@ async def sendCommandName(name, cmd, hash=None):
             logger.error(f"sendCommandName took {duration}s to send: {cmd}")
         # wait max 60s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
-        logger.debug("sendCommandName END")
-        ret = json.loads(jsonmsg)["result"]
+        ret = jsonmsg["result"]
     except asyncio.TimeoutError:
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
