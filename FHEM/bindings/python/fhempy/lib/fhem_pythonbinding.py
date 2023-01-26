@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 loadedModuleInstances = {}
 moduleLoadingRunning = {}
+id_received_timestamp = {}
 zc_info = None
 
 pip_lock = asyncio.Lock()
@@ -113,7 +114,9 @@ class fhempy:
         retHash["returnval"] = ret
         retHash["id"] = hash["id"]
         msg = json.dumps(retHash)
-        logger.debug("<<< WS: " + msg)
+        duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
+        del id_received_timestamp[retHash["id"]]
+        logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         await self.wsconnection.send(msg.encode("utf-8"))
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
@@ -126,7 +129,9 @@ class fhempy:
         if "id" in hash:
             retHash["id"] = hash["id"]
         msg = json.dumps(retHash, ensure_ascii=False)
-        logger.debug("<<< WS: " + msg)
+        duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
+        del id_received_timestamp[retHash["id"]]
+        logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         await self.wsconnection.send(msg.encode("utf-8"))
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
@@ -188,7 +193,6 @@ class fhempy:
                 logger.debug(f"Skipped non-utf8 payload: {payload}")
                 return
         msg = payload
-        logger.debug(">>> WS: " + msg)
         hash = None
         try:
             hash = json.loads(msg)
@@ -219,6 +223,8 @@ class fhempy:
             if removeElement:
                 self._msg_listeners.remove(removeElement)
         else:
+            id_received_timestamp[hash["id"]] = time.time()
+            logger.debug(f">>> {int(hash['id']):08d}: {hash}")
             if hash["msgtype"] == "update":
                 await self.update_and_exit(hash)
             elif hash["msgtype"] == "restart":
@@ -428,7 +434,6 @@ class fhempy:
             # call Set/Attr/Define/...
             func = getattr(nmInstance, hash["function"], "nofunction")
             if func != "nofunction":
-                logger.debug((f"Start function {hash['NAME']}:" f"{hash['function']}"))
                 if hash["function"] == "Undefine":
                     try:
                         ret = await asyncio.wait_for(func(hash), fct_timeout)
@@ -439,7 +444,6 @@ class fhempy:
                         func(hash, hash["args"], hash["argsh"]),
                         fct_timeout,
                     )
-                logger.debug((f"End function {hash['NAME']}:" f"{hash['function']}"))
                 if ret is None:
                     ret = ""
                 if fhem_reply_done:
@@ -646,6 +650,7 @@ def handle_cmdline_options(opts):
             local = True
         elif o in ("-d", "--debug"):
             logging.getLogger("").setLevel(logging.DEBUG)
+            logging.getLogger("websockets.server").setLevel(logging.ERROR)
             asyncio.get_event_loop().set_debug(True)
     return ip, port, local
 
