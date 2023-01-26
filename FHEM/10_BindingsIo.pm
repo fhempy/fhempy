@@ -118,7 +118,7 @@ BindingsIo_Define($$$)
   }
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, "devStateIcon", "");
-  if ($devstateicon_val eq "" or index($devstateicon_val, "ver_available") == -1) {
+  if ($devstateicon_val eq "" or index($devstateicon_val, "refresh_txt") == -1) {
     my $devstate_cmd = '{
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
