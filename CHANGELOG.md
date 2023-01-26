@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.576 (2023-01-26)
+### Feature
+* **fhempy:** Update devStateIcon ([`69ba9e1`](https://github.com/dominikkarall/fhempy/commit/69ba9e1e521eca19bd5853e24f1953a20c4bb748))
+* **fhempy:** Update devStateIcon ([`457d60b`](https://github.com/dominikkarall/fhempy/commit/457d60bfbd3196b2d1629f29cdcdd05300a875e7))
+
+### Fix
+* **fhempy:** Debug log cleanup ([`7a54c9d`](https://github.com/dominikkarall/fhempy/commit/7a54c9d04a12c6531fb92b8eb53da88f7724e5ba))
+
 ## v0.1.575 (2023-01-24)
 ### Fix
 * **tuya:** Try to reconnect every 15s ([`8f13ab2`](https://github.com/dominikkarall/fhempy/commit/8f13ab2b12639afc844ea594ade19653cb603cc1))
