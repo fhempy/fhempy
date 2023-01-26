@@ -137,34 +137,35 @@ sub BindingsIo_Define {
     if (AttrVal($name, q[group], q[]) eq q[]) {
       CommandAttr(undef, qq[$name group fhempy]);
     }
-    # set devStateIcon
-    my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-    if ($devstateicon_val eq q[] or index($devstateicon_val, "refresh_txt") == -1) {
-      my $devstate_cmd = '{
-        my $status_img = "10px-kreis-gruen";;
-        my $status_txt = "connected";;
-        my $ver = ReadingsVal($name, "version", "-");;
-        my $ver_available = ReadingsVal($name, "version_available", $ver);;
-        my $update_icon = "";;
-        my $refresh_img = "refresh";;
-        my $refresh_txt = "Update fhempy";;
-        if ($ver_available ne $ver) {
-          $refresh_img = "refresh\@orange";;
-          $refresh_txt = "Version ".$ver_available." available for update";;
-        }
-        if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-          $status_img = "10px-kreis-rot";;
-          $status_txt = "disconnected";;
-        }
-        $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
-        my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-        "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
-      }';
-      $devstate_cmd =~ tr/\n//d;
-      CommandAttr(undef, "$name devStateIcon $devstate_cmd");
-    }
   }
 
+  # set devStateIcon
+  my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
+  if ($devstateicon_val eq q[] or index($devstateicon_val, "refresh_txt") == -1) {
+    my $devstate_cmd = '{
+      my $status_img = "10px-kreis-gruen";;
+      my $status_txt = "connected";;
+      my $ver = ReadingsVal($name, "version", "-");;
+      my $ver_available = ReadingsVal($name, "version_available", $ver);;
+      my $update_icon = "";;
+      my $refresh_img = "refresh";;
+      my $refresh_txt = "Update fhempy";;
+      if ($ver_available ne $ver) {
+        $refresh_img = "refresh\@orange";;
+        $refresh_txt = "Version ".$ver_available." available for update";;
+      }
+      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+        $status_img = "10px-kreis-rot";;
+        $status_txt = "disconnected";;
+      }
+      $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
+      my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
+    }';
+    $devstate_cmd =~ tr/\n//d;
+    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+  }
+  
   return undef;
 }
 
