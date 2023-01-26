@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.578 (2023-01-26)
+### Feature
+* **fhempy:** Support debug with verbose 5 ([`6d96d9b`](https://github.com/dominikkarall/fhempy/commit/6d96d9b71a6eba1914b0faef3a5098cd2b9554ef))
+
 ## v0.1.577 (2023-01-26)
 
 
