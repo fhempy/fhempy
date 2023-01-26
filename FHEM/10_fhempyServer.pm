@@ -52,6 +52,10 @@ sub fhempyServer_detailFn($$$$)
 sub fhempyServer_getCmd($)
 {
   my ($hash) = @_;
+  my $verbose = AttrVal($hash->{NAME}, "verbose", "");
+  if ($verbose eq "5") {
+    return "FHEM/bindings/python/bin/fhempy --local --debug"
+  }
   return "FHEM/bindings/python/bin/fhempy --local";
 }
 
