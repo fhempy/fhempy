@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.579 (2023-01-29)
+### Feature
+* **fhempy:** Add restart button ([`13c93d1`](https://github.com/dominikkarall/fhempy/commit/13c93d1d8d5c16218618d3daf180e861f68b75d1))
+
 ## v0.1.578 (2023-01-26)
 ### Feature
 * **fhempy:** Support debug with verbose 5 ([`6d96d9b`](https://github.com/dominikkarall/fhempy/commit/6d96d9b71a6eba1914b0faef3a5098cd2b9554ef))
