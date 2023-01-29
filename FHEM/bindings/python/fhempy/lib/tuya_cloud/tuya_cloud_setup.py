@@ -221,8 +221,14 @@ class tuya_cloud_setup:
         devname = "tuya_cloud_" + device_id
         devname = utils.remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
         device_exists = await fhem.checkIfDeviceExists(
-            self.hash, "PYTHONTYPE", "tuya_cloud", "DEVICEID", device_id
+            self.hash, "FHEMPYTYPE", "tuya_cloud", "DEVICEID", device_id
         )
+
+        if not device_exists:
+            device_exists = await fhem.checkIfDeviceExists(
+                self.hash, "FHEMPYTYPE", "tuya", "DEVICEID", device_id
+            )
+
         if not device_exists:
             self.logger.info(
                 (
