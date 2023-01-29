@@ -563,6 +563,10 @@ sub BindingsIo_processMessage($$$$) {
         my $liststr = BindingsIo_getIODevList($hash);
         $json->{command} =~ s/IODev/IODev:$liststr/;
     }
+    local $SIG{__WARN__} = sub {
+        my $message = shift;
+        Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ".$message." => COMMAND: ".$json->{command};
+    };
     $ret = eval $json->{command};
     if ($@) {
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$json->{command}."): ".$@;
