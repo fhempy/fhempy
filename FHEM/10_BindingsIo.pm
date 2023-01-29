@@ -118,8 +118,9 @@ BindingsIo_Define($$$)
   }
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, "devStateIcon", "");
-  if ($devstateicon_val eq "" or index($devstateicon_val, "refresh_txt") == -1) {
+  if ($devstateicon_val eq "" or index($devstateicon_val, "1.0.0") == -1) {
     my $devstate_cmd = '{
+      my $attr_ver = "1.0.0";;
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
       my $ver = ReadingsVal($name, "version", "-");;
@@ -137,7 +138,7 @@ BindingsIo_Define($$$)
       }
       $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
       my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon."</div>"
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon."</div>"
     }';
     $devstate_cmd =~ tr/\n//d;
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");
