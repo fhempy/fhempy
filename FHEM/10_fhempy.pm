@@ -11,8 +11,8 @@ use Time::HiRes qw(time);
 
 use Color;
 
-sub Log($$);
-sub Log3($$$);
+our $init_done;
+
 
 sub
 fhempy_Initialize($)
@@ -50,11 +50,9 @@ fhempy_Define($$$)
   # check if BindingsIo exists
   if ($init_done) {
     my $foundServer = 0;
-    foreach my $fhem_dev (sort keys %main::defs) {
-      if($main::defs{$fhem_dev}{TYPE} eq 'BindingsIo') {
-        $foundServer = 1;
-      }
-    }
+    my @fhempyDevices = ::devspec2array(qq[i:TYPE=BindingsIo]);
+    $foundServer = ::IsDevice($fhempyDevices[0]);
+
     if ($foundServer == 0) {
       return "Before you use fhempy please define BindingsIo once:\ndefine pyBinding BindingsIo fhempy";
     }

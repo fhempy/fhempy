@@ -1,0 +1,92 @@
+
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Test fhempy FHEM Modules
+
+on:
+  pull_request:
+      paths: 
+      - 'FHEM/**.pm'
+      - 't/**'
+      - '.github/workflows/fhem_test.yml'
+
+  push:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  runtest:
+    strategy:
+      matrix:
+        os: ['ubuntu-latest']
+        perl: [ '5.28', '5.32' ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps: 
+    - name: Checkout Repostory
+      uses: actions/checkout@v3
+
+    - uses: shogo82148/actions-setup-perl@v1.18.0
+      with:
+        perl-version: ${{ matrix.perl }}
+        install-modules-with: cpanm
+        multi-thread: true
+        install-modules: |
+            Test2::Suite
+            JSON
+            Protocol::WebSocket::Frame
+            File::Basename
+            Devel::Cover
+
+    - name: Install FHEM via debian nightly 
+      uses: fhem/setup-fhem@v1.0.1
+
+    - name: fix permissions
+      run: |
+        sudo chown -R --reference=controls_pythonbinding.txt /opt/fhem
+
+    - name: run prove on fhem with perl ${{ matrix.perl }}
+      run: |
+        cp -R ${GITHUB_WORKSPACE}/FHEM/*.pm ${FHEM_DIR}/FHEM/
+        prove -j1 --exec 'perl -MDevel::Cover=-silent,1 fhem.pl -t' -I FHEM -vv -r ${GITHUB_WORKSPACE}/t/FHEM/
+      shell: bash
+      working-directory: /opt/fhem/
+      env:
+        FHEM_DIR: /opt/fhem
+   
+  update_controls:
+    needs: [runtest]
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout Repostory
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0
+        
+    - name: update controls file for FHEM Module
+      uses: fhem/fhem-controls-actions@v2.1.0
+      with:
+        filename: controls_pythonbinding.txt 
+
+    - name: update controls file for python binary
+      uses: fhem/fhem-controls-actions@v2.1.0
+      with:
+        filename: controls_pythonbinding.txt 
+        directory: FHEM/bindings/python/bin
+        writemode: a
+        extension: ''
+
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        default_author: github_actions 
+        commit: --signoff
+        message: "action: auto update controls"
+        push: true
+        add: controls_pythonbinding.txt 
