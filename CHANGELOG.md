@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.580 (2023-01-29)
+### Feature
+* **tuya_cloud:** Create only devices which do not exist as tuya or tuya_cloud device ([`299f393`](https://github.com/dominikkarall/fhempy/commit/299f393a65d176b3ca26396fc7084a5fc6803d63))
+
+### Fix
+* **fhempy:** Change PYTHONTYPE to FHEMPYTYPE ([`b8d464e`](https://github.com/dominikkarall/fhempy/commit/b8d464e90fab9a0718c63e0c2b948f424f307048))
+* **fhempy:** Handle WARNINGS in log message ([`2d19476`](https://github.com/dominikkarall/fhempy/commit/2d194760ce40905b01293dbb7b978f3cfc69cda7))
+* **fhempy:** Update text for hard restart ([`22fe106`](https://github.com/dominikkarall/fhempy/commit/22fe106d93e89e5343d533ceaeccc7c959376950))
+
 ## v0.1.579 (2023-01-29)
 ### Feature
 * **fhempy:** Add restart button ([`13c93d1`](https://github.com/dominikkarall/fhempy/commit/13c93d1d8d5c16218618d3daf180e861f68b75d1))
