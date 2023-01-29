@@ -120,7 +120,7 @@ sub fhempyServer_Define($$$)
         $status_img = "10px-kreis-rot";;
         $status_txt = "stopped";;
       }
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart\">".FW_makeImage("audio_repeat")."</a></div>"
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Kill and restart\">".FW_makeImage("audio_repeat")."</a></div>"
       }';
     $devstate_cmd =~ tr/\n//d;
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");

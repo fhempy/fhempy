@@ -49,7 +49,7 @@ class discover_mdns(FhemModule):
                 if not (
                     await fhem.checkIfDeviceExists(
                         self.hash,
-                        "PYTHONTYPE",
+                        "FHEMPYTYPE",
                         "googlecast",
                         "CASTNAME",
                         get_value("fn"),
@@ -97,7 +97,7 @@ class discover_mdns(FhemModule):
             elif info.type == "_spotify-connect":
                 if not (
                     await fhem.checkIfDeviceExists(
-                        self.hash, "PYTHONTYPE", "spotify", "PYTHONTYPE", "spotify"
+                        self.hash, "FHEMPYTYPE", "spotify", "FHEMPYTYPE", "spotify"
                     )
                 ):
                     self.logger.debug("create spotify")

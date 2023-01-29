@@ -4,11 +4,9 @@
 # current version is based on https://github.com/AlexxIT/XiaomiGateway3/tree/360c6d8ecc41f70ecf4f536e51bf379383f56200
 
 import asyncio
-import functools
 import logging
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic
 from .core.gateway3 import GatewayEntry
 from .core.utils import update_zigbee_firmware
 
@@ -152,7 +150,7 @@ class xiaomi_gateway3(generic.FhemModule):
         did = device["did"]
         self.devices[did] = device
         if not await fhem.checkIfDeviceExists(
-            self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
+            self.hash, "FHEMPYTYPE", "xiaomi_gateway3_device", "DID", did
         ):
             devname = (
                 "".join(filter(str.isalnum, str(device["model"]))) + "_" + device["mac"]
