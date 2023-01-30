@@ -124,6 +124,12 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
             + value.replace("'", "\\'")
             + "');;"
         )
+        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
+            logging.error(
+                f"{hash['NAME']}: readingsBulkUpdateIfChanged without "
+                + f"readingsBeginUpdate: {cmd}"
+            )
+            return
         return await sendCommandHash(hash, cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdateIfChanged")
@@ -154,6 +160,12 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + str(changed)
                 + ");;"
             )
+        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
+            logging.error(
+                f"{hash['NAME']}: readingsBulkUpdate without "
+                + f"readingsBeginUpdate: {cmd}"
+            )
+            return
         return await sendCommandHash(hash, cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdate")
