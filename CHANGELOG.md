@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.581 (2023-01-31)
+### Fix
+* **fhempy:** Add logging if readingsBeginUpdate call is missing ([`fd893dd`](https://github.com/dominikkarall/fhempy/commit/fd893dd6ce81428b703fd41e14be4dade3df3115))
+
 ## v0.1.580 (2023-01-29)
 ### Feature
 * **tuya_cloud:** Create only devices which do not exist as tuya or tuya_cloud device ([`299f393`](https://github.com/dominikkarall/fhempy/commit/299f393a65d176b3ca26396fc7084a5fc6803d63))
