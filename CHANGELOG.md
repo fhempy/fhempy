@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.582 (2023-01-31)
+### Fix
+* **fhempy:** Do not skip messages older than 10s ([`afc3961`](https://github.com/dominikkarall/fhempy/commit/afc39612a91a370fe670591e6eb83a8da6144414))
+* **tuya_cloud:** Fix warning when searching for DEVICEID ([`4e8f80e`](https://github.com/dominikkarall/fhempy/commit/4e8f80eb0f8b62aa3ffc6986e16bf7be7637f8e5))
+* **fhempy:** Fix restart button ([`253fb16`](https://github.com/dominikkarall/fhempy/commit/253fb16b9e3c63538e35761c3656465e5214a59e))
+
 ## v0.1.581 (2023-01-31)
 ### Fix
 * **fhempy:** Add logging if readingsBeginUpdate call is missing ([`fd893dd`](https://github.com/dominikkarall/fhempy/commit/fd893dd6ce81428b703fd41e14be4dade3df3115))
