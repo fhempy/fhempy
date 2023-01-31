@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.585 (2023-01-31)
+### Fix
+* **fhempy:** Update devStateIcon for all users ([`b438bcc`](https://github.com/dominikkarall/fhempy/commit/b438bccf2f4d3c6cf2725544aaacd125b545d7a7))
+* **fhempy:** Add devicename to log output ([`c928e23`](https://github.com/dominikkarall/fhempy/commit/c928e23a1962a157359391583de5448b16563c69))
+
 ## v0.1.584 (2023-01-31)
 ### Fix
 * **fhempy:** Change init_done response to int ([`c0a1b9b`](https://github.com/dominikkarall/fhempy/commit/c0a1b9bcd86469f67929ffb638129e7e371464fa))
