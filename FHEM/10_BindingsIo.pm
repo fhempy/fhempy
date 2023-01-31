@@ -141,9 +141,9 @@ sub BindingsIo_Define {
 
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.0.0") == -1) {
+  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.1.0") == -1) {
     my $devstate_cmd = '{
-      my $attr_ver = "1.0.0";;
+      my $attr_ver = "1.1.0";;
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
       my $ver = ReadingsVal($name, "version", "-");;
