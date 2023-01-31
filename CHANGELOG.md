@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.583 (2023-01-31)
+### Fix
+* **fhempy:** Update attr_ver ([`83ac51d`](https://github.com/dominikkarall/fhempy/commit/83ac51de976afbae6b88aefb2f9cb70560df1e2c))
+
 ## v0.1.582 (2023-01-31)
 ### Fix
 * **fhempy:** Do not skip messages older than 10s ([`afc3961`](https://github.com/dominikkarall/fhempy/commit/afc39612a91a370fe670591e6eb83a8da6144414))
