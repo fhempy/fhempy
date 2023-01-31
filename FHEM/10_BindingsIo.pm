@@ -474,6 +474,12 @@ BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
+  if ($attrName eq "devStateIcon") {
+    if (index($attrVal, "1.1.0") == -1) {
+      return "devStateIcon updated"
+    }
+  }
+
   return undef;
 }
 
