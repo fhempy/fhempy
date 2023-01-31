@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.584 (2023-01-31)
+### Fix
+* **fhempy:** Change init_done response to int ([`c0a1b9b`](https://github.com/dominikkarall/fhempy/commit/c0a1b9bcd86469f67929ffb638129e7e371464fa))
+
 ## v0.1.583 (2023-01-31)
 ### Fix
 * **fhempy:** Update attr_ver ([`83ac51d`](https://github.com/dominikkarall/fhempy/commit/83ac51de976afbae6b88aefb2f9cb70560df1e2c))
