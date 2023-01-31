@@ -54,11 +54,11 @@ fhempy_Define($$$)
     $foundServer = ::IsDevice($fhempyDevices[0]);
 
     if ($foundServer == 0) {
-      return "Before you use fhempy please define BindingsIo once:\ndefine pyBinding BindingsIo fhempy";
+      return "Before you use fhempy please define BindingsIo once:\ndefine fhempy_local BindingsIo fhempy";
     }
   }
 
-  Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.")";
+  Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.": ".$hash->{NAME}.")";
 
   AssignIoPort($hash, "fhempy_local");
 
