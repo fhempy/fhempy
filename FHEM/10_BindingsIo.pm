@@ -678,9 +678,6 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   $hash->{TempReceiverQueue} = Thread::Queue->new();
   Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
   while (my $msg = $hash->{ReceiverQueue}->dequeue_nb()) {
-    if ((time - $msg->{'time'}) > 10) {
-      next;
-    }
     $response = $msg->{'response'};
     my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
     if ($ret ne "continue" && $ret ne "nothandled") {
