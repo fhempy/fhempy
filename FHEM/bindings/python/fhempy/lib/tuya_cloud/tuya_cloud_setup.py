@@ -32,6 +32,7 @@ class tuya_cloud_setup:
             self._t_region = args[9]
         else:
             self._t_region = "Europe"
+        self.hash["DEVICEID"] = 0
 
         self.fhemdev.create_async_task(self.run_setup())
 

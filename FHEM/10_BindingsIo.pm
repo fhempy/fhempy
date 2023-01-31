@@ -160,7 +160,7 @@ sub BindingsIo_Define {
         $status_txt = "disconnected";;
       }
       $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
-      my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
+      my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
       "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon."</div>"
     }';
     $devstate_cmd =~ tr/\n//d;
@@ -678,9 +678,6 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   $hash->{TempReceiverQueue} = Thread::Queue->new();
   Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
   while (my $msg = $hash->{ReceiverQueue}->dequeue_nb()) {
-    if ((time - $msg->{'time'}) > 10) {
-      next;
-    }
     $response = $msg->{'response'};
     my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
     if ($ret ne "continue" && $ret ne "nothandled") {
