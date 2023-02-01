@@ -701,7 +701,21 @@ sub BindingsIo_readWebsocketMessage($$$$) {
 
   Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
 
+  # give main loop some time to handle other things
+  InternalTimer(gettimeofday()+0.2, 'BindingsIo_handleReceiverQueue', $hash, 0);
+
   return $returnval;
+}
+
+sub BindingsIo_handleReceiverQueue($) {
+  my ($hash) = @_;
+  
+  if ($hash->{ReceiverQueue}->pending() > 0) {
+    BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
+    # give main loop some time to handle other things
+    InternalTimer(gettimeofday()+0.2, 'BindingsIo_handleReceiverQueue', $hash, 0);
+  }
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: size - ".$hash->{ReceiverQueue}->pending();
 }
 
 1;
