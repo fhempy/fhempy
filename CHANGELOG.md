@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.586 (2023-02-01)
+### Feature
+* **fhempy:** Set rssi reading for all ble devices ([`faa743a`](https://github.com/dominikkarall/fhempy/commit/faa743a81875a39886723b36d61e75618fac0834))
+
+### Fix
+* **blue_connect:** Remove rssi as it is covered within core ble ([`a30591f`](https://github.com/dominikkarall/fhempy/commit/a30591f1bf5708f9f2acf7a6323e6737a845343d))
+
 ## v0.1.585 (2023-01-31)
 ### Fix
 * **fhempy:** Update devStateIcon for all users ([`b438bcc`](https://github.com/dominikkarall/fhempy/commit/b438bccf2f4d3c6cf2725544aaacd125b545d7a7))
