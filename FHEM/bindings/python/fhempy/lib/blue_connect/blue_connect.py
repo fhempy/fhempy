@@ -41,7 +41,6 @@ class blue_connect(generic.FhemModule):
         self.water_ph = "0"
         self.water_salt = "0"
         self.water_conductivity = "0"
-        self.rssi = ""
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
             "restart": {"help": "Restart blue connect"},
@@ -93,7 +92,6 @@ class blue_connect(generic.FhemModule):
             self.raw_measurement[20:22] + self.raw_measurement[18:20], 16
         )
         self.water_conductivity = round(float(raw_conductivity) / 0.4134)
-        self.rssi = self.ble_dev.device.rssi
 
         self.create_async_task(self.update_readings())
 
@@ -139,7 +137,6 @@ class blue_connect(generic.FhemModule):
 
     async def update_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdate(self.hash, "rssi", self.rssi)
         await fhem.readingsBulkUpdate(self.hash, "temperature", self.water_temp)
         await fhem.readingsBulkUpdate(self.hash, "ph", self.water_ph)
         await fhem.readingsBulkUpdate(self.hash, "orp", self.water_orp)
