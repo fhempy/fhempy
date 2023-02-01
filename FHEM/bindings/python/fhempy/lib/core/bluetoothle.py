@@ -115,6 +115,9 @@ class BluetoothLE:
                     + ")",
                     1,
                 )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self._dev_hash, "rssi", self._device.rssi, 1
+                )
 
                 self._client = BleakClient(
                     self._device,
