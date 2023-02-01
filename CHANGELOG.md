@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.587 (2023-02-01)
+### Fix
+* **fhempy:** Always handle messages on the receiver queue ([`bbeb97c`](https://github.com/dominikkarall/fhempy/commit/bbeb97c467c9d7a5f2046044081567540bd71fa4))
+
 ## v0.1.586 (2023-02-01)
 ### Feature
 * **fhempy:** Set rssi reading for all ble devices ([`faa743a`](https://github.com/dominikkarall/fhempy/commit/faa743a81875a39886723b36d61e75618fac0834))
