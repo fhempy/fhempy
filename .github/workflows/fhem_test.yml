@@ -17,6 +17,40 @@ on:
   workflow_dispatch:
 
 jobs:
+  update_controls:
+    needs: [runtest]
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout Repostory
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0
+        
+    - name: update controls file for FHEM Module
+      uses: fhem/fhem-controls-actions@v2.1.0
+      with:
+        filename: controls_pythonbinding.txt 
+
+    - name: update controls file for python binary
+      uses: fhem/fhem-controls-actions@v2.1.0
+      with:
+        filename: controls_pythonbinding.txt 
+        directory: FHEM/bindings/python/bin
+        writemode: a
+        extension: ''
+
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        default_author: github_actions 
+        commit: --signoff
+        message: "action: auto update controls"
+        push: true
+        add: controls_pythonbinding.txt 
+
   runtest:
     strategy:
       matrix:
@@ -57,36 +91,3 @@ jobs:
       env:
         FHEM_DIR: /opt/fhem
    
-  update_controls:
-    needs: [runtest]
-    runs-on: ubuntu-latest
-
-    steps: 
-    - name: Checkout Repostory
-      uses: actions/checkout@v3
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        ref: ${{ github.event.pull_request.head.ref }}
-        fetch-depth: 0
-        
-    - name: update controls file for FHEM Module
-      uses: fhem/fhem-controls-actions@v2.1.0
-      with:
-        filename: controls_pythonbinding.txt 
-
-    - name: update controls file for python binary
-      uses: fhem/fhem-controls-actions@v2.1.0
-      with:
-        filename: controls_pythonbinding.txt 
-        directory: FHEM/bindings/python/bin
-        writemode: a
-        extension: ''
-
-    - name: Commit changes
-      uses: EndBug/add-and-commit@v9
-      with:
-        default_author: github_actions 
-        commit: --signoff
-        message: "action: auto update controls"
-        push: true
-        add: controls_pythonbinding.txt 
