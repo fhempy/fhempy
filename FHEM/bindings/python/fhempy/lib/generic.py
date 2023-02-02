@@ -127,7 +127,7 @@ class FhemModule:
         )
 
         # add readme as help
-        if False and self.readme_str is not None:
+        if self.readme_str is not None:
             ret = ret.replace(
                 "###README_HELP_STRING###",
                 self.readme_str.replace("\n", "<br>")
