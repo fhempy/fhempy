@@ -173,6 +173,8 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
 
 
 async def readingsEndUpdate(hash, do_trigger):
+    if hash["NAME"] not in update_locks:
+        logger.error("readingsEndUpdate without active readingsBeginUpdate")
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
     res = await sendCommandHash(hash, cmd)
     update_locks[hash["NAME"]].release()
@@ -263,7 +265,9 @@ async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
         + typeinternal
         + "} eq '"
         + typevalue
-        + "' && $main::defs{$fhem_dev}{"
+        + "' && defined($main::defs{$fhem_dev}{"
+        + internal
+        + "}) && $main::defs{$fhem_dev}{"
         + internal
         + "} eq '"
         + value
@@ -352,7 +356,7 @@ async def send_and_wait(name, cmd):
         try:
             recv_time = time.time()
             fhem_time = (recv_time - sent_time) * 1000
-            if fhem_time > 20000:
+            if fhem_time > 5000:
                 # log error message if fhem took too long to handle cmd
                 logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
             rmsg = json.loads(rmsg)
