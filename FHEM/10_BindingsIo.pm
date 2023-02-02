@@ -174,7 +174,7 @@ sub
 BindingsIo_initFrame($) {
   my ($hash) = @_;
   $hash->{frame} = Protocol::WebSocket::Frame->new;
-  #$hash->{frame}->{max_fragments_amount} = 1000;
+  $hash->{frame}->{max_fragments_amount} = 1000;
   $hash->{frame}->{max_payload_size} = 0;
 }
 
@@ -620,10 +620,6 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
         my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
         return $bufws;
       } else {
-        my $op = (ord(substr($buf,0,1)) & 0x0F);
-        if ($op == 8) {
-          return undef;
-        }
         return $buf;
       }
     }
@@ -660,14 +656,16 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   }
 
   if ($USE_DEVIO_DECODEWS == 0) {
-    $hash->{frame}->append($response);
-    while (my $r = $hash->{frame}->next) {
-      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
-      my $resTemp = {
-        "response" => $r,
-        "time" => time
-      };
-      $hash->{ReceiverQueue}->enqueue($resTemp);
+    if (defined($response) && $response ne "") {
+      $hash->{frame}->append($response);
+      while (my $r = $hash->{frame}->next) {
+        Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
+        my $resTemp = {
+          "response" => $r,
+          "time" => time
+        };
+        $hash->{ReceiverQueue}->enqueue($resTemp);
+      }
     }
   } else {
     if (defined($response) && $response ne "") {
@@ -701,21 +699,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
 
   Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
 
-  # give main loop some time to handle other things
-  InternalTimer(gettimeofday()+0.2, 'BindingsIo_handleReceiverQueue', $hash, 0);
-
   return $returnval;
-}
-
-sub BindingsIo_handleReceiverQueue($) {
-  my ($hash) = @_;
-  
-  if ($hash->{ReceiverQueue}->pending() > 0) {
-    BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
-    # give main loop some time to handle other things
-    InternalTimer(gettimeofday()+0.2, 'BindingsIo_handleReceiverQueue', $hash, 0);
-  }
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: size - ".$hash->{ReceiverQueue}->pending();
 }
 
 1;
