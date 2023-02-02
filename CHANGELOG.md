@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.588 (2023-02-02)
+### Feature
+* **fhempy:** Enable readme again ([`761dc85`](https://github.com/dominikkarall/fhempy/commit/761dc853a23e1c8a7fd6f7806838d30d74db7a50))
+* **fhempy:** Log error when fhempy took longer than 1s to reply to fhem ([`af15f07`](https://github.com/dominikkarall/fhempy/commit/af15f073bc51c63cb2a5fe72fcb52933b19abdce))
+
+### Fix
+* **tuya_cloud:** Fix undefine ([`cc06489`](https://github.com/dominikkarall/fhempy/commit/cc06489669512bfdc32d24ab264043a038414f86))
+* **fhempy:** Fix NO RESPONSE in some situations ([`9b05dba`](https://github.com/dominikkarall/fhempy/commit/9b05dba39fc7442de602a94bef0612283ab17e93))
+* **fhempy:** Fix checkIfDeviceExists, log error when fhem takes longer than 5s, ensure BeginUpdate call before EndUpdate ([`40119f9`](https://github.com/dominikkarall/fhempy/commit/40119f97e0643898e115827450b2bd968a23d47b))
+* **fhempy:** Update websockets library ([`fc18898`](https://github.com/dominikkarall/fhempy/commit/fc18898fb559a97779d476b6f0f0e9aeaeb89220))
+
 ## v0.1.587 (2023-02-01)
 ### Fix
 * **fhempy:** Always handle messages on the receiver queue ([`bbeb97c`](https://github.com/dominikkarall/fhempy/commit/bbeb97c467c9d7a5f2046044081567540bd71fa4))
