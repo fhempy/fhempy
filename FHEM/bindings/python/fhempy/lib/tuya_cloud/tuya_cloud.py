@@ -2,10 +2,11 @@
 """Support for Tuya Smart devices."""
 
 import logging
-from fhempy.lib import fhem
-from fhempy.lib.generic import FhemModule
+
 import fhempy.lib.tuya_cloud.tuya_cloud_device as tcd
 import fhempy.lib.tuya_cloud.tuya_cloud_setup as tcs
+from fhempy.lib import fhem
+from fhempy.lib.generic import FhemModule
 
 
 class tuya_cloud(FhemModule):
@@ -35,6 +36,11 @@ class tuya_cloud(FhemModule):
             self.device = tcd.tuya_cloud_device(self.logger, self)
 
         await self.device.Define(self.hash, args, argsh)
+
+    async def Undefine(self, hash):
+        if self.device:
+            await self.device.Undefine(hash)
+        return await super().Undefine(hash)
 
     async def set_boolean(self, hash, params):
         await self.device.set_boolean(hash, params)

@@ -36,6 +36,9 @@ class tuya_cloud_setup:
 
         self.fhemdev.create_async_task(self.run_setup())
 
+    async def Undefine(self, hash):
+        return
+
     def _get_region_url(self, region) -> str:
         for url in TUYA_ENDPOINT:
             if TUYA_ENDPOINT[url] == region:
@@ -213,6 +216,9 @@ class tuya_cloud_setup:
     def register_tuya_device(self, device):
         self._t_devicelist.append(device)
 
+    def unregister_tuya_device(self, device):
+        self._t_devicelist.remove(device)
+
     @property
     def tuya_devices(self):
         return self._t_devicelist
@@ -256,6 +262,7 @@ class tuya_cloud_setup:
             await self._create_fhem_device(
                 self.device_manager.device_map[device_id].name, device_id
             )
+            await asyncio.sleep(1)
 
     async def send_commands(self, deviceid, commands):
         await utils.run_blocking(

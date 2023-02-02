@@ -1,11 +1,11 @@
 import asyncio
+import colorsys
 import functools
 import json
-import colorsys
 
 import fhempy.lib.fhem as fhem
-import fhempy.lib.utils as utils
 import fhempy.lib.fhem_pythonbinding as fpb
+import fhempy.lib.utils as utils
 
 
 class tuya_cloud_device:
@@ -13,6 +13,7 @@ class tuya_cloud_device:
         self.logger = logger
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
+        self.readings_update_lock = asyncio.Lock()
 
     async def Define(self, hash, args, argsh):
         self._t_setupdev = args[3]
@@ -24,6 +25,10 @@ class tuya_cloud_device:
         self.default_code = None
         await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         self.fhemdev.create_async_task(self._init_device())
+
+    async def Undefine(self, hash):
+        if self.tuyaiot:
+            self.tuyaiot.unregister_tuya_device(self)
 
     async def _init_device(self):
         try:
@@ -271,40 +276,42 @@ class tuya_cloud_device:
         await self.update_readings_dict(device.status)
 
     async def update_readings_arr(self, status_arr):
-        await fhem.readingsBeginUpdate(self.hash)
-        try:
-            for status in status_arr:
-                if status["code"] in ["colour_data", "colour_data_v2"]:
-                    await self.update_readings_hsv(
-                        status["code"], json.loads(status["value"])
-                    )
-                else:
-                    await fhem.readingsBulkUpdate(
-                        self.hash,
-                        self._convert_code2fhem(status["code"]),
-                        self._convert_value2fhem(status["code"], status["value"]),
-                    )
-        except Exception as ex:
-            self.logger.exception(ex)
-        await fhem.readingsEndUpdate(self.hash, 1)
+        async with self.readings_update_lock:
+            await fhem.readingsBeginUpdate(self.hash)
+            try:
+                for status in status_arr:
+                    if status["code"] in ["colour_data", "colour_data_v2"]:
+                        await self.update_readings_hsv(
+                            status["code"], json.loads(status["value"])
+                        )
+                    else:
+                        await fhem.readingsBulkUpdate(
+                            self.hash,
+                            self._convert_code2fhem(status["code"]),
+                            self._convert_value2fhem(status["code"], status["value"]),
+                        )
+            except Exception as ex:
+                self.logger.exception(ex)
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_dict(self, status_dic):
-        await fhem.readingsBeginUpdate(self.hash)
-        try:
-            for st_name in status_dic:
-                if st_name in ["colour_data", "colour_data_v2"]:
-                    await self.update_readings_hsv(
-                        st_name, json.loads(status_dic[st_name])
-                    )
-                else:
-                    await fhem.readingsBulkUpdate(
-                        self.hash,
-                        self._convert_code2fhem(st_name),
-                        self._convert_value2fhem(st_name, status_dic[st_name]),
-                    )
-        except Exception as ex:
-            self.logger.exception(ex)
-        await fhem.readingsEndUpdate(self.hash, 1)
+        async with self.readings_update_lock:
+            await fhem.readingsBeginUpdate(self.hash)
+            try:
+                for st_name in status_dic:
+                    if st_name in ["colour_data", "colour_data_v2"]:
+                        await self.update_readings_hsv(
+                            st_name, json.loads(status_dic[st_name])
+                        )
+                    else:
+                        await fhem.readingsBulkUpdate(
+                            self.hash,
+                            self._convert_code2fhem(st_name),
+                            self._convert_value2fhem(st_name, status_dic[st_name]),
+                        )
+            except Exception as ex:
+                self.logger.exception(ex)
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_hsv(self, hsv_code, hsv_json):
         if hsv_code == "colour_data" and self._t_info["category"] == "dj":
