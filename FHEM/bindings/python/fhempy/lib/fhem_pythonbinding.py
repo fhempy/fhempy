@@ -116,7 +116,10 @@ class fhempy:
         msg = json.dumps(retHash)
         duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
         del id_received_timestamp[retHash["id"]]
-        logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
+        if duration > 1000:
+            logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
+        else:
+            logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         await self.wsconnection.send(msg.encode("utf-8"))
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
@@ -131,7 +134,10 @@ class fhempy:
         msg = json.dumps(retHash, ensure_ascii=False)
         duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
         del id_received_timestamp[retHash["id"]]
-        logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
+        if duration > 1000:
+            logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
+        else:
+            logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         await self.wsconnection.send(msg.encode("utf-8"))
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
