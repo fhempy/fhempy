@@ -69,14 +69,15 @@ class tuya(generic.FhemModule):
             self.tt_key = args[8]
             self.tt_secret = args[9]
 
+        # set internal
+        hash["DEVICEID"] = self.tt_did
+
         if self.tt_ip == "offline":
             await fhem.readingsSingleUpdate(
                 self.hash, "state", "Change DEF and use IP instead of 'offline'", 1
             )
             return
 
-        # set internal
-        hash["DEVICEID"] = self.tt_did
         # set attributes
         self.attr_config = {
             "tuya_spec_functions": {"default": ""},
