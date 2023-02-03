@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.589 (2023-02-03)
+### Fix
+* **tuya:** Set DEVICEID for offline devices ([`4bc9951`](https://github.com/dominikkarall/fhempy/commit/4bc9951faf0a24e867f484f1d61add681bdc64b0))
+
 ## v0.1.588 (2023-02-02)
 ### Feature
 * **fhempy:** Enable readme again ([`761dc85`](https://github.com/dominikkarall/fhempy/commit/761dc853a23e1c8a7fd6f7806838d30d74db7a50))
