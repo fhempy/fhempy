@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.591 (2023-02-04)
+### Fix
+* **fhempy:** Fix websocket ping/pong ([`5ab09fc`](https://github.com/dominikkarall/fhempy/commit/5ab09fc28bacde1277d9f25459f41cf817d41434))
+
 ## v0.1.590 (2023-02-04)
 ### Fix
 * **fhempy:** Support websocket ping/pong ([`814c009`](https://github.com/dominikkarall/fhempy/commit/814c009a06e1a42b80fbbc15c4f380fc471ae193))
