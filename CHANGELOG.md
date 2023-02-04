@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.593 (2023-02-05)
+### Fix
+* **fhempy:** Revert readingsBulkUpdate lock ([`dada627`](https://github.com/dominikkarall/fhempy/commit/dada6278574018b4b19890859978149c218b701b))
+
 ## v0.1.592 (2023-02-04)
 ### Fix
 * **fhempy:** Revert ping/pong support ([`ff5a3b3`](https://github.com/dominikkarall/fhempy/commit/ff5a3b33d37635c94a24c9db05508ad652228631))
