@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.592 (2023-02-04)
+### Fix
+* **fhempy:** Revert ping/pong support ([`ff5a3b3`](https://github.com/dominikkarall/fhempy/commit/ff5a3b33d37635c94a24c9db05508ad652228631))
+
 ## v0.1.591 (2023-02-04)
 ### Fix
 * **fhempy:** Fix websocket ping/pong ([`5ab09fc`](https://github.com/dominikkarall/fhempy/commit/5ab09fc28bacde1277d9f25459f41cf817d41434))
