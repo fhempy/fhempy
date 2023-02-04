@@ -617,11 +617,13 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       return "connectionclosed";
     } else {
       # call DevIo_DecodeWS to handle ping and close
-      my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
+      my $bufws = DevIo_DecodeWS($hash, $buf);
       if ($USE_DEVIO_DECODEWS == 1) {
         return $bufws;
       } else {
-        return $buf;
+        if (defined($bufws) && $bufws ne "") {
+          return $buf;
+        }
       }
     }
   }
