@@ -616,8 +616,9 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       # connection closed
       return "connectionclosed";
     } else {
+      # call DevIo_DecodeWS to handle ping and close
+      my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
       if ($USE_DEVIO_DECODEWS == 1) {
-        my $bufws = DevIo_DecodeWS($hash, $buf) if($hash->{WEBSOCKET});
         return $bufws;
       } else {
         return $buf;
