@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 function_active = []
 update_locks = {}
 wsconnection = None
+single_bulk_update_lock = asyncio.Lock()
 
 # TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
 # this would make all functions threadsafe
@@ -100,6 +101,7 @@ async def setDevAttrList(name, attr_list):
 
 
 async def readingsBeginUpdate(hash):
+    await asyncio.wait_for(single_bulk_update_lock.acquire(), 30)
     if hash["NAME"] not in update_locks:
         update_locks[hash["NAME"]] = asyncio.Lock()
     try:
@@ -178,49 +180,52 @@ async def readingsEndUpdate(hash, do_trigger):
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
     res = await sendCommandHash(hash, cmd)
     update_locks[hash["NAME"]].release()
+    single_bulk_update_lock.release()
     return res
 
 
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
-    if hash["NAME"] not in update_locks:
-        update_locks[hash["NAME"]] = asyncio.Lock()
-    async with update_locks[hash["NAME"]]:
-        value = convertValue(value)
-        cmd = (
-            "readingsSingleUpdate($defs{'"
-            + hash["NAME"]
-            + "'},'"
-            + reading
-            + "','"
-            + value.replace("'", "\\'")
-            + "',"
-            + str(do_trigger)
-            + ")"
-        )
-        return await sendCommandHash(hash, cmd)
+    async with single_bulk_update_lock:
+        if hash["NAME"] not in update_locks:
+            update_locks[hash["NAME"]] = asyncio.Lock()
+        async with update_locks[hash["NAME"]]:
+            value = convertValue(value)
+            cmd = (
+                "readingsSingleUpdate($defs{'"
+                + hash["NAME"]
+                + "'},'"
+                + reading
+                + "','"
+                + value.replace("'", "\\'")
+                + "',"
+                + str(do_trigger)
+                + ")"
+            )
+            return await sendCommandHash(hash, cmd)
 
 
 async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
-    if hash["NAME"] not in update_locks:
-        update_locks[hash["NAME"]] = asyncio.Lock()
-    async with update_locks[hash["NAME"]]:
-        value = convertValue(value)
-        cmd = (
-            "readingsBeginUpdate($defs{'"
-            + hash["NAME"]
-            + "'});;readingsBulkUpdateIfChanged($defs{'"
-            + hash["NAME"]
-            + "'},'"
-            + reading
-            + "','"
-            + value.replace("'", "\\'")
-            + "');;readingsEndUpdate($defs{'"
-            + hash["NAME"]
-            + "'},"
-            + str(do_trigger)
-            + ");;"
-        )
-        return await sendCommandHash(hash, cmd)
+    async with single_bulk_update_lock:
+        if hash["NAME"] not in update_locks:
+            update_locks[hash["NAME"]] = asyncio.Lock()
+        async with update_locks[hash["NAME"]]:
+            value = convertValue(value)
+            cmd = (
+                "readingsBeginUpdate($defs{'"
+                + hash["NAME"]
+                + "'});;readingsBulkUpdateIfChanged($defs{'"
+                + hash["NAME"]
+                + "'},'"
+                + reading
+                + "','"
+                + value.replace("'", "\\'")
+                + "');;readingsEndUpdate($defs{'"
+                + hash["NAME"]
+                + "'},"
+                + str(do_trigger)
+                + ");;"
+            )
+            return await sendCommandHash(hash, cmd)
 
 
 async def CommandDefine(hash, definition: str):
@@ -363,7 +368,7 @@ async def send_and_wait(name, cmd):
             logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
-            logger.error("Failed to set result, received: " + rmsg)
+            logger.error(f"Failed to set result, received: {rmsg}")
 
     global wsconnection
     wsconnection.register_msg_listener(listener, msg["awaitId"])
@@ -382,7 +387,7 @@ async def send_and_wait(name, cmd):
 
 async def sendCommandName(name, cmd, hash=None):
     ret = ""
-    timeout = 60
+    timeout = 180
     try:
         start = time.time()
         while len(function_active) != 0:
@@ -393,7 +398,7 @@ async def sendCommandName(name, cmd, hash=None):
         duration = end - start
         if duration > 5:
             logger.error(f"sendCommandName took {duration}s to send: {cmd}")
-        # wait max 60s for reply from FHEM
+        # wait max 180s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
