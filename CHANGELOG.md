@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.590 (2023-02-04)
+### Fix
+* **fhempy:** Support websocket ping/pong ([`814c009`](https://github.com/dominikkarall/fhempy/commit/814c009a06e1a42b80fbbc15c4f380fc471ae193))
+* **fhempy:** Do not mix different readingsBulkUpdates, increase fhem timeout to 180s ([`b0d377e`](https://github.com/dominikkarall/fhempy/commit/b0d377ed80f26ea069d53d856343cc53e79568b6))
+
 ## v0.1.589 (2023-02-03)
 ### Fix
 * **tuya:** Set DEVICEID for offline devices ([`4bc9951`](https://github.com/dominikkarall/fhempy/commit/4bc9951faf0a24e867f484f1d61add681bdc64b0))
