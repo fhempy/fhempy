@@ -1,5 +1,5 @@
 [![Download](https://img.shields.io/pypi/dm/fhempy)](https://pypistats.org/packages/fhempy)
-[![python](https://img.shields.io/badge/python-3.7+-critical)](https://github.com/fhempy/fhempy)
+[![python](https://img.shields.io/badge/python-3.9+-critical)](https://github.com/fhempy/fhempy)
 [![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
 [![LastCommit](https://img.shields.io/github/last-commit/fhempy/fhempy)](https://github.com/fhempy/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
@@ -61,7 +61,7 @@ This repository includes following working modules:
 |[zigbee2mqtt](FHEM/bindings/python/fhempy/lib/zigbee2mqtt/README.md)|Install, update and run Zigbee2MQTT server|
 
 ## Installation
-Python >=3.8 is required, Python 2 won't work\!
+Python >=3.9 is required, Python 2 won't work\!
 
 ### Console
 #### Debian 11 (Bullseye)
