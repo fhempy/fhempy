@@ -382,7 +382,7 @@ async def send_and_wait(name, cmd):
 
 async def sendCommandName(name, cmd, hash=None):
     ret = ""
-    timeout = 60
+    timeout = 180
     try:
         start = time.time()
         while len(function_active) != 0:
@@ -393,7 +393,7 @@ async def sendCommandName(name, cmd, hash=None):
         duration = end - start
         if duration > 5:
             logger.error(f"sendCommandName took {duration}s to send: {cmd}")
-        # wait max 60s for reply from FHEM
+        # wait max 180s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
