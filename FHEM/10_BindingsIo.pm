@@ -430,7 +430,9 @@ BindingsIo_Write($$$$$) {
   }
 
   # do not wait for others to finish within function reply
-  BindingsIo_handleReceiverQueue($hash);
+  if ($write_deep_recursion == 1) {
+    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleReceiverQueue', $hash, 0);
+  }
 
   $write_deep_recursion = $write_deep_recursion - 1;
   
