@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.595 (2023-02-08)
+### Fix
+* **fhempy:** Fix deep recursion ([`685c12e`](https://github.com/dominikkarall/fhempy/commit/685c12e84bc0eef454c9cd9b1088667d25fd19da))
+
 ## v0.1.594 (2023-02-08)
 ### Fix
 * **fhempy:** Increase fhem timeout to 180s ([`919b5c3`](https://github.com/dominikkarall/fhempy/commit/919b5c3429c59bb3364c07d79c06dddd186936d7))
