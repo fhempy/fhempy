@@ -23,6 +23,7 @@ our $modules;
 
 my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
+my $write_deep_recursion = 0;
 
 sub BindingsIo_Initialize {
   my ($hash) = @_;
@@ -68,7 +69,7 @@ sub BindingsIo_Define {
     $localServer = 0;
     $hash->{localBinding} = 0;
   } elsif ($#{$a} == 2 && ($bindingType eq q[fhempy]) )   {
-    $hash->{DeviceName} = q[ws:localhost:15733];
+    $hash->{DeviceName} = q[ws:127.0.0.1:15733];
     $hash->{localBinding} = 1;
   } elsif ($#{$a} < 2) {  
     return q[to few parameters given for define];
@@ -96,7 +97,7 @@ sub BindingsIo_Define {
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
-  $hash->{ReceiverQueue} = Thread::Queue->new();
+  @{$hash->{ReceiverQueue}} = ();
   # send binary data via websocket
   $hash->{binary} = 1;
 
@@ -235,6 +236,8 @@ BindingsIo_doInit($) {
   my ($hash) = @_;
 
   $hash->{connecttime} = time;
+  @{$hash->{ReceiverQueue}} = ();
+  $write_deep_recursion = 0;
 
   BindingsIo_initFrame($hash);
 
@@ -315,6 +318,7 @@ BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
   my $initrun = 0;
   my $waitforresponse = 1;
+  $write_deep_recursion = $write_deep_recursion + 1;
 
   if ($function eq "InitDefine") {
     $initrun = 1;
@@ -336,7 +340,7 @@ BindingsIo_Write($$$$$) {
   }
 
   my $waitingForId = int(rand()*100000000);
-  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
 
   my $bindingType = uc($hash->{BindingType})."TYPE";
 
@@ -419,19 +423,40 @@ BindingsIo_Write($$$$$) {
       $returnval = "";
     }
   }
-  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
 
   if ($returnval eq "" || $returnval eq "continue") {
     $returnval = undef;
   }
 
-  my $cnt = 0;
-  while ($hash->{ReceiverQueue}->pending() > 0 && $cnt < 50) {
-    BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
-    $cnt = $cnt + 1
-  }
+  # do not wait for others to finish within function reply
+  BindingsIo_handleReceiverQueue($hash);
+
+  $write_deep_recursion = $write_deep_recursion - 1;
   
   return $returnval;
+}
+
+sub
+BindingsIo_handleReceiverQueue($) {
+  my ($hash) = @_;
+  
+  # handle messages on the queue
+  my @tempReceiverQueue = ();
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): $write_deep_recursion - QUEUE: start handling - ".@{$hash->{ReceiverQueue}};
+  while (my $msg = shift(@{$hash->{ReceiverQueue}})) {
+    my $response = $msg->{'response'};
+    my $ret = BindingsIo_processMessage($hash, undef, 0, $response);
+    if ($ret eq "nothandled") {
+      push(@tempReceiverQueue, $msg);
+    }
+  }
+  
+  # add not matching messages to the queue
+  while (my $msg = shift @tempReceiverQueue) {
+    push(@{$hash->{ReceiverQueue}}, $msg);
+  }
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): $write_deep_recursion - QUEUE: finished handling - ".@{$hash->{ReceiverQueue}};
 }
 
 sub
@@ -656,6 +681,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
     return "Websocket connection closed unexpected";
   }
 
+  my @currentQueue = ();
   if ($USE_DEVIO_DECODEWS == 0) {
     if (defined($response) && $response ne "") {
       $hash->{frame}->append($response);
@@ -665,7 +691,7 @@ sub BindingsIo_readWebsocketMessage($$$$) {
           "response" => $r,
           "time" => time
         };
-        $hash->{ReceiverQueue}->enqueue($resTemp);
+        push (@currentQueue, $resTemp);
       }
     }
   } else {
@@ -675,30 +701,46 @@ sub BindingsIo_readWebsocketMessage($$$$) {
         "response" => $response,
         "time" => time
       };
-      $hash->{ReceiverQueue}->enqueue($resTemp);
+      push (@currentQueue, $resTemp);
     }
   }
 
-  # handle messages on the queue
-  $hash->{TempReceiverQueue} = Thread::Queue->new();
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: start handling - ".$hash->{ReceiverQueue}->pending();
-  while (my $msg = $hash->{ReceiverQueue}->dequeue_nb()) {
+  while (my $msg = shift @currentQueue) {
     $response = $msg->{'response'};
     my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
     if ($ret ne "continue" && $ret ne "nothandled") {
       $returnval = $ret;
     }
     if ($ret eq "nothandled") {
-      $hash->{TempReceiverQueue}->enqueue($msg);
+      push(@{$hash->{ReceiverQueue}}, $msg);
+    }
+  }
+
+  # check if the message is on the queue
+  if ($returnval eq "continue" or $returnval eq "nothandled") {
+    my @tempReceiverQueue = ();
+    while (my $msg = shift @{$hash->{ReceiverQueue}}) {
+      my $response = $msg->{'response'};
+      my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
+      if ($ret ne "continue" && $ret ne "nothandled") {
+        $returnval = $ret;
+      }
+      if ($ret eq "nothandled") {
+        push(@tempReceiverQueue, $msg);
+      }
+    }
+    
+    # add not matching messages to the queue
+    while (my $msg = shift @tempReceiverQueue) {
+      push(@{$hash->{ReceiverQueue}}, $msg);
     }
   }
   
-  # add not matching messages to the queue
-  while (my $msg = $hash->{TempReceiverQueue}->dequeue_nb()) {
-    $hash->{ReceiverQueue}->enqueue($msg);
+  if ($returnval eq "continue" or $returnval eq "nothandled") {
+    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): Waiting for id ".$waitingForId;
   }
-
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: finished handling - ".$hash->{ReceiverQueue}->pending();
+  
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: size - ".@{$hash->{ReceiverQueue}};
 
   return $returnval;
 }
