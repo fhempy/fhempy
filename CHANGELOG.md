@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.594 (2023-02-08)
+### Fix
+* **fhempy:** Increase fhem timeout to 180s ([`919b5c3`](https://github.com/dominikkarall/fhempy/commit/919b5c3429c59bb3364c07d79c06dddd186936d7))
+* **fhempy:** Do not drop messags on high load ([`30b43dd`](https://github.com/dominikkarall/fhempy/commit/30b43ddc069d159a785943d11dd3eb3bde595e0d))
+* **tuya_cloud:** Do not update readings if they didn't change - reduce load on fhem ([`7bd27bb`](https://github.com/dominikkarall/fhempy/commit/7bd27bb252b3bc220096e3e4e777048f5386cf6c))
+* **fhempy:** Support Python 3.9 and higher ([`1a672c5`](https://github.com/dominikkarall/fhempy/commit/1a672c582fc8e1651f832e933f3f6c37bb427c23))
+
 ## v0.1.593 (2023-02-05)
 ### Fix
 * **fhempy:** Revert readingsBulkUpdate lock ([`dada627`](https://github.com/dominikkarall/fhempy/commit/dada6278574018b4b19890859978149c218b701b))
