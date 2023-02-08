@@ -2,6 +2,7 @@ import asyncio
 import colorsys
 import functools
 import json
+from random import randrange
 
 import fhempy.lib.fhem as fhem
 import fhempy.lib.fhem_pythonbinding as fpb
@@ -14,6 +15,7 @@ class tuya_cloud_device:
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
         self.readings_update_lock = asyncio.Lock()
+        self.last_status = None
 
     async def Define(self, hash, args, argsh):
         self._t_setupdev = args[3]
@@ -39,10 +41,11 @@ class tuya_cloud_device:
 
     async def _connect_to_setup_device(self):
         while self.tuyaiot is None or self.tuyaiot.ready is False:
-            await asyncio.sleep(1)
             self.tuyaiot = fpb.getFhemPyDeviceByName(self._t_setupdev)
             if self.tuyaiot is not None:
                 self.tuyaiot = self.tuyaiot.tuya_cloud_device
+
+            await asyncio.sleep(randrange(20))
 
         self.tuyaiot.register_tuya_device(self)
 
@@ -296,6 +299,12 @@ class tuya_cloud_device:
 
     async def update_readings_dict(self, status_dic):
         async with self.readings_update_lock:
+
+            if self.last_status != status_dic:
+                self.last_status = status_dic
+            else:
+                return
+
             await fhem.readingsBeginUpdate(self.hash)
             try:
                 for st_name in status_dic:
