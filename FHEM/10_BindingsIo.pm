@@ -538,8 +538,6 @@ sub BindingsIo_processMessage($$$$) {
   if ($@) {
     Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
     Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: ".$response;
-    # reset frames
-    BindingsIo_initFrame($hash);
     return "error";
   }
 
@@ -638,18 +636,14 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
   vec($rin, $hash->{FD}, 1) = 1;
   my $nfound = select($rin, undef, undef, $timeout);
   if ($nfound > 0) {
-    my $buf = DevIo_DoSimpleRead($hash);
-    if ($buf eq "") {
+    delete $hash->{WEBSOCKET};
+    my $buf = DevIo_SimpleRead($hash);
+    $hash->{WEBSOCKET} = 1;
+    if (!defined($buf)) {
       # connection closed
       return "connectionclosed";
     } else {
-      # call DevIo_DecodeWS to handle ping and close
-      if ($USE_DEVIO_DECODEWS == 1) {
-        my $bufws = DevIo_DecodeWS($hash, $buf);
-        return $bufws;
-      } else {
-        return $buf;
-      }
+      return $buf;
     }
   }
   return undef;
@@ -661,33 +655,19 @@ sub BindingsIo_readWebsocketMessage($$$$) {
   # read message from websocket
   my $returnval = "continue";
   my $response = "";
-  if (defined($socketready) && $socketready == 1) {
-    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead";
-    if ($USE_DEVIO_DECODEWS == 0) {
-      delete $hash->{WEBSOCKET};
-    }
-    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.00001);
-    #$response = DevIo_SimpleRead($hash);
-    $hash->{WEBSOCKET} = 1;
-    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead NoTimeout";
-  } else {
-    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead";
-    $response = BindingsIo_SimpleReadWithTimeout($hash, 0.01);
-    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead WithTimeout";
-  }
+  $response = BindingsIo_SimpleReadWithTimeout($hash, 1);
   if (defined($response) && $response eq "connectionclosed") {
     Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead WithTimeout - connection seems to be closed";
-    # connection seems to be closed, call simpleread to disconnect
-    # connection will be reopened by ReadyFn
-    DevIo_SimpleRead($hash);
     return "Websocket connection closed unexpected";
   }
 
   my @currentQueue = ();
-  if ($USE_DEVIO_DECODEWS == 0) {
-    if (defined($response) && $response ne "") {
-      $hash->{frame}->append($response);
-      while (my $r = $hash->{frame}->next) {
+  if (defined($response) && $response ne "") {
+    $hash->{frame}->append($response);
+    while (my $r = $hash->{frame}->next) {
+      if ($hash->{frame}->is_ping or $hash->{frame}->is_pong or $hash->{frame}->is_close) {
+        DevIo_DecodeWS($hash, $response);
+      } else {
         Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
         my $resTemp = {
           "response" => $r,
@@ -695,15 +675,6 @@ sub BindingsIo_readWebsocketMessage($$$$) {
         };
         push (@currentQueue, $resTemp);
       }
-    }
-  } else {
-    if (defined($response) && $response ne "") {
-      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$response;
-      my $resTemp = {
-        "response" => $response,
-        "time" => time
-      };
-      push (@currentQueue, $resTemp);
     }
   }
 
