@@ -21,7 +21,7 @@ class FhemModule:
 
     async def set_attr_config(self, attr_config):
         self._conf_attr = attr_config
-        await utils.handle_define_attr(self._conf_attr, self, hash)
+        await utils.handle_define_attr(self._conf_attr, self, self.hash)
 
     async def set_set_config(self, set_config):
         self._conf_set = set_config
