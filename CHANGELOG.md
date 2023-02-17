@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.598 (2023-02-17)
+### Fix
+* **fhempy:** Fix attr handling 2 ([`322cecb`](https://github.com/dominikkarall/fhempy/commit/322cecb2f6ea63701add23ddfe87f3b5a3a093a6))
+* **fhempy:** Fix attr handling ([`58bf90d`](https://github.com/dominikkarall/fhempy/commit/58bf90d95a9146383385e680fa09954a1ebd5b51))
+
 ## v0.1.597 (2023-02-17)
 ### Fix
 * **fhempy:** Fix set error ([`d651009`](https://github.com/dominikkarall/fhempy/commit/d6510097548d04454c1efa8336ad7b5f2375a863))
