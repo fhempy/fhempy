@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.596 (2023-02-17)
+### Feature
+* **fhempy:** Support set ? cache in BindingsIo ([`0615960`](https://github.com/dominikkarall/fhempy/commit/061596046f72d0ceb61e6f677913630f4104c164))
+
+### Fix
+* **fhempy:** Cleanup websocket message handling ([`8421824`](https://github.com/dominikkarall/fhempy/commit/84218242e3ca1c47a579a1c604256b7163b89899))
+* **fhempy:** Use DevIo_SimpleRead ([`2fcc386`](https://github.com/dominikkarall/fhempy/commit/2fcc386484e96337646598874104a63f750c81c3))
+
 ## v0.1.595 (2023-02-08)
 ### Fix
 * **fhempy:** Fix deep recursion ([`685c12e`](https://github.com/dominikkarall/fhempy/commit/685c12e84bc0eef454c9cd9b1088667d25fd19da))
