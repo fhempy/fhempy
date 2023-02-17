@@ -16,6 +16,8 @@ class kia_hyundai(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "update_interval": {
                 "default": 30,
@@ -23,7 +25,7 @@ class kia_hyundai(generic.FhemModule):
                 "help": "Change interval in minutes, default is 30.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "lock": {},
@@ -52,10 +54,7 @@ class kia_hyundai(generic.FhemModule):
             },
             "update_data": {},
         }
-        self.set_set_config(set_config)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(set_config)
         await super().Define(hash, args, argsh)
         if len(args) != 8:
             return (

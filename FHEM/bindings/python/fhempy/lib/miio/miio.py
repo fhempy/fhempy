@@ -18,6 +18,9 @@ class miio(generic.FhemModule):
         self._fct_update_tasks = {}
         self._cmd_lock = asyncio.Lock()
         self._attr_update_functions = ""
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         self._attr_list = {
             "update_functions": {
                 "default": "status:60,info:600",
@@ -27,11 +30,8 @@ class miio(generic.FhemModule):
                 ),
             }
         }
-        self.set_attr_config(self._attr_list)
-        return
+        await self.set_attr_config(self._attr_list)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 6:
@@ -87,7 +87,7 @@ class miio(generic.FhemModule):
                 helptext + "<br>Arguments: " + " ".join(self._set_list[dev_cmd]["help"])
             )
 
-        self.set_set_config(self._set_list)
+        await self.set_set_config(self._set_list)
         self._device = self._miio_device_class(ip=self._miio_ip, token=self._miio_token)
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
         await self.set_attr_update_functions(self.hash)

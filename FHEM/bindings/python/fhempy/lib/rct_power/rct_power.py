@@ -3,8 +3,7 @@ import asyncio
 from fhempy.lib.rct_power.api import RctPowerApiClient, ValidApiResponse
 from rctclient.registry import REGISTRY
 
-from .. import fhem
-from .. import generic
+from .. import fhem, generic
 
 
 class rct_power(generic.FhemModule):
@@ -34,6 +33,8 @@ class rct_power(generic.FhemModule):
 
         self.update_loop_task = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 10,
@@ -84,7 +85,7 @@ class rct_power(generic.FhemModule):
                 + "}",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "display_brightness": {
@@ -209,10 +210,7 @@ class rct_power(generic.FhemModule):
                 "function_param": 0x54829753,
             },
         }
-        self.set_set_config(set_config)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(set_config)
         await super().Define(hash, args, argsh)
         if len(args) < 4 or len(args) > 5:
             return "Usage: define my_rct fhempy rct_power IP [PORT]"

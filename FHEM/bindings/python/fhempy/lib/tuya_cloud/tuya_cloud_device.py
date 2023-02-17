@@ -133,7 +133,7 @@ class tuya_cloud_device:
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
         set_conf = self.prepare_onoff_usage(set_conf)
-        self.fhemdev.set_set_config(set_conf)
+        await self.fhemdev.set_set_config(set_conf)
 
     def prepare_onoff_usage(self, set_conf):
         self.default_code = None

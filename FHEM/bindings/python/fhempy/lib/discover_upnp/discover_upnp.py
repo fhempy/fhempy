@@ -11,7 +11,6 @@ from .. import fhem
 class discover_upnp(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
-        self.set_set_config({})
         self.hash = None
         self.create_devs = {}
 
@@ -39,7 +38,7 @@ class discover_upnp(FhemModule):
                 for dev in self.create_devs:
                     set_devs.append(self.create_devs[dev]["name"])
                 set_config["create"]["options"] = ",".join(set_devs)
-                self.set_set_config(set_config)
+                await self.set_set_config(set_config)
 
     async def removed_device(self, upnp_device):
         return
@@ -47,6 +46,7 @@ class discover_upnp(FhemModule):
     # FHEM Define
     async def Define(self, hash, args, argsh):
         """Start a discovery service."""
+        await self.set_set_config({})
         await super().Define(hash, args, argsh)
         ssdp.getInstance(self.logger).register_listener(self)
         await ssdp.getInstance(self.logger).start_search()

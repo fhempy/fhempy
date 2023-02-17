@@ -30,8 +30,14 @@ class xiaomi_gateway3(generic.FhemModule):
         self.devices = {}
         self.fhempy_devices = {}
 
+    @property
+    def gateway3(self):
+        return self.gw.gateway3
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
-        self.set_attr_config(attr_conf)
+        await self.set_attr_config(attr_conf)
 
         set_conf = {
             "activate_zigbee2mqtt": {
@@ -50,14 +56,7 @@ class xiaomi_gateway3(generic.FhemModule):
             },
             "deactivate_zigbee2mqtt": {},
         }
-        self.set_set_config(set_conf)
-
-    @property
-    def gateway3(self):
-        return self.gw.gateway3
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(set_conf)
         await super().Define(hash, args, argsh)
         self.hash = hash
 

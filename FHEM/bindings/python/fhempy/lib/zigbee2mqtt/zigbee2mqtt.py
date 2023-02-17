@@ -16,15 +16,15 @@ class zigbee2mqtt(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.proc = None
-        self._set_list = {"start": {}, "stop": {}, "restart": {}, "update": {}}
-        self.set_set_config(self._set_list)
-        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
-        self.set_attr_config(attr_conf)
-
         self.check_process_task = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self._set_list = {"start": {}, "stop": {}, "restart": {}, "update": {}}
+        await self.set_set_config(self._set_list)
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        await self.set_attr_config(attr_conf)
+
         await super().Define(hash, args, argsh)
 
         if self._attr_disable == 1:

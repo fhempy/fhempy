@@ -19,15 +19,16 @@ class mitemp(FhemModule):
         self._poller = None
         self._attr_update_interval = 1200
         self._attr_hci_device = "hci0"
-        self._attr_list = {
-            "update_interval": {"default": 1200, "format": "int"},
-            "hci_device": {"default": "hci0"},
-        }
-        self.set_attr_config(self._attr_list)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self._attr_list = {
+            "update_interval": {"default": 1200, "format": "int"},
+            "hci_device": {"default": "hci0"},
+        }
+        await self.set_attr_config(self._attr_list)
+
         await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define mi_temphum fhempy mitemp <MAC>"

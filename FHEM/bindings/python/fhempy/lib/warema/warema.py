@@ -1,6 +1,6 @@
 import asyncio
 
-from warema_wms import WmsController, Shade
+from warema_wms import Shade, WmsController
 
 from .. import fhem, utils
 from ..generic import FhemModule
@@ -11,6 +11,8 @@ class warema(FhemModule):
         super().__init__(logger)
         self.hash = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 60,
@@ -18,7 +20,7 @@ class warema(FhemModule):
                 "help": "Change interval, default is 60.",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "status": {},
@@ -26,10 +28,8 @@ class warema(FhemModule):
             "down": {},
             "position": {"args": ["position"], "options": "slider,0,11,100"},
         }
-        self.set_set_config(set_config)
+        await self.set_set_config(set_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 5:

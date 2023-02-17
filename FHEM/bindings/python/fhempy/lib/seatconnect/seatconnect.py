@@ -1,17 +1,19 @@
 import asyncio
 
-from .. import fhem
-from ..generic import FhemModule
-
 from aiohttp import ClientSession
 from seatconnect import Connection
 from seatconnect.vehicle import Vehicle
+
+from .. import fhem
+from ..generic import FhemModule
 
 
 class seatconnect(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         self.attr_config = {
             "vin": {
                 "default": "",
@@ -28,10 +30,8 @@ class seatconnect(FhemModule):
                 "help": "Update readings only on value change or always (default onchange).",
             },
         }
-        self.set_attr_config(self.attr_config)
+        await self.set_attr_config(self.attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 6:
             return (
@@ -72,11 +72,11 @@ class seatconnect(FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "no cars found", 1)
                 return
 
-            self.prepare_set_commands()
+            await self.prepare_set_commands()
 
             await self.update_readings()
 
-    def prepare_set_commands(self):
+    async def prepare_set_commands(self):
         self.set_config = {
             "timer_1": {"args": ["onoff"], "options": "on,off"},
             "timer_2": {"args": ["onoff"], "options": "on,off"},
@@ -198,7 +198,7 @@ class seatconnect(FhemModule):
             ),
         }
 
-        self.set_set_config(self.set_config)
+        await self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
         self.create_async_task(

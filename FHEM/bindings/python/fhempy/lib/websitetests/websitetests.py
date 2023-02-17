@@ -10,6 +10,8 @@ class websitetests(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 600,
@@ -46,10 +48,8 @@ class websitetests(generic.FhemModule):
                 "help": "Response must contain this text.",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(argsh) > 0:
             k = list(argsh)[0]

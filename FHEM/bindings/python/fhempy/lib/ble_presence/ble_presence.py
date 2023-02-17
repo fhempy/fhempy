@@ -183,17 +183,6 @@ class ble_presence(FhemModule):
         self._attr_scan_duration = 10
         self._attr_read_characteristics = "battery"
 
-        self._attr_list = {
-            "scan_interval": {"default": 10, "format": "int"},
-            "hci_device": {"default": "hci0"},
-            "scan_duration": {"default": 10, "format": "int"},
-            "read_characteristics": {
-                "default": "battery",
-                "options": "all,off,battery",
-            },
-        }
-        self.set_attr_config(self._attr_list)
-
     async def update_readings(self, presence, address, name, rssi):
         if self._rssi != rssi:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "rssi", str(rssi), 1)
@@ -284,6 +273,17 @@ class ble_presence(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self._attr_list = {
+            "scan_interval": {"default": 10, "format": "int"},
+            "hci_device": {"default": "hci0"},
+            "scan_duration": {"default": 10, "format": "int"},
+            "read_characteristics": {
+                "default": "battery",
+                "options": "all,off,battery",
+            },
+        }
+        await self.set_attr_config(self._attr_list)
+
         await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define p_mysmartphone fhempy ble_presence <MAC>"

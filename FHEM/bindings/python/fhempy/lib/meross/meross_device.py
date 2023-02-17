@@ -106,7 +106,7 @@ class meross_device:
             }
             set_conf["continuous"] = {}
 
-        self.fhemdev.set_set_config(set_conf)
+        await self.fhemdev.set_set_config(set_conf)
 
     async def set_thermostat_mode(self, hash, params):
         new_mode = ThermostatMode(params["value"].upper())

@@ -3,18 +3,16 @@ from __future__ import annotations
 import asyncio
 import datetime
 
-from .. import fhem, utils
-from .. import generic
-
 from httpx import AsyncClient
-
 from vaillant_netatmo_api import (
     AuthClient,
+    SetpointMode,
     SystemMode,
     ThermostatClient,
     TokenStore,
-    SetpointMode,
 )
+
+from .. import fhem, generic, utils
 
 
 class erelax_vaillant(generic.FhemModule):
@@ -35,6 +33,8 @@ class erelax_vaillant(generic.FhemModule):
             unknown_key,
         )
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "update_interval": {
                 "default": 300,
@@ -42,7 +42,7 @@ class erelax_vaillant(generic.FhemModule):
                 "help": "Change interval, default is 300.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "away": {},
@@ -69,10 +69,7 @@ class erelax_vaillant(generic.FhemModule):
                 "options": "winter,summer,frostguard",
             },
         }
-        self.set_set_config(set_config)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(set_config)
         await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define erelax_vaillant fhempy USERNAME PASSWORD [STATION]"

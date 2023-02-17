@@ -45,6 +45,10 @@ class gfprobt(generic.FhemModule):
         super().__init__(logger)
         self._ble_lock = asyncio.Lock()
         self._conn = None
+        return
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         set_conf = {
             "update": {"help": "Retrieve values from GF Pro BT"},
             "off": {"help": "Turn off watering"},
@@ -70,11 +74,8 @@ class gfprobt(generic.FhemModule):
             },
             "eco": {"help": "Activate/decactivate eco mode"},
         }
-        self.set_set_config(set_conf)
-        return
+        await self.set_set_config(set_conf)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define irrigation_control fhempy gfprobt <MAC>"

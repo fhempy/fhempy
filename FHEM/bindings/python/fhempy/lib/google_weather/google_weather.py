@@ -14,6 +14,8 @@ class google_weather(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 61,
@@ -21,10 +23,8 @@ class google_weather(generic.FhemModule):
                 "help": "Change interval in minutes, default is 61.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_weather fhempy google_weather CITY"

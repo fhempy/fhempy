@@ -26,7 +26,12 @@ class Mode(IntEnum):
 class eq3bt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._last_update = 0
+        self._mac = None
+        self.thermostat = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_list = {
             "keep_connected": {
                 "default": "on",
@@ -40,7 +45,7 @@ class eq3bt(generic.FhemModule):
                 "help": "Maximum retries for connection setup, default=5.",
             },
         }
-        self.set_attr_config(attr_list)
+        await self.set_attr_config(attr_list)
 
         set_list_conf = {
             "on": {},
@@ -89,14 +94,8 @@ class eq3bt(generic.FhemModule):
                 "options": "slider,4.5,0.5,30,1",
             },
         }
-        self.set_set_config(set_list_conf)
+        await self.set_set_config(set_list_conf)
 
-        self._last_update = 0
-        self._mac = None
-        self.thermostat = None
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 4:

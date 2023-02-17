@@ -19,6 +19,8 @@ class gree_climate(generic.FhemModule):
 
         self.device = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 60,
@@ -26,7 +28,7 @@ class gree_climate(generic.FhemModule):
                 "help": "Change interval, default is 60.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "mode": {
@@ -70,10 +72,7 @@ class gree_climate(generic.FhemModule):
             "on": {},
             "off": {},
         }
-        self.set_set_config(set_config)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(set_config)
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define gree_scan fhempy gree_climate scan/name"
@@ -84,7 +83,7 @@ class gree_climate(generic.FhemModule):
         self.name = args[3]
         if self.name == "scan":
             self.create_async_task(self.scan_devices())
-            self.set_set_config({})
+            await self.set_set_config({})
         else:
             self.create_async_task(self.update_loop())
 

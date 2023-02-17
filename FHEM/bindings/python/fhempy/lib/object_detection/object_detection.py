@@ -25,17 +25,17 @@ class object_detection(FhemModule):
         self._stop_detection = False
         self._attr_detection_interval = 2
         self._attr_detection_threshold = 0.6
-        self._attr_list = {
-            "detection_interval": {"default": 2, "format": "float"},
-            "detection_threshold": {"default": 0.6, "format": "float"},
-        }
-        self.set_attr_config(self._attr_list)
-        set_list_conf = {"start": {}, "detect_once": {}, "stop": {}}
-        self.set_set_config(set_list_conf)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self._attr_list = {
+            "detection_interval": {"default": 2, "format": "float"},
+            "detection_threshold": {"default": 0.6, "format": "float"},
+        }
+        await self.set_attr_config(self._attr_list)
+        set_list_conf = {"start": {}, "detect_once": {}, "stop": {}}
+        await self.set_set_config(set_list_conf)
         await super().Define(hash, args, argsh)
         if len(args) < 5:
             return "Usage: define obj_detection fhempy object_detection <image/stream> <LOCATION>"

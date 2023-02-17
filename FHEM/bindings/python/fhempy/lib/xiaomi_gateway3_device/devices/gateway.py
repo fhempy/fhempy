@@ -1,6 +1,6 @@
+import asyncio
 import functools
 import time
-import asyncio
 
 from fhempy.lib import fhem, utils
 from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
@@ -9,6 +9,8 @@ from fhempy.lib.xiaomi_gateway3_device.devices.base import BaseDevice
 class Gateway(BaseDevice):
     def __init__(self, logger, gateway):
         super().__init__(logger, gateway)
+
+    async def initialize(self, device):
         set_config = {
             "start_pairing": {},
             "stop_pairing": {},
@@ -16,6 +18,7 @@ class Gateway(BaseDevice):
             "start_model_pairing": {"args": ["model"]},
         }
         self.set_set_config(set_config)
+        await super().initialize(device)
 
     async def set_firmware_update(self, hash, params):
         self.create_async_task(self.lock_firmware(params["block"] == "block"))

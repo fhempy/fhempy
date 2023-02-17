@@ -15,6 +15,8 @@ class fhem_forum(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 15,
@@ -37,10 +39,8 @@ class fhem_forum(generic.FhemModule):
                 "function": "set_attr_keywords",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define fhem.forum fhempy fhem_forum FHEM_COOKIE"

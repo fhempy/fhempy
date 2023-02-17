@@ -4,8 +4,7 @@ import functools
 import spotipy
 from spotipy.oauth2 import CacheFileHandler
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic, utils
 
 
 class spotify(generic.FhemModule):
@@ -43,6 +42,9 @@ class spotify(generic.FhemModule):
             + "user-read-private"
         )
         self.loggedin = False
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "update_status_interval": {
                 "default": 60,
@@ -61,7 +63,7 @@ class spotify(generic.FhemModule):
                 "help": "Activate FHEM Connect Player within FHEM Web. Just open Spotify app and stream to FHEM Web Player.",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         self.set_config = {
             "play": {
@@ -111,11 +113,7 @@ class spotify(generic.FhemModule):
                 "function": "set_command",
             },
         }
-        self.set_set_config(self.set_config)
-        return
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(self.set_config)
         await super().Define(hash, args, argsh)
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")

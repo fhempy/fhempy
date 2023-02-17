@@ -26,6 +26,8 @@ class geizhals(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 3,
@@ -33,10 +35,8 @@ class geizhals(generic.FhemModule):
                 "help": "Change interval in hours, default is 3 hours.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define gh.pixel fhempy geizhals URL"
@@ -72,10 +72,8 @@ class geizhals(generic.FhemModule):
 
     def handle_product_page(self, html):
         soup = BeautifulSoup(html, "html.parser")
-        self.product_name = soup.find(
-            "h1", {"class": "variant__header__headline"}
-        ).text[1:-1]
-        self.store = soup.find("span", {"class": "notrans"}).text[1:-1]
+        self.product_name = soup.find("h1", {"class": "variant__header__headline"}).text
+        self.store = soup.find("span", {"class": "notrans"}).text
         self.store_availability = (
             soup.find("div", {"id": "offer__0"})
             .find("div", {"class": "offer__delivery-time"})

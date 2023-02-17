@@ -1,15 +1,17 @@
 from fhempy.lib import fhem
 from fhempy.lib.ble_monitor.blemonitor import BLEmonitor
 from fhempy.lib.ble_monitor.bt_helpers import BT_INTERFACES
+
 from .. import generic
 
 
 class ble_monitor(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
-
         self.blemonitor = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "hci_interface": {
                 "default": "0",
@@ -27,10 +29,8 @@ class ble_monitor(generic.FhemModule):
                 "function": "set_attr_generic",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_miscale fhempy ble_monitor 11:22:33:44:55:66"

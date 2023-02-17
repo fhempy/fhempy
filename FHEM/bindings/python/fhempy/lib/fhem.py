@@ -342,6 +342,18 @@ async def send_version():
     await wsconnection.send(msg)
 
 
+async def send_default_response(hash, set_default_response):
+    msg = {
+        "msgtype": "set_update",
+        "NAME": hash["NAME"],
+        "set_default_response": set_default_response,
+    }
+    msg = json.dumps(msg, ensure_ascii=False)
+    logger.debug("<<< WS: " + msg)
+    global wsconnection
+    await wsconnection.send(msg)
+
+
 async def send_and_wait(name, cmd):
     fut = asyncio.get_running_loop().create_future()
     msg = {

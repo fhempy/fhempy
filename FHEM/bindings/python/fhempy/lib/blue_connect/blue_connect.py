@@ -41,15 +41,16 @@ class blue_connect(generic.FhemModule):
         self.water_ph = "0"
         self.water_salt = "0"
         self.water_conductivity = "0"
-        set_conf = {
-            "measure": {"help": "Send signal to start measuring"},
-            "restart": {"help": "Restart blue connect"},
-        }
-        self.set_set_config(set_conf)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        set_conf = {
+            "measure": {"help": "Send signal to start measuring"},
+            "restart": {"help": "Restart blue connect"},
+        }
+        await self.set_set_config(set_conf)
+
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
