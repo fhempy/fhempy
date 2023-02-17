@@ -13,17 +13,18 @@ class ble_reset(FhemModule):
         super().__init__(logger)
         self._hours = 24
         self._resettask = None
-        self._attr_list = {"reset_time": {"default": "04:00", "format": "str"}}
-        self.set_attr_config(self._attr_list)
-        set_list_conf = {
-            "interval": {"args": ["hours"], "options": "1h,2h,4h,8h,12h,24h,manual"},
-            "resetnow": {},
-        }
-        self.set_set_config(set_list_conf)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        self._attr_list = {"reset_time": {"default": "04:00", "format": "str"}}
+        await self.set_attr_config(self._attr_list)
+        set_list_conf = {
+            "interval": {"args": ["hours"], "options": "1h,2h,4h,8h,12h,24h,manual"},
+            "resetnow": {},
+        }
+        await self.set_set_config(set_list_conf)
+
         await super().Define(hash, args, argsh)
         self._reset_time = datetime.datetime.strptime(self._attr_reset_time, "%H:%M")
 

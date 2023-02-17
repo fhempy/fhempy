@@ -18,9 +18,10 @@ class github_backup(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
-
         self.gh_token_ready = asyncio.Event()
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "backup_time": {
                 "default": "03:38",
@@ -43,15 +44,13 @@ class github_backup(generic.FhemModule):
                 ),
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "backup_now": {},
         }
-        self.set_set_config(set_config)
+        await self.set_set_config(set_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 5:
             return (

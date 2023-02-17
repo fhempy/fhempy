@@ -42,6 +42,8 @@ class ddnssde(generic.FhemModule):
         self.update_key_ready = asyncio.Event()
         self.hostname_ready = asyncio.Event()
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "ip_check_interval": {
                 "default": 15,
@@ -54,10 +56,8 @@ class ddnssde(generic.FhemModule):
                 "help": "Select the hostname you would like to update",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 5:
             return "Usage: define ddnss.updater fhempy ddnssde USERNAME PASSWORD"
@@ -146,7 +146,7 @@ class ddnssde(generic.FhemModule):
 
         # update attribute hostname
         self._conf_attr["hostname"]["options"] = ",".join(hostattr)
-        self.set_attr_config(self._conf_attr)
+        await self.set_attr_config(self._conf_attr)
         await utils.handle_define_attr(self._conf_attr, self, self.hash)
 
     async def login(self):

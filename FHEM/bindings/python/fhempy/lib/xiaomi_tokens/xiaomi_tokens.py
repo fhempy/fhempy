@@ -14,16 +14,14 @@ class xiaomi_tokens(FhemModule):
         self._country = ["de", "cn", "sg"]
         self._all_devices = {}
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         self._set_list_conf = {
             "username": {"args": ["username"]},
             "password": {"args": ["password"]},
             "get_tokens": {},
         }
-        self.set_set_config(self._set_list_conf)
-        return
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
+        await self.set_set_config(self._set_list_conf)
         await super().Define(hash, args, argsh)
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
 
@@ -174,7 +172,7 @@ class xiaomi_tokens(FhemModule):
             "help": "Creates a fhempy xiaomi_gateway3 device and devices for all connected devices.",
             "options": ",".join(self._xiaomigw3_devices),
         }
-        self.set_set_config(self._set_list_conf)
+        await self.set_set_config(self._set_list_conf)
 
     def thread_get_tokens(self):
         self._device_list = []

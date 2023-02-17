@@ -1,9 +1,11 @@
 from datetime import datetime
+
 from fhempy.lib import fhem
 from fhempy.lib.ble_monitor.blemonitor import BLEmonitor
 from fhempy.lib.ble_monitor.bt_helpers import BT_INTERFACES
 from fhempy.lib.miscale.body_metrics import bodyMetrics
 from fhempy.lib.miscale.body_score import bodyScore
+
 from .. import generic
 
 
@@ -13,6 +15,8 @@ class miscale(generic.FhemModule):
 
         self.blemonitor = None
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "hci_interface": {
                 "default": "0",
@@ -34,10 +38,8 @@ class miscale(generic.FhemModule):
                 "help": "In centimeters",
             },
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_miscale fhempy miscale 11:22:33:44:55:66"

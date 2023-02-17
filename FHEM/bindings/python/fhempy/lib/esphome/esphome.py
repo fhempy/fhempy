@@ -13,16 +13,17 @@ class esphome(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.proc = None
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         self._set_list = {"start": {}, "stop": {}, "restart": {}}
-        self.set_set_config(self._set_list)
+        await self.set_set_config(self._set_list)
         self._attr_list = {
             "disable": {"default": "0", "options": "0,1"},
             "port_dashboard": {"default": "6052", "help": "Default port ist 6052"},
         }
-        self.set_attr_config(self._attr_list)
+        await self.set_attr_config(self._attr_list)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
 
         if self._attr_disable == "1":

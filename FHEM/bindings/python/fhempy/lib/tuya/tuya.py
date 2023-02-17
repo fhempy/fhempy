@@ -45,7 +45,7 @@ class tuya(generic.FhemModule):
                 self.tt_region = args[7]
             else:
                 self.tt_region = "eu"
-            self.set_set_config({"scan_devices": {}})
+            await self.set_set_config({"scan_devices": {}})
             await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
             # set internal
             hash["DEVICEID"] = 0
@@ -83,7 +83,7 @@ class tuya(generic.FhemModule):
             "tuya_spec_functions": {"default": ""},
             "tuya_spec_status": {"default": ""},
         }
-        self.set_attr_config(self.attr_config)
+        await self.set_attr_config(self.attr_config)
         # this is needed to set default values
         await utils.handle_define_attr(self.attr_config, self, hash)
 
@@ -239,7 +239,7 @@ class tuya(generic.FhemModule):
                     set_conf[fct["code"]]["function"] = "set_colour_data_v2"
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
-        self.set_set_config(set_conf)
+        await self.set_set_config(set_conf)
 
     async def set_create_device(self, hash, params):
         nameid = params["name"]
@@ -466,7 +466,7 @@ class tuya(generic.FhemModule):
                 "options": ",".join(options),
             }
         self.attr_config.update(attr_conf)
-        self.set_attr_config(self.attr_config)
+        await self.set_attr_config(self.attr_config)
         await utils.handle_define_attr(self.attr_config, self, self.hash)
 
         # if spec contains dp_id
@@ -812,7 +812,7 @@ class tuya(generic.FhemModule):
         for dev in self.create_device_list:
             options.append(dev["name_esc"] + "_" + dev["device_id"])
         set_conf["create_device"]["options"] = ",".join(options)
-        self.set_set_config(set_conf)
+        await self.set_set_config(set_conf)
 
         await fhem.readingsSingleUpdate(
             self.hash,

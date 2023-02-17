@@ -1,38 +1,29 @@
 import asyncio
 
-from .. import fhem
-from .. import generic
-
 from aiohttp import ClientSession
 from skodaconnect import Connection
 from skodaconnect.vehicle import Vehicle
 
+from .. import fhem, generic
+
 # If you wish to use stored tokens, this is an example on how to format data sent to restore_tokens method:
 TOKENS = {
-    'technical': {
-        'access_token': '...',
-        'refresh_token': '...',
-        'id_token': '...'
-    },
-    'connect': {
-        'access_token': '...',
-        'refresh_token': '...',
-        'id_token': '...'
-    },
-    'vwg': {
-        'access_token': '...',
-        'refresh_token': '...'
-    },
-    'cabs': None,   # Could be populated with access_token, refresh_token, id_token
-    'dcs': None,    # Could be populated with access_token, refresh_token, id_token
+    "technical": {"access_token": "...", "refresh_token": "...", "id_token": "..."},
+    "connect": {"access_token": "...", "refresh_token": "...", "id_token": "..."},
+    "vwg": {"access_token": "...", "refresh_token": "..."},
+    "cabs": None,  # Could be populated with access_token, refresh_token, id_token
+    "dcs": None,  # Could be populated with access_token, refresh_token, id_token
 }
 # Comment out the following line to use stored tokens above, set TOKENS=None to do fresh login
 TOKENS = None
+
 
 class skodaconnect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         self.attr_config = {
             "vin": {
                 "default": "",
@@ -49,10 +40,8 @@ class skodaconnect(generic.FhemModule):
                 "help": "Update readings only on value change or always (default onchange).",
             },
         }
-        self.set_attr_config(self.attr_config)
+        await self.set_attr_config(self.attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 6:
             return (
@@ -81,7 +70,7 @@ class skodaconnect(generic.FhemModule):
 
             await connection.get_vehicles()
             await connection.update_all()
-            
+
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
                 # there is more than one car
@@ -102,11 +91,11 @@ class skodaconnect(generic.FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "no cars found", 1)
                 return
 
-            self.prepare_set_commands()
+            await self.prepare_set_commands()
 
             await self.update_readings()
 
-    def prepare_set_commands(self):
+    async def prepare_set_commands(self):
         self.set_config = {
             "timer_1": {"args": ["onoff"], "options": "on,off"},
             "timer_2": {"args": ["onoff"], "options": "on,off"},
@@ -209,7 +198,7 @@ class skodaconnect(generic.FhemModule):
             ),
         }
 
-        self.set_set_config(self.set_config)
+        await self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
         self.create_async_task(self.vehicle.set_pheater(params["mode"], self.spin))

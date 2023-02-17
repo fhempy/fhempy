@@ -48,30 +48,6 @@ class dlna_dmr(FhemModule):
         # set log level to ERROR for aiohttp.access to avoid INFO notify msgs
         logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
 
-        set_config = {
-            "play": {
-                "args": ["url"],
-                "params": {"url": {"optional": True, "default": ""}},
-            },
-            "volume": {
-                "args": ["volume"],
-                "params": {"volume": {"format": "int"}},
-                "options": "slider,0,1,100",
-            },
-            "mute": {"args": ["onoff"], "options": "on,off,toggle"},
-            "pause": {},
-            "next": {},
-            "previous": {},
-            "off": {},
-            "stop": {},
-            "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
-            "speak": {
-                "args": ["text"],
-                "help": "Please use double quotes for the text to speak",
-            },
-        }
-        self.set_set_config(set_config)
-
     async def found_device(self, upnp_device):
         if self.device:
             self.logger.error("Device exists already, do not create a new one")
@@ -142,6 +118,30 @@ class dlna_dmr(FhemModule):
     # FHEM Function
     async def Define(self, hash, args, argsh):
         """Set up DLNA DMR platform."""
+        set_config = {
+            "play": {
+                "args": ["url"],
+                "params": {"url": {"optional": True, "default": ""}},
+            },
+            "volume": {
+                "args": ["volume"],
+                "params": {"volume": {"format": "int"}},
+                "options": "slider,0,1,100",
+            },
+            "mute": {"args": ["onoff"], "options": "on,off,toggle"},
+            "pause": {},
+            "next": {},
+            "previous": {},
+            "off": {},
+            "stop": {},
+            "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
+            "speak": {
+                "args": ["text"],
+                "help": "Please use double quotes for the text to speak",
+            },
+        }
+        await self.set_set_config(set_config)
+
         await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define device fhempy dlna_dmr <UUID>"

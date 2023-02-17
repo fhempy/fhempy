@@ -5,7 +5,7 @@ import json
 import logging
 import threading
 import time
-from urllib.parse import parse_qs, urlparse, quote
+from urllib.parse import parse_qs, quote, urlparse
 
 import aiohttp
 
@@ -14,7 +14,7 @@ import pychromecast
 
 # DashCast
 import pychromecast.controllers.dashcast as dashcast
-from requests import Session
+import spotipy
 
 # youtube_dl
 import youtube_dl
@@ -22,17 +22,16 @@ import youtube_dl
 # BubbleUPNP
 from pychromecast.controllers.bubbleupnp import BubbleUPNPController
 
-# Spotify
-from .spotcast.spotify_controller import SpotifyController
-import spotipy
-from spotipy.oauth2 import CacheFileHandler
-
 # YouTube
 from pychromecast.controllers.youtube import YouTubeController
+from requests import Session
+from spotipy.oauth2 import CacheFileHandler
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic, utils
 from ..core.zeroconf import zeroconf
+
+# Spotify
+from .spotcast.spotify_controller import SpotifyController
 
 connection_update_lock = threading.Lock()
 
@@ -49,6 +48,9 @@ class googlecast(generic.FhemModule):
         self.connectionStateCache = ""
         self.browser = None
         self.spotipy = None
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_conf = {
             "favorite_1": {"default": ""},
             "favorite_2": {"default": ""},
@@ -75,7 +77,7 @@ class googlecast(generic.FhemModule):
                 "options": "BubbleUpnp,DefaultMediaRenderer",
             },
         }
-        self.set_attr_config(attr_conf)
+        await self.set_attr_config(attr_conf)
 
         self._set_conf = {
             "authcode": {"args": ["code"]},
@@ -118,17 +120,8 @@ class googlecast(generic.FhemModule):
             "volUp": {},
             "volDown": {},
         }
-        self.set_set_config(
-            {
-                "waiting": {
-                    "help": "Please wait till connected and"
-                    + " reload the page when connected."
-                }
-            }
-        )
+        await self.set_set_config(self._set_conf)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) > 3:
             hash["CASTNAME"] = args[3]
@@ -612,7 +605,6 @@ class googlecast(generic.FhemModule):
             res.result()
 
         if status.status == "CONNECTED":
-            self.set_set_config(self._set_conf)
             # run reading updates in main thread
             res = asyncio.run_coroutine_threadsafe(
                 self.updateDeviceReadings(self.hash), self.loop

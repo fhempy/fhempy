@@ -19,11 +19,15 @@ class FhemModule:
         self._conf_attr = {}
         self.readme_str = None
 
-    def set_attr_config(self, attr_config):
+    async def set_attr_config(self, attr_config):
         self._conf_attr = attr_config
 
-    def set_set_config(self, set_config):
+    async def set_set_config(self, set_config):
         self._conf_set = set_config
+        await fhem.send_default_response(
+            self.hash,
+            await utils.handle_set(self._conf_set, self, self.hash, ["?"], {}),
+        )
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
@@ -163,6 +167,11 @@ class FhemModule:
         self.hash = hash
         self._defargs = args
         self._defargsh = argsh
+
+        # send set to fhem if set_set_config wasn't used before
+        if self._conf_set == {}:
+            await self.set_set_config(self._conf_set)
+
         check_init_done = await fhem.init_done(self.hash)
         if check_init_done == 1:
             if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":

@@ -51,6 +51,8 @@ class arp_presence(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
         attr_config = {
             "interval": {
                 "default": 60,
@@ -58,13 +60,11 @@ class arp_presence(generic.FhemModule):
                 "help": "Change interval in seconds, default is 60s.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {"update": {}}
-        self.set_set_config(set_config)
+        await self.set_set_config(set_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define presence_my_iphone fhempy arp_presence IP"

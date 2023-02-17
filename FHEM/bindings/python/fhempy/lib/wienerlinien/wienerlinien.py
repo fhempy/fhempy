@@ -25,7 +25,7 @@ class wienerlinien(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         set_list_conf = {"update": {}}
-        self.set_set_config(set_list_conf)
+        await self.set_set_config(set_list_conf)
         if len(args) < 4:
             return "Usage: define devname fhempy wienerlinien <STOPID>"
         self._stopid = args[3]
