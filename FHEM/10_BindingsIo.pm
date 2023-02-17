@@ -5,8 +5,6 @@ package main;
 use strict;
 use warnings;
 
-use threads;
-use Thread::Queue;
 use Encode;
 
 use Protocol::WebSocket::Frame;
@@ -20,8 +18,6 @@ use Time::HiRes qw(time);
 our $init_done;
 our $modules;
 
-
-my $USE_DEVIO_DECODEWS = 0;
 my $timeouts = 0;
 my $write_deep_recursion = 0;
 
@@ -97,7 +93,8 @@ sub BindingsIo_Define {
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
-  @{$hash->{ReceiverQueue}} = ();
+  $hash->{messages} = ();
+  @{$hash->{messages}{0}} = ();
   # send binary data via websocket
   $hash->{binary} = 1;
 
@@ -236,7 +233,8 @@ BindingsIo_doInit($) {
   my ($hash) = @_;
 
   $hash->{connecttime} = time;
-  @{$hash->{ReceiverQueue}} = ();
+  $hash->{messages} = ();
+  @{$hash->{messages}{0}} = ();
   $write_deep_recursion = 0;
 
   BindingsIo_initFrame($hash);
@@ -301,7 +299,7 @@ BindingsIo_Read($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  BindingsIo_readWebsocketMessage($hash, undef, 0, 1);
+  BindingsIo_readWebsocketMessage($hash, undef, 0);
 }
 
 sub
@@ -318,11 +316,14 @@ BindingsIo_Write($$$$$) {
   my ($hash, $devhash, $function, $a, $h) = @_;
   my $initrun = 0;
   my $waitforresponse = 1;
-  $write_deep_recursion = $write_deep_recursion + 1;
 
   if ($function eq "InitDefine") {
     $initrun = 1;
     $function = "Define";
+  } elsif ($function eq "Set") {
+    if (@$a[1] eq "?" && defined($devhash) && defined($devhash->{".set_default_response"})) {
+      return $devhash->{".set_default_response"};
+    }
   }
 
   if($function ne "event" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
@@ -340,8 +341,6 @@ BindingsIo_Write($$$$$) {
   }
 
   my $waitingForId = int(rand()*100000000);
-  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
-
   my $bindingType = uc($hash->{BindingType})."TYPE";
 
   my %msg = (
@@ -380,6 +379,9 @@ BindingsIo_Write($$$$$) {
     }
   }
 
+  $write_deep_recursion = $write_deep_recursion + 1;
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
+
   my $py_timeout = 3000;
   my $cur_time = time;
   if (($cur_time - $hash->{connecttime}) < 120) {
@@ -405,17 +407,9 @@ BindingsIo_Write($$$$$) {
         Log3 $hash, 1, "  $key =>  $msg{$key}";
       }
       last;
-      readingsSingleUpdate($devhash, "state", $hash->{BindingType}." timeout", 1);
-      $returnval = ""; # was before "Timeout while waiting for reply from $function"
-      #if ($timeouts > 1) {
-        # SimpleRead will close the connection and DevIo reconnect starts
-      #  Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Too many timeouts, disconnect now and try to reconnect";
-      #  DevIo_Disconnected($hash);
-      #}
-      last;
     }
     
-    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, $waitingForId, 0);
+    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, $waitingForId);
     if ($returnval ne "empty" && $returnval ne "continue") {
       $timeouts = 0;
       last;
@@ -431,7 +425,7 @@ BindingsIo_Write($$$$$) {
 
   # do not wait for others to finish within function reply
   if ($write_deep_recursion == 1) {
-    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleReceiverQueue', $hash, 0);
+    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
   }
 
   $write_deep_recursion = $write_deep_recursion - 1;
@@ -440,25 +434,10 @@ BindingsIo_Write($$$$$) {
 }
 
 sub
-BindingsIo_handleReceiverQueue($) {
+BindingsIo_handleOtherResponses($) {
   my ($hash) = @_;
   
-  # handle messages on the queue
-  my @tempReceiverQueue = ();
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): $write_deep_recursion - QUEUE: start handling - ".@{$hash->{ReceiverQueue}};
-  while (my $msg = shift(@{$hash->{ReceiverQueue}})) {
-    my $response = $msg->{'response'};
-    my $ret = BindingsIo_processMessage($hash, undef, 0, $response);
-    if ($ret eq "nothandled") {
-      push(@tempReceiverQueue, $msg);
-    }
-  }
-  
-  # add not matching messages to the queue
-  while (my $msg = shift @tempReceiverQueue) {
-    push(@{$hash->{ReceiverQueue}}, $msg);
-  }
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): $write_deep_recursion - QUEUE: finished handling - ".@{$hash->{ReceiverQueue}};
+  BindingsIo_checkResponse($hash, undef, 0);
 }
 
 sub
@@ -530,10 +509,10 @@ BindingsIo_Shutdown($)
   return undef;
 }
 
-sub BindingsIo_processMessage($$$$) {
-  my ($hash, $devhash, $waitingForId, $response) = @_;
+sub BindingsIo_storeMessage($$) {
+  my ($hash, $response) = @_;
   $response = Encode::encode("utf8", $response);
-  Log3 $hash, 5, "processMessage: ".$response;
+  Log3 $hash, 5, "BindingsIo_storeMessage: ".$response;
   my $json = eval {from_json($response)};
   if ($@) {
     Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
@@ -541,39 +520,85 @@ sub BindingsIo_processMessage($$$$) {
     return "error";
   }
 
-  if ($waitingForId != 0) {
-    # function running
-    # skip messages which aren't part of the function
-    if (defined($devhash) && defined($json->{NAME}) && $devhash->{NAME} ne $json->{NAME}) {
-      return "nothandled";
+  if (defined($json->{id})) {
+    # messages from functions
+    $hash->{messages}{$json->{NAME}}{$json->{id}} = $json;
+  } else {
+    # messages without hash NAME
+    push (@{$hash->{messages}{0}}, $json);
+  }
+  return undef;
+}
+
+sub BindingsIo_checkResponseByAllNames($) {
+  my ($hash) = @_;
+
+  Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
+  while (my $msg = shift @{$hash->{messages}{0}}) {
+    BindingsIo_processCommand($hash, $msg);
+  }  
+  Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
+}
+
+sub BindingsIo_checkResponseByName($$) {
+  my ($hash, $devhash) = @_;
+  
+  my @temp = ();
+  while (my $msg = shift @{$hash->{messages}{0}}) {
+    if ($msg->{NAME} eq $devhash->{NAME}) {
+      BindingsIo_processCommand($hash, $msg);
+    } else {
+      push @temp, $msg;
     }
   }
+  @{$hash->{messages}{0}} = @temp;
+}
 
-  my $returnval = "continue";
-  if ($json->{msgtype} eq "function") {
-    if ($json->{finished} == 1 && defined($devhash) && $json->{id} eq $waitingForId) {
+sub BindingsIo_checkResponse($$$) {
+  # check if waitingForId is in the hash
+  # if it is not in the hash, check if there is a message with the same NAME
+  # hash strcuture:
+  #   messages
+  #     NAME
+  #       ID
+  # TODO CHECK STRUCTURE AGAIN, KEEP ORDER AS RECEIVED FOR ALL MSGS
+  #   messages[0] for all other messages like version, hash_update
+  my ($hash, $devhash, $waitingForId) = @_;
+
+  if ($waitingForId != 0) {
+    # check if there is a message with this id
+    if (defined($hash->{messages}{$devhash->{NAME}}) && defined($hash->{messages}{$devhash->{NAME}}{$waitingForId})) {
+      my $json = $hash->{messages}{$devhash->{NAME}}{$waitingForId};
+      delete $hash->{messages}{$devhash->{NAME}}{$waitingForId};
       if ($json->{error}) {
         return $json->{error};
       }
-      if ($devhash->{NAME} ne $json->{NAME}) {
-        Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Received wrong WS message, waiting for ".$devhash->{NAME}.", but received ".$json->{NAME};
-        return "nothandled";
-      } else {
-        foreach my $key (keys %$json) {
-          next if ($key eq "msgtype" or $key eq "finished" or $key eq "ws" or $key eq "returnval" or $key 
-            eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh" or $key eq "id");
-          $devhash->{$key} = $json->{$key};
-        }
-        $returnval = $json->{returnval};
+      foreach my $key (keys %$json) {
+        next if ($key eq "msgtype" or $key eq "finished" or $key eq "ws" or $key eq "returnval" or $key 
+          eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh" or $key eq "id");
+        $devhash->{$key} = $json->{$key};
       }
-    } else {
-      Log3 $hash, 4, "BindingsIo ($hash->{NAME}): Received message doesn't match, continue waiting...";
-      Log3 $hash, 4, "BindingsIo ($hash->{NAME}):   received id (".$json->{id}.") = waiting for id (".$waitingForId.")";
-      return "nothandled";
+      return $json->{returnval};
     }
-  } elsif ($json->{msgtype} eq "update_hash") {
+    BindingsIo_checkResponseByName($hash, $devhash);
+  } else {
+    BindingsIo_checkResponseByAllNames($hash);
+  }
+  
+  return "continue";
+}
+
+sub BindingsIo_processCommand($$) {
+  my ($hash, $json) = @_;
+
+  if (!defined($json)) {
+    Log3 $hash, 3, "BindingsIo($hash->{NAME}): ERROR processCommand got empty message to process";
+    return;
+  }
+
+  if ($json->{msgtype} eq "update_hash") {
     my $devname = $json->{NAME};
-    $devhash = $defs{$devname};
+    my $devhash = $defs{$devname};
     foreach my $key (keys %$json) {
       next if ($key eq "msgtype" or $key eq "update_hash" or $key eq "ws" or $key eq "returnval" or $key 
         eq "function" or $key eq "defargs" or $key eq "defargsh" or $key eq "args" or $key eq "argsh" or $key eq "id");
@@ -586,6 +611,10 @@ sub BindingsIo_processMessage($$$$) {
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
     }
+  } elsif ($json->{msgtype} eq "set_update") {
+    my $devname = $json->{NAME};
+    my $devhash = $defs{$devname};
+    $devhash->{".set_default_response"} = $json->{set_default_response};
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
@@ -597,19 +626,23 @@ sub BindingsIo_processMessage($$$$) {
     local $SIG{__WARN__} = sub {
         my $message = shift;
         Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ".$message." => COMMAND: ".$json->{command};
+        foreach my $key (keys %$json) {
+          Log3 $hash, 1, "BindingsIo ($hash->{NAME}):    ".$key." = ".$json->{$key};
+        }
     };
+    Log3 $hash, 4, "BindingsIo($hash->{NAME}): processCommand ($json->{awaitId}): ".$json->{command};
     $ret = eval $json->{command};
     if ($@) {
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$json->{command}."): ".$@;
       %res = (
-        awaitId => $json->{awaitId},
+        awaitId => int($json->{awaitId}),
         error => 1,
         errorText => $@,
         result => $ret
       );
     } else {
       %res = (
-        awaitId => $json->{awaitId},
+        awaitId => int($json->{awaitId}),
         error => 0,
         result => $ret
       );
@@ -619,9 +652,7 @@ sub BindingsIo_processMessage($$$$) {
     if (length $utf8msg > 0) {
       DevIo_SimpleWrite($hash, $utf8msg, 0);
     }
-    return "continue";
   }
-  return $returnval;
 }
 
 # will be removed from DevIo, therefore it's copied here
@@ -649,19 +680,19 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
   return undef;
 }
 
-sub BindingsIo_readWebsocketMessage($$$$) {
-  my ($hash, $devhash, $waitingForId, $socketready) = @_;
+sub BindingsIo_readWebsocketMessage($$$) {
+  my ($hash, $devhash, $waitingForId) = @_;
+  my $ret = "";
 
   # read message from websocket
-  my $returnval = "continue";
-  my $response = "";
-  $response = BindingsIo_SimpleReadWithTimeout($hash, 1);
+  my $response = BindingsIo_SimpleReadWithTimeout($hash, 1);
+
   if (defined($response) && $response eq "connectionclosed") {
+    # handle connection closed
     Log3 $hash, 5, "BindingsIo ($hash->{NAME}): DevIo_SimpleRead WithTimeout - connection seems to be closed";
     return "Websocket connection closed unexpected";
   }
 
-  my @currentQueue = ();
   if (defined($response) && $response ne "") {
     $hash->{frame}->append($response);
     while (my $r = $hash->{frame}->next) {
@@ -669,53 +700,19 @@ sub BindingsIo_readWebsocketMessage($$$$) {
         DevIo_DecodeWS($hash, $response);
       } else {
         Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
-        my $resTemp = {
-          "response" => $r,
-          "time" => time
-        };
-        push (@currentQueue, $resTemp);
+        BindingsIo_storeMessage($hash, $r);
       }
     }
   }
 
-  while (my $msg = shift @currentQueue) {
-    $response = $msg->{'response'};
-    my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
-    if ($ret ne "continue" && $ret ne "nothandled") {
-      $returnval = $ret;
-    }
-    if ($ret eq "nothandled") {
-      push(@{$hash->{ReceiverQueue}}, $msg);
-    }
-  }
-
-  # check if the message is on the queue
-  if ($returnval eq "continue" or $returnval eq "nothandled") {
-    my @tempReceiverQueue = ();
-    while (my $msg = shift @{$hash->{ReceiverQueue}}) {
-      my $response = $msg->{'response'};
-      my $ret = BindingsIo_processMessage($hash, $devhash, $waitingForId, $response);
-      if ($ret ne "continue" && $ret ne "nothandled") {
-        $returnval = $ret;
-      }
-      if ($ret eq "nothandled") {
-        push(@tempReceiverQueue, $msg);
-      }
-    }
-    
-    # add not matching messages to the queue
-    while (my $msg = shift @tempReceiverQueue) {
-      push(@{$hash->{ReceiverQueue}}, $msg);
-    }
+  $ret = BindingsIo_checkResponse($hash, $devhash, $waitingForId);
+  if ($ret ne "continue") {
+    return $ret;
   }
   
-  if ($returnval eq "continue" or $returnval eq "nothandled") {
-    Log3 $hash, 5, "BindingsIo ($hash->{NAME}): Waiting for id ".$waitingForId;
-  }
+  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): Waiting for id ".$waitingForId;
   
-  Log3 $hash, 5, "BindingsIo ($hash->{NAME}): QUEUE: size - ".@{$hash->{ReceiverQueue}};
-
-  return $returnval;
+  return "continue";
 }
 
 1;
