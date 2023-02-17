@@ -12,6 +12,8 @@ class volvo_software_update(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 1800,
@@ -21,7 +23,6 @@ class volvo_software_update(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_volvo_update fhempy volvo_software_update URL"
 

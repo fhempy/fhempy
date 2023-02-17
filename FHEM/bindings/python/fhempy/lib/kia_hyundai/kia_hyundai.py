@@ -18,6 +18,8 @@ class kia_hyundai(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "update_interval": {
                 "default": 30,
@@ -55,7 +57,7 @@ class kia_hyundai(generic.FhemModule):
             "update_data": {},
         }
         await self.set_set_config(set_config)
-        await super().Define(hash, args, argsh)
+        
         if len(args) != 8:
             return (
                 "Usage: define my_car fhempy kia_hyundai "

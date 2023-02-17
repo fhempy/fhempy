@@ -21,6 +21,8 @@ class miio(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._attr_list = {
             "update_functions": {
                 "default": "status:60,info:600",
@@ -32,7 +34,6 @@ class miio(generic.FhemModule):
         }
         await self.set_attr_config(self._attr_list)
 
-        await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 6:
             return "Usage: define miiodev fhempy miio <TYPE> <IP> <TOKEN>"

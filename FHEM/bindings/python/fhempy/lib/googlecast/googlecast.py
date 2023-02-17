@@ -51,6 +51,8 @@ class googlecast(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_conf = {
             "favorite_1": {"default": ""},
             "favorite_2": {"default": ""},
@@ -122,7 +124,6 @@ class googlecast(generic.FhemModule):
         }
         await self.set_set_config(self._set_conf)
 
-        await super().Define(hash, args, argsh)
         if len(args) > 3:
             hash["CASTNAME"] = args[3]
         else:

@@ -32,6 +32,7 @@ class eq3bt(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         attr_list = {
             "keep_connected": {
                 "default": "on",
@@ -96,7 +97,6 @@ class eq3bt(generic.FhemModule):
         }
         await self.set_set_config(set_list_conf)
 
-        await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 4:
             return "Usage: define eq3_livingroom fhempy eq3bt <MAC>"

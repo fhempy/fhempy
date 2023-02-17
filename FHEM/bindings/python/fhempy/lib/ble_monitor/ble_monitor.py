@@ -12,6 +12,7 @@ class ble_monitor(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         attr_config = {
             "hci_interface": {
                 "default": "0",
@@ -31,7 +32,6 @@ class ble_monitor(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_miscale fhempy ble_monitor 11:22:33:44:55:66"
 

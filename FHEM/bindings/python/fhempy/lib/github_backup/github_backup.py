@@ -22,6 +22,8 @@ class github_backup(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "backup_time": {
                 "default": "03:38",
@@ -51,7 +53,6 @@ class github_backup(generic.FhemModule):
         }
         await self.set_set_config(set_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 5:
             return (
                 "Usage: define my_backup fhempy github_backup"

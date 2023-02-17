@@ -16,6 +16,8 @@ class pyit600(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self.attr_config = {
             "update_interval": {
                 "default": 60,
@@ -45,7 +47,6 @@ class pyit600(generic.FhemModule):
         }
         await self.set_attr_config(self.attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 5:
             return "Usage: define my_salus_device fhempy pyit600 host euid"
         self.host = args[3]

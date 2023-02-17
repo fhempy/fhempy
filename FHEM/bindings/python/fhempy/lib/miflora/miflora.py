@@ -22,6 +22,8 @@ class miflora(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._attr_list = {
             "update_interval": {"default": 1200, "format": "int"},
             "hci_device": {"default": "hci0"},
@@ -30,7 +32,7 @@ class miflora(FhemModule):
         await self.set_attr_config(self._attr_list)
         self._set_list = {"update": {}}
         await self.set_set_config(self._set_list)
-        await super().Define(hash, args, argsh)
+        
         if len(args) < 4:
             return "Usage: define mi_plant fhempy miflora <MAC>"
 

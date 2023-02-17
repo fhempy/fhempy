@@ -49,6 +49,8 @@ class ring(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._attr_list = {
             "deviceUpdateInterval": {"default": 300, "format": "int"},
             "dingPollInterval": {"default": 2, "format": "int"},
@@ -59,7 +61,7 @@ class ring(FhemModule):
             "2fa_code": {"args": ["2facode"]},
         }
         await self.set_set_config(self.set_list_conf)
-        await super().Define(hash, args, argsh)
+        
         if len(args) < 5:
             return (
                 "Usage: define rrring fhempy ring <USERNAME>"

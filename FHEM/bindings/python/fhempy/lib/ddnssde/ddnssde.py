@@ -44,6 +44,7 @@ class ddnssde(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         attr_config = {
             "ip_check_interval": {
                 "default": 15,
@@ -58,7 +59,6 @@ class ddnssde(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 5:
             return "Usage: define ddnss.updater fhempy ddnssde USERNAME PASSWORD"
 

@@ -46,8 +46,8 @@ class discover_upnp(FhemModule):
     # FHEM Define
     async def Define(self, hash, args, argsh):
         """Start a discovery service."""
-        await self.set_set_config({})
         await super().Define(hash, args, argsh)
+        await self.set_set_config({})
         ssdp.getInstance(self.logger).register_listener(self)
         await ssdp.getInstance(self.logger).start_search()
         await fhem.readingsSingleUpdate(hash, "state", "active", 0)

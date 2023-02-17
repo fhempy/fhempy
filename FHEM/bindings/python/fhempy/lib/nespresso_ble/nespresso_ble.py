@@ -18,6 +18,8 @@ class nespresso_ble(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self.set_conf_list = {
             "authkey": {"args": ["authkey"]},
             "brew": {
@@ -36,7 +38,6 @@ class nespresso_ble(generic.FhemModule):
             "updateStatus": {},
         }
         await self.set_set_config(self.set_conf_list)
-        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define devicename fhempy nespresso_ble <MAC> [<AUTHKEY>]"
         await fhem.readingsBeginUpdate(hash)

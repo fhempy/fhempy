@@ -12,6 +12,8 @@ class websitetests(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 600,
@@ -50,7 +52,6 @@ class websitetests(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(argsh) > 0:
             k = list(argsh)[0]
             url = k + "=" + argsh[k]
