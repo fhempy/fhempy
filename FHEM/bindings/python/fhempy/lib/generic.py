@@ -21,6 +21,7 @@ class FhemModule:
 
     async def set_attr_config(self, attr_config):
         self._conf_attr = attr_config
+        await utils.handle_define_attr(self._conf_attr, self, hash)
 
     async def set_set_config(self, set_config):
         self._conf_set = set_config
@@ -184,7 +185,6 @@ class FhemModule:
         self.readme_str = await utils.run_blocking(
             functools.partial(self._get_readme_content)
         )
-        await utils.handle_define_attr(self._conf_attr, self, hash)
 
     # FHEM FUNCTION
     async def Attr(self, hash, args, argsh):
