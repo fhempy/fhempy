@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.597 (2023-02-17)
+### Fix
+* **fhempy:** Fix set error ([`d651009`](https://github.com/dominikkarall/fhempy/commit/d6510097548d04454c1efa8336ad7b5f2375a863))
+
 ## v0.1.596 (2023-02-17)
 ### Feature
 * **fhempy:** Support set ? cache in BindingsIo ([`0615960`](https://github.com/dominikkarall/fhempy/commit/061596046f72d0ceb61e6f677913630f4104c164))
