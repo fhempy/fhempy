@@ -13,6 +13,8 @@ class warema(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 60,
@@ -30,7 +32,6 @@ class warema(FhemModule):
         }
         await self.set_set_config(set_config)
 
-        await super().Define(hash, args, argsh)
         self.hash = hash
         if len(args) < 5:
             return "Usage: define warema_fhempy fhempy warema <IP> <channel>"

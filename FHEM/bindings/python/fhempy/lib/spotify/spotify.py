@@ -45,6 +45,8 @@ class spotify(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "update_status_interval": {
                 "default": 60,
@@ -114,7 +116,7 @@ class spotify(generic.FhemModule):
             },
         }
         await self.set_set_config(self.set_config)
-        await super().Define(hash, args, argsh)
+        
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")
         await fhem.readingsEndUpdate(hash, 1)

@@ -17,6 +17,7 @@ class ble_reset(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         self._attr_list = {"reset_time": {"default": "04:00", "format": "str"}}
         await self.set_attr_config(self._attr_list)
         set_list_conf = {
@@ -25,7 +26,6 @@ class ble_reset(FhemModule):
         }
         await self.set_set_config(set_list_conf)
 
-        await super().Define(hash, args, argsh)
         self._reset_time = datetime.datetime.strptime(self._attr_reset_time, "%H:%M")
 
         hours = await fhem.ReadingsVal(hash["NAME"], "interval", "24h")

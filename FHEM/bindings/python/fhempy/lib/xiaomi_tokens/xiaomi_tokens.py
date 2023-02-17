@@ -16,13 +16,15 @@ class xiaomi_tokens(FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._set_list_conf = {
             "username": {"args": ["username"]},
             "password": {"args": ["password"]},
             "get_tokens": {},
         }
         await self.set_set_config(self._set_list_conf)
-        await super().Define(hash, args, argsh)
+        
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
 
         self._uniqueid = await fhem.getUniqueId(self.hash)

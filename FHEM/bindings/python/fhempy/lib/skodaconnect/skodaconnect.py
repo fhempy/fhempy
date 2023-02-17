@@ -24,6 +24,8 @@ class skodaconnect(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self.attr_config = {
             "vin": {
                 "default": "",
@@ -42,7 +44,6 @@ class skodaconnect(generic.FhemModule):
         }
         await self.set_attr_config(self.attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 6:
             return (
                 "Usage: define my_skoda fhempy skodaconnect my@account.com "

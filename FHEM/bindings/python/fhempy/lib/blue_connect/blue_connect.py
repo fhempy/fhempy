@@ -45,13 +45,13 @@ class blue_connect(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         set_conf = {
             "measure": {"help": "Send signal to start measuring"},
             "restart": {"help": "Restart blue connect"},
         }
         await self.set_set_config(set_conf)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
         self._mac = args[3]

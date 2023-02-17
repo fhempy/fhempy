@@ -118,6 +118,7 @@ class dlna_dmr(FhemModule):
     # FHEM Function
     async def Define(self, hash, args, argsh):
         """Set up DLNA DMR platform."""
+        await super().Define(hash, args, argsh)
         set_config = {
             "play": {
                 "args": ["url"],
@@ -142,7 +143,6 @@ class dlna_dmr(FhemModule):
         }
         await self.set_set_config(set_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define device fhempy dlna_dmr <UUID>"
 

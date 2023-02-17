@@ -29,6 +29,8 @@ class nefit(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 900,
@@ -159,7 +161,6 @@ class nefit(generic.FhemModule):
             "tomorrowAsSunday": {"args": ["onoff"], "options": "on,off"},
         }
         await self.set_set_config(set_config)
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define netfit_thermostat fhempy nefit <SERIAL_NUMBER>"
 

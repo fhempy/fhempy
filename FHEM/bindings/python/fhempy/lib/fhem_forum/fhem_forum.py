@@ -17,6 +17,8 @@ class fhem_forum(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 15,
@@ -41,7 +43,6 @@ class fhem_forum(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define fhem.forum fhempy fhem_forum FHEM_COOKIE"
 

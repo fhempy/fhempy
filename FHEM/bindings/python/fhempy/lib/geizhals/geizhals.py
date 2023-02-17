@@ -28,6 +28,7 @@ class geizhals(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         attr_config = {
             "interval": {
                 "default": 3,
@@ -37,7 +38,6 @@ class geizhals(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        await super().Define(hash, args, argsh)
         if len(args) != 4:
             return "Usage: define gh.pixel fhempy geizhals URL"
 

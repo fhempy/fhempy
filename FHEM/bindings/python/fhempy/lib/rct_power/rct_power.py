@@ -35,6 +35,8 @@ class rct_power(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 10,
@@ -211,7 +213,7 @@ class rct_power(generic.FhemModule):
             },
         }
         await self.set_set_config(set_config)
-        await super().Define(hash, args, argsh)
+        
         if len(args) < 4 or len(args) > 5:
             return "Usage: define my_rct fhempy rct_power IP [PORT]"
 

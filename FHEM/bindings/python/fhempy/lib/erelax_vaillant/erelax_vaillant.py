@@ -35,6 +35,7 @@ class erelax_vaillant(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
         attr_config = {
             "update_interval": {
                 "default": 300,
@@ -70,7 +71,6 @@ class erelax_vaillant(generic.FhemModule):
             },
         }
         await self.set_set_config(set_config)
-        await super().Define(hash, args, argsh)
         if len(args) < 4:
             return "Usage: define erelax_vaillant fhempy USERNAME PASSWORD [STATION]"
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
