@@ -321,7 +321,7 @@ BindingsIo_Write($$$$$) {
     $initrun = 1;
     $function = "Define";
   } elsif ($function eq "Set") {
-    if (@$a[1] eq "?" && defined($devhash) && defined($devhash->{".set_default_response"})) {
+    if (@$a[1] eq "?" && defined($devhash) && defined($devhash->{".set_default_response"}) && DevIo_IsOpen($hash)) {
       return $devhash->{".set_default_response"};
     }
   }
