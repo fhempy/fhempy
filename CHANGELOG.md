@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.599 (2023-02-19)
+### Feature
+* **tuya:** Add productid keym9qkuywghyrvs ([#128](https://github.com/dominikkarall/fhempy/issues/128)) ([`b5d9ec6`](https://github.com/dominikkarall/fhempy/commit/b5d9ec676e85fcb16c52a0e18dbfa68d2a6ba8bd))
+
+### Fix
+* **fhempy:** Use set ? cache only when connected ([`1c59259`](https://github.com/dominikkarall/fhempy/commit/1c59259d4147e95cbec9dc0473ea261c8f7833bd))
+* **fhempy:** Fix tests ([`e312537`](https://github.com/dominikkarall/fhempy/commit/e31253790b800197b656f6a721af48989a89723e))
+
 ## v0.1.598 (2023-02-17)
 ### Fix
 * **fhempy:** Fix attr handling 2 ([`322cecb`](https://github.com/dominikkarall/fhempy/commit/322cecb2f6ea63701add23ddfe87f3b5a3a093a6))
