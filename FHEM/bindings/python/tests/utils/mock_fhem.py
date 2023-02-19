@@ -41,6 +41,7 @@ def mock_module(mocker):
     mocker.patch("fhempy.lib.fhem.send_version", send_version)
     mocker.patch("fhempy.lib.fhem.setFunctionInactive", do_nothing)
     mocker.patch("fhempy.lib.fhem.init_done", init_done)
+    mocker.patch("fhempy.lib.fhem.send_default_response", send_default_response)
 
 
 def do_nothing(param):
@@ -48,6 +49,10 @@ def do_nothing(param):
 
 
 def updateConnection(ws):
+    return
+
+
+async def send_default_response(hash, set_default_response):
     return
 
 
