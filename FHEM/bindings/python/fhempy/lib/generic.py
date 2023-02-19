@@ -33,6 +33,13 @@ class FhemModule:
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
         (FW_wname, d, room, pageHash) = args
+
+        if not hasattr(self, "hash"):
+            return (
+                "This device is disabled, set disable attribute "
+                "to 0 or delete it to enable the device<br>"
+            )
+
         ret = """<script type="text/javascript">
         function displayHelp() {
           var x = document.getElementById("fhempyReadme");

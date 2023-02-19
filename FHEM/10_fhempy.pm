@@ -27,7 +27,7 @@ fhempy_Initialize($)
   $hash->{SetFn}    = 'fhempy_Set';
   $hash->{AttrFn}   = 'fhempy_Attr';
   $hash->{RenameFn} = 'fhempy_Rename';
-  $hash->{AttrList} = 'IODev '.$readingFnAttributes;
+  $hash->{AttrList} = 'IODev disable:0,1 '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempy_detailFn";
   $hash->{FW_deviceOverview} = 1;
 
