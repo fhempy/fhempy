@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.603 (2023-02-20)
+### Fix
+* **fhempy:** Fix disable for modules without attributes ([`f85134d`](https://github.com/dominikkarall/fhempy/commit/f85134db71dd53d188fa9d3f3ceb8ae8e1598c23))
+
 ## v0.1.602 (2023-02-20)
 ### Fix
 * **fhempy:** Fix disable ([#118](https://github.com/dominikkarall/fhempy/issues/118)) ([`fed397a`](https://github.com/dominikkarall/fhempy/commit/fed397afc36ef41e54907fdadc1deecc45299501))
