@@ -43,13 +43,14 @@ class spotify_connect_player(generic.FhemModule):
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+
         attr_config = {"player_name": {"default": "FHEM Web Player"}}
         await self.set_attr_config(attr_config)
 
         self.set_config = {"start": {}, "stop": {}}
         await self.set_set_config(self.set_config)
 
-        await super().Define(hash, args, argsh)
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")
         await fhem.readingsEndUpdate(hash, 1)

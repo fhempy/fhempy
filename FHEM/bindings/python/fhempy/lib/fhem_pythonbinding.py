@@ -37,6 +37,10 @@ active_internal_modules = []
 conf = {"internal_modules": ["discover_fhempy"]}
 
 
+class ModuleDisabledException(Exception):
+    pass
+
+
 def getFhemPyDeviceByName(name):
     if name in loadedModuleInstances:
         return loadedModuleInstances[name]
@@ -332,6 +336,8 @@ class fhempy:
                     module_object = await self.import_module(hash)
 
                     await self.define_module(hash, module_object)
+                except ModuleDisabledException:
+                    return 0
                 except asyncio.TimeoutError:
                     errorMsg = (
                         f"Function execution >{fct_timeout}s, "
@@ -414,8 +420,15 @@ class fhempy:
         moduleLogger.setLevel(
             self.getLogLevel(await fhem.AttrVal(hash["NAME"], "verbose", "3"))
         )
+
         loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
         del moduleLoadingRunning[hash["NAME"]]
+
+        # check if module is disabled
+        disable_attr = await fhem.AttrVal(hash["NAME"], "disable", "0")
+        if disable_attr == "1":
+            raise ModuleDisabledException
+
         if hash["function"] != "Define":
             func = getattr(
                 loadedModuleInstances[hash["NAME"]],
@@ -436,24 +449,47 @@ class fhempy:
                 moduleLogger.setLevel(self.getLogLevel(hash["args"][3]))
             else:
                 moduleLogger.setLevel(logging.ERROR)
-        else:
-            # call Set/Attr/Define/...
-            func = getattr(nmInstance, hash["function"], "nofunction")
-            if func != "nofunction":
-                if hash["function"] == "Undefine":
-                    try:
-                        ret = await asyncio.wait_for(func(hash), fct_timeout)
-                    except Exception:
-                        logger.exception(f"Undefine failed for {hash['NAME']}")
+            return ret
+
+        # handle disable
+        if hash["function"] == "Attr" and hash["args"][2] == "disable":
+            disable_device = False
+            if hash["args"][0] == "set":
+                if hash["args"][3] == "1":
+                    disable_device = True
                 else:
-                    ret = await asyncio.wait_for(
-                        func(hash, hash["args"], hash["argsh"]),
-                        fct_timeout,
-                    )
-                if ret is None:
-                    ret = ""
-                if fhem_reply_done:
-                    await self.updateHash(hash)
+                    disable_device = False
+            else:
+                # disable attr deleted
+                disable_device = False
+
+            if disable_device:
+                # call Undefine
+                hash["function"] = "Undefine"
+            else:
+                # class Define
+                hash["function"] = "Define"
+                hash["args"] = hash["defargs"]
+                hash["argsh"] = hash["defargsh"]
+
+        # call Set/Attr/Define/...
+        func = getattr(nmInstance, hash["function"], "nofunction")
+        if func != "nofunction":
+            if hash["function"] == "Undefine":
+                try:
+                    ret = await asyncio.wait_for(func(hash), fct_timeout)
+                except Exception:
+                    logger.exception(f"Undefine failed for {hash['NAME']}")
+            else:
+                ret = await asyncio.wait_for(
+                    func(hash, hash["args"], hash["argsh"]),
+                    fct_timeout,
+                )
+            if ret is None:
+                ret = ""
+            if fhem_reply_done:
+                await self.updateHash(hash)
+
         return ret
 
     async def rename_device(self, hash, old_name, new_name):
