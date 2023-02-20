@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.601 (2023-02-20)
+### Feature
+* **fhempy:** Activate disable attr for all fhempy modules ([#118](https://github.com/dominikkarall/fhempy/issues/118)) ([`0072cb6`](https://github.com/dominikkarall/fhempy/commit/0072cb6999b9727b60812e6c2393ea67d7c0d7e7))
+
 ## v0.1.600 (2023-02-20)
 ### Feature
 * **fhempy:** Support disable attr for all fhempy devices ([`196ee60`](https://github.com/dominikkarall/fhempy/commit/196ee602d395310222f845d849a60c87a125b8f0))
