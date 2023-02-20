@@ -95,7 +95,13 @@ async def addToDevAttrList(name, attr_list):
 
 async def setDevAttrList(name, attr_list):
     attr_list += " IODev"
-    cmd = "setDevAttrList('" + name + "', '" + attr_list + " '.$readingFnAttributes)"
+    cmd = (
+        "setDevAttrList('"
+        + name
+        + "', '"
+        + attr_list
+        + " '.$readingFnAttributes disable:0,1)"
+    )
     return await sendCommandName(name, cmd)
 
 
