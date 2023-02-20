@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.600 (2023-02-20)
+### Feature
+* **fhempy:** Support disable attr for all fhempy devices ([`196ee60`](https://github.com/dominikkarall/fhempy/commit/196ee602d395310222f845d849a60c87a125b8f0))
+
+### Fix
+* **spotify_connect_player:** Fix define ([`80df09c`](https://github.com/dominikkarall/fhempy/commit/80df09c1086cdb011801fd9cb8768dedd2ca074a))
+
 ## v0.1.599 (2023-02-19)
 ### Feature
 * **tuya:** Add productid keym9qkuywghyrvs ([#128](https://github.com/dominikkarall/fhempy/issues/128)) ([`b5d9ec6`](https://github.com/dominikkarall/fhempy/commit/b5d9ec676e85fcb16c52a0e18dbfa68d2a6ba8bd))
