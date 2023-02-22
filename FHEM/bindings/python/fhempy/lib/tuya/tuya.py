@@ -682,8 +682,8 @@ class tuya(generic.FhemModule):
                                     cur_energy = (
                                         (time.time() - self.last_energy_ts)
                                         * (self.last_energy_value + cur_power)
-                                        / (3600 * 1000)
-                                    )
+                                        / 2
+                                    ) / (3600 * 1000)
                                     self.energy += cur_energy
 
                                 self.last_energy_ts = time.time()
