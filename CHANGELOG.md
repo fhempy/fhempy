@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.606 (2023-02-22)
+### Feature
+* **tuya_cloud:** Add energy reading ([`1ad2090`](https://github.com/dominikkarall/fhempy/commit/1ad2090c455fb47903007b61f32bdf4d20e6d336))
+
 ## v0.1.605 (2023-02-22)
 ### Fix
 * **tuya:** Fix energy formula ([`f2d25b7`](https://github.com/dominikkarall/fhempy/commit/f2d25b79d228967915693af4972deafda21ee887))
