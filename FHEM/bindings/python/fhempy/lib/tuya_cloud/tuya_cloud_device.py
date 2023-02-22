@@ -2,6 +2,7 @@ import asyncio
 import colorsys
 import functools
 import json
+import time
 from random import randrange
 
 import fhempy.lib.fhem as fhem
@@ -25,6 +26,12 @@ class tuya_cloud_device:
 
         self.tuyaiot = None
         self.default_code = None
+
+        # read current energy just on define
+        self.energy = float(await fhem.ReadingsVal(self.hash["NAME"], "energy", "0"))
+        self.last_energy_ts = None
+        self.last_energy_value = 0
+
         await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         self.fhemdev.create_async_task(self._init_device())
 
@@ -313,6 +320,27 @@ class tuya_cloud_device:
                             st_name, json.loads(status_dic[st_name])
                         )
                     else:
+                        if st_name == "cur_power" and status_dic[st_name] > 0:
+                            cur_power = self._convert_value2fhem(
+                                st_name, status_dic[st_name]
+                            )
+
+                            if self.last_energy_ts is not None:
+                                # last value available
+                                cur_energy = (
+                                    (time.time() - self.last_energy_ts)
+                                    * (self.last_energy_value + cur_power)
+                                    / 2
+                                ) / (3600 * 1000)
+                                self.energy += cur_energy
+
+                            self.last_energy_ts = time.time()
+                            self.last_energy_value = cur_power
+                            await fhem.readingsBulkUpdateIfChanged(
+                                self.hash,
+                                "energy",
+                                round(self.energy, 3),
+                            )
                         await fhem.readingsBulkUpdate(
                             self.hash,
                             self._convert_code2fhem(st_name),
