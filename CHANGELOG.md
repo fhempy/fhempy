@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.605 (2023-02-22)
+### Fix
+* **tuya:** Fix energy formula ([`f2d25b7`](https://github.com/dominikkarall/fhempy/commit/f2d25b79d228967915693af4972deafda21ee887))
+
 ## v0.1.604 (2023-02-22)
 ### Feature
 * **tuya:** Add energy reading ([`7231691`](https://github.com/dominikkarall/fhempy/commit/72316919794aec137e9243ba4808a49667e99c9f))
