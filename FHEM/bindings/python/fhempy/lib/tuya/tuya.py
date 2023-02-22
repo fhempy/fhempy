@@ -3,6 +3,7 @@ import asyncio
 import functools
 import json
 import re
+import time
 
 import tinytuya as tt
 
@@ -77,6 +78,11 @@ class tuya(generic.FhemModule):
                 self.hash, "state", "Change DEF and use IP instead of 'offline'", 1
             )
             return
+
+        # read current energy just on define
+        self.energy = float(await fhem.ReadingsVal(self.hash["NAME"], "energy", "0"))
+        self.last_energy_ts = None
+        self.last_energy_value = 0
 
         # set attributes
         self.attr_config = {
@@ -668,6 +674,25 @@ class tuya(generic.FhemModule):
                         else:
                             if reading == "state":
                                 state_set = True
+                            if reading == "cur_power" and status[dp] > 0:
+                                cur_power = self.convert(status[dp], st)
+
+                                if self.last_energy_ts is not None:
+                                    # last value available
+                                    cur_energy = (
+                                        (time.time() - self.last_energy_ts)
+                                        * (self.last_energy_value + cur_power)
+                                        / (3600 * 1000)
+                                    )
+                                    self.energy += cur_energy
+
+                                self.last_energy_ts = time.time()
+                                self.last_energy_value = cur_power
+                                await fhem.readingsBulkUpdateIfChanged(
+                                    self.hash,
+                                    "energy",
+                                    round(self.energy, 3),
+                                )
                             await fhem.readingsBulkUpdateIfChanged(
                                 self.hash,
                                 reading,
