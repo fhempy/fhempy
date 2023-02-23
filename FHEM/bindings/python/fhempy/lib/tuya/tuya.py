@@ -573,6 +573,8 @@ class tuya(generic.FhemModule):
             elif self.tt_productid in ["wifvoilfrqeo6hvu", "37mnhia3pojleqfh"]:
                 if schema["code"] == "cur_voltage":
                     value /= 10
+                elif schema['code'] == "cur_power":
+                    value /= 10
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
             if value is True:
