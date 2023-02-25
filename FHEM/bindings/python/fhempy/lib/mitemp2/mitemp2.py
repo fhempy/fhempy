@@ -20,7 +20,7 @@ class mitemp2(generic.FhemModule):
         )
         self.create_async_task(self.async_connection_setup())
 
-    async def async_connection_setup(self, mac):
+    async def async_connection_setup(self):
         await self._conn.connect()
         # enable notifications
         await self._conn.write_gatt_char(0x0038 - 1, b"\x01\x00")
