@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.607 (2023-02-25)
+### Feature
+* **wienernetze_smartmeter:** Testing wiener netze smartmeter ([`c8cb33d`](https://github.com/dominikkarall/fhempy/commit/c8cb33dc342083afe8e985596f92ce56f6ed3728))
+* **volvo:** Initial release of volvo new api module ([`a69bd1b`](https://github.com/dominikkarall/fhempy/commit/a69bd1b42d399a66ccf5ad33a344a874f905aacc))
+* **energie_gv_at:** Add more details about the current source of electricity ([`66ea3db`](https://github.com/dominikkarall/fhempy/commit/66ea3db36992876efa6879ba10c7a105d054470c))
+
+### Fix
+* **tuya:** Fix cur_power for prodid wifvoilfrqeo6hvu ([`b10a374`](https://github.com/dominikkarall/fhempy/commit/b10a374b63b8d837c993cfbbfb2432d8a2930b3e))
+
 ## v0.1.606 (2023-02-22)
 ### Feature
 * **tuya_cloud:** Add energy reading ([`1ad2090`](https://github.com/dominikkarall/fhempy/commit/1ad2090c455fb47903007b61f32bdf4d20e6d336))
