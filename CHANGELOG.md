@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.608 (2023-02-26)
+### Fix
+* **wienernetze_smartmeter:** Update wiener netze api ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`2f917c1`](https://github.com/dominikkarall/fhempy/commit/2f917c1ef286e85962f71d71cdfd10e560ffd051))
+* **mitemp2:** Fix wrong number of arguments ([`b3f4066`](https://github.com/dominikkarall/fhempy/commit/b3f4066613e9cd2c4cd13f2cb75768134071ea2c))
+
 ## v0.1.607 (2023-02-25)
 ### Feature
 * **wienernetze_smartmeter:** Testing wiener netze smartmeter ([`c8cb33d`](https://github.com/dominikkarall/fhempy/commit/c8cb33dc342083afe8e985596f92ce56f6ed3728))
