@@ -1,9 +1,9 @@
 import asyncio
 
-from api.client import AsyncSmartmeter
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
+from .api.client import AsyncSmartmeter
 
 
 class wienernetze_smartmeter(FhemModule):
