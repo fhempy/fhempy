@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.610 (2023-02-26)
+### Fix
+* **wienernetze_smartmeter:** Fix imports ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`f1b2c80`](https://github.com/dominikkarall/fhempy/commit/f1b2c80317c298ac25fa2b1e5b7888fb993c3000))
+
 ## v0.1.609 (2023-02-26)
 ### Fix
 * **tuya_cloud:** Fix wrong scale for some product ids ([`e1008d3`](https://github.com/dominikkarall/fhempy/commit/e1008d3e30de58290a1f9c69501fe3a4587ec3bf))
