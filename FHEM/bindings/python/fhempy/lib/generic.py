@@ -30,6 +30,11 @@ class FhemModule:
             await utils.handle_set(self._conf_set, self, self.hash, ["?"], {}),
         )
 
+    async def set_icon(self, icon_name):
+        curr_icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
+        if curr_icon == "":
+            await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} icon {icon_name}")
+
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
         (FW_wname, d, room, pageHash) = args
