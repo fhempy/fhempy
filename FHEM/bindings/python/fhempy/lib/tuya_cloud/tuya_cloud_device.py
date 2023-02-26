@@ -250,6 +250,14 @@ class tuya_cloud_device:
     def _convert_value2fhem(self, code, value):
         for code_def in self._t_specification["status"]:
             if code_def["code"] == code and code_def["type"] == "Integer":
+                if self._t_info["product_id"] in [
+                    "wifvoilfrqeo6hvu",
+                    "37mnhia3pojleqfh",
+                ]:
+                    if code == "cur_voltage":
+                        value /= 10
+                    elif code == "cur_power":
+                        value /= 10
                 values = json.loads(code_def["values"])
                 return value / (10 ** int(values["scale"]))
 
