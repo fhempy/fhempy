@@ -26,6 +26,8 @@ class energie_gv_at(generic.FhemModule):
         if len(args) != 3:
             return "Usage: define energy_austria fhempy energie_gv_at"
 
+        await self.set_icon("measure_photovoltaic_inst")
+
         self.create_async_task(self.update_loop())
 
     async def retrieve_data(self, url):
@@ -97,11 +99,28 @@ class energie_gv_at(generic.FhemModule):
         )
 
     async def handle_electricity_now(self, res):
+        all_labels = [
+            "Biomasse",
+            "Erdgas",
+            "Nettoimporte",
+            "Sonne",
+            "Sonstige",
+            "Wasser",
+            "Wind",
+        ]
         for entry in res:
             await fhem.readingsSingleUpdate(
                 self.hash,
                 f"current_hour_electricity_{entry['label']}",
                 round(entry["percentage"], 1),
+                1,
+            )
+            all_labels.remove(entry["label"])
+        for entry in all_labels:
+            await fhem.readingsSingleUpdate(
+                self.hash,
+                f"current_hour_electricity_{entry}",
+                0,
                 1,
             )
 
