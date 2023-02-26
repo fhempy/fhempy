@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "git+https://github.com/florianL21/vienna-smartmeter#vienna-smartmeter==0.3.2"
+    "lxml"
   ]
 }

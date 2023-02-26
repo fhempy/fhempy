@@ -1,7 +1,7 @@
 import asyncio
 
+from api.client import AsyncSmartmeter
 from fhempy.lib.generic import FhemModule
-from vienna_smartmeter import AsyncSmartmeter
 
 from .. import fhem, utils
 
@@ -27,11 +27,18 @@ class wienernetze_smartmeter(FhemModule):
     async def update_loop(self):
         client = AsyncSmartmeter(self.username, self.password)
         await client.refresh_token()
+        data = await client.base_information()
+        await self.update_readings(data)
         while True:
-            data = await client.welcome()
-            flat_data = utils.flatten_json(data)
-            await fhem.readingsBeginUpdate(self.hash)
-            for name in flat_data:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, name, flat_data[name])
-            await fhem.readingsEndUpdate(self.hash, 1)
+            data = await client.consumptions()
+            await self.update_readings(data)
+            data = await client.meter_readings()
+            await self.update_readings(data)
             await asyncio.sleep(3600)
+
+    async def update_readings(self, data):
+        flat_data = utils.flatten_json(data)
+        await fhem.readingsBeginUpdate(self.hash)
+        for name in flat_data:
+            await fhem.readingsBulkUpdateIfChanged(self.hash, name, flat_data[name])
+        await fhem.readingsEndUpdate(self.hash, 1)
