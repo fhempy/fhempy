@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.609 (2023-02-26)
+### Fix
+* **tuya_cloud:** Fix wrong scale for some product ids ([`e1008d3`](https://github.com/dominikkarall/fhempy/commit/e1008d3e30de58290a1f9c69501fe3a4587ec3bf))
+
 ## v0.1.608 (2023-02-26)
 ### Fix
 * **wienernetze_smartmeter:** Update wiener netze api ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`2f917c1`](https://github.com/dominikkarall/fhempy/commit/2f917c1ef286e85962f71d71cdfd10e560ffd051))
