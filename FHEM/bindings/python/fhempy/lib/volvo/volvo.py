@@ -253,8 +253,10 @@ class volvo(generic.FhemModule):
 
     async def get_regular_update_urls(self):
         for url in volvo.REGULAR_UPDATE_URLS:
+            start = url.rfind("/") + 1
+            domain = url[start:].replace("-", "_")
             data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
-            await self.update_readings(data["data"])
+            await self.update_readings(data["data"], domain)
 
     async def get_cars(self):
         cars = await self.volvo_get(volvo.VEHICLELIST)
@@ -264,14 +266,17 @@ class volvo(generic.FhemModule):
 
         self.vin = cars["vehicles"][0]["id"]
 
-    async def update_readings(self, data):
+    async def update_readings(self, data, domain=""):
         try:
             for reading in data:
                 await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, reading, data[reading]["value"], 1
+                    self.hash, domain + "_" + reading, data[reading]["value"], 1
                 )
                 await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, reading + "_timestamp", data[reading]["timestamp"], 1
+                    self.hash,
+                    domain + "_" + reading + "_timestamp",
+                    data[reading]["timestamp"],
+                    1,
                 )
         except Exception:
             self.logger.exception("Failed to update readings")
