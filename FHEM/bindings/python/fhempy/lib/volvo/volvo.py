@@ -25,7 +25,6 @@ class volvo(generic.FhemModule):
         "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/statistics": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
         "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/tyres": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
         "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/warnings": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/extended-vehicle/v1/vehicles/{vin}/resources/sunRoofOpen": "application/json",
     }
 
     def __init__(self, logger):
@@ -54,6 +53,7 @@ class volvo(generic.FhemModule):
             },
         }
         await self.set_attr_config(self.attr_config)
+        await self.set_icon("car")
 
         if len(args) != 6:
             return "Usage: define my_volvo fhempy volvo appkey username password"
@@ -265,13 +265,16 @@ class volvo(generic.FhemModule):
         self.vin = cars["vehicles"][0]["id"]
 
     async def update_readings(self, data):
-        for reading in data:
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, reading, data[reading]["value"], 1
-            )
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, reading + "_timestamp", data[reading]["timestamp"], 1
-            )
+        try:
+            for reading in data:
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, reading, data[reading]["value"], 1
+                )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, reading + "_timestamp", data[reading]["timestamp"], 1
+                )
+        except Exception:
+            self.logger.exception("Failed to update readings")
 
     async def volvo_get(self, url, accept_header="application/json"):
         url = url.replace("{vin}", self.vin)
