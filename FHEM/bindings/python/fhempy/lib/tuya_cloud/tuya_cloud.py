@@ -42,6 +42,9 @@ class tuya_cloud(FhemModule):
             await self.device.Undefine(hash)
         return await super().Undefine(hash)
 
+    async def set_reset_energy(self, hash, params):
+        await self.device.set_reset_energy(hash, params)
+
     async def set_boolean(self, hash, params):
         await self.device.set_boolean(hash, params)
 

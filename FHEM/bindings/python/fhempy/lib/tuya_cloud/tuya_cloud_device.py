@@ -140,6 +140,12 @@ class tuya_cloud_device:
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
         set_conf = self.prepare_onoff_usage(set_conf)
+
+        for st in self._t_specification["status"]:
+            if st["code"] == "cur_power":
+                set_conf["reset_energy"] = {}
+                break
+
         await self.fhemdev.set_set_config(set_conf)
 
     def prepare_onoff_usage(self, set_conf):
@@ -162,6 +168,11 @@ class tuya_cloud_device:
             }
             del set_conf[self.default_code]
         return set_conf
+
+    async def set_reset_energy(self, hash, params):
+        self.last_energy_ts = time.time()
+        self.last_energy_value = 0
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_boolean(self, hash, params):
         code = params["function_param"]["code"]
