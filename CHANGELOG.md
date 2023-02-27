@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.612 (2023-02-27)
+### Fix
+* **volvo:** Add domain in reading name ([`fb8f93c`](https://github.com/dominikkarall/fhempy/commit/fb8f93c6135b13813f6d3ccf4144739c58dd1074))
+
 ## v0.1.611 (2023-02-27)
 ### Feature
 * **tuya:** Support reset_energy ([`fb5f25f`](https://github.com/dominikkarall/fhempy/commit/fb5f25f36f0364cd4881d386b6b8ecc234dbee86))
