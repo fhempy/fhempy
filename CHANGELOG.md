@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.611 (2023-02-27)
+### Feature
+* **tuya:** Support reset_energy ([`fb5f25f`](https://github.com/dominikkarall/fhempy/commit/fb5f25f36f0364cd4881d386b6b8ecc234dbee86))
+* **tuya_cloud:** Support reset_energy ([`0a0b12c`](https://github.com/dominikkarall/fhempy/commit/0a0b12c90c2228f35d8c6d65df467c63a2b3f90e))
+* **fhempy:** Add set_icon method ([`42b4260`](https://github.com/dominikkarall/fhempy/commit/42b4260cf74dd7b0ef68d7353244fd9e06abf9b4))
+
+### Fix
+* **volvo:** Remove sunRoofOpen as currently not working, handle exceptions on update_readings ([`e8d8e45`](https://github.com/dominikkarall/fhempy/commit/e8d8e45d3564d9288fa24b171099c0510a928e1f))
+* **energie_gv_at:** Set label to 0 if no data received for that label ([`d88dc5d`](https://github.com/dominikkarall/fhempy/commit/d88dc5d6c0f1c7c2500acacf4bd23fe3b9d7afd7))
+
 ## v0.1.610 (2023-02-26)
 ### Fix
 * **wienernetze_smartmeter:** Fix imports ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`f1b2c80`](https://github.com/dominikkarall/fhempy/commit/f1b2c80317c298ac25fa2b1e5b7888fb993c3000))
