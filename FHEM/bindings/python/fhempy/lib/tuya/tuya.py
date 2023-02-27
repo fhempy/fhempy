@@ -245,7 +245,17 @@ class tuya(generic.FhemModule):
                     set_conf[fct["code"]]["function"] = "set_colour_data_v2"
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
+        for st in self.tuya_spec_status:
+            if st["code"] == "cur_power":
+                set_conf["reset_energy"] = {}
+                break
+
         await self.set_set_config(set_conf)
+
+    async def set_reset_energy(self, hash, params):
+        self.last_energy_ts = time.time()
+        self.last_energy_value = 0
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_create_device(self, hash, params):
         nameid = params["name"]
@@ -573,7 +583,7 @@ class tuya(generic.FhemModule):
             elif self.tt_productid in ["wifvoilfrqeo6hvu", "37mnhia3pojleqfh"]:
                 if schema["code"] == "cur_voltage":
                     value /= 10
-                elif schema['code'] == "cur_power":
+                elif schema["code"] == "cur_power":
                     value /= 10
             return value / (10 ** values["scale"])
         elif schema["type"] == "Boolean":
