@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.613 (2023-03-01)
+### Fix
+* **wienernetze_smartmeter:** Fix login ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`542e308`](https://github.com/dominikkarall/fhempy/commit/542e308d4e8f23d856db59ac830235a827cd73af))
+
 ## v0.1.612 (2023-02-27)
 ### Fix
 * **volvo:** Add domain in reading name ([`fb8f93c`](https://github.com/dominikkarall/fhempy/commit/fb8f93c6135b13813f6d3ccf4144739c58dd1074))
