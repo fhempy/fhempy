@@ -13,8 +13,6 @@ class wienernetze_smartmeter(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        set_list_conf = {"update": {}}
-        await self.set_set_config(set_list_conf)
         if len(args) != 5:
             return (
                 "Usage: define devname fhempy wienernetze_smartmeter USERNAME PASSWORD"

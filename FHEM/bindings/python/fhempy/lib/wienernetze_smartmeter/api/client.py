@@ -1,6 +1,5 @@
 """Contains the Async Smartmeter API Client."""
 import asyncio
-import json
 import logging
 import socket
 from datetime import datetime
@@ -11,7 +10,7 @@ import async_timeout
 from lxml import html
 
 from . import constants as const
-from .errors import SmartmeterLoginError
+from .errors import SmartmeterConnectionError, SmartmeterLoginError
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +34,7 @@ class AsyncSmartmeter:
         self._session = session or aiohttp.ClientSession()
         self._timeout = timeout
         self._access_token = None
+        self._refresh_token = None
         self._api_gateway_token = None
 
     async def _get_login_action(self):
@@ -70,11 +70,11 @@ class AsyncSmartmeter:
                 async with self._session.request(
                     "GET", const.PAGE_URL + script
                 ) as response:
-                    if const.MAIN_SCRIPT_REGEX.match(script):
-                        for match in const.API_GATEWAY_TOKEN_REGEX.findall(
-                            await response.text()
-                        ):
-                            return match
+                    for match in const.API_GATEWAY_TOKEN_REGEX.findall(response.text):
+                        return match
+                    raise SmartmeterConnectionError(
+                        "Could not obtain API key - no match"
+                    )
         return None
 
     async def refresh_token(self):
@@ -88,7 +88,9 @@ class AsyncSmartmeter:
                 raise SmartmeterLoginError(
                     "Authentication failed. Check user credentials."
                 )
-            self._access_token = json.loads(await response.text())["access_token"]
+            result_json = await response.json()
+            self._access_token = result_json["access_token"]
+            self._refresh_token = result_json["refresh_token"]
             self._api_gateway_token = await self._get_api_key(self._access_token)
 
         logger.debug("Successfully authenticated Smart Meter API")
