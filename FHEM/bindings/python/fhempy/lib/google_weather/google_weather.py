@@ -17,7 +17,7 @@ class google_weather(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "interval": {
                 "default": 61,
@@ -144,7 +144,7 @@ class google_weather(generic.FhemModule):
         return self.soup_extract_text(soup, "span", {"id": "wob_tm"})
 
     def get_current_condition(self, soup):
-        return self.soup_extract(soup, "img", {"wob_tci"})
+        return self.soup_extract(soup, "img", {"id": "dimg_1"})
 
     def get_current_windspeed(self, soup):
         return self.soup_extract_text(soup, "span", {"id": "wob_ws"})
@@ -169,6 +169,7 @@ class google_weather(generic.FhemModule):
             day_name = day.findAll("div")[0].attrs["aria-label"]
             # get weather status for that day
             image = day.find("img")
+            base64_img = self.get_image(soup, day.find("img")["id"])
             weather = image.attrs["alt"]
             temp = day.findAll("span", {"class": "wob_t"})
             # maximum temparature in Celsius, use temp[1].text if you want fahrenheit
@@ -181,7 +182,7 @@ class google_weather(generic.FhemModule):
                     "weather": weather,
                     "max_temp": max_temp,
                     "min_temp": min_temp,
-                    "image": image,
+                    "image": '<img src="' + base64_img + '"/>',
                 }
             )
         return next_days
@@ -195,7 +196,8 @@ class google_weather(generic.FhemModule):
             self.cur_condition_img = "-"
         else:
             self.cur_condition = cur_condition_element["alt"]
-            self.cur_condition_img = f"{cur_condition_element}"
+            base64_img = self.get_image(soup, cur_condition_element["id"])
+            self.cur_condition_img = '<img src="' + base64_img + '"/>'
         self.cur_windspeed = self.get_current_windspeed(soup)
         self.cur_windspeed_number = self.cur_windspeed.split(" ")[0]
         self.cur_precipitation = self.get_current_precipitation(soup).replace("%", "")
@@ -221,6 +223,13 @@ class google_weather(generic.FhemModule):
             self.next_hours.append(x)
             if len(self.next_hours) > 24:
                 break
+
+    def get_image(self, soup, image_id):
+        for script in soup.find_all("script"):
+            if script.text.find(image_id) != -1:
+                start = script.text.find("data:image")
+                end = script.text.find(";var") - 1
+                return script.text[start:end].replace("\\x3d", "=")
 
     async def handle_response(self, response):
         # bs4
