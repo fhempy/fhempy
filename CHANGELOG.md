@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.615 (2023-03-03)
+### Fix
+* **fhempy:** Update aiohttp to support Python 3.11 ([`9a5975a`](https://github.com/dominikkarall/fhempy/commit/9a5975a4c69fc61717fbf29fb9e18b434b83d9f5))
+
 ## v0.1.614 (2023-03-03)
 ### Fix
 * **tuya:** Colour_data = A, colour_data_v2 = B for rgb bulbs ([`022e2f1`](https://github.com/dominikkarall/fhempy/commit/022e2f1ccb9a1ad0148cfa38d8950d9c285911a8))
