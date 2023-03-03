@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.616 (2023-03-03)
+### Fix
+* **google_weather:** Update get images ([`91db97d`](https://github.com/dominikkarall/fhempy/commit/91db97d7060db5df6e31a4ac442da0947fd78ca3))
+
 ## v0.1.615 (2023-03-03)
 ### Fix
 * **fhempy:** Update aiohttp to support Python 3.11 ([`9a5975a`](https://github.com/dominikkarall/fhempy/commit/9a5975a4c69fc61717fbf29fb9e18b434b83d9f5))
