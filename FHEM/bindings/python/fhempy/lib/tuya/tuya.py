@@ -321,10 +321,7 @@ class tuya(generic.FhemModule):
     async def set_colour_data(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
-        if "category" in self.info_dict and self.info_dict["category"] == "dj":
-            hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
-        else:
-            hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
+        hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
         await self.change_to_colour_mode()
         await self._connected_device.set_dp(hexvalue, index)
 
@@ -859,7 +856,7 @@ class tuya(generic.FhemModule):
         )
 
     async def update_readings_colour(self, code, hexcolour):
-        if code == "colour_data" and self.info_dict["category"] == "dj":
+        if code == "colour_data":
             # only category dj (light) has old colour_data
             (red, green, blue) = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
         else:
