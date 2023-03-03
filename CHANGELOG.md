@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.614 (2023-03-03)
+### Fix
+* **tuya:** Colour_data = A, colour_data_v2 = B for rgb bulbs ([`022e2f1`](https://github.com/dominikkarall/fhempy/commit/022e2f1ccb9a1ad0148cfa38d8950d9c285911a8))
+
 ## v0.1.613 (2023-03-01)
 ### Fix
 * **wienernetze_smartmeter:** Fix login ([#120](https://github.com/dominikkarall/fhempy/issues/120)) ([`542e308`](https://github.com/dominikkarall/fhempy/commit/542e308d4e8f23d856db59ac830235a827cd73af))
