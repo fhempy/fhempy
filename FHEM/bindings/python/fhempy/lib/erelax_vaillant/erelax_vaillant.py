@@ -71,6 +71,7 @@ class erelax_vaillant(generic.FhemModule):
             },
         }
         await self.set_set_config(set_config)
+        await self.set_icon("sani_heating_temp")
         if len(args) < 4:
             return "Usage: define erelax_vaillant fhempy USERNAME PASSWORD [STATION]"
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
@@ -220,6 +221,10 @@ class erelax_vaillant(generic.FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "thermostat_battery_percent", v_module.battery_percent
         )
+        await fhem.readingsBulkUpdate(
+            self.hash, "thermostat_boiler_status", v_module.boiler_status
+        )
+        await fhem.readingsBulkUpdate(self.hash, "thermostat_id", v_module.id)
 
         # setpoint_manual
         await fhem.readingsBulkUpdate(
@@ -276,13 +281,19 @@ class erelax_vaillant(generic.FhemModule):
             self.hash, "desiredTemperature", v_module.measured.setpoint_temp
         )
         await fhem.readingsBulkUpdate(
-            self.hash, "outdoor_temperature", v_station.outdoor_temperature.temperature
+            self.hash, "outdoor_temperature", v_station.outdoor_temperature.te
         )
         await fhem.readingsBulkUpdate(
             self.hash,
             "outdoor_temperature_updated",
-            v_station.outdoor_temperature.date_updated,
+            v_station.outdoor_temperature.ti,
         )
+        await fhem.readingsBulkUpdate(self.hash, "dhw", v_station.dhw)
+        await fhem.readingsBulkUpdate(self.hash, "dhw_min", v_station.dhw_min)
+        await fhem.readingsBulkUpdate(self.hash, "dhw_max", v_station.dhw_max)
+        await fhem.readingsBulkUpdate(self.hash, "wifi_status", v_station.wifi_status)
+
+        await fhem.readingsBulkUpdate(self.hash, "rf_status", v_module.rf_status)
 
         """ await fhem.readingsBulkUpdate(
             self.hash, "place_altitude", v_station.place_altitude
@@ -301,12 +312,10 @@ class erelax_vaillant(generic.FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash, "place_location", v_station.place_location
         )
-        await fhem.readingsBulkUpdate(self.hash, "dhw", v_station.dhw)
         await fhem.readingsBulkUpdate(self.hash, "oem_serial", v_station.oem_serial)
         await fhem.readingsBulkUpdate(
             self.hash, "hot_water_anticipating", v_station.hot_water_anticipating
         )
-        await fhem.readingsBulkUpdate(self.hash, "wifi_status", v_station.wifi_status)
         await fhem.readingsBulkUpdate(
             self.hash, "boiler_oem_serial", v_station.boiler_oem_serial
         )
@@ -314,6 +323,5 @@ class erelax_vaillant(generic.FhemModule):
             self.hash, "refill_water", v_station.ebus_refill_water
         )
 
-        await fhem.readingsBulkUpdate(self.hash, "rf_status", v_module.rf_status)
         """
         await fhem.readingsEndUpdate(self.hash, 1)
