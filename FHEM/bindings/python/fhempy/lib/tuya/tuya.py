@@ -220,7 +220,7 @@ class tuya(generic.FhemModule):
                 set_conf[fct["code"]] = {
                     "options": slider,
                     "args": ["new_val"],
-                    "params": {"new_val": {"format": "int"}},
+                    "params": {"new_val": {"format": "float"}},
                     "help": fct["desc"],
                     "function_param": fct,
                     "function": "set_integer",
