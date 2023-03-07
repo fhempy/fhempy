@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.618 (2023-03-07)
+### Fix
+* **tuya:** Revert last change ([`bd66d41`](https://github.com/dominikkarall/fhempy/commit/bd66d414009c1c55556230476aed168f0da6f55a))
+
 ## v0.1.617 (2023-03-07)
 ### Fix
 * **tuya:** Retry connect on failure ([`a370795`](https://github.com/dominikkarall/fhempy/commit/a370795822976227b5b5b821a83c77738c77a291))
