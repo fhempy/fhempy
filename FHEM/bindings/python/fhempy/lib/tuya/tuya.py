@@ -529,11 +529,6 @@ class tuya(generic.FhemModule):
                     timeout=15,
                 )
                 self._connected_device = await asyncio.wait_for(connect_fct, timeout=15)
-                if self._connected_device.device.started is False:
-                    self._connected_device = None
-                    await asyncio.sleep(1)
-                    continue
-
                 if self.update_dps_loop_task is None:
                     self.update_dps_loop_task = self.create_async_task(
                         self.update_dps_loop()
