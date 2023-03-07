@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "git+https://github.com/dominikkarall/vaillant-netatmo-api#vaillant-netatmo-api==0.8.2"
+    "vaillant-netatmo-api==0.11.0"
   ]
 }
