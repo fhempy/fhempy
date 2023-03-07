@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.617 (2023-03-07)
+### Fix
+* **tuya:** Retry connect on failure ([`a370795`](https://github.com/dominikkarall/fhempy/commit/a370795822976227b5b5b821a83c77738c77a291))
+* **erelax_vaillant:** Use vaillant-netatmo-api library ([`bc61d49`](https://github.com/dominikkarall/fhempy/commit/bc61d49278f2c370ad1a8533e2caa1f34c00e49e))
+
 ## v0.1.616 (2023-03-03)
 ### Fix
 * **google_weather:** Update get images ([`91db97d`](https://github.com/dominikkarall/fhempy/commit/91db97d7060db5df6e31a4ac442da0947fd78ca3))
