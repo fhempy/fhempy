@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.619 (2023-03-07)
+### Fix
+* **tuya:** Allow float values ([`1484727`](https://github.com/dominikkarall/fhempy/commit/148472771da6472610f2bb76dbfbea1e70c77d2e))
+
 ## v0.1.618 (2023-03-07)
 ### Fix
 * **tuya:** Revert last change ([`bd66d41`](https://github.com/dominikkarall/fhempy/commit/bd66d414009c1c55556230476aed168f0da6f55a))
