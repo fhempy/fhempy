@@ -62,7 +62,7 @@ class AsyncSmartmeter:
 
     async def _get_api_key(self, access_token):
         async with self._session.request(
-            "GET", const.PAGE_URL, data={"Authorization": f"Bearer {access_token}"}
+            "GET", const.PAGE_URL, headers={"Authorization": f"Bearer {access_token}"}
         ) as result:
             tree = html.fromstring(await result.text())
             scripts = tree.xpath("(//script/@src)")
@@ -70,11 +70,10 @@ class AsyncSmartmeter:
                 async with self._session.request(
                     "GET", const.PAGE_URL + script
                 ) as response:
-                    for match in const.API_GATEWAY_TOKEN_REGEX.findall(response.text):
-                        return match
-                    raise SmartmeterConnectionError(
-                        "Could not obtain API key - no match"
-                    )
+                    res_text = await response.text()
+            for match in const.API_GATEWAY_TOKEN_REGEX.findall(res_text):
+                return match
+            raise SmartmeterConnectionError("Could not obtain API key - no match")
         return None
 
     async def refresh_token(self):
