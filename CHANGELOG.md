@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.620 (2023-03-10)
+### Fix
+* **wienernetze_smartmeter:** Fix login via logwien ([`99e0872`](https://github.com/dominikkarall/fhempy/commit/99e087231ab6db0672ea7cfcbb92359317fc32e4))
+
 ## v0.1.619 (2023-03-07)
 ### Fix
 * **tuya:** Allow float values ([`1484727`](https://github.com/dominikkarall/fhempy/commit/148472771da6472610f2bb76dbfbea1e70c77d2e))
