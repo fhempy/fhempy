@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.628 (2023-03-11)
+### Feature
+* **aktionsfinder:** New module aktionsfinder ([`4edcad3`](https://github.com/dominikkarall/fhempy/commit/4edcad3f30ec4e48027c6d97e0b2f6cbf777f6d9))
+* **blue_connect:** Add icon ([`3ad3964`](https://github.com/dominikkarall/fhempy/commit/3ad396497972983244404d09d30e2e1a6f08e886))
+* **arp_presence:** Add icon ([`33f29c4`](https://github.com/dominikkarall/fhempy/commit/33f29c4a0b528edddcb95138a2465ca9ca332b65))
+
 ## v0.1.627 (2023-03-11)
 ### Fix
 * **kia_hyundai:** Fix dateutil requirement ([`c5dc94c`](https://github.com/dominikkarall/fhempy/commit/c5dc94c31b8d09efe84d8188be9c5497cbf9de10))
