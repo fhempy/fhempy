@@ -1,25 +1,19 @@
 import asyncio
 import functools
 
-from fhempy.lib.kia_hyundai.const import VEHICLE_LOCK_ACTION
+import hyundai_kia_connect_api as api
 
 from .. import fhem, generic, utils
-from .utils import get_implementation_by_region_brand
-from .Vehicle import Vehicle
 
 
 class kia_hyundai(generic.FhemModule):
-
-    CAR_BRANDS = {"kia": 1, "hyundai": 2}
-    REGION_CODE = {"eu": 1, "us": 2, "ca": 3}
-
     def __init__(self, logger):
         super().__init__(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "update_interval": {
                 "default": 30,
@@ -57,7 +51,7 @@ class kia_hyundai(generic.FhemModule):
             "update_data": {},
         }
         await self.set_set_config(set_config)
-        
+
         if len(args) != 8:
             return (
                 "Usage: define my_car fhempy kia_hyundai "
@@ -66,25 +60,33 @@ class kia_hyundai(generic.FhemModule):
         self.username = args[3]
         self.password = args[4]
         self.pin = args[5]
-        self.car_brand = kia_hyundai.CAR_BRANDS[args[6].lower()]
-        self.region_code = kia_hyundai.REGION_CODE[args[7].lower()]
+        self.car_brand = [
+            k for k, v in api.const.BRANDS.items() if v.lower() == args[6].lower()
+        ][0]
+        if args[7].lower() == "eu":
+            args[7] = "Europe"
+        self.region_code = [
+            k for k, v in api.const.REGIONS.items() if v.lower() == args[7].lower()
+        ][0]
         self.create_async_task(self.connect_to_car())
 
     async def connect_to_car(self):
-        self.token = None
-        kh_impl = get_implementation_by_region_brand(
-            self.region_code, self.car_brand, self.username, self.password
+        self.vm = api.VehicleManager(
+            self.region_code,
+            self.car_brand,
+            self.username,
+            self.password,
+            self.pin,
+            geocode_api_enable=True,
+            geocode_api_use_email=True,
         )
-        while self.token is None:
+        while True:
             try:
-                self.token = await utils.run_blocking(functools.partial(kh_impl.login))
-                if self.token is not None:
-                    self.vehicle = Vehicle(
-                        self.token, kh_impl, "km", False, str(self.region_code)
-                    )
-                    self.create_async_task(self.update_loop())
-                    break
-                await asyncio.sleep(60)
+                await utils.run_blocking(
+                    functools.partial(self.vm.check_and_refresh_token)
+                )
+                self.create_async_task(self.update_loop())
+                break
             except Exception:
                 self.logger.exception("Failed to login to server, retry in 120s")
                 await asyncio.sleep(120)
@@ -96,18 +98,26 @@ class kia_hyundai(generic.FhemModule):
 
     async def update_once(self):
         try:
-            await self.vehicle.update()
+            await utils.run_blocking(functools.partial(self.vm.check_and_refresh_token))
+            await utils.run_blocking(
+                functools.partial(self.vm.update_all_vehicles_with_cached_state)
+            )
             await self.update_readings()
         except Exception:
             self.logger.exception("Failed to update car data")
             await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
 
     async def update_readings(self):
-        flat_json = utils.flatten_json(self.vehicle.vehicle_data)
+        # use only first vehicle
+        self.vehicle = self.vm.vehicles[list(self.vm.vehicles)[0]]
+        flat_json = utils.flatten_json(self.vehicle.data)
         await fhem.readingsBeginUpdate(self.hash)
         try:
             for name in flat_json:
                 await fhem.readingsBulkUpdate(self.hash, name, flat_json[name])
+            await fhem.readingsBulkUpdate(
+                self.hash, "geolocation", self.vehicle.geocode[0]
+            )
             await fhem.readingsBulkUpdate(self.hash, "state", "online")
         except Exception:
             self.logger.exception("Failed to update readings")
@@ -118,14 +128,16 @@ class kia_hyundai(generic.FhemModule):
         self.create_async_task(self.update_once())
 
     async def set_lock(self, hash, params):
-        self.create_async_task(self.vehicle.lock_action(VEHICLE_LOCK_ACTION.LOCK))
+        self.create_async_task(self.execute_command(self.vm.lock, self.vehicle.id))
 
     async def set_unlock(self, hash, params):
-        self.create_async_task(self.vehicle.lock_action(VEHICLE_LOCK_ACTION.UNLOCK))
+        self.create_async_task(self.execute_command(self.vm.unlock, self.vehicle.id))
 
     async def set_start_climate(self, hash, params):
         self.create_async_task(
-            self.vehicle.start_climate(
+            self.execute_command(
+                self.vm.start_climate,
+                self.vehicle.id,
                 params["set_temp"],
                 params["duration"],
                 params["defrost"],
@@ -135,15 +147,33 @@ class kia_hyundai(generic.FhemModule):
         )
 
     async def set_stop_climate(self, hash, params):
-        self.create_async_task(self.vehicle.stop_climate())
+        self.create_async_task(
+            self.execute_command(self.vm.stop_climate, self.vehicle.id)
+        )
 
     async def set_start_charge(self, hash, params):
-        self.create_async_task(self.vehicle.start_charge())
+        self.create_async_task(
+            self.execute_command(self.vm.start_charge, self.vehicle.id)
+        )
 
     async def set_stop_charge(self, hash, params):
-        self.create_async_task(self.vehicle.stop_charge())
+        self.create_async_task(
+            self.execute_command(self.vm.stop_charge, self.vehicle.id)
+        )
 
     async def set_charge_limits(self, hash, params):
-        self.create_async_task(
-            self.vehicle.set_charge_limits(params["ac_limit"], params["dc_limit"])
+        utils.run_blocking_task(
+            functools.partial(
+                self.vm.set_charge_limits,
+                self.vehicle.id,
+                params["ac_limit"],
+                params["dc_limit"],
+            )
         )
+
+    async def execute_command(self, command, *kwargs):
+        # check token
+        await utils.run_blocking(functools.partial(self.vm.check_and_refresh_token))
+
+        # execute function
+        await utils.run_blocking(functools.partial(command, *kwargs))
