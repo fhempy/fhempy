@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.622 (2023-03-11)
+### Fix
+* **tuya:** Use aiotinytuya ([`264f2db`](https://github.com/dominikkarall/fhempy/commit/264f2db8d7cfb1e4a1104789907c074c4727f00e))
+
 ## v0.1.621 (2023-03-11)
 ### Feature
 * **tuya:** Update to latest tinytuya release (1.11.0) ([`1740bf0`](https://github.com/dominikkarall/fhempy/commit/1740bf0ef90638ea63ca67709d89e4a89636c3d1))
