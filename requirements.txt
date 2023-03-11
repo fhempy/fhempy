@@ -1,7 +1,7 @@
 websockets==10.4
 importlib_metadata==4.8.1
 pycryptodomex==3.16.0
-zeroconf==0.36.12
+zeroconf==0.47.3
 aiohttp[speedups]==3.8.4
 markdown2==2.4.2
 requests==2.26.0
