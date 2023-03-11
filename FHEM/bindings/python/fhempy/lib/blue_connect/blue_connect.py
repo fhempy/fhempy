@@ -51,6 +51,7 @@ class blue_connect(generic.FhemModule):
             "restart": {"help": "Restart blue connect"},
         }
         await self.set_set_config(set_conf)
+        await self.set_icon("scene_pool")
 
         if len(args) != 4:
             return "Usage: define my_blueconnect fhempy blue_connect MAC"
