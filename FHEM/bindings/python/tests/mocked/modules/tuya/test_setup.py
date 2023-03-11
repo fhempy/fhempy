@@ -49,7 +49,7 @@ async def test_setup(mocker):
     def devicesScan(verbose, maxretry=1, color=None):
         return json.loads(load_fixture("local_devices.json"))
 
-    mocker.patch("tinytuya.deviceScan", devicesScan)
+    mocker.patch("aiotinytuya.deviceScan", devicesScan)
 
     await fhempy_device.Define(
         testhash,
