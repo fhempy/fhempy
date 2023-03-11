@@ -5,7 +5,7 @@ import json
 import re
 import time
 
-import tinytuya as tt
+import aiotinytuya as tt
 
 from .. import fhem, generic, utils
 from . import mappings
