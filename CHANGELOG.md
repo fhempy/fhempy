@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.624 (2023-03-11)
+### Fix
+* **kia_hyundai:** Add missing pytz requirement ([`d5be5bf`](https://github.com/dominikkarall/fhempy/commit/d5be5bf255adf6fdd561068b2c17fb476dd8fef0))
+
 ## v0.1.623 (2023-03-11)
 ### Fix
 * **kia_hyundai:** Use library instead of    own code ([`51aa0b4`](https://github.com/dominikkarall/fhempy/commit/51aa0b47ff1ca814c89b70955ac20ccf89e25e31))
