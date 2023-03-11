@@ -62,6 +62,7 @@ class arp_presence(generic.FhemModule):
             }
         }
         await self.set_attr_config(attr_config)
+        await self.set_icon("people_sensor")
 
         set_config = {"update": {}}
         await self.set_set_config(set_config)
