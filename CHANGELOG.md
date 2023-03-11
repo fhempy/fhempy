@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.627 (2023-03-11)
+### Fix
+* **kia_hyundai:** Fix dateutil requirement ([`c5dc94c`](https://github.com/dominikkarall/fhempy/commit/c5dc94c31b8d09efe84d8188be9c5497cbf9de10))
+
 ## v0.1.626 (2023-03-11)
 
 
