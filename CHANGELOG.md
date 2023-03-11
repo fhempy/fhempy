@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.623 (2023-03-11)
+### Fix
+* **kia_hyundai:** Use library instead of    own code ([`51aa0b4`](https://github.com/dominikkarall/fhempy/commit/51aa0b47ff1ca814c89b70955ac20ccf89e25e31))
+* **tuya:** Fix testcase by using aiotinytuya ([`148e2bb`](https://github.com/dominikkarall/fhempy/commit/148e2bbb481093addeafd768c7e6aef73a5be4f6))
+
 ## v0.1.622 (2023-03-11)
 ### Fix
 * **tuya:** Use aiotinytuya ([`264f2db`](https://github.com/dominikkarall/fhempy/commit/264f2db8d7cfb1e4a1104789907c074c4727f00e))
