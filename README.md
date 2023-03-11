@@ -12,6 +12,7 @@ This repository includes following working modules:
 
 |Module | Description|
 |-------|--------------|
+|[aktionsfinder](FHEM/bindings/python/fhempy/lib/aktionsfinder/)|Keep informed about product promotions|
 |[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
 |[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
