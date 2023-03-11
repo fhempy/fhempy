@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.621 (2023-03-11)
+### Feature
+* **tuya:** Update to latest tinytuya release (1.11.0) ([`1740bf0`](https://github.com/dominikkarall/fhempy/commit/1740bf0ef90638ea63ca67709d89e4a89636c3d1))
+
 ## v0.1.620 (2023-03-10)
 ### Fix
 * **wienernetze_smartmeter:** Fix login via logwien ([`99e0872`](https://github.com/dominikkarall/fhempy/commit/99e087231ab6db0672ea7cfcbb92359317fc32e4))
