@@ -213,10 +213,11 @@ class tuya(generic.FhemModule):
                 if self.tt_productid == "IAYz2WK1th0cMLmL":
                     min = spec["min"] / 2
                     max = spec["max"] / 2
+                    slider = f"slider,{min},0.5,{max},1"
                 else:
                     min = spec["min"] / (10 ** spec["scale"])
                     max = spec["max"] / (10 ** spec["scale"])
-                slider = f"slider,{min},{step},{max}"
+                    slider = f"slider,{min},{step},{max}"
                 set_conf[fct["code"]] = {
                     "options": slider,
                     "args": ["new_val"],
@@ -526,7 +527,6 @@ class tuya(generic.FhemModule):
                     self.tt_localkey,
                     self.tt_version,
                     self,
-                    timeout=15,
                 )
                 self._connected_device = await asyncio.wait_for(connect_fct, timeout=15)
                 if self.update_dps_loop_task is None:
