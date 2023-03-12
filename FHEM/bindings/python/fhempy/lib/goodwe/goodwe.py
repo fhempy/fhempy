@@ -2,7 +2,7 @@ import asyncio
 
 import goodwe as gw
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class goodwe(generic.FhemModule):
@@ -36,8 +36,11 @@ class goodwe(generic.FhemModule):
             await asyncio.sleep(30)
 
         while True:
-            runtime_data = await self.inverter.read_runtime_data()
-            await self.handle_data(runtime_data)
+            try:
+                runtime_data = await self.inverter.read_runtime_data()
+                await self.handle_data(runtime_data)
+            except Exception:
+                await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
             await asyncio.sleep(self._attr_interval)
 
     async def handle_data(self, runtime_data):
@@ -45,11 +48,15 @@ class goodwe(generic.FhemModule):
         try:
             for sensor in self.inverter.sensors():
                 if sensor.id_ in runtime_data:
-                    await fhem.readingsBulkUpdateIfChanged(
+                    reading = utils.gen_reading_name(sensor.name)
+                    if sensor.unit:
+                        reading += "_" + sensor.unit
+                    await fhem.readingsBulkUpdate(
                         self.hash,
-                        sensor.name + "_" + sensor.unit,
+                        reading,
                         runtime_data[sensor.id_],
                     )
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
         except Exception:
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
