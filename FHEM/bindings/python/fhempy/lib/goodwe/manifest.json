@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "goodwe==0.2.27"
+  ]
+}
