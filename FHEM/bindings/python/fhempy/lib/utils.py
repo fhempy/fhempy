@@ -181,6 +181,12 @@ def flatten_json(y):
     return out
 
 
+def gen_reading_name(reading):
+    reading = reading.lower()
+    reading = reading.replace(" ", "_").replace("-", "_")
+    return remove_umlaut(reading)
+
+
 def gen_fhemdev_name(devname):
     return remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
 
