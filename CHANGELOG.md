@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.630 (2023-03-12)
+### Fix
+* **goodwe:** Fix reading names ([`0c466ca`](https://github.com/dominikkarall/fhempy/commit/0c466ca8d758bb6db595393cd5910bff35e91f16))
+
 ## v0.1.629 (2023-03-12)
 ### Feature
 * **goodwe:** New module for goodwe inverters ([`04a98f2`](https://github.com/dominikkarall/fhempy/commit/04a98f2d031387f477755d5bdc909f1212b3ba25))
