@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.629 (2023-03-12)
+### Feature
+* **goodwe:** New module for goodwe inverters ([`04a98f2`](https://github.com/dominikkarall/fhempy/commit/04a98f2d031387f477755d5bdc909f1212b3ba25))
+
 ## v0.1.628 (2023-03-11)
 ### Feature
 * **aktionsfinder:** New module aktionsfinder ([`4edcad3`](https://github.com/dominikkarall/fhempy/commit/4edcad3f30ec4e48027c6d97e0b2f6cbf777f6d9))
