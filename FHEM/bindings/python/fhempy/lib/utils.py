@@ -184,14 +184,14 @@ def flatten_json(y):
 def gen_reading_name(reading):
     reading = reading.lower()
     reading = reading.replace(" ", "_").replace("-", "_")
-    return remove_umlaut(reading)
+    return remove_special_charachters(reading)
 
 
 def gen_fhemdev_name(devname):
-    return remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
+    return remove_special_charachters(devname.replace(" ", "_").replace("-", "_"))
 
 
-def remove_umlaut(string):
+def remove_special_charachters(string):
     """
     Removes umlauts from strings and replaces them with the letter+e convention
     :param string: string to remove umlauts from
@@ -215,6 +215,9 @@ def remove_umlaut(string):
     string = string.replace(ss_enc, b"ss")
 
     string = string.decode("utf-8")
+
+    string = string.replace("(", "")
+    string = string.replace(")", "")
     return string
 
 
