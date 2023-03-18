@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.631 (2023-03-18)
+### Fix
+* **fhempy:** Remove () in dev and reading names ([`19aadef`](https://github.com/dominikkarall/fhempy/commit/19aadefc5841063a929a34de83ee79a213ef61e7))
+
 ## v0.1.630 (2023-03-12)
 ### Fix
 * **goodwe:** Fix reading names ([`0c466ca`](https://github.com/dominikkarall/fhempy/commit/0c466ca8d758bb6db595393cd5910bff35e91f16))
