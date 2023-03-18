@@ -1,4 +1,6 @@
 import asyncio
+import re
+from datetime import datetime
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -13,7 +15,7 @@ class volvo_software_update(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "interval": {
                 "default": 1800,
@@ -69,7 +71,7 @@ class volvo_software_update(generic.FhemModule):
     async def handle_response(self, response):
         # bs4
         soup = BeautifulSoup(response, "html.parser")
-        entries = soup.findAll("div", {"class": "segment"})
+        entries = soup.findAll("section")
         for entry in entries:
             if entry.find("h2"):
                 await fhem.readingsBeginUpdate(self.hash)
@@ -77,23 +79,26 @@ class volvo_software_update(generic.FhemModule):
                     self.hash, "latest_release_notes", f"<html>{entry}</html>"
                 )
                 release_text = entry.find("h2").text
+                release_numbers = re.findall("\d+\.\d+", release_text)
 
-                if release_text.find(" V") > 0:
-                    release_number = release_text[release_text.find(" V") + 2 :]
+                if len(release_numbers) > 0:
+                    release_number = release_numbers[0]
                     state_text = "Version "
                 else:
                     release_number = release_text
                     state_text = ""
 
-                await fhem.readingsBulkUpdateIfChanged(
+                updated = await fhem.readingsBulkUpdateIfChanged(
                     self.hash, "latest_release", release_number
                 )
                 await fhem.readingsBulkUpdateIfChanged(
                     self.hash, "state", f"{state_text}{release_number}"
                 )
-                latest_update = soup.findAll("em")[-1].text
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "latest_update", latest_update
-                )
+
+                if updated:
+                    latest_update = datetime.now()
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, "latest_update", latest_update
+                    )
                 await fhem.readingsEndUpdate(self.hash, 1)
                 break
