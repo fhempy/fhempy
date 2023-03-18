@@ -25,10 +25,10 @@ class aktionsfinder(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
-        if len(args) != 4:
+        if len(args) < 4:
             return "Usage: define water fhempy aktionsfinder voeslauer"
 
-        self.search_item = args[3]
+        self.search_item = " ".join(args[3:])
 
         self.create_async_task(self.update_loop())
 
