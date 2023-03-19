@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.632 (2023-03-19)
+### Feature
+* **aktionsfinder:** Support multiple arguments as search items ([`6e20578`](https://github.com/dominikkarall/fhempy/commit/6e20578d6222af26e3bb1c61aa4ae84928f02d7c))
+
+### Fix
+* **wienernetze_smartmeter:** Add exception handling ([#136](https://github.com/dominikkarall/fhempy/issues/136)) ([`af66eb2`](https://github.com/dominikkarall/fhempy/commit/af66eb2fc5e5fcec40a7dab3224c64724ebbfda4))
+* **volvo_software_update:** Support new volvo urls, please update your url! ([`7b13a5e`](https://github.com/dominikkarall/fhempy/commit/7b13a5e966598e8b6b8a05e368791e424da76881))
+
 ## v0.1.631 (2023-03-18)
 ### Fix
 * **fhempy:** Remove () in dev and reading names ([`19aadef`](https://github.com/dominikkarall/fhempy/commit/19aadefc5841063a929a34de83ee79a213ef61e7))
