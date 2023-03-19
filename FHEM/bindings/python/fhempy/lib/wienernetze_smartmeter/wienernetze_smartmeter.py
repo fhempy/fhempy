@@ -28,15 +28,21 @@ class wienernetze_smartmeter(FhemModule):
         data = await client.base_information()
         await self.update_readings(data)
         while True:
-            data = await client.consumptions()
-            await self.update_readings(data)
-            data = await client.meter_readings()
-            await self.update_readings(data)
+            try:
+                data = await client.consumptions()
+                await self.update_readings(data)
+                data = await client.meter_readings()
+                await self.update_readings(data)
+            except Exception:
+                self.logger.exception("Failed to update values")
             await asyncio.sleep(3600)
 
     async def update_readings(self, data):
         flat_data = utils.flatten_json(data)
         await fhem.readingsBeginUpdate(self.hash)
-        for name in flat_data:
-            await fhem.readingsBulkUpdateIfChanged(self.hash, name, flat_data[name])
+        try:
+            for name in flat_data:
+                await fhem.readingsBulkUpdateIfChanged(self.hash, name, flat_data[name])
+        except Exception:
+            self.logger.exception("Failed readings update")
         await fhem.readingsEndUpdate(self.hash, 1)
