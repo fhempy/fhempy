@@ -18,7 +18,7 @@ class fhem_forum(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "interval": {
                 "default": 15,
@@ -100,10 +100,10 @@ class fhem_forum(generic.FhemModule):
 
     def get_soup_entries(self, response):
         soup = BeautifulSoup(response, "html.parser")
-        tbody = soup.find("tbody")
-        if tbody is None:
+        topics = soup.find("div", {"id": "topic_container"})
+        if topics is None:
             return []
-        entries = tbody.findAll("tr")
+        entries = topics.findAll("div", {"class": "windowbg"})
         return entries
 
     async def handle_response(self, response, url):
@@ -123,25 +123,29 @@ class fhem_forum(generic.FhemModule):
 
             i = 1
             for entry in entries:
-                subject = entry.find("td", {"class": "subject windowbg2"})
+                subject = entry.find("div", {"class": "recent_title"})
                 if subject is None:
                     continue
 
                 if not self.contains_keyword(subject.find("span").text, keywords):
                     continue
 
-                link_to_new = subject.findAll("a")[1]
-                link_to_new.next_element.replace_with(subject.find("span").text)
-                link_to_new.attrs["target"] = "_blank"
+                link_to_new = subject.findAll("a")[0]["href"]
+                title_to_new = subject.find("span").find("a").text
 
-                last_post = " ".join(
-                    entry.find("td", {"class": "lastpost windowbg2"}).text.split()
-                )
+                last_post = entry.find("div", {"class": "lastpost"}).findAll("a")
+                last_post_date = last_post[0]
+                last_post_name = last_post[1]
+                last_post_date["target"] = "_blank"
+                last_post_name["target"] = "_blank"
+                last_post_str = f"{last_post_date} von {last_post_name}"
 
                 ret = await fhem.readingsBulkUpdateIfChanged(
                     self.hash,
                     f"topic_{reading}_{i:02d}",
-                    f"<html>{link_to_new}<br>{last_post}</html>",
+                    f'<html><a href="{link_to_new}" target="_blank">'
+                    + f"{title_to_new}</a>"
+                    + f"<br>{last_post_str}</html>",
                 )
 
                 if i == 1 and (ret is not None or self.first_run is True):
@@ -149,7 +153,9 @@ class fhem_forum(generic.FhemModule):
                     await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
                         "state",
-                        f"<html>{link_to_new}<br>{last_post}</html>",
+                        f'<html><a href="{link_to_new}" target="_blank">'
+                        + f"{title_to_new}</a>"
+                        + f"<br>{last_post_str}</html>",
                     )
 
                 stateset = True
