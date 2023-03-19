@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.633 (2023-03-19)
+### Fix
+* **fhem_forum:** Support new forum software ([`2cb1134`](https://github.com/dominikkarall/fhempy/commit/2cb1134df4fb9d3796ead7344ddd64a206ee9637))
+
 ## v0.1.632 (2023-03-19)
 ### Feature
 * **aktionsfinder:** Support multiple arguments as search items ([`6e20578`](https://github.com/dominikkarall/fhempy/commit/6e20578d6222af26e3bb1c61aa4ae84928f02d7c))
