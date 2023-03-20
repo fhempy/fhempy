@@ -440,7 +440,7 @@ BindingsIo_handleOtherResponses($) {
   BindingsIo_checkResponse($hash, undef, 0);
 
   # check if there are still commands on the queue
-  if (@{$hash->{messages}{0}} > 0
+  if (@{$hash->{messages}{0}} > 0) {
     InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
   }
 }
