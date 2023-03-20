@@ -438,6 +438,11 @@ BindingsIo_handleOtherResponses($) {
   my ($hash) = @_;
   
   BindingsIo_checkResponse($hash, undef, 0);
+
+  # check if there are still commands on the queue
+  if (@{$hash->{messages}{0}} > 0
+    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
+  }
 }
 
 sub
@@ -534,8 +539,13 @@ sub BindingsIo_checkResponseByAllNames($) {
   my ($hash) = @_;
 
   Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
+  # run maximum 300ms
+  my $start_time = time * 1000;
   while (my $msg = shift @{$hash->{messages}{0}}) {
     BindingsIo_processCommand($hash, $msg);
+    if ((time * 1000 - $start_time) > 300) {
+      return;
+    }
   }  
   Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
 }
