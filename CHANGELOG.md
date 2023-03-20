@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.635 (2023-03-20)
+### Fix
+* **fhempy:** Fix perl syntax ([`09b4377`](https://github.com/dominikkarall/fhempy/commit/09b4377ebfacabf11f9747c1197b95835868c452))
+
 ## v0.1.634 (2023-03-20)
 ### Fix
 * **fhempy:** Run received commands for max 300ms within fhem ([`18a26a2`](https://github.com/dominikkarall/fhempy/commit/18a26a2832d6039fe1d5719008acdb74bd62ecbb))
