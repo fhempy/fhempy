@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.634 (2023-03-20)
+### Fix
+* **fhempy:** Run received commands for max 300ms within fhem ([`18a26a2`](https://github.com/dominikkarall/fhempy/commit/18a26a2832d6039fe1d5719008acdb74bd62ecbb))
+
 ## v0.1.633 (2023-03-19)
 ### Fix
 * **fhem_forum:** Support new forum software ([`2cb1134`](https://github.com/dominikkarall/fhempy/commit/2cb1134df4fb9d3796ead7344ddd64a206ee9637))
