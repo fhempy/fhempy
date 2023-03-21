@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.636 (2023-03-21)
+### Fix
+* **volvo_software_update:** Fix update headers ([`d024d99`](https://github.com/dominikkarall/fhempy/commit/d024d994868fa5d8699746ee238079ee2e826415))
+
 ## v0.1.635 (2023-03-20)
 ### Fix
 * **fhempy:** Fix perl syntax ([`09b4377`](https://github.com/dominikkarall/fhempy/commit/09b4377ebfacabf11f9747c1197b95835868c452))
