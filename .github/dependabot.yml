@@ -10,6 +10,6 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/FHEM/bindings/python/fhempy/lib/tuya/" # Location of package manifests
+    directory: "/FHEM/bindings/python/fhempy/lib/blue_connect/" # Location of package manifests
     schedule:
       interval: "weekly"
