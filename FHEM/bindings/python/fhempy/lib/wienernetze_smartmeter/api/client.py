@@ -221,4 +221,4 @@ class AsyncSmartmeter:
         except (aiohttp.ClientError, socket.gaierror) as exception:
             logger.error(f"Error fetching information from {url} - {exception}")
         except Exception as exception:
-            logger.error(f"Something really wrong happened! - {exception}")
+            logger.exception(f"Something really wrong happened! - {exception}")
