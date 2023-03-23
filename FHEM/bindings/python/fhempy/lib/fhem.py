@@ -309,9 +309,14 @@ async def send_latest_release():
     while True:
         try:
             github_data = await get_github_data()
+            try:
+                latest_version = github_data["name"][1:]
+            except Exception:
+                latest_version = "unknown"
+
             msg = {
                 "msgtype": "version",
-                "version_available": github_data["name"][1:],
+                "version_available": latest_version,
                 "version_release_notes": (
                     '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
                     "Release Notes</a></html>"
