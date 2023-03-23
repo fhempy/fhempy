@@ -11,6 +11,7 @@ class fhem_forum(generic.FhemModule):
 
     URL_UNREADREPLIES = "https://forum.fhem.de/index.php?action=unreadreplies"
     URL_UNREAD = "https://forum.fhem.de/index.php?action=unread"
+    URL_PM = "https://forum.fhem.de/index.php?action=pm"
 
     def __init__(self, logger):
         super().__init__(logger)
@@ -57,7 +58,8 @@ class fhem_forum(generic.FhemModule):
     async def update_once(self):
         stateset_ur = await self.get_fhem_data(fhem_forum.URL_UNREADREPLIES)
         stateset_u = await self.get_fhem_data(fhem_forum.URL_UNREAD)
-        if stateset_ur is False and stateset_u is False:
+        stateset_pm = await self.get_fhem_data(fhem_forum.URL_PM)
+        if stateset_ur is False and stateset_u is False and stateset_pm is False:
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "-", 1)
 
     async def update_loop(self):
@@ -106,69 +108,122 @@ class fhem_forum(generic.FhemModule):
         entries = topics.findAll("div", {"class": "windowbg"})
         return entries
 
+    def get_soup_private_messages(self, response):
+        soup = BeautifulSoup(response, "html.parser")
+        topics = soup.select(".windowbg.unread_pm")
+        if topics is None:
+            return []
+        entries = soup.select(".windowbg.unread_pm")
+        return entries
+
+    async def handle_private_messages(self, response):
+        stateset = False
+        entries = await utils.run_blocking(
+            functools.partial(self.get_soup_private_messages, response)
+        )
+        if len(entries) == 0:
+            ret = await fhem.readingsBulkUpdateIfChanged(
+                self.hash, f"private_message", "-"
+            )
+            return stateset
+
+        try:
+            for entry in entries:
+                title = entry.select(".pm_subject")[0].next.next.text
+                user_from = entry.select(".pm_from_to")[0].text.strip()
+                date_sent = entry.select(".pm_time")[0].text
+                link_to_msg = entry.select(".pm_subject")[0].next.next["href"]
+                link_to_msg = "https://forum.fhem.de/index.php?action=pm" + link_to_msg
+
+                ret = await fhem.readingsBulkUpdateIfChanged(
+                    self.hash,
+                    f"private_message",
+                    f'<html><a href="{link_to_msg}" target="_blank">'
+                    + f"{title}</a>"
+                    + f"<br>{date_sent} von {user_from}</html>",
+                )
+
+                if ret:
+                    stateset = True
+                    ret = await fhem.readingsBulkUpdateIfChanged(
+                        self.hash,
+                        f"state",
+                        f'<html><a href="{link_to_msg}" target="_blank">'
+                        + f"{title}</a>"
+                        + f"<br>{date_sent} von {user_from}</html>",
+                    )
+                break
+
+        except Exception:
+            self.logger.exception("Failed to handle private messages")
+        return stateset
+
     async def handle_response(self, response, url):
         # bs4
         stateset = False
         await fhem.readingsBeginUpdate(self.hash)
         try:
-            reading = "unread_replies"
+            reading = "topic_unread_replies"
             keywords = self._attr_keywords_unread_replies
             if url == fhem_forum.URL_UNREAD:
-                reading = "unread"
+                reading = "topic_unread"
                 keywords = self._attr_keywords_unread
+            elif url == fhem_forum.URL_PM:
+                await self.handle_private_messages(response)
 
-            entries = await utils.run_blocking(
-                functools.partial(self.get_soup_entries, response)
-            )
-
-            i = 1
-            for entry in entries:
-                subject = entry.find("div", {"class": "recent_title"})
-                if subject is None:
-                    continue
-
-                if not self.contains_keyword(subject.find("span").text, keywords):
-                    continue
-
-                link_to_new = subject.findAll("a")[0]["href"]
-                title_to_new = subject.find("span").find("a").text
-
-                last_post = entry.find("div", {"class": "lastpost"}).findAll("a")
-                last_post_date = last_post[0]
-                last_post_name = last_post[1]
-                last_post_date["target"] = "_blank"
-                last_post_name["target"] = "_blank"
-                last_post_str = f"{last_post_date} von {last_post_name}"
-
-                ret = await fhem.readingsBulkUpdateIfChanged(
-                    self.hash,
-                    f"topic_{reading}_{i:02d}",
-                    f'<html><a href="{link_to_new}" target="_blank">'
-                    + f"{title_to_new}</a>"
-                    + f"<br>{last_post_str}</html>",
+            if url != fhem_forum.URL_PM:
+                entries = await utils.run_blocking(
+                    functools.partial(self.get_soup_entries, response)
                 )
 
-                if i == 1 and (ret is not None or self.first_run is True):
-                    self.first_run = False
-                    await fhem.readingsBulkUpdateIfChanged(
+                i = 1
+                for entry in entries:
+                    subject = entry.find("div", {"class": "recent_title"})
+                    if subject is None:
+                        continue
+
+                    if not self.contains_keyword(subject.find("span").text, keywords):
+                        continue
+
+                    link_to_new = subject.findAll("a")[0]["href"]
+                    title_to_new = subject.find("span").find("a").text
+
+                    last_post = entry.find("div", {"class": "lastpost"}).findAll("a")
+                    last_post_date = last_post[0]
+                    last_post_name = last_post[1]
+                    last_post_date["target"] = "_blank"
+                    last_post_name["target"] = "_blank"
+                    last_post_str = f"{last_post_date} von {last_post_name}"
+
+                    ret = await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
-                        "state",
+                        f"{reading}_{i:02d}",
                         f'<html><a href="{link_to_new}" target="_blank">'
                         + f"{title_to_new}</a>"
                         + f"<br>{last_post_str}</html>",
                     )
 
-                stateset = True
+                    if i == 1 and (ret is not None or self.first_run is True):
+                        self.first_run = False
+                        await fhem.readingsBulkUpdateIfChanged(
+                            self.hash,
+                            "state",
+                            f'<html><a href="{link_to_new}" target="_blank">'
+                            + f"{title_to_new}</a>"
+                            + f"<br>{last_post_str}</html>",
+                        )
 
-                i += 1
-                if i > self._attr_max_topics:
-                    break
+                    stateset = True
 
-            while i <= self._attr_max_topics:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, f"topic_{reading}_{i:02d}", "-"
-                )
-                i += 1
+                    i += 1
+                    if i > self._attr_max_topics:
+                        break
+
+                while i <= self._attr_max_topics:
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, f"{reading}_{i:02d}", "-"
+                    )
+                    i += 1
 
         except Exception as ex:
             self.logger.exception(f"Failed to handle data from {url}")
