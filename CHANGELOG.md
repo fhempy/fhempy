@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.639 (2023-03-23)
+### Fix
+* **wienernetze_smartmeter:** Add more log output ([#136](https://github.com/dominikkarall/fhempy/issues/136)) ([`17f77a5`](https://github.com/dominikkarall/fhempy/commit/17f77a53c3415eddfa0aaf93ebe1352f07167dfe))
+
 ## v0.1.638 (2023-03-23)
 ### Feature
 * **fhem_forum:** Support private messages ([`78eeb03`](https://github.com/dominikkarall/fhempy/commit/78eeb03b12ff3e47724355887f069da40349f7ad))
