@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.638 (2023-03-23)
+### Feature
+* **fhem_forum:** Support private messages ([`78eeb03`](https://github.com/dominikkarall/fhempy/commit/78eeb03b12ff3e47724355887f069da40349f7ad))
+* **esphome:** Update lib to 2023.3.1 ([`f3e9ecb`](https://github.com/dominikkarall/fhempy/commit/f3e9ecb7b9a8cc070c31a6d641f01b8ced6c18cd))
+
+### Fix
+* **fhempy:** Handle github api rate limits on latest release check ([`564f7a1`](https://github.com/dominikkarall/fhempy/commit/564f7a1720d6fb36537e74bbf2953e093411fc4d))
+
 ## v0.1.637 (2023-03-21)
 
 
