@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.640 (2023-03-25)
+### Fix
+* **wienernetze_smartmeter:** Clear cookies on login ([#136](https://github.com/dominikkarall/fhempy/issues/136)) ([`5567821`](https://github.com/dominikkarall/fhempy/commit/5567821ea4615c947f29dd2300decb1028ba9a34))
+
 ## v0.1.639 (2023-03-23)
 ### Fix
 * **wienernetze_smartmeter:** Add more log output ([#136](https://github.com/dominikkarall/fhempy/issues/136)) ([`17f77a5`](https://github.com/dominikkarall/fhempy/commit/17f77a53c3415eddfa0aaf93ebe1352f07167dfe))
