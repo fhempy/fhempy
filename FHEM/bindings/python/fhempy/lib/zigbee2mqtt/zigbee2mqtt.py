@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import json
 import os
 import shutil
 import signal
@@ -21,7 +22,7 @@ class zigbee2mqtt(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         self._set_list = {"start": {}, "stop": {}, "restart": {}, "update": {}}
         await self.set_set_config(self._set_list)
         attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
@@ -209,6 +210,14 @@ class zigbee2mqtt(FhemModule):
     async def start_process(self):
         current_directory = os.getcwd()
         z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
+
+        # Load the package.json file
+        with open(z2m_directory + ".fhempy/zigbee2mqtt/package.json", "r") as f:
+            package_data = json.load(f)
+
+        # Extract the version number
+        version = package_data["version"]
+        await fhem.readingsSingleUpdate(self.hash, "z2m_version", version, 1)
 
         try:
             self.proc = subprocess.Popen(["node", "./index.js"], cwd=z2m_directory)
