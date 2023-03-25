@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.641 (2023-03-25)
+### Feature
+* **zigbee2mqtt:** Add z2m_version reading ([`ed09190`](https://github.com/dominikkarall/fhempy/commit/ed091906442f7de603a04632615d704598c83c5f))
+
 ## v0.1.640 (2023-03-25)
 ### Fix
 * **wienernetze_smartmeter:** Clear cookies on login ([#136](https://github.com/dominikkarall/fhempy/issues/136)) ([`5567821`](https://github.com/dominikkarall/fhempy/commit/5567821ea4615c947f29dd2300decb1028ba9a34))
