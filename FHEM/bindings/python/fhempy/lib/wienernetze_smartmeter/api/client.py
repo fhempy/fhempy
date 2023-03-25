@@ -39,6 +39,7 @@ class AsyncSmartmeter:
 
     async def _get_login_action(self):
         login_url = const.AUTH_URL + "auth?" + parse.urlencode(const.LOGIN_ARGS)
+        self._session.cookie_jar.clear()
         async with self._session.get(login_url) as response:
             tree = html.fromstring(await response.text())
             return tree.xpath("(//form/@action)")[0]
