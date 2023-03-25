@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.643 (2023-03-25)
+### Fix
+* **zigbee2mqtt:** Fix z2m version reading again ([`e64b707`](https://github.com/dominikkarall/fhempy/commit/e64b7077b39335dab640cfe30d1972008d1705f7))
+
 ## v0.1.642 (2023-03-25)
 ### Fix
 * **zigbee2mqtt:** Fix startup ([`4444db7`](https://github.com/dominikkarall/fhempy/commit/4444db7d4c4d1206b9e3df42d44b56f0d1c0838b))
