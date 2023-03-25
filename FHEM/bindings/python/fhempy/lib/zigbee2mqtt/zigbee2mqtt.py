@@ -212,7 +212,7 @@ class zigbee2mqtt(FhemModule):
         z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
 
         # Load the package.json file
-        with open(z2m_directory + "/.fhempy/zigbee2mqtt/package.json", "r") as f:
+        with open(z2m_directory + "/package.json", "r") as f:
             package_data = json.load(f)
 
         # Extract the version number
