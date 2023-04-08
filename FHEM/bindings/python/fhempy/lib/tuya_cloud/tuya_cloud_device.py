@@ -319,8 +319,10 @@ class tuya_cloud_device:
                             self._convert_code2fhem(status["code"]),
                             self._convert_value2fhem(status["code"], status["value"]),
                         )
-            except Exception as ex:
-                self.logger.exception(ex)
+            except Exception:
+                self.logger.exception(
+                    f"Exception in handling status values from tuya: {status_arr}"
+                )
             await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_dict(self, status_dic):
