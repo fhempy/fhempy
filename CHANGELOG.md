@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.644 (2023-04-08)
+### Feature
+* **esphome:** Update esphome to 2023.3.2 ([`a4f81b2`](https://github.com/dominikkarall/fhempy/commit/a4f81b2f6b751d8191541878026a6ce3d6b6ae20))
+
+### Fix
+* **tuya_cloud:** Add values in exception log ([`0d16830`](https://github.com/dominikkarall/fhempy/commit/0d16830b90a6c126f97cd0d2e21ce6563ffce67a))
+* **skodaconnect:** Minor improvements in BaseLib ([#140](https://github.com/dominikkarall/fhempy/issues/140)) ([`9033dbd`](https://github.com/dominikkarall/fhempy/commit/9033dbdb4ad9e2e7fd2a2f9483b2eff5377e2c3b))
+
 ## v0.1.643 (2023-03-25)
 ### Fix
 * **zigbee2mqtt:** Fix z2m version reading again ([`e64b707`](https://github.com/dominikkarall/fhempy/commit/e64b7077b39335dab640cfe30d1972008d1705f7))
