@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.645 (2023-04-09)
+### Fix
+* **kia_hyundai:** Fix login with lib update to 3.1.8 ([`8e630af`](https://github.com/dominikkarall/fhempy/commit/8e630afceddf48d4620ccfe6fdb6b41ccb3901f0))
+
 ## v0.1.644 (2023-04-08)
 ### Feature
 * **esphome:** Update esphome to 2023.3.2 ([`a4f81b2`](https://github.com/dominikkarall/fhempy/commit/a4f81b2f6b751d8191541878026a6ce3d6b6ae20))
