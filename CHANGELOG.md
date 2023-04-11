@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.646 (2023-04-11)
+### Feature
+* **mqtt_ha_discovery:** MQTT HomeAssistant discovery support ([`34e04cf`](https://github.com/dominikkarall/fhempy/commit/34e04cf6c80d59a47360b0283f0ebc2058f1b0db))
+
 ## v0.1.645 (2023-04-09)
 ### Fix
 * **kia_hyundai:** Fix login with lib update to 3.1.8 ([`8e630af`](https://github.com/dominikkarall/fhempy/commit/8e630afceddf48d4620ccfe6fdb6b41ccb3901f0))
