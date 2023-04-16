@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.647 (2023-04-16)
+### Fix
+* **tuya:** Update aiotinytuya 1.12.3 ([`46f8fa9`](https://github.com/dominikkarall/fhempy/commit/46f8fa960a518d493f82cb02651f1702c6b71396))
+
 ## v0.1.646 (2023-04-11)
 ### Feature
 * **mqtt_ha_discovery:** MQTT HomeAssistant discovery support ([`34e04cf`](https://github.com/dominikkarall/fhempy/commit/34e04cf6c80d59a47360b0283f0ebc2058f1b0db))
