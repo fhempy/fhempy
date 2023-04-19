@@ -218,6 +218,9 @@ def remove_special_charachters(string):
 
     string = string.replace("(", "")
     string = string.replace(")", "")
+    string = string.replace("'", "")
+    string = string.replace("`", "")
+    string = string.replace('"', "")
     return string
 
 
