@@ -72,13 +72,21 @@ class geizhals(generic.FhemModule):
 
     def handle_product_page(self, html):
         soup = BeautifulSoup(html, "html.parser")
-        self.product_name = soup.find("h1", {"class": "variant__header__headline"}).text
-        self.store = soup.find("span", {"class": "notrans"}).text
-        self.store_availability = (
-            soup.find("div", {"id": "offer__0"})
-            .find("div", {"class": "offer__delivery-time"})
-            .text
-        )
+        try:
+            self.img = soup.find("img", {"class": "swiper-slide__image"})
+            self.img = "<html>" + str(self.img) + "</html>"
+            self.product_name = soup.find(
+                "h1", {"class": "variant__header__headline"}
+            ).text
+            self.best_offer = soup.find("div", {"id": "offer__0"})
+            self.store = self.best_offer.find(
+                "div", {"class": "merchant__logo-caption"}
+            ).text.strip()
+            self.store_availability = self.best_offer.find(
+                "div", {"class": "offer__delivery-time"}
+            ).text
+        except Exception:
+            self.logger.exception("Failed to parse product page")
 
     async def update_loop(self):
         # get product page infos
@@ -118,6 +126,7 @@ class geizhals(generic.FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(
                     self.hash, "store_availability", self.store_availability
                 )
+                await fhem.readingsBulkUpdateIfChanged(self.hash, "image", self.img)
 
             except Exception:
                 self.logger.exception("Failed to update")
