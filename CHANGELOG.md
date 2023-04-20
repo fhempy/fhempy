@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.648 (2023-04-20)
+### Feature
+* **geizhals:** Add image and get store from offer 0 ([`0397ef4`](https://github.com/dominikkarall/fhempy/commit/0397ef4b35a8c2b3c53df0074cd986e73e53fcdd))
+* **geizhals:** Add image and get store from offer 0 ([`6b04f0c`](https://github.com/dominikkarall/fhempy/commit/6b04f0c8a364b4fad63e3131f80f0b72bfbce1d4))
+
+### Fix
+* **fhempy:** Fix special characters in readings and device names ([`e81d6d0`](https://github.com/dominikkarall/fhempy/commit/e81d6d009b37f7a9dfd18eadbe70fc2b88f707f3))
+* **fhempy:** Fix special characters in readings and device names ([`6ed1f18`](https://github.com/dominikkarall/fhempy/commit/6ed1f181579e6565df0d27afbc69adad53d460aa))
+
 ## v0.1.647 (2023-04-16)
 ### Fix
 * **tuya:** Update aiotinytuya 1.12.3 ([`46f8fa9`](https://github.com/dominikkarall/fhempy/commit/46f8fa960a518d493f82cb02651f1702c6b71396))
