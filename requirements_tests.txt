@@ -8,7 +8,7 @@ async-upnp-client
 websockets==11.0.3
 importlib_metadata==6.1.0
 pycryptodomex==3.18.0
-zeroconf==0.36.12
+zeroconf==0.63.0
 aiohttp[speedups]==3.8.4
 markdown2==2.4.8
 requests==2.31.0
