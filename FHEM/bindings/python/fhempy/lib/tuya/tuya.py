@@ -33,7 +33,7 @@ class tuya(generic.FhemModule):
                 "Usage: define wifi_plug fhempy tuya"
                 " setup <API_KEY> <API_SECRET> <DEVICE_ID> [<REGION>=eu]<br>"
                 "OR if you want to define only one device with existing local key<br>"
-                " <PRODUCTID> <DEVICE_ID> <IP> <LOCAL_KEY> "
+                " <PRODUCTID> <DEVICE_ID> <IP> "
                 "[<VERSION>=3.3] [<API_KEY>] [<API_SECRET>]"
             )
 
@@ -61,14 +61,25 @@ class tuya(generic.FhemModule):
         self.tt_region = "eu"
         self.tt_did = args[4]
         self.tt_ip = args[5]
-        self.tt_localkey = args[6]
+        self.tt_version = 3.3
+        self.tt_localkey = ""
+        old_def_with_localkey = False
+        if len(args) >= 7:
+            if len(args[6]) < 16:
+                self.tt_version = float(args[6])
+            else:
+                old_def_with_localkey = True
+                self.tt_localkey = args[6]
         if len(args) >= 8:
-            self.tt_version = float(args[7])
-        else:
-            self.tt_version = 3.3
-        if len(args) == 10:
-            self.tt_key = args[8]
-            self.tt_secret = args[9]
+            if old_def_with_localkey:
+                self.tt_version = float(args[7])
+                if len(args) == 10:
+                    self.tt_key = args[8]
+                    self.tt_secret = args[9]
+            else:
+                if len(args) == 9:
+                    self.tt_key = args[7]
+                    self.tt_secret = args[8]
 
         # set internal
         hash["DEVICEID"] = self.tt_did
@@ -88,19 +99,36 @@ class tuya(generic.FhemModule):
         self.attr_config = {
             "tuya_spec_functions": {"default": ""},
             "tuya_spec_status": {"default": ""},
+            "localkey": {
+                "default": self.tt_localkey,
+                "help": "Use the localkey from the tuya setup device readings",
+            },
         }
         await self.set_attr_config(self.attr_config)
         # this is needed to set default values
         await utils.handle_define_attr(self.attr_config, self, hash)
+        await self.set_attr_localkey(self.hash)
 
-        await self.setup_cloud()
+    async def set_attr_localkey(self, hash):
+        if self._attr_localkey == "":
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", "attr localkey required", 1
+            )
+            return
+        else:
+            if self._connected_device:
+                await self._connected_device.close()
+                self._connected_device = None
 
-        # create device
-        self.create_async_task(self.create_device())
+            self.tt_localkey = self._attr_localkey
+            await self.setup_cloud()
+
+            # create device
+            self.create_async_task(self.create_device())
 
     async def setup_cloud(self):
         # create cloud device for cloud calls
-        if self.tt_key and self.tt_secret:
+        if self.tt_key and self.tt_secret and self.tuya_cloud is None:
             self.tuya_cloud = await utils.run_blocking(
                 functools.partial(
                     tt.Cloud,
@@ -267,12 +295,16 @@ class tuya(generic.FhemModule):
                     (
                         f"tuya_local_{dev['device_id']} fhempy tuya "
                         f"{dev['productid']} {dev['device_id']} {dev['ip']} "
-                        f"{dev['local_key']} {dev['version']} "
+                        f"{dev['version']} "
                         f"{self.tt_key} {self.tt_secret}"
                     ),
                 )
                 await fhem.CommandAttr(
                     self.hash, f"tuya_local_{dev['device_id']} alias {dev['name']}"
+                )
+                await fhem.CommandAttr(
+                    self.hash,
+                    f"tuya_local_{dev['device_id']} localkey {dev['local_key']}",
                 )
 
     async def set_boolean(self, hash, params):

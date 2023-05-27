@@ -35,12 +35,12 @@ The scan might take some minutes to finish, please wait and take a coffee.
 ### Individual Device
 If a device couldn't be setup properly or you know your local keys and don't need setup, you can define it on your own
 ```
-define wifi_plug fhempy tuya PRODUCT_ID DEVICE_ID IP LOCAL_KEY [VERSION] [API_KEY] [API_SECRET]
+define wifi_plug fhempy tuya PRODUCT_ID DEVICE_ID IP [VERSION] [API_KEY] [API_SECRET]
+attr wifi_plug localkey LOCALKEY_FROM_TUYA_SYSTEM_READINGS
 ```
  - PRODUCT_ID: Set to "api" if API_KEY and API_SECRET are provided, otherwise use the proper product id
  - DEVICE_ID: Take that one from the tuya_system device you created
  - IP: Check for the IP in your tuya_system device or on your router
- - LOCAL_KEY: Take that one from the tuya_system device you created
  - VERSION: Take that one from the tuya_system device you created (default 3.3)
  - API_KEY: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud
  - API_SECRET: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud
