@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.651 (2023-05-27)
+### Fix
+* **skodaconnect:** Update baselib and use cryptography 3.3.2 ([`43be1b2`](https://github.com/dominikkarall/fhempy/commit/43be1b2eff7b00cb378f460cedef315ce7e21ab1))
+* **seatconnect:** Use cryptography 3.3.2 ([`3e7f943`](https://github.com/dominikkarall/fhempy/commit/3e7f94300cec1bb78eec5bdf0078957c4b7c5d41))
+
 ## v0.1.650 (2023-05-27)
 
 
