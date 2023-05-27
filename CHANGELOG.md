@@ -2,6 +2,9 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.650 (2023-05-27)
+
+
 ## v0.1.649 (2023-05-27)
 ### Feature
 * **esphome:** Update esphome to 2023.5.4 ([`5e6a585`](https://github.com/dominikkarall/fhempy/commit/5e6a58516cb726c9e88b99e413b88481483ea462))
