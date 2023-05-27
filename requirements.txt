@@ -1,4 +1,4 @@
-websockets==10.4
+websockets==11.0.3
 importlib_metadata==6.1.0
 pycryptodomex==3.18.0
 zeroconf==0.36.12
