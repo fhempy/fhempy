@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.649 (2023-05-27)
+### Feature
+* **esphome:** Update esphome to 2023.5.4 ([`5e6a585`](https://github.com/dominikkarall/fhempy/commit/5e6a58516cb726c9e88b99e413b88481483ea462))
+* **ikos:** New module for ikos hotels ([`6b0f38c`](https://github.com/dominikkarall/fhempy/commit/6b0f38c87305c67b9c2c4a196db694084d38b492))
+
+### Fix
+* **tuya:** Support locakeys with special characters. localkey is used from attr instead of define ([#156](https://github.com/dominikkarall/fhempy/issues/156)) ([`a0dad2b`](https://github.com/dominikkarall/fhempy/commit/a0dad2b3d09e78f746fab56f69e4ded593c68415))
+
 ## v0.1.648 (2023-04-20)
 ### Feature
 * **geizhals:** Add image and get store from offer 0 ([`0397ef4`](https://github.com/dominikkarall/fhempy/commit/0397ef4b35a8c2b3c53df0074cd986e73e53fcdd))
