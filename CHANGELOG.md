@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.652 (2023-06-05)
+
+### Fix
+
+* **tuya:** Fix localkey attr on create ([`e8d620a`](https://github.com/dominikkarall/fhempy/commit/e8d620af06119ed421a7c42453eb35ee6ff458ae))
+
 ## v0.1.651 (2023-05-27)
 ### Fix
 * **skodaconnect:** Update baselib and use cryptography 3.3.2 ([`43be1b2`](https://github.com/dominikkarall/fhempy/commit/43be1b2eff7b00cb378f460cedef315ce7e21ab1))
