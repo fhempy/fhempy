@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.654 (2023-06-11)
+
+### Feature
+
+* **fhempy:** Update zeroconf ([`509cddd`](https://github.com/dominikkarall/fhempy/commit/509cdddd865d56a150d62dfd12d2101b94fd4c77))
+
 ## v0.1.653 (2023-06-11)
 
 ### Feature
