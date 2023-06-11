@@ -7,10 +7,10 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 class zeroconf:
 
-    instance = None
+    instance: "zeroconf" = None
 
     @staticmethod
-    def get_instance(logger):
+    def get_instance(logger) -> "zeroconf":
         if zeroconf.instance is None:
             zeroconf.instance = zeroconf(logger)
         return zeroconf.instance
@@ -19,7 +19,7 @@ class zeroconf:
         self.logger = logger
         self.loop = asyncio.get_event_loop()
         self.async_zeroconf = AsyncZeroconf()
-        self.zeroconf = Zeroconf()
+        self.zeroconf = self.async_zeroconf.zeroconf
 
     async def register_service(self, type, name, port, properties):
         hostname = socket.gethostname()
