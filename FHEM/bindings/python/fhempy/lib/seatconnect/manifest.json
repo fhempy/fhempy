@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "seatconnect==1.1.6",
-    "cryptography==3.3.2"
+    "cryptography==3.3.2",
+    "seatconnect==1.1.6"
   ]
 }
