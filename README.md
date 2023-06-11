@@ -37,6 +37,7 @@ This repository includes following working modules:
 |[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
 |helloworld|Hello World example for developers to start writing their own module|
+|[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control homekit devices|
 |[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for ikos resorts|
 |[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
