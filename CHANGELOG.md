@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.655 (2023-06-11)
+
+### Fix
+
+* **homekit:** Fix cryptography version ([`2d66139`](https://github.com/dominikkarall/fhempy/commit/2d661398dc99d035a91b5e2738b56df21cfa8c69))
+
 ## v0.1.654 (2023-06-11)
 
 ### Feature
