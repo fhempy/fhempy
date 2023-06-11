@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.653 (2023-06-11)
+
+### Feature
+
+* **homekit:** Initial version of homekit support (very basic!) ([`4171521`](https://github.com/dominikkarall/fhempy/commit/4171521e34b6b712e1330e7e41abda3cbbe9de99))
+
 ## v0.1.652 (2023-06-05)
 
 ### Fix
