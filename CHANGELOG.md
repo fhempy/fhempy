@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.656 (2023-06-11)
+
+### Fix
+
+* **fhempy:** Fix cryptography imports ([`3eddf85`](https://github.com/dominikkarall/fhempy/commit/3eddf853ef9571b0ebee49250ffd8e826f20ce7b))
+
 ## v0.1.655 (2023-06-11)
 
 ### Fix
