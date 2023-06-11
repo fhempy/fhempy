@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "skodaconnect==1.3.5",
-    "cryptography==3.3.2"
+    "cryptography==3.3.2",
+    "skodaconnect==1.3.5"
   ]
 }

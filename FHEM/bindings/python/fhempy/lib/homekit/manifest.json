@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "aiohomekit==2.6.3",
-    "cryptography==3.3.2"
+    "cryptography==3.3.2",
+    "aiohomekit==2.6.3"
   ]
 }
