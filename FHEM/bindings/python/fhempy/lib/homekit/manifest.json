@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "cryptography==3.3.2",
+    "pyOpenSSL==23.2.0",
     "aiohomekit==2.6.3"
   ]
 }
