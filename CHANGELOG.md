@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.658 (2023-06-17)
+
+### Fix
+
+* **tuya:** Fix localkey attr on create_device ([#162](https://github.com/dominikkarall/fhempy/issues/162)) ([`b45555d`](https://github.com/dominikkarall/fhempy/commit/b45555d6d74c44dd98b52868f38ee5bf75ec66b4))
+
 ## v0.1.657 (2023-06-17)
 
 ### Fix
