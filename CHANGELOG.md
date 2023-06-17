@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.657 (2023-06-17)
+
+### Fix
+
+* **fhempy:** Add pyOpenSSL for cryptography ([`1dc4a78`](https://github.com/dominikkarall/fhempy/commit/1dc4a78d76082b199502fc08548ccf140a1da69e))
+* **homekit:** Do set call async ([`9e0821e`](https://github.com/dominikkarall/fhempy/commit/9e0821ed4df01608abb5826a909de05ab98a0a7f))
+
 ## v0.1.656 (2023-06-11)
 
 ### Fix
