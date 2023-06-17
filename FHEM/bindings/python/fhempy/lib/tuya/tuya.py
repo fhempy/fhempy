@@ -304,7 +304,7 @@ class tuya(generic.FhemModule):
                 )
                 await fhem.CommandAttr(
                     self.hash,
-                    f"tuya_local_{dev['device_id']} localkey {dev['key']}",
+                    f"tuya_local_{dev['device_id']} localkey {dev['local_key']}",
                 )
 
     async def set_boolean(self, hash, params):
