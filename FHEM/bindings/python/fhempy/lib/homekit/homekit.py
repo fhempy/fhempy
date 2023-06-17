@@ -213,8 +213,10 @@ class homekit(generic.FhemModule):
 
     async def set_int(self, hash, params):
         char = params["function_param"]
-        await self.pairing.put_characteristics(
-            [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
+        self.create_async_task(
+            self.pairing.put_characteristics(
+                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
+            )
         )
 
     async def char_to_set(self, char):
