@@ -1,5 +1,3 @@
 {
-  "requirements": [
-    "async-upnp-client==0.31.2"
-  ]
+  "requirements": []
 }
