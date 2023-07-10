@@ -718,7 +718,10 @@ class tuya(generic.FhemModule):
                             if reading == "cur_power" and status[dp] > 0:
                                 cur_power = self.convert(status[dp], st)
 
-                                if self.last_energy_ts is not None:
+                                if (
+                                    self.last_energy_ts is not None
+                                    and self.last_energy_value > 0
+                                ):
                                     # last value available
                                     cur_energy = (
                                         (time.time() - self.last_energy_ts)

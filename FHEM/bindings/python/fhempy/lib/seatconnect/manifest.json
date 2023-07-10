@@ -1,6 +1,6 @@
 {
   "requirements": [
     "pyOpenSSL==23.2.0",
-    "seatconnect==1.1.6"
+    "seatconnect==1.1.7"
   ]
 }
