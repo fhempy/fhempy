@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.659 (2023-07-10)
+
+### Fix
+
+* **kia_hyundai:** Update base lib to 3.3.12 ([`8f4b732`](https://github.com/dominikkarall/fhempy/commit/8f4b73289750ac647b570b45c40d6bc8ac2603fb))
+* **skodaconnect:** Update base lib to 1.3.6 ([`34460fc`](https://github.com/dominikkarall/fhempy/commit/34460fc55cf2e32d75f675ecf931ac39fcbdbec5))
+* **seatconnect:** Update base lib to 1.1.7 ([#168](https://github.com/dominikkarall/fhempy/issues/168)) ([`72acd0d`](https://github.com/dominikkarall/fhempy/commit/72acd0d5f316b9a577ec13b7ca0e3a751388661d))
+* **tuya:** Fix energy calculation ([`aa9a52b`](https://github.com/dominikkarall/fhempy/commit/aa9a52b818937e075e9cc0c32c65414c105dccfc))
+
 ## v0.1.658 (2023-06-17)
 
 ### Fix
