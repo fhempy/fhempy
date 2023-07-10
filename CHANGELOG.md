@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.660 (2023-07-10)
+
+### Fix
+
+* **fhempy:** Add async upnp client to requirements ([`bbb68f5`](https://github.com/dominikkarall/fhempy/commit/bbb68f5f8dcc33eed0e2f5f3af16a67cc6eea097))
+
 ## v0.1.659 (2023-07-10)
 
 ### Fix
