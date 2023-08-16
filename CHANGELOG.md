@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.661 (2023-08-16)
+
+### Feature
+
+* **skodaconnect:** Add some features ([#180](https://github.com/dominikkarall/fhempy/issues/180)) ([`4662110`](https://github.com/dominikkarall/fhempy/commit/46621102f7bd0b13bad19f99e33a24bb05b5562c))
+
 ## v0.1.660 (2023-07-10)
 
 ### Fix
