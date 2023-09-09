@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.665 (2023-09-09)
+
+### Fix
+
+* **object_detection:** Support python 3.10 ([`62e0183`](https://github.com/dominikkarall/fhempy/commit/62e0183694dbe68f57ee082ee8cf6fc5c9c6c306))
+
 ## v0.1.664 (2023-09-09)
 
 ### Fix
