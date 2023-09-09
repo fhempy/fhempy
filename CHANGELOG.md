@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.662 (2023-09-09)
+
+### Fix
+
+* **seatconnect:** Update seatconnect lib ([#190](https://github.com/dominikkarall/fhempy/issues/190)) ([`d2ae3ef`](https://github.com/dominikkarall/fhempy/commit/d2ae3ef34cc36119027ac1847e43715c28bb07e4))
+
 ## v0.1.661 (2023-08-16)
 
 ### Feature
