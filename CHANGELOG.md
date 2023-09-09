@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.663 (2023-09-09)
+
+### Fix
+
+* **homekit:** Update aiohomekit lib ([`fb5c4fc`](https://github.com/dominikkarall/fhempy/commit/fb5c4fccd88ea1cc48a7913bad46b454083aead0))
+* **skodaconnect:** Fix installation dependency ([`b78ec37`](https://github.com/dominikkarall/fhempy/commit/b78ec375a41244ad70f88bdf69857a08179fbaab))
+
 ## v0.1.662 (2023-09-09)
 
 ### Fix
