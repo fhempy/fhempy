@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.1.664 (2023-09-09)
+
+### Fix
+
+* **skodaconnect:** Fix possible installation issues ([`fb360d3`](https://github.com/dominikkarall/fhempy/commit/fb360d3d2be591d51b9cd79c9ee29acca9bb8ed0))
+
 ## v0.1.663 (2023-09-09)
 
 ### Fix
