@@ -1,6 +1,8 @@
 {
   "requirements": [
     "pyjwt",
+    "beautifulsoup4",
+    "lxml",
     "skodaconnect==1.3.6"
   ]
 }
