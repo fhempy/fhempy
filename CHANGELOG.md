@@ -2,6 +2,13 @@
 
 
 
+## v0.1.669 (2023-10-08)
+
+### Chore
+
+* chore: fix versioning ([`a99193e`](https://github.com/fhempy/fhempy/commit/a99193e35e8cda66edd174ebb9070962758e58c6))
+
+
 ## v0.1.668 (2023-10-08)
 
 ### Chore
