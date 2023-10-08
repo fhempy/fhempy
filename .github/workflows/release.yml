@@ -29,15 +29,14 @@ jobs:
           ref: "master"
           fetch-depth: 0
 
+      - run: pip install build
+
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@master
         with:
           force: "patch"
           push: "true"
-        env:
-          build_command: "python3 setup.py sdist bdist_wheel"
-          version_variable: "FHEM/bindings/python/fhempy/lib/version.py:__version__"
           
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
