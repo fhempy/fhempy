@@ -2,6 +2,17 @@
 
 
 
+## v0.1.670 (2023-10-08)
+
+### Ci
+
+* ci: move release.sh functionality to github actions ([`2661fa1`](https://github.com/fhempy/fhempy/commit/2661fa10f7afcbcaaca13110906cb6a19dcee371))
+
+### Fix
+
+* fix(googlecast): try to fix spotify playback (#196) ([`30eea09`](https://github.com/fhempy/fhempy/commit/30eea09b1a64a2b31db4aca164423c720d6b8672))
+
+
 ## v0.1.669 (2023-10-08)
 
 ### Chore
