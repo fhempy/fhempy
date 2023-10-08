@@ -29,24 +29,6 @@ jobs:
           ref: "master"
           fetch-depth: 0
 
-      - name: Setup Perl
-        uses: shogo82148/actions-setup-perl@v1.24.1
-        with:
-          perl-version: '5.34'
-
-      # Runs a single command using the runners shell
-      - name: Update controls file
-        run: perl prepare_update.pl > controls_pythonbinding.txt
-
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: fhempy
-          author_email: dominik.karall@gmail.com
-          message: "chore: auto update controls"
-          branch: master
-          push: true
-
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@master
