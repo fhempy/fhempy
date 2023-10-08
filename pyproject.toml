@@ -28,5 +28,3 @@ exclude = ["tests*"]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.semantic_release]
-build_command="python3 -m build"
