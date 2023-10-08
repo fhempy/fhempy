@@ -1,5 +1,0 @@
-global-include manifest.json
-include requirements.txt
-include LICENSE
-prune .tox
-prune .vscode
