@@ -31,16 +31,18 @@ jobs:
       
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11' 
-      - run: sudo apt install python3-build
-
-      - name: Python Semantic Release
-        id: release
-        uses: python-semantic-release/python-semantic-release@master
-        with:
-          force: "patch"
-          push: "true"
+          python-version: '3.11'
           
+      - uses: Gr1N/setup-poetry@v8
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+
+      - run: poetry version patch
+
+      - run: poetry build
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         # NOTE: DO NOT wrap the conditional in ${{ }} as it will always evaluate to true.
@@ -49,6 +51,3 @@ jobs:
   
       - name: Publish package distributions to GitHub Releases
         uses: python-semantic-release/upload-to-gh-release@main
-        if: steps.release.outputs.released == 'true'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
