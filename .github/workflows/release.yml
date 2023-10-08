@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11' 
-      - run: python3 -m pip install build
+      - run: sudo apt install python3-build
 
       - name: Python Semantic Release
         id: release
