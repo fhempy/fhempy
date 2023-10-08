@@ -33,6 +33,9 @@ jobs:
         id: release
         uses: python-semantic-release/python-semantic-release@master
         with:
+          force: "patch"
+          push: "true"
+        env:
           build_command: "python3 setup.py sdist bdist_wheel"
           version_variable: "FHEM/bindings/python/fhempy/lib/version.py:__version__"
           
