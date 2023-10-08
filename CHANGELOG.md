@@ -2,6 +2,13 @@
 
 
 
+## v0.1.668 (2023-10-08)
+
+### Chore
+
+* chore: Update release.yml ([`9704eee`](https://github.com/fhempy/fhempy/commit/9704eee16a68e2e19f6bb281e6b340bd13126154))
+
+
 ## v0.1.667 (2023-10-08)
 
 ### Unknown
