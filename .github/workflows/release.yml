@@ -32,6 +32,9 @@ jobs:
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@master
+        with:
+          build_command: "python3 setup.py sdist bdist_wheel"
+          version_variable: "FHEM/bindings/python/fhempy/lib/version.py:__version__"
           
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
