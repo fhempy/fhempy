@@ -12,17 +12,21 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  release:
     # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      id-token: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: "master"
+          fetch-depth: 0
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1.8.3
@@ -36,28 +40,28 @@ jobs:
       - name: Commit changes
         uses: EndBug/add-and-commit@v5
         with:
-          author_name: Dominik
+          author_name: fhempy
           author_email: dominik.karall@gmail.com
-          message: "action: auto update controls"
+          message: "chore: auto update controls"
           branch: master
           push: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@master
         with:
-          python-version: '3.x'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-
-      - name: Build and publish
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # NOTE: DO NOT wrap the conditional in ${{ }} as it will always evaluate to true.
+        # See https://github.com/actions/runner/issues/1173
+        if: steps.release.outputs.released == 'true'
+  
+      - name: Publish package distributions to GitHub Releases
+        uses: python-semantic-release/upload-to-gh-release@main
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
