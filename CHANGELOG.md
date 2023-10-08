@@ -2,6 +2,15 @@
 
 
 
+## v0.1.667 (2023-10-08)
+
+### Unknown
+
+* Update BaseLibs SkodaConnect and Ring (#197)
+
+Thx! ([`98eb8b9`](https://github.com/fhempy/fhempy/commit/98eb8b9b6b18a8b762427925f2df36ae046c3748))
+
+
 ## v0.1.666 (2023-10-08)
 
 ### Chore
