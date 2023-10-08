@@ -30,6 +30,10 @@ async-upnp-client = "0.31.2"
 
 [tool.semantic_release]
 build_command = "pip install poetry && poetry build"
+version_variables=[
+    "FHEM/bindings/python/fhempy/lib/version.py:__version__",
+]
+version_toml=["pyproject.toml:tool.poetry.version",]
 
 [tool.setuptools]
 include-package-data = true
