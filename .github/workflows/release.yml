@@ -27,7 +27,6 @@ jobs:
         with:
           ref: "master"
           fetch-depth: 0
-          token: ${{ github.token }}
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1.24.1
@@ -50,8 +49,6 @@ jobs:
       - name: Python Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
