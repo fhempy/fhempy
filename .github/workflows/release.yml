@@ -23,10 +23,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "master"
           fetch-depth: 0
+          token: ${{ github.token }}
 
       - name: Setup Perl
         uses: shogo82148/actions-setup-perl@v1.24.1
@@ -38,15 +39,13 @@ jobs:
         run: perl prepare_update.pl > controls_pythonbinding.txt
 
       - name: Commit changes
-        uses: EndBug/add-and-commit@v5
+        uses: EndBug/add-and-commit@v9
         with:
           author_name: fhempy
           author_email: dominik.karall@gmail.com
           message: "chore: auto update controls"
           branch: master
           push: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Python Semantic Release
         id: release
