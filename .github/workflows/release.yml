@@ -28,8 +28,11 @@ jobs:
         with:
           ref: "master"
           fetch-depth: 0
-
-      - run: pip install build
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' 
+      - run: python3 -m pip install build
 
       - name: Python Semantic Release
         id: release
