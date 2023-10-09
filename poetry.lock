@@ -152,16 +152,16 @@ files = [
 
 [[package]]
 name = "async-upnp-client"
-version = "0.31.2"
+version = "0.36.1"
 description = "Async UPnP Client"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "async_upnp_client-0.31.2.tar.gz", hash = "sha256:f059e90bde27cf6e8c617daa6bd64d7649ab1dc91963e2cc86b36c776028e6e2"},
+    {file = "async_upnp_client-0.36.1.tar.gz", hash = "sha256:9033f9620a1d19121d85f0e90e8df6abb642fa01a56f26bc86bdcd24583c1a7d"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.7.4"
+aiohttp = ">=3.8.1"
 async-timeout = ">=3.0,<5.0"
 defusedxml = ">=0.6.0"
 python-didl-lite = ">=1.3.2,<1.4.0"
@@ -1443,4 +1443,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "27e65ab683fd525d746d511465cc6e4d8a26c2e20896a52e8ee2cd87b643040e"
+content-hash = "e6645a27a6982519a9ca6117ef98759b8c437e2fb9976f348807fa0878f7ef04"
