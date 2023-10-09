@@ -18,7 +18,7 @@ packages = [
 fhempy = 'fhempy.lib.fhem_pythonbinding:run'
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 websockets = "11.0.3"
 importlib_metadata = "6.1.0"
 pycryptodomex = "3.18.0"
@@ -27,6 +27,14 @@ aiohttp = {extras = ["speedups"], version = "3.8.6"}
 markdown2 = "2.4.10"
 requests = "2.31.0"
 async-upnp-client = "0.31.2"
+
+[tool.poetry.group.dev.dependencies]
+tox = "^4.11.3"
+pytest = "^7.4.2"
+pytest-env = "^1.0.1"
+pytest-mock = "^3.11.1"
+pytest-asyncio = "^0.21.1"
+requests-mock = "^1.11.0"
 
 [tool.semantic_release]
 build_command = "pip install poetry && poetry build"
