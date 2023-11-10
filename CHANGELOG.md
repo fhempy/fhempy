@@ -2,6 +2,25 @@
 
 
 
+## v0.1.672 (2023-11-10)
+
+### Chore
+
+* chore: update fhem-controls-actions ([`4fd76af`](https://github.com/fhempy/fhempy/commit/4fd76afd760f9ca007122ec8c5b1d997e120933b))
+
+* chore: add quick &amp; dirty development instructions ([`f3e7d18`](https://github.com/fhempy/fhempy/commit/f3e7d18d3b180283c27273df9d61daaf4403243b))
+
+### Feature
+
+* feat(huawei_modbus): add Huawei ModBus module ([`28abee1`](https://github.com/fhempy/fhempy/commit/28abee157e7a09fa4389a83b314f5df3c46168ac))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`37f17a5`](https://github.com/fhempy/fhempy/commit/37f17a50eba618fc0e2e2ad67b53aaf0e627fba1))
+
+
 ## v0.1.671 (2023-11-10)
 
 ### Chore
