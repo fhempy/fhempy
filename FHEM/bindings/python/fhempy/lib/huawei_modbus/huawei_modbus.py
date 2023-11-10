@@ -1,7 +1,5 @@
 import asyncio
 
-from huawei_solar import HuaweiSolarBridge
-
 from .. import fhem, generic
 
 
@@ -61,6 +59,8 @@ class huawei_modbus(generic.FhemModule):
             await asyncio.sleep(30)
 
     async def connect(self):
+        from huawei_solar import HuaweiSolarBridge
+
         self.bridge = await HuaweiSolarBridge.create(
             host=self.ip, port=self.port, slave_id=self.slave_id
         )
