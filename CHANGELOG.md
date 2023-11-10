@@ -2,6 +2,43 @@
 
 
 
+## v0.1.671 (2023-11-10)
+
+### Chore
+
+* chore: install poetry ([`96b8610`](https://github.com/fhempy/fhempy/commit/96b861069e9a4b9bf4805aede5ab5a8e677974ff))
+
+### Fix
+
+* fix(ring): Ring Doorbell - Update BaseLib (#213)
+
+* Update BaseLibs SkodaConnect and Ring
+
+* Ring Doorbell - Update BaseLib
+
+* Important Update in BaseLib.
+Versions &lt;1.3.8 not working anymore
+
+* Ring Update to latest BaseLib
+
+---------
+
+Co-authored-by: Dominik &lt;dominik.karall@gmail.com&gt; ([`c59b3e4`](https://github.com/fhempy/fhempy/commit/c59b3e4485c2cd19e19ef12ce6afbf8920fe59fa))
+
+* fix(skodaconnect): update base lib (#217)
+
+Bump skodaconnect to 1.3.8
+
+This Version is needed:
+&#34;Updated User-Agent in order to get code on par with recent Android and IOS apps.
+
+Outdated User-Agent from older app version seems to be blocked now at token endpoints. This change is confirmed working with Enyaq owners.&#34; ([`2de2114`](https://github.com/fhempy/fhempy/commit/2de211469867eceaf10d357e94657dbc96d1257b))
+
+* fix(fhempy): use poetry for tox ([`c579343`](https://github.com/fhempy/fhempy/commit/c579343200c340afb7f98b33f28d41451971d63b))
+
+* fix(fhempy): add dev dependencies, min version python 3.8 ([`fcde943`](https://github.com/fhempy/fhempy/commit/fcde9432ae87377dab1fcfdd67ab3a21b7078e2e))
+
+
 ## v0.1.670 (2023-10-08)
 
 ### Ci
