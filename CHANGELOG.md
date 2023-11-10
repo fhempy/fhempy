@@ -2,6 +2,13 @@
 
 
 
+## v0.1.673 (2023-11-10)
+
+### Fix
+
+* fix(huawei_modbus): moved import to ensure event loop running ([`ada2d4f`](https://github.com/fhempy/fhempy/commit/ada2d4f10af2ebdf6632e0e8998c60f56d47a724))
+
+
 ## v0.1.672 (2023-11-10)
 
 ### Chore
