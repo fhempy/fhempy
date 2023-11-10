@@ -38,7 +38,7 @@ This repository includes following working modules:
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
 |helloworld|Hello World example for developers to start writing their own module|
 |[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control homekit devices|
-|[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverter|
+|[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverter, requires Python 3.10 or higher|
 |[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for ikos resorts|
 |[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
