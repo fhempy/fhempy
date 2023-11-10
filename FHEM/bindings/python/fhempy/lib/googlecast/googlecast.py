@@ -48,6 +48,7 @@ class googlecast(generic.FhemModule):
         self.connectionStateCache = ""
         self.browser = None
         self.spotipy = None
+        self.spotify_access_token = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -428,7 +429,7 @@ class googlecast(generic.FhemModule):
             return
         await self.update_token()
         # Launch the spotify app on the cast we want to cast to
-        sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
+        sp = SpotifyController(self.cast, self.spotify_access_token, self.spotify_expires)
         self.cast.register_handler(sp)
         await utils.run_blocking(functools.partial(sp.launch_app))
 
@@ -442,7 +443,7 @@ class googlecast(generic.FhemModule):
         try:
             await self.update_token()
             # Launch the spotify app on the cast we want to cast to
-            sp = SpotifyController(self.spotify_access_token, self.spotify_expires)
+            sp = SpotifyController(self.cast, self.spotify_access_token, self.spotify_expires)
             self.cast.register_handler(sp)
             await utils.run_blocking(functools.partial(sp.launch_app))
 
