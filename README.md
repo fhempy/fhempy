@@ -28,7 +28,7 @@ This repository includes following working modules:
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat|
 |[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management|
-|[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve values from FusionSolar Kiosk|
+|[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve data from FusionSolar|
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |gfprobt|Control GF Pro Bluetooth irrigation control|
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to github|
@@ -38,6 +38,7 @@ This repository includes following working modules:
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
 |helloworld|Hello World example for developers to start writing their own module|
 |[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control homekit devices|
+|[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverter|
 |[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for ikos resorts|
 |[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
