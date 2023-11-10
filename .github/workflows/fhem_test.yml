@@ -30,12 +30,12 @@ jobs:
         fetch-depth: 0
         
     - name: update controls file for FHEM Module
-      uses: fhem/fhem-controls-actions@v2.1.0
+      uses: fhem/fhem-controls-actions@v2.2.0
       with:
         filename: controls_pythonbinding.txt 
 
     - name: update controls file for python binary
-      uses: fhem/fhem-controls-actions@v2.1.0
+      uses: fhem/fhem-controls-actions@v2.2.0
       with:
         filename: controls_pythonbinding.txt 
         directory: FHEM/bindings/python/bin
