@@ -39,7 +39,6 @@ class Signal:
 
 
 class FusionSolarRestApi:
-
     ENERGY_FLOW_PATH = (
         "/rest/pvms/web/station/v1/overview/energy-flow?"
         + "stationDn=%STATION%&_=%CURRENT_UTC_TIME%"
@@ -149,7 +148,7 @@ class FusionSolarRestApi:
             "sec-ch-ua-platform": '"Chrome OS"',
             "sec-fetch-dest": "document",
             "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "same-site",
+            "sec-fetch-site": "same-origin",
             "sec-fetch-user": "?1",
             "upgrade-insecure-requests": "1",
             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
@@ -158,8 +157,17 @@ class FusionSolarRestApi:
             self.api_base = redurl
             url = redurl
         else:
-            url = "https://" + self._region + ".fusionsolar.huawei.com" + redurl
+            self.api_base = None
+            url = (
+                "https://"
+                + self._region
+                + ".fusionsolar.huawei.com"
+                + redurl
+                + "&redirectionAddress=%2Funiportal%2Fpvmswebsite%2Fassets%2Fbuild%2Fcloud.html%23%2Fhome%2Flist"
+            )
         async with session.get(url, max_redirects=20, headers=headers) as resp:
+            if self.api_base is None:
+                self.api_base = "https://" + resp.host
             return resp
 
     async def get_jsessionid(self, session):
@@ -189,7 +197,10 @@ class FusionSolarRestApi:
 
                 # validateUser.action to get bspsessionid
                 json_resp = await self.validate_user(session)
-                redurl = json_resp["redirectURL"]
+                if json_resp["errorCode"] == 370:
+                    redurl = json_resp["respMultiRegionName"][1]
+                else:
+                    redurl = json_resp["redirectURL"]
 
                 if redurl:
                     resp = await self.login_redirect(session, redurl)
@@ -208,11 +219,16 @@ class FusionSolarRestApi:
                     "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
                 }
 
-                url = self.api_base + "/unisess/v1/auth/session"
+                if json_resp["errorCode"] == 370:
+                    url = self.api_base + "/rest/dpcloud/auth/v1/keep-alive"
+                    tokenid = "payload"
+                else:
+                    url = self.api_base + "/unisess/v1/auth/session"
+                    tokenid = "csrfToken"
                 async with session.get(url, headers=headers) as resp3:
                     self.logger.debug(f"response from {url}: {resp3}")
                     response = await resp3.json()
-                    self._csrftoken = response["csrfToken"]
+                    self._csrftoken = response[tokenid]
 
                 headers = {
                     "accept": "application/json, text/javascript, */*; q=0.01",
@@ -360,7 +376,7 @@ class FusionSolarRestApi:
         await self.update_energy_balance()
         await self.update_energy_flow()
         await self.update_device_signals()
-        await self.send_idle()
+        # await self.send_idle()
 
     async def update_energy_flow(self):
         self._inverter_output_power = "-"
@@ -516,14 +532,18 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_energy(self):
-        if "selfUseNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
-            return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2)
+        if "realNrgKpi" in self._stationdetail:
+            if "selfUseNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
+                return round(
+                    self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2
+                )
         return 0
 
     @property
     def daily_use_energy(self):
-        if "useNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
-            return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
+        if "realNrgKpi" in self._stationdetail:
+            if "useNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
+                return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
         return 0
 
     @property
