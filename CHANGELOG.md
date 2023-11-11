@@ -2,6 +2,17 @@
 
 
 
+## v0.1.674 (2023-11-11)
+
+### Feature
+
+* feat(fusionsolar): support multiregion accounts ([`293b209`](https://github.com/fhempy/fhempy/commit/293b2091d3bc58e9d102d32cc6b85e4dcb112177))
+
+### Fix
+
+* fix(huawei_modbus): add Python 3.10 or higher requirement ([`04b72c9`](https://github.com/fhempy/fhempy/commit/04b72c9ddb8300ef0f7bd9961e6c15e550a8cb0f))
+
+
 ## v0.1.673 (2023-11-10)
 
 ### Fix
