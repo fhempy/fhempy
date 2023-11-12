@@ -197,7 +197,7 @@ class FusionSolarRestApi:
 
                 # validateUser.action to get bspsessionid
                 json_resp = await self.validate_user(session)
-                if json_resp["errorCode"] == 370:
+                if json_resp["errorCode"] == 470:
                     redurl = json_resp["respMultiRegionName"][1]
                 else:
                     redurl = json_resp["redirectURL"]
@@ -219,7 +219,7 @@ class FusionSolarRestApi:
                     "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
                 }
 
-                if json_resp["errorCode"] == 370:
+                if json_resp["errorCode"] == 470:
                     url = self.api_base + "/rest/dpcloud/auth/v1/keep-alive"
                     tokenid = "payload"
                 else:
