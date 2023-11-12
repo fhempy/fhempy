@@ -2,6 +2,13 @@
 
 
 
+## v0.1.676 (2023-11-12)
+
+### Fix
+
+* fix(fusionsolar): fix multiregion account again ([`25eef13`](https://github.com/fhempy/fhempy/commit/25eef13ca3712b3406e531589082de2339effcb2))
+
+
 ## v0.1.675 (2023-11-12)
 
 ### Fix
