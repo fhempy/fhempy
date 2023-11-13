@@ -32,9 +32,14 @@ class skodaconnect(generic.FhemModule):
                 "help": "VIN of your car you want to connect to.",
             },
             "update_interval": {
-                "default": 30,
+                "default": 300,
                 "format": "int",
-                "help": "Readings update intervall in seconds (default 30s).",
+                "help": (
+                    "Readings update intervall in seconds (default 300s).<br>"
+                    "do not poll to often due to API rate limits.<br>"
+                    "You might be banned from VAG also on your offical APP<br>"
+                    "until reset at 2 am."
+                ),
             },
             "update_readings": {
                 "default": "always",
