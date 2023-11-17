@@ -2,6 +2,19 @@
 
 
 
+## v0.1.677 (2023-11-17)
+
+### Feature
+
+* feat(rct_power): Adding options for manual grid loading (#223)
+
+https://github.com/weltenwort/home-assistant-rct-power-integration/discussions/277 ([`58bdec5`](https://github.com/fhempy/fhempy/commit/58bdec560e5c064d66e71c98463e8f1dc9ec0568))
+
+### Fix
+
+* fix(skodaconnect): Modify default poll intervall to 300 seconds (#221) ([`629940c`](https://github.com/fhempy/fhempy/commit/629940c5da5e1b17b9666bc86f85a1666c4db14e))
+
+
 ## v0.1.676 (2023-11-12)
 
 ### Fix
