@@ -2,6 +2,27 @@
 
 
 
+## v0.1.678 (2023-11-18)
+
+### Feature
+
+* feat(pyit600): reading for hvac_action added (#224)
+
+* minor fixes
+
+* usage description updated
+
+* usage description updated
+
+* retry after connection timeout added
+
+* fix: missing break added
+
+* additional attributes added
+
+* reading for hvac_action added ([`d35d303`](https://github.com/fhempy/fhempy/commit/d35d3031aa789f590d949fa8c023f28b1d382af6))
+
+
 ## v0.1.677 (2023-11-17)
 
 ### Feature
