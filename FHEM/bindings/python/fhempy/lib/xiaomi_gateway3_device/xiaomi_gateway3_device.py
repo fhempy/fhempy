@@ -6,10 +6,11 @@ from .. import generic
 
 # imports for dynamical usage, do NOT remove
 from .devices.gateway import Gateway  # noqa: F401
-from .devices.sensor import (  # noqa: F401
+from .devices.sensor import (
     ContactSensor,
-    HTSensor,
+    HTSensor,  # noqa: F401
     MotionSensor,
+    SmokeSensor,
     WaterLeakSensor,
 )
 
@@ -29,6 +30,9 @@ device_type_mapping = {
     "lumi.sensor_motion.v2": "MotionSensor",
     "lumi.gateway": "Gateway",
     "lumi.gateway.mgl03": "Gateway",
+    # Bluetooth sensors here
+    "1371": "HTSensor",
+    "2455": "SmokeSensor",
 }
 
 
@@ -86,17 +90,17 @@ class xiaomi_gateway3_device(generic.FhemModule):
             return
 
         # first update, set attributes and device readings like model, sid, ...
-        if device["model"] not in device_type_mapping:
+        if str(device["model"]) not in device_type_mapping:
             self.logger.error(
                 f"{device['model']} not yet supported, please report an issue here: "
-                f"https://github.com/dominikkarall/fhempy/issues"
+                f"https://github.com/fhempy/fhempy/issues"
             )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "state", f"unsupported device: {device['model']}", 1
             )
             return
         # create device based on device model
-        self._fhempy_device = globals()[device_type_mapping[device["model"]]](
+        self._fhempy_device = globals()[device_type_mapping[str(device["model"])]](
             self.logger, self._fhempy_gateway
         )
         self._fhempy_device.set_hash(self.hash)

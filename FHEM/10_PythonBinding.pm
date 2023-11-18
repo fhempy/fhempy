@@ -1,5 +1,5 @@
 
-# $Id: 10_PythonBinding.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_PythonBinding.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;
 
@@ -60,6 +60,9 @@ sub PythonBinding_Define($$$)
   my $name = $hash->{NAME};
 
   Log3 $hash, 3, "PythonBinding v1.0.0";
+
+  # automatically migrate to fhempyServer
+  $hash->{TYPE} = "fhempyServer";
 
   $hash->{logfile} = "./log/fhempy-%Y-%m-%d.log";
   $hash->{CoProcess} = {  name => 'fhempy',

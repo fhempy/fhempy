@@ -1,6 +1,5 @@
-from ..core.ble import BTLEConnection
-from .. import generic
-from .. import fhem
+from .. import fhem, generic
+from ..core import bluetoothle
 
 
 class mitemp2(generic.FhemModule):
@@ -14,24 +13,21 @@ class mitemp2(generic.FhemModule):
             return "Usage: define mitemp fhempy mitemp2 <MAC>"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
-        self._conn = BTLEConnection(
+        self._conn = bluetoothle.BluetoothLE(
+            self.logger,
+            self.hash,
             self._mac,
-            keep_connected=True,
-            connection_established_callback=self.connection_setup,
         )
+        self.create_async_task(self.async_connection_setup())
 
-    def connection_setup(self, mac):
-        self.create_async_task(self.async_connection_setup(mac))
-
-    async def async_connection_setup(self, mac):
-        await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+    async def async_connection_setup(self):
+        await self._conn.connect()
         # enable notifications
-        self._conn.write_characteristic(0x0038, b"\x01\x00")
+        await self._conn.write_gatt_char(0x0038 - 1, b"\x01\x00")
         # enable lower power mode
-        self._conn.write_characteristic(0x0046, b"\xf4\x01\x00")
-        self._conn.set_callback("all", self.received_notification)
+        await self._conn.write_gatt_char(0x0046 - 1, b"\xf4\x01\x00")
 
-    def received_notification(self, data):
+    def received_notification(self, uuid, data):
         self.create_async_task(self.update_data(data))
 
     async def update_data(self, data):

@@ -1,38 +1,59 @@
 import asyncio
 
-from .. import fhem
-from .. import generic
-
 from aiohttp import ClientSession
 from skodaconnect import Connection
 from skodaconnect.vehicle import Vehicle
+
+from .. import fhem, generic
+
+# If you wish to use stored tokens, this is an example on how to format data sent to restore_tokens method:
+TOKENS = {
+    "technical": {"access_token": "...", "refresh_token": "...", "id_token": "..."},
+    "connect": {"access_token": "...", "refresh_token": "...", "id_token": "..."},
+    "vwg": {"access_token": "...", "refresh_token": "..."},
+    "cabs": None,  # Could be populated with access_token, refresh_token, id_token
+    "dcs": None,  # Could be populated with access_token, refresh_token, id_token
+}
+# Comment out the following line to use stored tokens above, set TOKENS=None to do fresh login
+TOKENS = None
 
 
 class skodaconnect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self.attr_config = {
             "vin": {
                 "default": "",
                 "help": "VIN of your car you want to connect to.",
             },
             "update_interval": {
-                "default": 30,
+                "default": 300,
                 "format": "int",
-                "help": "Readings update intervall in seconds (default 30s).",
+                "help": (
+                    "Readings update intervall in seconds (default 300s).<br>"
+                    "do not poll to often due to API rate limits.<br>"
+                    "You might be banned from VAG also on your offical APP<br>"
+                    "until reset at 2 am."
+                ),
             },
             "update_readings": {
                 "default": "always",
                 "options": "always,onchange",
                 "help": "Update readings only on value change or always (default onchange).",
             },
+            "EV_Type": {
+                "default": "none",
+                "options": "EV,other",
+                "help": "Type of vehicle. Electriv Vehicle or other.",
+            },
         }
-        self.set_attr_config(self.attr_config)
+        await self.set_attr_config(self.attr_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
         if len(args) != 6:
             return (
                 "Usage: define my_skoda fhempy skodaconnect my@account.com "
@@ -45,12 +66,22 @@ class skodaconnect(generic.FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
     async def start_login(self):
+        login_success = False
         async with ClientSession(headers={"Connection": "keep-alive"}) as session:
             connection = Connection(session, self.username, self.password, False)
-            while await connection.doLogin() is False:
-                await asyncio.sleep(5)
+            if TOKENS is not None:
+                print("Attempting restore of tokens")
+                if await connection.restore_tokens(TOKENS):
+                    print("Token restore succeeded")
+                    login_success = True
+            if not login_success:
+                print("Attempting to login to the Skoda Connect service")
+                while await connection.doLogin() is False:
+                    await asyncio.sleep(5)
 
+            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)            
             await connection.get_vehicles()
+            await connection.update_all()
 
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
@@ -72,11 +103,11 @@ class skodaconnect(generic.FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "no cars found", 1)
                 return
 
-            self.prepare_set_commands()
+            await self.prepare_set_commands()
 
             await self.update_readings()
 
-    def prepare_set_commands(self):
+    async def prepare_set_commands(self):
         self.set_config = {
             "timer_1": {"args": ["onoff"], "options": "on,off"},
             "timer_2": {"args": ["onoff"], "options": "on,off"},
@@ -113,18 +144,34 @@ class skodaconnect(generic.FhemModule):
             },
         }
         if self.vehicle.is_charging_supported:
-            self.set_config["charger"] = {
-                "args": ["onoff"],
-                "options": "on,off",
-            }
-            self.set_config["charger_current"] = {
-                "args": ["current"],
-                "options": "slider,1,1,254",
-            }
-            self.set_config["charge_limit"] = {
-                "args": ["limit"],
-                "options": "0,10,20,30,40,50",
-            }
+            if self._attr_EV_Type == "EV":
+                self.set_config["charger"] = {
+                    "args": ["onoff"],
+                    "options": "start,stop",
+                }
+                self.set_config["charge_limit"] = {
+                    "args": ["limit"],
+                    "options": "50,60,70,80,90,100",
+                }
+                self.set_config["charger_current"] = {
+                    "args": ["current"],
+                    "options": "Reduced,Maximum",
+                }
+                
+            else:
+                self.set_config["charger"] = {
+                    "args": ["onoff"],
+                    "options": "on,off",
+                }
+                self.set_config["charge_limit"] = {
+                    "args": ["limit"],
+                    "options": "0,10,20,30,40,50",
+                }
+                self.set_config["charger_current"] = {
+                    "args": ["current"],
+                    "options": "252,254",
+                }
+
         if self.vehicle.is_electric_climatisation_supported:
             self.set_config["battery_climatisation"] = {
                 "args": ["onoff"],
@@ -179,7 +226,7 @@ class skodaconnect(generic.FhemModule):
             ),
         }
 
-        self.set_set_config(self.set_config)
+        await self.set_set_config(self.set_config)
 
     async def set_pheater(self, hash, params):
         self.create_async_task(self.vehicle.set_pheater(params["mode"], self.spin))
@@ -201,7 +248,7 @@ class skodaconnect(generic.FhemModule):
         self.create_async_task(self.vehicle.set_charger_current(params["current"]))
 
     async def set_charge_limit(self, hash, params):
-        self.create_async_task(self.vehicle.set_charge_limit(params["limit"]))
+        self.create_async_task(self.vehicle.set_charge_limit(int(params["limit"])))
 
     async def set_battery_climatisation(self, hash, params):
         self.create_async_task(self.vehicle.set_battery_climatisation(params["onoff"]))

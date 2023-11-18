@@ -2,10 +2,10 @@ import asyncio
 import sys
 from ipaddress import IPv4Address
 
-import aiohttp
-from async_upnp_client import UpnpFactory
-from async_upnp_client.advertisement import UpnpAdvertisementListener
+from aiohttp import ClientSession
+from async_upnp_client.advertisement import SsdpAdvertisementListener
 from async_upnp_client.aiohttp import AiohttpSessionRequester
+from async_upnp_client.client_factory import UpnpFactory
 from async_upnp_client.search import async_search as async_ssdp_search
 
 
@@ -26,34 +26,36 @@ class ssdp:
         self.logger = logger
         self.listeners = []
         self.listener = None
-        self.search_task = None
+        self.search_tasks = []
         self.advertisement_task = None
         self.nr_started_searches = 0
 
         # build upnp/aiohttp requester
-        self.session = aiohttp.ClientSession()
+        self.session = ClientSession()
         self.requester = AiohttpSessionRequester(self.session, True)
         # create upnp device
         self.factory = UpnpFactory(self.requester)
 
     async def start_search(self):
         self.nr_started_searches += 1
-        self.search_task = asyncio.create_task(self.search())
+        self.search_tasks.append(asyncio.create_task(self.search()))
 
         if self.advertisement_task is None:
             self.advertisement_task = asyncio.create_task(self.advertisements())
 
     async def stop_search(self):
-        self.nr_started_searches -= 1
+        if self.nr_started_searches > 0:
+            self.nr_started_searches -= 1
         # stop search only when last client stops it
         if self.nr_started_searches == 0:
-            await self.session.close()
-            if self.search_task is not None:
-                self.search_task.cancel()
+            if len(self.search_tasks) > 0:
+                for task in self.search_tasks:
+                    task.cancel()
             if self.advertisement_task is not None:
                 self.advertisement_task.cancel()
             if self.listener is not None:
                 await self.listener.async_stop()
+            await self.session.close()
 
     def register_listener(self, listener, ssdp_filter={"service_type": "ssdp:all"}):
         listenerFilter = {
@@ -175,7 +177,7 @@ class ssdp:
             async def on_update(data):
                 return
 
-            self.listener = UpnpAdvertisementListener(
+            self.listener = SsdpAdvertisementListener(
                 on_alive=on_alive,
                 on_byebye=on_byebye,
                 on_update=on_update,

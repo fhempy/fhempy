@@ -2,12 +2,11 @@ import asyncio
 import functools
 
 import spotipy
-from spotipy.oauth2 import CacheFileHandler
 from aiohttp import web
 from pyppeteer import launch
+from spotipy.oauth2 import CacheFileHandler
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic, utils
 
 
 class spotify_connect_player(generic.FhemModule):
@@ -40,16 +39,18 @@ class spotify_connect_player(generic.FhemModule):
             + "user-read-private"
         )
         self.loggedin = False
-        attr_config = {"player_name": {"default": "FHEM Web Player"}}
-        self.set_attr_config(attr_config)
-
-        self.set_config = {"start": {}, "stop": {}}
-        self.set_set_config(self.set_config)
         return
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+
+        attr_config = {"player_name": {"default": "FHEM Web Player"}}
+        await self.set_attr_config(attr_config)
+
+        self.set_config = {"start": {}, "stop": {}}
+        await self.set_set_config(self.set_config)
+
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")
         await fhem.readingsEndUpdate(hash, 1)

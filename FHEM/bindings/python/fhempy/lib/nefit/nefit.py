@@ -1,9 +1,9 @@
 import asyncio
 import datetime
-from aionefit import NefitCore
-
-import re
 import math
+import re
+
+from aionefit import NefitCore
 
 from .. import fhem, generic
 
@@ -27,16 +27,20 @@ class nefit(generic.FhemModule):
         self.first_run = True
         self.module_shutdown = False
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
-                "default": 300,
+                "default": 900,
                 "format": "int",
-                "help": "Change interval, default is 300.",
+                "help": "Change interval, default is 900.",
             },
             "password": {"default": ""},
             "access_key": {"default": ""},
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "mode": {
@@ -156,11 +160,7 @@ class nefit(generic.FhemModule):
             "todayAsSunday": {"args": ["onoff"], "options": "on,off"},
             "tomorrowAsSunday": {"args": ["onoff"], "options": "on,off"},
         }
-        self.set_set_config(set_config)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
+        await self.set_set_config(set_config)
         if len(args) != 4:
             return "Usage: define netfit_thermostat fhempy nefit <SERIAL_NUMBER>"
 
@@ -446,7 +446,10 @@ class nefit(generic.FhemModule):
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update readings")
-            await asyncio.sleep(self._attr_interval)
+            try:
+                await asyncio.sleep(self._attr_interval)
+            except asyncio.CancelledError:
+                pass
 
     async def update_dayassunday(self, day=None):
         if day is None:

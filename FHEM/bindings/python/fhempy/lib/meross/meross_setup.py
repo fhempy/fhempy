@@ -1,10 +1,9 @@
 import asyncio
 
-from meross_iot.manager import MerossManager
-from meross_iot.http_api import MerossHttpClient
-
 from fhempy.lib import fhem, utils
 from fhempy.lib.generic import FhemModule
+from meross_iot.http_api import MerossHttpClient
+from meross_iot.manager import MerossManager
 
 
 class meross_setup:
@@ -48,19 +47,16 @@ class meross_setup:
         devname = name + "_" + device_id
         devname = utils.gen_fhemdev_name(devname)
         device_exists = await fhem.checkIfDeviceExists(
-            self.hash, "PYTHONTYPE", "meross", "DEVICEID", device_id
+            self.hash, "FHEMPYTYPE", "meross", "DEVICEID", device_id
         )
         if not device_exists:
             self.logger.info(
-                (
-                    f"create: {devname} PythonModule meross "
-                    f"{self.hash['NAME']} {device_id}"
-                )
+                (f"create: {devname} fhempy meross " f"{self.hash['NAME']} {device_id}")
             )
             # define each device (CommandDefine ... tuya_cloud_setup_dev deviceid
             await fhem.CommandDefine(
                 self.hash,
-                (f"{devname} PythonModule meross " f"{self.hash['NAME']} {device_id}"),
+                (f"{devname} fhempy meross " f"{self.hash['NAME']} {device_id}"),
             )
             await fhem.CommandAttr(self.hash, f"{devname} alias {devalias}")
             # wait for FHEM to handle CommandDefine

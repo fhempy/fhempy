@@ -15,13 +15,6 @@ class bt_presence(FhemModule):
         self.btscan_task = None
         self._curr_state = ""
         self._count_diff_state = 0
-        attr_config = {
-            "absentInterval": {"default": 10, "format": "int"},
-            "presentInterval": {"default": 60, "format": "int"},
-            "absentThreshold": {"default": 0, "format": "int"},
-            "presentThreshold": {"default": 0, "format": "int"},
-        }
-        self.set_attr_config(attr_config)
 
     def lookup_name(self, mac):
         return bluetooth.lookup_name(mac, timeout=5)
@@ -86,6 +79,14 @@ class bt_presence(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        attr_config = {
+            "absentInterval": {"default": 10, "format": "int"},
+            "presentInterval": {"default": 60, "format": "int"},
+            "absentThreshold": {"default": 0, "format": "int"},
+            "presentThreshold": {"default": 0, "format": "int"},
+        }
+        await self.set_attr_config(attr_config)
+
         if len(args) < 4:
             return "Usage: define p_mysmartphone fhempy bt_presence <MAC>"
 

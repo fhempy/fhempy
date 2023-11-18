@@ -28,6 +28,8 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' PATH_FROM_FIND
 ```
 
 #### Remote peers
+Run the following commands after the define in FHEM.
+
 ```
 find $HOME/.local -name bluepy-helper
 sudo setcap 'cap_net_raw,cap_net_admin+eip' PATH_FROM_FIND

@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "pyvaillant@git+https://github.com/pjmaenh/pyvaillant#pyvaillant==0.0.4"
+    "vaillant-netatmo-api==0.11.0"
   ]
 }

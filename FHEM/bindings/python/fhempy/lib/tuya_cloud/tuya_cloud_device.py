@@ -1,17 +1,22 @@
 import asyncio
+import colorsys
 import functools
 import json
-import colorsys
-from tuya_iot.device import TuyaDevice
-from fhempy.lib.generic import FhemModule
-from fhempy.lib import fhem, fhem_pythonbinding, utils
+import time
+from random import randrange
+
+import fhempy.lib.fhem as fhem
+import fhempy.lib.fhem_pythonbinding as fpb
+import fhempy.lib.utils as utils
 
 
 class tuya_cloud_device:
-    def __init__(self, logger, fhemdevice: FhemModule):
+    def __init__(self, logger, fhemdevice):
         self.logger = logger
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
+        self.readings_update_lock = asyncio.Lock()
+        self.last_status = None
 
     async def Define(self, hash, args, argsh):
         self._t_setupdev = args[3]
@@ -21,8 +26,18 @@ class tuya_cloud_device:
 
         self.tuyaiot = None
         self.default_code = None
+
+        # read current energy just on define
+        self.energy = float(await fhem.ReadingsVal(self.hash["NAME"], "energy", "0"))
+        self.last_energy_ts = None
+        self.last_energy_value = 0
+
         await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         self.fhemdev.create_async_task(self._init_device())
+
+    async def Undefine(self, hash):
+        if self.tuyaiot:
+            self.tuyaiot.unregister_tuya_device(self)
 
     async def _init_device(self):
         try:
@@ -33,10 +48,11 @@ class tuya_cloud_device:
 
     async def _connect_to_setup_device(self):
         while self.tuyaiot is None or self.tuyaiot.ready is False:
-            await asyncio.sleep(1)
-            self.tuyaiot = fhem_pythonbinding.getFhemPyDeviceByName(self._t_setupdev)
+            self.tuyaiot = fpb.getFhemPyDeviceByName(self._t_setupdev)
             if self.tuyaiot is not None:
                 self.tuyaiot = self.tuyaiot.tuya_cloud_device
+
+            await asyncio.sleep(randrange(20))
 
         self.tuyaiot.register_tuya_device(self)
 
@@ -123,6 +139,16 @@ class tuya_cloud_device:
                     set_conf[fct["code"]]["function"] = "set_colour_data_v2"
                     set_conf[fct["code"]]["options"] = "colorpicker,RGB"
 
+        set_conf = self.prepare_onoff_usage(set_conf)
+
+        for st in self._t_specification["status"]:
+            if st["code"] == "cur_power":
+                set_conf["reset_energy"] = {}
+                break
+
+        await self.fhemdev.set_set_config(set_conf)
+
+    def prepare_onoff_usage(self, set_conf):
         self.default_code = None
         if "switch" in set_conf:
             self.default_code = "switch"
@@ -141,7 +167,12 @@ class tuya_cloud_device:
                 "function": "set_boolean",
             }
             del set_conf[self.default_code]
-        self.fhemdev.set_set_config(set_conf)
+        return set_conf
+
+    async def set_reset_energy(self, hash, params):
+        self.last_energy_ts = time.time()
+        self.last_energy_value = 0
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_boolean(self, hash, params):
         code = params["function_param"]["code"]
@@ -230,6 +261,14 @@ class tuya_cloud_device:
     def _convert_value2fhem(self, code, value):
         for code_def in self._t_specification["status"]:
             if code_def["code"] == code and code_def["type"] == "Integer":
+                if self._t_info["product_id"] in [
+                    "wifvoilfrqeo6hvu",
+                    "37mnhia3pojleqfh",
+                ]:
+                    if code == "cur_voltage":
+                        value /= 10
+                    elif code == "cur_power":
+                        value /= 10
                 values = json.loads(code_def["values"])
                 return value / (10 ** int(values["scale"]))
 
@@ -262,44 +301,75 @@ class tuya_cloud_device:
         await asyncio.sleep(timeout)
         await fhem.readingsSingleUpdate(self.fhemdev.hash, reading, resetvalue, 1)
 
-    async def update(self, device: TuyaDevice):
+    async def update(self, device):
         await self.update_readings_dict(device.status)
 
     async def update_readings_arr(self, status_arr):
-        await fhem.readingsBeginUpdate(self.hash)
-        try:
-            for status in status_arr:
-                if status["code"] in ["colour_data", "colour_data_v2"]:
-                    await self.update_readings_hsv(
-                        status["code"], json.loads(status["value"])
-                    )
-                else:
-                    await fhem.readingsBulkUpdate(
-                        self.hash,
-                        self._convert_code2fhem(status["code"]),
-                        self._convert_value2fhem(status["code"], status["value"]),
-                    )
-        except Exception as ex:
-            self.logger.exception(ex)
-        await fhem.readingsEndUpdate(self.hash, 1)
+        async with self.readings_update_lock:
+            await fhem.readingsBeginUpdate(self.hash)
+            try:
+                for status in status_arr:
+                    if status["code"] in ["colour_data", "colour_data_v2"]:
+                        await self.update_readings_hsv(
+                            status["code"], json.loads(status["value"])
+                        )
+                    else:
+                        await fhem.readingsBulkUpdate(
+                            self.hash,
+                            self._convert_code2fhem(status["code"]),
+                            self._convert_value2fhem(status["code"], status["value"]),
+                        )
+            except Exception:
+                self.logger.exception(
+                    f"Exception in handling status values from tuya: {status_arr}"
+                )
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_dict(self, status_dic):
-        await fhem.readingsBeginUpdate(self.hash)
-        try:
-            for st_name in status_dic:
-                if st_name in ["colour_data", "colour_data_v2"]:
-                    await self.update_readings_hsv(
-                        st_name, json.loads(status_dic[st_name])
-                    )
-                else:
-                    await fhem.readingsBulkUpdate(
-                        self.hash,
-                        self._convert_code2fhem(st_name),
-                        self._convert_value2fhem(st_name, status_dic[st_name]),
-                    )
-        except Exception as ex:
-            self.logger.exception(ex)
-        await fhem.readingsEndUpdate(self.hash, 1)
+        async with self.readings_update_lock:
+
+            if self.last_status != status_dic:
+                self.last_status = status_dic
+            else:
+                return
+
+            await fhem.readingsBeginUpdate(self.hash)
+            try:
+                for st_name in status_dic:
+                    if st_name in ["colour_data", "colour_data_v2"]:
+                        await self.update_readings_hsv(
+                            st_name, json.loads(status_dic[st_name])
+                        )
+                    else:
+                        if st_name == "cur_power" and status_dic[st_name] > 0:
+                            cur_power = self._convert_value2fhem(
+                                st_name, status_dic[st_name]
+                            )
+
+                            if self.last_energy_ts is not None:
+                                # last value available
+                                cur_energy = (
+                                    (time.time() - self.last_energy_ts)
+                                    * (self.last_energy_value + cur_power)
+                                    / 2
+                                ) / (3600 * 1000)
+                                self.energy += cur_energy
+
+                            self.last_energy_ts = time.time()
+                            self.last_energy_value = cur_power
+                            await fhem.readingsBulkUpdateIfChanged(
+                                self.hash,
+                                "energy",
+                                round(self.energy, 3),
+                            )
+                        await fhem.readingsBulkUpdate(
+                            self.hash,
+                            self._convert_code2fhem(st_name),
+                            self._convert_value2fhem(st_name, status_dic[st_name]),
+                        )
+            except Exception as ex:
+                self.logger.exception(ex)
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_hsv(self, hsv_code, hsv_json):
         if hsv_code == "colour_data" and self._t_info["category"] == "dj":

@@ -52,7 +52,7 @@ class discover_ble(FhemModule):
                             )
                     elif d.name == "CC-RT-BLE":
                         if not await fhem.checkIfDeviceExists(
-                            self.hash, "PYTHONTYPE", "eq3bt", "MAC", d.address
+                            self.hash, "FHEMPYTYPE", "eq3bt", "MAC", d.address
                         ):
                             self.logger.debug(
                                 "create device: "
@@ -67,7 +67,7 @@ class discover_ble(FhemModule):
                                 d.name
                                 + "_"
                                 + d.address.replace(":", "")
-                                + " PythonModule eq3bt '"
+                                + " fhempy eq3bt '"
                                 + d.address
                                 + "'",
                             )
@@ -82,7 +82,7 @@ class discover_ble(FhemModule):
                             )
                     elif d.name[0:7] == "Expert_":
                         if not await fhem.checkIfDeviceExists(
-                            self.hash, "PYTHONTYPE", "nespresso_ble", "MAC", d.address
+                            self.hash, "FHEMPYTYPE", "nespresso_ble", "MAC", d.address
                         ):
                             self.logger.debug(
                                 "create device: "
@@ -97,7 +97,7 @@ class discover_ble(FhemModule):
                                 d.name
                                 + "_"
                                 + d.address.replace(":", "")
-                                + " PythonModule nespresso_ble '"
+                                + " fhempy nespresso_ble '"
                                 + d.address
                                 + "'",
                             )

@@ -6,10 +6,10 @@ import logging
 import time
 from datetime import timedelta
 
-import aiohttp
+from aiohttp import ClientError, ClientSession
 from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
-from async_upnp_client.utils import async_get_local_ip
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
+from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem
@@ -29,7 +29,7 @@ def catch_request_errors():
             """Catch asyncio.TimeoutError, aiohttp.ClientError errors."""
             try:
                 return await func(self, *args, **kwargs)
-            except (asyncio.TimeoutError, aiohttp.ClientError):
+            except (asyncio.TimeoutError, ClientError):
                 self.logger.error("Error during call %s", func.__name__)
 
         return wrapper
@@ -48,30 +48,6 @@ class dlna_dmr(FhemModule):
         # set log level to ERROR for aiohttp.access to avoid INFO notify msgs
         logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
 
-        set_config = {
-            "play": {
-                "args": ["url"],
-                "params": {"url": {"optional": True, "default": ""}},
-            },
-            "volume": {
-                "args": ["volume"],
-                "params": {"volume": {"format": "int"}},
-                "options": "slider,0,1,100",
-            },
-            "mute": {"args": ["onoff"], "options": "on,off,toggle"},
-            "pause": {},
-            "next": {},
-            "previous": {},
-            "off": {},
-            "stop": {},
-            "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
-            "speak": {
-                "args": ["text"],
-                "help": "Please use double quotes for the text to speak",
-            },
-        }
-        self.set_set_config(set_config)
-
     async def found_device(self, upnp_device):
         if self.device:
             self.logger.error("Device exists already, do not create a new one")
@@ -79,7 +55,7 @@ class dlna_dmr(FhemModule):
 
         self.upnp_device = upnp_device
         # build upnp/aiohttp requester
-        session = aiohttp.ClientSession()
+        session = ClientSession()
         requester = AiohttpSessionRequester(session, True)
         # ensure event handler has been started
         server_host = await async_get_local_ip()
@@ -130,7 +106,6 @@ class dlna_dmr(FhemModule):
 
     # FHEM Function
     async def Undefine(self, hash):
-        await super().Undefine(hash)
         await ssdp.getInstance(self.logger).stop_search()
         if self.server:
             await self.server.stop_server()
@@ -138,11 +113,36 @@ class dlna_dmr(FhemModule):
             await self.device.cleanup()
             del self.device
             self.device = None
+        await super().Undefine(hash)
 
     # FHEM Function
     async def Define(self, hash, args, argsh):
         """Set up DLNA DMR platform."""
         await super().Define(hash, args, argsh)
+        set_config = {
+            "play": {
+                "args": ["url"],
+                "params": {"url": {"optional": True, "default": ""}},
+            },
+            "volume": {
+                "args": ["volume"],
+                "params": {"volume": {"format": "int"}},
+                "options": "slider,0,1,100",
+            },
+            "mute": {"args": ["onoff"], "options": "on,off,toggle"},
+            "pause": {},
+            "next": {},
+            "previous": {},
+            "off": {},
+            "stop": {},
+            "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
+            "speak": {
+                "args": ["text"],
+                "help": "Please use double quotes for the text to speak",
+            },
+        }
+        await self.set_set_config(set_config)
+
         if len(args) < 4:
             return "Usage: define device fhempy dlna_dmr <UUID>"
 

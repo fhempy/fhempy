@@ -35,6 +35,12 @@ class meross(FhemModule):
     async def set_off(self, hash, params):
         self.create_async_task(self.device.set_off(hash, params))
 
+    async def set_continuous(self, hash, params):
+        self.create_async_task(self.device.set_continuous(hash, params))
+
+    async def set_intermittent(self, hash, params):
+        self.create_async_task(self.device.set_continuous(hash, params))
+
     async def set_toggle(self, hash, params):
         self.create_async_task(self.device.set_toggle(hash, params))
 
@@ -43,6 +49,9 @@ class meross(FhemModule):
 
     async def set_close(self, hash, params):
         self.create_async_task(self.device.set_close(hash, params))
+
+    async def set_stop(self, hash, params):
+        self.create_async_task(self.device.set_stop(hash, params))
 
     async def set_rgb(self, hash, params):
         self.create_async_task(self.device.set_rgb(hash, params))

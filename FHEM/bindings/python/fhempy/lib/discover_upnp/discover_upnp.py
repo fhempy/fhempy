@@ -1,7 +1,6 @@
 """
 Starts a service to scan in intervals for new devices.
 """
-import asyncio
 
 from fhempy.lib.core.ssdp import ssdp
 from fhempy.lib.generic import FhemModule
@@ -12,7 +11,6 @@ from .. import fhem
 class discover_upnp(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
-        self.set_set_config({})
         self.hash = None
         self.create_devs = {}
 
@@ -39,14 +37,8 @@ class discover_upnp(FhemModule):
                 set_devs = []
                 for dev in self.create_devs:
                     set_devs.append(self.create_devs[dev]["name"])
-                set_list = ""
                 set_config["create"]["options"] = ",".join(set_devs)
-                self.set_set_config(set_config)
-        # if upnp_device.device_type == "urn:schemas-upnp-org:device:MediaRenderer:1":
-        #     if not (await fhem.checkIfDeviceExists(self.hash, "PYTHONTYPE", "dlna_dmr", "UDN", upnp_device.udn)):
-        #         devname = devname = upnp_device.friendly_name + "_" + upnp_device.model_name
-        #         devname = ''.join(filter(str.isalnum, devname))
-        #         await fhem.CommandDefine(self.hash, devname + " PythonModule dlna_dmr " + upnp_device.udn)
+                await self.set_set_config(set_config)
 
     async def removed_device(self, upnp_device):
         return
@@ -55,6 +47,7 @@ class discover_upnp(FhemModule):
     async def Define(self, hash, args, argsh):
         """Start a discovery service."""
         await super().Define(hash, args, argsh)
+        await self.set_set_config({})
         ssdp.getInstance(self.logger).register_listener(self)
         await ssdp.getInstance(self.logger).start_search()
         await fhem.readingsSingleUpdate(hash, "state", "active", 0)
@@ -67,7 +60,7 @@ class discover_upnp(FhemModule):
             if self.create_devs[udn]["name"] == params["device"]:
                 await fhem.CommandDefine(
                     self.hash,
-                    self.create_devs[udn]["devname"] + " PythonModule dlna_dmr " + udn,
+                    self.create_devs[udn]["devname"] + " fhempy dlna_dmr " + udn,
                 )
 
     # FHEM Undefine

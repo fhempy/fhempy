@@ -1,0 +1,7 @@
+{
+  "requirements": [
+    "hyundai_kia_connect_api==3.3.12",
+    "pytz",
+    "python-dateutil"
+  ]
+}

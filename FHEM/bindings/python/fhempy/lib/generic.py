@@ -1,10 +1,10 @@
 import asyncio
+import functools
 import inspect
 import json
 import os
-import markdown2
-import functools
 
+import markdown2
 from fhempy.lib import fhem
 
 from . import utils
@@ -19,15 +19,32 @@ class FhemModule:
         self._conf_attr = {}
         self.readme_str = None
 
-    def set_attr_config(self, attr_config):
+    async def set_attr_config(self, attr_config):
         self._conf_attr = attr_config
+        await utils.handle_define_attr(self._conf_attr, self, self.hash)
 
-    def set_set_config(self, set_config):
+    async def set_set_config(self, set_config):
         self._conf_set = set_config
+        await fhem.send_default_response(
+            self.hash,
+            await utils.handle_set(self._conf_set, self, self.hash, ["?"], {}),
+        )
+
+    async def set_icon(self, icon_name):
+        curr_icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
+        if curr_icon == "":
+            await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} icon {icon_name}")
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
         (FW_wname, d, room, pageHash) = args
+
+        if not hasattr(self, "hash"):
+            return (
+                "This device is disabled, set disable attribute "
+                "to 0 or delete it to enable the device<br>"
+            )
+
         ret = """<script type="text/javascript">
         function displayHelp() {
           var x = document.getElementById("fhempyReadme");
@@ -82,15 +99,26 @@ class FhemModule:
           helpAttrAction();
 
           var helpLink = document.getElementById("content")
-            .getElementsByClassName("detLink devSpecHelp");
-          helpLink[0].innerHTML = '<div class="detLink devSpecHelp"><a href="#" onclick="displayHelp();return false;">Device specific help</a></div>';
+            .getElementsByClassName("detLink");
+          if (helpLink.length == 0) {
+            helpLink = document.getElementById("content")
+              .getElementsByClassName("detLink devSpecHelp");
+            helpLink[0].innerHTML = '<div class="detLink devSpecHelp"><a href="#" onclick="displayHelp();return false;">Device specific help</a></div>';
+          } else {
+            helpLink[0].innerHTML = '<div class="detLink"><a href="#" onclick="displayHelp();return false;">Help for fhempy device ###DEVICETYPE###</a></div>';
+          }
         });
         </script>"""
         js_set_conf = {}
         for key in self._conf_set:
             if "help" in self._conf_set[key]:
                 js_set_conf[key] = {}
-                js_set_conf[key]["help"] = self._conf_set[key]["help"]
+                js_set_conf[key]["help"] = (
+                    self._conf_set[key]["help"]
+                    .replace("\n", "<br>")
+                    .replace("'", '"')
+                    .replace('"', '\\"')
+                )
         ret = ret.replace(
             "###SET_CMD_CONFIG_STRING###",
             json.dumps(js_set_conf),
@@ -99,15 +127,30 @@ class FhemModule:
         for key in self._conf_attr:
             if "help" in self._conf_attr[key]:
                 js_attr_conf[key] = {}
-                js_attr_conf[key]["help"] = self._conf_attr[key]["help"]
+                js_attr_conf[key]["help"] = (
+                    self._conf_attr[key]["help"]
+                    .replace("\n", "<br>")
+                    .replace("'", '"')
+                    .replace('"', '\\"')
+                )
         ret = ret.replace(
             "###ATTR_CONFIG_STRING###",
             json.dumps(js_attr_conf),
         )
 
+        ret = ret.replace(
+            "###DEVICETYPE###",
+            self.hash["FHEMPYTYPE"],
+        )
+
         # add readme as help
         if self.readme_str is not None:
-            ret = ret.replace("###README_HELP_STRING###", self.readme_str)
+            ret = ret.replace(
+                "###README_HELP_STRING###",
+                self.readme_str.replace("\n", "<br>")
+                .replace("\\", "\\\\")
+                .replace("`", "\\`"),
+            )
 
         return ret
 
@@ -135,6 +178,13 @@ class FhemModule:
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         self.hash = hash
+        self._defargs = args
+        self._defargsh = argsh
+
+        # send set to fhem if set_set_config wasn't used before
+        if self._conf_set == {}:
+            await self.set_set_config(self._conf_set)
+
         check_init_done = await fhem.init_done(self.hash)
         if check_init_done == 1:
             if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
@@ -147,7 +197,7 @@ class FhemModule:
         self.readme_str = await utils.run_blocking(
             functools.partial(self._get_readme_content)
         )
-        await utils.handle_define_attr(self._conf_attr, self, hash)
+        await utils.handle_define_attr(self._conf_attr, self, self.hash)
 
     # FHEM FUNCTION
     async def Attr(self, hash, args, argsh):
@@ -158,9 +208,24 @@ class FhemModule:
         return await utils.handle_set(self._conf_set, self, hash, args, argsh)
 
     def create_async_task(self, coro):
-        task = asyncio.create_task(coro)
+        task = asyncio.create_task(self._run_coro(coro))
+        task.add_done_callback(self._handle_task_result)
         self._tasks.append(task)
         return task
+
+    async def _run_coro(self, coro):
+        try:
+            await coro
+        except asyncio.CancelledError:
+            pass
+
+    def _handle_task_result(self, task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            self.logger.exception("Exception raised by task: %r", task)
 
     def cancel_async_task(self, task):
         self._tasks.remove(task)

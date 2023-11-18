@@ -1,10 +1,6 @@
-MOV FHEM/bindings/python/fhempy FHEM/bindings/python/delete_fhempy
-DIR FHEM/bindings
-DIR FHEM/bindings/python
-DIR FHEM/bindings/python/bin
-UPD 2022-02-01_20:46:03 3195 FHEM/10_PythonModule.pm
-UPD 2021-10-22_15:14:46 3131 FHEM/10_fhempy.pm
-UPD 2021-12-19_12:34:20 4593 FHEM/10_PythonBinding.pm
-UPD 2022-02-01_20:46:03 17179 FHEM/10_BindingsIo.pm
-UPD 2022-02-01_20:46:03 5440 FHEM/10_fhempyServer.pm
-UPD 2021-08-28_12:01:46 3501 FHEM/bindings/python/bin/fhempy
+UPD 2023-03-20_21:25:55 21407 FHEM/10_BindingsIo.pm
+UPD 2022-08-12_18:31:17 4663 FHEM/10_PythonBinding.pm
+UPD 2022-08-12_18:30:57 3253 FHEM/10_PythonModule.pm
+UPD 2023-02-19_23:23:37 2932 FHEM/10_fhempy.pm
+UPD 2023-01-29_14:12:13 6672 FHEM/10_fhempyServer.pm
+UPD 2022-12-17_16:26:42 4739 FHEM/bindings/python/bin/fhempy

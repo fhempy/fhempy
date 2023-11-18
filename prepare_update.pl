@@ -8,7 +8,8 @@ use strict;
 my $location = "FHEM";
 
 # keep this till 03/2021 (written on 22.12.2020)
-print "MOV FHEM/bindings/python/fhempy FHEM/bindings/python/delete_fhempy\n";
+# deactivated on 13.08.2022
+#print "MOV FHEM/bindings/python/fhempy FHEM/bindings/python/delete_fhempy\n";
 
 print "DIR FHEM/bindings\n";
 print "DIR FHEM/bindings/python\n";

@@ -25,7 +25,7 @@ class wienerlinien(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         set_list_conf = {"update": {}}
-        self.set_set_config(set_list_conf)
+        await self.set_set_config(set_list_conf)
         if len(args) < 4:
             return "Usage: define devname fhempy wienerlinien <STOPID>"
         self._stopid = args[3]
@@ -43,6 +43,52 @@ class wienerlinien(FhemModule):
             await self.update()
             await asyncio.sleep(30)
 
+    async def _parse_data(self, data, message):
+        if len(data["monitors"]) == 0:
+            flat_data = {}
+            flat_data_location = {}
+            state_text = "no departures"
+        else:
+            flat_data = utils.flatten_json(data["monitors"][0]["lines"][0])
+            flat_data_location = utils.flatten_json(data["monitors"][0]["locationStop"])
+            state_text = (
+                flat_data["towards"]
+                + ": "
+                + str(flat_data["departures_departure_0_departureTime_countdown"])
+            )
+
+        if self._last_data:
+            del_readings = set(self._last_data) - set(flat_data)
+        else:
+            del_readings = {}
+
+        await fhem.readingsBeginUpdate(self.hash)
+        for msg in message:
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "msg_" + msg, message[msg]
+            )
+        for data_name in flat_data:
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "line_" + data_name, flat_data[data_name]
+            )
+        for data_name in flat_data_location:
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "loc_" + data_name, flat_data_location[data_name]
+            )
+
+        if "trafficjam" in flat_data and flat_data["trafficjam"] == 1:
+            state_text += " (traffic jam)"
+        await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_text)
+        await fhem.readingsEndUpdate(self.hash, 1)
+
+        # delete old readings which were not updated
+        for del_reading in del_readings:
+            await fhem.CommandDeleteReading(
+                self.hash, self.hash["NAME"] + " line_" + del_reading
+            )
+
+        self._last_data = flat_data
+
     async def update(self):
         try:
             data = await self.api.get_json()
@@ -58,52 +104,7 @@ class wienerlinien(FhemModule):
         if data is None:
             return
         try:
-            if len(data["monitors"]) == 0:
-                flat_data = {}
-                flat_data_location = {}
-                state_text = "no departures"
-            else:
-                flat_data = utils.flatten_json(data["monitors"][0]["lines"][0])
-                flat_data_location = utils.flatten_json(
-                    data["monitors"][0]["locationStop"]
-                )
-                state_text = (
-                    flat_data["towards"]
-                    + ": "
-                    + str(flat_data["departures_departure_0_departureTime_countdown"])
-                )
-
-            if self._last_data:
-                del_readings = set(self._last_data) - set(flat_data)
-            else:
-                del_readings = {}
-
-            await fhem.readingsBeginUpdate(self.hash)
-            for msg in message:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "msg_" + msg, message[msg]
-                )
-            for data_name in flat_data:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "line_" + data_name, flat_data[data_name]
-                )
-            for data_name in flat_data_location:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "loc_" + data_name, flat_data_location[data_name]
-                )
-
-            if "trafficjam" in flat_data and flat_data["trafficjam"] == 1:
-                state_text += " (traffic jam)"
-            await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_text)
-            await fhem.readingsEndUpdate(self.hash, 1)
-
-            # delete old readings which were not updated
-            for del_reading in del_readings:
-                await fhem.CommandDeleteReading(
-                    self.hash, self.hash["NAME"] + " line_" + del_reading
-                )
-
-            self._last_data = flat_data
+            await self._parse_data(data, message)
 
         except Exception:
             self.logger.exception("Failed...")

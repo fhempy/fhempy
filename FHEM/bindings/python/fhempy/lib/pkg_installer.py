@@ -10,8 +10,10 @@ import os
 import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
+from urllib.parse import urlparse
 
 import pkg_resources
+from fhempy.lib import utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -38,21 +40,28 @@ def is_virtual_env() -> bool:
     )
 
 
-def is_docker_env() -> bool:
-    """Return True if we run in a docker env."""
-    return Path("/.dockerenv").exists()
+def is_container_env():
+    if Path("/.dockerenv").exists():
+        """Return True if we run in a docker env."""
+        container = True
+    elif Path("/var/run/secrets/kubernetes.io").exists():
+        """Return True if we run in a Kubernetes env."""
+        container = True
+    else:
+        container = False
+    return container
 
 
 def pip_kwargs(config_dir):
     """Return keyword arguments for PIP install."""
-    is_docker = is_docker_env()
+    is_container = is_container_env()
     kwargs = {
         # "constraints": os.path.join(os.path.dirname(__file__), CONSTRAINT_FILE),
-        "no_cache_dir": is_docker,
+        "no_cache_dir": is_container,
     }
     if "WHEELS_LINKS" in os.environ:
         kwargs["find_links"] = os.environ["WHEELS_LINKS"]
-    if not (config_dir is None or is_virtual_env()) and not is_docker:
+    if not (config_dir is None or is_virtual_env()) and not is_container:
         kwargs["target"] = os.path.join(config_dir, "deps")
     return kwargs
 
@@ -62,10 +71,7 @@ def check_dependencies(module):
     of dependencies
     """
     try:
-        from fhempy import lib
-
-        initfile = inspect.getfile(lib)
-        fhempy_root = os.path.dirname(initfile)
+        fhempy_root = utils.get_fhempy_root()
         with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
             manifest = json.load(f)
 
@@ -137,13 +143,24 @@ def is_installed(package: str) -> bool:
     Returns False when the package is not installed or doesn't meet req.
     """
     try:
+        pkg_resources.get_distribution(package)
+        return True
+    except (pkg_resources.ResolutionError, pkg_resources.ExtractionError):
         req = pkg_resources.Requirement.parse(package)
     except ValueError:
-        raise
+        # This is a zip file. We no longer use this in Home Assistant,
+        # leaving it in for custom components.
+        req = pkg_resources.Requirement.parse(urlparse(package).fragment)
 
     try:
-        ret = version(req.project_name) in req
-        return ret
+        installed_version = version(req.project_name)
+        # This will happen when an install failed or
+        # was aborted while in progress see
+        # https://github.com/home-assistant/core/issues/47699
+        if installed_version is None:
+            logger.error("Installed version for %s resolved to None", req.project_name)  # type: ignore[unreachable]
+            return False
+        return installed_version in req
     except PackageNotFoundError:
         return False
 

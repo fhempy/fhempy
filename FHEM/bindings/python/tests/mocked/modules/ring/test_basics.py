@@ -43,7 +43,7 @@ def mock_ring_requests():
             text=load_fixture("ring_doorbots.json"),
         )
         mock.get(
-            "https://api.ring.com/clients_api/dings/active",
+            "https://api.ring.com/clients_api/dings/active?api_version=9",
             text=load_fixture("ring_ding_active.json"),
         )
         mock.put(

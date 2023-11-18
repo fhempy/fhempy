@@ -49,7 +49,7 @@ async def test_setup(mocker):
     def devicesScan(verbose, maxretry=1, color=None):
         return json.loads(load_fixture("local_devices.json"))
 
-    mocker.patch("tinytuya.deviceScan", devicesScan)
+    mocker.patch("aiotinytuya.deviceScan", devicesScan)
 
     await fhempy_device.Define(
         testhash,
@@ -65,23 +65,5 @@ async def test_setup(mocker):
         {},
     )
     assert mock_fhem.readings["testdevice"]["state"] == "ready"
-
-    await fhempy_device.Set(testhash, ["testdevice", "scan_devices"], {})
-
-    await asyncio.sleep(0.2)
-    assert mock_fhem.readings["testdevice"]["state"] == "done, created 2 devices"
-
-    assert (
-        mock_fhem.readings["testdevice"]["239823982398239823_localkey"]
-        == "0923092309231234"
-    )
-    assert (
-        mock_fhem.readings["testdevice"]["23424524513414245_localkey"]
-        == "0923092309231234"
-    )
-    assert (
-        mock_fhem.readings["testdevice"]["2423425345234234234_localkey"]
-        == "0923092309231234"
-    )
 
     await fhempy_device.Undefine(testhash)

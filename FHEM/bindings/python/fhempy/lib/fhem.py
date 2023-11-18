@@ -1,16 +1,20 @@
 import asyncio
-import concurrent.futures
 import json
 import logging
+import os
+import platform
 import random
+import socket
+import time
 import traceback
+from datetime import datetime
 
+import aiohttp
 import websockets
 
 from .version import __version__
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 function_active = []
 update_locks = {}
@@ -65,7 +69,8 @@ async def getUniqueId(hash):
 
 async def init_done(hash):
     cmd = "$init_done"
-    return await sendCommandHash(hash, cmd)
+    res = await sendCommandHash(hash, cmd)
+    return int(res)
 
 
 async def ReadingsVal(name, reading, default):
@@ -89,7 +94,7 @@ async def addToDevAttrList(name, attr_list):
 
 
 async def setDevAttrList(name, attr_list):
-    attr_list += " IODev"
+    attr_list += " IODev disable:0,1"
     cmd = "setDevAttrList('" + name + "', '" + attr_list + " '.$readingFnAttributes)"
     return await sendCommandName(name, cmd)
 
@@ -97,7 +102,13 @@ async def setDevAttrList(name, attr_list):
 async def readingsBeginUpdate(hash):
     if hash["NAME"] not in update_locks:
         update_locks[hash["NAME"]] = asyncio.Lock()
-    await update_locks[hash["NAME"]].acquire()
+    try:
+        await asyncio.wait_for(update_locks[hash["NAME"]].acquire(), 120)
+    except asyncio.TimeoutError:
+        logging.error(
+            f"{hash['NAME']}: readingsBeginUpdate couldn't acquire lock,"
+            + " caused by readingsBeginUpdate without End or Single update inbetween"
+        )
     cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
     return await sendCommandHash(hash, cmd)
 
@@ -114,6 +125,12 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
             + value.replace("'", "\\'")
             + "');;"
         )
+        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
+            logging.error(
+                f"{hash['NAME']}: readingsBulkUpdateIfChanged without "
+                + f"readingsBeginUpdate: {cmd}"
+            )
+            return
         return await sendCommandHash(hash, cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdateIfChanged")
@@ -144,12 +161,20 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + str(changed)
                 + ");;"
             )
+        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
+            logging.error(
+                f"{hash['NAME']}: readingsBulkUpdate without "
+                + f"readingsBeginUpdate: {cmd}"
+            )
+            return
         return await sendCommandHash(hash, cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdate")
 
 
 async def readingsEndUpdate(hash, do_trigger):
+    if hash["NAME"] not in update_locks:
+        logger.error("readingsEndUpdate without active readingsBeginUpdate")
     cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
     res = await sendCommandHash(hash, cmd)
     update_locks[hash["NAME"]].release()
@@ -240,7 +265,9 @@ async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
         + typeinternal
         + "} eq '"
         + typevalue
-        + "' && $main::defs{$fhem_dev}{"
+        + "' && defined($main::defs{$fhem_dev}{"
+        + internal
+        + "}) && $main::defs{$fhem_dev}{"
         + internal
         + "} eq '"
         + value
@@ -259,14 +286,72 @@ def convertValue(value):
         value = 1
     if value is False:
         value = 0
+    if isinstance(value, datetime):
+        value = value.strftime("%Y-%m-%d %H:%M:%S")
 
     return str(value)
+
+
+async def get_github_data():
+    res_json = {}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.github.com/repos/fhempy/fhempy/releases/latest"
+            ) as resp:
+                res_json = await resp.json()
+    except Exception:
+        logger.exception("Failed to get github fhempy data")
+    return res_json
+
+
+async def send_latest_release():
+    while True:
+        try:
+            github_data = await get_github_data()
+            try:
+                latest_version = github_data["name"][1:]
+            except Exception:
+                latest_version = "unknown"
+
+            msg = {
+                "msgtype": "version",
+                "version_available": latest_version,
+                "version_release_notes": (
+                    '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
+                    "Release Notes</a></html>"
+                ),
+            }
+            msg = json.dumps(msg, ensure_ascii=False)
+            logger.debug("<<< WS: " + msg)
+            global wsconnection
+            await wsconnection.send(msg)
+        except Exception:
+            logger.exception("Failed to update latest release infos")
+        await asyncio.sleep(3600 * 12)
 
 
 async def send_version():
     msg = {
         "msgtype": "version",
         "version": __version__,
+        "python": platform.python_version(),
+        "os": os.name,
+        "system": platform.system(),
+        "release": platform.release(),
+        "hostname": socket.gethostname(),
+    }
+    msg = json.dumps(msg, ensure_ascii=False)
+    logger.debug("<<< WS: " + msg)
+    global wsconnection
+    await wsconnection.send(msg)
+
+
+async def send_default_response(hash, set_default_response):
+    msg = {
+        "msgtype": "set_update",
+        "NAME": hash["NAME"],
+        "set_default_response": set_default_response,
     }
     msg = json.dumps(msg, ensure_ascii=False)
     logger.debug("<<< WS: " + msg)
@@ -282,20 +367,27 @@ async def send_and_wait(name, cmd):
         "msgtype": "command",
         "command": cmd,
     }
+    sent_time = time.time()
 
     def listener(rmsg):
         try:
+            recv_time = time.time()
+            fhem_time = (recv_time - sent_time) * 1000
+            if fhem_time > 5000:
+                # log error message if fhem took too long to handle cmd
+                logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
+            rmsg = json.loads(rmsg)
+            logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
-            logger.error("Failed to set result, received: " + rmsg)
+            logger.error(f"Failed to set result, received: {rmsg}")
 
     global wsconnection
-    wsconnection.registerMsgListener(listener, msg["awaitId"])
+    wsconnection.register_msg_listener(listener, msg["awaitId"])
+    logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
     msg = json.dumps(msg, ensure_ascii=False)
-    logger.debug("<<< WS: " + msg)
     try:
         await wsconnection.send(msg)
-        logger.debug("message sent successfully")
     except websockets.exceptions.ConnectionClosed:
         logger.error("Connection closed, can't send message.")
     except Exception as e:
@@ -307,21 +399,25 @@ async def send_and_wait(name, cmd):
 
 async def sendCommandName(name, cmd, hash=None):
     ret = ""
+    timeout = 180
     try:
-        logger.debug("sendCommandName START")
+        start = time.time()
         while len(function_active) != 0:
             if function_active[-1] == name:
                 break
-            await asyncio.sleep(0.001)
-        # wait max 60s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), 60)
-        logger.debug("sendCommandName END")
-        ret = json.loads(jsonmsg)["result"]
+            await asyncio.sleep(0.1)
+        end = time.time()
+        duration = end - start
+        if duration > 5:
+            logger.error(f"sendCommandName took {duration}s to send: {cmd}")
+        # wait max 180s for reply from FHEM
+        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
+        ret = jsonmsg["result"]
     except asyncio.TimeoutError:
-        logger.error("Timeout - NO RESPONSE for command: " + cmd)
+        logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
-    except concurrent.futures.CancelledError:
-        # function timeout
+    except asyncio.CancelledError:
+        # task was cancelled
         pass
     except Exception as e:
         logger.error("Exception while waiting for reply: " + e)

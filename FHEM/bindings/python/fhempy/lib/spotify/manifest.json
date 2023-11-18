@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "spotipy==2.18.0"
+    "spotipy==2.20.0"
   ]
 }

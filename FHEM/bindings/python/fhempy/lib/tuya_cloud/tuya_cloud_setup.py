@@ -1,26 +1,17 @@
 import asyncio
 import functools
+import json
 
-from tuya_iot import (
-    AuthType,
-    TuyaDevice,
-    TuyaDeviceListener,
-    TuyaDeviceManager,
-    TuyaHomeManager,
-    TuyaOpenAPI,
-    TuyaOpenMQ,
-)
-from fhempy.lib import fhem, utils
+import fhempy.lib.fhem as fhem
+import fhempy.lib.utils as utils
+import tuya_iot
+from tuya_connector import TuyaCloudPulsarTopic, TuyaOpenPulsar
 
-from fhempy.lib.generic import FhemModule
-
-from .const import (
-    TUYA_ENDPOINT,
-)
+from .const import TUYA_ENDPOINT
 
 
 class tuya_cloud_setup:
-    def __init__(self, logger, fhemdevice: FhemModule):
+    def __init__(self, logger, fhemdevice):
         self.logger = logger
         self.fhemdev = fhemdevice
         self.hash = fhemdevice.hash
@@ -41,13 +32,20 @@ class tuya_cloud_setup:
             self._t_region = args[9]
         else:
             self._t_region = "Europe"
+        self.hash["DEVICEID"] = 0
 
         self.fhemdev.create_async_task(self.run_setup())
+
+    async def Undefine(self, hash):
+        return
 
     def _get_region_url(self, region) -> str:
         for url in TUYA_ENDPOINT:
             if TUYA_ENDPOINT[url] == region:
                 return url
+
+    def _get_pulsar_endpoint(self, region):
+        return "wss://mqe.tuya" + self._get_countrycode(self._t_region) + ".com:8285/"
 
     def _get_countrycode(self, region) -> str:
         if region == "Europe":
@@ -62,30 +60,36 @@ class tuya_cloud_setup:
             await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
             await self._init_devices()
 
-    async def restart_mqtt_loop(self):
-        while True:
-            await asyncio.sleep(7100)  # nearly 2 hours
-            try:
-                await self.restart_mqtt()
-            except Exception as ex:
-                self.logger.exception(ex)
+    async def _init_tuya_openpulsar(self):
+        self.tuya_pulsar = TuyaOpenPulsar(
+            self._t_apikey,
+            self._t_apisecret,
+            self._get_pulsar_endpoint(self._t_region),
+            TuyaCloudPulsarTopic.PROD,
+        )
+        self.tuya_pulsar.start()
 
-    async def restart_mqtt(self):
+        # check if pulsar is working
+        await asyncio.sleep(2)
+        pulsar_connected = False
         try:
-            self.device_manager.mq.stop()
-            self.tuya_mq.stop()
+            pulsar_connected = self.tuya_pulsar.ws_app.sock.status == 101
         except Exception:
             pass
 
-        self.tuya_mq = TuyaOpenMQ(self.device_manager.api)
-        self.tuya_mq.start()
-
-        self.device_manager.mq = self.tuya_mq
-        self.tuya_mq.add_message_listener(self.device_manager.on_message)
+        if pulsar_connected is False:
+            self.logger.error(
+                "Please activate OpenPulsar: "
+                + "https://developer.tuya.com/en/docs/iot/subscribe-mq?id=Kavqcrvckbh9h"
+            )
+            # pulsar not working
+            self.tuya_pulsar.stop()
+        else:
+            self.logger.info("Tuya Open Pulsar connected")
 
     async def _init_tuya_sdk(self) -> bool:
-        auth_type = AuthType(0)
-        api = TuyaOpenAPI(
+        auth_type = tuya_iot.AuthType(0)
+        api = tuya_iot.TuyaOpenAPI(
             self._get_region_url(self._t_region),
             self._t_apikey,
             self._t_apisecret,
@@ -98,7 +102,7 @@ class tuya_cloud_setup:
             await utils.run_blocking(
                 functools.partial(api.connect, self._t_username, self._t_password)
             )
-            if auth_type == AuthType.CUSTOM
+            if auth_type == tuya_iot.AuthType.CUSTOM
             else await utils.run_blocking(
                 functools.partial(
                     api.connect,
@@ -121,27 +125,30 @@ class tuya_cloud_setup:
                 self.logger.error(f"Tuya login error response: {response}")
             return False
 
-        self.tuya_mq = TuyaOpenMQ(api)
-        self.tuya_mq.start()
-        # self.fhemdev.create_async_task(self.restart_mqtt_loop())
+        await self._init_tuya_openpulsar()
 
-        self.device_manager = TuyaDeviceManager(api, self.tuya_mq)
+        self.tuya_mq = tuya_iot.TuyaOpenMQ(api)
+        self.tuya_mq.start()
+
+        self.device_manager = tuya_iot.TuyaDeviceManager(api, self.tuya_mq)
 
         # Get device list
-        self.home_manager = TuyaHomeManager(api, self.tuya_mq, self.device_manager)
+        self.home_manager = tuya_iot.TuyaHomeManager(
+            api, self.tuya_mq, self.device_manager
+        )
         await utils.run_blocking(
             functools.partial(self.home_manager.update_device_cache)
         )
         t_cloud_setup = self
 
-        class DeviceListener(TuyaDeviceListener):
+        class DeviceListener(tuya_iot.TuyaDeviceListener):
             """Device Update Listener."""
 
             def __init__(self, logger) -> None:
                 super().__init__()
                 self.logger = logger
 
-            def update_device(self, device: TuyaDevice):
+            def update_device(self, device: tuya_iot.TuyaDevice):
                 self.logger.debug(f"update_device received for {device.id}")
                 for dev in t_cloud_setup.tuya_devices:
                     if dev.id == device.id:
@@ -152,7 +159,7 @@ class tuya_cloud_setup:
                         except Exception:
                             self.logger.exception("Failed to update device")
 
-            def add_device(self, device: TuyaDevice):
+            def add_device(self, device: tuya_iot.TuyaDevice):
                 self.logger.info(f"add_device received for {device.id}")
                 try:
                     asyncio.run_coroutine_threadsafe(
@@ -161,13 +168,13 @@ class tuya_cloud_setup:
                 except Exception:
                     self.logger.exception("Failed to add device")
 
-            async def add_fhem_device(self, device: TuyaDevice):
+            async def add_fhem_device(self, device: tuya_iot.TuyaDevice):
                 await t_cloud_setup._create_fhem_device(device.name, device.id)
                 try:
                     self.tuya_mq.stop()
                 except Exception:
                     pass
-                self.tuya_mq = TuyaOpenMQ(
+                self.tuya_mq = tuya_iot.TuyaOpenMQ(
                     t_cloud_setup.device_manager.device_manager.api
                 )
                 self.tuya_mq.start()
@@ -182,7 +189,23 @@ class tuya_cloud_setup:
 
         __listener = DeviceListener(self.logger)
         self.device_manager.add_device_listener(__listener)
-        self.tuya_mq.add_message_listener(self.device_manager.on_message)
+
+        def on_pulsar_message(msg):
+            msg = json.loads(msg)
+            status = msg.get("status", [])
+            device = {"id": msg["devId"], "status": status}
+            self.logger.debug(f"update_device received: {msg}")
+            for dev in t_cloud_setup.tuya_devices:
+                if dev.id == device["id"]:
+                    try:
+                        asyncio.run_coroutine_threadsafe(
+                            dev.update_readings_arr(device["status"]),
+                            t_cloud_setup.fhemdev.loop,
+                        )
+                    except Exception:
+                        self.logger.exception("Failed to update device")
+
+        self.tuya_pulsar.add_message_listener(on_pulsar_message)
 
         return True
 
@@ -193,31 +216,37 @@ class tuya_cloud_setup:
     def register_tuya_device(self, device):
         self._t_devicelist.append(device)
 
+    def unregister_tuya_device(self, device):
+        self._t_devicelist.remove(device)
+
     @property
     def tuya_devices(self):
         return self._t_devicelist
 
     async def _create_fhem_device(self, name, device_id):
         devalias = name
-        devname = name + "_" + device_id
-        devname = utils.remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
+        devname = "tuya_cloud_" + device_id
+        devname = utils.gen_fhemdev_name(devname)
         device_exists = await fhem.checkIfDeviceExists(
-            self.hash, "PYTHONTYPE", "tuya_cloud", "DEVICEID", device_id
+            self.hash, "FHEMPYTYPE", "tuya_cloud", "DEVICEID", device_id
         )
+
+        if not device_exists:
+            device_exists = await fhem.checkIfDeviceExists(
+                self.hash, "FHEMPYTYPE", "tuya", "DEVICEID", device_id
+            )
+
         if not device_exists:
             self.logger.info(
                 (
-                    f"create: {devname} PythonModule tuya_cloud "
+                    f"create: {devname} fhempy tuya_cloud "
                     f"{self.hash['NAME']} {device_id}"
                 )
             )
             # define each device (CommandDefine ... tuya_cloud_setup_dev deviceid
             await fhem.CommandDefine(
                 self.hash,
-                (
-                    f"{devname} PythonModule tuya_cloud "
-                    f"{self.hash['NAME']} {device_id}"
-                ),
+                (f"{devname} fhempy tuya_cloud " f"{self.hash['NAME']} {device_id}"),
             )
             await fhem.CommandAttr(self.hash, f"{devname} alias {devalias}")
             # wait for FHEM to handle CommandDefine
@@ -233,6 +262,7 @@ class tuya_cloud_setup:
             await self._create_fhem_device(
                 self.device_manager.device_map[device_id].name, device_id
             )
+            await asyncio.sleep(1)
 
     async def send_commands(self, deviceid, commands):
         await utils.run_blocking(

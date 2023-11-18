@@ -19,18 +19,20 @@ class miflora(FhemModule):
         self._poller = None
         self._attr_update_interval = 1200
         self._attr_hci_device = "hci0"
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._attr_list = {
             "update_interval": {"default": 1200, "format": "int"},
             "hci_device": {"default": "hci0"},
             "poll_type": {"default": "interval", "options": "interval,manual"},
         }
-        self.set_attr_config(self._attr_list)
+        await self.set_attr_config(self._attr_list)
         self._set_list = {"update": {}}
-        self.set_set_config(self._set_list)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
+        await self.set_set_config(self._set_list)
+        
         if len(args) < 4:
             return "Usage: define mi_plant fhempy miflora <MAC>"
 

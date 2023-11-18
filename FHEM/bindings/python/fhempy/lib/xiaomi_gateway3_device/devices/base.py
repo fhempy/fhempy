@@ -74,6 +74,14 @@ attr_settings = {
         "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
         "icon": "tradfri_gateway",
     },
+    # Bluetooth devices
+    "1371": {
+        "stateFormat": "temperature °C, humidity %",
+        "icon": "temp_temperature",
+    },
+    "2455": {
+        "icon": "secur_smoke_detector",
+    },
 }
 
 
@@ -95,15 +103,16 @@ class BaseDevice(FhemModule):
 
     async def initialize(self, device):
         self._xg3_device = device
-        for attr in attr_settings[device["model"]]:
-            if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
-                await fhem.CommandAttr(
-                    self.hash,
-                    (
-                        f"{self.hash['NAME']} {attr} "
-                        f"{attr_settings[self._xg3_device['model']][attr]}"
-                    ),
-                )
+        if str(device["model"]) in attr_settings:
+            for attr in attr_settings[str(device["model"])]:
+                if await fhem.AttrVal(self.hash["NAME"], attr, "") == "":
+                    await fhem.CommandAttr(
+                        self.hash,
+                        (
+                            f"{self.hash['NAME']} {attr} "
+                            f"{attr_settings[str(self._xg3_device['model'])][attr]}"
+                        ),
+                    )
 
         for reading in device:
             # following attributes are not readings
@@ -133,7 +142,7 @@ class BaseDevice(FhemModule):
         # device is online
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
         # update data
-        for reading in data:
+        for reading in list(data):
             if reading == "added_device":
                 pass
             else:

@@ -1,28 +1,67 @@
 import asyncio
-import base64
+import binascii
 import concurrent.futures
+import inspect
+import json
+import os
 import socket
-from codecs import decode, encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
+from codecs import decode
+from datetime import datetime
 from functools import partial, reduce
 
-from cryptography.fernet import Fernet
+from Cryptodome.Cipher import AES
+from Cryptodome.Hash import HMAC, SHA256
+from Cryptodome.Util.Padding import unpad
 
 from . import fhem
 
 
 def encrypt_string(plain_text, fhem_unique_id):
-    key = base64.b64encode(fhem_unique_id.encode("utf-8"))
-    cipher_suite = Fernet(key)
-    encrypted_text = cipher_suite.encrypt(plain_text.encode("utf-8"))
-    return reduce(encode, ("zlib", "base64"), encrypted_text).decode("utf-8")
+    key = fhem_unique_id.encode("utf-8")
+    b_text = plain_text.encode("utf-8")
+    e_cipher = AES.new(key, AES.MODE_EAX, nonce=key[0:16])
+    e_data = e_cipher.encrypt(b_text)
+    return "crypt-aes:" + urlsafe_b64encode(e_data).decode()
 
 
 def decrypt_string(encrypted_text, fhem_unique_id):
-    key = base64.b64encode(fhem_unique_id.encode("utf-8"))
-    encrypted_text = encrypted_text.encode("utf-8")
-    uncompressed_text = reduce(decode, ("base64", "zlib"), encrypted_text)
-    cipher_suite = Fernet(key)
-    return cipher_suite.decrypt(uncompressed_text).decode("utf-8")
+    if encrypted_text[0:10] != "crypt-aes:":
+        return decrypt_fernet(encrypted_text, fhem_unique_id)
+    key = fhem_unique_id.encode("utf-8")
+    encrypted_data = urlsafe_b64decode(encrypted_text[10:])
+    d_cipher = AES.new(key, AES.MODE_EAX, nonce=key[0:16])
+    return d_cipher.decrypt(encrypted_data).decode()
+
+
+def decrypt_fernet(token_b64, key_str):
+    try:
+        keys = key_str.encode("utf-8")
+        token_z = token_b64.encode("utf-8")
+        token_b64 = reduce(decode, ("base64", "zlib"), token_z).decode()
+        token = urlsafe_b64decode(token_b64)
+
+        if len(keys) != 32 or len(token) < 73 or token[0] != 0x80:
+            raise ValueError("Incorrect format")
+
+        hmac_key, dec_key = keys[:16], keys[16:]
+        HMAC.new(hmac_key, token[:-32], digestmod=SHA256).verify(token[-32:])
+        iv, ct = token[9:25], token[25:-32]
+        # Possibly check time-to-live here
+        message = unpad(AES.new(dec_key, AES.MODE_CBC, iv=iv).decrypt(ct), 16).decode()
+
+    except (ValueError, binascii.Error):
+        message = None
+
+    return message
+
+
+def get_fhempy_root():
+    from fhempy import lib
+
+    initfile = inspect.getfile(lib)
+    fhempy_root = os.path.dirname(initfile)
+    return fhempy_root
 
 
 async def run_blocking(function):
@@ -61,15 +100,16 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
+    ret = None
     if attr_name in attr_list and "function" in attr_list[attr_name]:
         fct_name = attr_list[attr_name]["function"]
     try:
         fct_call = getattr(obj, fct_name)
-        return await fct_call(hash)
+        ret = await fct_call(hash)
     except AttributeError:
         pass
 
-    return
+    return ret
 
 
 def get_local_ip():
@@ -108,20 +148,22 @@ async def handle_define_attr(attr_list, obj, hash):
         setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
 
         # call set_attr_....
-        fct_name = "set_attr_" + attr
-        if "function" in attr_list[attr]:
-            fct_name = attr_list[attr]["function"]
-        try:
-            fct_call = getattr(obj, fct_name)
-            await fct_call(hash)
-        except AttributeError:
-            pass
+        # fct_name = "set_attr_" + attr
+        # if "function" in attr_list[attr]:
+        #    fct_name = attr_list[attr]["function"]
+        # try:
+        #    fct_call = getattr(obj, fct_name)
+        #    await fct_call(hash)
+        # except AttributeError:
+        #    pass
 
     return
 
 
 def flatten_json(y):
     out = {}
+    if type(y) is str:
+        y = json.loads(y)
 
     def flatten(x, name=""):
         if type(x) is dict:
@@ -139,11 +181,17 @@ def flatten_json(y):
     return out
 
 
+def gen_reading_name(reading):
+    reading = reading.lower()
+    reading = reading.replace(" ", "_").replace("-", "_")
+    return remove_special_charachters(reading)
+
+
 def gen_fhemdev_name(devname):
-    return remove_umlaut(devname.replace(" ", "_").replace("-", "_"))
+    return remove_special_charachters(devname.replace(" ", "_").replace("-", "_"))
 
 
-def remove_umlaut(string):
+def remove_special_charachters(string):
     """
     Removes umlauts from strings and replaces them with the letter+e convention
     :param string: string to remove umlauts from
@@ -167,6 +215,12 @@ def remove_umlaut(string):
     string = string.replace(ss_enc, b"ss")
 
     string = string.decode("utf-8")
+
+    string = string.replace("(", "")
+    string = string.replace(")", "")
+    string = string.replace("'", "")
+    string = string.replace("`", "")
+    string = string.replace('"', "")
     return string
 
 
@@ -186,6 +240,18 @@ def convert2format(value, list_def):
             return True
         else:
             return False
+    elif target_format == "json":
+        try:
+            return json.loads(value)
+        except Exception:
+            return {}
+    elif target_format == "time":
+        try:
+            return datetime.strptime(value, "%H:%M")
+        except Exception:
+            return None
+    elif target_format == "array":
+        return value.split(",")
     return value
 
 
@@ -261,11 +327,9 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
                         )
 
             # call function with params
+            if "function_param" in set_list_conf[cmd]:
+                final_params["function_param"] = set_list_conf[cmd]["function_param"]
             if "function" in set_list_conf[cmd]:
-                if "function_param" in set_list_conf[cmd]:
-                    final_params["function_param"] = set_list_conf[cmd][
-                        "function_param"
-                    ]
                 fct_name = set_list_conf[cmd]["function"]
                 final_params["cmd"] = cmd
             else:

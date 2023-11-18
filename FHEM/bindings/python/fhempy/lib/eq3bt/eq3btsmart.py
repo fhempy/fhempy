@@ -7,21 +7,33 @@ To get the current state, update() has to be called for powersaving reasons.
 Schedule needs to be requested with query_schedule() before accessing for similar reasons.
 """
 
+# handle: 0x0110, char properties: 0x02, char value handle: 0x0111, uuid: 00002a00-0000-1000-8000-00805f9b34fb
+# handle: 0x0120, char properties: 0x02, char value handle: 0x0121, uuid: 00002a01-0000-1000-8000-00805f9b34fb
+# handle: 0x0130, char properties: 0x02, char value handle: 0x0131, uuid: 00002a02-0000-1000-8000-00805f9b34fb
+# handle: 0x0140, char properties: 0x08, char value handle: 0x0141, uuid: 00002a03-0000-1000-8000-00805f9b34fb
+# handle: 0x0150, char properties: 0x02, char value handle: 0x0151, uuid: 00002a04-0000-1000-8000-00805f9b34fb
+# handle: 0x0210, char properties: 0x22, char value handle: 0x0211, uuid: 00002a05-0000-1000-8000-00805f9b34fb
+# handle: 0x0310, char properties: 0x02, char value handle: 0x0311, uuid: 00002a29-0000-1000-8000-00805f9b34fb
+# handle: 0x0320, char properties: 0x02, char value handle: 0x0321, uuid: 00002a24-0000-1000-8000-00805f9b34fb
+# handle: 0x0410, char properties: 0x0a, char value handle: 0x0411, uuid: 3fa4585a-ce4a-3bad-db4b-b8df8179ea09
+# handle: 0x0420, char properties: 0x1a, char value handle: 0x0421, uuid: d0e8434d-cd29-0996-af41-6c90f4e0eb2a
+# handle: 0xff01, char properties: 0x38, char value handle: 0xff02, uuid: e3dd50bf-f7a7-4e99-838e-570a086c666b
+# handle: 0xff04, char properties: 0x08, char value handle: 0xff05, uuid: 92e86c7a-d961-4091-b74f-2409e72efe36
+# handle: 0xff06, char properties: 0x02, char value handle: 0xff07, uuid: 347f7608-2e2d-47eb-913b-75d4edc4de3b
+
+import asyncio
 import codecs
-import logging
 import struct
 from datetime import datetime, timedelta
 from enum import IntEnum
 
 from construct import Byte
 
-from .connection import BTLEConnection
+from ..core import bluetoothle
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status
 
-_LOGGER = logging.getLogger("eq3bt")
-
-PROP_WRITE_HANDLE = 0x411
-PROP_NTFY_HANDLE = 0x421
+PROP_WRITE_HANDLE = "3fa4585a-ce4a-3bad-db4b-b8df8179ea09"
+PROP_NTFY_HANDLE = "d0e8434d-cd29-0996-af41-6c90f4e0eb2a"
 
 PROP_ID_QUERY = 0
 PROP_ID_RETURN = 1
@@ -72,12 +84,15 @@ class TemperatureException(Exception):
 class Thermostat:
     """Representation of a EQ3 Bluetooth Smart thermostat."""
 
-    def __init__(self, _mac, connection_cls=BTLEConnection, keep_connection=False):
+    def __init__(
+        self, logger, hash, _mac, keep_connection=True, notification_callback=None
+    ):
         """Initialize the thermostat."""
+        self.logger = logger
 
-        self._target_temperature = Mode.Unknown
+        self._target_temperature = 0
         self._mode = Mode.Unknown
-        self._valve_state = Mode.Unknown
+        self._valve_state = 0
         self._raw_mode = None
 
         self._schedule = {}
@@ -95,11 +110,17 @@ class Thermostat:
         self._firmware_version = None
         self._device_serial = None
 
-        self._conn = connection_cls(_mac, keep_connection)
-        self._conn.set_callback(PROP_NTFY_HANDLE, self.handle_notification)
+        self._notification_callback = notification_callback
 
-    def set_keep_connected(self, new_state):
-        self._conn.set_keep_connected(new_state)
+        self._conn = bluetoothle.BluetoothLE(
+            self.logger,
+            hash,
+            _mac,
+        )
+        self._conn.register_notification_listener(self.handle_notification)
+
+    async def connect(self):
+        await self._conn.connect()
 
     def __str__(self):
         away_end = "no"
@@ -127,18 +148,21 @@ class Thermostat:
     def parse_schedule(self, data):
         """Parses the device sent schedule."""
         sched = Schedule.parse(data)
-        _LOGGER.debug("Got schedule data for day '%s'", sched.day)
+        self.logger.debug("Got schedule data for day '%s'", sched.day)
 
         return sched
 
-    def handle_notification(self, data):
+    async def disconnect(self):
+        await self._conn.disconnect()
+
+    def handle_notification(self, uuid, data):
         """Handle Callback from a Bluetooth (GATT) request."""
-        _LOGGER.debug("Received notification from the device..")
+        self.logger.debug("Received notification from the device..")
 
         if data[0] == PROP_INFO_RETURN and data[1] == 1:
-            _LOGGER.debug("Got status: %s" % codecs.encode(data, "hex"))
+            self.logger.debug("Got status: %s" % codecs.encode(data, "hex"))
             status = Status.parse(data)
-            _LOGGER.debug("Parsed status: %s", status)
+            self.logger.debug("Parsed status: %s", status)
 
             self._raw_mode = status.mode
             self._valve_state = status.valve
@@ -173,15 +197,15 @@ class Thermostat:
                 self._eco_temperature = None
                 self._temperature_offset = None
 
-            _LOGGER.debug("Valve state:      %s", self._valve_state)
-            _LOGGER.debug("Mode:             %s", self.mode_readable)
-            _LOGGER.debug("Target temp:      %s", self._target_temperature)
-            _LOGGER.debug("Away end:         %s", self._away_end)
-            _LOGGER.debug("Window open temp: %s", self._window_open_temperature)
-            _LOGGER.debug("Window open time: %s", self._window_open_time)
-            _LOGGER.debug("Comfort temp:     %s", self._comfort_temperature)
-            _LOGGER.debug("Eco temp:         %s", self._eco_temperature)
-            _LOGGER.debug("Temp offset:      %s", self._temperature_offset)
+            self.logger.debug("Valve state:      %s", self._valve_state)
+            self.logger.debug("Mode:             %s", self.mode_readable)
+            self.logger.debug("Target temp:      %s", self._target_temperature)
+            self.logger.debug("Away end:         %s", self._away_end)
+            self.logger.debug("Window open temp: %s", self._window_open_temperature)
+            self.logger.debug("Window open time: %s", self._window_open_time)
+            self.logger.debug("Comfort temp:     %s", self._comfort_temperature)
+            self.logger.debug("Eco temp:         %s", self._eco_temperature)
+            self.logger.debug("Temp offset:      %s", self._temperature_offset)
 
         elif data[0] == PROP_SCHEDULE_RETURN:
             parsed = self.parse_schedule(data)
@@ -189,24 +213,26 @@ class Thermostat:
 
         elif data[0] == PROP_ID_RETURN:
             parsed = DeviceId.parse(data)
-            _LOGGER.debug("Parsed device data: %s", parsed)
+            self.logger.debug("Parsed device data: %s", parsed)
             self._firmware_version = parsed.version
             self._device_serial = parsed.serial
 
         else:
-            _LOGGER.debug(
+            self.logger.debug(
                 "Unknown notification %s (%s)", data[0], codecs.encode(data, "hex")
             )
+        if self._notification_callback:
+            asyncio.create_task(self._notification_callback())
 
-    def query_id(self):
+    async def query_id(self):
         """Query device identification information, e.g. the serial number."""
-        _LOGGER.debug("Querying id..")
+        self.logger.debug("Querying id..")
         value = struct.pack("B", PROP_ID_QUERY)
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
-    def update(self):
+    async def update(self):
         """Update the data from the thermostat. Always sets the current time."""
-        _LOGGER.debug("Querying the device..")
+        self.logger.debug("Querying the device..")
         time = datetime.now()
         value = struct.pack(
             "BBBBBBB",
@@ -219,17 +245,17 @@ class Thermostat:
             time.second,
         )
 
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
-    def query_schedule(self, day):
-        _LOGGER.debug("Querying schedule..")
+    async def query_schedule(self, day):
+        self.logger.debug("Querying schedule..")
 
         if day < 0 or day > 6:
-            _LOGGER.error("Invalid day: %s", day)
+            self.logger.error("Invalid day: %s", day)
 
         value = struct.pack("BB", PROP_SCHEDULE_QUERY, day)
 
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def schedule(self):
@@ -238,18 +264,17 @@ class Thermostat:
         """
         return self._schedule
 
-    def set_schedule(self, data):
+    async def set_schedule(self, data):
         """Sets the schedule for the given day."""
         value = Schedule.build(data)
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def target_temperature(self):
         """Return the temperature we try to reach."""
         return self._target_temperature
 
-    @target_temperature.setter
-    def target_temperature(self, temperature):
+    async def set_target_temperature(self, temperature):
         """Set new target temperature."""
         dev_temp = int(temperature * 2)
         if temperature == EQ3BT_OFF_TEMP or temperature == EQ3BT_ON_TEMP:
@@ -259,17 +284,16 @@ class Thermostat:
             self._verify_temperature(temperature)
             value = struct.pack("BB", PROP_TEMPERATURE_WRITE, dev_temp)
 
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def mode(self):
         """Return the current operation mode"""
         return self._mode
 
-    @mode.setter
-    def mode(self, mode):
+    async def set_mode(self, mode):
         """Set the operation mode."""
-        _LOGGER.debug("Setting new mode: %s", mode)
+        self.logger.debug("Setting new mode: %s", mode)
 
         if self.mode == Mode.Boost and mode != Mode.Boost:
             self.boost = False
@@ -281,46 +305,48 @@ class Thermostat:
             end = datetime.now() + self._away_duration
             return self.set_away(end, self._away_temp)
         elif mode == Mode.Closed:
-            return self.set_mode(0x40 | int(EQ3BT_OFF_TEMP * 2))
+            return await self.send_mode(0x40 | int(EQ3BT_OFF_TEMP * 2))
         elif mode == Mode.Open:
-            return self.set_mode(0x40 | int(EQ3BT_ON_TEMP * 2))
+            return await self.send_mode(0x40 | int(EQ3BT_ON_TEMP * 2))
 
         if mode == Mode.Manual:
             temperature = max(
                 min(self._target_temperature, self.max_temp), self.min_temp
             )
-            return self.set_mode(0x40 | int(temperature * 2))
+            return await self.send_mode(0x40 | int(temperature * 2))
         else:
-            return self.set_mode(0)
+            return await self.send_mode(0)
 
     @property
     def away_end(self):
         return self._away_end
 
-    def set_away(self, away_end=None, temperature=EQ3BT_AWAY_TEMP):
+    async def set_away(self, away_end=None, temperature=EQ3BT_AWAY_TEMP):
         """Sets away mode with target temperature.
         When called without parameters disables away mode."""
         if not away_end:
-            _LOGGER.debug("Disabling away, going to auto mode.")
-            return self.set_mode(0x00)
+            self.logger.debug("Disabling away, going to auto mode.")
+            return await self.send_mode(0x00)
 
-        _LOGGER.debug("Setting away until %s, temp %s", away_end, temperature)
+        self.logger.debug("Setting away until %s, temp %s", away_end, temperature)
         adapter = AwayDataAdapter(Byte[4])
         packed = adapter.build(away_end)
 
-        self.set_mode(0x80 | int(temperature * 2), packed)
+        await self.send_mode(0x80 | int(temperature * 2), packed)
 
-    def set_mode(self, mode, payload=None):
+    async def send_mode(self, mode, payload=None):
         value = struct.pack("BB", PROP_MODE_WRITE, mode)
         if payload:
             value += payload
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def mode_readable(self):
         """Return a readable representation of the mode.."""
         ret = ""
         mode = self._raw_mode
+        if mode is None:
+            return "unknown"
 
         if mode.MANUAL:
             ret = "manual"
@@ -353,12 +379,11 @@ class Thermostat:
         """Returns True if the thermostat is in boost mode."""
         return self.mode == Mode.Boost
 
-    @boost.setter
-    def boost(self, boost):
+    async def set_boost(self, boost):
         """Sets boost mode."""
-        _LOGGER.debug("Setting boost mode: %s", boost)
+        self.logger.debug("Setting boost mode: %s", boost)
         value = struct.pack("BB", PROP_BOOST, bool(boost))
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def valve_state(self):
@@ -371,10 +396,10 @@ class Thermostat:
         (detected by sudden drop of temperature)"""
         return self._raw_mode and self._raw_mode.WINDOW
 
-    def window_open_config(self, temperature, duration):
+    async def window_open_config(self, temperature, duration):
         """Configures the window open behavior. The duration is specified in
         5 minute increments."""
-        _LOGGER.debug(
+        self.logger.debug(
             "Window open config, temperature: %s duration: %s", temperature, duration
         )
         self._verify_temperature(temperature)
@@ -387,7 +412,7 @@ class Thermostat:
             int(temperature * 2),
             int(duration / 300),
         )
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def window_open_temperature(self):
@@ -404,28 +429,29 @@ class Thermostat:
         """Returns True if the thermostat is locked."""
         return self._raw_mode and self._raw_mode.LOCKED
 
-    @locked.setter
-    def locked(self, lock):
+    async def set_locked(self, lock):
         """Locks or unlocks the thermostat."""
-        _LOGGER.debug("Setting the lock: %s", lock)
+        self.logger.debug("Setting the lock: %s", lock)
         value = struct.pack("BB", PROP_LOCK, bool(lock))
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def low_battery(self):
         """Returns True if the thermostat reports a low battery."""
         return self._raw_mode and self._raw_mode.LOW_BATTERY
 
-    def temperature_presets(self, comfort, eco):
+    async def temperature_presets(self, comfort, eco):
         """Set the thermostats preset temperatures comfort (sun) and
         eco (moon)."""
-        _LOGGER.debug("Setting temperature presets, comfort: %s eco: %s", comfort, eco)
+        self.logger.debug(
+            "Setting temperature presets, comfort: %s eco: %s", comfort, eco
+        )
         self._verify_temperature(comfort)
         self._verify_temperature(eco)
         value = struct.pack(
             "BBB", PROP_COMFORT_ECO_CONFIG, int(comfort * 2), int(eco * 2)
         )
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def comfort_temperature(self):
@@ -442,10 +468,9 @@ class Thermostat:
         """Returns the thermostat's temperature offset."""
         return self._temperature_offset
 
-    @temperature_offset.setter
-    def temperature_offset(self, offset):
+    async def set_temperature_offset(self, offset):
         """Sets the thermostat's temperature offset."""
-        _LOGGER.debug("Setting offset: %s", offset)
+        self.logger.debug("Setting offset: %s", offset)
         # [-3,5 .. 0  .. 3,5 ]
         # [00   .. 07 .. 0e ]
         if offset < -3.5 or offset > 3.5:
@@ -458,17 +483,17 @@ class Thermostat:
             current += 0.5
 
         value = struct.pack("BB", PROP_OFFSET, values[offset])
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
-    def activate_comfort(self):
+    async def activate_comfort(self):
         """Activates the comfort temperature."""
         value = struct.pack("B", PROP_COMFORT)
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
-    def activate_eco(self):
+    async def activate_eco(self):
         """Activates the comfort temperature."""
         value = struct.pack("B", PROP_ECO)
-        self._conn.make_request(PROP_WRITE_HANDLE, value)
+        await self._conn.write_gatt_char(PROP_WRITE_HANDLE, value)
 
     @property
     def min_temp(self):

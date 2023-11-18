@@ -1,15 +1,21 @@
 
-# $Id: 10_fhempyServer.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_fhempyServer.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;
 
 use strict;
 use warnings;
+use version;
 
 use CoProcess;
 
 sub Log($$);
 sub Log3($$$);
+
+#
+# Predeclare Variables from other modules may be loaded later from fhem
+#
+our $FW_ME;
 
 sub fhempyServer_Initialize($)
 {
@@ -51,7 +57,25 @@ sub fhempyServer_detailFn($$$$)
 sub fhempyServer_getCmd($)
 {
   my ($hash) = @_;
+  my $verbose = AttrVal($hash->{NAME}, "verbose", "");
+  if ($verbose eq "5") {
+    return "FHEM/bindings/python/bin/fhempy --local --debug"
+  }
   return "FHEM/bindings/python/bin/fhempy --local";
+}
+
+sub fhempyServer_checkPythonVersion($)
+{
+  my ($hash) = @_;
+  my $ver = qx(python3 -V|sed "s/.*\ //");
+  chomp($ver);
+  my $ver_obj = version->declare($ver);
+  if ($ver eq "" || $ver_obj < version->declare("3.7.2")) {
+    readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
+    return 0;
+  }
+  readingsSingleUpdate($hash, "python", $ver_obj->normal, 1);
+  return 1;
 }
 
 sub fhempyServer_Define($$$)
@@ -68,7 +92,7 @@ sub fhempyServer_Define($$$)
 
   chmod(0744, "FHEM/bindings/python/bin/fhempy");
 
-  if ($init_done) {
+  if ($init_done && fhempyServer_checkPythonVersion($hash)) {
     CoProcess::start($hash);
   }
 
@@ -96,7 +120,7 @@ sub fhempyServer_Define($$$)
         $status_img = "10px-kreis-rot";;
         $status_txt = "stopped";;
       }
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart\">".FW_makeImage("audio_repeat")."</a></div>"
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Kill and restart\">".FW_makeImage("audio_repeat")."</a></div>"
       }';
     $devstate_cmd =~ tr/\n//d;
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");
@@ -118,7 +142,9 @@ sub fhempyServer_Notify($$)
   return if($dev->{NAME} ne "global");
    
   if( grep(m/^INITIALIZED|REREADCFG$/, @{$dev->{CHANGED}}) ) {
-    CoProcess::start($hash);
+    if (fhempyServer_checkPythonVersion($hash)) {
+      CoProcess::start($hash);
+    }
     return undef;
   }
    
@@ -164,6 +190,10 @@ sub fhempyServer_Set($$$)
 {
   my ($hash, $a, $h) = @_;
 
+  if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 0) {
+    return "Python 3.7.2 or higher required (recommended: 3.8)";
+  }
+
   return CoProcess::setCommands($hash, "", @$a[1], @$a);
 }
 
@@ -173,17 +203,20 @@ sub fhempyServer_Attr($$$)
   my $hash = $defs{$name};
 
   if( $attrName eq 'logfile' ) {
-    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
-      fhem( "defmod fhempy_log FileLog $attrVal Logfile" );
-      CommandAttr( undef, 'fhempy_log room fhempy' ) if( !AttrVal($name, 'room', undef ) );
+    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' && $init_done ) {
+      fhem( "defmod fhempy_log FileLog $attrVal Logfile" ) if( !exists($defs{"fhempy_log"}) );
+      CommandAttr( undef, 'fhempy_log room hidden' ) if( !AttrVal($name, 'room', undef ) );
+      CommandAttr( undef, 'fhempy_log group fhempy' ) if( !AttrVal($name, 'group', undef ) );
+      CommandAttr( undef, 'fhempy_log icon file_unknown' ) if( !AttrVal($name, 'icon', undef ) );
+      CommandAttr( undef, 'fhempy_log nrarchive 10' ) if( !AttrVal($name, 'nrarchive', undef ) );
       $hash->{logfile} = $attrVal;
-    } else {
-      fhem( "delete fhempy_log" );
     }
 
     $attr{$name}{$attrName} = $attrVal;
 
-    CoProcess::start($hash);
+    if (fhempyServer_checkPythonVersion($hash)) {
+      CoProcess::start($hash);
+    }
   }
 
   return undef;

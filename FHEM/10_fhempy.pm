@@ -1,5 +1,5 @@
 
-# $Id: 10_fhempy.pm 18283 2019-01-16 16:58:23Z dominikkarall $
+# $Id: 10_fhempy.pm 18283 2019-01-16 16:58:23Z fhempy $
 
 package main;
 
@@ -11,8 +11,8 @@ use Time::HiRes qw(time);
 
 use Color;
 
-sub Log($$);
-sub Log3($$$);
+our $init_done;
+
 
 sub
 fhempy_Initialize($)
@@ -27,7 +27,7 @@ fhempy_Initialize($)
   $hash->{SetFn}    = 'fhempy_Set';
   $hash->{AttrFn}   = 'fhempy_Attr';
   $hash->{RenameFn} = 'fhempy_Rename';
-  $hash->{AttrList} = 'IODev '.$readingFnAttributes;
+  $hash->{AttrList} = 'IODev disable:0,1 '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempy_detailFn";
   $hash->{FW_deviceOverview} = 1;
 
@@ -50,24 +50,17 @@ fhempy_Define($$$)
   # check if BindingsIo exists
   if ($init_done) {
     my $foundServer = 0;
-    foreach my $fhem_dev (sort keys %main::defs) {
-      if($main::defs{$fhem_dev}{TYPE} eq 'BindingsIo') {
-        $foundServer = 1;
-      }
-    }
+    my @fhempyDevices = ::devspec2array(qq[i:TYPE=BindingsIo]);
+    $foundServer = ::IsDevice($fhempyDevices[0]);
+
     if ($foundServer == 0) {
-      return "Before you use fhempy please define BindingsIo once:\ndefine pyBinding BindingsIo fhempy";
+      return "Before you use fhempy please define BindingsIo once:\ndefine fhempy_local BindingsIo fhempy";
     }
   }
 
-  Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.")";
+  Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.": ".$hash->{NAME}.")";
 
-  AssignIoPort($hash, "local_pybinding");
-
-  if (!defined(DevIo_IsOpen($defs{$hash->{IODev}}))) {
-    Log3 $hash, 4, "fhempy: fhempy not yet connected! Define will continue after connect...";
-    return undef;
-  }
+  AssignIoPort($hash, "fhempy_local");
 
   return IOWrite($hash, $hash, "Define", $a, $h);
 }
@@ -153,7 +146,7 @@ fhempy_detailFn($$$)
 <h3>fhempy</h3>
 <ul>
   This module provides the interface for python modules.<br><br>
-  <a href="https://github.com/dominikkarall/fhempy#readme">Click here for online README</a>
+  <a href="https://github.com/fhempy/fhempy#readme">Click here for online README</a>
 </ul><br>
 
 =end html

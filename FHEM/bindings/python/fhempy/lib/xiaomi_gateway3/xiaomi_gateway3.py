@@ -4,11 +4,9 @@
 # current version is based on https://github.com/AlexxIT/XiaomiGateway3/tree/360c6d8ecc41f70ecf4f536e51bf379383f56200
 
 import asyncio
-import functools
 import logging
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic
 from .core.gateway3 import GatewayEntry
 from .core.utils import update_zigbee_firmware
 
@@ -39,24 +37,9 @@ class xiaomi_gateway3(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        self.hash = hash
-
-        if len(args) < 5:
-            return "Usage: define devname fhempy xiaomi_gateway3 <IP> <TOKEN>"
-
-        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon mqtt")
-        await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
-
-        logging.getLogger("fhempy.lib.xiaomi_gateway3.core.gateway3").setLevel(
-            logging.ERROR
-        )
-
-        hash["HOST"] = args[3]
-        hash["TOKEN"] = args[4]
-
-        self.host = args[3]
-        self.token = args[4]
+        
+        attr_conf = {"disable": {"options": "0,1", "default": "0", "format": "int"}}
+        await self.set_attr_config(attr_conf)
 
         set_conf = {
             "activate_zigbee2mqtt": {
@@ -75,7 +58,29 @@ class xiaomi_gateway3(generic.FhemModule):
             },
             "deactivate_zigbee2mqtt": {},
         }
-        self.set_set_config(set_conf)
+        await self.set_set_config(set_conf)
+        
+        self.hash = hash
+
+        if self._attr_disable == 1:
+            return
+
+        if len(args) < 5:
+            return "Usage: define devname fhempy xiaomi_gateway3 <IP> <TOKEN>"
+
+        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
+            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon mqtt")
+        await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
+
+        logging.getLogger("fhempy.lib.xiaomi_gateway3.core.gateway3").setLevel(
+            logging.ERROR
+        )
+
+        hash["HOST"] = args[3]
+        hash["TOKEN"] = args[4]
+
+        self.host = args[3]
+        self.token = args[4]
 
         self.create_async_task(self.connect_gw())
 
@@ -88,6 +93,13 @@ class xiaomi_gateway3(generic.FhemModule):
     async def set_deactivate_zigbee2mqtt(self, hash, params):
         self.create_async_task(update_zigbee_firmware(self.host, False))
         await fhem.readingsSingleUpdateIfChanged(hash, "zigbee2mqtt", "off", 1)
+
+    async def set_attr_disable(self, hash):
+        if self._attr_disable and self.gw is not None:
+            await self.gw.stop()
+            self.cancel_async_task(self.is_connected_task)
+        else:
+            self.create_async_task(self.connect_gw())
 
     async def register_device(self, fhempy_device, handler):
         did = fhempy_device.did
@@ -113,7 +125,7 @@ class xiaomi_gateway3(generic.FhemModule):
             for domain in DOMAINS:
                 self.gw.add_setup(domain, self.create_device)
         # start check task
-        self.create_async_task(self.is_connected())
+        self.is_connected_task = self.create_async_task(self.is_connected())
         # run gateway
         self.gw.start()
 
@@ -139,15 +151,15 @@ class xiaomi_gateway3(generic.FhemModule):
         did = device["did"]
         self.devices[did] = device
         if not await fhem.checkIfDeviceExists(
-            self.hash, "PYTHONTYPE", "xiaomi_gateway3_device", "DID", did
+            self.hash, "FHEMPYTYPE", "xiaomi_gateway3_device", "DID", did
         ):
             devname = (
-                "".join(filter(str.isalnum, device["model"])) + "_" + device["mac"]
+                "".join(filter(str.isalnum, str(device["model"]))) + "_" + device["mac"]
             )
             await fhem.CommandDefine(
                 self.hash,
                 devname
-                + " PythonModule xiaomi_gateway3_device "
+                + " fhempy xiaomi_gateway3_device "
                 + self.hash["NAME"]
                 + " "
                 + did,
@@ -183,6 +195,9 @@ class FhempyGateway:
 
     def start(self):
         self.gw.start()
+
+    async def stop(self):
+        await self.gw.stop()
 
     async def is_connected(self):
         return await self.gw.check_port(23)

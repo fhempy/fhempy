@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Support for Tuya Smart devices."""
 
+import logging
+
+import fhempy.lib.tuya_cloud.tuya_cloud_device as tcd
+import fhempy.lib.tuya_cloud.tuya_cloud_setup as tcs
+from fhempy.lib import fhem
 from fhempy.lib.generic import FhemModule
-from fhempy.lib.tuya_cloud.tuya_cloud_device import tuya_cloud_device
-from fhempy.lib.tuya_cloud.tuya_cloud_setup import tuya_cloud_setup
 
 
 class tuya_cloud(FhemModule):
@@ -24,11 +27,23 @@ class tuya_cloud(FhemModule):
             )
 
         if args[3] == "setup":
-            self.device = tuya_cloud_setup(self.logger, self)
+            self.device = tcs.tuya_cloud_setup(self.logger, self)
+            if await fhem.AttrVal(self.hash["NAME"], "verbose", "3") == "5":
+                logging.getLogger("tuya_iot").setLevel(logging.DEBUG)
+            else:
+                logging.getLogger("tuya_iot").setLevel(logging.ERROR)
         else:
-            self.device = tuya_cloud_device(self.logger, self)
+            self.device = tcd.tuya_cloud_device(self.logger, self)
 
         await self.device.Define(self.hash, args, argsh)
+
+    async def Undefine(self, hash):
+        if self.device:
+            await self.device.Undefine(hash)
+        return await super().Undefine(hash)
+
+    async def set_reset_energy(self, hash, params):
+        await self.device.set_reset_energy(hash, params)
 
     async def set_boolean(self, hash, params):
         await self.device.set_boolean(hash, params)

@@ -1,10 +1,10 @@
 import asyncio
 import functools
 import json
-import time
-import string
 import random
+import string
 import threading
+import time
 
 from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
 from ring_doorbell import Auth, Ring
@@ -37,19 +37,8 @@ class ring(FhemModule):
         self._livestreamjson = ""
         self._login_lock = asyncio.Lock()
         self._snapshot = None
-        self._attr_list = {
-            "deviceUpdateInterval": {"default": 300, "format": "int"},
-            "dingPollInterval": {"default": 2, "format": "int"},
-        }
-        self.set_attr_config(self._attr_list)
-        self.set_list_conf = {
-            "password": {"args": ["password"]},
-            "2fa_code": {"args": ["2facode"]},
-        }
-        self.set_set_config(self.set_list_conf)
         self.stop_dings_loop = threading.Event()
         self.update_dings_thread = None
-        return
 
     async def token_updated(self, token):
         self._token = token
@@ -61,6 +50,18 @@ class ring(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        
+        self._attr_list = {
+            "deviceUpdateInterval": {"default": 300, "format": "int"},
+            "dingPollInterval": {"default": 2, "format": "int"},
+        }
+        await self.set_attr_config(self._attr_list)
+        self.set_list_conf = {
+            "password": {"args": ["password"]},
+            "2fa_code": {"args": ["2facode"]},
+        }
+        await self.set_set_config(self.set_list_conf)
+        
         if len(args) < 5:
             return (
                 "Usage: define rrring fhempy ring <USERNAME>"
@@ -133,7 +134,7 @@ class ring(FhemModule):
                     "params": {"volume": {"format": "int"}},
                     "options": "slider,0,1,10",
                 }
-            self.set_set_config(self.set_list_conf)
+            await self.set_set_config(self.set_list_conf)
 
             await self.update_readings()
 
@@ -152,10 +153,9 @@ class ring(FhemModule):
                 except Exception:
                     self.logger.exception("Failed to poll devices")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
-        except CancelledError:
-            pass
-        except Exception:
+        except Exception as ex:
             self.logger.exception("Failed to update devices")
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", ex, 1)
 
     async def update_dings_loop(self):
         try:
@@ -196,6 +196,8 @@ class ring(FhemModule):
                         self.update_readings(), self.loop
                     ).result()
             except Exception:
+                if self.stop_dings_loop.is_set():
+                    return
                 self.logger.exception("Failed to poll dings...")
                 self.blocking_login()
             time.sleep(self._attr_dingPollInterval)
@@ -317,8 +319,8 @@ class ring(FhemModule):
         self._ring.update_dings()
 
     def poll_device(self):
-        self._rdevice.update_health_data()
         self._ring.update_data()
+        self._rdevice.update_health_data()
         self._history = []
         if (
             self._rdevice.family == "doorbots"
@@ -333,7 +335,10 @@ class ring(FhemModule):
             )
             if self._lastrecording_url is False:
                 self.blocking_login()
-            # self._snapshot = self._rdevice.get_snapshot(retries=10)
+            # try:
+            #    self._snapshot = self._rdevice.get_snapshot(retries=10)
+            # except Exception:
+            #    self._snapshot = None
 
     def blocking_login(self):
         def token_updater(token):
@@ -382,6 +387,9 @@ class ring(FhemModule):
         await fhem.readingsSingleUpdateIfChanged(
             self.hash, "password", encrypted_password, 1
         )
+        self._token = ""
+        self._2facode = None
+        await fhem.CommandDeleteReading(self.hash, self.hash["NAME"] + " token")
         self.create_async_task(self.ring_login())
 
     async def set_2fa_code(self, hash, params):

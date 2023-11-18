@@ -1,13 +1,16 @@
 import asyncio
 
-from .. import fhem, utils
-from .. import generic
+from .. import fhem, generic
 
 
 class helloworld(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         attr_config = {
             "interval": {
                 "default": 100,
@@ -15,7 +18,7 @@ class helloworld(generic.FhemModule):
                 "help": "Change interval, default is 100.",
             }
         }
-        self.set_attr_config(attr_config)
+        await self.set_attr_config(attr_config)
 
         set_config = {
             "mode": {
@@ -42,11 +45,8 @@ class helloworld(generic.FhemModule):
             },
             "off": {},
         }
-        self.set_set_config(set_config)
+        await self.set_set_config(set_config)
 
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
         if len(args) > 3:
             return "Usage: define hello_fhempy fhempy helloworld"
         await fhem.readingsBeginUpdate(hash)

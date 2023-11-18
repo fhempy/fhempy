@@ -2,9 +2,8 @@ import asyncio
 import functools
 import logging
 
-from .. import fhem
+from .. import fhem, generic
 from .. import utils as fpyutils
-from .. import generic
 from .nespresso import NespressoDetect
 
 
@@ -16,6 +15,11 @@ class nespresso_ble(generic.FhemModule):
         self.auth = None
         logging.getLogger("pygatt.backends.gatttool.gatttool").setLevel(logging.ERROR)
         # logging.getLogger("nespresso_ble").setLevel(logging.DEBUG)
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self.set_conf_list = {
             "authkey": {"args": ["authkey"]},
             "brew": {
@@ -33,11 +37,7 @@ class nespresso_ble(generic.FhemModule):
             "recipe": {"help": "Not yet supported"},
             "updateStatus": {},
         }
-        self.set_set_config(self.set_conf_list)
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
+        await self.set_set_config(self.set_conf_list)
         if len(args) < 4:
             return "Usage: define devicename fhempy nespresso_ble <MAC> [<AUTHKEY>]"
         await fhem.readingsBeginUpdate(hash)
@@ -69,12 +69,12 @@ class nespresso_ble(generic.FhemModule):
     async def Set(self, hash, args, argsh):
         if self.auth and "authkey" in self.set_conf_list:
             del self.set_conf_list["authkey"]
-            self.set_set_config(self.set_conf_list)
+            await self.set_set_config(self.set_conf_list)
         return await super().Set(hash, args, argsh)
 
     async def set_authkey(self, hash, params):
         self.auth = params["authkey"]
-        self.set_set_config(self.set_conf_list)
+        await self.set_set_config(self.set_conf_list)
         await fhem.readingsSingleUpdateIfChanged(self.hash, "authkey", self.auth, 1)
         if self.task:
             self.task.cancel()

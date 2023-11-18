@@ -14,29 +14,31 @@ class xiaomi_tokens(FhemModule):
         self._country = ["de", "cn", "sg"]
         self._all_devices = {}
 
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
         self._set_list_conf = {
             "username": {"args": ["username"]},
             "password": {"args": ["password"]},
             "get_tokens": {},
         }
-        self.set_set_config(self._set_list_conf)
-        return
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
+        await self.set_set_config(self._set_list_conf)
+        
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "active", 1)
 
         self._uniqueid = await fhem.getUniqueId(self.hash)
         self._enc_username = await fhem.ReadingsVal(
             self.hash["NAME"], "xiaomi_username", ""
         )
+        self._enc_username = self._enc_username.replace("\\n", "")
         if self._enc_username != "":
             self._username = utils.decrypt_string(self._enc_username, self._uniqueid)
 
         self._enc_password = await fhem.ReadingsVal(
             self.hash["NAME"], "xiaomi_password", ""
         )
+        self._enc_password = self._enc_password.replace("\\n", "")
         if self._enc_password != "":
             self._password = utils.decrypt_string(self._enc_password, self._uniqueid)
 
@@ -78,28 +80,28 @@ class xiaomi_tokens(FhemModule):
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_vacuum_{did} PythonModule miio vacuum {ip} {token}",
+                    f"miio_vacuum_{did} fhempy miio vacuum {ip} {token}",
                 )
             )
         elif "viomi" in model:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_vacuum_{did} PythonModule miio viomivacuum {ip} {token}",
+                    f"miio_vacuum_{did} fhempy miio viomivacuum {ip} {token}",
                 )
             )
         elif "chuangmi" in model or "camera" in model:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_camera_{did} PythonModule miio chuangmicamera {ip} {token}",
+                    f"miio_camera_{did} fhempy miio chuangmicamera {ip} {token}",
                 )
             )
         else:
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"miio_device_{did} PythonModule miio device {ip} {token}",
+                    f"miio_device_{did} fhempy miio device {ip} {token}",
                 )
             )
 
@@ -113,7 +115,7 @@ class xiaomi_tokens(FhemModule):
             self.create_async_task(
                 fhem.CommandDefine(
                     self.hash,
-                    f"xiaomigw3_{did} PythonModule xiaomi_gateway3 {ip} {token}",
+                    f"xiaomigw3_{did} fhempy xiaomi_gateway3 {ip} {token}",
                 )
             )
 
@@ -121,7 +123,8 @@ class xiaomi_tokens(FhemModule):
         try:
             await utils.run_blocking(functools.partial(self.thread_get_tokens))
         except Exception as ex:
-            await fhem.readingsSingleUpdateIfChanged(f"Failed to get tokens: {ex}")
+            await self.logger.error(f"Failed to get tokens: {ex}")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"{ex}", 1)
             return
 
         self._miio_devices = []
@@ -171,7 +174,7 @@ class xiaomi_tokens(FhemModule):
             "help": "Creates a fhempy xiaomi_gateway3 device and devices for all connected devices.",
             "options": ",".join(self._xiaomigw3_devices),
         }
-        self.set_set_config(self._set_list_conf)
+        await self.set_set_config(self._set_list_conf)
 
     def thread_get_tokens(self):
         self._device_list = []

@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "fhempy"
+description = "Python binding for FHEM to support Python modules"
+version = "0.1.677"
+authors = ["Dominik Karall <dominik.karall@gmail.com>"]
+readme="README.md"
+homepage = "https://github.com/fhempy/fhempy"
+
+packages = [
+    { include = "fhempy", from = "FHEM/bindings/python" },
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/fhempy/fhempy/issues"
+"Sponsorship" = "https://github.com/sponsors/fhempy"
+
+[tool.poetry.scripts]
+fhempy = 'fhempy.lib.fhem_pythonbinding:run'
+
+[tool.poetry.dependencies]
+python = "^3.8"
+websockets = "11.0.3"
+importlib_metadata = "6.1.0"
+pycryptodomex = "3.18.0"
+zeroconf = "0.64.1"
+aiohttp = {extras = ["speedups"], version = "3.8.6"}
+markdown2 = "2.4.10"
+requests = "2.31.0"
+async-upnp-client = "0.31.2"
+
+[tool.poetry.group.dev.dependencies]
+tox = "^4.11.3"
+pytest = "^7.4.2"
+pytest-env = "^1.0.1"
+pytest-mock = "^3.11.1"
+pytest-asyncio = "^0.21.1"
+requests-mock = "^1.11.0"
+
+[tool.semantic_release]
+build_command = "pip install poetry && poetry build"
+version_variables=[
+    "FHEM/bindings/python/fhempy/lib/version.py:__version__",
+]
+version_toml=["pyproject.toml:tool.poetry.version",]
+
+[tool.setuptools]
+include-package-data = true
+script-files = ["FHEM/bindings/python/bin/fhempy"]
+
+[tool.setuptools.packages.find]
+where=["FHEM/bindings/python"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["README.md"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

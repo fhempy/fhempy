@@ -12,52 +12,42 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  release:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      id-token: write
+      contents: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: "master"
-
-      - name: Setup Perl
-        uses: shogo82148/actions-setup-perl@v1.8.3
+          fetch-depth: 0
+      
+      - uses: actions/setup-python@v4
         with:
-          perl-version: 5
+          python-version: '3.11'
 
-      # Runs a single command using the runners shell
-      - name: Update controls file
-        run: perl prepare_update.pl > controls_pythonbinding.txt
-
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v5
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@master
         with:
-          author_name: Dominik
-          author_email: dominik.karall@gmail.com
-          message: "action: auto update controls"
-          branch: master
-          push: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: "patch"
+          push: "true"
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # NOTE: DO NOT wrap the conditional in ${{ }} as it will always evaluate to true.
+        # See https://github.com/actions/runner/issues/1173
+        if: steps.release.outputs.released == 'true'
+  
+      - name: Publish package distributions to GitHub Releases
+        uses: python-semantic-release/upload-to-gh-release@main
+        if: steps.release.outputs.released == 'true'
 
-      - name: Build and publish
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python setup.py sdist bdist_wheel
-          twine upload dist/*

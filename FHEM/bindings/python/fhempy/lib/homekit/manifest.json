@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "aiohomekit==2.6.16"
+  ]
+}

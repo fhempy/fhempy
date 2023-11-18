@@ -49,7 +49,7 @@ class discover_mdns(FhemModule):
                 if not (
                     await fhem.checkIfDeviceExists(
                         self.hash,
-                        "PYTHONTYPE",
+                        "FHEMPYTYPE",
                         "googlecast",
                         "CASTNAME",
                         get_value("fn"),
@@ -61,7 +61,7 @@ class discover_mdns(FhemModule):
                         get_value("md").replace(" ", "_")
                         + "_"
                         + get_value("fn").replace(" ", "_")
-                        + " PythonModule googlecast '"
+                        + " fhempy googlecast '"
                         + get_value("fn")
                         + "'",
                     )
@@ -97,12 +97,12 @@ class discover_mdns(FhemModule):
             elif info.type == "_spotify-connect":
                 if not (
                     await fhem.checkIfDeviceExists(
-                        self.hash, "PYTHONTYPE", "spotify", "PYTHONTYPE", "spotify"
+                        self.hash, "FHEMPYTYPE", "spotify", "FHEMPYTYPE", "spotify"
                     )
                 ):
                     self.logger.debug("create spotify")
                     await fhem.CommandDefine(
-                        self.hash, "spotify_connect PythonModule spotify"
+                        self.hash, "spotify_connect fhempy spotify"
                     )
                 else:
                     self.logger.debug("device spotify exists already, do not create")
@@ -112,7 +112,7 @@ class discover_mdns(FhemModule):
             # wait for the devices to initialize
             await asyncio.sleep(10)
         except Exception:
-            self.logger.error(traceback.print_exc())
+            self.logger.exception("Failed to handle foundDevice")
 
     async def runZeroconfScan(self):
         # await here to finish define before zeroconf object is created
