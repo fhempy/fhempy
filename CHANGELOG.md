@@ -2,6 +2,15 @@
 
 
 
+## v0.1.679 (2023-11-18)
+
+### Chore
+
+* chore: fix python-semantic-release 8.3.0 ([`7c321e1`](https://github.com/fhempy/fhempy/commit/7c321e1719ec93b6871666e6fee78ddedce9ecdc))
+
+* chore: use python-semantic-release 8.3.0 ([`43d098c`](https://github.com/fhempy/fhempy/commit/43d098ce11cf1815ab05efee459b6a2bb93f0069))
+
+
 ## v0.1.678 (2023-11-18)
 
 ### Feature
