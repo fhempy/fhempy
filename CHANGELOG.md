@@ -2,6 +2,17 @@
 
 
 
+## v0.1.681 (2023-11-18)
+
+### Fix
+
+* fix(fhempy): add missing packaging dep ([`4ca2884`](https://github.com/fhempy/fhempy/commit/4ca2884936070fcc866800743d5ba2e9198a21f9))
+
+* fix(meross): add setuptools requirement ([`587fef9`](https://github.com/fhempy/fhempy/commit/587fef9757113f2eecd67858320d549e27eb457f))
+
+* fix(miflora): add setuptools requirement ([`20999c9`](https://github.com/fhempy/fhempy/commit/20999c9b7e3efbdd5c28b819bac737ba3ef39c73))
+
+
 ## v0.1.680 (2023-11-18)
 
 ### Chore
