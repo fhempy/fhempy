@@ -2,6 +2,31 @@
 
 
 
+## v0.1.680 (2023-11-18)
+
+### Chore
+
+* chore: remove fhempy.sh ([`4d81501`](https://github.com/fhempy/fhempy/commit/4d815019ae60d3fafb3cfacf0702d0a1feef2a40))
+
+### Fix
+
+* fix(fusionsolar): try to fix local time issue (#219) ([`0b9d387`](https://github.com/fhempy/fhempy/commit/0b9d387c4bca526c58c33e527bf148078c582697))
+
+* fix(fusionsolar): try to fix local time issue (#215) ([`668e440`](https://github.com/fhempy/fhempy/commit/668e4407dfb9a75a63f50d8cfa7f49e3857bd555))
+
+* fix(fhempy): remove deprecated pkg_resources ([`a766fb7`](https://github.com/fhempy/fhempy/commit/a766fb7489dd26fbe7fc78db85eb8e90c6e4ad3c))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`1ea7975`](https://github.com/fhempy/fhempy/commit/1ea7975e38443766fa0c5d23cba0322a1bd35aa6))
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`0bda580`](https://github.com/fhempy/fhempy/commit/0bda5808cdc11361a325f7ca13d6f019b0e7f03c))
+
+
 ## v0.1.679 (2023-11-18)
 
 ### Chore
