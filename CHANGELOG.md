@@ -2,6 +2,19 @@
 
 
 
+## v0.1.682 (2023-12-05)
+
+### Fix
+
+* fix(xiaomi_gateway3): update python-miio to 0.5.12 ([`9b2782f`](https://github.com/fhempy/fhempy/commit/9b2782f7631f7b6883d4b1eb9c3b447d03fbf994))
+
+* fix(xiaomi_gateway3): update python-miio to 0.5.12 ([`fcec43d`](https://github.com/fhempy/fhempy/commit/fcec43d085a57d83cc101e650990f568400b79b3))
+
+* fix(esphome): update lib to 2023.11.6 ([`b20339a`](https://github.com/fhempy/fhempy/commit/b20339a0ff8d2e570b032cc04595f88a574c32bf))
+
+* fix(ring): fix tests ([`0e7272f`](https://github.com/fhempy/fhempy/commit/0e7272fb299aaaabf9faf06135ca3a56bd7f1ec6))
+
+
 ## v0.1.681 (2023-11-18)
 
 ### Fix
