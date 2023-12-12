@@ -2,6 +2,23 @@
 
 
 
+## v0.1.684 (2023-12-12)
+
+### Fix
+
+* fix(fhempy): do not report error if .fhempy dir exists already ([`4c7c901`](https://github.com/fhempy/fhempy/commit/4c7c9018d331294ca36836ec8a7dd78272af9d6a))
+
+* fix(miio): add six dependency ([`aef754b`](https://github.com/fhempy/fhempy/commit/aef754b9688ebaba40e836d624772ed07a4f4388))
+
+* fix(googlecast): add six dependency ([`aa79813`](https://github.com/fhempy/fhempy/commit/aa79813e5011a3366c166a1dfd5f6d54f8612edf))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`b1e438d`](https://github.com/fhempy/fhempy/commit/b1e438d28cc5a5e1600134812c44be028dfeb7fb))
+
+
 ## v0.1.683 (2023-12-12)
 
 ### Feature
