@@ -24,7 +24,7 @@ then
   if [[ $? -ne 0 ]]
   then
     echo -n "Creating fhempy virtual environment..."
-    mkdir .fhempy
+    mkdir -p .fhempy
     python3 -m venv .fhempy/fhempy_venv
     echo "OK"
   fi
