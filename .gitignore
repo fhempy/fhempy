@@ -130,3 +130,6 @@ dmypy.json
 
 
 .vstags
+
+# fhempy data directory
+.fhempy
