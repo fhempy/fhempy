@@ -2,6 +2,23 @@
 
 
 
+## v0.1.683 (2023-12-12)
+
+### Feature
+
+* feat(fhempy): add error log if another fhempy instance is running already ([`4a42883`](https://github.com/fhempy/fhempy/commit/4a42883c7ccf4b764417765b3a8c1bac6c12f9cc))
+
+### Fix
+
+* fix(fhempy): create venv for fhempy installations to support bookworm (#218) ([`9d5f9b7`](https://github.com/fhempy/fhempy/commit/9d5f9b758afdf05bd69621718b845dd7a7e4225a))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`2399044`](https://github.com/fhempy/fhempy/commit/2399044cb005fb485518ce58e9eb61e76a1e21ae))
+
+
 ## v0.1.682 (2023-12-05)
 
 ### Fix
