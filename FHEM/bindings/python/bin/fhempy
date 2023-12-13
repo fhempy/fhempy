@@ -13,8 +13,21 @@ python_version=$(python3 -c 'import sys; print(sys.version_info[:3])')
 
 # TODO add python version check > 3.8.0
 
+CONTAINER=0
+# Check if Docker-specific environment variables are set
+if [ -f "/.dockerenv" ] || [ -n "$DOCKER_CONTAINER" ] || [ -n "$DOCKERENV" ]; then
+    echo "Running within a Docker container."
+    CONTAINER=1
+fi
+
+# Check for specific process names that indicate container environments
+if grep -qE "(lxc|docker|containerd|podman|crio)" /proc/1/cgroup; then
+    echo "Running within a containerized environment."
+    CONTAINER=1
+fi
+
 # check if I run in a fhempy_venv
-if [[ "$VIRTUAL_ENV" == "" ]]
+if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
 then
   
   # if not, check if "fhempy_venv" exists
