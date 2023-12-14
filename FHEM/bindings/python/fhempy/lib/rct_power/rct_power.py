@@ -15,8 +15,10 @@ class rct_power(generic.FhemModule):
         "battery.soc_target",
         "battery.cycles",
         "battery.soh",
+        "power_mng.battery_power_extern"
         "power_mng.soc_max",
         "power_mng.soc_min",
+        "power_mng.soc_strategy"
         "battery.temperature",
         "battery.efficiency",
         "g_sync.p_acc_lp",
@@ -210,6 +212,20 @@ class rct_power(generic.FhemModule):
                 "options": "slider,0,1,10000",
                 "function": "set_rct_write",
                 "function_param": 0x54829753,
+            },
+            "power_mng.battery_power_extern": {
+                "args": ["value"],
+                "params": {"value": {"format": "float"}},
+                "help": "Battery Power [W] Battery target power (positive = discharge)<br>Registry: power_mng.battery_power_extern<br>Default: 0",
+                "function": "set_rct_write",
+                "function_param": 0xBD008E29,
+            },
+            "power_mng.soc_strategy": {
+                "args": ["value"],
+                "params": {"value": {"format": "int"}},
+                "help": "Battery SoC strategy [-] 0: 'SOC target = SOC', 1: 'Constant', 2: 'External', 3: 'Middle battery voltage', 4: 'Internal', 5: 'Schedule'<br>Registry: power_mng.soc_strategy<br>Default: 4",
+                "function": "set_rct_write",
+                "function_param": 0xF168B748,
             },
         }
         await self.set_set_config(set_config)

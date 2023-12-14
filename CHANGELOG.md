@@ -2,6 +2,132 @@
 
 
 
+## v0.1.684 (2023-12-12)
+
+### Fix
+
+* fix(fhempy): do not report error if .fhempy dir exists already ([`4c7c901`](https://github.com/fhempy/fhempy/commit/4c7c9018d331294ca36836ec8a7dd78272af9d6a))
+
+* fix(miio): add six dependency ([`aef754b`](https://github.com/fhempy/fhempy/commit/aef754b9688ebaba40e836d624772ed07a4f4388))
+
+* fix(googlecast): add six dependency ([`aa79813`](https://github.com/fhempy/fhempy/commit/aa79813e5011a3366c166a1dfd5f6d54f8612edf))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`b1e438d`](https://github.com/fhempy/fhempy/commit/b1e438d28cc5a5e1600134812c44be028dfeb7fb))
+
+
+## v0.1.683 (2023-12-12)
+
+### Feature
+
+* feat(fhempy): add error log if another fhempy instance is running already ([`4a42883`](https://github.com/fhempy/fhempy/commit/4a42883c7ccf4b764417765b3a8c1bac6c12f9cc))
+
+### Fix
+
+* fix(fhempy): create venv for fhempy installations to support bookworm (#218) ([`9d5f9b7`](https://github.com/fhempy/fhempy/commit/9d5f9b758afdf05bd69621718b845dd7a7e4225a))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`2399044`](https://github.com/fhempy/fhempy/commit/2399044cb005fb485518ce58e9eb61e76a1e21ae))
+
+
+## v0.1.682 (2023-12-05)
+
+### Fix
+
+* fix(xiaomi_gateway3): update python-miio to 0.5.12 ([`9b2782f`](https://github.com/fhempy/fhempy/commit/9b2782f7631f7b6883d4b1eb9c3b447d03fbf994))
+
+* fix(xiaomi_gateway3): update python-miio to 0.5.12 ([`fcec43d`](https://github.com/fhempy/fhempy/commit/fcec43d085a57d83cc101e650990f568400b79b3))
+
+* fix(esphome): update lib to 2023.11.6 ([`b20339a`](https://github.com/fhempy/fhempy/commit/b20339a0ff8d2e570b032cc04595f88a574c32bf))
+
+* fix(ring): fix tests ([`0e7272f`](https://github.com/fhempy/fhempy/commit/0e7272fb299aaaabf9faf06135ca3a56bd7f1ec6))
+
+
+## v0.1.681 (2023-11-18)
+
+### Fix
+
+* fix(fhempy): add missing packaging dep ([`4ca2884`](https://github.com/fhempy/fhempy/commit/4ca2884936070fcc866800743d5ba2e9198a21f9))
+
+* fix(meross): add setuptools requirement ([`587fef9`](https://github.com/fhempy/fhempy/commit/587fef9757113f2eecd67858320d549e27eb457f))
+
+* fix(miflora): add setuptools requirement ([`20999c9`](https://github.com/fhempy/fhempy/commit/20999c9b7e3efbdd5c28b819bac737ba3ef39c73))
+
+
+## v0.1.680 (2023-11-18)
+
+### Chore
+
+* chore: remove fhempy.sh ([`4d81501`](https://github.com/fhempy/fhempy/commit/4d815019ae60d3fafb3cfacf0702d0a1feef2a40))
+
+### Fix
+
+* fix(fusionsolar): try to fix local time issue (#219) ([`0b9d387`](https://github.com/fhempy/fhempy/commit/0b9d387c4bca526c58c33e527bf148078c582697))
+
+* fix(fusionsolar): try to fix local time issue (#215) ([`668e440`](https://github.com/fhempy/fhempy/commit/668e4407dfb9a75a63f50d8cfa7f49e3857bd555))
+
+* fix(fhempy): remove deprecated pkg_resources ([`a766fb7`](https://github.com/fhempy/fhempy/commit/a766fb7489dd26fbe7fc78db85eb8e90c6e4ad3c))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`1ea7975`](https://github.com/fhempy/fhempy/commit/1ea7975e38443766fa0c5d23cba0322a1bd35aa6))
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`0bda580`](https://github.com/fhempy/fhempy/commit/0bda5808cdc11361a325f7ca13d6f019b0e7f03c))
+
+
+## v0.1.679 (2023-11-18)
+
+### Chore
+
+* chore: fix python-semantic-release 8.3.0 ([`7c321e1`](https://github.com/fhempy/fhempy/commit/7c321e1719ec93b6871666e6fee78ddedce9ecdc))
+
+* chore: use python-semantic-release 8.3.0 ([`43d098c`](https://github.com/fhempy/fhempy/commit/43d098ce11cf1815ab05efee459b6a2bb93f0069))
+
+
+## v0.1.678 (2023-11-18)
+
+### Feature
+
+* feat(pyit600): reading for hvac_action added (#224)
+
+* minor fixes
+
+* usage description updated
+
+* usage description updated
+
+* retry after connection timeout added
+
+* fix: missing break added
+
+* additional attributes added
+
+* reading for hvac_action added ([`d35d303`](https://github.com/fhempy/fhempy/commit/d35d3031aa789f590d949fa8c023f28b1d382af6))
+
+
+## v0.1.677 (2023-11-17)
+
+### Feature
+
+* feat(rct_power): Adding options for manual grid loading (#223)
+
+https://github.com/weltenwort/home-assistant-rct-power-integration/discussions/277 ([`58bdec5`](https://github.com/fhempy/fhempy/commit/58bdec560e5c064d66e71c98463e8f1dc9ec0568))
+
+### Fix
+
+* fix(skodaconnect): Modify default poll intervall to 300 seconds (#221) ([`629940c`](https://github.com/fhempy/fhempy/commit/629940c5da5e1b17b9666bc86f85a1666c4db14e))
+
+
 ## v0.1.676 (2023-11-12)
 
 ### Fix

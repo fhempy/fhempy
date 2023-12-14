@@ -659,17 +659,22 @@ async def async_main():
         await advertise_fhempy(ip, port)
 
     logger.info("Waiting for FHEM connection")
-    async with websockets.serve(
-        pybinding,
-        "0.0.0.0",
-        port,
-        ping_timeout=None,
-        ping_interval=None,
-        process_request=health_check,
-        max_size=None,
-        write_limit=2**20,
-    ):
-        await stop_event.wait()
+    try:
+        async with websockets.serve(
+            pybinding,
+            "0.0.0.0",
+            port,
+            ping_timeout=None,
+            ping_interval=None,
+            process_request=health_check,
+            max_size=None,
+            write_limit=2**20,
+        ):
+            await stop_event.wait()
+    except OSError:
+        logger.error(
+            "Another instance of fhempy is running, stop the other instance first."
+        )
 
 
 def handle_cmdline_options(opts):

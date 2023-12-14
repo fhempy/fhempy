@@ -8,12 +8,22 @@
       "name": "Python: fhempy",
       "type": "python",
       "request": "launch",
-      "program": "FHEM/bindings/python/bin/fhempy",
+      "program": "FHEM/bindings/python/bin/start_fhempy.py",
       "env": {
         "PYTHONPATH": "${workspaceRoot}/FHEM/bindings/python"
       },
       "console": "integratedTerminal",
       "justMyCode": false,
+    },
+    {
+      "name": "Bash: fhempy",
+      "type": "bashdb",
+      "request": "launch",
+      "program": "FHEM/bindings/python/bin/fhempy",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}/FHEM/bindings/python",
+        "HOME": "${workspaceRoot}",
+      },
     }
   ]
 }

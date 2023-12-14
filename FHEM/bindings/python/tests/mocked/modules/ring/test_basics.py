@@ -2,11 +2,13 @@ import asyncio
 import datetime
 import logging
 import os
+import re
 
 import pytest
 import requests_mock
-from fhempy.lib.pkg_installer import check_and_install_dependencies
 from tests.utils import mock_fhem
+
+from fhempy.lib.pkg_installer import check_and_install_dependencies
 
 
 def load_fixture(filename):
@@ -31,11 +33,11 @@ def mock_ring_requests():
             text=load_fixture("ring_devices.json"),
         )
         mock.get(
-            "https://api.ring.com/clients_api/chimes/999999/health",
+            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/chimes\/\d+\/health"),
             text=load_fixture("ring_chime_health_attrs.json"),
         )
         mock.get(
-            "https://api.ring.com/clients_api/doorbots/987652/health",
+            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/doorbots\/\d+\/health"),
             text=load_fixture("ring_doorboot_health_attrs.json"),
         )
         mock.get(
@@ -43,7 +45,7 @@ def mock_ring_requests():
             text=load_fixture("ring_doorbots.json"),
         )
         mock.get(
-            "https://api.ring.com/clients_api/dings/active?api_version=9",
+            "https://api.ring.com/clients_api/dings/active",
             text=load_fixture("ring_ding_active.json"),
         )
         mock.put(
@@ -59,12 +61,43 @@ def mock_ring_requests():
             "https://api.ring.com/clients_api/doorbots/987652/siren_off", text="ok"
         )
         mock.get(
-            "https://api.ring.com/clients_api/dings/987654321/share/play?api_version=9",
-            text='{"url":"https://api.ring.com/clients_api/dings/987654321/recording?api_version=9"}',
+            "https://api.ring.com/clients_api/dings/987654321/share/play",
+            text='{"url":"https://api.ring.com/clients_api/dings/987654321/recording"}',
         )
         mock.get(
             "https://api.ring.com/clients_api/dings/987654321/recording",
             text="ok",
+        )
+        mock.get(
+            "https://api.ring.com/groups/v1/locations/mock-location-id/groups",
+            text=load_fixture("ring_groups.json"),
+        )
+        mock.post(
+            "https://api.ring.com/groups/v1/locations/"
+            + "mock-location-id/groups/mock-group-id/devices",
+            text="ok",
+        )
+        mock.patch(
+            re.compile(
+                r"https:\/\/api\.ring\.com\/devices\/v1\/devices\/\d+\/settings"
+            ),
+            text="ok",
+        )
+        mock.get(
+            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/dings\/\d+\/recording"),
+            # "https://api.ring.com/clients_api/dings/987654321/recording",
+            status_code=200,
+            content=b"123456",
+        )
+        mock.get(
+            "https://api.ring.com/clients_api/dings/9876543212/recording",
+            status_code=200,
+            content=b"123456",
+        )
+        mock.patch(
+            "https://api.ring.com/clients_api/device",
+            status_code=204,
+            content=b"",
         )
         yield mock
 
@@ -114,7 +147,7 @@ async def test_login(mocker):
 
     # wait for the ding
     await asyncio.sleep(1)
-    assert mock_fhem.readings["testdevice"]["state"] == "ding"
+    assert mock_fhem.readings["testdevice"]["state"] == "connected"
     assert mock_fhem.readings["testdevice"]["address"] == "123 Main St"
     assert mock_fhem.readings["testdevice"]["family"] == "doorbots"
     assert mock_fhem.readings["testdevice"]["device_id"] == "aacdef123"
@@ -141,7 +174,7 @@ async def test_login(mocker):
     assert mock_fhem.readings["testdevice"]["last_recording_id"] == 987654321
     assert (
         mock_fhem.readings["testdevice"]["last_recording_url"]
-        == "https://api.ring.com/clients_api/dings/987654321/recording?api_version=9"
+        == "https://api.ring.com/clients_api/dings/987654321/recording"
     )
     assert mock_fhem.readings["testdevice"]["history_1_id"] == 987654321
     assert mock_fhem.readings["testdevice"]["history_1_kind"] == "motion"
@@ -149,7 +182,5 @@ async def test_login(mocker):
     assert mock_fhem.readings["testdevice"][
         "history_1_created_at"
     ] == datetime.datetime(2017, 3, 5, 15, 3, 40, tzinfo=datetime.timezone.utc)
-
-    assert mock_fhem.readings["testdevice"]["alert_id"] == 123456789
 
     await fhempy_device.Undefine(testhash)

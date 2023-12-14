@@ -47,6 +47,11 @@ class FusionSolarRestApi:
         "/rest/pvms/web/station/v1/overview/station-detail?"
         + "stationDn=%STATION%&_=%CURRENT_UTC_TIME%"
     )
+    STATION_REAL_KPI = (
+        "/rest/pvms/web/station/v1/overview/station-real-kpi?"
+        + "stationDn=%STATION%&clientTime=%CURRENT_UTC_TIME%&"
+        + "timeZone=1&_=%CURRENT_UTC_TIME%"
+    )
     ENERGY_BALANCE = (
         "/rest/pvms/web/station/"
         + "v1/overview/energy-balance?stationDn=%STATION%&"
@@ -65,6 +70,7 @@ class FusionSolarRestApi:
         self._username = username
         self._password = password
         self._stationdetail = None
+        self._stationrealkpi = None
         self._energy_balance = None
         self._device_signals = None
         self._inverter_station = None
@@ -373,6 +379,7 @@ class FusionSolarRestApi:
 
     async def update(self):
         await self.update_station_detail()
+        await self.update_station_real_kpi()
         await self.update_energy_balance()
         await self.update_energy_flow()
         await self.update_device_signals()
@@ -482,6 +489,11 @@ class FusionSolarRestApi:
             FusionSolarRestApi.STATION_DETAIL_PATH
         )
 
+    async def update_station_real_kpi(self):
+        self._stationrealkpi = await self._get_rest_data(
+            FusionSolarRestApi.STATION_REAL_KPI
+        )
+
     @property
     def station(self):
         return self._stationdetail["dn"]
@@ -512,7 +524,7 @@ class FusionSolarRestApi:
 
     @property
     def total_current_day_energy(self):
-        return float(self._stationdetail["dailyEnergy"])
+        return float(self._stationrealkpi["dailyEnergy"])
 
     @property
     def total_current_month_energy(self):
@@ -532,19 +544,11 @@ class FusionSolarRestApi:
 
     @property
     def daily_self_use_energy(self):
-        if "realNrgKpi" in self._stationdetail:
-            if "selfUseNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
-                return round(
-                    self._stationdetail["realNrgKpi"]["dailyNrg"]["selfUseNrg"], 2
-                )
-        return 0
+        return self._stationrealkpi["dailySelfUseEnergy"]
 
     @property
     def daily_use_energy(self):
-        if "realNrgKpi" in self._stationdetail:
-            if "useNrg" in self._stationdetail["realNrgKpi"]["dailyNrg"]:
-                return round(self._stationdetail["realNrgKpi"]["dailyNrg"]["useNrg"], 2)
-        return 0
+        return self._stationrealkpi["dailyUseEnergy"]
 
     @property
     def daily_self_use_ratio(self):
