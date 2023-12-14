@@ -49,7 +49,7 @@ then
 fi
 
 # check if virtual env was activated
-if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0]]
+if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
 then
   echo "No Python virtual environment available. Exit."
   exit 1
