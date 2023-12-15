@@ -72,10 +72,10 @@ This repository includes following working modules:
 Python >=3.9 is required, Python 2 won't work\!
 
 ### Console
-#### Debian 11 (Bullseye)
+#### Debian 11/12 (Bullseye/Bookworm)
 Copy & paste this command if you are running Debian Bullseye.
 ```
-sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
+sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
 ```
 
 #### Others
@@ -119,7 +119,6 @@ Only on remote peers, do not run this commands on the FHEM instance. Run this co
 
 ```
 ### WARNING: DO THIS COMMAND ONLY ON REMOTE PEER, NOT ON YOUR FHEM INSTANCE ###
-pip3 install --upgrade fhempy
 # systemd service installation
 curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
 ```
@@ -127,6 +126,8 @@ curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_
 ### Peer setup (long version)
 Only needed if you didn't run Peer setup (short version). The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
 
+- Setup virtual environment for fhempy: `python3 -m venv .fhempy/fhempy_venv`
+- Activate venv: `source .fhempy/fhempy_venv/bin/activate`
 - Install fhempy with user pi: `pip3 install --upgrade fhempy`
 - Make sure your main fhempy instance (within FHEM) is running
 - Test fhempy by just running it with user pi, type `fhempy` and enter. Wait a few seconds until it gets discovered and you see the incoming FHEM connection.
