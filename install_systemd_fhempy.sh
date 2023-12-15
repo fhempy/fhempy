@@ -9,6 +9,15 @@ echo -n "Creating virtual environment..."
 python3 -m venv .fhempy/fhempy_venv
 echo "OK"
 
+echo -n "Activate virtual environment..."
+source .fhempy/fhempy_venv/bin/activate
+echo "OK"
+
+echo -n "Install fhempy..."
+pip3 install fhempy
+deactivate
+echo "OK"
+
 echo -n "Download fhempy.service file..."
 wget https://raw.githubusercontent.com/fhempy/fhempy/master/fhempy.service -O /tmp/fhempy.service
 echo "OK"
