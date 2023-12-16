@@ -39,6 +39,14 @@ then
     echo -n "Creating fhempy virtual environment..."
     mkdir -p .fhempy
     python3 -m venv .fhempy/fhempy_venv
+    
+    if [[ $? -ne 0 ]]
+    then
+      echo "FAILED"
+      echo "Please make sure that python3-venv package is installed"
+      echo "sudo apt install python3-venv"
+      exit 1
+    fi
     echo "OK"
   fi
 
