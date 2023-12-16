@@ -50,7 +50,7 @@ This repository includes following working modules:
 |[nefit](FHEM/bindings/python/fhempy/lib/nefit/README.md)|Control nefit devices|
 |[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
 |[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
-|[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
+|[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer, requires Python 3.10 or higher|
 |[pyit600](FHEM/bindings/python/fhempy/lib/pyit600/README.md)|Control Salus iT600 devices|
 |[rct_power](FHEM/bindings/python/fhempy/lib/rct_power/README.md)|RCT Power inverter|
 |[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
