@@ -2,6 +2,54 @@
 
 
 
+## v0.1.685 (2023-12-16)
+
+### Fix
+
+* fix(bt_presence): use pybluez from git ([`7639626`](https://github.com/fhempy/fhempy/commit/7639626c3b92f194a4f23a99acca7a1a8db96a05))
+
+* fix(bt_presence): update bt_proximity ([`8a34a11`](https://github.com/fhempy/fhempy/commit/8a34a11677e1cdf7dcda3833575faf9ed782764a))
+
+* fix(bt_presence): use pybluez2 instead of pybluez ([`8f5717d`](https://github.com/fhempy/fhempy/commit/8f5717da66b6fc9a5e396791f7622296d9114829))
+
+* fix(object_detection): Update libs ([`d6618b8`](https://github.com/fhempy/fhempy/commit/d6618b8546a116e8322b0d710e99674adaa32f2d))
+
+* fix(fhempy): Add check if venv creation was successful ([`dd065e5`](https://github.com/fhempy/fhempy/commit/dd065e58bd90c64deff57a73ef8945c7de404eb4))
+
+* fix(fhempy): add venv creation ([`f296a39`](https://github.com/fhempy/fhempy/commit/f296a396cef7d67a350f5f0a0901eb4545f6cb27))
+
+* fix(fhempy): install fhempy in venv ([`2f05060`](https://github.com/fhempy/fhempy/commit/2f05060c022b12101badc9227cc240e16896656c))
+
+* fix(fhempy): Fix Line52 in fhempy (#234)
+
+* Modify default poll intervall to 300 seconds
+
+* - Fix Line52 in fhempy
+- Update BaseLib Ring ([`24e47a8`](https://github.com/fhempy/fhempy/commit/24e47a84ff9e0610656bdea53c2270482de32b02))
+
+* fix(fhempy): do venv check only for non-container envs (#218) ([`526b92a`](https://github.com/fhempy/fhempy/commit/526b92a339d89c43419deef5432b39aa7ab774b4))
+
+* fix(fhempy): do not create venv in container environment (#218) ([`98ebf9e`](https://github.com/fhempy/fhempy/commit/98ebf9ec5ca9698667d294caeb466b061978e0e1))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`00fef76`](https://github.com/fhempy/fhempy/commit/00fef7608d81369b375355c35f8808d8369393dc))
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`fe55d43`](https://github.com/fhempy/fhempy/commit/fe55d43d6ff81947a695c24c723eaf8967021838))
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`a0fc16f`](https://github.com/fhempy/fhempy/commit/a0fc16fc73d72090f2f0ac2c48c2ff30a1c047c0))
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`5f3c7d1`](https://github.com/fhempy/fhempy/commit/5f3c7d17a53538d5acbcd4a02436bedb482ae643))
+
+
 ## v0.1.684 (2023-12-12)
 
 ### Fix
