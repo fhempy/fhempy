@@ -22,7 +22,7 @@ python = "^3.8"
 websockets = "11.0.3"
 importlib_metadata = "6.1.0"
 pycryptodomex = "3.18.0"
-zeroconf = "0.64.1"
+zeroconf = "0.129.0"
 aiohttp = {extras = ["speedups"], version = "3.9.0"}
 markdown2 = "2.4.10"
 requests = "2.31.0"
