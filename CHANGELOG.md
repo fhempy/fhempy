@@ -2,6 +2,53 @@
 
 
 
+## v0.1.686 (2023-12-16)
+
+### Chore
+
+* chore(deps): bump aiohttp from 3.8.6 to 3.9.0 (#236)
+
+Bumps [aiohttp](https://github.com/aio-libs/aiohttp) from 3.8.6 to 3.9.0.
+- [Release notes](https://github.com/aio-libs/aiohttp/releases)
+- [Changelog](https://github.com/aio-libs/aiohttp/blob/master/CHANGES.rst)
+- [Commits](https://github.com/aio-libs/aiohttp/compare/v3.8.6...v3.9.0)
+
+---
+updated-dependencies:
+- dependency-name: aiohttp
+  dependency-type: direct:production
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`1a18d6a`](https://github.com/fhempy/fhempy/commit/1a18d6a81a0189457269a9752f9ec0bf4042d893))
+
+* chore(deps): bump urllib3 from 2.0.6 to 2.0.7 (#208)
+
+Bumps [urllib3](https://github.com/urllib3/urllib3) from 2.0.6 to 2.0.7.
+- [Release notes](https://github.com/urllib3/urllib3/releases)
+- [Changelog](https://github.com/urllib3/urllib3/blob/main/CHANGES.rst)
+- [Commits](https://github.com/urllib3/urllib3/compare/2.0.6...2.0.7)
+
+---
+updated-dependencies:
+- dependency-name: urllib3
+  dependency-type: indirect
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`6376ba5`](https://github.com/fhempy/fhempy/commit/6376ba537d19bbb02b28a4b52bb5b4d5f1454eb1))
+
+* chore: test only with python 3.10 and 3.11 ([`e5a5fad`](https://github.com/fhempy/fhempy/commit/e5a5fad9cd49b12a19404d24a06e6c42538c1559))
+
+### Feature
+
+* feat(prusalink): support prusa 3d printer via prusalink ([`6dcea09`](https://github.com/fhempy/fhempy/commit/6dcea093848823f4e1163ad93168bee7cca786db))
+
+### Fix
+
+* fix(prusalink): requires python 3.10 or higher ([`3082abd`](https://github.com/fhempy/fhempy/commit/3082abdeed0590c2ee9e4939b7ebf05f811a5c57))
+
+
 ## v0.1.685 (2023-12-16)
 
 ### Fix
