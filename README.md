@@ -6,6 +6,7 @@
 
 # Attention (12/2023)
 Please make sure that you have python3-venv installed before you do an update!
+
 `sudo apt install python3-venv`
 
 # fhempy
