@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fhempy"
 description = "Python binding for FHEM to support Python modules"
-version = "0.1.687"
+version = "0.1.688"
 authors = ["Dominik Karall <dominik.karall@gmail.com>"]
 readme="README.md"
 homepage = "https://github.com/fhempy/fhempy"
