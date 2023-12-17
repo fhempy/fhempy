@@ -2,6 +2,79 @@
 
 
 
+## v0.1.687 (2023-12-17)
+
+### Chore
+
+* chore(deps): bump websockets from 11.0.3 to 12.0 (#247)
+
+Bumps [websockets](https://github.com/python-websockets/websockets) from 11.0.3 to 12.0.
+- [Release notes](https://github.com/python-websockets/websockets/releases)
+- [Commits](https://github.com/python-websockets/websockets/compare/11.0.3...12.0)
+
+---
+updated-dependencies:
+- dependency-name: websockets
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`23d0f0a`](https://github.com/fhempy/fhempy/commit/23d0f0a09d29936fa0eeb06b6d5438728df64001))
+
+* chore(deps): bump zeroconf from 0.129.0 to 0.130.0 (#245)
+
+Bumps [zeroconf](https://github.com/python-zeroconf/python-zeroconf) from 0.129.0 to 0.130.0.
+- [Release notes](https://github.com/python-zeroconf/python-zeroconf/releases)
+- [Changelog](https://github.com/python-zeroconf/python-zeroconf/blob/master/CHANGELOG.md)
+- [Commits](https://github.com/python-zeroconf/python-zeroconf/compare/0.129.0...0.130.0)
+
+---
+updated-dependencies:
+- dependency-name: zeroconf
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`809890e`](https://github.com/fhempy/fhempy/commit/809890ea59196047843291be1c1c785e655af6ad))
+
+* chore(deps-dev): bump pytest-env from 1.0.1 to 1.1.3 (#246) ([`24ba5fe`](https://github.com/fhempy/fhempy/commit/24ba5fefab1e0fe95d261d4e962d657af87ac72c))
+
+* chore(deps): bump actions/setup-python from 4 to 5 (#244) ([`9a26482`](https://github.com/fhempy/fhempy/commit/9a2648223c65b0f0db36c6d34fdb8821f5356ed9))
+
+* chore(deps): bump actions/checkout from 3 to 4 (#243) ([`dc167a2`](https://github.com/fhempy/fhempy/commit/dc167a201e5425b00f3e291c1dfa9fcc6019c621))
+
+* chore(deps): bump fhem/fhem-controls-actions from 2.2.0 to 2.2.1 (#242) ([`af9a2c1`](https://github.com/fhempy/fhempy/commit/af9a2c17d041c0c99a62875af4ba828d9414d5a9))
+
+* chore(deps-dev): bump tox from 4.11.3 to 4.11.4 (#241) ([`d21ec28`](https://github.com/fhempy/fhempy/commit/d21ec2833129c5102ae8cc7002c90fd18080997b))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.18.0 to 1.25.0 (#240) ([`4aac589`](https://github.com/fhempy/fhempy/commit/4aac5897bd197a23a2304a21581e8fc044b56c45))
+
+* chore(deps-dev): bump pytest from 7.4.2 to 7.4.3 (#239) ([`6a08efb`](https://github.com/fhempy/fhempy/commit/6a08efbd464c06bc1392d97cceff52a9be947dd0))
+
+* chore(deps): bump actions/stale from 3 to 9 (#238) ([`b09ad38`](https://github.com/fhempy/fhempy/commit/b09ad38cfb1d8e7ab44b7831524fe0ed6739db06))
+
+* chore: Add gh-actions and test some module manifest.json files ([`4f6e6a6`](https://github.com/fhempy/fhempy/commit/4f6e6a691b0d08e7965017c6673917f6f30ebe5e))
+
+* chore(deps): bump zeroconf from 0.64.1 to 0.129.0 (#237)
+
+Bumps [zeroconf](https://github.com/python-zeroconf/python-zeroconf) from 0.64.1 to 0.129.0.
+- [Release notes](https://github.com/python-zeroconf/python-zeroconf/releases)
+- [Changelog](https://github.com/python-zeroconf/python-zeroconf/blob/master/CHANGELOG.md)
+- [Commits](https://github.com/python-zeroconf/python-zeroconf/compare/0.64.1...0.129.0)
+
+---
+updated-dependencies:
+- dependency-name: zeroconf
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`d0d052e`](https://github.com/fhempy/fhempy/commit/d0d052e22a57019d8e251d3848dec90b9f4bac5e))
+
+
 ## v0.1.686 (2023-12-16)
 
 ### Chore
