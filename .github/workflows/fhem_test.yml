@@ -63,7 +63,7 @@ jobs:
     - name: Checkout Repostory
       uses: actions/checkout@v3
 
-    - uses: shogo82148/actions-setup-perl@v1.18.0
+    - uses: shogo82148/actions-setup-perl@v1.25.0
       with:
         perl-version: ${{ matrix.perl }}
         install-modules-with: cpanm
