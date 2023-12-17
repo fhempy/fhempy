@@ -2,6 +2,27 @@
 
 
 
+## v0.1.689 (2023-12-17)
+
+### Chore
+
+* chore: missing new line ([`43fee61`](https://github.com/fhempy/fhempy/commit/43fee610b83e22c3caa403cb9f4e6d59083e6117))
+
+* chore: inform about venv requirement ([`e7c18d2`](https://github.com/fhempy/fhempy/commit/e7c18d287cb2901370e155ef08e2de1db5df7a0d))
+
+### Fix
+
+* fix(skodaconnect): update lib ([`79eca38`](https://github.com/fhempy/fhempy/commit/79eca38c3567c2e816642190c01e5850454b9353))
+
+* fix(fhempy): check for venv activate command ([`3539c66`](https://github.com/fhempy/fhempy/commit/3539c66094954b8e00433d76526e3c1066e57b2d))
+
+### Unknown
+
+* action: auto update controls
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`b42517d`](https://github.com/fhempy/fhempy/commit/b42517d7c35671593e9b90d4a75a2abf9e301b6a))
+
+
 ## v0.1.688 (2023-12-17)
 
 
