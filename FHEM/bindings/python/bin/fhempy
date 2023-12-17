@@ -31,7 +31,7 @@ if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
 then
   
   # if not, check if "fhempy_venv" exists
-  test -d .fhempy/fhempy_venv
+  test -e .fhempy/fhempy_venv/bin/activate
 
   # if not, create fhempy_venv
   if [[ $? -ne 0 ]]
