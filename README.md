@@ -4,6 +4,10 @@
 [![LastCommit](https://img.shields.io/github/last-commit/fhempy/fhempy)](https://github.com/fhempy/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
+# Attention (12/2023)
+Please make sure that you have python3-venv installed before you do an update!
+`sudo apt install python3-venv`
+
 # fhempy
 
 fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.9 or higher is required, therefore I recommend using bullseye.
