@@ -45,7 +45,7 @@ packaging = "23.2"
 
 [tool.poetry.dependencies.aiohttp]
 extras = [ "speedups",]
-version = "3.9.0"
+version = "3.9.1"
 
 [tool.poetry.group.all]
 optional = true
