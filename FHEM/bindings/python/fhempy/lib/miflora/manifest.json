@@ -1,3 +1,7 @@
 {
-  "requirements": ["bluepy", "miflora", "setuptools"]
+  "requirements": [
+    "bluepy",
+    "miflora",
+    "setuptools"
+  ]
 }

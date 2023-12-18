@@ -1,3 +1,5 @@
 {
-  "requirements": ["huawei-solar==2.2.9"]
+  "requirements": [
+    "huawei-solar==2.2.9"
+  ]
 }
