@@ -1,33 +1,118 @@
+[build-system]
+requires = [ "poetry-core",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "fhempy"
 description = "Python binding for FHEM to support Python modules"
 version = "0.1.689"
-authors = ["Dominik Karall <dominik.karall@gmail.com>"]
-readme="README.md"
+authors = [ "Dominik Karall <dominik.karall@gmail.com>",]
+readme = "README.md"
 homepage = "https://github.com/fhempy/fhempy"
+[[tool.poetry.packages]]
+include = "fhempy"
+from = "FHEM/bindings/python"
 
-packages = [
-    { include = "fhempy", from = "FHEM/bindings/python" },
-]
+[tool.semantic_release]
+build_command = "pip install poetry && poetry build"
+version_variables = [ "FHEM/bindings/python/fhempy/lib/version.py:__version__",]
+version_toml = [ "pyproject.toml:tool.poetry.version",]
+
+[tool.setuptools]
+include-package-data = true
+script-files = [ "FHEM/bindings/python/bin/fhempy",]
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/fhempy/fhempy/issues"
-"Sponsorship" = "https://github.com/sponsors/fhempy"
+Sponsorship = "https://github.com/sponsors/fhempy"
 
 [tool.poetry.scripts]
-fhempy = 'fhempy.lib.fhem_pythonbinding:run'
+fhempy = "fhempy.lib.fhem_pythonbinding:run"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 websockets = "12.0"
 importlib_metadata = "6.1.0"
 pycryptodomex = "3.18.0"
 zeroconf = "0.130.0"
-aiohttp = {extras = ["speedups"], version = "3.9.0"}
 markdown2 = "2.4.10"
 requests = "2.31.0"
 async-upnp-client = "0.31.2"
 packaging = "23.2"
+
+[tool.setuptools.package-data]
+"*" = [ "README.md",]
+
+[tool.poetry.dependencies.aiohttp]
+extras = [ "speedups",]
+version = "3.9.0"
+
+[tool.poetry.group.all]
+optional = true
+
+[tool.setuptools.packages.find]
+where = [ "FHEM/bindings/python",]
+exclude = [ "tests*",]
+
+[tool.poetry.group.all.dependencies]
+GitPython = "==3.1.40"
+aioblescan = ">=0.2.12"
+aiohomekit = "==2.6.16"
+aionefit = "==0.14"
+async-upnp-client = "==0.31.2"
+asyncio_mqtt = "==0.16.1"
+beautifulsoup4 = "==4.12.2"
+bleak = "==0.19.5"
+bleparser = "==2.0.0"
+bluepy = "==1.3.0"
+bluetooth-adapters = "==0.15.2"
+bluetooth-auto-recovery = "==1.0.3"
+bt_proximity = "==0.2.1"
+btsocket = ">=0.1.0"
+construct = "*"
+cryptography = "*"
+esphome = "==2023.11.6"
+goodwe = "==0.2.27"
+greeclimate = "==1.2.1"
+huawei-solar = "==2.2.9"
+hyundai_kia_connect_api = "==3.3.12"
+janus = ">=1.0.0"
+lxml = "*"
+meross-iot = "==0.4.5.7"
+micloud = "==0.5"
+miflora = "*"
+mitemp-bt = "==0.0.3"
+netifaces = "*"
+opencv-python-headless = "==4.8.1.78"
+paho-mqtt = "==1.5.1"
+pexpect = "*"
+pychromecast = "==13.0.7"
+pycryptodome = "==3.15.0"
+pycryptodomex = ">=3.12.0"
+pygatt = "*"
+pyit600 = "==0.5.1"
+pyjwt = "*"
+pyppeteer = ">=0.2.2"
+pyprusalink = "==2.0.0"
+pyric = ">=0.1.6.3"
+python-dateutil = "*"
+python-miio = "==0.5.12"
+pytz = "*"
+rctclient = "==0.0.3"
+requests = ">=2.0"
+ring_doorbell = "==0.8.4"
+seatconnect = "==1.1.9"
+setuptools = "*"
+six = "*"
+skodaconnect = "==1.3.9"
+spotipy = ">=2.16.1"
+tflite-runtime = "==2.14.0"
+tuya-connector-python = "==0.1.2"
+tuya-iot-py-sdk = "==0.6.6"
+vaillant-netatmo-api = "==0.11.0"
+warema-wms-controller = "*"
+xmodem = "==0.4.6"
+youtube_dl = "==2021.12.17"
 
 [tool.poetry.group.dev.dependencies]
 tox = "^4.11.3"
@@ -36,25 +121,3 @@ pytest-env = "^1.0.1"
 pytest-mock = "^3.11.1"
 pytest-asyncio = "^0.21.1"
 requests-mock = "^1.11.0"
-
-[tool.semantic_release]
-build_command = "pip install poetry && poetry build"
-version_variables=[
-    "FHEM/bindings/python/fhempy/lib/version.py:__version__",
-]
-version_toml=["pyproject.toml:tool.poetry.version",]
-
-[tool.setuptools]
-include-package-data = true
-script-files = ["FHEM/bindings/python/bin/fhempy"]
-
-[tool.setuptools.packages.find]
-where=["FHEM/bindings/python"]
-exclude = ["tests*"]
-
-[tool.setuptools.package-data]
-"*" = ["README.md"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
