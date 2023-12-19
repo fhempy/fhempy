@@ -2,6 +2,99 @@
 
 
 
+## v0.1.690 (2023-12-19)
+
+### Chore
+
+* chore: update manifest files ([`fb7ab3e`](https://github.com/fhempy/fhempy/commit/fb7ab3e435e0e497ee9f3b4ae92749ca914d467c))
+
+* chore(deps): bump async-upnp-client from 0.31.2 to 0.38.0 (#256)
+
+Bumps [async-upnp-client](https://github.com/StevenLooman/async_upnp_client) from 0.31.2 to 0.38.0.
+- [Changelog](https://github.com/StevenLooman/async_upnp_client/blob/development/CHANGES.rst)
+- [Commits](https://github.com/StevenLooman/async_upnp_client/compare/0.31.2...0.38.0)
+
+---
+updated-dependencies:
+- dependency-name: async-upnp-client
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`16d63fe`](https://github.com/fhempy/fhempy/commit/16d63fee9d09a89a134a7b94cdd24b2e83ebd3d1))
+
+* chore(deps): bump aiohttp from 3.9.0 to 3.9.1 (#250)
+
+Bumps [aiohttp](https://github.com/aio-libs/aiohttp) from 3.9.0 to 3.9.1.
+- [Release notes](https://github.com/aio-libs/aiohttp/releases)
+- [Changelog](https://github.com/aio-libs/aiohttp/blob/master/CHANGES.rst)
+- [Commits](https://github.com/aio-libs/aiohttp/compare/v3.9.0...v3.9.1)
+
+---
+updated-dependencies:
+- dependency-name: aiohttp
+  dependency-type: direct:production
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`c0f5bce`](https://github.com/fhempy/fhempy/commit/c0f5bcefb6e9a92e23766e01684d9b5be9c4f34f))
+
+* chore(deps): bump markdown2 from 2.4.10 to 2.4.12 (#251)
+
+Bumps [markdown2](https://github.com/trentm/python-markdown2) from 2.4.10 to 2.4.12.
+- [Changelog](https://github.com/trentm/python-markdown2/blob/master/CHANGES.md)
+- [Commits](https://github.com/trentm/python-markdown2/compare/2.4.10...2.4.12)
+
+---
+updated-dependencies:
+- dependency-name: markdown2
+  dependency-type: direct:production
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`ede5e10`](https://github.com/fhempy/fhempy/commit/ede5e104fbbd52276b6ecb2a930e13b10356853f))
+
+* chore: resolve dependencies ([`4e44df7`](https://github.com/fhempy/fhempy/commit/4e44df73158a7ce6b3e74af70dafded0157ccf0b))
+
+* chore: update dependencies lock file ([`1af3235`](https://github.com/fhempy/fhempy/commit/1af32354c17894ad37391ec4ef2f4fcf9e8cbe09))
+
+* chore: remove schedule time from dependabot ([`aa09be4`](https://github.com/fhempy/fhempy/commit/aa09be45e155e58e6978854233f311571d7caeca))
+
+* chore: run dependabot daily ([`0d6bc27`](https://github.com/fhempy/fhempy/commit/0d6bc27ba5037600fb03e296b1b48cc1b2cf74d3))
+
+* chore: update spotipy and paho-mqtt ([`4bea873`](https://github.com/fhempy/fhempy/commit/4bea8734df5d8eadf56f8fb20c483e69b237b3ab))
+
+* chore: cleanup manifest files ([`ca31810`](https://github.com/fhempy/fhempy/commit/ca3181052f6ca27f2a301d6b298134459f5781ff))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#252)
+
+Bumps [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release) from 8.3.0 to 8.5.1.
+- [Release notes](https://github.com/python-semantic-release/python-semantic-release/releases)
+- [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.md)
+- [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/v8.3.0...v8.5.1)
+
+---
+updated-dependencies:
+- dependency-name: python-semantic-release/python-semantic-release
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`c3fc8d9`](https://github.com/fhempy/fhempy/commit/c3fc8d9eae54e42ca8fa5372febb756fe2b75355))
+
+* chore: update spotipy ([`a90ac1e`](https://github.com/fhempy/fhempy/commit/a90ac1e56348e412c6fcc7a2f16aff14a0eb16a6))
+
+* chore: try to handle libraries with dependabot ([`f6c379d`](https://github.com/fhempy/fhempy/commit/f6c379d0889931b30d6e91fbd99fd8250befe06d))
+
+* chore: cleanup manifest files ([`5926ded`](https://github.com/fhempy/fhempy/commit/5926ded39aeea0ebe6e4dfd98b5319971002d204))
+
+* chore: cleanup manifest files ([`068640e`](https://github.com/fhempy/fhempy/commit/068640e552b5bc4d973f3cd5adea5266b38cdd06))
+
+
 ## v0.1.689 (2023-12-17)
 
 ### Chore
