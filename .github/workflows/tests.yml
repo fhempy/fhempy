@@ -35,8 +35,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest tox-gh-actions tox
-        if [ -f requirements_tests.txt ]; then pip install -r requirements_tests.txt; fi
+        python -m pip install pytest tox-gh-actions tox toml
+    - name: Update dependencies in manifest.json
+      run: |
+        python3 pyproject2manifest.py
     - name: Test with tox
       run: |
         tox
