@@ -30,6 +30,9 @@ jobs:
       run: |
         sudo apt update
         sudo apt install python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev
+    - name: Update manifest.json files
+      run: |
+        python3 pyproject2manifest.py
     - name: Install Poetry
       uses: snok/install-poetry@v1
     - name: Install dependencies
