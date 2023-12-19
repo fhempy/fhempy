@@ -1,3 +1,6 @@
 {
-  "requirements": ["bt_proximity==0.2.1", "git+https://github.com/pybluez/pybluez.git#pybluez==0.30"]
+  "requirements": [
+    "bt_proximity==0.2.1",
+    "git+https://github.com/pybluez/pybluez.git#pybluez==0.30"
+  ]
 }

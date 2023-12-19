@@ -1,6 +1,6 @@
 {
   "requirements": [
     "spotipy==2.23.0",
-    "pyppeteer>=0.2.2"
+    "pyppeteer==1.0.2"
   ]
 }
