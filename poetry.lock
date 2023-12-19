@@ -1974,13 +1974,13 @@ tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
 name = "meross-iot"
-version = "0.4.5.7"
+version = "0.4.6.0"
 description = "A simple library to deal with Meross devices. At the moment MSS110, MSS210, MSS310, MSS310H smart plugs and the MSS425E power strip. Other meross device might work out of the box with limited functionality. Give it a try and, in case of problems, let the developer know by opening an issue on Github."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "meross_iot-0.4.5.7-py2.py3-none-any.whl", hash = "sha256:5499887f0cc91cff5626123a4f661303b891bec3bf00ea88c4c4d9472e41fbe0"},
-    {file = "meross_iot-0.4.5.7.tar.gz", hash = "sha256:47db78d53cfa354bef70597a99c9e8df20f2bb4c270ee9c1808bad46ab2c7517"},
+    {file = "meross_iot-0.4.6.0-py2.py3-none-any.whl", hash = "sha256:3dbe56b9859a4059061f88abd6524df4a4d4d05ca277129be3a686f53e54697f"},
+    {file = "meross_iot-0.4.6.0.tar.gz", hash = "sha256:79054b183a06096f8233cca4563425a6b7ba9d068f6bcf52dc3a3951ed41dd4b"},
 ]
 
 [package.dependencies]
@@ -4076,4 +4076,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "e5c6eadcadc105990a933245a951ef63424836062d4e7745888d3e1959c711b9"
+content-hash = "a5a4e6d21fd77de9ea0d136579beee50dce3fb94e99427dcde21e78c9c1ca390"
