@@ -2023,17 +2023,17 @@ testing = ["pytest"]
 
 [[package]]
 name = "mitemp-bt"
-version = "0.0.3"
+version = "0.0.5"
 description = "Library to read data from Mi Temperature and Humidity Sensor (V2) using Bluetooth LE with LCD display"
 optional = false
 python-versions = "*"
 files = [
-    {file = "mitemp_bt-0.0.3-py3-none-any.whl", hash = "sha256:56208ff630c41734d9230d164c9f1b681cd857203ac8e9070b7a3ac4c90a7a86"},
-    {file = "mitemp_bt-0.0.3.tar.gz", hash = "sha256:3c9d139458808511b9a05648ec0566d1d1519f8f8d1c732ff5aa3ec6ae81d592"},
+    {file = "mitemp_bt-0.0.5-py3-none-any.whl", hash = "sha256:056d6172f4b92c19aab8a2f5f746068cffa9c0bf27091657f8bb5aaae2a53c9e"},
+    {file = "mitemp_bt-0.0.5.tar.gz", hash = "sha256:fd3cfe0edce8aa81b99714f262b661ca6802a1a845d29eafc2621606923caf6c"},
 ]
 
 [package.dependencies]
-btlewrap = "0.0.8"
+btlewrap = ">=0.0.8"
 
 [package.extras]
 testing = ["pytest"]
@@ -4076,4 +4076,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "a5a4e6d21fd77de9ea0d136579beee50dce3fb94e99427dcde21e78c9c1ca390"
+content-hash = "4e59e31154104b28e7e9bfabaa3459a2980668344f082030409211d64f472c38"
