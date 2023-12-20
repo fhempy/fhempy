@@ -2547,13 +2547,13 @@ idna = ["idna (>=2.1)"]
 
 [[package]]
 name = "pychromecast"
-version = "13.0.7"
+version = "13.0.8"
 description = "Python module to talk to Google Chromecast."
 optional = false
 python-versions = "*"
 files = [
-    {file = "PyChromecast-13.0.7-py2.py3-none-any.whl", hash = "sha256:2327f1a2c3902e7be901f43dc97e65aeebb42f0d0a8b2c29f55453c6cacc3bd0"},
-    {file = "PyChromecast-13.0.7.tar.gz", hash = "sha256:0de98e9e5be43269dd41efb16126ab0d5ba941ca4acae024329712851c0c0324"},
+    {file = "PyChromecast-13.0.8-py2.py3-none-any.whl", hash = "sha256:acbee4cd5e4a65cc8057b22ea994680c0996effff23a9648bb242adfb524aefe"},
+    {file = "PyChromecast-13.0.8.tar.gz", hash = "sha256:e4b7523db137f8de05eedcc6154113b68532848629442b448c2334fac966a447"},
 ]
 
 [package.dependencies]
@@ -4076,4 +4076,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "26b510453483fabadefb24706902123ebe02f01a4f7782737a5bad89a23b203a"
+content-hash = "4d7310a49d0d5c49a1c2cd967ca00e6321e132807768248e0fa33742c2320c6b"
