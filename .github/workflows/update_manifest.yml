@@ -6,7 +6,6 @@ name: Update manifest.json files
 
 on:
   pull_request:
-    types: [opened]
     paths: 
       - 'pyproject.toml'
 
