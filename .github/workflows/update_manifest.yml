@@ -1,0 +1,46 @@
+
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Update manifest.json files
+
+on:
+  pull_request:
+      paths: 
+      - 'pyproject.toml'
+
+  workflow_dispatch:
+
+jobs:
+  update_manifest:
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout Repostory
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
+        fetch-depth: 0
+        
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install toml
+
+    - name: Update dependencies in manifest.json
+      run: |
+        python3 pyproject2manifest.py
+
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        default_author: github_actions 
+        commit: --signoff
+        message: "action: auto update manifest.json"
+        push: true

@@ -10,11 +10,6 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
-permissions:
-  pull-requests: write
-  repository-projects: write
-  contents: write
-
 jobs:
   build:
 
@@ -27,39 +22,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.ref }}
-        fetch-depth: 0
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
     - name: Install apt depencies
       run: |
         sudo apt update
         sudo apt install python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev
-
+    - name: Update manifest.json files
+      run: |
+        python3 pyproject2manifest.py
     - name: Install Poetry
       uses: snok/install-poetry@v1
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest tox-gh-actions tox toml
-
-    - name: Update dependencies in manifest.json
-      run: |
-        python3 pyproject2manifest.py
-      if: github.event_name == 'pull_request'
-
-    - name: Commit & Push changes
-      uses: actions-js/push@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-      if: github.event_name == 'pull_request'
-
+        python -m pip install pytest tox-gh-actions tox
+        if [ -f requirements_tests.txt ]; then pip install -r requirements_tests.txt; fi
     - name: Test with tox
       run: |
         tox
