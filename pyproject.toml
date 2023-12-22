@@ -32,7 +32,7 @@ fhempy = "fhempy.lib.fhem_pythonbinding:run"
 [tool.poetry.dependencies]
 python = "^3.9"
 websockets = ">=10.0"
-importlib_metadata = "6.1.0"
+importlib_metadata = "7.0.0"
 pycryptodomex = "3.18.0"
 zeroconf = ">=0.123.0"
 markdown2 = "2.4.12"
