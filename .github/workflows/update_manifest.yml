@@ -5,11 +5,9 @@
 name: Update manifest.json files
 
 on:
-  workflow_dispatch:
-  workflow_run:
-    workflows: ["Test fhempy"]
-    types: 
-      - completed
+  pull_request:
+    paths: 
+      - 'pyproject.toml'
 
 permissions:
   contents: write
@@ -43,7 +41,7 @@ jobs:
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
       with:
-        default_author: github_actions 
+        default_author:  github_actor
         commit: --signoff
         message: "action: auto update manifest.json"
         push: true
