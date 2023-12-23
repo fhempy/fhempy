@@ -3,7 +3,6 @@
     "pychromecast==13.0.8",
     "youtube_dl==2021.12.17",
     "spotipy==2.23.0",
-    "requests>=2.0",
     "six"
   ]
 }
