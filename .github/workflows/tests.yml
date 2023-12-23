@@ -2,9 +2,12 @@
 name: Test fhempy
 
 on:
+  pull_request:
+    paths-ignore: 
+      - 'pyproject.toml'
+      - 'pyproject.lock'
   push:
     branches: [master]
-  pull_request:
   workflow_dispatch:
 
 jobs:
