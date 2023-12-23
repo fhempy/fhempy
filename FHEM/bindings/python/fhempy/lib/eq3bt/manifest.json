@@ -2,6 +2,6 @@
   "requirements": [
     "construct==2.10.70",
     "bleak==0.19.5",
-    "bluetooth-adapters==0.15.2"
+    "bluetooth-adapters==0.16.2"
   ]
 }
