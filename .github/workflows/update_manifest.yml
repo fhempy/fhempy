@@ -5,11 +5,11 @@
 name: Update manifest.json files
 
 on:
-  pull_request:
-    paths: 
-      - 'pyproject.toml'
-
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Test fhempy"]
+    types: 
+      - completed
 
 permissions:
   contents: write
