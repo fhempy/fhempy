@@ -1,13 +1,11 @@
 
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Update manifest.json files
 
 on:
   pull_request:
     paths: 
       - 'pyproject.toml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -41,7 +39,7 @@ jobs:
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
       with:
-        default_author:  github_actor
+        default_author: github_actions
         commit: --signoff
         message: "action: auto update manifest.json"
         push: true
