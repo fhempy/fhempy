@@ -27,7 +27,7 @@ def split_package_version(string):
         version_constraint = match.group(2)
         return package_name, version_constraint
     else:
-        return None, None
+        return string, None
 
 
 def update_manifest_requirements(directory, latest_versions):

@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "beautifulsoup4"
+    "beautifulsoup4==4.12.2"
   ]
 }

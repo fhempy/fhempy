@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "warema-wms-controller"
+    "warema-wms-controller==0.2.4"
   ]
 }
