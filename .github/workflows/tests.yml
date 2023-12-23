@@ -7,7 +7,6 @@ on:
       - 'pyproject.toml'
       - 'pyproject.lock'
   push:
-    branches: [master]
   workflow_dispatch:
 
 jobs:

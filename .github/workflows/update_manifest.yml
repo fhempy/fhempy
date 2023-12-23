@@ -2,9 +2,6 @@
 name: Test update manifest
 
 on:
-  push:
-    paths:
-      - '**/manifest.json'
   pull_request:
     paths: 
       - 'pyproject.toml'
