@@ -2,9 +2,13 @@
 name: Test update manifest
 
 on:
+  push:
+    paths:
+      - '**/manifest.json'
   pull_request:
     paths: 
       - 'pyproject.toml'
+      - 'pyproject.lock'
   workflow_dispatch:
 
 permissions:
