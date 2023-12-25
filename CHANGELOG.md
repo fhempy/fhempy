@@ -2,6 +2,286 @@
 
 
 
+## v0.1.691 (2023-12-25)
+
+### Chore
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#266)
+
+Bumps [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release) from 8.5.1 to 8.7.0.
+- [Release notes](https://github.com/python-semantic-release/python-semantic-release/releases)
+- [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.md)
+- [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/v8.5.1...v8.7.0)
+
+---
+updated-dependencies:
+- dependency-name: python-semantic-release/python-semantic-release
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`ea016f0`](https://github.com/fhempy/fhempy/commit/ea016f0bb26b9a091a6014b2f36f9f9c9fa2b40f))
+
+* chore(deps-dev): bump goodwe from 0.2.27 to 0.2.33 (#267)
+
+* chore(deps-dev): bump goodwe from 0.2.27 to 0.2.33
+
+Bumps [goodwe](https://github.com/marcelblijleven/goodwe) from 0.2.27 to 0.2.33.
+- [Release notes](https://github.com/marcelblijleven/goodwe/releases)
+- [Commits](https://github.com/marcelblijleven/goodwe/compare/v0.2.27...v0.2.33)
+
+---
+updated-dependencies:
+- dependency-name: goodwe
+  dependency-type: direct:development
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`5ab6663`](https://github.com/fhempy/fhempy/commit/5ab66631ab878fb6e7c779ed1095c2e24bcee3a7))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.25.0 to 1.26.0 (#268)
+
+---
+updated-dependencies:
+- dependency-name: shogo82148/actions-setup-perl
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`629ff46`](https://github.com/fhempy/fhempy/commit/629ff463553a47c3f2501cf6e553026934eb2973))
+
+* chore(deps): bump pycryptodomex from 3.18.0 to 3.19.0 (#193)
+
+* chore(deps): bump pycryptodomex from 3.18.0 to 3.19.0
+
+Bumps [pycryptodomex](https://github.com/Legrandin/pycryptodome) from 3.18.0 to 3.19.0.
+- [Release notes](https://github.com/Legrandin/pycryptodome/releases)
+- [Changelog](https://github.com/Legrandin/pycryptodome/blob/master/Changelog.rst)
+- [Commits](https://github.com/Legrandin/pycryptodome/compare/v3.18.0...v3.19.0)
+
+---
+updated-dependencies:
+- dependency-name: pycryptodomex
+  dependency-type: direct:production
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`22077f7`](https://github.com/fhempy/fhempy/commit/22077f75c45f54499c5c49d76884abc607caaad0))
+
+* chore: remove pycryptodome dependency as pycryptodomeex is used ([`d390692`](https://github.com/fhempy/fhempy/commit/d390692ea076e93de3b1955f272b5ff03133c9ee))
+
+* chore(deps-dev): bump bluetooth-adapters from 0.15.2 to 0.16.2 (#260)
+
+* chore(deps-dev): bump bluetooth-adapters from 0.15.2 to 0.16.2
+
+Bumps [bluetooth-adapters](https://github.com/bluetooth-devices/bluetooth-adapters) from 0.15.2 to 0.16.2.
+- [Release notes](https://github.com/bluetooth-devices/bluetooth-adapters/releases)
+- [Changelog](https://github.com/Bluetooth-Devices/bluetooth-adapters/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/bluetooth-devices/bluetooth-adapters/compare/v0.15.2...v0.16.2)
+
+---
+updated-dependencies:
+- dependency-name: bluetooth-adapters
+  dependency-type: direct:development
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`ab28f88`](https://github.com/fhempy/fhempy/commit/ab28f88e8b437b98188a41ce465390653d25d4c1))
+
+* chore: update manifest dependencies ([`d075bf5`](https://github.com/fhempy/fhempy/commit/d075bf5cb54333abda898082126d304a4bbe4ebd))
+
+* chore: update depencies ([`9336e19`](https://github.com/fhempy/fhempy/commit/9336e199a4870d0646e59e121f6ccbe6ef6ba3f7))
+
+* chore: update dependencies ([`a3f8090`](https://github.com/fhempy/fhempy/commit/a3f80907097991cf24f7359ec88ec229d787f38b))
+
+* chore(deps-dev): bump asyncio-mqtt from 0.16.1 to 0.16.2 (#258)
+
+* chore(deps-dev): bump asyncio-mqtt from 0.16.1 to 0.16.2
+
+Bumps [asyncio-mqtt](https://github.com/sbtinstruments/asyncio-mqtt) from 0.16.1 to 0.16.2.
+- [Release notes](https://github.com/sbtinstruments/asyncio-mqtt/releases)
+- [Changelog](https://github.com/sbtinstruments/aiomqtt/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/sbtinstruments/asyncio-mqtt/commits)
+
+---
+updated-dependencies:
+- dependency-name: asyncio-mqtt
+  dependency-type: direct:development
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`04d25db`](https://github.com/fhempy/fhempy/commit/04d25db1c38095a4ef822c841cda0e8b0da4e2f6))
+
+* chore: try reuseable workflow ([`ab3895f`](https://github.com/fhempy/fhempy/commit/ab3895f0a2e9bb5d95e749dcf512ba67a9bb1508))
+
+* chore: next try ([`5f96cd5`](https://github.com/fhempy/fhempy/commit/5f96cd592e966fbdd8a7a62029e09aca3e4bca31))
+
+* chore: run on manifest.json push ([`2d070eb`](https://github.com/fhempy/fhempy/commit/2d070ebc715ecf334c6eec8e33255bc5eaebd1b7))
+
+* chore: do not run for pyproject.* ([`39a9aef`](https://github.com/fhempy/fhempy/commit/39a9aeff6b77b7c0bf17f43dc23ed323a6ff151c))
+
+* chore: do tests after update manifest ([`a2c9a79`](https://github.com/fhempy/fhempy/commit/a2c9a79e959c4d0307b4dac94f4c994d2f607976))
+
+* chore: further workflow changes ([`3d8e3cd`](https://github.com/fhempy/fhempy/commit/3d8e3cda5ad9981a40b5fac3b477211f283f22dd))
+
+* chore: some yml updates ([`a80a31e`](https://github.com/fhempy/fhempy/commit/a80a31ebf0f508944b970f576e363a2eef8ff50a))
+
+* chore: another workflow test ([`7a9b99b`](https://github.com/fhempy/fhempy/commit/7a9b99b1921cb9be4325b1f6dce5f55d23cc2369))
+
+* chore(deps): bump importlib-metadata from 6.1.0 to 7.0.0 (#261)
+
+Bumps [importlib-metadata](https://github.com/python/importlib_metadata) from 6.1.0 to 7.0.0.
+- [Release notes](https://github.com/python/importlib_metadata/releases)
+- [Changelog](https://github.com/python/importlib_metadata/blob/main/NEWS.rst)
+- [Commits](https://github.com/python/importlib_metadata/compare/v6.1.0...v7.0.0)
+
+---
+updated-dependencies:
+- dependency-name: importlib-metadata
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`67f517a`](https://github.com/fhempy/fhempy/commit/67f517a53b3f98029ea0b6507a5f2afd3e953447))
+
+* chore: always run tests ([`6ffd391`](https://github.com/fhempy/fhempy/commit/6ffd39166436b5de3bde38ee9dea1fd1d029af33))
+
+* chore: fix dep updates ([`fa66b26`](https://github.com/fhempy/fhempy/commit/fa66b268497078de5eff9edaeef17a50f7c8cc8d))
+
+* chore: prevent duplicate checks ([`3385cb5`](https://github.com/fhempy/fhempy/commit/3385cb553212512cd9dae242fc01dc6685e2a148))
+
+* chore: dep update fixes ([`b5f8363`](https://github.com/fhempy/fhempy/commit/b5f8363ccacd7c2efbbf1ee7d8b00dec81172caa))
+
+* chore(deps-dev): bump pychromecast from 13.0.7 to 13.0.8 (#259)
+
+* chore(deps-dev): bump pychromecast from 13.0.7 to 13.0.8
+
+Bumps [pychromecast](https://github.com/balloob/pychromecast) from 13.0.7 to 13.0.8.
+- [Release notes](https://github.com/balloob/pychromecast/releases)
+- [Commits](https://github.com/balloob/pychromecast/compare/13.0.7...13.0.8)
+
+---
+updated-dependencies:
+- dependency-name: pychromecast
+  dependency-type: direct:development
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`ed6c319`](https://github.com/fhempy/fhempy/commit/ed6c319150db498fb8e2935a9e3b83d0dfa3ddf3))
+
+* chore: fix loop ([`a30ab5d`](https://github.com/fhempy/fhempy/commit/a30ab5d1c2d06e1dc33aca4ea94c2618da207f63))
+
+* chore: run tests on every branch ([`072d092`](https://github.com/fhempy/fhempy/commit/072d09224712b46b924af1b44faaaaf49d8e6b24))
+
+* chore: restructure for dep updates ([`ea97544`](https://github.com/fhempy/fhempy/commit/ea975448d06413f5cb601dd6b42c700ae2cd03eb))
+
+* chore: fix permission error ([`b8450b4`](https://github.com/fhempy/fhempy/commit/b8450b4487dc6f230423f2ad3a319687211a4ca4))
+
+* chore: remove dependency update from tests.yml ([`c452ba7`](https://github.com/fhempy/fhempy/commit/c452ba7f9c86f46829c196343fd4bc55671bfcd6))
+
+* chore: another test for dependency updates ([`cf1f5be`](https://github.com/fhempy/fhempy/commit/cf1f5be022e811f633cec20a7d38bae8f67cdaea))
+
+* chore: fix checkout ([`ee7fd17`](https://github.com/fhempy/fhempy/commit/ee7fd1791038e9cb2dd9a5dd36466dfc8f1e684f))
+
+* chore: another try to push changes ([`d244716`](https://github.com/fhempy/fhempy/commit/d244716aab10e0d72a536a53a816a7170207e93e))
+
+* chore: fix permissions ([`5400128`](https://github.com/fhempy/fhempy/commit/540012857e21d20a30980d95a835403e4e83e6b5))
+
+* chore: fix permissions ([`3b0d59a`](https://github.com/fhempy/fhempy/commit/3b0d59a7e6c56fda70d7a428d81ba0923579af58))
+
+* chore: change permissions ([`0b08d86`](https://github.com/fhempy/fhempy/commit/0b08d8672b52679fa9faa878b1125b0d104ac7ce))
+
+* chore(deps-dev): bump pytest-asyncio from 0.21.1 to 0.23.2 (#249) ([`5c6c7d8`](https://github.com/fhempy/fhempy/commit/5c6c7d8808fef1dfa7400520254f96b8f2325eec))
+
+* chore: update readme to include firmware pairing process (#230) ([`445b5d8`](https://github.com/fhempy/fhempy/commit/445b5d8563a5a8d82b3d2353426b2c78cdb03097))
+
+* chore: update mitemp-bt ([`ac82ea2`](https://github.com/fhempy/fhempy/commit/ac82ea2538411eefc930abc3be9f6faeec26d965))
+
+* chore(deps-dev): bump mitemp-bt from 0.0.3 to 0.0.5 (#254) ([`630dc87`](https://github.com/fhempy/fhempy/commit/630dc8771106a3a82a79af60ff20c9881f73716d))
+
+* chore: test update deps on PR ([`1ad66a4`](https://github.com/fhempy/fhempy/commit/1ad66a49e3da7393ada7a38e217a2f8be8ec6dff))
+
+* chore: another test to update dependencies ([`1caea02`](https://github.com/fhempy/fhempy/commit/1caea02a9ca8a82d66018d246377ff18c0869917))
+
+* chore: remove dep update ([`4f9171b`](https://github.com/fhempy/fhempy/commit/4f9171b00c3e51e2b53ad5734591af8e8293cf0d))
+
+* chore: test pyproject2manifest on PRs ([`38ba28b`](https://github.com/fhempy/fhempy/commit/38ba28b55ca9dc53ef3a6a37c56f56bb3f9afc9d))
+
+* chore: add python scripts to manage dependencies ([`7a3eb5a`](https://github.com/fhempy/fhempy/commit/7a3eb5a374d6735681fb730ed5bdff17682ff6a3))
+
+* chore: update meross-iot ([`5e31948`](https://github.com/fhempy/fhempy/commit/5e319481e712e015630e6ab154dc4983308d415e))
+
+* chore(deps-dev): bump meross-iot from 0.4.5.7 to 0.4.6.0 (#255) ([`7dad408`](https://github.com/fhempy/fhempy/commit/7dad408fa443050e4244d892a8256f82160b5f9a))
+
+### Feature
+
+* feat(tibber): add tibber module (#222) ([`7d89477`](https://github.com/fhempy/fhempy/commit/7d89477237d98fd479059b6e7290733fbfdf4f39))
+
+### Fix
+
+* fix(tibber): fix testcase ([`395e8ca`](https://github.com/fhempy/fhempy/commit/395e8caa601b0d93f2bd81b394238bb24e8a1322))
+
+* fix(tibber): fix testcase ([`5b70aa5`](https://github.com/fhempy/fhempy/commit/5b70aa5c8fa92c2be443155119f3f9d2f95a1d7c))
+
+
 ## v0.1.690 (2023-12-19)
 
 ### Chore
