@@ -2,6 +2,23 @@
 
 
 
+## v0.1.693 (2023-12-25)
+
+### Chore
+
+* chore: fix version detection ([`b5e1c3e`](https://github.com/fhempy/fhempy/commit/b5e1c3e91cdaa550aed21493ee100d05176ee8eb))
+
+* chore: update dependencies ([`4e0d4a8`](https://github.com/fhempy/fhempy/commit/4e0d4a86aff5c4db98b53d378190fdb1daeaae55))
+
+* chore: remove dependency sync with lock file ([`9af3f32`](https://github.com/fhempy/fhempy/commit/9af3f3289294fc321e0595fb3aac66736b9ceec8))
+
+* chore: remove lock file to prevent dependency locking ([`051eaf3`](https://github.com/fhempy/fhempy/commit/051eaf34f816627dfaa0a6ab950c85424792027e))
+
+### Fix
+
+* fix(tibber): fix realtime data ([`7644815`](https://github.com/fhempy/fhempy/commit/764481545404240c9b5d8b519b922917bd7d0cfb))
+
+
 ## v0.1.692 (2023-12-25)
 
 ### Chore
