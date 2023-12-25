@@ -58,6 +58,7 @@ class tibber(generic.FhemModule):
 
     async def update_home_data(self):
         home = self.tibber_connection.get_homes()[0]
+        await home.update_info()
 
         if home.has_real_time_consumption:
             await home.rt_subscribe(self._rt_callback)
