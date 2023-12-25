@@ -3,7 +3,6 @@ import logging
 
 import pytest
 from tests.utils import mock_fhem
-from tibber.const import DEMO_TOKEN
 
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 
@@ -17,6 +16,9 @@ async def test_setup(mocker):
         "FHEMPYTYPE": "tibber",
     }
     await check_and_install_dependencies("tibber")
+
+    from tibber.const import DEMO_TOKEN
+
     from fhempy.lib.tibber.tibber import tibber
 
     fhempy_device = tibber(logging.getLogger(__name__))
