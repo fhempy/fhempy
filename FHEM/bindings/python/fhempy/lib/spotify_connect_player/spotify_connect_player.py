@@ -3,7 +3,7 @@ import functools
 
 import spotipy
 from aiohttp import web
-from pyppeteer import launch
+from playwright.async_api import async_playwright
 from spotipy.oauth2 import CacheFileHandler
 
 from .. import fhem, generic, utils
@@ -12,6 +12,7 @@ from .. import fhem, generic, utils
 class spotify_connect_player(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self.browser = None
         # Spotipy PKCE authenticator instance
         self.spotipy_pkce = None
         self.spotipy_scope = (
@@ -168,14 +169,33 @@ class spotify_connect_player(generic.FhemModule):
         self.site = web.TCPSite(self.runner, "localhost", 8080)
         await self.site.start()
 
-        self.browser = launch(
-            {
-                "ignoreDefaultArgs": ["--mute-audio"],
-                "executablePath": "/usr/bin/chromium",
-            }
-        )
-        page = await self.browser.newPage()
-        await page.goto("http://localhost:8080/")
+        async with async_playwright() as p:
+            try:
+                self.browser = await p.chromium.launch(
+                    ignore_default_args=["--mute-audio"]
+                )
+            except Exception:
+                self.logger.info("Chromium installation started")
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "Install chromium...", 1
+                )
+                import sys
+
+                from playwright.__main__ import main
+
+                tmp_argv = sys.argv
+                sys.argv = ["playwright", "install", "chromium"]
+                main()
+                sys.argv = tmp_argv
+                self.browser = await p.chromium.launch(
+                    ignore_default_args=["--mute-audio"]
+                )
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "Chromium installed", 1
+                )
+
+            page = await self.browser.new_page()
+            await page.goto("http://localhost:8080/")
 
     async def set_stop(self, hash, params):
         self.create_async_task(self.stop_spotify())
@@ -183,4 +203,5 @@ class spotify_connect_player(generic.FhemModule):
     async def stop_spotify(self):
         # stop aiohttp server and stop chrome headless
         await self.runner.cleanup()
-        await self.browser.close()
+        if self.browser:
+            await self.browser.close()
