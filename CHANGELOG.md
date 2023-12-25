@@ -2,6 +2,15 @@
 
 
 
+## v0.1.692 (2023-12-25)
+
+### Chore
+
+* chore: add ifaddr zeroconf dependency ([`7b0322a`](https://github.com/fhempy/fhempy/commit/7b0322a262d65241d0a26d40896863588cab9421))
+
+* chore: update zeroconf and websockets ([`6beb29c`](https://github.com/fhempy/fhempy/commit/6beb29c00a885e7892e8bd31d9a17c904d4de707))
+
+
 ## v0.1.691 (2023-12-25)
 
 ### Chore
