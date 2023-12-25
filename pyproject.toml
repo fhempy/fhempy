@@ -57,7 +57,7 @@ exclude = [ "tests*",]
 
 [tool.poetry.group.all.dependencies]
 GitPython = "==3.1.40"
-aioblescan = "==0.2.12"
+aioblescan = "==0.2.14"
 aiohomekit = "==2.6.16"
 aionefit = "==0.14"
 async-upnp-client = "==0.38.0"
