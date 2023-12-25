@@ -45,6 +45,8 @@ def update_manifest_requirements(directory, latest_versions):
                                 req
                             )
                             latest_version = latest_versions.get(package_name)
+                            if latest_version and "version" in latest_version:
+                                latest_version = latest_version["version"]
                             if latest_version and latest_version != "*":
                                 updated_requirements.append(
                                     f"{package_name}{latest_version}"
