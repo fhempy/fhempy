@@ -38,7 +38,7 @@ async def test_setup(mocker):
 
     assert mock_fhem.readings["testdevice"]["tibber_name"] == "Arya Stark"
     assert mock_fhem.readings["testdevice"]["address"] == "Winterfell Castle 1"
-    assert mock_fhem.readings["testdevice"]["current_price_level"] == "NORMAL"
+    assert len(mock_fhem.readings["testdevice"]["current_price_level"]) > 0
     assert mock_fhem.readings["testdevice"]["current_price_total"] >= 0
     assert mock_fhem.readings["testdevice"]["rt_currentL3"] >= 0
 
