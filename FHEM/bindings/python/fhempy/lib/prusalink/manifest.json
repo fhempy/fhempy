@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "pyprusalink==2.0.0"
+    "pyprusalink==2.0.1"
   ]
 }
