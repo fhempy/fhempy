@@ -111,7 +111,7 @@ tuya-connector-python = "==0.1.2"
 tuya-iot-py-sdk = "==0.6.6"
 vaillant-netatmo-api = "==0.11.0"
 warema-wms-controller = "==0.2.4"
-xmodem = "==0.4.6"
+xmodem = "==0.4.7"
 youtube_dl = "==2021.12.17"
 
 
