@@ -1,9 +1,10 @@
 import asyncio
 
-from fhempy.lib import fhem, utils
-from fhempy.lib.generic import FhemModule
 from meross_iot.http_api import MerossHttpClient
 from meross_iot.manager import MerossManager
+
+from fhempy.lib import fhem, utils
+from fhempy.lib.generic import FhemModule
 
 
 class meross_setup:
@@ -25,7 +26,9 @@ class meross_setup:
 
         # Setup the HTTP client API from user-password
         http_api_client = await MerossHttpClient.async_from_user_password(
-            email=self._username, password=self._password
+            api_base_url="https://iotx-eu.meross.com",
+            email=self._username,
+            password=self._password,
         )
 
         # Setup and start the device manager
