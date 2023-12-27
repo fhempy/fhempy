@@ -2,6 +2,257 @@
 
 
 
+## v0.1.694 (2023-12-27)
+
+### Chore
+
+* chore(deps-dev): update bleparser requirement from ==2.0.0 to ==3.7.1 (#269)
+
+* chore(deps-dev): update bleparser requirement from ==2.0.0 to ==3.7.1
+
+Updates the requirements on [bleparser](https://github.com/Ernst79/bleparser) to permit the latest version.
+- [Release notes](https://github.com/Ernst79/bleparser/releases)
+- [Commits](https://github.com/Ernst79/bleparser/compare/2.0.0...3.7.1)
+
+---
+updated-dependencies:
+- dependency-name: bleparser
+  dependency-type: direct:development
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`eadb9b6`](https://github.com/fhempy/fhempy/commit/eadb9b62dd346c471c85b1c5ab0f7f4d398d225c))
+
+* chore(deps): update importlib-metadata requirement from 7.0.0 to 7.0.1 (#271)
+
+Updates the requirements on [importlib-metadata](https://github.com/python/importlib_metadata) to permit the latest version.
+- [Release notes](https://github.com/python/importlib_metadata/releases)
+- [Changelog](https://github.com/python/importlib_metadata/blob/main/NEWS.rst)
+- [Commits](https://github.com/python/importlib_metadata/compare/v7.0.0...v7.0.1)
+
+---
+updated-dependencies:
+- dependency-name: importlib-metadata
+  dependency-type: direct:production
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt; ([`d8d9840`](https://github.com/fhempy/fhempy/commit/d8d9840bfd1e0e555345bfc02a802c5298635ca2))
+
+* chore(deps-dev): update bleak requirement from ==0.19.5 to ==0.20.2 (#272)
+
+* chore(deps-dev): update bleak requirement from ==0.19.5 to ==0.20.2
+
+Updates the requirements on [bleak](https://github.com/hbldh/bleak) to permit the latest version.
+- [Release notes](https://github.com/hbldh/bleak/releases)
+- [Changelog](https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst)
+- [Commits](https://github.com/hbldh/bleak/compare/v0.19.5...v0.20.2)
+
+---
+updated-dependencies:
+- dependency-name: bleak
+  dependency-type: direct:development
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`50a7819`](https://github.com/fhempy/fhempy/commit/50a7819b8c4e45d0645497a1177e70018bcb79e2))
+
+* chore(deps-dev): update ring-doorbell requirement from ==0.8.4 to ==0.8.5 (#273)
+
+* chore(deps-dev): update ring-doorbell requirement
+
+Updates the requirements on [ring-doorbell](https://github.com/tchellomello/python-ring-doorbell) to permit the latest version.
+- [Release notes](https://github.com/tchellomello/python-ring-doorbell/releases)
+- [Changelog](https://github.com/tchellomello/python-ring-doorbell/blob/master/CHANGELOG.rst)
+- [Commits](https://github.com/tchellomello/python-ring-doorbell/compare/0.8.4...0.8.5)
+
+---
+updated-dependencies:
+- dependency-name: ring-doorbell
+  dependency-type: direct:development
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`332845e`](https://github.com/fhempy/fhempy/commit/332845e439d8149f5aff0c1f1b0005bac9d5b018))
+
+* chore(deps-dev): update greeclimate requirement from ==1.2.1 to ==1.4.1 (#270)
+
+* chore(deps-dev): update greeclimate requirement from ==1.2.1 to ==1.4.1
+
+Updates the requirements on [greeclimate](https://github.com/cmroche/greeclimate) to permit the latest version.
+- [Release notes](https://github.com/cmroche/greeclimate/releases)
+- [Changelog](https://github.com/cmroche/greeclimate/blob/master/CHANGELOG.md)
+- [Commits](https://github.com/cmroche/greeclimate/compare/v1.2.1...v1.4.1)
+
+---
+updated-dependencies:
+- dependency-name: greeclimate
+  dependency-type: direct:development
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`cfc79bb`](https://github.com/fhempy/fhempy/commit/cfc79bbf1c6b34512f17bb7b4aec4b1eb79cb0a7))
+
+* chore(deps-dev): bump hyundai-kia-connect-api from 3.3.12 to 3.11.2 (#262)
+
+* chore(deps-dev): bump hyundai-kia-connect-api from 3.3.12 to 3.11.2
+
+Bumps [hyundai-kia-connect-api](https://github.com/fuatakgun/hyundai_kia_connect_api) from 3.3.12 to 3.11.2.
+- [Release notes](https://github.com/fuatakgun/hyundai_kia_connect_api/releases)
+- [Commits](https://github.com/fuatakgun/hyundai_kia_connect_api/compare/v3.3.12...v3.11.2)
+
+---
+updated-dependencies:
+- dependency-name: hyundai-kia-connect-api
+  dependency-type: direct:development
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`4edb9dd`](https://github.com/fhempy/fhempy/commit/4edb9dd0f8792f9728858470e385989718b74eb0))
+
+* chore(deps-dev): bump aioblescan from 0.2.12 to 0.2.14 (#263)
+
+* chore(deps-dev): bump aioblescan from 0.2.12 to 0.2.14
+
+Bumps [aioblescan](https://github.com/frawau/aioblescan) from 0.2.12 to 0.2.14.
+- [Release notes](https://github.com/frawau/aioblescan/releases)
+- [Commits](https://github.com/frawau/aioblescan/compare/0.2.12...0.2.14)
+
+---
+updated-dependencies:
+- dependency-name: aioblescan
+  dependency-type: direct:development
+  update-type: version-update:semver-patch
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`5bf225c`](https://github.com/fhempy/fhempy/commit/5bf225c9e8a75880b9b965b59e6de9afdf64002b))
+
+* chore(deps-dev): bump micloud from 0.5 to 0.6 (#264)
+
+* chore(deps-dev): bump micloud from 0.5 to 0.6
+
+Bumps [micloud](https://github.com/squachen/micloud) from 0.5 to 0.6.
+- [Release notes](https://github.com/squachen/micloud/releases)
+- [Commits](https://github.com/squachen/micloud/compare/v_0.5...v_0.6)
+
+---
+updated-dependencies:
+- dependency-name: micloud
+  dependency-type: direct:development
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`1724bed`](https://github.com/fhempy/fhempy/commit/1724bedbbe713015e36d94f6c05c067f1804734d))
+
+* chore(deps-dev): bump bluetooth-auto-recovery from 1.0.3 to 1.2.3 (#265)
+
+* chore(deps-dev): bump bluetooth-auto-recovery from 1.0.3 to 1.2.3
+
+Bumps [bluetooth-auto-recovery](https://github.com/bluetooth-devices/bluetooth-auto-recovery) from 1.0.3 to 1.2.3.
+- [Release notes](https://github.com/bluetooth-devices/bluetooth-auto-recovery/releases)
+- [Changelog](https://github.com/Bluetooth-Devices/bluetooth-auto-recovery/blob/main/CHANGELOG.md)
+- [Commits](https://github.com/bluetooth-devices/bluetooth-auto-recovery/compare/v1.0.3...v1.2.3)
+
+---
+updated-dependencies:
+- dependency-name: bluetooth-auto-recovery
+  dependency-type: direct:development
+  update-type: version-update:semver-minor
+...
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+
+---------
+
+Signed-off-by: dependabot[bot] &lt;support@github.com&gt;
+Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt;
+Co-authored-by: dependabot[bot] &lt;49699333+dependabot[bot]@users.noreply.github.com&gt;
+Co-authored-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`caec13d`](https://github.com/fhempy/fhempy/commit/caec13dd1f32389ded8f24397efc218df6b70de2))
+
+### Fix
+
+* fix(tibber): fix testcase ([`ffbe1cf`](https://github.com/fhempy/fhempy/commit/ffbe1cf768a11fa3acad6d3c404a2eb4bdd137ea))
+
+* fix(meross): fix meross login ([`fb7be37`](https://github.com/fhempy/fhempy/commit/fb7be3707d582da6ebc72411a6f1819228bb0893))
+
+
 ## v0.1.693 (2023-12-25)
 
 ### Chore
