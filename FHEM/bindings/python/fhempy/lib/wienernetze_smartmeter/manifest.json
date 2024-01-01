@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "lxml==4.9.4"
+    "lxml==5.0.0"
   ]
 }

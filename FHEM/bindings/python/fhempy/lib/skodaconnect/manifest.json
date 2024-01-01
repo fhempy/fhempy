@@ -2,7 +2,7 @@
   "requirements": [
     "pyjwt==2.8.0",
     "beautifulsoup4==4.12.2",
-    "lxml==4.9.4",
+    "lxml==5.0.0",
     "skodaconnect==1.3.9"
   ]
 }
