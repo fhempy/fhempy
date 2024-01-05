@@ -2,6 +2,31 @@
 
 
 
+## v0.1.695 (2024-01-05)
+
+### Chore
+
+* chore(deps-dev): update mytoyota requirement from ==1.0.0 to ==1.1.0 (#286) ([`4fda236`](https://github.com/fhempy/fhempy/commit/4fda23617f2a9cf6f03af8190f6b3a5cf077d5bc))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.26.0 to 1.27.0 (#284) ([`2f684c5`](https://github.com/fhempy/fhempy/commit/2f684c5021e86deb5e3209edc5ccf5991401006f))
+
+* chore(deps-dev): update lxml requirement from ==4.9.4 to ==5.0.0 (#283) ([`6073ca6`](https://github.com/fhempy/fhempy/commit/6073ca6ac65a16288094734b1f9666bf0827ed31))
+
+* chore(deps-dev): update opencv-python-headless requirement from ==4.8.1.78 to ==4.9.0.80 (#282) ([`1f9ae51`](https://github.com/fhempy/fhempy/commit/1f9ae5143c0d53aa9a9ae55fef16a52130806f0b))
+
+* chore: add issue msg ([`e1cdcec`](https://github.com/fhempy/fhempy/commit/e1cdcec852aa8699e3cb7be70417243c65fcfe47))
+
+* chore(deps): update pycryptodomex requirement from 3.19.0 to 3.19.1 (#281) ([`161d21e`](https://github.com/fhempy/fhempy/commit/161d21e82aa0f5be13e67f8d769030870d0b78b3))
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.11.3 to ==3.11.4 (#280) ([`0eb0b32`](https://github.com/fhempy/fhempy/commit/0eb0b32e5851d4ea6fbf092a9d2a5b7b54b7b677))
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.11.2 to ==3.11.3 (#279) ([`c754505`](https://github.com/fhempy/fhempy/commit/c7545059613100764bd762b49255e7f6711f7352))
+
+* chore(deps-dev): update xmodem requirement from ==0.4.6 to ==0.4.7 (#277) ([`3bdbfbf`](https://github.com/fhempy/fhempy/commit/3bdbfbfe649212f0542400f7115f95a8b5660138))
+
+* chore(deps-dev): update pyprusalink requirement from ==2.0.0 to ==2.0.1 (#276) ([`5174c25`](https://github.com/fhempy/fhempy/commit/5174c25e6fd84258e01b9aa3e5f638503ebc3f92))
+
+
 ## v0.1.694 (2023-12-27)
 
 ### Chore

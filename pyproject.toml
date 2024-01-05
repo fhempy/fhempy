@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "fhempy"
 description = "Python binding for FHEM to support Python modules"
-version = "0.1.694"
+version = "0.1.695"
 authors = [ "Dominik Karall <dominik.karall@gmail.com>",]
 readme = "README.md"
 homepage = "https://github.com/fhempy/fhempy"
@@ -113,6 +113,7 @@ vaillant-netatmo-api = "==0.11.0"
 warema-wms-controller = "==0.2.4"
 xmodem = "==0.4.7"
 youtube_dl = "==2021.12.17"
+
 
 
 
