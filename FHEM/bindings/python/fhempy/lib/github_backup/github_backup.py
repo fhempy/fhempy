@@ -35,6 +35,7 @@ class github_backup(generic.FhemModule):
                 "default": (
                     "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
+                    + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
                     + ".fhempy/zigbee2mqtt/data/database.db,"
                     + "esphome_config/*.yaml"
@@ -44,6 +45,7 @@ class github_backup(generic.FhemModule):
                     + "Default:<br>"
                     + "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
+                    + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
                     + ".fhempy/zigbee2mqtt/data/database.db,"
                     + "esphome_config/*.yaml"
