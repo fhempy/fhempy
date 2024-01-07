@@ -2,6 +2,15 @@
 
 
 
+## v0.1.696 (2024-01-07)
+
+### Fix
+
+* fix(github_backup): add coordinator_backup.json for z2m ([`8f880ac`](https://github.com/fhempy/fhempy/commit/8f880acdf2481afa70fc511b222167923982d4c4))
+
+* fix(github_backup): add further z2m files ([`458e85e`](https://github.com/fhempy/fhempy/commit/458e85e2b3b13f255cafdbc0cc81b414b9d27f2c))
+
+
 ## v0.1.695 (2024-01-05)
 
 ### Chore
