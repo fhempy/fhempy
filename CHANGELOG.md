@@ -2,6 +2,21 @@
 
 
 
+## v0.1.697 (2024-01-08)
+
+### Chore
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.11.4 to ==3.12.0 (#290) ([`d7cec1b`](https://github.com/fhempy/fhempy/commit/d7cec1b066439cb6db599f9175136247b9d671e8))
+
+* chore(deps-dev): update lxml requirement from ==5.0.0 to ==5.0.1 (#289) ([`d404eb5`](https://github.com/fhempy/fhempy/commit/d404eb56eea83a4d0e616babfb91be2b36ceb9d0))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#288) ([`cc0162f`](https://github.com/fhempy/fhempy/commit/cc0162fafcfab692ee56611812cd49eeded181d9))
+
+### Fix
+
+* fix(homekit): fix await (#292) ([`c108fcb`](https://github.com/fhempy/fhempy/commit/c108fcb95d9f05116cb8dc8a86ced852f26c4146))
+
+
 ## v0.1.696 (2024-01-07)
 
 ### Fix
