@@ -144,7 +144,7 @@ class homekit(generic.FhemModule):
             finish_pairing = await discovery.async_start_pairing(homekitid)
             self.pairing = await finish_pairing(pin)
             pairing_data = self.pairing.pairing_data.copy()
-            fhem.CommandAttr(
+            await fhem.CommandAttr(
                 self.hash, f"{self.hash['NAME']} pairing_data {pairing_data}"
             )
         else:
