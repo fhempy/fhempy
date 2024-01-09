@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import cast
 
@@ -143,7 +144,7 @@ class homekit(generic.FhemModule):
             discovery = await controller.async_find(homekitid)
             finish_pairing = await discovery.async_start_pairing(homekitid)
             self.pairing = await finish_pairing(pin)
-            pairing_data = self.pairing.pairing_data.copy()
+            pairing_data = json.dumps(self.pairing.pairing_data)
             await fhem.CommandAttr(
                 self.hash, f"{self.hash['NAME']} pairing_data {pairing_data}"
             )
