@@ -1,7 +1,7 @@
 Very quick & dirty instructions on how to run fhempy within VS Code for development.
 
 1. Install VS Code
-2. Checkout https://github.org/fhempy/fhempy to $HOME/vscode-github
+2. Checkout https://github.com/fhempy/fhempy to $HOME/vscode-github
 3. sudo apt install python3-venv python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
 4. cd $HOME/vscode-github/fhempy
 5. python3 -m venv fhempy-venv
