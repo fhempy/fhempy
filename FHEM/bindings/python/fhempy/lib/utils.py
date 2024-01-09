@@ -188,7 +188,9 @@ def gen_reading_name(reading):
 
 
 def gen_fhemdev_name(devname):
-    return remove_special_charachters(devname.replace(" ", "_").replace("-", "_"))
+    return remove_special_charachters(
+        devname.replace(" ", "_").replace("-", "_").replace(":", "_")
+    )
 
 
 def remove_special_charachters(string):
