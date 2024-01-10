@@ -2,6 +2,23 @@
 
 
 
+## v0.1.698 (2024-01-10)
+
+### Chore
+
+* chore: Update DEVELOPMENT.md (#296) ([`c67040a`](https://github.com/fhempy/fhempy/commit/c67040aae6650865b7a79fffe37cfa51b6e09970))
+
+* chore(deps-dev): update lxml requirement from ==5.0.1 to ==5.1.0 (#294) ([`e20809d`](https://github.com/fhempy/fhempy/commit/e20809d5595569b3def9aebb38ca166e38a2afca))
+
+### Fix
+
+* fix(fhempy): fix gen_fhempdev_name (#298)
+
+fhem device name cannot contain `:` ([`98a7b08`](https://github.com/fhempy/fhempy/commit/98a7b08af7e29d18b83984b03378eb8b902830d4))
+
+* fix(homekit): save pairing_data as json (#297) ([`16f88ee`](https://github.com/fhempy/fhempy/commit/16f88eeac4bac95b60ff65e186f5f7ed93fdc898))
+
+
 ## v0.1.697 (2024-01-08)
 
 ### Chore
