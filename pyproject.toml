@@ -56,7 +56,7 @@ where = [ "FHEM/bindings/python",]
 exclude = [ "tests*",]
 
 [tool.poetry.group.all.dependencies]
-GitPython = "==3.1.40"
+GitPython = "==3.1.41"
 aioblescan = "==0.2.14"
 aiohomekit = "==2.6.16"
 aionefit = "==0.14"
