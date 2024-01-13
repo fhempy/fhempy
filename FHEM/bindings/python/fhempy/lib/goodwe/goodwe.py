@@ -1,6 +1,7 @@
 import asyncio
 
 import goodwe as gw
+from goodwe.inverter import OperationMode
 
 from .. import fhem, generic, utils
 
@@ -22,12 +23,44 @@ class goodwe(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
 
+        set_config = {
+            "operation_mode": {
+                "args": ["mode"],
+                "options": "general,off_grid,backup,eco,peak_shaving,eco_charge,eco_discharge",
+                "help": "Change operations mode of the inverter.",
+            }
+        }
+        await self.set_set_config(set_config)
+
         if len(args) != 4:
             return "Usage: define inverter fhempy goodwe IP"
 
         self.ip = args[3]
 
         self.create_async_task(self.update_loop())
+
+    async def set_operation_mode(self, hash, params):
+        if params["mode"] == "general":
+            set_mode = OperationMode.GENERAL
+        elif params["mode"] == "off_grid":
+            set_mode = OperationMode.OFF_GRID
+        elif params["mode"] == "backup":
+            set_mode = OperationMode.BACKUP
+        elif params["mode"] == "eco":
+            set_mode = OperationMode.ECO
+        elif params["mode"] == "peak_shaving":
+            set_mode = OperationMode.PEAK_SHAVING
+        elif params["mode"] == "eco_charge":
+            set_mode = OperationMode.ECO_CHARGE
+        elif params["mode"] == "eco_discharge":
+            set_mode = OperationMode.ECO_DISCHARGE
+        else:
+            set_mode = OperationMode.GENERAL
+        self.create_async_task(
+            self.inverter.set_operation_mode(
+                set_mode
+            )
+        )
 
     async def update_loop(self):
         self.inverter = None
