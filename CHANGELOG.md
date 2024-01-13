@@ -2,6 +2,21 @@
 
 
 
+## v0.1.699 (2024-01-13)
+
+### Chore
+
+* chore(deps-dev): update bluetooth-auto-recovery requirement from ==1.2.3 to ==1.3.0 (#302) ([`33c47b8`](https://github.com/fhempy/fhempy/commit/33c47b8d511bfe201543acfc216a1102fd92cd06))
+
+* chore(deps): update pycryptodomex requirement from 3.19.1 to 3.20.0 (#301) ([`10fc2fb`](https://github.com/fhempy/fhempy/commit/10fc2fb5fc7114fe917a38da8c30f88c1bb76dc4))
+
+* chore(deps-dev): update gitpython requirement from ==3.1.40 to ==3.1.41 (#300) ([`f3de32d`](https://github.com/fhempy/fhempy/commit/f3de32d59cb25ab92384e6418b60cb16e49eefca))
+
+### Feature
+
+* feat(goodwe): support set_operation_mode ([`f68dbd5`](https://github.com/fhempy/fhempy/commit/f68dbd57aa54a76df297e297cad29d0472a76879))
+
+
 ## v0.1.698 (2024-01-10)
 
 ### Chore
