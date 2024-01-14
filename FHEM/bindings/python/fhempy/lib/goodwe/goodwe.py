@@ -62,7 +62,7 @@ class goodwe(generic.FhemModule):
             )
         )
 
-    def get_enum_name(enum_value):
+    def get_enum_name(self, enum_value):
         for name, value in OperationMode.__members__.items():
             if value == enum_value:
                 return name
