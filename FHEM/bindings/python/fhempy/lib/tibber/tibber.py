@@ -75,6 +75,21 @@ class tibber(generic.FhemModule):
 
             await fhem.readingsBeginUpdate(self.hash)
             try:
+                for i, (timestamp, value) in enumerate(home._price_info.items()):
+                    # Extracting date and time
+                    date, time = timestamp.split('T')
+                    time = time.split('+')[0]  # Removing timezone offset
+                    hour = time.split(':')[0].lstrip('0')  # Removing leading zero from hour
+
+                    # Determining whether it's today or tomorrow
+                    day_key = 'today' if i < 24 else 'tomorrow'
+
+                    # Creating the new key in the desired format
+                    new_key = f'{day_key}_{hour.zfill(2)}00'
+
+                    # Assigning the value to the new key in the new dictionary
+                    await fhem.readingsBulkUpdate(self.hash, new_key, value)
+
                 await fhem.readingsBulkUpdate(self.hash, "address", home.address1)
                 await fhem.readingsBulkUpdate(
                     self.hash, "has_active_subscription", home.has_active_subscription
