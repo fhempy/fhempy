@@ -2,6 +2,19 @@
 
 
 
+## v0.1.700 (2024-01-14)
+
+### Feature
+
+* feat(tibber): add hourly price entries for today and tomorrow ([`61ba9f7`](https://github.com/fhempy/fhempy/commit/61ba9f7a5aae33cfb8e167abb210d12045b0c572))
+
+* feat(goodwe): add operation_mode reading ([`112681c`](https://github.com/fhempy/fhempy/commit/112681c736fd629f8fba912421c2156f66b1786b))
+
+### Fix
+
+* fix(goodwe): fix get_enum_name function ([`9d57083`](https://github.com/fhempy/fhempy/commit/9d570839586d808a4cc0bbcaeb426e010a18abed))
+
+
 ## v0.1.699 (2024-01-13)
 
 ### Chore
