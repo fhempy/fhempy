@@ -62,6 +62,11 @@ class goodwe(generic.FhemModule):
             )
         )
 
+    def get_enum_name(enum_value):
+        for name, value in OperationMode.__members__.items():
+            if value == enum_value:
+                return name
+
     async def update_loop(self):
         self.inverter = None
         while self.inverter is None:
@@ -72,6 +77,9 @@ class goodwe(generic.FhemModule):
             try:
                 runtime_data = await self.inverter.read_runtime_data()
                 await self.handle_data(runtime_data)
+
+                operation_mode = await self.inverter.get_operation_mode()
+                await fhem.readingsSingleUpdate(self.hash, "operation_mode", self.get_enum_name(operation_mode))
             except Exception:
                 await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
             await asyncio.sleep(self._attr_interval)
