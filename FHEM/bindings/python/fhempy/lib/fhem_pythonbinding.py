@@ -621,12 +621,13 @@ class fhempy:
 
 
 def usage():
-    print("Usage: fhempy [-h|--help] [-v|--version] [-i|--ip] [-p|--port] [-l|--local]")
+    print("Usage: fhempy [-h|--help] [-v|--version] [-i|--ip] [-b|--bind] [-p|--port] [-l|--local]")
     print("  --local   Use only if you run fhempy on your FHEM machine")
     print(
         "  --ip      "
         "Specify the IP address for FHEM connection setup (default: local ip)"
     )
+    print("  --bind    Bind to the specified IP address (default: 0.0.0.0)")
     print("  --port    Specify the port fhempy runs on (default: 15733)")
     print("  --version Print version and exit")
     print("  --help    This help text")
@@ -649,7 +650,7 @@ async def async_main():
         usage()
         return
 
-    ip, port, local = handle_cmdline_options(opts)
+    ip, bindip, port, local = handle_cmdline_options(opts)
 
     logger.info(f"Starting fhempy {version.__version__}...")
 
@@ -662,7 +663,7 @@ async def async_main():
     try:
         async with websockets.serve(
             pybinding,
-            "0.0.0.0",
+            bindip,
             port,
             ping_timeout=None,
             ping_interval=None,
@@ -679,6 +680,7 @@ async def async_main():
 
 def handle_cmdline_options(opts):
     ip = None
+    bindip = "0.0.0.0"
     port = 15733
     local = False
 
@@ -691,6 +693,8 @@ def handle_cmdline_options(opts):
             sys.exit()
         elif o in ("-i", "--ip"):
             ip = a
+        elif o in ("-b", "--bind"):
+            bindip = a
         elif o in ("-p", "--port"):
             port = int(a)
         elif o in ("-l", "--local"):
@@ -699,7 +703,11 @@ def handle_cmdline_options(opts):
             logging.getLogger("").setLevel(logging.DEBUG)
             logging.getLogger("websockets.server").setLevel(logging.ERROR)
             asyncio.get_event_loop().set_debug(True)
-    return ip, port, local
+
+    if bindip != "0.0.0.0" and ip is None:
+        ip = bindip
+
+    return ip, bindip, port, local
 
 
 async def advertise_fhempy(ip, port):
