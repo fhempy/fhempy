@@ -2,6 +2,13 @@
 
 
 
+## v0.1.701 (2024-01-17)
+
+### Feature
+
+* feat(fhempy): specify bind ip address with -b parameter ([`09945e9`](https://github.com/fhempy/fhempy/commit/09945e9ada051c0498734d037673a4c3bc395c2a))
+
+
 ## v0.1.700 (2024-01-14)
 
 ### Feature
