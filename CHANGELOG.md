@@ -2,6 +2,21 @@
 
 
 
+## v0.1.702 (2024-01-18)
+
+### Chore
+
+* chore(deps-dev): update beautifulsoup4 requirement from ==4.12.2 to ==4.12.3 (#306) ([`e40306b`](https://github.com/fhempy/fhempy/commit/e40306b3b501e88c40b03fed9e7060c97f63eb55))
+
+* chore(deps-dev): update pychromecast requirement from ==13.0.8 to ==13.1.0 (#305) ([`dc3e116`](https://github.com/fhempy/fhempy/commit/dc3e1165fe0c436790c3532baa572a24f1e28cd9))
+
+* chore(deps-dev): update esphome requirement from ==2023.12.5 to ==2023.12.6 (#304) ([`9ef45ca`](https://github.com/fhempy/fhempy/commit/9ef45cad1ff005e8829f693fa35d742abf005fde))
+
+### Fix
+
+* fix(skodaconnect): support target temperature in 0.5 steps (#308) ([`11d1c68`](https://github.com/fhempy/fhempy/commit/11d1c6847513d688443bb845f227ef2a3d623e80))
+
+
 ## v0.1.701 (2024-01-17)
 
 ### Feature
