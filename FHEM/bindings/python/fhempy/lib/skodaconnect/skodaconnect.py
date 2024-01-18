@@ -187,8 +187,8 @@ class skodaconnect(generic.FhemModule):
         ):
             self.set_config["climatisation_target_temperature"] = {
                 "args": ["temperature"],
-                "params": {"temperature": {"format": "int"}},
-                "options": "slider,16,1,30",
+                "params": {"temperature": {"format": "float"}},
+                "options": "slider,16,0.5,30,1",
             }
         if self.vehicle.is_window_heater_supported:
             self.set_config["window_heating"] = {
