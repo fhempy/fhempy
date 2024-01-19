@@ -78,6 +78,7 @@ greeclimate = "==1.4.1"
 huawei-solar = "==2.2.9"
 hyundai_kia_connect_api = "==3.12.0"
 janus = "==1.0.0"
+luma.led-matrix = "==1.7.1"
 lxml = "==5.1.0"
 meross-iot = "==0.4.6.0"
 micloud = "==0.6"
@@ -88,6 +89,7 @@ netifaces = "==0.11.0"
 opencv-python-headless = "==4.9.0.80"
 paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
+pillow = "==10.2.0"
 playwright = "==1.41.0"
 pychromecast = "==13.1.0"
 pygatt = "==4.0.5"
@@ -101,6 +103,7 @@ pyTibber = {version = "==0.28.2", python = "^3.10" }
 pytz = "==2023.3.post1"
 rctclient = "==0.0.3"
 ring_doorbell = "==0.8.5"
+RPi.GPIO = "==0.7.1"
 seatconnect = "==1.1.9"
 setuptools = "==69.0.3"
 six = "==1.16.0"
@@ -113,17 +116,6 @@ vaillant-netatmo-api = "==0.11.0"
 warema-wms-controller = "==0.2.4"
 xmodem = "==0.4.7"
 youtube_dl = "==2021.12.17"
-
-
-
-
-
-
-
-
-
-
-
 
 [tool.poetry.group.dev.dependencies]
 tox = "^4.11.3"
