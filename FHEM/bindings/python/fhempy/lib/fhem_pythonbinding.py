@@ -643,7 +643,7 @@ async def async_main():
         opts, args = getopt.getopt(
             sys.argv[1:],
             "dhvli:p:",
-            ["help", "version", "ip=", "port=", "local", "debug"],
+            ["help", "version", "ip=", "bind=", "port=", "local", "debug"],
         )
     except getopt.GetoptError as err:
         logger.error(err)
