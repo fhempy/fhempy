@@ -2,6 +2,25 @@
 
 
 
+## v0.1.704 (2024-01-19)
+
+### Chore
+
+* chore: fix rpi.gpio dependency ([`69cf7c6`](https://github.com/fhempy/fhempy/commit/69cf7c62b9c836c2ebea21cd4a00498327781cb5))
+
+* chore: try to fix luma dependency ([`b109fb2`](https://github.com/fhempy/fhempy/commit/b109fb2fad4377189fb70adc7ef44d37b25cad47))
+
+* chore: do not run rpi tests ([`f4c7865`](https://github.com/fhempy/fhempy/commit/f4c7865c151180570490d84965faf995eb9895e7))
+
+### Feature
+
+* feat(piclock): create MAX7219 based clock with this module ([`b8b4126`](https://github.com/fhempy/fhempy/commit/b8b41264eb966557fc80a63a34f735c3fdcd2835))
+
+### Fix
+
+* fix(piclock): add piclock dependencies ([`50516ac`](https://github.com/fhempy/fhempy/commit/50516acc4d517a82acb0f9e3ff79e908b20654b7))
+
+
 ## v0.1.703 (2024-01-19)
 
 ### Chore
