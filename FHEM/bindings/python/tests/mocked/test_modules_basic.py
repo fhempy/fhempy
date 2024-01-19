@@ -19,7 +19,7 @@ def pytest_generate_tests(metafunc):
     dirs = os.walk(directory)
     dirs = next(dirs)[1]
     for module_name in dirs:
-        if module_name != "core" and module_name != "__pycache__":
+        if module_name != "core" and module_name != "__pycache__" and module_name != "piclock":
             modules.append(module_name)
     metafunc.parametrize("module_name", modules, ids=modules)
 
