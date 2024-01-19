@@ -2,6 +2,17 @@
 
 
 
+## v0.1.703 (2024-01-19)
+
+### Chore
+
+* chore(deps-dev): update playwright requirement from ==1.40.0 to ==1.41.0 (#307) ([`fd21751`](https://github.com/fhempy/fhempy/commit/fd21751f1c8cb1a9ddc8828d68b425575bf9709a))
+
+### Fix
+
+* fix(fhempy): fix bind parameter (#295) ([`cb8b525`](https://github.com/fhempy/fhempy/commit/cb8b525f348b2ff6bb300bdb9845934c69c4e98b))
+
+
 ## v0.1.702 (2024-01-18)
 
 ### Chore
