@@ -20,7 +20,7 @@ from .bluetoothctl import Bluetoothctl
 
 class BluetoothLE:
     # run bluetoothctl only once
-    bluetoothctl_lock = asyncio.Lock()
+    bluetoothctl_lock = None
 
     # keep connected (get manuf uuid every x seconds)
     # reset hci devices on errors
@@ -51,6 +51,10 @@ class BluetoothLE:
 
         self.connection_task = None
         self.connected = asyncio.Event()
+
+        # initialize bluetoothctl_lock here to avoid thread without event loop error
+        if BluetoothLE.bluetoothctl_lock is None:
+            BluetoothLE.bluetoothctl_lock = asyncio.Lock()
 
     async def pair(self):
         if self.addr is None:
