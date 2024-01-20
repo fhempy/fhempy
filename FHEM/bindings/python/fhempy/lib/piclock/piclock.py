@@ -100,7 +100,7 @@ class piclock(generic.FhemModule):
             )
 
         await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
-        self.change_contrast(int(await fhem.ReadingsVal(self.hash["NAME"], "contrast", "100")))
+        self.change_contrast(int(await fhem.ReadingsVal(self.hash["NAME"], "brightness", "100")))
 
         self.create_async_task(self.run_piclock())
 
