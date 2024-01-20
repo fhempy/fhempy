@@ -2,6 +2,15 @@
 
 
 
+## v0.1.710 (2024-01-20)
+
+### Fix
+
+* fix(eq3bt): fix bt connection ([`15d430f`](https://github.com/fhempy/fhempy/commit/15d430f8b0ea57ccaf95efc2760530be296bde25))
+
+* fix(piclock): fix brightness on startup ([`ed6a92c`](https://github.com/fhempy/fhempy/commit/ed6a92c68da2a65a502d148e336680212b17c45c))
+
+
 ## v0.1.709 (2024-01-20)
 
 ### Fix
