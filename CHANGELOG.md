@@ -2,6 +2,13 @@
 
 
 
+## v0.1.707 (2024-01-20)
+
+### Fix
+
+* fix(fhempy): add missing import ([`1bac858`](https://github.com/fhempy/fhempy/commit/1bac85833982b7f9e39e51d0e4f57bb32a361e2d))
+
+
 ## v0.1.706 (2024-01-20)
 
 ### Fix
