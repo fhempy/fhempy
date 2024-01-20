@@ -2,6 +2,13 @@
 
 
 
+## v0.1.708 (2024-01-20)
+
+### Fix
+
+* fix(fhempy): do not run bluetoothctl in parallel ([`33fb4d0`](https://github.com/fhempy/fhempy/commit/33fb4d040b5d9e2ad5ef8181da2f774041ab573a))
+
+
 ## v0.1.707 (2024-01-20)
 
 ### Fix
