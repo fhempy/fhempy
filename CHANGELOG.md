@@ -2,6 +2,13 @@
 
 
 
+## v0.1.706 (2024-01-20)
+
+### Fix
+
+* fix(fhempy): use getpass instead of os ([`5c8e4fc`](https://github.com/fhempy/fhempy/commit/5c8e4fc0310acf872f72b213a5d444eee1016ad7))
+
+
 ## v0.1.705 (2024-01-20)
 
 ### Feature
