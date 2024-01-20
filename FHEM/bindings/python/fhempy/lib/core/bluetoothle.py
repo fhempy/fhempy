@@ -5,6 +5,7 @@ Handles reconnection
 import asyncio
 import functools
 import getpass
+import os
 import time
 
 import aiofiles
