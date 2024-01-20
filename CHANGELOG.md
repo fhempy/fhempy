@@ -2,6 +2,19 @@
 
 
 
+## v0.1.705 (2024-01-20)
+
+### Feature
+
+* feat(eq3bt): add pairing functionality with PIN ([`9a41859`](https://github.com/fhempy/fhempy/commit/9a418598aa24b6238b4ab0b71b220b6c37b07a14))
+
+* feat(fhempy): add bluetooth pairing function ([`978a375`](https://github.com/fhempy/fhempy/commit/978a3751f8ab4d09ec7bffb2a8ef922b3d600399))
+
+### Fix
+
+* fix(fhempy): add aiofiles, pexpect for bluetooth pairing ([`017c7dc`](https://github.com/fhempy/fhempy/commit/017c7dcfe70399b69a1c761e11974f4769ebf6f2))
+
+
 ## v0.1.704 (2024-01-19)
 
 ### Chore
