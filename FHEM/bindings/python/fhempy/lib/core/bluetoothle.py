@@ -4,7 +4,7 @@ Handles reconnection
 """
 import asyncio
 import functools
-import os
+import getpass
 import time
 
 import aiofiles
@@ -115,7 +115,7 @@ class BluetoothLE:
         """Connect to the device."""
 
         # check which user is running this code
-        user = os.getlogin()
+        user = getpass.getuser()
 
         # check if bluetooth.conf is present and contains the required policy lines
         btconf = "/etc/dbus-1/system.d/bluetooth.conf"
