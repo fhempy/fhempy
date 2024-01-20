@@ -14,7 +14,7 @@ class Bluetoothctl:
     def __init__(self, logger):
         self.logger = logger
         subprocess.check_output("rfkill unblock bluetooth", shell=True)
-        self.process = pexpect.spawnu("bluetoothctl", echo=False)
+        self.process = pexpect.spawn("bluetoothctl", echo=False)
 
     def stop(self):
         """Stop bluetoothctl utility only if it is running."""

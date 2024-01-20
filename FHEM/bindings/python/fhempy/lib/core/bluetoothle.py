@@ -19,6 +19,9 @@ from .bluetoothctl import Bluetoothctl
 
 
 class BluetoothLE:
+    # run bluetoothctl only once
+    bluetoothctl_lock = asyncio.Lock()
+
     # keep connected (get manuf uuid every x seconds)
     # reset hci devices on errors
     # find by name
@@ -53,13 +56,17 @@ class BluetoothLE:
         if self.addr is None:
             return
 
-        return await utils.run_blocking(functools.partial(self._pair, self.pin))
+        with await Bluetoothctl.bluetoothctl_lock:
+            ret = await utils.run_blocking(functools.partial(self._pair, self.pin))
+
+        return ret
 
     def _pair(self, pin, retry=3):
         btctl = Bluetoothctl(self.logger)
 
         paired_devices = btctl.get_paired_devices()
         if self.addr in [d["mac_address"] for d in paired_devices]:
+            btctl.exit()
             return
 
         while retry > 0:
@@ -94,14 +101,15 @@ class BluetoothLE:
     async def find_device(self, timeout=30, adapter=None):
         self._device = None
 
-        try:
-            self._device = await BleakScanner.find_device_by_address(
-                self.addr, timeout=timeout, adapter=adapter
-            )
-            self.logger.info(f"Device found via adapter {adapter}")
-        except (asyncio.TimeoutError, BleakError):
-            # nothing found
-            self._device = None
+        with await Bluetoothctl.bluetoothctl_lock:
+            try:
+                self._device = await BleakScanner.find_device_by_address(
+                    self.addr, timeout=timeout, adapter=adapter
+                )
+                self.logger.info(f"Device found via adapter {adapter}")
+            except (asyncio.TimeoutError, BleakError):
+                # nothing found
+                self._device = None
 
     def register_disconnect_listener(self, disconnect_listener):
         self.disconnect_listener = disconnect_listener
