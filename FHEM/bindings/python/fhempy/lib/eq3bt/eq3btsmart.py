@@ -85,7 +85,7 @@ class Thermostat:
     """Representation of a EQ3 Bluetooth Smart thermostat."""
 
     def __init__(
-        self, logger, hash, _mac, keep_connection=True, notification_callback=None
+        self, logger, hash, _mac, keep_connection=True, notification_callback=None, pin="0000"
     ):
         """Initialize the thermostat."""
         self.logger = logger
@@ -112,10 +112,14 @@ class Thermostat:
 
         self._notification_callback = notification_callback
 
+        self._pin = pin
+
         self._conn = bluetoothle.BluetoothLE(
             self.logger,
             hash,
             _mac,
+            pairing_required=True,
+            pin=self._pin,
         )
         self._conn.register_notification_listener(self.handle_notification)
 

@@ -45,6 +45,11 @@ class eq3bt(generic.FhemModule):
                 "format": "int",
                 "help": "Maximum retries for connection setup, default=5.",
             },
+            "pairing_pin": {
+                "default": "0000",
+                "format": "str",
+                "help": "Pin for pairing, default=0000.",
+            },
         }
         await self.set_attr_config(attr_list)
 
@@ -117,6 +122,7 @@ class eq3bt(generic.FhemModule):
             self._mac,
             keep_connection=self._attr_keep_connected == "on",
             notification_callback=self.notification_received,
+            pin=self._attr_pairing_pin,
         )
 
         self.create_async_task(self.check_online())
@@ -136,6 +142,7 @@ class eq3bt(generic.FhemModule):
         )
 
     async def consumption_rotate(self):
+        """Rotate consumption readings at midnight."""
         while True:
             await asyncio.sleep(self.seconds_till_midnight())
             consumption = float(
@@ -149,6 +156,7 @@ class eq3bt(generic.FhemModule):
             )
 
     async def set_resetConsumption(self, hash, params):
+        """Reset consumption readings."""
         cons_var = params["cons_var"]
         if cons_var == "all":
             await fhem.readingsSingleUpdateIfChanged(self.hash, "consumption", 0, 1)
@@ -165,6 +173,7 @@ class eq3bt(generic.FhemModule):
         self.thermostat.set_keep_connected(self._attr_keep_connected == "on")
 
     async def check_online(self):
+        """Check if thermostat is online and update readings."""
         await self.thermostat.connect()
 
         waittime = 300
@@ -187,18 +196,22 @@ class eq3bt(generic.FhemModule):
             await asyncio.sleep(waittime)
 
     async def notification_received(self):
+        """Handle notification from thermostat."""
         await self.update_all_readings()
 
     async def update_all(self):
+        """Update all data."""
         self.logger.debug("start update_all")
         await self.thermostat.update_all()
 
     async def update_all_readings(self):
+        """Update all readings."""
         await self.update_readings()
         await self.update_id_readings()
         await self.update_schedule_readings()
 
     async def update_readings(self):
+        """Update readings."""
         old_valve_pos = float(
             await fhem.ReadingsVal(self.hash["NAME"], "valvePosition", "0")
         )
@@ -455,7 +468,7 @@ class eq3bt(generic.FhemModule):
 
 
 class FhemThermostat(eq3.Thermostat):
-    def __init__(self, logger, hash, mac, keep_connection, notification_callback):
+    def __init__(self, logger, hash, mac, keep_connection, notification_callback, pin):
         self.logger = logger
         self._keep_conection = keep_connection
         super(FhemThermostat, self).__init__(
@@ -464,6 +477,7 @@ class FhemThermostat(eq3.Thermostat):
             mac,
             keep_connection=self._keep_conection,
             notification_callback=notification_callback,
+            pin=pin,
         )
 
     async def disconnect(self):
