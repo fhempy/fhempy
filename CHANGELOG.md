@@ -2,6 +2,13 @@
 
 
 
+## v0.1.709 (2024-01-20)
+
+### Fix
+
+* fix(fhempy): fix lock ([`8a1b0e2`](https://github.com/fhempy/fhempy/commit/8a1b0e2871c5fd519aee0ed2767e8d677a848c76))
+
+
 ## v0.1.708 (2024-01-20)
 
 ### Fix
