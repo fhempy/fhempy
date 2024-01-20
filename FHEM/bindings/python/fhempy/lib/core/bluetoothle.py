@@ -60,7 +60,7 @@ class BluetoothLE:
         if self.addr is None:
             return
 
-        with await Bluetoothctl.bluetoothctl_lock:
+        async with BluetoothLE.bluetoothctl_lock:
             ret = await utils.run_blocking(functools.partial(self._pair, self.pin))
 
         return ret
@@ -105,7 +105,7 @@ class BluetoothLE:
     async def find_device(self, timeout=30, adapter=None):
         self._device = None
 
-        with await Bluetoothctl.bluetoothctl_lock:
+        async with BluetoothLE.bluetoothctl_lock:
             try:
                 self._device = await BleakScanner.find_device_by_address(
                     self.addr, timeout=timeout, adapter=adapter
