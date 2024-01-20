@@ -45,11 +45,6 @@ class eq3bt(generic.FhemModule):
                 "format": "int",
                 "help": "Maximum retries for connection setup, default=5.",
             },
-            "pairing_pin": {
-                "default": "0000",
-                "format": "str",
-                "help": "Pin for pairing, default=0000.",
-            },
         }
         await self.set_attr_config(attr_list)
 
@@ -104,9 +99,11 @@ class eq3bt(generic.FhemModule):
 
         self.hash = hash
         if len(args) < 4:
-            return "Usage: define eq3_livingroom fhempy eq3bt <MAC>"
+            return "Usage: define eq3_livingroom fhempy eq3bt MAC PIN"
         self._mac = args[3]
         self.hash["MAC"] = self._mac
+        if len(args) > 4:
+            self._pin = args[4]
         self.logger.info(f"Define: eq3bt {self._mac}")
 
         icon = await fhem.AttrVal(self.hash["NAME"], "icon", "noicon")
@@ -122,7 +119,7 @@ class eq3bt(generic.FhemModule):
             self._mac,
             keep_connection=self._attr_keep_connected == "on",
             notification_callback=self.notification_received,
-            pin=self._attr_pairing_pin,
+            pin=self._pin,
         )
 
         self.create_async_task(self.check_online())

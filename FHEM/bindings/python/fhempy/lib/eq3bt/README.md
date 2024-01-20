@@ -8,7 +8,7 @@ Attention: If you use a firmware newer than 120, you need to pair it with the PI
 
 These instructions were copied from eq3bt python module.
 
-If you have thermostat with firmware version 1.20+ pairing may be needed. Below simple procedure to do that.
+If you have thermostat with firmware version 1.20+ you need to specify the pairing pin. If the pin doesn't work in FHEM, use the procedure below to pair.
 
 ```
 Press and hold wheel on thermostat until Pair will be displayed. Remember or write it.
@@ -65,8 +65,11 @@ Restart dbus afterwards: `sudo systemctl restart dbus`
 
 ## Usage
 ```
-define thermostat1 fhempy eq3bt <MAC>
+define thermostat1 fhempy eq3bt MAC PIN
 ```
+
+PIN: Optional pairing PIN, required starting from firmware version 120.
+
 
 ## Commands
  - boost on|off
