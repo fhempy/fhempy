@@ -3,13 +3,18 @@ A simple wrapper for bleak
 Handles reconnection
 """
 import asyncio
+import functools
+import os
+import time
 
+import aiofiles
 import bluetooth_adapters
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
-from .. import fhem
+from .. import fhem, utils
+from .bluetoothctl import Bluetoothctl
 
 
 class BluetoothLE:
@@ -17,12 +22,22 @@ class BluetoothLE:
     # reset hci devices on errors
     # find by name
     # add bluetooth-auto-recovery
-    def __init__(self, logger, device_hash, address=None, name=None) -> None:
+    def __init__(
+        self,
+        logger,
+        device_hash,
+        address=None,
+        name=None,
+        pairing_required=False,
+        pin="0000",
+    ) -> None:
         self._disconnect_called = False
         self._device = None
         self._client = None
         self._dev_hash = device_hash
 
+        self.pairing_required = pairing_required
+        self.pin = pin
         self.disconnect_listener = None
         self.connected_listener = None
 
@@ -32,6 +47,42 @@ class BluetoothLE:
 
         self.connection_task = None
         self.connected = asyncio.Event()
+
+    async def pair(self):
+        if self.addr is None:
+            return
+
+        return await utils.run_blocking(functools.partial(self._pair, self.pin))
+
+    def _pair(self, pin, retry=3):
+        btctl = Bluetoothctl(self.logger)
+
+        paired_devices = btctl.get_paired_devices()
+        if self.addr in [d["mac_address"] for d in paired_devices]:
+            return
+
+        while retry > 0:
+            try:
+                btctl.power_on()
+                btctl.agent_on()
+                btctl.default_agent()
+                btctl.start_scan()
+                time.sleep(10)
+                btctl.stop_scan()
+                pairing_successfull = btctl.pair(self.addr, pin)
+                if pairing_successfull:
+                    btctl.trust(self.addr)
+                    btctl.disconnect(self.addr)
+                    btctl.exit()
+                    return True
+                else:
+                    retry -= 1
+                    time.sleep(5)
+            except Exception:
+                retry -= 1
+                time.sleep(5)
+
+        return False
 
     async def update_adapters(self):
         self.adapters = await bluetooth_adapters.get_bluetooth_adapters()
@@ -61,6 +112,40 @@ class BluetoothLE:
         self.notification_listener = notification_listener
 
     async def connect(self, timeout=30, max_retries=20):
+        """Connect to the device."""
+
+        # check which user is running this code
+        user = os.getlogin()
+
+        # check if bluetooth.conf is present and contains the required policy lines
+        btconf = "/etc/dbus-1/system.d/bluetooth.conf"
+        policy_lines = [
+            '<policy user="' + user + '">',
+            '<allow own="org.bluez"/>',
+            '<allow send_destination="org.bluez"/>',
+            '<allow send_interface="org.bluez.GattCharacteristic1"/>',
+            '<allow send_interface="org.bluez.GattDescriptor1"/>',
+            '<allow send_interface="org.freedesktop.DBus.ObjectManager"/>',
+            '<allow send_interface="org.freedesktop.DBus.Properties"/>',
+            "</policy>",
+        ]
+        if os.path.exists(btconf):
+            async with aiofiles.open(btconf, mode="r") as f:
+                content = await f.read()
+                if not all(line in content for line in policy_lines):
+                    self.logger.error(
+                        "Not all required policy lines are present in bluetooth.conf"
+                    )
+                    self.logger.error(
+                        "Please add the following lines to the file /etc/dbus-1/system.d/bluetooth.conf:"
+                    )
+                    for line in policy_lines:
+                        self.logger.error(line)
+                    return
+
+        if self.pairing_required:
+            await self.pair()
+
         if self._client and self._client.is_connected:
             return
 
