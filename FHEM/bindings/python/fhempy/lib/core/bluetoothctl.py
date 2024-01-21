@@ -15,7 +15,12 @@ class Bluetoothctl:
         self.logger = logger
         # try to unblock bluetooth with rfkill, it doesn't matter if it fails
         try:
-            subprocess.check_output("rfkill unblock bluetooth", shell=True)
+            subprocess.check_output(
+                "rfkill unblock bluetooth",
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         except Exception as e:
             self.logger.debug("rfkill is not present")
         self.process = pexpect.spawn("bluetoothctl", echo=False, encoding="utf-8")

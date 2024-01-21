@@ -49,6 +49,9 @@ class BluetoothLE:
         self.addr = address
         self.name = name
 
+        self.conf_checked = False
+        self.paired = False
+
         self.connection_task = None
         self.connected = asyncio.Event()
 
@@ -71,7 +74,7 @@ class BluetoothLE:
         paired_devices = btctl.get_paired_devices()
         if self.addr in [d["mac_address"] for d in paired_devices]:
             btctl.exit()
-            return
+            return True
 
         while retry > 0:
             try:
@@ -131,33 +134,37 @@ class BluetoothLE:
         user = getpass.getuser()
 
         # check if bluetooth.conf is present and contains the required policy lines
-        btconf = "/etc/dbus-1/system.d/bluetooth.conf"
-        policy_lines = [
-            '<policy user="' + user + '">',
-            '<allow own="org.bluez"/>',
-            '<allow send_destination="org.bluez"/>',
-            '<allow send_interface="org.bluez.GattCharacteristic1"/>',
-            '<allow send_interface="org.bluez.GattDescriptor1"/>',
-            '<allow send_interface="org.freedesktop.DBus.ObjectManager"/>',
-            '<allow send_interface="org.freedesktop.DBus.Properties"/>',
-            "</policy>",
-        ]
-        if os.path.exists(btconf):
-            async with aiofiles.open(btconf, mode="r") as f:
-                content = await f.read()
-                if not all(line in content for line in policy_lines):
-                    self.logger.error(
-                        "Not all required policy lines are present in bluetooth.conf"
-                    )
-                    self.logger.error(
-                        "Please add the following lines to the file /etc/dbus-1/system.d/bluetooth.conf:"
-                    )
-                    for line in policy_lines:
-                        self.logger.error(line)
-                    return
+        if not self.conf_checked:
+            btconf = "/etc/dbus-1/system.d/bluetooth.conf"
+            policy_lines = [
+                '<policy user="' + user + '">',
+                '<allow own="org.bluez"/>',
+                '<allow send_destination="org.bluez"/>',
+                '<allow send_interface="org.bluez.GattCharacteristic1"/>',
+                '<allow send_interface="org.bluez.GattDescriptor1"/>',
+                '<allow send_interface="org.freedesktop.DBus.ObjectManager"/>',
+                '<allow send_interface="org.freedesktop.DBus.Properties"/>',
+                "</policy>",
+            ]
+            if os.path.exists(btconf):
+                async with aiofiles.open(btconf, mode="r") as f:
+                    content = await f.read()
+                    if not all(line in content for line in policy_lines):
+                        self.logger.error(
+                            "Not all required policy lines are present in bluetooth.conf"
+                        )
+                        self.logger.error(
+                            "Please add the following lines to the file /etc/dbus-1/system.d/bluetooth.conf:"
+                        )
+                        for line in policy_lines:
+                            self.logger.error(line)
+                        return
+            self.conf_checked = True
 
-        if self.pairing_required:
-            await self.pair()
+        if self.pairing_required and not self.paired:
+            ret = await self.pair()
+            if ret:
+                self.paired = True
 
         if self._client and self._client.is_connected:
             return
@@ -230,7 +237,7 @@ class BluetoothLE:
                     self.logger.exception("Failed to connect")
                 except asyncio.TimeoutError:
                     pass
-                if self._client.is_connected:
+                if self._client and self._client.is_connected:
                     await fhem.readingsSingleUpdate(
                         self._dev_hash, "connection", "connected", 1
                     )
