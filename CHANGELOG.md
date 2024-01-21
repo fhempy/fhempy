@@ -2,6 +2,21 @@
 
 
 
+## v0.1.711 (2024-01-21)
+
+### Chore
+
+* chore(deps-dev): update esphome requirement from ==2023.12.6 to ==2023.12.7 (#309) ([`f2a1123`](https://github.com/fhempy/fhempy/commit/f2a1123b5071abfb584fa94e2f14b87e09a2e8b7))
+
+### Feature
+
+* feat(eq3bt): add pairing pin to define ([`1b9d8ec`](https://github.com/fhempy/fhempy/commit/1b9d8ec37bf7a6f89fb02319935328436e95c4ed))
+
+### Fix
+
+* fix(eq3bt): add notification lock and fix pin usage (#311) ([`a8072ba`](https://github.com/fhempy/fhempy/commit/a8072ba86105670c91e01c54029a7626d9408b62))
+
+
 ## v0.1.710 (2024-01-20)
 
 ### Fix
