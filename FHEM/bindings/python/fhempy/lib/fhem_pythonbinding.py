@@ -621,7 +621,9 @@ class fhempy:
 
 
 def usage():
-    print("Usage: fhempy [-h|--help] [-v|--version] [-i|--ip] [-b|--bind] [-p|--port] [-l|--local]")
+    print(
+        "Usage: fhempy [-h|--help] [-v|--version] [-i|--ip] [-b|--bind] [-p|--port] [-l|--local]"
+    )
     print("  --local   Use only if you run fhempy on your FHEM machine")
     print(
         "  --ip      "
@@ -642,7 +644,7 @@ async def async_main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "dhvli:p:",
+            "dhvli:p:b:",
             ["help", "version", "ip=", "bind=", "port=", "local", "debug"],
         )
     except getopt.GetoptError as err:
