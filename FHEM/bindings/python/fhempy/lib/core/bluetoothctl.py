@@ -13,7 +13,11 @@ class Bluetoothctl:
 
     def __init__(self, logger):
         self.logger = logger
-        subprocess.check_output("rfkill unblock bluetooth", shell=True)
+        # try to unblock bluetooth with rfkill, it doesn't matter if it fails
+        try:
+            subprocess.check_output("rfkill unblock bluetooth", shell=True)
+        except Exception as e:
+            self.logger.debug("rfkill is not present")
         self.process = pexpect.spawn("bluetoothctl", echo=False, encoding="utf-8")
 
     def stop(self):
