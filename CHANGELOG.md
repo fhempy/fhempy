@@ -2,6 +2,13 @@
 
 
 
+## v0.1.714 (2024-01-21)
+
+### Feature
+
+* feat(github_restore): restore your github backup with this module ([`c179425`](https://github.com/fhempy/fhempy/commit/c1794255bbf5a748b3a4ae7ce2f592c13f17fbc7))
+
+
 ## v0.1.713 (2024-01-21)
 
 ### Fix
