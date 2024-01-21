@@ -2,6 +2,15 @@
 
 
 
+## v0.1.713 (2024-01-21)
+
+### Fix
+
+* fix(fhempy): fix -b argument for bind ([`23d2a74`](https://github.com/fhempy/fhempy/commit/23d2a7408492c9cdf88fb6dd1437a71486b84433))
+
+* fix(fhempy): do bluetooth checks for pairing and conf only when required ([`cb8d956`](https://github.com/fhempy/fhempy/commit/cb8d9567e96a3572f02da20a37b6d62ad9b71716))
+
+
 ## v0.1.712 (2024-01-21)
 
 ### Fix
