@@ -2,6 +2,13 @@
 
 
 
+## v0.1.712 (2024-01-21)
+
+### Fix
+
+* fix(eq3bt): fix if rfkill is not working (#311) ([`002ff8b`](https://github.com/fhempy/fhempy/commit/002ff8ba67e7545d5975746c9c08912fba5e05c5))
+
+
 ## v0.1.711 (2024-01-21)
 
 ### Chore
