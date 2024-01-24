@@ -2,6 +2,15 @@
 
 
 
+## v0.1.716 (2024-01-24)
+
+### Fix
+
+* fix(fhempy): fix return value if no addr available ([`5ee0c62`](https://github.com/fhempy/fhempy/commit/5ee0c620450ab68c38ee87bef454651e8fb8ef86))
+
+* fix(fhempy): set state to &#34;connected (no notifications)&#34; if only notifications fail to subscribe ([`b81b67a`](https://github.com/fhempy/fhempy/commit/b81b67ad18328589b2f6f6067ed2806ea1c666d8))
+
+
 ## v0.1.715 (2024-01-24)
 
 ### Fix
