@@ -232,15 +232,27 @@ class BluetoothLE:
                 )
                 try:
                     await self._client.connect()
-                    await self._subscribe_notifies()
                 except BleakError:
                     self.logger.exception("Failed to connect")
                 except asyncio.TimeoutError:
                     pass
+
                 if self._client and self._client.is_connected:
-                    await fhem.readingsSingleUpdate(
-                        self._dev_hash, "connection", "connected", 1
-                    )
+                    try:
+                        await self._subscribe_notifies()
+                    except BleakError:
+                        # set state to connected (no notifications)
+                        await fhem.readingsSingleUpdate(
+                            self._dev_hash,
+                            "connection",
+                            "connected (no notifications)",
+                            1,
+                        )
+                        self.logger.exception("Failed to subscribe to notifications")
+                    else:
+                        await fhem.readingsSingleUpdate(
+                            self._dev_hash, "connection", "connected", 1
+                        )
                     if self.connected_listener:
                         await self.connected_listener()
                     return
