@@ -61,7 +61,7 @@ class BluetoothLE:
 
     async def pair(self):
         if self.addr is None:
-            return
+            return False
 
         async with BluetoothLE.bluetoothctl_lock:
             ret = await utils.run_blocking(functools.partial(self._pair, self.pin))
