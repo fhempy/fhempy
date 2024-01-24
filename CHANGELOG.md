@@ -2,6 +2,13 @@
 
 
 
+## v0.1.715 (2024-01-24)
+
+### Fix
+
+* fix(eq3bt): fix notification lock ([`0bf270c`](https://github.com/fhempy/fhempy/commit/0bf270c40a8fbba064410ad28c4b8890eb731efa))
+
+
 ## v0.1.714 (2024-01-21)
 
 ### Feature
