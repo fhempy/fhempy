@@ -121,7 +121,7 @@ class eq3bt(generic.FhemModule):
             self._mac,
             keep_connection=self._attr_keep_connected == "on",
             notification_callback=self.notification_received,
-            pin = self._pin,
+            pin=self._pin,
         )
 
         self.create_async_task(self.check_online())
@@ -206,10 +206,9 @@ class eq3bt(generic.FhemModule):
 
     async def update_all_readings(self):
         """Update all readings."""
-        async with self.notification_lock:
-            await self.update_readings()
-            await self.update_id_readings()
-            await self.update_schedule_readings()
+        await self.update_readings()
+        await self.update_id_readings()
+        await self.update_schedule_readings()
 
     async def update_readings(self):
         """Update readings."""
