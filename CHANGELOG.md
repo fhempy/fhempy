@@ -2,6 +2,17 @@
 
 
 
+## v0.1.717 (2024-01-28)
+
+### Chore
+
+* chore(deps): bump importlib-metadata from 7.0.0 to 7.0.1 (#312) ([`e1aeb92`](https://github.com/fhempy/fhempy/commit/e1aeb92c34fa6afe75a9263cdf18b91c113f8917))
+
+### Fix
+
+* fix(esphome): update esphome (#315) ([`220fd97`](https://github.com/fhempy/fhempy/commit/220fd9724d68c8004946efe39adf5d40d120f67c))
+
+
 ## v0.1.716 (2024-01-24)
 
 ### Fix
