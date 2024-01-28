@@ -167,7 +167,7 @@ class tuya_smartlife_device:
         await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_boolean(self, hash, params):
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         onoff = False
         if "onoff" in params:
             if params["onoff"] == "on":
@@ -178,21 +178,21 @@ class tuya_smartlife_device:
         await self.send_commands([{"code": code, "value": onoff}])
 
     async def set_enum(self, hash, params):
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
 
     async def set_string(self, hash, params):
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": params["new_val"]}])
 
     async def set_json(self, hash, params):
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands(
             [{"code": code, "value": json.loads(params["new_val"])}]
         )
 
     async def set_integer(self, hash, params):
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
 
     async def set_colour_data(self, hash, params):
@@ -207,7 +207,7 @@ class tuya_smartlife_device:
     async def set_colour_data_v2(self, hash, params):
         # convert e.g. ff0000 to hsv (360, 1000, 1000) and set hsv values with json
         hsv = self.fhemrgb2hsv(params["new_val"])
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": hsv}])
 
     def fhemrgb2hsv(self, rgb):
