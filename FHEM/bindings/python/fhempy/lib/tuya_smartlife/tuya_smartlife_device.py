@@ -10,7 +10,7 @@ import fhempy.lib.fhem_pythonbinding as fpb
 import fhempy.lib.utils as utils
 
 
-class tuya_cloud_device:
+class tuya_smartlife_device:
     def __init__(self, logger, fhemdevice):
         self.logger = logger
         self.fhemdev = fhemdevice
@@ -50,41 +50,25 @@ class tuya_cloud_device:
         while self.tuyaiot is None or self.tuyaiot.ready is False:
             self.tuyaiot = fpb.getFhemPyDeviceByName(self._t_setupdev)
             if self.tuyaiot is not None:
-                self.tuyaiot = self.tuyaiot.tuya_cloud_device
+                self.tuyaiot = self.tuyaiot.setup_device
 
             await asyncio.sleep(randrange(20))
 
         self.tuyaiot.register_tuya_device(self)
+        self.device = self.tuyaiot.device_manager.device_map[self._t_deviceid]
+        self.device.set_up = True
 
     async def _setup_device(self):
         # retrieve functions/status/types
-        self._t_specification = await utils.run_blocking(
-            functools.partial(
-                self.tuyaiot.device_manager.get_device_specification, self._t_deviceid
-            )
-        )
-        if self._t_specification["success"]:
-            self._t_specification = self._t_specification["result"]
-        else:
-            await fhem.readingsSingleUpdate(
-                self.hash, "state", self._t_specification["msg"], 1
-            )
-            self._t_specification = {"functions": [], "status": []}
+        self._t_specification = self.device.function
+
         # retrieve general infos
-        self._t_info = await utils.run_blocking(
-            functools.partial(
-                self.tuyaiot.device_manager.get_device_info, self._t_deviceid
-            )
-        )
-        self._t_info = self._t_info["result"]
-        await self.update_readings_dict(self._t_info)
+        self._t_info = self.device
+        # update static device readings
+        # TODO await self.update_readings_dict(self._t_info)
+
         # retrieve current status
-        self._t_status = await utils.run_blocking(
-            functools.partial(
-                self.tuyaiot.device_manager.get_device_status, self._t_deviceid
-            )
-        )
-        self._t_status = self._t_status["result"]
+        self._t_status = self.device.status
 
         # setup set commands
         await self._generate_set()
@@ -94,55 +78,63 @@ class tuya_cloud_device:
 
     async def _generate_set(self):
         set_conf = {}
-        for fct in self._t_specification["functions"]:
-            if fct["type"] == "Boolean":
-                set_conf[fct["code"]] = {
+        for fct in self._t_specification:
+            if self._t_specification[fct].type == "Boolean":
+                set_conf[self._t_specification[fct].code] = {
                     "options": "on,off",
                     "args": ["onoff"],
-                    "function_param": fct,
+                    "function_param": self._t_specification[fct],
                     "function": "set_boolean",
                 }
-            elif fct["type"] == "Enum":
-                options = json.loads(fct["values"])["range"]
-                set_conf[fct["code"]] = {
+            elif self._t_specification[fct].type == "Enum":
+                options = json.loads(self._t_specification[fct].values)["range"]
+                set_conf[self._t_specification[fct].code] = {
                     "options": ",".join(options),
                     "args": ["selected_val"],
-                    "function_param": fct,
+                    "function_param": self._t_specification[fct],
                     "function": "set_enum",
                 }
-            elif fct["type"] == "Integer":
-                spec = json.loads(fct["values"])
+            elif self._t_specification[fct].type == "Integer":
+                spec = json.loads(self._t_specification[fct].values)
                 slider = f"slider,{spec['min']},{spec['step']},{spec['max']}"
-                set_conf[fct["code"]] = {
+                set_conf[self._t_specification[fct].code] = {
                     "options": slider,
                     "args": ["selected_val"],
                     "params": {"selected_val": {"format": "int"}},
-                    "function_param": fct,
+                    "function_param": self._t_specification[fct],
                     "function": "set_integer",
                 }
-            elif fct["type"] == "String":
-                set_conf[fct["code"]] = {
+            elif self._t_specification[fct].type == "String":
+                set_conf[self._t_specification[fct].code] = {
                     "args": ["new_val"],
-                    "function_param": fct,
+                    "function_param": self._t_specification[fct],
                     "function": "set_string",
                 }
-            elif fct["type"] == "Json":
-                set_conf[fct["code"]] = {
+            elif self._t_specification[fct].type == "Json":
+                set_conf[self._t_specification[fct].code] = {
                     "args": ["new_val"],
-                    "function_param": fct,
+                    "function_param": self._t_specification[fct],
                     "function": "set_json",
                 }
-                if fct["code"] == "colour_data":
-                    set_conf[fct["code"]]["function"] = "set_colour_data"
-                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
-                elif fct["code"] == "colour_data_v2":
-                    set_conf[fct["code"]]["function"] = "set_colour_data_v2"
-                    set_conf[fct["code"]]["options"] = "colorpicker,RGB"
+                if self._t_specification[fct].code == "colour_data":
+                    set_conf[self._t_specification[fct].code][
+                        "function"
+                    ] = "set_colour_data"
+                    set_conf[self._t_specification[fct].code][
+                        "options"
+                    ] = "colorpicker,RGB"
+                elif self._t_specification[fct].code == "colour_data_v2":
+                    set_conf[self._t_specification[fct].code][
+                        "function"
+                    ] = "set_colour_data_v2"
+                    set_conf[self._t_specification[fct].code][
+                        "options"
+                    ] = "colorpicker,RGB"
 
         set_conf = self.prepare_onoff_usage(set_conf)
 
-        for st in self._t_specification["status"]:
-            if st["code"] == "cur_power":
+        for st in self.device.status:
+            if st == "cur_power":
                 set_conf["reset_energy"] = {}
                 break
 
@@ -175,7 +167,7 @@ class tuya_cloud_device:
         await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_boolean(self, hash, params):
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         onoff = False
         if "onoff" in params:
             if params["onoff"] == "on":
@@ -186,21 +178,21 @@ class tuya_cloud_device:
         await self.send_commands([{"code": code, "value": onoff}])
 
     async def set_enum(self, hash, params):
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
 
     async def set_string(self, hash, params):
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands([{"code": code, "value": params["new_val"]}])
 
     async def set_json(self, hash, params):
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands(
             [{"code": code, "value": json.loads(params["new_val"])}]
         )
 
     async def set_integer(self, hash, params):
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands([{"code": code, "value": params["selected_val"]}])
 
     async def set_colour_data(self, hash, params):
@@ -209,13 +201,13 @@ class tuya_cloud_device:
         if self._t_info["category"] == "dj":
             hsv["s"] = int(hsv["s"] / 1000 * 255)
             hsv["v"] = int(hsv["v"] / 1000 * 255)
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands([{"code": code, "value": hsv}])
 
     async def set_colour_data_v2(self, hash, params):
         # convert e.g. ff0000 to hsv (360, 1000, 1000) and set hsv values with json
         hsv = self.fhemrgb2hsv(params["new_val"])
-        code = params["function_param"]["code"]
+        code = params["function_param"].code
         await self.send_commands([{"code": code, "value": hsv}])
 
     def fhemrgb2hsv(self, rgb):
@@ -259,27 +251,8 @@ class tuya_cloud_device:
         return code
 
     def _convert_value2fhem(self, code, value):
-        for code_def in self._t_specification["status"]:
-            if code_def["code"] == code and code_def["type"] == "Integer":
-                if self._t_info["product_id"] in [
-                    "wifvoilfrqeo6hvu",
-                    "37mnhia3pojleqfh",
-                ]:
-                    if code == "cur_voltage":
-                        value /= 10
-                    elif code == "cur_power":
-                        value /= 10
-                values = json.loads(code_def["values"])
-                return value / (10 ** int(values["scale"]))
-
-        if code == "icon":
-            return (
-                self.tuyaiot.device_manager.api.endpoint.replace("openapi", "images")
-                + "/"
-                + value
-            )
         # pir device
-        elif code == "pir" and self._t_info["category"] == "pir":
+        if code == "pir" and self.device.category == "pir":
             if value == "pir":
                 self.fhemdev.create_async_task(
                     self.reset_reading("state", "nomotion", 180)
@@ -308,16 +281,15 @@ class tuya_cloud_device:
         async with self.readings_update_lock:
             await fhem.readingsBeginUpdate(self.hash)
             try:
-                for status in status_arr:
-                    if status["code"] in ["colour_data", "colour_data_v2"]:
-                        await self.update_readings_hsv(
-                            status["code"], json.loads(status["value"])
-                        )
+                # iterature through key, value pairs
+                for status, val in status_arr.items():
+                    if status in ["colour_data", "colour_data_v2"]:
+                        await self.update_readings_hsv(status, json.loads(val))
                     else:
                         await fhem.readingsBulkUpdate(
                             self.hash,
-                            self._convert_code2fhem(status["code"]),
-                            self._convert_value2fhem(status["code"], status["value"]),
+                            self._convert_code2fhem(status),
+                            self._convert_value2fhem(status, val),
                         )
             except Exception:
                 self.logger.exception(
@@ -327,9 +299,9 @@ class tuya_cloud_device:
 
     async def update_readings_dict(self, status_dic):
         async with self.readings_update_lock:
-
+            # check if last_status dictionary equals status_dic dictionary
             if self.last_status != status_dic:
-                self.last_status = status_dic
+                self.last_status = status_dic.copy()
             else:
                 return
 
@@ -372,7 +344,7 @@ class tuya_cloud_device:
             await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_hsv(self, hsv_code, hsv_json):
-        if hsv_code == "colour_data" and self._t_info["category"] == "dj":
+        if hsv_code == "colour_data" and self.device.category == "dj":
             # only category dj (light) has old colour_data
             rgb = colorsys.hsv_to_rgb(
                 int(hsv_json["h"]) / 360,
