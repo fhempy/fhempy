@@ -17,7 +17,7 @@ class esphome(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         self._set_list = {"start": {}, "stop": {}, "restart": {}}
         await self.set_set_config(self._set_list)
         self._attr_list = {
@@ -36,29 +36,29 @@ class esphome(FhemModule):
             self.create_async_task(self.create_weblink())
 
     async def start_process(self):
-        my_env = os.environ
-        my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
         self._esphomeargs = [
-            site.getuserbase() + "/bin/esphome",
+            "esphome",
             "dashboard",
             "esphome_config/",
             "--port",
             self._attr_port_dashboard,
         ]
+        self.proc = subprocess.Popen(self._esphomeargs)
 
         try:
             self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
         except Exception:
             self.logger.exception("Failed to execute esphome")
             try:
+                my_env = os.environ
+                my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
                 self._esphomeargs = [
-                    "esphome",
+                    site.getuserbase() + "/bin/esphome",
                     "dashboard",
                     "esphome_config/",
                     "--port",
                     self._attr_port_dashboard,
                 ]
-                self.proc = subprocess.Popen(self._esphomeargs)
             except Exception:
                 self.logger.exception("Failed to execute esphome")
                 return "Failed to execute esphome"
