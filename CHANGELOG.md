@@ -2,6 +2,35 @@
 
 
 
+## v0.1.718 (2024-02-05)
+
+### Chore
+
+* chore(deps-dev): update pytest-env requirement from 1.0.1 to 1.1.0 (#322) ([`c9bd78e`](https://github.com/fhempy/fhempy/commit/c9bd78ee610bf6aba7c8ff3eabd5e5d14341c3da))
+
+* chore(deps): update aiohttp requirement from 3.9.1 to 3.9.3 (#324) ([`386fa80`](https://github.com/fhempy/fhempy/commit/386fa80c67b1c8ee8da5de106caa2b5f49c22e93))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.27.0 to 1.28.0 (#326) ([`d8f38fb`](https://github.com/fhempy/fhempy/commit/d8f38fb116c6a012bc107986219d589932a1d67c))
+
+* chore: set dev dependencies to specific version ([`26a86fb`](https://github.com/fhempy/fhempy/commit/26a86fb6d46730edd81f15302d56e041d1a76b34))
+
+* chore(deps): update async-upnp-client requirement from 0.38.0 to 0.38.1 (#319) ([`1284e7e`](https://github.com/fhempy/fhempy/commit/1284e7e8c4f2805bf6d8f8534131879d7f1cd742))
+
+* chore(deps-dev): update playwright requirement from ==1.41.0 to ==1.41.1 (#317) ([`7e3a6b8`](https://github.com/fhempy/fhempy/commit/7e3a6b83a614e7512acf2c3ec05a9be74c90fe93))
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.12.0 to ==3.13.2 (#321) ([`ee477e9`](https://github.com/fhempy/fhempy/commit/ee477e913612ae8f51ad22f68efd1a55762f5c86))
+
+### Feature
+
+* feat: Tuya SmartLife integration (#327)
+
+This integration is based on the SmartLife SDK from Tuya. You need to have all your devices in the SmartLife app to use it. ([`7325034`](https://github.com/fhempy/fhempy/commit/73250347a78a730f3af1e949139f0ae150b06228))
+
+### Fix
+
+* fix(esphome): try to run esphome from PATH first ([`c982c75`](https://github.com/fhempy/fhempy/commit/c982c753df3947f17ce097c6cc90c771b92d335b))
+
+
 ## v0.1.717 (2024-01-28)
 
 ### Chore
