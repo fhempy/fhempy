@@ -251,6 +251,11 @@ async def CommandAttr(hash, attrdef):
     return await sendCommandHash(hash, cmd)
 
 
+async def CommandDeleteAttr(hash, deldef):
+    cmd = 'CommandDeleteAttr(undef, "' + deldef + '")'
+    return await sendCommandHash(hash, cmd)
+
+
 async def CommandDeleteReading(hash, deldef):
     cmd = 'CommandDeleteReading(undef, "' + deldef + '")'
     return await sendCommandHash(hash, cmd)

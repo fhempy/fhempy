@@ -64,6 +64,11 @@ class tuya_smartlife_setup:
                     self.hash, "login_qr_code", "<html>" + img + "</html>", 1
                 )
 
+                # set attr webCmd to scan_done
+                await fhem.CommandAttr(
+                    self.hash, f"{self.hash['NAME']} webCmd scan_done"
+                )
+
                 # inform user via state to scan qr_code and press scan_done
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash,
@@ -97,11 +102,18 @@ class tuya_smartlife_setup:
             self.terminal_id = info.get("terminal_id")
             self.endpoint = info.get("endpoint")
 
-            # remove login_qr_code reading
+            # remove login_qr_code reading and webCmd attr
             await fhem.readingsSingleUpdateIfChanged(self.hash, "login_qr_code", "-", 1)
+            await fhem.CommandDeleteAttr(self.hash, f"{self.hash['NAME']} webCmd")
+
             await self.save_token_info()
 
             self.fhemdev.create_async_task(self.connect_to_smartlife())
+        else:
+            self.logger.error(f"login_result failed: {info}")
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "state", f"login failed: {info}", 1
+            )
 
     async def save_token_info(self):
         # save token_info to reading
@@ -185,6 +197,7 @@ class tuya_smartlife_setup:
         await self._init_devices()
 
         await utils.run_blocking(functools.partial(self.device_manager.refresh_mq))
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
 
     def _generate_qr_code(self, data: str) -> str:
         """Generate a base64 PNG string represent QR Code image of data."""
@@ -231,11 +244,6 @@ class tuya_smartlife_setup:
         device_exists = await fhem.checkIfDeviceExists(
             self.hash, "FHEMPYTYPE", "tuya_smartlife", "DEVICEID", device_id
         )
-
-        if not device_exists:
-            device_exists = await fhem.checkIfDeviceExists(
-                self.hash, "FHEMPYTYPE", "tuya", "DEVICEID", device_id
-            )
 
         if not device_exists:
             self.logger.info(

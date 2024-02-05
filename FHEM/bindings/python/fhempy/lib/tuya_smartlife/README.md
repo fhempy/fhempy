@@ -12,7 +12,7 @@ This module uses the official tuya library to communicate with all sort of tuya 
 
 ## Usage
 ```
-define tuya_smartlife_integration fhempy tuya_smartlife USERCODE
+define tuya_smartlife_integration fhempy tuya_smartlife setup USERCODE
 ```
 
  - USERCODE: From the SmartLife app account settings page
