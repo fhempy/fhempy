@@ -48,7 +48,7 @@ aiofiles = "==23.2.1"
 
 [tool.poetry.dependencies.aiohttp]
 extras = [ "speedups",]
-version = "3.9.1"
+version = "3.9.3"
 
 [tool.poetry.group.all]
 optional = true
