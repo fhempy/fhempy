@@ -169,13 +169,14 @@ class Bluetoothctl:
                     "Pairing successful",
                     "[agent] Enter passkey (number in 0-999999):",
                     "Failed to pair",
+                    pexpect.TIMEOUT,
                 ],
-                pexpect.EOF,
+                timeout=60,
             )
             if res == 1:
                 self.send(pin, 4)
                 res = self.process.expect(
-                    ["Pairing successful", "Failed to pair", pexpect.EOF]
+                    ["Pairing successful", "Failed to pair", pexpect.TIMEOUT], timeout=60,
                 )
 
             return res == 0
@@ -188,7 +189,7 @@ class Bluetoothctl:
             return False
         else:
             res = self.process.expect(
-                ["Failed to trust", "Pairing successful", pexpect.EOF]
+                ["failed", "succeeded", pexpect.TIMEOUT], timeout=60,
             )
             return res == 1
 
@@ -214,7 +215,7 @@ class Bluetoothctl:
             return False
         else:
             res = self.process.expect(
-                ["Failed to connect", "Connection successful", pexpect.EOF]
+                ["Failed to connect", "Connection successful", pexpect.TIMEOUT], timeout=60,
             )
             return res == 1
 
@@ -227,6 +228,6 @@ class Bluetoothctl:
             return False
         else:
             res = self.process.expect(
-                ["Failed to disconnect", "Successful disconnected", pexpect.EOF]
+                ["Failed to disconnect", "Successful disconnected", pexpect.TIMEOUT], timeout=60
             )
             return res == 1

@@ -162,10 +162,10 @@ class BluetoothLE:
                         return
             self.conf_checked = True
 
-        #if self.pairing_required and not self.paired:
-        #    ret = await self.pair()
-        #    if ret:
-        #        self.paired = True
+        if self.pairing_required and not self.paired:
+            ret = await self.pair()
+            if ret:
+                self.paired = True
 
         if self._client and self._client.is_connected:
             return
