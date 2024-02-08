@@ -8,7 +8,7 @@ This module checks the presence of a bluetooth mac address and displays:
 ## Installation
 ```
 sudo apt-get install bluetooth
-sudo apt-get install python-bluez
+sudo apt-get install python3-bluez
 ```
 
 ## Usage
