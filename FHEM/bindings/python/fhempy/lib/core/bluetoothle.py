@@ -2,6 +2,7 @@
 A simple wrapper for bleak
 Handles reconnection
 """
+
 import asyncio
 import functools
 import getpass
