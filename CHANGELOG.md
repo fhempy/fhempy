@@ -2,6 +2,15 @@
 
 
 
+## v0.1.719 (2024-02-08)
+
+### Fix
+
+* fix(fhempy): fix pairing procedure ([`0a55dfe`](https://github.com/fhempy/fhempy/commit/0a55dfe280a1a7df7703c9520a5d7a58a3b2eb77))
+
+* fix(fhempy): disable pairing ([`72b3b93`](https://github.com/fhempy/fhempy/commit/72b3b9322e2977dfb5f8eb0fefe5a8987afd5621))
+
+
 ## v0.1.718 (2024-02-05)
 
 ### Chore
