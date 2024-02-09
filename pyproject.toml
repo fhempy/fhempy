@@ -104,7 +104,7 @@ python-miio = "==0.5.12"
 pyTibber = {version = "==0.28.2", python = "^3.10" }
 pytz = "==2023.3.post1"
 rctclient = "==0.0.3"
-ring_doorbell = "==0.8.5"
+ring_doorbell = "==0.8.7"
 RPi-GPIO = "==0.7.1"
 seatconnect = "==1.1.9"
 setuptools = "==69.0.3"
