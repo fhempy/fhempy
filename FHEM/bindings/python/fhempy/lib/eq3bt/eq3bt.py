@@ -308,7 +308,7 @@ class eq3bt(generic.FhemModule):
 
     async def update_schedule_readings(self):
         await fhem.readingsBeginUpdate(self.hash)
-        for day in self.thermostat.schedule.keys():
+        for day in list(self.thermostat.schedule.keys()):
             reading = f"schedule_{day}_1"
             if self.thermostat.schedule[day].base_temp == 0 or isinstance(
                 self.thermostat.schedule[day].next_change_at, int
