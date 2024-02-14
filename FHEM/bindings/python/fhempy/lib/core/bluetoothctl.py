@@ -169,7 +169,7 @@ class Bluetoothctl:
             res = self.process.expect(
                 [
                     "Pairing successful",
-                    "[agent] Enter passkey (number in 0-999999):",
+                    "Request passkey",
                     "Failed to pair",
                     pexpect.TIMEOUT,
                 ],
