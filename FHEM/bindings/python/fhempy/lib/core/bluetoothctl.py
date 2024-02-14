@@ -131,6 +131,8 @@ class Bluetoothctl:
         paired_devices = []
         try:
             out = self.get_output("paired-devices")
+            # add output of devices Paired command
+            out += self.get_output("devices Paired")
         except Exception as e:
             self.logger.error(e)
         else:
