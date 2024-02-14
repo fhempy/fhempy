@@ -2,6 +2,21 @@
 
 
 
+## v0.1.720 (2024-02-14)
+
+### Chore
+
+* chore: code style fixes ([`3a452e0`](https://github.com/fhempy/fhempy/commit/3a452e08d6f4ebbdc5188f86d9e2e448f1b67011))
+
+### Fix
+
+* fix(fhempy): fix peer installation ([`45d06ae`](https://github.com/fhempy/fhempy/commit/45d06ae518508fa1ee6776aa0867701d822a526a))
+
+* fix(fhempy): add check for &#34;devices Paired&#34; ([`243436b`](https://github.com/fhempy/fhempy/commit/243436b5d4d75fa9f0afa6148f300fd61d73f79c))
+
+* fix(bt_presence): fix readme (#332) ([`7e0149a`](https://github.com/fhempy/fhempy/commit/7e0149a28f52eadcdecaf3d40ab68addbff37cb1))
+
+
 ## v0.1.719 (2024-02-08)
 
 ### Fix
