@@ -2,6 +2,13 @@
 
 
 
+## v0.1.721 (2024-02-14)
+
+### Fix
+
+* fix(fhempy): fix bluetooth passkey handling ([`0a98d7e`](https://github.com/fhempy/fhempy/commit/0a98d7e3042bb01d4f43fd371571bacd08f0d516))
+
+
 ## v0.1.720 (2024-02-14)
 
 ### Chore
