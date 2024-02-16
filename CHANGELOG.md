@@ -2,6 +2,35 @@
 
 
 
+## v0.1.722 (2024-02-16)
+
+### Chore
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.13.2 to ==3.17.3 (#342) ([`2eaba7a`](https://github.com/fhempy/fhempy/commit/2eaba7a9662bb8c82f11ac16008ce33f7c9fa67d))
+
+* chore(deps-dev): update tox requirement from 4.11.3 to 4.12.1 (#341) ([`bd7d8dc`](https://github.com/fhempy/fhempy/commit/bd7d8dc3aa692c3f7d434d1a033ac1502b53ed01))
+
+* chore(deps-dev): update skodaconnect requirement from ==1.3.9 to ==1.3.10 (#343) ([`be9d2d7`](https://github.com/fhempy/fhempy/commit/be9d2d7b8775cf9057aed41c2415debac612422b))
+
+* chore(deps-dev): update pytest requirement from ^7.4.2 to &gt;=7.4.2,&lt;9.0.0 (#320) ([`129d8db`](https://github.com/fhempy/fhempy/commit/129d8db49b8e5e67f070fda8939dcb6cc35785f4))
+
+* chore(deps-dev): update goodwe requirement from ==0.2.33 to ==0.3.0 (#329) ([`4fc42b0`](https://github.com/fhempy/fhempy/commit/4fc42b03673644f1e9fc88ce541d691a491f184a))
+
+* chore(deps-dev): update cryptography requirement from ==41.0.7 to ==42.0.2 (#328) ([`a7d31f8`](https://github.com/fhempy/fhempy/commit/a7d31f8a12f7b625f81d007bced42c855fac57a7))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#335) ([`a8faebf`](https://github.com/fhempy/fhempy/commit/a8faebf53fb6f934bd7a3f9a3c765c3f91830990))
+
+* chore(deps): bump fhem/fhem-controls-actions from V2.2.1 to 2.3.0 (#336) ([`ce93812`](https://github.com/fhempy/fhempy/commit/ce9381213d98f6c3d3694ec333c8829af9f48a47))
+
+### Fix
+
+* fix(tuya_smartlife): add cryptography dependency ([`07add41`](https://github.com/fhempy/fhempy/commit/07add41deeae0fa29390b66cde6b9d020465b75b))
+
+* fix(fhempy): add connection_paired reading for bluetooth connections ([`2d99f0c`](https://github.com/fhempy/fhempy/commit/2d99f0cc70fdeeb00c25118ebca16fe172f0d090))
+
+* fix(eq3bt): fix schedule iteration error ([`e826fdf`](https://github.com/fhempy/fhempy/commit/e826fdf26915e41845abcb791483a8d516349758))
+
+
 ## v0.1.721 (2024-02-14)
 
 ### Fix
