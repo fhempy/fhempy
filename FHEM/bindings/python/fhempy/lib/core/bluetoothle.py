@@ -117,6 +117,8 @@ class BluetoothLE:
                 retry -= 1
                 time.sleep(5)
 
+        btctl.exit()
+
         return PairingState.FAILED
 
     async def update_adapters(self):
