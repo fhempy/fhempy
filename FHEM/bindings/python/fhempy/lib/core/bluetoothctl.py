@@ -166,40 +166,41 @@ class Bluetoothctl:
             self.logger.error(e)
             return PairingState.FAILED
         else:
-            res = self.process.expect(
-                [
-                    "Pairing successful",
-                    "Request passkey",
-                    "Failed to pair",
-                    pexpect.TIMEOUT,
-                ],
-                timeout=60,
-            )
-            if res == 1:
-                self.send(pin, 4)
+            try:
                 res = self.process.expect(
                     [
                         "Pairing successful",
+                        "Request passkey",
                         "Failed to pair",
-                        "AuthenticationFailed",
                         pexpect.TIMEOUT,
                     ],
                     timeout=60,
                 )
-                if res == 2:
-                    return PairingState.WRONG_PIN
-                elif res == 3:
-                    return PairingState.TIMEOUT
-                elif res == 1:
+                if res == 1:
+                    self.send(pin, 4)
+                    res = self.process.expect(
+                        [
+                            "Pairing successful",
+                            "Failed to pair",
+                            "AuthenticationFailed",
+                            pexpect.TIMEOUT,
+                        ],
+                        timeout=60,
+                    )
+                    if res == 2:
+                        return PairingState.WRONG_PIN
+                    elif res == 3:
+                        return PairingState.TIMEOUT
+                    elif res == 1:
+                        return PairingState.FAILED
+                    return PairingState.SUCCESS
+
+                elif res == 0:
+                    return PairingState.SUCCESS
+                elif res == 2:
                     return PairingState.FAILED
-                return PairingState.SUCCESS
-
-            elif res == 0:
-                return PairingState.SUCCESS
-            elif res == 2:
-                return PairingState.FAILED
-
-            return PairingState.TIMEOUT
+            except pexpect.TIMEOUT:
+                return PairingState.TIMEOUT
 
     def trust(self, mac_address):
         try:
