@@ -164,7 +164,7 @@ class Bluetoothctl:
             self.send(f"pair {mac_address}", 4)
         except Exception as e:
             self.logger.error(e)
-            return False
+            return PairingState.FAILED
         else:
             res = self.process.expect(
                 [
@@ -178,11 +178,28 @@ class Bluetoothctl:
             if res == 1:
                 self.send(pin, 4)
                 res = self.process.expect(
-                    ["Pairing successful", "Failed to pair", pexpect.TIMEOUT],
+                    [
+                        "Pairing successful",
+                        "Failed to pair",
+                        "AuthenticationFailed",
+                        pexpect.TIMEOUT,
+                    ],
                     timeout=60,
                 )
+                if res == 2:
+                    return PairingState.WRONG_PIN
+                elif res == 3:
+                    return PairingState.TIMEOUT
+                elif res == 1:
+                    return PairingState.FAILED
+                return PairingState.SUCCESS
 
-            return res == 0
+            elif res == 0:
+                return PairingState.SUCCESS
+            elif res == 2:
+                return PairingState.FAILED
+
+            return PairingState.TIMEOUT
 
     def trust(self, mac_address):
         try:
@@ -237,3 +254,11 @@ class Bluetoothctl:
                 timeout=60,
             )
             return res == 1
+
+
+# Enum class with the possible pairing states
+class PairingState:
+    SUCCESS = 0
+    WRONG_PIN = 1
+    TIMEOUT = 2
+    FAILED = 3

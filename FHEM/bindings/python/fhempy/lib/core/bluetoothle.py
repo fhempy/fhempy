@@ -16,7 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
-from .bluetoothctl import Bluetoothctl
+from .bluetoothctl import Bluetoothctl, PairingState
 
 
 class BluetoothLE:
@@ -67,6 +67,24 @@ class BluetoothLE:
         async with BluetoothLE.bluetoothctl_lock:
             ret = await utils.run_blocking(functools.partial(self._pair, self.pin))
 
+        # get enum text from PairingState from ret
+        if ret == PairingState.SUCCESS:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection_paired", "paired", 1
+            )
+        elif ret == PairingState.FAILED:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection_paired", "failed", 1
+            )
+        elif ret == PairingState.WRONG_PIN:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection_paired", "wrong PIN", 1
+            )
+        elif ret == PairingState.TIMEOUT:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection_paired", "timeout", 1
+            )
+
         return ret
 
     def _pair(self, pin, retry=3):
@@ -75,7 +93,7 @@ class BluetoothLE:
         paired_devices = btctl.get_paired_devices()
         if self.addr in [d["mac_address"] for d in paired_devices]:
             btctl.exit()
-            return True
+            return PairingState.SUCCESS
 
         while retry > 0:
             try:
@@ -86,11 +104,11 @@ class BluetoothLE:
                 time.sleep(10)
                 btctl.stop_scan()
                 pairing_successfull = btctl.pair(self.addr, pin)
-                if pairing_successfull:
+                if pairing_successfull == PairingState.SUCCESS:
                     btctl.trust(self.addr)
                     btctl.disconnect(self.addr)
                     btctl.exit()
-                    return True
+                    return pairing_successfull
                 else:
                     retry -= 1
                     time.sleep(5)
@@ -99,7 +117,7 @@ class BluetoothLE:
                 retry -= 1
                 time.sleep(5)
 
-        return False
+        return PairingState.FAILED
 
     async def update_adapters(self):
         self.adapters = await bluetooth_adapters.get_bluetooth_adapters()
