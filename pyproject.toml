@@ -124,7 +124,7 @@ youtube_dl = "==2021.12.17"
 
 
 [tool.poetry.group.dev.dependencies]
-tox = "4.11.3"
+tox = "4.12.1"
 pytest = "8.0.0"
 pytest-env = "1.1.0"
 pytest-mock = "3.11.1"
