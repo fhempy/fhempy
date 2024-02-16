@@ -69,19 +69,19 @@ class BluetoothLE:
 
         # get enum text from PairingState from ret
         if ret == PairingState.SUCCESS:
-            await fhem.readingsSingleUpdate(
+            await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection_paired", "paired", 1
             )
         elif ret == PairingState.FAILED:
-            await fhem.readingsSingleUpdate(
+            await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection_paired", "failed", 1
             )
         elif ret == PairingState.WRONG_PIN:
-            await fhem.readingsSingleUpdate(
+            await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection_paired", "wrong PIN", 1
             )
         elif ret == PairingState.TIMEOUT:
-            await fhem.readingsSingleUpdate(
+            await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection_paired", "timeout", 1
             )
 
@@ -182,6 +182,9 @@ class BluetoothLE:
             self.conf_checked = True
 
         if self.pairing_required and not self.paired:
+            await fhem.readingsSingleUpdateIfChanged(
+                self._dev_hash, "connection", "pairing", 1
+            )
             ret = await self.pair()
             if ret:
                 self.paired = True
@@ -214,7 +217,9 @@ class BluetoothLE:
         # get latest adapter list
         await self.update_adapters()
 
-        await fhem.readingsSingleUpdate(self._dev_hash, "connection", "connecting", 1)
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection", "connecting", 1
+        )
         self._disconnect_called = False
 
         for i in range(0, max_retries):
