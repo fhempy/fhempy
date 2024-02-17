@@ -2,6 +2,19 @@
 
 
 
+## v0.1.723 (2024-02-17)
+
+### Fix
+
+* fix(tuya_smartlife): fix save token call ([`af37fbd`](https://github.com/fhempy/fhempy/commit/af37fbd43ddc62697c0122dba3b7c55fefb81a81))
+
+* fix(fhempy): add bluetoothctl exit in case of pairing failed ([`5ddba8e`](https://github.com/fhempy/fhempy/commit/5ddba8e1294784bd504945fc03a28c72f93675de))
+
+* fix(fhempy): set connection reading to pairing during pairing process ([`f10d7cd`](https://github.com/fhempy/fhempy/commit/f10d7cdc32813f3e041bd7cfc0c2da3c40e6a3e7))
+
+* fix(fhempy): properly handle expect timeout ([`b8a1689`](https://github.com/fhempy/fhempy/commit/b8a16899d87d61cb6ed861cd6be4a2920e16b283))
+
+
 ## v0.1.722 (2024-02-16)
 
 ### Chore
