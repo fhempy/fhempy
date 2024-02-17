@@ -291,6 +291,7 @@ class TokenListener(SharingTokenListener):
     def update_token(self, token_info):
         self.logger.debug("update token info : %s", token_info)
         self.tuya_smartlife_setup.token_info = token_info
-        self.tuya_smartlife_setup.fhemdev.create_async_task(
-            self.tuya_smartlife_setup.save_token_info()
+        asyncio.run_coroutine_threadsafe(
+            self.tuya_smartlife_setup.save_token_info(),
+            self.tuya_smartlife_setup.fhemdev.loop,
         )
