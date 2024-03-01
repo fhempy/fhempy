@@ -1,7 +1,6 @@
 import asyncio
 
-from fhempy.lib import fhem, fhem_pythonbinding
-from fhempy.lib.generic import FhemModule
+from meross_iot.controller.mixins.electricity import ElectricityMixin
 from meross_iot.controller.mixins.garage import GarageOpenerMixin
 from meross_iot.controller.mixins.light import LightMixin
 from meross_iot.controller.mixins.roller_shutter import RollerShutterTimerMixin
@@ -9,6 +8,9 @@ from meross_iot.controller.mixins.spray import SprayMixin
 from meross_iot.controller.mixins.thermostat import ThermostatModeMixin
 from meross_iot.controller.mixins.toggle import ToggleMixin, ToggleXMixin
 from meross_iot.model.enums import Namespace, OnlineStatus, SprayMode, ThermostatMode
+
+from fhempy.lib import fhem, fhem_pythonbinding
+from fhempy.lib.generic import FhemModule
 
 
 class meross_device:
@@ -334,6 +336,16 @@ class meross_device:
                 state_val = "intermittent"
             elif mode == SprayMode.OFF:
                 state_val = "off"
+
+        # update consumption values from device
+        if isinstance(self._device, ElectricityMixin):
+            instant_consumption = await self._device.async_get_instant_metrics()
+            power = instant_consumption.power
+            voltage = instant_consumption.voltage
+            current = instant_consumption.current
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "power", power)
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "voltage", voltage)
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "current", current)
 
         await fhem.readingsBulkUpdateIfChanged(self.hash, "state", state_val)
         await fhem.readingsEndUpdate(self.hash, 1)
