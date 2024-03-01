@@ -2,6 +2,33 @@
 
 
 
+## v0.1.724 (2024-03-01)
+
+### Chore
+
+* chore(deps-dev): update pytest requirement from 8.0.0 to 8.0.2 (#352) ([`e3a06c8`](https://github.com/fhempy/fhempy/commit/e3a06c8e41471cf991f2e2f88ec2f8e3b639c807))
+
+* chore(deps-dev): update cryptography requirement from ==42.0.2 to ==42.0.5 (#354) ([`38a81e3`](https://github.com/fhempy/fhempy/commit/38a81e37c607e2bbf96137e45b157536048caa26))
+
+* chore(deps-dev): update pytz requirement from ==2023.3.post1 to ==2024.1 (#353) ([`53249a6`](https://github.com/fhempy/fhempy/commit/53249a6715ea058ff326746417902628a54a4703))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#351) ([`35bfd52`](https://github.com/fhempy/fhempy/commit/35bfd52b62204654e6a0ee857d13a235d798d7d3))
+
+* chore(deps-dev): update pytest-mock requirement from 3.11.1 to 3.12.0 (#347) ([`2a7a11e`](https://github.com/fhempy/fhempy/commit/2a7a11e5fdb2197d0c0264ab06fd304339812449))
+
+* chore(deps-dev): update playwright requirement from ==1.41.1 to ==1.41.2 (#345) ([`c48c60c`](https://github.com/fhempy/fhempy/commit/c48c60c4a98ec136be8306ab56e0320863734cc6))
+
+* chore(deps-dev): update meross-iot requirement from ==0.4.6.0 to ==0.4.6.2 (#346) ([`620cf69`](https://github.com/fhempy/fhempy/commit/620cf69b4851a3ab3d2235d8b84c97966f802d53))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.28.0 to 1.29.0 (#349) ([`a06a8b6`](https://github.com/fhempy/fhempy/commit/a06a8b6c7a876435c55c19b6e3b5f7f4fc7fed68))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#348) ([`e32c637`](https://github.com/fhempy/fhempy/commit/e32c637adbfff3ae831b43371e0cae0e9405bf0f))
+
+### Feature
+
+* feat(meross): add power, voltage, current readings ([`5456fe8`](https://github.com/fhempy/fhempy/commit/5456fe8a581cd7688234385d7851d4a269501e03))
+
+
 ## v0.1.723 (2024-02-17)
 
 ### Fix
