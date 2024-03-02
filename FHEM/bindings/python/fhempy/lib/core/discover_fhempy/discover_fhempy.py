@@ -1,9 +1,10 @@
 import asyncio
 import logging
 
+from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
+
 from fhempy.lib import fhem
 from fhempy.lib.core.zeroconf import zeroconf as fzeroconf
-from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
 
 
 class discover_fhempy:
@@ -55,12 +56,14 @@ class discover_fhempy:
                         )
                     ):
                         ip = get_value("ip")
-                        port = get_value("port")
-                        ipstr = ip.replace(".", "_")
-                        await fhem.CommandDefine(
-                            self.hash,
-                            f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} fhempy",
-                        )
+                        # prevent adding local ip
+                        if ip != "127.0.1.1":
+                            port = get_value("port")
+                            ipstr = ip.replace(".", "_")
+                            await fhem.CommandDefine(
+                                self.hash,
+                                f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} fhempy",
+                            )
             else:
                 return
 
