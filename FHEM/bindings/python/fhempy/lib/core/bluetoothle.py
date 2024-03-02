@@ -64,6 +64,10 @@ class BluetoothLE:
         if self.addr is None:
             return False
 
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection_paired", "pairing", 1
+        )
+
         async with BluetoothLE.bluetoothctl_lock:
             ret = await utils.run_blocking(functools.partial(self._pair, self.pin))
 
