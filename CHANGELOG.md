@@ -2,6 +2,35 @@
 
 
 
+## v0.1.725 (2024-03-07)
+
+### Chore
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.17.3 to ==3.17.5 (#358) ([`7fcf6e4`](https://github.com/fhempy/fhempy/commit/7fcf6e4c52f8291488be381b2c273cf41ac78c97))
+
+* chore(deps-dev): update goodwe requirement from ==0.3.0 to ==0.3.1 (#357) ([`a4b8b32`](https://github.com/fhempy/fhempy/commit/a4b8b32e08e1d58a23aed4898b4dfcb1278b3450))
+
+* chore(deps-dev): update tox requirement from 4.12.1 to 4.14.1 (#361) ([`397a418`](https://github.com/fhempy/fhempy/commit/397a41818e85e87358d23e327aeb894e1430848b))
+
+### Feature
+
+* feat(fhempy): inform about pairing process ([`1486dad`](https://github.com/fhempy/fhempy/commit/1486dada37c83e49870223499248cf38e3646d5a))
+
+### Fix
+
+* fix(fhempy): downgrade cryptography ([`ba5f542`](https://github.com/fhempy/fhempy/commit/ba5f542c55f4164d8fbde605bf8144afcc659ee5))
+
+* fix(fhempy): fix cryptography dependency ([`0fa5770`](https://github.com/fhempy/fhempy/commit/0fa5770e9353e003232b87718d49245b15032eb0))
+
+* fix(fhempy): update zeroconf ([`b8181c1`](https://github.com/fhempy/fhempy/commit/b8181c1fa71ff92928ef9d4746b99b764decf60f))
+
+* fix(esphome): update library ([`2458be6`](https://github.com/fhempy/fhempy/commit/2458be69c2aeee0abe24f9336d48423d6a0db110))
+
+* fix(esphome): update library ([`f48c017`](https://github.com/fhempy/fhempy/commit/f48c0176c9df72d9540bab393277e1f807af6d69))
+
+* fix(fhempy): prevent adding 127.0.1.1 peer ([`dedb8df`](https://github.com/fhempy/fhempy/commit/dedb8df6277edd653f660b5bf08d643e91100219))
+
+
 ## v0.1.724 (2024-03-01)
 
 ### Chore
