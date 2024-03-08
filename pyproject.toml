@@ -99,7 +99,7 @@ pyit600 = "==0.5.1"
 pyjwt = "==2.8.0"
 pyprusalink = "==2.0.1"
 pyric = "==0.1.6.3"
-python-dateutil = "==2.8.2"
+python-dateutil = "==2.9.0.post0"
 python-miio = "==0.5.12"
 pyTibber = {version = "==0.28.2", python = "^3.10" }
 pytz = "==2024.1"
