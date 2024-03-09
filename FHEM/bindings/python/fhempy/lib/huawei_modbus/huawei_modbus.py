@@ -12,7 +12,13 @@ class huawei_modbus(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
 
-        attr_config = {}
+        attr_config = {
+            "interval": {
+                "default": 30,
+                "format": "int",
+                "help": "Update interval in seconds",
+            },
+        }
         await self.set_attr_config(attr_config)
 
         set_config = {}
@@ -56,7 +62,7 @@ class huawei_modbus(generic.FhemModule):
             except Exception as e:
                 self.logger.error(e)
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(self._attr_interval)
 
     async def connect(self):
         from huawei_solar import HuaweiSolarBridge
