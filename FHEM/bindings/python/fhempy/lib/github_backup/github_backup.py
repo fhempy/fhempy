@@ -23,7 +23,7 @@ class github_backup(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "backup_time": {
                 "default": "03:38",
@@ -34,21 +34,23 @@ class github_backup(generic.FhemModule):
             "backup_files": {
                 "default": (
                     "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
+                    + "fhem/www/gplot/SVG*.gplot"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
                     + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
                     + ".fhempy/zigbee2mqtt/data/database.db,"
-                    + "esphome_config/*.yaml"
+                    + "esphome_config/*.yaml",
                 ),
                 "help": (
                     "Comma separated list of files to backup.<br>"
                     + "Default:<br>"
                     + "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
+                    + "fhem/www/gplot/SVG*.gplot"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
                     + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
                     + ".fhempy/zigbee2mqtt/data/database.db,"
-                    + "esphome_config/*.yaml"
+                    + "esphome_config/*.yaml",
                 ),
             },
         }
