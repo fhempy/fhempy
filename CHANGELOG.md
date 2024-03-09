@@ -2,6 +2,15 @@
 
 
 
+## v0.1.726 (2024-03-09)
+
+### Feature
+
+* feat(huawei_modbus): support interval attribute ([`66b4799`](https://github.com/fhempy/fhempy/commit/66b479994b4f6d71eac9846a9dad7d84ff8fa082))
+
+* feat(github_backup): backup SVG*.gplot files ([`0215ea1`](https://github.com/fhempy/fhempy/commit/0215ea1642b1dd0a3f8d2b3a79e4779d369fbdfc))
+
+
 ## v0.1.725 (2024-03-07)
 
 ### Chore
