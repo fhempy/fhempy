@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 
 from tibber import Tibber
 
@@ -129,13 +130,11 @@ class tibber(generic.FhemModule):
             except Exception:
                 self.logger.error("Failed to update readings")
             await fhem.readingsEndUpdate(self.hash, 1)
-            #  update reading every new hour
-            if self._attr_intervall < 3600:
-                await asyncio.sleep(self._attr_interval)
-            else:
-                now = datetime.datetime.now()
-                remaining_seconds = 3600 - (now.minute * 60 + now.second)
-                await asyncio.sleep(remaining_seconds+10)
+            
+            #  update readings every new hour to fetch new current_* data
+            now = datetime.datetime.now()
+            remaining_seconds = 3600 - (now.minute * 60 + now.second)
+            await asyncio.sleep(remaining_seconds+10)
 
     async def Undefine(self, hash):
         if self.tibber_connection:
