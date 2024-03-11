@@ -55,6 +55,9 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBulkUpdate(self.hash, "rt_" + name, data[name])
         except Exception:
             self.logger.error("Failed to update realtime readings")
+        
+        # additional total consumption / production reading
+        await fhem.readingsBulkUpdate(self.hash, "rt_powerNet" , data["power"]-data["powerProduction"])
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_home_data(self):
