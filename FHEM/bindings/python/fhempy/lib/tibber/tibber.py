@@ -112,6 +112,9 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBulkUpdate(self.hash, "home_name", home.name)
                 await fhem.readingsBulkUpdate(self.hash, "peak_hour", home.peak_hour)
 
+                #  price information incl price rank
+                price, level, time, rank = home.current_price_data()
+               
                 # price info
                 await fhem.readingsBulkUpdate(
                     self.hash, "current_price_energy", home.current_price_info["energy"]
@@ -130,6 +133,11 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBulkUpdate(
                     self.hash, "current_price_level", home.current_price_info["level"]
                 )
+                await fhem.readingsBulkUpdate(
+                    self.hash, "current_price_rank", rank
+                )
+
+            
             except Exception:
                 self.logger.error("Failed to update readings")
             await fhem.readingsEndUpdate(self.hash, 1)
