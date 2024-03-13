@@ -39,6 +39,14 @@ class volvo(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
 
+        attr_config = {
+            "interval": {
+                "default": 60,
+                "format": "int",
+                "help": "Change interval, default is 60.",
+            }
+        }
+
         self.session = aiohttp.ClientSession()
 
         self.attr_config = {
@@ -193,7 +201,7 @@ class volvo(generic.FhemModule):
 
         while True:
             await self.get_regular_update_urls()
-            await asyncio.sleep(1800)
+            await asyncio.sleep(self._attr_interval)
 
     async def get_commands(self):
         cmds = await self.volvo_get(
@@ -255,16 +263,26 @@ class volvo(generic.FhemModule):
         for url in volvo.REGULAR_UPDATE_URLS:
             start = url.rfind("/") + 1
             domain = url[start:].replace("-", "_")
-            data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
-            await self.update_readings(data["data"], domain)
+            try:
+                data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
+                await self.update_readings(data["data"], domain)
+            except Exception:
+                self.logger.error("Failed to get data from " + url)
 
     async def get_cars(self):
         cars = await self.volvo_get(volvo.VEHICLELIST)
         if len(cars["vehicles"]) == 0:
             self.logger.error("No cars found")
             return
+        
+        #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
+        #TODO let the user select the right car
 
-        self.vin = cars["vehicles"][0]["id"]
+        if len(cars["vehicles"]) > 1:
+             self.vin = cars["vehicles"][1]["id"]
+        else:
+             self.vin = cars["vehicles"][0]["id"]
+
 
     async def update_readings(self, data, domain=""):
         try:
