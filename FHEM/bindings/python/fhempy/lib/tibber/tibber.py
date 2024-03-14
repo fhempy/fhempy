@@ -67,6 +67,8 @@ class tibber(generic.FhemModule):
         if home.has_real_time_consumption:
             await home.rt_subscribe(self._rt_callback)
 
+        self.create_async_task(self.update_current__price_data())
+
         while True:
             try:
                 await home.fetch_consumption_data()
@@ -111,7 +113,27 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBulkUpdate(self.hash, "month_cost", home.month_cost)
                 await fhem.readingsBulkUpdate(self.hash, "home_name", home.name)
                 await fhem.readingsBulkUpdate(self.hash, "peak_hour", home.peak_hour)
+                          
+            except Exception:
+                self.logger.error("Failed to update readings")
+            await fhem.readingsEndUpdate(self.hash, 1)
+            
+            await asyncio.sleep(self._attr_interval)
 
+    async def update_current__price_data(self):
+        home = self.tibber_connection.get_homes()[0]
+        
+        while True:
+            try:
+                await home.update_info()
+                await home.update_price_info()
+            except Exception:
+                self.logger.error("Failed to update data from tibber, retry in 60s")
+                await asyncio.sleep(60)
+                continue
+
+            await fhem.readingsBeginUpdate(self.hash)
+            try:
                 #  price information incl price rank
                 price, level, time, rank = home.current_price_data()
                
@@ -145,7 +167,7 @@ class tibber(generic.FhemModule):
             #  update readings every new hour to fetch new current_* data
             now = datetime.datetime.now()
             remaining_seconds = 3600 - (now.minute * 60 + now.second)
-            await asyncio.sleep(remaining_seconds+10)
+            await asyncio.sleep(remaining_seconds+5)
 
     async def Undefine(self, hash):
         if self.tibber_connection:
