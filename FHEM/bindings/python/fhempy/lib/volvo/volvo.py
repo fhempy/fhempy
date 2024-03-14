@@ -4,6 +4,8 @@ import aiohttp
 
 from .. import fhem, generic
 
+import datetime as dt
+
 
 class volvo(generic.FhemModule):
 
@@ -39,13 +41,7 @@ class volvo(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
 
-        attr_config = {
-            "interval": {
-                "default": 60,
-                "format": "int",
-                "help": "Change interval, default is 60.",
-            }
-        }
+        
 
         self.session = aiohttp.ClientSession()
 
@@ -54,10 +50,10 @@ class volvo(generic.FhemModule):
                 "default": "",
                 "help": "Select the car you would like to control.",
             },
-            "update_interval": {
-                "default": 5,
+            "interval": {
+                "default": 60,
                 "format": "int",
-                "help": "Readings update intervall in minutes (default 5min).",
+                "help": "Readings update intervall in seconds (default 1min).",
             },
         }
         await self.set_attr_config(self.attr_config)
@@ -267,8 +263,8 @@ class volvo(generic.FhemModule):
                 data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
                 await self.update_readings(data["data"], domain)
             except Exception:
-                self.logger.error("Failed to get data from " + url)
-
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "failed to read data from URL", 1)
+        
     async def get_cars(self):
         cars = await self.volvo_get(volvo.VEHICLELIST)
         if len(cars["vehicles"]) == 0:
