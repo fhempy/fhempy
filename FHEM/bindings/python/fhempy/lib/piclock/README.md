@@ -3,6 +3,19 @@
 PiClock for MAX7219 displays including current temperature and weather condition.
 It also supports buttons to execute commands if GPIO pin gets high.
 
+
+# Installation
+Install required libraries
+```
+sudo apt-get install libopenjp2-7-dev 
+```
+
+Enable SPI in /boot/firmware/config.txt
+´´´
+dtparam=spi=on
+´´´
+
+
 # Usage
 ```
 define piclock fhempy piclock DEVICE:TEMP_READING DEVICE:WEATHER_READING BUTTONS
