@@ -67,7 +67,8 @@ class tibber(generic.FhemModule):
         if home.has_real_time_consumption:
             await home.rt_subscribe(self._rt_callback)
 
-        self.create_async_task(self.update_current__price_data())
+        self.create_async_task(self.update_current_price_data())
+        self.create_async_task(self.update_prices_forPeriods())
 
         while True:
             try:
@@ -113,63 +114,160 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBulkUpdate(self.hash, "month_cost", home.month_cost)
                 await fhem.readingsBulkUpdate(self.hash, "home_name", home.name)
                 await fhem.readingsBulkUpdate(self.hash, "peak_hour", home.peak_hour)
-                          
+
+                
             except Exception:
                 self.logger.error("Failed to update readings")
             await fhem.readingsEndUpdate(self.hash, 1)
             
             await asyncio.sleep(self._attr_interval)
 
-    async def update_current__price_data(self):
-        home = self.tibber_connection.get_homes()[0]
-        
-        while True:
-            try:
-                await home.update_info()
-                await home.update_price_info()
-            except Exception:
-                self.logger.error("Failed to update data from tibber, retry in 60s")
-                await asyncio.sleep(60)
-                continue
+    async def update_current_price_data(self):
+            """
+            Updates the current price data from Tibber API and updates the readings in FHEM.
 
-            await fhem.readingsBeginUpdate(self.hash)
-            try:
-                #  price information incl price rank
-                price, level, time, rank = home.current_price_data()
-               
-                # price info
-                await fhem.readingsBulkUpdate(
-                    self.hash, "current_price_energy", home.current_price_info["energy"]
-                )
-                await fhem.readingsBulkUpdate(
-                    self.hash, "current_price_tax", home.current_price_info["tax"]
-                )
-                await fhem.readingsBulkUpdate(
-                    self.hash, "current_price_total", home.current_price_info["total"]
-                )
-                await fhem.readingsBulkUpdate(
-                    self.hash,
-                    "current_price_startsat",
-                    home.current_price_info["startsAt"],
-                )
-                await fhem.readingsBulkUpdate(
-                    self.hash, "current_price_level", home.current_price_info["level"]
-                )
-                await fhem.readingsBulkUpdate(
-                    self.hash, "current_price_rank", rank
-                )
+            This method retrieves the current price information from the Tibber API and updates the corresponding readings
+            in FHEM. It continuously fetches the latest price data and updates the readings every new hour.
 
+            Raises:
+                Exception: If there is an error updating the data from Tibber API or updating the readings in FHEM.
+
+            """
+            home = self.tibber_connection.get_homes()[0]
             
-            except Exception:
-                self.logger.error("Failed to update readings")
-            await fhem.readingsEndUpdate(self.hash, 1)
-            
-            #  update readings every new hour to fetch new current_* data
-            now = datetime.datetime.now()
-            remaining_seconds = 3600 - (now.minute * 60 + now.second)
-            await asyncio.sleep(remaining_seconds+5)
+            while True:
+                try:
+                    await home.update_info()
+                    await home.update_price_info()
+                except Exception:
+                    self.logger.error("Failed to update data from tibber, retry in 60s")
+                    await asyncio.sleep(60)
+                    continue
+
+                await fhem.readingsBeginUpdate(self.hash)
+                try:
+                    #  price information incl price rank
+                    price, level, time, rank = home.current_price_data()
+                   
+                    price_list = list(home._price_info.values())
+                    time_list = list(home._price_info.keys())
+                    now = datetime.datetime.now()
+
+                    # find the index of the element with lowest price for the rest of the day 
+                    cheapest_price_idx_today_remaing = price_list.index(min(price_list[now.hour:24]))    
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_remaining_startsAt", time_list[cheapest_price_idx_today_remaing])
+
+                    # find the index of the element with highest price for the rest of the day 
+                    highest_price_idx_today_remaing = price_list.index(max(price_list[now.hour:24]))    
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_remaining_startAt", time_list[highest_price_idx_today_remaing])
+
+
+                    # price info
+                    await fhem.readingsBulkUpdate(
+                        self.hash, "current_price_energy", home.current_price_info["energy"]
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash, "current_price_tax", home.current_price_info["tax"]
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash, "current_price_total", home.current_price_info["total"]
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash,
+                        "current_price_startsat",
+                        home.current_price_info["startsAt"],
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash, "current_price_level", home.current_price_info["level"]
+                    )
+                    await fhem.readingsBulkUpdate(
+                        self.hash, "current_price_rank", rank
+                    )
+
+                
+                except Exception:
+                    self.logger.error("Failed to update readings")
+                await fhem.readingsEndUpdate(self.hash, 1)
+                
+                #  update readings every new hour to fetch new current_* data
+                
+                remaining_seconds = 3600 - (now.minute * 60 + now.second)
+                await asyncio.sleep(remaining_seconds+5)
 
     async def Undefine(self, hash):
         if self.tibber_connection:
             await self.tibber_connection.close_connection()
         return await super().Undefine(hash)
+    
+    async def update_prices_forPeriods(self):
+            """
+            Updates the price information for different periods and stores the results in FHEM readings.
+
+            This method retrieves the price information for different periods from the Tibber API and calculates
+            the periods with the lowest and highest prices. It then updates the corresponding readings in FHEM.
+
+            Raises:
+                Exception: If there is an error updating the data from Tibber or updating the readings in FHEM.
+
+            """
+            home = self.tibber_connection.get_homes()[0]
+            
+            while True:
+                try:
+                    await home.update_info()
+                    await home.update_price_info()
+                except Exception:
+                    self.logger.error("Failed to update data from tibber, retry in 60s")
+                    await asyncio.sleep(60)
+                    continue
+
+                await fhem.readingsBeginUpdate(self.hash)
+                try:
+
+                    time_list = list(home._price_info.keys())
+                    price_list = list(home._price_info.values())
+
+                    # find the index of the element with lowest price 
+                    cheapest_price_idx_today = price_list.index(min(price_list[:24]))    
+
+                    # find 3h window with lowest price
+                    sum_list = [sum(price_list[i:i+3]) for i in range(len(price_list)-3)]
+                    cheapest_price_3h_today_idx = sum_list.index(min(sum_list))
+
+                    #find 2h window with lowest price
+                    sum_list = [sum(price_list[i:i+2]) for i in range(len(price_list)-2)]
+                    cheapest_price_2h_today_idx = sum_list.index(min(sum_list))
+                
+                    # find the index of the element with highest price 
+                    highest_price_idx_today = price_list.index(max(price_list[:24]))    
+
+                    # find 3h window with highest price
+                    sum_list = [sum(price_list[i:i+3]) for i in range(len(price_list)-3)]
+                    highest_price_3h_today_idx= sum_list.index(max(sum_list))
+
+                    #find 2h window with highest price
+                    sum_list = [sum(price_list[i:i+2]) for i in range(len(price_list)-2)]
+                    highest_price_2h_today_idx = sum_list.index(max(sum_list))
+
+                    # update readings
+
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_today", price_list[cheapest_price_idx_today])
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_today_startsAt", time_list[cheapest_price_idx_today])  
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_3h_window_startsAt", time_list[cheapest_price_3h_today_idx])
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_2h_window_startsAt", time_list[cheapest_price_2h_today_idx])
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_today", price_list[highest_price_idx_today])
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_today_startsAt", time_list[highest_price_idx_today])
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_3h_window_startsAt", time_list[highest_price_3h_today_idx])
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_2h_window_startsAt", time_list[highest_price_2h_today_idx])
+
+
+                
+                except Exception:
+                    self.logger.error("Failed to update readings")
+                
+                await fhem.readingsEndUpdate(self.hash, 1)
+                # get remaining seconds until next day and sleep
+                now = datetime.datetime.now()
+                remaining_seconds = 86400 - (now.hour * 3600 + now.minute * 60 + now.second)+10
+                await asyncio.sleep(remaining_seconds+5)
+
