@@ -2,6 +2,23 @@
 
 
 
+## v0.1.727 (2024-03-16)
+
+### Chore
+
+* chore(deps-dev): update playwright requirement from ==1.41.2 to ==1.42.0 (#364) ([`27d8532`](https://github.com/fhempy/fhempy/commit/27d8532d3bf885cd41f38ed708fda5f2ad961e85))
+
+* chore(deps-dev): update setuptools requirement from ==69.0.3 to ==69.1.1 (#362) ([`43f3097`](https://github.com/fhempy/fhempy/commit/43f309752797abeb84d11ae8ba857186af54487d))
+
+* chore(deps-dev): update python-dateutil requirement from ==2.8.2 to ==2.9.0.post0 (#363) ([`90c6886`](https://github.com/fhempy/fhempy/commit/90c68864f256ae34e1be34cdbebcec1b0a44fb1d))
+
+### Fix
+
+* fix(github_backup): fix helptext ([`e6fc0d0`](https://github.com/fhempy/fhempy/commit/e6fc0d049626f3324789123ad8ce70216e594323))
+
+* fix(piclock): add installation details ([`65ea1ba`](https://github.com/fhempy/fhempy/commit/65ea1bac80ab55fbdd705a5f70a4b1e04fdc5d78))
+
+
 ## v0.1.726 (2024-03-09)
 
 ### Feature
