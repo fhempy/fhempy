@@ -51,7 +51,7 @@ class volvo(generic.FhemModule):
                 "help": "Select the car you would like to control.",
             },
             "interval": {
-                "default": 60,
+                "default": 300,
                 "format": "int",
                 "help": "Readings update intervall in seconds (default 1min).",
             },
@@ -200,9 +200,14 @@ class volvo(generic.FhemModule):
             await asyncio.sleep(self._attr_interval)
 
     async def get_commands(self):
-        cmds = await self.volvo_get(
+        try:
+            cmds = await self.volvo_get(
             volvo.VEHICLE_COMMANDS, volvo.VEHICLE_COMMANDS_ACCEPT
-        )
+            )
+        except Exception:
+            self.logger.exception("Failed to get commands")
+            return
+        
         set_conf = {}
         for cmd in cmds["data"]:
             set_conf[cmd["command"].lower()] = {
@@ -266,19 +271,24 @@ class volvo(generic.FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "failed to read data from URL", 1)
         
     async def get_cars(self):
-        cars = await self.volvo_get(volvo.VEHICLELIST)
-        if len(cars["vehicles"]) == 0:
-            self.logger.error("No cars found")
+        
+        try:
+            cars = await self.volvo_get(volvo.VEHICLELIST)
+            if len(cars["vehicles"]) == 0:
+                self.logger.error("No cars found")
+                return
+            
+            #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
+            #TODO let the user select the right car
+
+            if len(cars["vehicles"]) > 1:
+                 self.vin = cars["vehicles"][1]["id"]
+            else:
+                 self.vin = cars["vehicles"][0]["id"]
+        except Exception:
+            self.logger.exception("Failed to get cars")
             return
         
-        #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
-        #TODO let the user select the right car
-
-        if len(cars["vehicles"]) > 1:
-             self.vin = cars["vehicles"][1]["id"]
-        else:
-             self.vin = cars["vehicles"][0]["id"]
-
 
     async def update_readings(self, data, domain=""):
         try:
@@ -309,6 +319,13 @@ class volvo(generic.FhemModule):
 
                 if resp.status == 200:
                     return response
+                elif resp.status == 403:
+                  await fhem.readingsSingleUpdateIfChanged(
+                    self.hash,
+                    "state",
+                    response,
+                    1,
+                )  
                 else:
                     self.logger.error(f"Failed to get data from {url}: {response}")
         except Exception:
