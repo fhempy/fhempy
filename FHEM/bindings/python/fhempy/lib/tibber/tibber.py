@@ -149,18 +149,18 @@ class tibber(generic.FhemModule):
                     #  price information incl price rank
                     price, level, time, rank = home.current_price_data()
                    
-                    price_list = list(home._price_info.values())
-                    time_list = list(home._price_info.keys())
+                    #price_list = list(home._price_info.values())
+                    #time_list = list(home._price_info.keys())
                     now = datetime.datetime.now()
-
+                    
                     # find the index of the element with lowest price for the rest of the day 
-                    cheapest_price_idx_today_remaing = price_list.index(min(price_list[now.hour:24]))    
-                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_remaining_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_idx_today_remaing]))
+                    #cheapest_price_idx_today_remaing = price_list.index(min(price_list[now.hour:24]))    
+                    #await fhem.readingsBulkUpdate(self.hash, "cheapest_price_remaining_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_idx_today_remaing]))
 
                     # find the index of the element with highest price for the rest of the day 
-                    highest_price_idx_today_remaing = price_list.index(max(price_list[now.hour:24]))    
-                    await fhem.readingsBulkUpdate(self.hash, "highest_price_remaining_startAt", datetime.datetime.fromisoformat(time_list[highest_price_idx_today_remaing]))
-
+                    #highest_price_idx_today_remaing = price_list.index(max(price_list[now.hour:24]))    
+                    #await fhem.readingsBulkUpdate(self.hash, "highest_price_remaining_startAt", datetime.datetime.fromisoformat(time_list[highest_price_idx_today_remaing]))
+                    
 
                     # price info
                     await fhem.readingsBulkUpdate(
@@ -228,8 +228,11 @@ class tibber(generic.FhemModule):
                     price_list = list(home._price_info.values())
                     now = datetime.datetime.now()
 
-                    # find the index of the element with lowest price 
+                    # find the index of the element with lowest price today
                     cheapest_price_idx_today = price_list.index(min(price_list[now.hour:24]))    
+
+                    # find the index of the element with lowest price 
+                    cheapest_price_idx_total = price_list.index(min(price_list[now.hour:]))
 
                     # find 3h window with lowest price
                     cheapest_price_3h_idx = min(range(now.hour, len(price_list) - 3), key=lambda i: sum(price_list[i:i+3]))
@@ -238,8 +241,11 @@ class tibber(generic.FhemModule):
                     #find 2h window with lowest price
                     cheapest_price_2h_idx = min(range(now.hour, len(price_list) - 2), key=lambda i: sum(price_list[i:i+2]))
                 
+                    # find the index of the element with highest price today
+                    highest_price_idx_today = price_list.index(max(price_list[now.hour:24])) 
+
                     # find the index of the element with highest price 
-                    highest_price_idx_today = price_list.index(max(price_list[now.hour:24]))    
+                    highest_price_idx_total = price_list.index(max(price_list[now.hour:]))    
 
                     # find 3h window with highest price
                     highest_price_3h_idx = max(range(now.hour, len(price_list) - 3), key=lambda i: sum(price_list[i:i+3]))
@@ -250,11 +256,15 @@ class tibber(generic.FhemModule):
                     # update readings
 
                     await fhem.readingsBulkUpdate(self.hash, "cheapest_price_today", price_list[cheapest_price_idx_today])
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_total", price_list[cheapest_price_idx_total])
                     await fhem.readingsBulkUpdate(self.hash, "cheapest_price_today_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_idx_today]))  
+                    await fhem.readingsBulkUpdate(self.hash, "cheapest_price_total_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_idx_total]))
                     await fhem.readingsBulkUpdate(self.hash, "cheapest_price_3h_window_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_3h_idx]))
                     await fhem.readingsBulkUpdate(self.hash, "cheapest_price_2h_window_startsAt", datetime.datetime.fromisoformat(time_list[cheapest_price_2h_idx]))
                     await fhem.readingsBulkUpdate(self.hash, "highest_price_today", price_list[highest_price_idx_today])
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_total", price_list[highest_price_idx_total])    
                     await fhem.readingsBulkUpdate(self.hash, "highest_price_today_startsAt", datetime.datetime.fromisoformat(time_list[highest_price_idx_today]))
+                    await fhem.readingsBulkUpdate(self.hash, "highest_price_total_startsAt", datetime.datetime.fromisoformat(time_list[highest_price_idx_total]))
                     await fhem.readingsBulkUpdate(self.hash, "highest_price_3h_window_startsAt", datetime.datetime.fromisoformat(time_list[highest_price_3h_idx]))
                     await fhem.readingsBulkUpdate(self.hash, "highest_price_2h_window_startsAt", datetime.datetime.fromisoformat(time_list[highest_price_2h]))
 

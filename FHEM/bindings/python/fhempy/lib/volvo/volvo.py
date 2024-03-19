@@ -280,6 +280,9 @@ class volvo(generic.FhemModule):
             
             #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
             #TODO let the user select the right car
+            
+            #Schreibe die Liste von vehicles ids in das attribute cars
+             await fhem.addToDevAttrList(self.hash, "cars", cars["vehicles"])
 
             if len(cars["vehicles"]) > 1:
                  self.vin = cars["vehicles"][1]["id"]
@@ -288,7 +291,7 @@ class volvo(generic.FhemModule):
         except Exception:
             self.logger.exception("Failed to get cars")
             return
-        
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "cars", cars.items, 1)
 
     async def update_readings(self, data, domain=""):
         try:
