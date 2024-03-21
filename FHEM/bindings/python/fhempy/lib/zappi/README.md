@@ -1,8 +1,8 @@
 
 # Zappi
-This module connects to your Volvo account and retrieves data from your car. It can also be used to activate climate control, lock/unlock, etc..
+This module privides the data from a Zappi charger wallbox. Optional it shows the measurements from connected harvi boxes. It can also be used to start/stop the charging, select charging mnode and set greenlevel for ECO+ mode,
 
-Thanks to ...
+Special thanks to CJNE for proving the myenergi API
 
 ## Setup
 
