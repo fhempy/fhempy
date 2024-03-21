@@ -2,6 +2,22 @@
 
 
 
+## v0.1.728 (2024-03-20)
+
+### Unknown
+
+* adding features to tibber and adding zappi charger device (#371)
+
+* * chore(deps-tibber):   update pyTibber to ==0.29.0
+
+* feat(tibber):   update price latest every new hour, adding 1h ,2h and 3h stats for highest and lowest price
+
+* * feat(zappi): add module for zappi charger
+
+* * chore(README.md): added zappi to the list of supported devices
+``` ([`a498b39`](https://github.com/fhempy/fhempy/commit/a498b39e10a8d62598b51221560ba179f75325e6))
+
+
 ## v0.1.727 (2024-03-16)
 
 ### Chore
