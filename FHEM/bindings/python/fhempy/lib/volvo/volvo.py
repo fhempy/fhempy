@@ -280,7 +280,14 @@ class volvo(generic.FhemModule):
             
             #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
             #TODO let the user select the right car
-            
+            if (len(cars["vehicles"]) > 1):
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "more than one car found. Please define the attribute VID  ", 1)
+
+            #await fhem.AttrVal(self.hash, "car", cars["vehicles"][0]["id"])
+            testVar = None
+            await fhem.AttrVal(self.hash, "VID", testVar)    
+            self.logger.error("attribute car set to: " + testVar)
+
             if len(cars["vehicles"]) > 1:
                  self.vin = cars["vehicles"][1]["id"]
             else:
