@@ -4,6 +4,8 @@ import aiohttp
 
 from .. import fhem, generic
 
+import datetime as dt
+
 
 class volvo(generic.FhemModule):
 
@@ -39,6 +41,8 @@ class volvo(generic.FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
 
+        
+
         self.session = aiohttp.ClientSession()
 
         self.attr_config = {
@@ -46,10 +50,10 @@ class volvo(generic.FhemModule):
                 "default": "",
                 "help": "Select the car you would like to control.",
             },
-            "update_interval": {
-                "default": 5,
+            "interval": {
+                "default": 300,
                 "format": "int",
-                "help": "Readings update intervall in minutes (default 5min).",
+                "help": "Readings update intervall in seconds (default 5min).",
             },
         }
         await self.set_attr_config(self.attr_config)
@@ -193,12 +197,17 @@ class volvo(generic.FhemModule):
 
         while True:
             await self.get_regular_update_urls()
-            await asyncio.sleep(1800)
+            await asyncio.sleep(self._attr_interval)
 
     async def get_commands(self):
-        cmds = await self.volvo_get(
+        try:
+            cmds = await self.volvo_get(
             volvo.VEHICLE_COMMANDS, volvo.VEHICLE_COMMANDS_ACCEPT
-        )
+            )
+        except Exception:
+            self.logger.exception("Failed to get commands")
+            return
+        
         set_conf = {}
         for cmd in cmds["data"]:
             set_conf[cmd["command"].lower()] = {
@@ -255,16 +264,35 @@ class volvo(generic.FhemModule):
         for url in volvo.REGULAR_UPDATE_URLS:
             start = url.rfind("/") + 1
             domain = url[start:].replace("-", "_")
-            data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
-            await self.update_readings(data["data"], domain)
-
+            try:
+                data = await self.volvo_get(url, volvo.REGULAR_UPDATE_URLS[url])
+                await self.update_readings(data["data"], domain)
+            except Exception:
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "failed to read data from URL", 1)
+        
     async def get_cars(self):
-        cars = await self.volvo_get(volvo.VEHICLELIST)
-        if len(cars["vehicles"]) == 0:
-            self.logger.error("No cars found")
+        
+        try:
+            cars = await self.volvo_get(volvo.VEHICLELIST)
+            carList = cars["vehicles"]
+            if len(carList) == 0:
+                self.logger.error("No cars found")
+                return
+            elif len(carList) == 1:
+                self.vin = carList["id"]
+            else:
+                carVID = await fhem.AttrVal(self.hash["NAME"], "car", "")
+                if (carVID == ""):
+                    car_ids = [car["id"] for car in carList]
+                    car_ids_str = ",".join(car_ids)
+                    self.logger.info(f"Car IDs: {car_ids_str}")
+                    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "found cars: " + car_ids_str + " Please set the attribute car", 1)
+                else:
+                    self.vin = carVID
+        except Exception:
+            self.logger.exception("Failed to get cars")
             return
-
-        self.vin = cars["vehicles"][0]["id"]
+        
 
     async def update_readings(self, data, domain=""):
         try:
@@ -295,6 +323,13 @@ class volvo(generic.FhemModule):
 
                 if resp.status == 200:
                     return response
+                elif resp.status == 403:
+                  await fhem.readingsSingleUpdateIfChanged(
+                    self.hash,
+                    "state",
+                    response,
+                    1,
+                )  
                 else:
                     self.logger.error(f"Failed to get data from {url}: {response}")
         except Exception:
