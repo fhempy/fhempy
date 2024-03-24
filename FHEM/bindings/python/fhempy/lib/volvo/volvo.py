@@ -53,7 +53,7 @@ class volvo(generic.FhemModule):
             "interval": {
                 "default": 300,
                 "format": "int",
-                "help": "Readings update intervall in seconds (default 1min).",
+                "help": "Readings update intervall in seconds (default 5min).",
             },
         }
         await self.set_attr_config(self.attr_config)
