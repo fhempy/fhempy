@@ -274,28 +274,25 @@ class volvo(generic.FhemModule):
         
         try:
             cars = await self.volvo_get(volvo.VEHICLELIST)
-            if len(cars["vehicles"]) == 0:
+            carList = cars["vehicles"]
+            if len(carList) == 0:
                 self.logger.error("No cars found")
                 return
-            
-            #nasty workaround if tthere is more than 1 car in the profile - always picking the second car
-            #TODO let the user select the right car
-            if (len(cars["vehicles"]) > 1):
-                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "more than one car found. Please define the attribute VID  ", 1)
-
-            #await fhem.AttrVal(self.hash, "car", cars["vehicles"][0]["id"])
-            testVar = None
-            await fhem.AttrVal(self.hash, "VID", testVar)    
-            self.logger.error("attribute car set to: " + testVar)
-
-            if len(cars["vehicles"]) > 1:
-                 self.vin = cars["vehicles"][1]["id"]
+            elif len(carList) == 1:
+                self.vin = carList["id"]
             else:
-                 self.vin = cars["vehicles"][0]["id"]
+                carVID = await fhem.AttrVal(self.hash["NAME"], "car", "")
+                if (carVID == ""):
+                    car_ids = [car["id"] for car in carList]
+                    car_ids_str = ",".join(car_ids)
+                    self.logger.info(f"Car IDs: {car_ids_str}")
+                    await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "found cars: " + car_ids_str + " Please set the attribute car", 1)
+                else:
+                    self.vin = carVID
         except Exception:
             self.logger.exception("Failed to get cars")
             return
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "cars", cars.items, 1)
+        
 
     async def update_readings(self, data, domain=""):
         try:
