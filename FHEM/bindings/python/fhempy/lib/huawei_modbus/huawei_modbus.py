@@ -54,13 +54,22 @@ class huawei_modbus(generic.FhemModule):
         return await super().Undefine(self.hash)
 
     async def start(self):
-        await self.connect()
+        # try to connect until successful
+        while not self.bridge:
+            try:
+                await self.connect()
+            except Exception as e:
+                self.logger.error(e)
+                await asyncio.sleep(10)
 
         while True:
             try:
                 await self.update()
             except Exception as e:
                 self.logger.error(e)
+                # try to reconnect
+                await self.bridge.stop()
+                await self.connect()
 
             await asyncio.sleep(self._attr_interval)
 
