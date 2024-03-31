@@ -2,6 +2,58 @@
 
 
 
+## v0.1.729 (2024-03-31)
+
+### Chore
+
+* chore(deps-dev): update pytest requirement from 8.0.2 to 8.1.1 (#367) ([`1809032`](https://github.com/fhempy/fhempy/commit/1809032292072a51e2ffd8c4354cc7ae0052edaa))
+
+* chore(deps): update markdown2 requirement from 2.4.12 to 2.4.13 (#369) ([`5f57433`](https://github.com/fhempy/fhempy/commit/5f57433eecd16e0c1a3f6580c275a94943917c98))
+
+* chore(deps): update importlib-metadata requirement from 7.0.1 to 7.1.0 (#373) ([`685e9e9`](https://github.com/fhempy/fhempy/commit/685e9e985785a867b25817a158a186074d09e784))
+
+* chore(deps): bump python-semantic-release/python-semantic-release from 9.1.1 to 9.3.1 (#375) ([`7629d81`](https://github.com/fhempy/fhempy/commit/7629d81af2a11d85e3988f5af4b718e7294f9aa3))
+
+### Feature
+
+* feat(huawei_modbus): add reconnect functionality ([`b2bbc3a`](https://github.com/fhempy/fhempy/commit/b2bbc3af0676538678f84dcbb05c97a0382c5c51))
+
+### Fix
+
+* fix(energie_gv_at): fix retry on error ([`9b2121c`](https://github.com/fhempy/fhempy/commit/9b2121c4fd6b9c068a3871af1f673556e3c2e5b2))
+
+### Unknown
+
+* feat(volvo.py) adding multi car support (#374)
+
+* Update volvo.py
+
+feat(volvo.py): improved error handling and intial workaround to handle more than one car
+
+* Update volvo.py
+
+* select branch
+
+* feat(volvo.py): handle more than 1 car in VOLVO app
+
+bugfix(volvo.py): improved error handling if URL return != 200 ([`166cc2a`](https://github.com/fhempy/fhempy/commit/166cc2a306ebb7ad4f800e835235ad6b14bf0964))
+
+* updating zappi doc in README.md (#372)
+
+* * chore(deps-tibber):   update pyTibber to ==0.29.0
+
+* feat(tibber):   update price latest every new hour, adding 1h ,2h and 3h stats for highest and lowest price
+
+* * feat(zappi): add module for zappi charger
+
+* * chore(README.md): added zappi to the list of supported devices
+```
+
+* docs(zappi): updated README.md for zappi charger
+
+``` ([`dac272f`](https://github.com/fhempy/fhempy/commit/dac272f7f2f71d671033d53b8f8678d03563b7fd))
+
+
 ## v0.1.728 (2024-03-20)
 
 ### Unknown
@@ -2668,7 +2720,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`17251b1`](https://github.com/fhempy/fhempy/commit/17251b156cebff5615cf954c64ad36fad21d6391))
 
 
-## v0.1.593 (2023-02-04)
+## v0.1.593 (2023-02-05)
 
 ### Fix
 
@@ -2860,7 +2912,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`580a6de`](https://github.com/fhempy/fhempy/commit/580a6defd1ce75de515bdc13db2df306b4e2d875))
 
 
-## v0.1.581 (2023-01-30)
+## v0.1.581 (2023-01-31)
 
 ### Fix
 
@@ -3247,7 +3299,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`d68c9d4`](https://github.com/fhempy/fhempy/commit/d68c9d439ff59d93a320933b6e6fee3e794b37ad))
 
 
-## v0.1.554 (2023-01-12)
+## v0.1.554 (2023-01-13)
 
 ### Fix
 
@@ -3258,7 +3310,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`f72fa26`](https://github.com/fhempy/fhempy/commit/f72fa265c44d388458edb5a72ae9336168632a95))
 
 
-## v0.1.553 (2023-01-12)
+## v0.1.553 (2023-01-13)
 
 ### Unknown
 
@@ -3731,7 +3783,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`192ea77`](https://github.com/fhempy/fhempy/commit/192ea77746c2de4bbd1662c285ee452a69fbd47c))
 
 
-## v0.1.520 (2022-11-19)
+## v0.1.520 (2022-11-20)
 
 ### Fix
 
@@ -3748,7 +3800,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.github.com&gt; ([`69e714a`](https://github.com/fhempy/fhempy/commit/69e714a1c6b1ff3a047901207600cd77325325af))
 
 
-## v0.1.519 (2022-11-19)
+## v0.1.519 (2022-11-20)
 
 ### Chore
 
@@ -4264,7 +4316,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`fdc79ac`](https://github.com/fhempy/fhempy/commit/fdc79ac18be0ce2b9d83095421e3c06c9765dc84))
 
 
-## v0.1.491 (2022-10-01)
+## v0.1.491 (2022-10-02)
 
 ### Chore
 
@@ -5836,7 +5888,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`8caa49f`](https://github.com/fhempy/fhempy/commit/8caa49f3c95fd965096ea50843a1028d99b7f4dd))
 
 
-## v0.1.395 (2022-08-09)
+## v0.1.395 (2022-08-10)
 
 ### Chore
 
@@ -5902,7 +5954,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`2e9fe8a`](https://github.com/fhempy/fhempy/commit/2e9fe8a6beaf676a25f6b09d2572a54049eb02ae))
 
 
-## v0.1.391 (2022-08-06)
+## v0.1.391 (2022-08-07)
 
 ### Chore
 
@@ -6653,7 +6705,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`e4eb8a3`](https://github.com/fhempy/fhempy/commit/e4eb8a399dafab46c47b3c44f304ccdf64a7e9d7))
 
 
-## v0.1.344 (2022-05-13)
+## v0.1.344 (2022-05-14)
 
 ### Chore
 
@@ -6670,7 +6722,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`48d9059`](https://github.com/fhempy/fhempy/commit/48d90593b25dc765a1a0805ff005d25d70704ead))
 
 
-## v0.1.343 (2022-05-13)
+## v0.1.343 (2022-05-14)
 
 ### Chore
 
@@ -6685,7 +6737,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`eb4b52f`](https://github.com/fhempy/fhempy/commit/eb4b52faccfe029c12fdf9b22d0b2d1eee23cbcd))
 
 
-## v0.1.342 (2022-05-13)
+## v0.1.342 (2022-05-14)
 
 ### Chore
 
@@ -6702,7 +6754,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`99e5ef9`](https://github.com/fhempy/fhempy/commit/99e5ef95da0c876f662cc2e431ae886b0b6aa604))
 
 
-## v0.1.341 (2022-05-13)
+## v0.1.341 (2022-05-14)
 
 ### Chore
 
@@ -6719,7 +6771,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`46fb6ca`](https://github.com/fhempy/fhempy/commit/46fb6ca97c9116a01fc6b1dc5bdd835203ce42a6))
 
 
-## v0.1.340 (2022-05-13)
+## v0.1.340 (2022-05-14)
 
 ### Chore
 
@@ -6736,7 +6788,7 @@ Signed-off-by: github-actions &lt;41898282+github-actions[bot]@users.noreply.git
 * Merge branch &#39;development&#39; ([`da7699b`](https://github.com/fhempy/fhempy/commit/da7699b52b92fdfb8e95807b36a2f2222dfd5135))
 
 
-## v0.1.339 (2022-05-13)
+## v0.1.339 (2022-05-14)
 
 ### Chore
 
