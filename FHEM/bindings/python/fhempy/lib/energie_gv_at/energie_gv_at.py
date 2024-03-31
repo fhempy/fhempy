@@ -72,16 +72,28 @@ class energie_gv_at(generic.FhemModule):
 
     async def update_loop(self):
         while True:
-            peak_hours = await self.retrieve_data(energie_gv_at.URL_PEAK_HOURS)
-            await self.handle_peak_hours(peak_hours)
-            elec_now = await self.retrieve_data(energie_gv_at.URL_ELECTRICITY_NOW)
-            await self.handle_electricity_now(elec_now)
-            renewable_now = await self.retrieve_data(energie_gv_at.URL_RENEWABLE_NOW)
-            await self.handle_renewable_now(renewable_now)
-            delta = datetime.timedelta(hours=1)
-            now = datetime.datetime.now()
-            next_hour = (now + delta).replace(microsecond=0, second=0, minute=0)
-            wait_seconds = (next_hour - now).seconds
+            try:
+                peak_hours = await self.retrieve_data(energie_gv_at.URL_PEAK_HOURS)
+                await self.handle_peak_hours(peak_hours)
+                elec_now = await self.retrieve_data(energie_gv_at.URL_ELECTRICITY_NOW)
+                await self.handle_electricity_now(elec_now)
+                renewable_now = await self.retrieve_data(
+                    energie_gv_at.URL_RENEWABLE_NOW
+                )
+                await self.handle_renewable_now(renewable_now)
+                delta = datetime.timedelta(hours=1)
+                now = datetime.datetime.now()
+                next_hour = (now + delta).replace(microsecond=0, second=0, minute=0)
+                wait_seconds = (next_hour - now).seconds
+            except Exception as ex:
+                self.logger.exception("Failed to update")
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "state",
+                    f"failed: {ex}",
+                    1,
+                )
+                wait_seconds = 60
             await asyncio.sleep(wait_seconds + 10)
 
     async def handle_renewable_now(self, res):
