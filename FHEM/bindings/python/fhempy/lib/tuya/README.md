@@ -72,7 +72,7 @@ These attributes have to be set as a JSON array. Each entry in the array is a JS
 
 Example for Tuya Water Quality Meter with EC and PH warning / relay function:
 
-#### tuya-spec-functions
+#### tuya_spec_functions
 
 This has to be set as an attribute to the device in one line! (no line breaks) For better readability the JSON is formatted and split into multiple lines here.
 
@@ -162,10 +162,10 @@ This has to be set as an attribute to the device in one line! (no line breaks) F
 the same as above in one line:
 
 ```
-[{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC high mark"},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC low mark"},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH high mark"},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH low mark"},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature high mark"},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature low mark"}]
+attr DEVICE tuya_spec_functions [{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC high mark"},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC low mark"},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH high mark"},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH low mark"},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature high mark"},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature low mark"}]
 ```
 
-#### tuya-spec-status
+#### tuya_spec_status
 
 This has to be set as an attribute to the device in one line! (no line breaks) For better readability the JSON is formatted and split into multiple lines here.
 
@@ -285,7 +285,7 @@ This has to be set as an attribute to the device in one line! (no line breaks) F
 the same as above in one line:
 
 ```
-[{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"temperature","dp_id":8,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"ec","dp_id":116,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph","dp_id":106,"type":"Integer","values":{"unit":"","min":0,"max":1500,"scale":2,"step":10}},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}}]
+attr DEVICE tuya_spec_status [{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"temperature","dp_id":8,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"ec","dp_id":116,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph","dp_id":106,"type":"Integer","values":{"unit":"","min":0,"max":1500,"scale":2,"step":10}},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}}]
 ```
 
 #### Attributes to add to the device
