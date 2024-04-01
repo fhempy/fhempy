@@ -1,5 +1,4 @@
 
-
 # Tuya
 This module supports local Tuya device control via their local key. The devices need to be added to the Tuya cloud via SmartLife to be able to extract the local key.
 
@@ -55,9 +54,9 @@ Additionally, you have to add a reading to the device with the name of the data 
 
 ### Values for `tuya_spec_functions` and `tuya_spec_status`
 
-The values for both JSON objects are as follows (`tuya_spec_status` doesn't use the `desc` attribute)
+These attributes have to be set as a JSON array. Each entry in the array is a JSON object with the following attributes (`tuya_spec_status` doesn't use the `desc` attribute):
 
-- `dp_id`: The ID of the data point (only the number, 1.g. `117`)
+- `dp_id`: The ID of the data point (only the number, e.g. `117`)
 - `code`: The name for the reading to be created (e.g. `temperature`)
 - `type`: The data type of the reading (Integer, Float, String etc.)
 - `desc`: Description of the reading shown in the FHEMWEB interface
