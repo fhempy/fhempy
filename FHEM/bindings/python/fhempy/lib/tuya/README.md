@@ -1,4 +1,5 @@
 
+
 # Tuya
 This module supports local Tuya device control via their local key. The devices need to be added to the Tuya cloud via SmartLife to be able to extract the local key.
 
@@ -44,3 +45,262 @@ attr wifi_plug localkey LOCALKEY_FROM_TUYA_SYSTEM_READINGS
  - VERSION: Take that one from the tuya_system device you created (default 3.3)
  - API_KEY: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud
  - API_SECRET: If the product ID couldn't be found in the standard mappings, the possible functions will be retrieved from tuya cloud
+
+
+## Adding Readings and Functions
+
+The module will automatically create known readings and functions for the device. Unknown data points from the device readings will appear as `dp_xxx` numbers in the readings list. If you want to add these as proper readings, you can do so by extending the `tuya_spec_status` and `tuya_spec_functions` attributes.
+
+Additionally, you have to add a reading to the device with the name of the data point and the name of the new reading you created, e.g. `attr DEVICE dp_117 readingName`.
+
+### Values for `tuya_spec_functions` and `tuya_spec_status`
+
+The values for both JSON objects are as follows (`tuya_spec_status` doesn't use the `desc` attribute)
+
+- `dp_id`: The ID of the data point (only the number, 1.g. `117`)
+- `code`: The name for the reading to be created (e.g. `temperature`)
+- `type`: The data type of the reading (Integer, Float, String etc.)
+- `desc`: Description of the reading shown in the FHEMWEB interface
+- `values`: Description of the possible values for the reading (JSON Object)
+  - `values.min`: Minimum value for the reading (on the tuya side)
+  - `values.max`: Maximum value for the reading (on the tuya side)
+  - `values.unit`: Unit to display for the reading (e.g. °C)
+  - `values.scale`: Scaling factor for the reading (1 divides by 10, 2 divides by 100 etc.)
+  - `values.step`: Step size for the reading (in the unit of the tuya side!)
+
+
+### Example
+
+Example for Tuya Water Quality Meter with EC and PH warning / relay function:
+
+#### tuya-spec-functions
+
+This has to be set as an attribute to the device in one line! (no line breaks) For better readability the JSON is formatted and split into multiple lines here.
+
+```
+[
+  {
+    "code": "ec_high",
+    "dp_id": 117,
+    "type": "Integer",
+    "values": {
+      "unit": "mS/cm",
+      "min": 0,
+      "max": 199999,
+      "scale": 3,
+      "step": 100
+    },
+    "desc": "set EC high mark"
+  },
+  {
+    "code": "ec_low",
+    "dp_id": 118,
+    "type": "Integer",
+    "values": {
+      "unit": "mS/cm",
+      "min": 0,
+      "max": 199999,
+      "scale": 3,
+      "step": 100
+    },
+    "desc": "set EC low mark"
+  },
+  {
+    "code": "ph_high",
+    "dp_id": 107,
+    "type": "Integer",
+    "values": {
+      "unit": "PH",
+      "min": 0,
+      "max": 1500,
+      "scale": 2,
+      "step": 10
+    },
+    "desc": "set PH high mark"
+  },
+  {
+    "code": "ph_low",
+    "dp_id": 108,
+    "type": "Integer",
+    "values": {
+      "unit": "PH",
+      "min": 0,
+      "max": 1500,
+      "scale": 2,
+      "step": 10
+    },
+    "desc": "set PH low mark"
+  },
+  {
+    "code": "temp_high",
+    "dp_id": 102,
+    "type": "Integer",
+    "values": {
+      "unit": "°C",
+      "min": -100,
+      "max": 1100,
+      "scale": 1,
+      "step": 1
+    },
+    "desc": "set temperature high mark"
+  },
+  {
+    "code": "temp_low",
+    "dp_id": 103,
+    "type": "Integer",
+    "values": {
+      "unit": "°C",
+      "min": -100,
+      "max": 1100,
+      "scale": 1,
+      "step": 1
+    },
+    "desc": "set temperature low mark"
+  }
+]
+```
+
+the same as above in one line:
+
+```
+[{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC high mark"},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100},"desc":"set EC low mark"},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH high mark"},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10},"desc":"set PH low mark"},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature high mark"},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"°C","min":-100,"max":1100,"scale":1,"step":1},"desc":"set temperature low mark"}]
+```
+
+#### tuya-spec-status
+
+This has to be set as an attribute to the device in one line! (no line breaks) For better readability the JSON is formatted and split into multiple lines here.
+
+```
+[
+  {
+    "code": "ec_high",
+    "dp_id": 117,
+    "type": "Integer",
+    "values": {
+      "unit": "mS/cm",
+      "min": 0,
+      "max": 199999,
+      "scale": 3,
+      "step": 100
+    }
+  },
+  {
+    "code": "ec_low",
+    "dp_id": 118,
+    "type": "Integer",
+    "values": {
+      "unit": "mS/cm",
+      "min": 0,
+      "max": 199999,
+      "scale": 3,
+      "step": 100
+    }
+  },
+  {
+    "code": "ph_high",
+    "dp_id": 107,
+    "type": "Integer",
+    "values": {
+      "unit": "PH",
+      "min": 0,
+      "max": 1500,
+      "scale": 2,
+      "step": 10
+    }
+  },
+  {
+    "code": "ph_low",
+    "dp_id": 108,
+    "type": "Integer",
+    "values": {
+      "unit": "PH",
+      "min": 0,
+      "max": 1500,
+      "scale": 2,
+      "step": 10
+    }
+  },
+  {
+    "code": "temperature",
+    "dp_id": 8,
+    "type": "Integer",
+    "values": {
+      "unit": "℃",
+      "min": -100,
+      "max": 1100,
+      "scale": 1,
+      "step": 1
+    }
+  },
+  {
+    "code": "ec",
+    "dp_id": 116,
+    "type": "Integer",
+    "values": {
+      "unit": "mS/cm",
+      "min": 0,
+      "max": 199999,
+      "scale": 3,
+      "step": 100
+    }
+  },
+  {
+    "code": "ph",
+    "dp_id": 106,
+    "type": "Integer",
+    "values": {
+      "unit": "",
+      "min": 0,
+      "max": 1500,
+      "scale": 2,
+      "step": 10
+    }
+  },
+  {
+    "code": "temp_high",
+    "dp_id": 102,
+    "type": "Integer",
+    "values": {
+      "unit": "℃",
+      "min": -100,
+      "max": 1100,
+      "scale": 1,
+      "step": 1
+    }
+  },
+  {
+    "code": "temp_low",
+    "dp_id": 103,
+    "type": "Integer",
+    "values": {
+      "unit": "℃",
+      "min": -100,
+      "max": 1100,
+      "scale": 1,
+      "step": 1
+    }
+  }
+]
+```
+
+the same as above in one line:
+
+```
+[{"code":"ec_high","dp_id":117,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ec_low","dp_id":118,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph_high","dp_id":107,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"ph_low","dp_id":108,"type":"Integer","values":{"unit":"PH","min":0,"max":1500,"scale":2,"step":10}},{"code":"temperature","dp_id":8,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"ec","dp_id":116,"type":"Integer","values":{"unit":"mS/cm","min":0,"max":199999,"scale":3,"step":100}},{"code":"ph","dp_id":106,"type":"Integer","values":{"unit":"","min":0,"max":1500,"scale":2,"step":10}},{"code":"temp_high","dp_id":102,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}},{"code":"temp_low","dp_id":103,"type":"Integer","values":{"unit":"℃","min":-100,"max":1100,"scale":1,"step":1}}]
+```
+
+#### Attributes to add to the device
+
+These attributes tell the module to create the readings and functions for the device. The `dp_xxx` readings will not be updated anymore, but the new readings will be updated with the data from the device.
+
+```
+attr DEVICE dp_08 temperature
+attr DEVICE dp_102 temp_high
+attr DEVICE dp_103 temp_low
+attr DEVICE dp_106 ph
+attr DEVICE dp_107 ph_high
+attr DEVICE dp_108 ph_low
+attr DEVICE dp_116 ec
+attr DEVICE dp_117 ec_high
+attr DEVICE dp_118 ec_low
+```
