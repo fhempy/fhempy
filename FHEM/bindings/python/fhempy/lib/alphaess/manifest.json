@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "alphaessopenapi==0.0.7"
+  ]
+}
