@@ -50,6 +50,8 @@ attr wifi_plug localkey LOCALKEY_FROM_TUYA_SYSTEM_READINGS
 
 The module will automatically create known readings and functions for the device. Unknown data points from the device readings will appear as `dp_xxx` numbers in the readings list. If you want to add these as proper readings, you can do so by extending the `tuya_spec_status` and `tuya_spec_functions` attributes.
 
+`tuya_spec_status` is used to define the readings that should be created for the device. `tuya_spec_functions` is used to define the `set xxx` functions that should be created for the reading.
+
 Additionally, you have to add a reading to the device with the name of the data point and the name of the new reading you created, e.g. `attr DEVICE dp_117 readingName`.
 
 ### Values for `tuya_spec_functions` and `tuya_spec_status`
