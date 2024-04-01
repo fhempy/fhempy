@@ -2,6 +2,23 @@
 
 
 
+## v0.1.730 (2024-04-01)
+
+### Chore
+
+* chore(deps-dev): update pytest-mock requirement from 3.12.0 to 3.14.0 (#379) ([`e01570d`](https://github.com/fhempy/fhempy/commit/e01570d30fbb6bd6fbd055b789f7cbe6ea31dbd4))
+
+* chore(deps-dev): update setuptools requirement from ==69.1.1 to ==69.2.0 (#380) ([`fc43440`](https://github.com/fhempy/fhempy/commit/fc4344002a8bfb4f5918e05732aa931adbcf4d76))
+
+* chore(deps-dev): update hyundai-kia-connect-api requirement from ==3.17.5 to ==3.19.1 (#381) ([`80d5ad1`](https://github.com/fhempy/fhempy/commit/80d5ad18b02f8345f50cebbcde5dc02a224de81b))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#382) ([`05b3884`](https://github.com/fhempy/fhempy/commit/05b38845468ab1fe7d0c4c6b6d424965dc849094))
+
+### Feature
+
+* feat(alphaesscloud): support Alpha Ess inverter cloud API (#383) ([`013ba36`](https://github.com/fhempy/fhempy/commit/013ba361a0ce70e7dd87a9179bf30c441e430190))
+
+
 ## v0.1.729 (2024-03-31)
 
 ### Chore
