@@ -13,7 +13,7 @@ Special thanks to CharlesGillandres for the API wrapper https://github.com/Charl
  
 ## Usage
 ```
-Usage: define myAlphaESSCloud fhempy alphaESS appID appSecret serial
+Usage: define myAlphaESSCloud fhempy alphaesscloud appID appSecret serial
 ```
 
 appID: your developer ID
