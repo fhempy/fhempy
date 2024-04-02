@@ -27,7 +27,7 @@ class alphaesscloud(generic.FhemModule):
         await self.set_attr_config(attr_config)
 
         if len(args) !=6:
-            return "Usage: define myAlphaESSCloud fhempy alphaESS appID appSecret serial"
+            return "Usage: define myAlphaESSCloud fhempy alphaesscloud appID appSecret serial"
         
         self.appID = args[3]
         self.appSecret = args[4]
