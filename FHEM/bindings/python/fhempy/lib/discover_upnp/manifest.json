@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "async-upnp-client==0.38.1"
+    "async-upnp-client==0.38.3"
   ]
 }
