@@ -39,7 +39,7 @@ zeroconf = "==0.131.0"
 markdown2 = "2.4.13"
 requests = "2.31.0"
 async-upnp-client = "0.38.3"
-packaging = "23.2"
+packaging = "24.0"
 pexpect = "==4.9.0"
 aiofiles = "==23.2.1"
 
