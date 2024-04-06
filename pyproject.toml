@@ -92,7 +92,7 @@ netifaces = "==0.11.0"
 opencv-python-headless = "==4.9.0.80"
 paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
-pillow = "==10.2.0"
+pillow = "==10.3.0"
 playwright = "==1.42.0"
 pyTibber = {version = "==0.28.2", python = "^3.10" }
 # pybluez 0.30 wasn't released yet, we use the github tag
