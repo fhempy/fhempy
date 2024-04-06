@@ -2,6 +2,13 @@
 
 
 
+## v0.1.732 (2024-04-06)
+
+### Fix
+
+* fix(esphome): fix startup in certain conditions ([`4cdd9ac`](https://github.com/fhempy/fhempy/commit/4cdd9acce5e7250e2a3a133ec748d1a992083dc5))
+
+
 ## v0.1.731 (2024-04-06)
 
 ### Chore
