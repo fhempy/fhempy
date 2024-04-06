@@ -1,7 +1,7 @@
 {
   "requirements": [
     "luma_led-matrix==1.7.0",
-    "pillow==10.2.0",
+    "pillow==10.3.0",
     "rpi_gpio==0.7.1"
   ]
 }
