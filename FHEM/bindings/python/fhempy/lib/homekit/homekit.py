@@ -5,13 +5,11 @@ from typing import cast
 
 import aiohomekit
 from aiohomekit.model.characteristics.characteristic import NUMBER_TYPES
-from aiohomekit.model.characteristics.characteristic_types import CharacteristicsTypes
-from zeroconf import IPVersion, ServiceStateChange
-from zeroconf.asyncio import (
-    AsyncServiceBrowser,
-    AsyncServiceInfo,
-    AsyncZeroconfServiceTypes,
+from aiohomekit.model.characteristics.characteristic_formats import (
+    CharacteristicFormats,
 )
+from zeroconf import ServiceStateChange
+from zeroconf.asyncio import AsyncServiceBrowser, AsyncServiceInfo
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhempy
@@ -130,6 +128,7 @@ class homekit(generic.FhemModule):
         else:
             hash["HOMEKIT_GW"] = args[3]
             hash["HOMEKIT_AID"] = args[4]
+            self.aid = int(args[4])
             self.create_async_task(self.setup_device(args[3], int(args[4])))
 
     async def set_attr_pairing_data(self, hash):
@@ -198,6 +197,25 @@ class homekit(generic.FhemModule):
                         if "pw" in char.perms:
                             # char.type convert to string (position_target)
                             await self.char_to_set(char)
+        await self.set_set_config(self.set_config)
+
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "ready", 1)
+
+        self.create_async_task(self.update_readings_from_homekit())
+
+    async def update_readings_from_homekit(self):
+        while True:
+            try:
+                await self.update_readings()
+            except Exception as e:
+                self.logger.error(f"Error during update_readings_from_homekit: {e}")
+            await asyncio.sleep(self._attr_interval)
+
+    async def update_readings(self):
+        for accessory in self.pairing.accessories:
+            if accessory.aid == self.aid:
+                for service in accessory.services:
+                    for char in service.characteristics:
                         if "pr" in char.perms:
                             if char.description:
                                 reading = char.description
@@ -210,9 +228,27 @@ class homekit(generic.FhemModule):
                                 1,
                             )
 
-        await self.set_set_config(self.set_config)
-
     async def set_int(self, hash, params):
+        char = params["function_param"]
+        self.create_async_task(
+            self.pairing.put_characteristics(
+                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
+            )
+        )
+
+    async def set_bool(self, hash, params):
+        char = params["function_param"]
+        if char == "on":
+            params["new_value"] = True
+        else:
+            params["new_value"] = False
+        self.create_async_task(
+            self.pairing.put_characteristics(
+                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
+            )
+        )
+
+    async def set_str(self, hash, params):
         char = params["function_param"]
         self.create_async_task(
             self.pairing.put_characteristics(
@@ -228,4 +264,19 @@ class homekit(generic.FhemModule):
                 "function": "set_int",
                 "function_param": char,
                 "options": f"slider,{char.minValue},{char.minStep},{char.maxValue},1",
+            }
+        elif char.format == CharacteristicFormats.bool:
+            self.set_config[utils.gen_reading_name(char.description)] = {
+                "args": ["new_value"],
+                "params": {"new_value": {"format": "bool"}},
+                "function": "set_bool",
+                "function_param": char,
+                "options": "on,off",
+            }
+        elif char.format == CharacteristicFormats.string:
+            self.set_config[utils.gen_reading_name(char.description)] = {
+                "args": ["new_value"],
+                "params": {"new_value": {"format": "string"}},
+                "function": "set_str",
+                "function_param": char,
             }
