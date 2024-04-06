@@ -43,25 +43,30 @@ class esphome(FhemModule):
             "--port",
             self._attr_port_dashboard,
         ]
-        self.proc = subprocess.Popen(self._esphomeargs)
 
         try:
-            self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
+            self.proc = subprocess.Popen(self._esphomeargs)
         except Exception:
-            self.logger.exception("Failed to execute esphome")
+            self.logger.exception("Failed to execute esphome, trying with env")
+
             try:
-                my_env = os.environ
-                my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
-                self._esphomeargs = [
-                    site.getuserbase() + "/bin/esphome",
-                    "dashboard",
-                    "esphome_config/",
-                    "--port",
-                    self._attr_port_dashboard,
-                ]
+                self.proc = subprocess.Popen(self._esphomeargs, env=my_env)
             except Exception:
-                self.logger.exception("Failed to execute esphome")
-                return "Failed to execute esphome"
+                self.logger.exception("Failed to execute esphome, trying with site")
+
+                try:
+                    my_env = os.environ
+                    my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
+                    self._esphomeargs = [
+                        site.getuserbase() + "/bin/esphome",
+                        "dashboard",
+                        "esphome_config/",
+                        "--port",
+                        self._attr_port_dashboard,
+                    ]
+                except Exception:
+                    self.logger.exception("Failed to execute esphome")
+                    return "Failed to execute esphome"
 
         await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
 
