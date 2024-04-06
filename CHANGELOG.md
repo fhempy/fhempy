@@ -2,6 +2,51 @@
 
 
 
+## v0.1.731 (2024-04-06)
+
+### Chore
+
+* chore(deps-dev): bump pillow from 10.2.0 to 10.3.0 (#393) ([`c904492`](https://github.com/fhempy/fhempy/commit/c904492766490eb0a9224a9c65b4318cba4237a6))
+
+* chore: fix dependencies ([`4dd4023`](https://github.com/fhempy/fhempy/commit/4dd4023f752509a0c7bbd5a47967cbbb2627f2ba))
+
+* chore: remove pybluez from deps, as it wasn&#39;t released yet ([`2a4d295`](https://github.com/fhempy/fhempy/commit/2a4d295426bb12e3af5bcb1e8937c2e5442efb27))
+
+* chore: fix tibber test ([`7aa3511`](https://github.com/fhempy/fhempy/commit/7aa3511176bc1b12d537b9f35f084008a0923329))
+
+* chore(deps-dev): update requests-mock requirement from 1.11.0 to 1.12.1 (#391) ([`209038d`](https://github.com/fhempy/fhempy/commit/209038de1a0862e8ff4c78be50b202b051d7837c))
+
+* chore(deps): update packaging requirement from 23.2 to 24.0 (#390) ([`9f81340`](https://github.com/fhempy/fhempy/commit/9f8134010aeb6513d9913d6218cc4ef6fe512b31))
+
+* chore(deps): update async-upnp-client requirement from 0.38.1 to 0.38.3 (#389) ([`2c49d43`](https://github.com/fhempy/fhempy/commit/2c49d43d96b38c92a083096e9bfb500e16ae7617))
+
+* chore(deps-dev): update esphome requirement from ==2024.2.2 to ==2024.3.1 (#385) ([`a0f89c1`](https://github.com/fhempy/fhempy/commit/a0f89c10a9f6237e2bd2b0234515f48733888e16))
+
+* chore(deps-dev): update pytest-env requirement from 1.1.0 to 1.1.3 (#387) ([`0f57879`](https://github.com/fhempy/fhempy/commit/0f578799e6644822e2e94b846f4f5a4cc27a7019))
+
+* chore(deps-dev): update pyprusalink requirement from ==2.0.1 to ==2.1.1 (#386) ([`7dc6bdd`](https://github.com/fhempy/fhempy/commit/7dc6bddc21b16c7f42797721ac568223dab3c0c3))
+
+* chore: Add infos on how to add tuya readings from datapoints (#384)
+
+* Add infos on how to add tuya readings from datapoints
+
+* typo/formatting
+
+* typo / add fhem command
+
+* add more info for tuya ([`bf8f182`](https://github.com/fhempy/fhempy/commit/bf8f182d68209f58d26a8a73d1127eeb295c89ca))
+
+### Feature
+
+* feat(homekit): update readings every &#34;interval&#34; seconds, support bool and string set ([`7e20713`](https://github.com/fhempy/fhempy/commit/7e20713980408ddad7040a843c543293fd7ebe49))
+
+### Fix
+
+* fix(fhempy): update dependencies in toml ([`761928d`](https://github.com/fhempy/fhempy/commit/761928daf81c6a95ad9f83b09bbde68ffd8a4597))
+
+* fix(alphaess): fixed usage info in readme and FHEM info (#388) ([`be634ec`](https://github.com/fhempy/fhempy/commit/be634ec7f86e77d5130f0a128e43e737789a5716))
+
+
 ## v0.1.730 (2024-04-01)
 
 ### Chore
