@@ -206,6 +206,7 @@ class homekit(generic.FhemModule):
     async def update_readings_from_homekit(self):
         while True:
             try:
+                await self.pairing.list_accessories_and_characteristics()
                 await self.update_readings()
             except Exception as e:
                 self.logger.error(f"Error during update_readings_from_homekit: {e}")
