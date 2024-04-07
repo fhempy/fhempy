@@ -2,6 +2,13 @@
 
 
 
+## v0.1.733 (2024-04-07)
+
+### Fix
+
+* fix(homekit): update values before update_readings ([`2175e96`](https://github.com/fhempy/fhempy/commit/2175e96879f1b963a3ec63a264e7e3c9595484b1))
+
+
 ## v0.1.732 (2024-04-06)
 
 ### Fix
