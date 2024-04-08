@@ -2,6 +2,13 @@
 
 
 
+## v0.1.734 (2024-04-08)
+
+### Fix
+
+* fix(tibber): fix integration (#399) ([`7eb60c2`](https://github.com/fhempy/fhempy/commit/7eb60c2c5e5743200fd076a247f263123e9ca342))
+
+
 ## v0.1.733 (2024-04-07)
 
 ### Fix
