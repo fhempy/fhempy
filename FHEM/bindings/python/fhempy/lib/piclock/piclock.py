@@ -221,7 +221,7 @@ class piclock(generic.FhemModule):
         w = 0
         with canvas(self.matrix_device) as draw:
             w = draw.textlength(msg, font=piclock.pm_font)
-        return w
+        return int(w)
 
     def icon_size(self, iconid):
         if iconid is None:
