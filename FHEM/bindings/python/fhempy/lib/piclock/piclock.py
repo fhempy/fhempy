@@ -74,7 +74,11 @@ class piclock(generic.FhemModule):
                 "args": ["text"],
                 "help": "Display a notification on piclock.",
             },
-            "brightness": {"args": ["contrast"], "params": {"contrast": { "format": "int" }}, "options": "slider,0,1,255,0"},
+            "brightness": {
+                "args": ["contrast"],
+                "params": {"contrast": {"format": "int"}},
+                "options": "slider,0,1,255,0",
+            },
         }
         await self.set_set_config(set_config)
 
@@ -100,7 +104,9 @@ class piclock(generic.FhemModule):
             )
 
         await fhem.readingsSingleUpdate(self.hash, "state", "active", 1)
-        self.change_contrast(int(await fhem.ReadingsVal(self.hash["NAME"], "brightness", "100")))
+        self.change_contrast(
+            int(await fhem.ReadingsVal(self.hash["NAME"], "brightness", "100"))
+        )
 
         self.create_async_task(self.run_piclock())
 
@@ -108,7 +114,9 @@ class piclock(generic.FhemModule):
         self.create_async_task(self.show_notification(params["text"]))
 
     async def set_brightness(self, hash, params):
-        await fhem.readingsSingleUpdateIfChanged(self.hash, "brightness", params["contrast"], 1)
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "brightness", params["contrast"], 1
+        )
         self.change_contrast(params["contrast"])
 
     async def run_piclock(self):
@@ -123,12 +131,12 @@ class piclock(generic.FhemModule):
                 self._current_time_task = self.create_async_task(
                     self.show_current_time_loop()
                 )
-                
+
                 # show weather
                 if self.temp_dev is not None:
                     await asyncio.sleep(self._attr_display_time_duration)
                     self._current_time_task.cancel()
-                    
+
                     self._current_weather_task = self.create_async_task(
                         self.show_current_weather()
                     )
@@ -172,9 +180,7 @@ class piclock(generic.FhemModule):
                 self.temp_dev, self.temp_reading, "No temperature data available"
             )
         if self.weather_dev is not None:
-            weather = await fhem.ReadingsVal(
-                self.weather_dev, self.weather_reading, ""
-            )
+            weather = await fhem.ReadingsVal(self.weather_dev, self.weather_reading, "")
             if weather == "":
                 weather = None
 
@@ -214,7 +220,7 @@ class piclock(generic.FhemModule):
     def text_size(self, msg):
         w = 0
         with canvas(self.matrix_device) as draw:
-            (w, h) = draw.textsize(msg, font=piclock.pm_font)
+            w = draw.textlength(msg, font=piclock.pm_font)
         return w
 
     def icon_size(self, iconid):
