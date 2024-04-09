@@ -1503,13 +1503,13 @@ files = [
 
 [[package]]
 name = "esphome"
-version = "2024.3.1"
+version = "2024.3.2"
 description = "Make creating custom firmwares for ESP32/ESP8266 super easy."
 optional = false
 python-versions = ">=3.9.0"
 files = [
-    {file = "esphome-2024.3.1-py2.py3-none-any.whl", hash = "sha256:b9e2b17c8650b9c3fd7ee1d377a76b1b357746cff544e565404f03b6305b07d9"},
-    {file = "esphome-2024.3.1.tar.gz", hash = "sha256:660f3432fe137fe050d4a08ec706432dddded62f62f0446c4bff7e90d19957fe"},
+    {file = "esphome-2024.3.2-py2.py3-none-any.whl", hash = "sha256:279ecfc6bb0ab890539908084d7c3756161b68c0099f19c7faec39721ebe6c3a"},
+    {file = "esphome-2024.3.2.tar.gz", hash = "sha256:75f7bd3b963deedfe1341694d15caedac2a95ad39bab8bad366c7c82f254ce7a"},
 ]
 
 [package.dependencies]
@@ -4768,4 +4768,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "637a0c396cd2befc73722bb6c08c6842207f27d08c3b5719967e54389123e3c5"
+content-hash = "109be8b1475c023d85885733be81d9434ba1a2a2bcec30e8eef0b66aa9d3e9a6"
