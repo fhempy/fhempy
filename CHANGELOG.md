@@ -2,6 +2,21 @@
 
 
 
+## v0.1.735 (2024-04-09)
+
+### Chore
+
+* chore(deps-dev): bump esphome from 2024.3.1 to 2024.3.2 (#394) ([`a890c43`](https://github.com/fhempy/fhempy/commit/a890c43217289e290909220af0be94d96d8867e0))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#396) ([`a3373c6`](https://github.com/fhempy/fhempy/commit/a3373c679045a2917f48a2b7905d81cd1230da29))
+
+* chore(deps-dev): bump tox from 4.14.1 to 4.14.2 (#397) ([`5ec54d2`](https://github.com/fhempy/fhempy/commit/5ec54d24eb82f14923f343201beb6f9f75392b20))
+
+### Fix
+
+* fix(piclock): fix textsize =&gt; textlength ([`ffd4bff`](https://github.com/fhempy/fhempy/commit/ffd4bff18ffe25ca228228c903806a23df99259e))
+
+
 ## v0.1.734 (2024-04-08)
 
 ### Fix
