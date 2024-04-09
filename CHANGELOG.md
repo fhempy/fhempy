@@ -2,6 +2,13 @@
 
 
 
+## v0.1.736 (2024-04-09)
+
+### Fix
+
+* fix(piclock): fix text_size return value ([`2c8646d`](https://github.com/fhempy/fhempy/commit/2c8646d29bb2a3e408da0479c0d5760b964db3cc))
+
+
 ## v0.1.735 (2024-04-09)
 
 ### Chore
