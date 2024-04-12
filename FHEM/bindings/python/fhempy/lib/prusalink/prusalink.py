@@ -1,6 +1,6 @@
 import asyncio
 
-import aiohttp
+import httpx
 import pyprusalink
 
 from fhempy.lib.utils import flatten_json
@@ -41,7 +41,7 @@ class prusalink(generic.FhemModule):
         return data
 
     async def update_loop(self):
-        async with aiohttp.ClientSession() as session:
+        async with httpx.AsyncClient() as session:
             self.pl = pyprusalink.PrusaLink(
                 session, self.url, self.username, self.password
             )
@@ -54,6 +54,9 @@ class prusalink(generic.FhemModule):
                         await fhem.readingsBulkUpdateIfChanged(
                             self.hash, name, flat_json[name]
                         )
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, "state", flat_json["status_printer_state"]
+                    )
                 except Exception:
                     self.logger.exception("Failed to update readings")
                 await fhem.readingsEndUpdate(self.hash, 1)
