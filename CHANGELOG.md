@@ -2,6 +2,21 @@
 
 
 
+## v0.1.737 (2024-04-12)
+
+### Chore
+
+* chore: fix httpx dependency ([`6006efa`](https://github.com/fhempy/fhempy/commit/6006efaa05343cdd7e56c1b7d08720e2a62314ff))
+
+* chore(deps-dev): bump bluetooth-auto-recovery from 1.3.0 to 1.4.0 (#401) ([`59883b4`](https://github.com/fhempy/fhempy/commit/59883b4f240e1be84f48da344887b929d5631cdb))
+
+### Fix
+
+* fix(prusalink): fix connection with httpx ([`b1f311d`](https://github.com/fhempy/fhempy/commit/b1f311d7d9114792cb47d243f95b75e07813fe5f))
+
+* fix(prusalink): remove state value ([`e3e4238`](https://github.com/fhempy/fhempy/commit/e3e4238020853056811dc150fffeb116319eb16c))
+
+
 ## v0.1.736 (2024-04-09)
 
 ### Fix
