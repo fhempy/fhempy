@@ -951,48 +951,48 @@ requests = "*"
 
 [[package]]
 name = "cbor2"
-version = "5.6.2"
+version = "5.6.3"
 description = "CBOR (de)serializer with extensive tag support"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cbor2-5.6.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:516b8390936bb172ff18d7b609a452eaa51991513628949b0a9bf25cbe5a7129"},
-    {file = "cbor2-5.6.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1b8b504b590367a51fe8c0d9b8cb458a614d782d37b24483097e2b1e93ed0fff"},
-    {file = "cbor2-5.6.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4f687e6731b1198811223576800258a712ddbfdcfa86c0aee2cc8269193e6b96"},
-    {file = "cbor2-5.6.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9e94043d99fe779f62a15a5e156768588a2a7047bb3a127fa312ac1135ff5ecb"},
-    {file = "cbor2-5.6.2-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:8af7162fcf7aa2649f02563bdb18b2fa6478b751eee4df0257bffe19ea8f107a"},
-    {file = "cbor2-5.6.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:ea7ecd81c5c6e02c2635973f52a0dd1e19c0bf5ef51f813d8cd5e3e7ed072726"},
-    {file = "cbor2-5.6.2-cp310-cp310-win_amd64.whl", hash = "sha256:3c7f223f1fedc74d33f363d184cb2bab9e4bdf24998f73b5e3bef366d6c41628"},
-    {file = "cbor2-5.6.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:7ea9e150029c3976c46ee9870b6dcdb0a5baae21008fe3290564886b11aa2b64"},
-    {file = "cbor2-5.6.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:922e06710e5cf6f56b82b0b90d2f356aa229b99e570994534206985f675fd307"},
-    {file = "cbor2-5.6.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b01a718e083e6de8b43296c3ccdb3aa8af6641f6bbb3ea1700427c6af73db28a"},
-    {file = "cbor2-5.6.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ac85eb731c524d148f608b9bdb2069fa79e374a10ed5d10a2405eba9a6561e60"},
-    {file = "cbor2-5.6.2-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:03e5b68867b9d89ff2abd14ef7c6d42fbd991adc3e734a19a294935f22a4d05a"},
-    {file = "cbor2-5.6.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:7221b83000ee01d674572eec1d1caa366eac109d1d32c14d7af9a4aaaf496563"},
-    {file = "cbor2-5.6.2-cp311-cp311-win_amd64.whl", hash = "sha256:9aca73b63bdc6561e1a0d38618e78b9c204c942260d51e663c92c4ba6c961684"},
-    {file = "cbor2-5.6.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:377cfe9d5560c682486faef6d856226abf8b2801d95fa29d4e5d75b1615eb091"},
-    {file = "cbor2-5.6.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fdc564ef2e9228bcd96ec8c6cdaa431a48ab03b3fb8326ead4b3f986330e5b9e"},
-    {file = "cbor2-5.6.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8d1c0021d9a1f673066de7c8941f71a59abb11909cc355892dda01e79a2b3045"},
-    {file = "cbor2-5.6.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1fde9e704e96751e0729cc58b912d0e77c34387fb6bcceea0817069e8683df45"},
-    {file = "cbor2-5.6.2-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:30e9ba8f4896726ca61869efacda50b6859aff92162ae5a0e192859664f36c81"},
-    {file = "cbor2-5.6.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:211a1e18e65ac71e04434ff5b58bde5c53f85b9c5bc92a3c0e2265089d3034f3"},
-    {file = "cbor2-5.6.2-cp312-cp312-win_amd64.whl", hash = "sha256:94981277b4bf448a2754c1f34a9d0055a9d1c5a8d102c933ffe95c80f1085bae"},
-    {file = "cbor2-5.6.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:f70db0ebcf005c25408e8d5cc4b9558c899f13a3e2f8281fa3d3be4894e0e821"},
-    {file = "cbor2-5.6.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:22c24fe9ef1696a84b8fd80ff66eb0e5234505d8b9a9711fc6db57bce10771f3"},
-    {file = "cbor2-5.6.2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3a4a3420f80d6b942874d66eaad07658066370df994ddee4125b48b2cbc61ece"},
-    {file = "cbor2-5.6.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5b28d8ff0e726224a7429281700c28afe0e665f83f9ae79648cbae3f1a391cbf"},
-    {file = "cbor2-5.6.2-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:c10ede9462458998f1b9c488e25fe3763aa2491119b7af472b72bf538d789e24"},
-    {file = "cbor2-5.6.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:ea686dfb5e54d690e704ce04993bc8ca0052a7cd2d4b13dd333a41cca8a05a05"},
-    {file = "cbor2-5.6.2-cp38-cp38-win_amd64.whl", hash = "sha256:22996159b491d545ecfd489392d3c71e5d0afb9a202dfc0edc8b2cf413a58326"},
-    {file = "cbor2-5.6.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:9faa0712d414a88cc1244c78cd4b28fced44f1827dbd8c1649e3c40588aa670f"},
-    {file = "cbor2-5.6.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:6031a284d93fc953fc2a2918f261c4f5100905bd064ca3b46961643e7312a828"},
-    {file = "cbor2-5.6.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f30c8a9a9df79f26e72d8d5fa51ef08eb250d9869a711bcf9539f1865916c983"},
-    {file = "cbor2-5.6.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44bf7457fca23209e14dab8181dff82466a83b72e55b444dbbfe90fa67659492"},
-    {file = "cbor2-5.6.2-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:cc29c068687aa2e7778f63b653f1346065b858427a2555df4dc2191f4a0de8ce"},
-    {file = "cbor2-5.6.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:42eaf0f768bd27afcb38135d5bfc361d3a157f1f5c7dddcd8d391f7fa43d9de8"},
-    {file = "cbor2-5.6.2-cp39-cp39-win_amd64.whl", hash = "sha256:8839b73befa010358477736680657b9d08c1ed935fd973decb1909712a41afdc"},
-    {file = "cbor2-5.6.2-py3-none-any.whl", hash = "sha256:c0b53a65673550fde483724ff683753f49462d392d45d7b6576364b39e76e54c"},
-    {file = "cbor2-5.6.2.tar.gz", hash = "sha256:b7513c2dea8868991fad7ef8899890ebcf8b199b9b4461c3c11d7ad3aef4820d"},
+    {file = "cbor2-5.6.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0201d5e8d9ad1557aeb50d35b907c0f170de0ae9ebb484b2894bcee3b2e13b80"},
+    {file = "cbor2-5.6.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:eda6965cca276d4c2cebdbee14572dec65b991c5359fc32a793f03f052e35985"},
+    {file = "cbor2-5.6.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:14561038b8eaab3fd5e867f09bc43f7525a1405e41ade14066925ea3d42513a8"},
+    {file = "cbor2-5.6.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9a3cf6b339a005031e4b8c79b9541856e3b0077ea4c33d7bb6a019885136f53a"},
+    {file = "cbor2-5.6.3-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:4b7636d39de203ee30ac13575ed3e9a0510e993fa1671022b84b9e35e369825f"},
+    {file = "cbor2-5.6.3-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:23847075ce1bcda871c7698e5db0635685995ae470098a5e4c9a26c00f65f21a"},
+    {file = "cbor2-5.6.3-cp310-cp310-win_amd64.whl", hash = "sha256:ca15be7142e861fb9f918e0248620b4d4153b9ff14ef6034f7204db5db2924a1"},
+    {file = "cbor2-5.6.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:b07ee755ae5b0dfad608dab37364b35895cab5d1222653da1fea32a10330c4b0"},
+    {file = "cbor2-5.6.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9fc063843c14e9e95181faf8d807a53c958d77bb9d360eb4f2344d075ecfed36"},
+    {file = "cbor2-5.6.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c66d4c227c2ed6c63ec5c2d50eb8ec0e1c41c07b452a867544e48ca41d4f0b64"},
+    {file = "cbor2-5.6.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3af60ac82a733bfdfb2b1079c850fefea2621bdb8c8f87f4c5d12802d48a8c55"},
+    {file = "cbor2-5.6.3-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:acb93292843aa72768f089a135bfeec4c9b745132e8dc22f1b149490fc77cb0a"},
+    {file = "cbor2-5.6.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:193d1abdffd52893710d39389daa5c03e1569421cdf53585a28033689aef7aec"},
+    {file = "cbor2-5.6.3-cp311-cp311-win_amd64.whl", hash = "sha256:d0c915db92b441f505f8a14a521c9461439ac8e5d959454845eb92f93db0bb3b"},
+    {file = "cbor2-5.6.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:9eaec8c04618124a6b597fe4471035cb7cb0d5114f43aaf2062821ad480ef57c"},
+    {file = "cbor2-5.6.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d1e5181d4f858237ab4e1a28e21bdcaf31dab2657ab60a8d4a0701a078fe5926"},
+    {file = "cbor2-5.6.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:277997127402710a3abdf4372ac75e8f8bb2e75a303cd789312e515c8ef657dd"},
+    {file = "cbor2-5.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:add01e4b4663199940d10f8c8e1d926e70823d1b2f3f981cc097a4764125f110"},
+    {file = "cbor2-5.6.3-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:adc87485ffd7a4dad481e08e6819eebfcfbafc0918fffcca47aee4cdf8c6de04"},
+    {file = "cbor2-5.6.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:ea4a0412426155c3b78763449db56cf5c72c48788a37d7e60bd66c844b9c8634"},
+    {file = "cbor2-5.6.3-cp312-cp312-win_amd64.whl", hash = "sha256:18b3dee4eddde9761c60298ce21c0cd4e770237978034c5ee1d4242e255683ec"},
+    {file = "cbor2-5.6.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:ff6fd1c54b97ee322c0b7180092305ca3b012ff78fddadad97b33490f5f8881f"},
+    {file = "cbor2-5.6.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:ac6f10b9d25f2d61c036f86238bf23e3ea0253f98faa8ab00f67228bf3c0ce2a"},
+    {file = "cbor2-5.6.3-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7be74f2cbda547fdd57c83ee5b3470804f02c660db28efcf9d4016f001b66f40"},
+    {file = "cbor2-5.6.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:64ea120206f82492a4385bbc5e2639f9b67c8bc7bdc57bffcbe9a8fee8cd6342"},
+    {file = "cbor2-5.6.3-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:c3d2902e1aed155d56cdcae99cd4a9dae843e3fff6978148d2d5d5f9a0b986cd"},
+    {file = "cbor2-5.6.3-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:2d4f95a567e26d8d9d62db234cd089525c52f19e7fdd59152629d9f03bd94b4f"},
+    {file = "cbor2-5.6.3-cp38-cp38-win_amd64.whl", hash = "sha256:33efbe7103bac090430d291fca2fe1c444b0ec55c4716e8051b72a81377e8b79"},
+    {file = "cbor2-5.6.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:81e619a2a59ae966cedb5fd3ea8a9487a3d4430824bbeacdcf5f74ad6112cc57"},
+    {file = "cbor2-5.6.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:2b7755b93d32638f4d79a0fa0744b423787f6faa3c96ccccac68b6dbf1848368"},
+    {file = "cbor2-5.6.3-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0f0e95011ae8460265ef348fe380664fa22c51015fd52344ebd781579fa9552a"},
+    {file = "cbor2-5.6.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7693e53c3ba0b2ad4e46b610f8d69159ffdbcb6ebe75ea1c1f5f40c3283639ca"},
+    {file = "cbor2-5.6.3-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:e3ec251db32516d383fc587874b15f4b5fb4e9049d9436b8696f5767b11c149b"},
+    {file = "cbor2-5.6.3-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:6081c1ab9791d5973a40b95ecb8b04b0fbf9fc04be170d89a3ad77d5964f52d5"},
+    {file = "cbor2-5.6.3-cp39-cp39-win_amd64.whl", hash = "sha256:2aba8b75e36c9f84a42a7026271da8fd759035a871c1b799028439059527276b"},
+    {file = "cbor2-5.6.3-py3-none-any.whl", hash = "sha256:8a4b7404af6da719092a4ee5953d1930d095b93b684bf99e1ab74512be1910a4"},
+    {file = "cbor2-5.6.3.tar.gz", hash = "sha256:e6f0ae2751c2d333a960e0807c0611494eb1245631a167965acbc100509455d3"},
 ]
 
 [package.extras]
@@ -1474,13 +1474,13 @@ files = [
 
 [[package]]
 name = "ecdsa"
-version = "0.18.0"
+version = "0.19.0"
 description = "ECDSA cryptographic signature library (pure python)"
 optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.6"
 files = [
-    {file = "ecdsa-0.18.0-py2.py3-none-any.whl", hash = "sha256:80600258e7ed2f16b9aa1d7c295bd70194109ad5a30fdee0eaeefef1d4c559dd"},
-    {file = "ecdsa-0.18.0.tar.gz", hash = "sha256:190348041559e21b22a1d65cee485282ca11a6f81d503fddb84d5017e9ed1e49"},
+    {file = "ecdsa-0.19.0-py2.py3-none-any.whl", hash = "sha256:2cea9b88407fdac7bbeca0833b189e4c9c53f2ef1e1eaa29f6224dbc809b707a"},
+    {file = "ecdsa-0.19.0.tar.gz", hash = "sha256:60eaad1199659900dd0af521ed462b793bbdf867432b3948e87416ae4caf6bf8"},
 ]
 
 [package.dependencies]
@@ -1586,13 +1586,13 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "filelock"
-version = "3.13.3"
+version = "3.13.4"
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "filelock-3.13.3-py3-none-any.whl", hash = "sha256:5ffa845303983e7a0b7ae17636509bc97997d58afeafa72fb141a17b152284cb"},
-    {file = "filelock-3.13.3.tar.gz", hash = "sha256:a79895a25bbefdf55d1a2a0a80968f7dbb28edcd6d4234a0afb3f37ecde4b546"},
+    {file = "filelock-3.13.4-py3-none-any.whl", hash = "sha256:404e5e9253aa60ad457cae1be07c0f0ca90a63931200a47d9b6a6af84fd7b45f"},
+    {file = "filelock-3.13.4.tar.gz", hash = "sha256:d13f466618bfde72bd2c18255e269f72542c6e70e7bac83a0232d6b1cc5c8cf4"},
 ]
 
 [package.extras]
@@ -1726,45 +1726,6 @@ python-versions = ">=3.8"
 files = [
     {file = "goodwe-0.3.1-py3-none-any.whl", hash = "sha256:4d716c31b3ed156fc643ed02967793695087c0cd8ee5e0e5f3295c1f4e328d56"},
     {file = "goodwe-0.3.1.tar.gz", hash = "sha256:4133218ef2ae445df1828e36f1ed6f615c597bf9ac6a000b362a6693f8ecf970"},
-]
-
-[[package]]
-name = "gql"
-version = "3.5.0"
-description = "GraphQL client for Python"
-optional = false
-python-versions = "*"
-files = [
-    {file = "gql-3.5.0-py2.py3-none-any.whl", hash = "sha256:70dda5694a5b194a8441f077aa5fb70cc94e4ec08016117523f013680901ecb7"},
-    {file = "gql-3.5.0.tar.gz", hash = "sha256:ccb9c5db543682b28f577069950488218ed65d4ac70bb03b6929aaadaf636de9"},
-]
-
-[package.dependencies]
-anyio = ">=3.0,<5"
-backoff = ">=1.11.1,<3.0"
-graphql-core = ">=3.2,<3.3"
-yarl = ">=1.6,<2.0"
-
-[package.extras]
-aiohttp = ["aiohttp (>=3.8.0,<4)", "aiohttp (>=3.9.0b0,<4)"]
-all = ["aiohttp (>=3.8.0,<4)", "aiohttp (>=3.9.0b0,<4)", "botocore (>=1.21,<2)", "httpx (>=0.23.1,<1)", "requests (>=2.26,<3)", "requests-toolbelt (>=1.0.0,<2)", "websockets (>=10,<12)"]
-botocore = ["botocore (>=1.21,<2)"]
-dev = ["aiofiles", "aiohttp (>=3.8.0,<4)", "aiohttp (>=3.9.0b0,<4)", "black (==22.3.0)", "botocore (>=1.21,<2)", "check-manifest (>=0.42,<1)", "flake8 (==3.8.1)", "httpx (>=0.23.1,<1)", "isort (==4.3.21)", "mock (==4.0.2)", "mypy (==0.910)", "parse (==1.15.0)", "pytest (==7.4.2)", "pytest-asyncio (==0.21.1)", "pytest-console-scripts (==1.3.1)", "pytest-cov (==3.0.0)", "requests (>=2.26,<3)", "requests-toolbelt (>=1.0.0,<2)", "sphinx (>=5.3.0,<6)", "sphinx-argparse (==0.2.5)", "sphinx-rtd-theme (>=0.4,<1)", "types-aiofiles", "types-mock", "types-requests", "vcrpy (==4.4.0)", "websockets (>=10,<12)"]
-httpx = ["httpx (>=0.23.1,<1)"]
-requests = ["requests (>=2.26,<3)", "requests-toolbelt (>=1.0.0,<2)"]
-test = ["aiofiles", "aiohttp (>=3.8.0,<4)", "aiohttp (>=3.9.0b0,<4)", "botocore (>=1.21,<2)", "httpx (>=0.23.1,<1)", "mock (==4.0.2)", "parse (==1.15.0)", "pytest (==7.4.2)", "pytest-asyncio (==0.21.1)", "pytest-console-scripts (==1.3.1)", "pytest-cov (==3.0.0)", "requests (>=2.26,<3)", "requests-toolbelt (>=1.0.0,<2)", "vcrpy (==4.4.0)", "websockets (>=10,<12)"]
-test-no-transport = ["aiofiles", "mock (==4.0.2)", "parse (==1.15.0)", "pytest (==7.4.2)", "pytest-asyncio (==0.21.1)", "pytest-console-scripts (==1.3.1)", "pytest-cov (==3.0.0)", "vcrpy (==4.4.0)"]
-websockets = ["websockets (>=10,<12)"]
-
-[[package]]
-name = "graphql-core"
-version = "3.2.3"
-description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
-optional = false
-python-versions = ">=3.6,<4"
-files = [
-    {file = "graphql-core-3.2.3.tar.gz", hash = "sha256:06d2aad0ac723e35b1cb47885d3e5c45e956a53bc1b209a9fc5369007fe46676"},
-    {file = "graphql_core-3.2.3-py3-none-any.whl", hash = "sha256:5766780452bd5ec8ba133f8bf287dc92713e3868ddd83aee4faab9fc3e303dc3"},
 ]
 
 [[package]]
@@ -1978,13 +1939,13 @@ files = [
 
 [[package]]
 name = "idna"
-version = "3.6"
+version = "3.7"
 description = "Internationalized Domain Names in Applications (IDNA)"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "idna-3.6-py3-none-any.whl", hash = "sha256:c05567e9c24a6b9faaa835c4821bad0590fbb9d5779e7caa6e1cc4978e7eb24f"},
-    {file = "idna-3.6.tar.gz", hash = "sha256:9ecdbbd083b06798ae1e86adcbfe8ab1479cf864e4ee30fe4e46a003d12491ca"},
+    {file = "idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0"},
+    {file = "idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc"},
 ]
 
 [[package]]
@@ -2233,7 +2194,6 @@ optional = false
 python-versions = "<4, >=3.5"
 files = [
     {file = "mac_vendor_lookup-0.1.12-py3-none-any.whl", hash = "sha256:aeec6eac01b07e6558d889b51f475a1e1e938e09cab409a069ab6a43b13cba58"},
-    {file = "mac_vendor_lookup-0.1.12.tar.gz", hash = "sha256:74e1723e177d4deb02977148d3fa04a7916f4bf93268e2afe3240529272bf80d"},
 ]
 
 [package.dependencies]
@@ -3185,13 +3145,13 @@ files = [
 
 [[package]]
 name = "pyftdi"
-version = "0.55.0"
+version = "0.55.4"
 description = "FTDI device driver (pure Python)"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pyftdi-0.55.0-py3-none-any.whl", hash = "sha256:6af7b6c73da1256fd5140076fe77a616c13e44dd0779dd561dac1b5981dbd43f"},
-    {file = "pyftdi-0.55.0.tar.gz", hash = "sha256:a747bbbccc4eeea26cefa2c8bd3d2b8bef8c94ecb6969bb9c75a63640887519a"},
+    {file = "pyftdi-0.55.4-py3-none-any.whl", hash = "sha256:64a804ea1c652e6935897df7867dbba18910848cad0a4927ccdb06813c072c85"},
+    {file = "pyftdi-0.55.4.tar.gz", hash = "sha256:cb2770b606507024a65e0a520bf892f239a36cec25cab45338ce3e3027de53c8"},
 ]
 
 [package.dependencies]
@@ -3581,24 +3541,6 @@ zeroconf = ">=0,<1"
 
 [package.extras]
 docs = ["sphinx (>=4.2)", "sphinx_click", "sphinx_rtd_theme (>=0,<1)", "sphinxcontrib-apidoc (>=0,<1)"]
-
-[[package]]
-name = "pytibber"
-version = "0.28.2"
-description = "A python3 library to communicate with Tibber"
-optional = false
-python-versions = ">=3.10.0"
-files = [
-    {file = "pyTibber-0.28.2-py3-none-any.whl", hash = "sha256:196990faa6569bd85cf4f583ca879de7642138e0a756d1b008db608bd787be78"},
-    {file = "pyTibber-0.28.2.tar.gz", hash = "sha256:767491fc6d3ade62937116a40b07b041ff317163c71283ebeca1f155b3a38620"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.0.6"
-async-timeout = ">=1.4.0"
-gql = ">=3.0.0"
-python-dateutil = "*"
-websockets = ">=10.0"
 
 [[package]]
 name = "pytz"
@@ -4768,4 +4710,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "825ad2e51c40046565c80e1ff5aafc75ffeb8bf63a6b6132adde2beba6ffffe9"
+content-hash = "26e2095c4db75e5676745f7d365a991d17bde35152e8fe4a15f8465b10cb2715"
