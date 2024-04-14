@@ -2,6 +2,13 @@
 
 
 
+## v0.1.738 (2024-04-14)
+
+### Fix
+
+* fix(tibber): fix tibber version ([`2eb9729`](https://github.com/fhempy/fhempy/commit/2eb9729886fde1294935a2078c624d60e2778da7))
+
+
 ## v0.1.737 (2024-04-12)
 
 ### Chore
