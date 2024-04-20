@@ -2075,13 +2075,13 @@ test = ["pytest", "pytest-cov", "pytest-timeout", "pytest-watch"]
 
 [[package]]
 name = "luma-led-matrix"
-version = "1.7.0"
+version = "1.7.1"
 description = "A library to drive a MAX7219 LED serializer (using SPI) and WS2812 NeoPixels (using DMA)"
 optional = false
 python-versions = "<4,>=3.7"
 files = [
-    {file = "luma.led_matrix-1.7.0-py2.py3-none-any.whl", hash = "sha256:f581ffd8b4d1aa49ba1baab68ab7ccb19ac1b5456b053bfe27dbce4c867c64f2"},
-    {file = "luma.led_matrix-1.7.0.tar.gz", hash = "sha256:0e1803384bd1d44b2e9a91bb1e139910ceb8684a59703d2241f0bbc002f1374f"},
+    {file = "luma.led_matrix-1.7.1-py2.py3-none-any.whl", hash = "sha256:ab822fc8849dc814933ab97934f176a899923dbb711f019671606506f3ccd6fb"},
+    {file = "luma.led_matrix-1.7.1.tar.gz", hash = "sha256:be47d0116653adaa3f36b118f2bc02c4415914141fb5712fe601d75b9bbc79a4"},
 ]
 
 [package.dependencies]
@@ -2089,7 +2089,7 @@ files = [
 rpi-ws281x = {version = "*", markers = "platform_machine == \"armv7l\" and platform_system == \"Linux\""}
 
 [package.extras]
-docs = ["sphinx (>=1.5.1)"]
+docs = ["sphinx (>=1.5.1)", "sphinx-rtd-theme"]
 qa = ["flake8", "rstcheck"]
 test = ["pytest", "pytest-cov", "pytest-timeout"]
 
@@ -4711,4 +4711,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "63eb46fb95286598c6830f36bd79c4bdc095fe0aa914e04fb1fec991b83edb42"
+content-hash = "7334a500a8b22dc0714ff7bc3c6a800d936a7cb716269b010db3d438e56e87f7"
