@@ -34,7 +34,7 @@ class github_backup(generic.FhemModule):
             "backup_files": {
                 "default": (
                     "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
-                    + "fhem/www/gplot/SVG*.gplot"
+                    + "fhem/www/gplot/SVG*.gplot,"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
                     + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
@@ -45,7 +45,7 @@ class github_backup(generic.FhemModule):
                     "Comma separated list of files to backup.<br>"
                     + "Default:<br>"
                     + "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
-                    + "fhem/www/gplot/SVG*.gplot"
+                    + "fhem/www/gplot/SVG*.gplot,"
                     + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
                     + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
                     + ".fhempy/zigbee2mqtt/data/state.json,"
