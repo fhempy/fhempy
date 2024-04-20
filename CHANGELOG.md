@@ -2,6 +2,27 @@
 
 
 
+## v0.1.739 (2024-04-20)
+
+### Chore
+
+* chore(deps-dev): bump lxml from 5.1.0 to 5.2.1 (#395) ([`d3d8a52`](https://github.com/fhempy/fhempy/commit/d3d8a529ce1b9d7095aa328ef906cc2841e2a135))
+
+* chore: add recommendation for python 3.11 ([`541735f`](https://github.com/fhempy/fhempy/commit/541735f646b12ff5824d10878c948a8725af4d62))
+
+* chore(deps-dev): bump luma-led-matrix from 1.7.0 to 1.7.1 (#400) ([`dc9d88e`](https://github.com/fhempy/fhempy/commit/dc9d88e24952bc034a25951a3c4f513966faabb5))
+
+* chore(deps): bump idna from 3.6 to 3.7 (#402) ([`cd11e8c`](https://github.com/fhempy/fhempy/commit/cd11e8c10aa4c590d7631b1bcbe3e1d7220c6fe9))
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#403) ([`63831fb`](https://github.com/fhempy/fhempy/commit/63831fbf2df9d76b95babe1c91267046cfb97190))
+
+* chore(deps): bump aiohttp from 3.9.3 to 3.9.5 (#406) ([`57d2017`](https://github.com/fhempy/fhempy/commit/57d201727503ca11b2c6ebbf11e9e72d45c04d7d))
+
+### Fix
+
+* fix(github_backup): fix backup of files ([`7918a3e`](https://github.com/fhempy/fhempy/commit/7918a3eb0aa6128e592a87ec97bd3cb1c93091b4))
+
+
 ## v0.1.738 (2024-04-14)
 
 ### Fix
