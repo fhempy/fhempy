@@ -2,6 +2,13 @@
 
 
 
+## v0.1.740 (2024-04-20)
+
+### Fix
+
+* fix(github_backup): fix SVG location ([`31e861c`](https://github.com/fhempy/fhempy/commit/31e861c61f88e9259076137bb75c81201e2a8d47))
+
+
 ## v0.1.739 (2024-04-20)
 
 ### Chore
