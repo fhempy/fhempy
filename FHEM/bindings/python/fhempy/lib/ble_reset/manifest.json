@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "bluetooth-auto-recovery==1.4.1",
+    "bluetooth-auto-recovery==1.4.2",
     "bluetooth-adapters==0.16.2"
   ]
 }
