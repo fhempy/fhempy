@@ -2193,7 +2193,6 @@ files = [
     {file = "lxml-5.2.1-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:9e2addd2d1866fe112bc6f80117bcc6bc25191c5ed1bfbcf9f1386a884252ae8"},
     {file = "lxml-5.2.1-cp37-cp37m-win32.whl", hash = "sha256:f51969bac61441fd31f028d7b3b45962f3ecebf691a510495e5d2cd8c8092dbd"},
     {file = "lxml-5.2.1-cp37-cp37m-win_amd64.whl", hash = "sha256:b0b58fbfa1bf7367dde8a557994e3b1637294be6cf2169810375caf8571a085c"},
-    {file = "lxml-5.2.1-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:3e183c6e3298a2ed5af9d7a356ea823bccaab4ec2349dc9ed83999fd289d14d5"},
     {file = "lxml-5.2.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:804f74efe22b6a227306dd890eecc4f8c59ff25ca35f1f14e7482bbce96ef10b"},
     {file = "lxml-5.2.1-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:08802f0c56ed150cc6885ae0788a321b73505d2263ee56dad84d200cab11c07a"},
     {file = "lxml-5.2.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0f8c09ed18ecb4ebf23e02b8e7a22a05d6411911e6fabef3a36e4f371f4f2585"},
@@ -2320,18 +2319,19 @@ tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
 name = "meross-iot"
-version = "0.4.6.2"
+version = "0.4.7.1"
 description = "A simple library to deal with Meross devices. At the moment MSS110, MSS210, MSS310, MSS310H smart plugs and the MSS425E power strip. Other meross device might work out of the box with limited functionality. Give it a try and, in case of problems, let the developer know by opening an issue on Github."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "meross_iot-0.4.6.2-py2.py3-none-any.whl", hash = "sha256:3c599f62a0f7c428aab0e5d2b374f56054b75a68a5436e2d1456476152959551"},
-    {file = "meross_iot-0.4.6.2.tar.gz", hash = "sha256:95603ce4e9c2c500f35436671cfa695a0f0457c4a4f602c73678214200029caf"},
+    {file = "meross_iot-0.4.7.1-py2.py3-none-any.whl", hash = "sha256:afd761c6dbcd03e1f73b7ed765460d4d538242940243fedef4e814d1bc570920"},
+    {file = "meross_iot-0.4.7.1.tar.gz", hash = "sha256:4e7a7c8dbb7643b2dff8be22518d6d158dd100dc138a8f866d8b2cdd5a8e634b"},
 ]
 
 [package.dependencies]
 aiohttp = {version = ">=3.7.4.post0,<4.0.0", extras = ["speedups"]}
 paho-mqtt = ">=1.5.0,<2.0.0"
+pycryptodomex = ">=3.20.0"
 requests = ">=2.19.1,<3.0.0"
 
 [[package]]
@@ -4790,4 +4790,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "32b916445e9de016d0f16b828c25f5e9eeac83d249cc829e06b65726552beb30"
+content-hash = "b85c1721b8771727370e9318ecbdb64cc4a2e3fb0a9903f3042067ca8d709f2d"
