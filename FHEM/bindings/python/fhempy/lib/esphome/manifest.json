@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "esphome==2024.3.2"
+    "esphome==2024.4.2"
   ]
 }
