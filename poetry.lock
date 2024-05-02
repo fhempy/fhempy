@@ -49,18 +49,18 @@ pycares = ">=4.0.0"
 
 [[package]]
 name = "aioesphomeapi"
-version = "23.1.1"
+version = "23.2.0"
 description = "Python API for interacting with ESPHome devices."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "aioesphomeapi-23.1.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c52ea260c36d4e5ac81b4ec532eb88c00f490f13074d26cf321af4eafd505680"},
-    {file = "aioesphomeapi-23.1.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:763551c2106b25a119c504c60577233f5cbc3c960c99a1d1cf571edb4e35197c"},
-    {file = "aioesphomeapi-23.1.1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a7489e9725d433e4e0e83553acd28cee8556428dc9662ec52fa8507354b44f06"},
-    {file = "aioesphomeapi-23.1.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:eb4f69846e898f46f237f1049fa50133ec299045d08823d04674d86d53d58255"},
-    {file = "aioesphomeapi-23.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:951e81e6d9b4cd0660beb5cbc82d9423d6dfc902af02002575cef072992e77c7"},
-    {file = "aioesphomeapi-23.1.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c2078f28cf987327daf976f3c34da24cf3f9d93a5898c8c702f68a25f20d468c"},
-    {file = "aioesphomeapi-23.1.1.tar.gz", hash = "sha256:69ffdbcdd51f88cc7caf58482c2c25b3adf78b69d309ae8a81bbc6ae0bb697e9"},
+    {file = "aioesphomeapi-23.2.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:335edeedefcc3a2199ff01134575ae32f9268f6706f7cb2b0585aaca3d7220d1"},
+    {file = "aioesphomeapi-23.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:677149ebe522beb016b305ab999c4d64ef12749c2fbb7532c81d23beb610e914"},
+    {file = "aioesphomeapi-23.2.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2727fc590ed626c68b921476f990dbc5d43b0370ad1652bb0e212fd76b077ea8"},
+    {file = "aioesphomeapi-23.2.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:badacd7e9b4d3d8bf376a5536ddcca499ccb68050cf010f70e13b77746165012"},
+    {file = "aioesphomeapi-23.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7b9bf18c0c89b3efca3decc687e164b9457a1943c3c19c75e216556960545ce5"},
+    {file = "aioesphomeapi-23.2.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5f76e67c37b6e2c2226317d3ed0eeb2cc50c8479bd094360a94b4af1f9c13d57"},
+    {file = "aioesphomeapi-23.2.0.tar.gz", hash = "sha256:8a2ec2b6d55cd4f1a8af9d3510ff3d63707ac863dedb433ddbcb24b0476ce59e"},
 ]
 
 [package.dependencies]
@@ -1503,23 +1503,23 @@ files = [
 
 [[package]]
 name = "esphome"
-version = "2024.3.2"
+version = "2024.4.2"
 description = "Make creating custom firmwares for ESP32/ESP8266 super easy."
 optional = false
 python-versions = ">=3.9.0"
 files = [
-    {file = "esphome-2024.3.2-py2.py3-none-any.whl", hash = "sha256:279ecfc6bb0ab890539908084d7c3756161b68c0099f19c7faec39721ebe6c3a"},
-    {file = "esphome-2024.3.2.tar.gz", hash = "sha256:75f7bd3b963deedfe1341694d15caedac2a95ad39bab8bad366c7c82f254ce7a"},
+    {file = "esphome-2024.4.2-py2.py3-none-any.whl", hash = "sha256:7b61f0574ad8644e0d44594e9db40fd3addd572b3a82621c7d93deede697a690"},
+    {file = "esphome-2024.4.2.tar.gz", hash = "sha256:d8ddb2fe0b0c9ddd5b5662896b27f0d4ac208e3791966f233b4c76745757c0f8"},
 ]
 
 [package.dependencies]
-aioesphomeapi = "23.1.1"
+aioesphomeapi = "23.2.0"
 argcomplete = ">=2.0.0"
 async-timeout = {version = "4.0.3", markers = "python_version <= \"3.10\""}
 click = "8.1.7"
 colorama = "0.4.6"
 cryptography = "42.0.2"
-esphome-dashboard = "20240319.0"
+esphome-dashboard = "20240412.0"
 esptool = "4.7.0"
 icmplib = "3.0.4"
 kconfiglib = "13.7.1"
@@ -1538,13 +1538,13 @@ zeroconf = "0.131.0"
 
 [[package]]
 name = "esphome-dashboard"
-version = "20240319.0"
+version = "20240412.0"
 description = "ESPHome dashboard"
 optional = false
 python-versions = "*"
 files = [
-    {file = "esphome-dashboard-20240319.0.tar.gz", hash = "sha256:8e2117656c3c03845cb116f2a45a5692df0edc86f570d70e40ed731edf7a6905"},
-    {file = "esphome_dashboard-20240319.0-py3-none-any.whl", hash = "sha256:d64412ea345750473d74256a2a724a0117cba762ff27a7ca7f7f01d53c616eed"},
+    {file = "esphome-dashboard-20240412.0.tar.gz", hash = "sha256:313fc4a59f240ca1e12461789e3761e90fb17bc185e056316a82228214a0ba24"},
+    {file = "esphome_dashboard-20240412.0-py3-none-any.whl", hash = "sha256:994237ccdad21477419525f1ff13e601541f9b3ff1d947554742544d576b1412"},
 ]
 
 [[package]]
@@ -4790,4 +4790,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "b85c1721b8771727370e9318ecbdb64cc4a2e3fb0a9903f3042067ca8d709f2d"
+content-hash = "cd792cd045d70da3061806ccc2bf6333f2076e9db8110d9fea034c7d3cb092fc"
