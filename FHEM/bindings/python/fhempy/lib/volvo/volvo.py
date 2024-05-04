@@ -11,22 +11,25 @@ class volvo(generic.FhemModule):
 
     VEHICLELIST = "https://api.volvocars.com/extended-vehicle/v1/vehicles"
     VEHICLE_COMMANDS = (
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/commands"
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/commands"
     )
-    VEHICLE_COMMANDS_ACCEPT = (
-        "application/vnd.volvocars.api.connected-vehicle.commandlist.v1+json"
-    )
+    
+    VEHICLE_DETAILS = "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}"
+
 
     REGULAR_UPDATE_URLS = {
         "https://api.volvocars.com/energy/v1/vehicles/{vin}/recharge-status": "application/vnd.volvocars.api.energy.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/doors": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/environment": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/engine": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/engine-status": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/odometer": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/statistics": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/tyres": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
-        "https://api.volvocars.com/connected-vehicle/v1/vehicles/{vin}/warnings": "application/vnd.volvocars.api.connected-vehicle.vehicledata.v1+json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/doors": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/windows": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/diagnostics": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/engine": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/brakes": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/engine-status": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/fuel": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/odometer": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/statistics": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/tyres": "application/json",
+        "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/warnings": "application/json",
     }
 
     def __init__(self, logger):
@@ -36,6 +39,7 @@ class volvo(generic.FhemModule):
         self.access_token = None
         self.refresh_token = None
         self.vin = "NO_VIN"
+        self.isECar = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -143,6 +147,7 @@ class volvo(generic.FhemModule):
                     self.access_token = response["access_token"]
                     self.refresh_token = response["refresh_token"]
                     self.expires_in = response["expires_in"]
+                    self.logger.error(f"Got new access token {self.access_token}")
                 else:
                     self.logger.error(f"Failed to get data from {url}: {response}")
         except Exception:
@@ -193,6 +198,10 @@ class volvo(generic.FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
 
         await self.get_cars()
+        if self.vin == "NO_VIN":
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "No car selected.", 1)
+            return
+
         await self.get_commands()
 
         while True:
@@ -202,8 +211,7 @@ class volvo(generic.FhemModule):
     async def get_commands(self):
         try:
             cmds = await self.volvo_get(
-            volvo.VEHICLE_COMMANDS, volvo.VEHICLE_COMMANDS_ACCEPT
-            )
+            volvo.VEHICLE_COMMANDS)
         except Exception:
             self.logger.exception("Failed to get commands")
             return
@@ -218,13 +226,14 @@ class volvo(generic.FhemModule):
 
     async def set_command(self, hash, params):
         cmd = params["function_param"]["command"]
-        url = params["function_param"]["href"]
+        url = "https://api.volvocars.com/connected-vehicle"
+        url += params["function_param"]["href"]
         self.create_async_task(self.execute_command(cmd, url))
 
     async def execute_command(self, command, url):
         cmd_type = command.replace("_", "").lower()
         headers = {
-            "content-type": f"application/vnd.volvocars.api.connected-vehicle.{cmd_type}.v1+json",
+            "content-type": f"application/json",
             "vcc-api-key": self.appkey,
             "authorization": f"Bearer {self.access_token}",
         }
@@ -236,23 +245,23 @@ class volvo(generic.FhemModule):
             async with self.session.post(url, headers=headers, data=data) as resp:
                 response = await resp.json()
 
-                if response["status"] == 202:
+                if resp.status == 202:
                     await asyncio.sleep(10)
                     async_href = response["async"]["href"]
                     resp = await self.volvo_get(
                         async_href,
-                        "application/vnd.volvocars.api.connected-vehicle.requestdetailresponse.v1+json",
+                        "application/json",
                     )
-                    if resp["status"] == 200:
+                if resp.status == 200:
                         await fhem.readingsSingleUpdate(
                             self.hash, "lastcommand", "ok", 1
                         )
-                    else:
+                else:
                         await fhem.readingsSingleUpdate(
                             self.hash, "lastcommand", "failed", 1
                         )
         except Exception:
-            self.logger.exception(f"Failed to get data from {url}")
+            self.logger.exception(f"Failed to get data from {url} + with response {response}")
             return {}
 
     async def update_token(self):
@@ -262,6 +271,8 @@ class volvo(generic.FhemModule):
 
     async def get_regular_update_urls(self):
         for url in volvo.REGULAR_UPDATE_URLS:
+            if (not self.isECar) and ("energy" in url):
+                continue
             start = url.rfind("/") + 1
             domain = url[start:].replace("-", "_")
             try:
@@ -289,25 +300,58 @@ class volvo(generic.FhemModule):
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "found cars: " + car_ids_str + " Please set the attribute car", 1)
                 else:
                     self.vin = carVID
+            if self.vin != "NO_VIN":
+            # get car details
+                car_details = await self.volvo_get(volvo.VEHICLE_DETAILS)
+                
+                
+                for details in car_details["data"]:
+                    if not(isinstance(car_details["data"][details], dict)):
+                        if details != "images":
+                            await fhem.readingsSingleUpdateIfChanged(
+                            self.hash, "car_" + details, car_details["data"][details]
+                            , 1
+                            )
+                await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "car_model", car_details["data"]["descriptions"]["model"], 1)
+                
+                if "ELECTRIC" in car_details["data"]["fuelType"]:
+                    self.isECar = True
+                
+                
+                
+
+
         except Exception:
             self.logger.exception("Failed to get cars")
             return
         
 
     async def update_readings(self, data, domain=""):
+
+        # TODO: Add code handle data "Get vehicle details" with no value fields
         try:
             for reading in data:
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, domain + "_" + reading, data[reading]["value"], 1
-                )
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash,
-                    domain + "_" + reading + "_timestamp",
-                    data[reading]["timestamp"],
-                    1,
-                )
+                if "value" in data[reading]:
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, domain + "_" + reading, data[reading]["value"], 1
+                    )
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash,
+                        domain + "_" + reading + "_timestamp",
+                        data[reading]["timestamp"],
+                        1,
+                    )
+                    if "unit" in data[reading]:
+                        await fhem.readingsSingleUpdateIfChanged(
+                            self.hash,
+                            domain + "_" + reading + "_unit",
+                            data[reading]["unit"],
+                            1,
+                        )
+                
         except Exception:
-            self.logger.exception("Failed to update readings")
+            self.logger.exception(f"Failed to update readings for data {data} and domain {domain}")
 
     async def volvo_get(self, url, accept_header="application/json"):
         url = url.replace("{vin}", self.vin)
@@ -329,9 +373,10 @@ class volvo(generic.FhemModule):
                     "state",
                     response,
                     1,
-                )  
+                ) 
+                                                     
                 else:
-                    self.logger.error(f"Failed to get data from {url}: {response}")
+                    self.logger.error(f"Failed to get data from {url} and header {headers} with status {resp.status} and message: {response}")
         except Exception:
             self.logger.exception(f"Failed to get data from {url}")
             return {}
