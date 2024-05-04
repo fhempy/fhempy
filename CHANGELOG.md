@@ -2,6 +2,35 @@
 
 
 
+## v0.1.741 (2024-05-04)
+
+### Chore
+
+* chore(deps): bump python-semantic-release/python-semantic-release (#416) ([`f2ff9d3`](https://github.com/fhempy/fhempy/commit/f2ff9d37c3adfc1943fc73b86be068a116187019))
+
+* chore(deps-dev): bump meross-iot from 0.4.6.2 to 0.4.7.1 (#413) ([`232c0e1`](https://github.com/fhempy/fhempy/commit/232c0e184ea768045eaffe6a6a84035eb8c0c809))
+
+* chore(deps-dev): bump gitpython from 3.1.41 to 3.1.43 (#415) ([`8e0bb34`](https://github.com/fhempy/fhempy/commit/8e0bb34c1efeca720763a7d4056e26c48526dafe))
+
+* chore(deps-dev): bump setuptools from 69.2.0 to 69.5.1 (#408) ([`fbcf8d6`](https://github.com/fhempy/fhempy/commit/fbcf8d6348fb3b46b8535f01fc4e4e440dea4283))
+
+* chore(deps-dev): bump playwright from 1.42.0 to 1.43.0 (#409) ([`5aa5a0d`](https://github.com/fhempy/fhempy/commit/5aa5a0db45cce14b1a302866b9931af65215c39f))
+
+* chore(deps-dev): bump bluetooth-auto-recovery from 1.4.1 to 1.4.2 (#411) ([`ab92f18`](https://github.com/fhempy/fhempy/commit/ab92f188fe151c5263d48139d77a38c1873f630b))
+
+* chore(deps-dev): bump bluetooth-auto-recovery from 1.4.0 to 1.4.1 (#410) ([`835ec0f`](https://github.com/fhempy/fhempy/commit/835ec0fa5cac54a09402ccce79329635562b43f6))
+
+### Fix
+
+* fix(volvo): fixing broken Volvo integration (#422)
+
+* bugfix: added support for Volvo API v2
+
+feat: adding more car information
+
+* fix: fixing commands invocation for volvo API v2 ([`4336a52`](https://github.com/fhempy/fhempy/commit/4336a52cc560835f36a3b9f082399f13bd9909a6))
+
+
 ## v0.1.740 (2024-04-20)
 
 ### Fix
