@@ -29,7 +29,6 @@ class volvo(generic.FhemModule):
         "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/odometer": "application/json",
         "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/statistics": "application/json",
         "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/tyres": "application/json",
-        
         "https://api.volvocars.com/connected-vehicle/v2/vehicles/{vin}/warnings": "application/json",
     }
 
@@ -200,7 +199,7 @@ class volvo(generic.FhemModule):
 
         await self.get_cars()
         if self.vin == "NO_VIN":
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "No car selected", 1)
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "No car selected.", 1)
             return
 
         await self.get_commands()
@@ -227,13 +226,14 @@ class volvo(generic.FhemModule):
 
     async def set_command(self, hash, params):
         cmd = params["function_param"]["command"]
-        url = params["function_param"]["href"]
+        url = "https://api.volvocars.com/connected-vehicle"
+        url += params["function_param"]["href"]
         self.create_async_task(self.execute_command(cmd, url))
 
     async def execute_command(self, command, url):
         cmd_type = command.replace("_", "").lower()
         headers = {
-            "content-type": f"application/vnd.volvocars.api.connected-vehicle.{cmd_type}.v1+json",
+            "content-type": f"application/json",
             "vcc-api-key": self.appkey,
             "authorization": f"Bearer {self.access_token}",
         }
@@ -245,23 +245,23 @@ class volvo(generic.FhemModule):
             async with self.session.post(url, headers=headers, data=data) as resp:
                 response = await resp.json()
 
-                if response["status"] == 202:
+                if resp.status == 202:
                     await asyncio.sleep(10)
                     async_href = response["async"]["href"]
                     resp = await self.volvo_get(
                         async_href,
-                        "application/vnd.volvocars.api.connected-vehicle.requestdetailresponse.v1+json",
+                        "application/json",
                     )
-                    if resp["status"] == 200:
+                if resp.status == 200:
                         await fhem.readingsSingleUpdate(
                             self.hash, "lastcommand", "ok", 1
                         )
-                    else:
+                else:
                         await fhem.readingsSingleUpdate(
                             self.hash, "lastcommand", "failed", 1
                         )
         except Exception:
-            self.logger.exception(f"Failed to get data from {url}")
+            self.logger.exception(f"Failed to get data from {url} + with response {response}")
             return {}
 
     async def update_token(self):
