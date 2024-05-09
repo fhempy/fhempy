@@ -2,6 +2,21 @@
 
 
 
+## v0.1.742 (2024-05-09)
+
+### Chore
+
+* chore(deps-dev): bump goodwe from 0.3.1 to 0.4.0 (#424) ([`1c390bb`](https://github.com/fhempy/fhempy/commit/1c390bb3c58650fc0bb2ace79ab30e4d0c993c4f))
+
+* chore(deps-dev): bump esphome from 2024.3.2 to 2024.4.2 (#418) ([`666d2d3`](https://github.com/fhempy/fhempy/commit/666d2d3eba41643a8ea6f459e4c5f23bd30fc815))
+
+### Fix
+
+* fix(ring): Update ring_doorbell to 0.8.11 (#428)
+
+Update ring_doorbell to 0.8.11 ([`394910c`](https://github.com/fhempy/fhempy/commit/394910ca7d9cb3acc3b46f4b5b48f9bac75dd798))
+
+
 ## v0.1.741 (2024-05-04)
 
 ### Chore
