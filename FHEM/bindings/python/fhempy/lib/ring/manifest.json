@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "ring_doorbell==0.8.5"
+    "ring_doorbell==0.8.11"
   ]
 }
