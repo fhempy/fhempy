@@ -93,7 +93,7 @@ netifaces = "==0.11.0"
 opencv-python-headless = "==4.9.0.80"
 paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
-pillow = "==10.3.0"
+pillow = "==10.4.0"
 playwright = "==1.43.0"
 # remove pytibber from here as it requires websockets < 12.0
 # pyTibber = {version = "==0.29.0", python = "^3.11" }
