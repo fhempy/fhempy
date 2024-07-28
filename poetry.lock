@@ -909,13 +909,13 @@ testing = ["pytest"]
 
 [[package]]
 name = "btsocket"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python library for BlueZ Bluetooth Management API"
 optional = false
 python-versions = "*"
 files = [
-    {file = "btsocket-0.2.0-py2.py3-none-any.whl", hash = "sha256:0d33893039284fa3a496dd31cb15227e1cf07f0d42d3843d3284b522cccf575a"},
-    {file = "btsocket-0.2.0.tar.gz", hash = "sha256:6862250b7e0973d2beea9e49d3b5ced324d80e5003a0350856879e537ba777a8"},
+    {file = "btsocket-0.3.0-py2.py3-none-any.whl", hash = "sha256:949821c1b580a88e73804ad610f5173d6ae258e7b4e389da4f94d614344f1a9c"},
+    {file = "btsocket-0.3.0.tar.gz", hash = "sha256:7ea495de0ff883f0d9f8eea59c72ca7fed492994df668fe476b84d814a147a0d"},
 ]
 
 [package.extras]
@@ -4789,4 +4789,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "76570b60e807045656bf8395c4f5a6bfd47c89af2e8c7bd538c7afe65e362def"
+content-hash = "b434869f0a94e4a3dd4c87669e6e232a0989dc84a1c1e8c2fe68c70540bad2e6"

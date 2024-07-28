@@ -2,7 +2,7 @@
   "requirements": [
     "janus==1.0.0",
     "aioblescan==0.2.14",
-    "btsocket==0.2.0",
+    "btsocket==0.3.0",
     "pyric==0.1.6.3",
     "bleparser==3.7.1"
   ]
