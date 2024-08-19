@@ -81,9 +81,7 @@ class zigbee2mqtt(FhemModule):
             await utils.run_blocking(functools.partial(o.pull))
 
             await utils.run_blocking(
-                functools.partial(
-                    subprocess.call, ["bash", "-i", "-c", "npm ci"], cwd=z2m_directory
-                )
+                functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
             )
 
             source_folder = z2m_directory + "/data-backup"
@@ -144,11 +142,7 @@ class zigbee2mqtt(FhemModule):
                     1,
                 )
                 await utils.run_blocking(
-                    functools.partial(
-                        subprocess.call,
-                        ["bash", "-i", "-c", "npm ci"],
-                        cwd=z2m_directory,
-                    )
+                    functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
                 )
 
                 z2m_conf = (
@@ -205,9 +199,7 @@ class zigbee2mqtt(FhemModule):
     async def check_npm_installation(self):
         try:
             ver = await utils.run_blocking(
-                functools.partial(
-                    subprocess.check_output, ["bash", "-i", "-c", "npm --version"]
-                )
+                functools.partial(subprocess.check_output, ["npm", "--version"])
             )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "npm", ver.decode("ascii").rstrip(), 1
@@ -232,9 +224,7 @@ class zigbee2mqtt(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "z2m_version", version, 1)
 
         try:
-            self.proc = subprocess.Popen(
-                ["bash", "-i", "-c", "node ./index.js"], cwd=z2m_directory
-            )
+            self.proc = subprocess.Popen(["node", "./index.js"], cwd=z2m_directory)
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:
                 self.check_process_task = self.create_async_task(self.check_process())
