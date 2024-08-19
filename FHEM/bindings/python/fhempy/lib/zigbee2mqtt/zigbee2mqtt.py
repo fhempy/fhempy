@@ -81,7 +81,9 @@ class zigbee2mqtt(FhemModule):
             await utils.run_blocking(functools.partial(o.pull))
 
             await utils.run_blocking(
-                functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
+                functools.partial(
+                    subprocess.call, ["bash", "-i", "-c", "npm ci"], cwd=z2m_directory
+                )
             )
 
             source_folder = z2m_directory + "/data-backup"
@@ -142,7 +144,11 @@ class zigbee2mqtt(FhemModule):
                     1,
                 )
                 await utils.run_blocking(
-                    functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
+                    functools.partial(
+                        subprocess.call,
+                        ["bash", "-i", "-c", "npm ci"],
+                        cwd=z2m_directory,
+                    )
                 )
 
                 z2m_conf = (
