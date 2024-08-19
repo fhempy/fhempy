@@ -7,8 +7,9 @@ import signal
 import subprocess
 
 import netifaces
-from fhempy.lib.generic import FhemModule
 from git import Repo
+
+from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
 
@@ -179,8 +180,11 @@ class zigbee2mqtt(FhemModule):
 
     async def check_node_installation(self):
         try:
+            # call subprocess and respect the users PATH from .bashrc
             ver = await utils.run_blocking(
-                functools.partial(subprocess.check_output, ["node", "--version"])
+                functools.partial(
+                    subprocess.check_output, ["bash", "-i", "-c", "node --version"]
+                )
             )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "node", ver.decode("ascii").rstrip(), 1
@@ -195,7 +199,9 @@ class zigbee2mqtt(FhemModule):
     async def check_npm_installation(self):
         try:
             ver = await utils.run_blocking(
-                functools.partial(subprocess.check_output, ["npm", "--version"])
+                functools.partial(
+                    subprocess.check_output, ["bash", "-i", "-c", "npm --version"]
+                )
             )
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "npm", ver.decode("ascii").rstrip(), 1
@@ -220,7 +226,9 @@ class zigbee2mqtt(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "z2m_version", version, 1)
 
         try:
-            self.proc = subprocess.Popen(["node", "./index.js"], cwd=z2m_directory)
+            self.proc = subprocess.Popen(
+                ["bash", "-i", "-c", "node ./index.js"], cwd=z2m_directory
+            )
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:
                 self.check_process_task = self.create_async_task(self.check_process())
