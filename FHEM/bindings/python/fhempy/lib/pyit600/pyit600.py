@@ -250,6 +250,37 @@ class pyit600(generic.FhemModule):
                         except AttributeError:
                             _LOGGER.info(
                                 f"Error on reading device name or hvac_action!"
+                            )
+
+                        try:
+                            name = re.search(
+                                "name=" "(.+?)" ",",
+                                str(climate_devices.get(climate_device_id)),
+                            ).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
+                            humidity = re.search(
+                                "current_humidity=(.+?),",
+                                str(climate_devices.get(climate_device_id)),
+                            ).group(1)
+
+                            if (
+                                name == "unknown"
+                                or self._attr_readings_device_id == "on"
+                            ):
+                                await fhem.readingsSingleUpdate(
+                                    self.hash,
+                                    climate_device_id + "_humidity",
+                                    humidity,
+                                    1,
+                                )
+                            else:
+                                await fhem.readingsSingleUpdate(
+                                    self.hash, name + "_humidity", humidity, 1
+                                )
+                        except AttributeError:
+                            _LOGGER.info(
+                                f"Error on reading device name or current humidity!"
                             )							
 
                 else:
@@ -355,6 +386,37 @@ class pyit600(generic.FhemModule):
                         except AttributeError:
                             _LOGGER.info(
                                 f"Error on reading device name or hvac_action!"
+                            )
+                        
+                        try:
+                            name = re.search(
+                                "name=" "(.+?)" ",",
+                                str(climate_devices.get(climate_device_id)),
+                            ).group(1)
+                            name = name.replace(" ", "")
+                            name = name.replace("'", "")
+                            humidity = re.search(
+                                "current_humidity=(.+?),",
+                                str(climate_devices.get(climate_device_id)),
+                            ).group(1)
+
+                            if (
+                                name == "unknown"
+                                or self._attr_readings_device_id == "on"
+                            ):
+                                await fhem.readingsSingleUpdate(
+                                    self.hash,
+                                    climate_device_id + "_humidity",
+                                    humidity,
+                                    1,
+                                )
+                            else:
+                                await fhem.readingsSingleUpdate(
+                                    self.hash, name + "_humidity", humidity, 1
+                                )
+                        except AttributeError:
+                            _LOGGER.info(
+                                f"Error on reading device name or current humidity!"
                             )
         except Exception:
             self.logger.exception("Failed to update readings")
