@@ -4,6 +4,7 @@ This module connects to your Salus gateway
 
 Supported devices:
 - VS20WRF
+- SQ610RF
 
 ## Usage
 ```
