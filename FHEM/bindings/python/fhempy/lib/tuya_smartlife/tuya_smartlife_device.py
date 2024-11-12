@@ -83,7 +83,7 @@ class tuya_smartlife_device:
                 set_conf[self._t_specification[fct].code] = {
                     "options": "on,off",
                     "args": ["onoff"],
-                    "function_param": self._t_specification[fct],
+                    "function_param": vars(self._t_specification[fct]),
                     "function": "set_boolean",
                 }
             elif self._t_specification[fct].type == "Enum":
@@ -91,7 +91,7 @@ class tuya_smartlife_device:
                 set_conf[self._t_specification[fct].code] = {
                     "options": ",".join(options),
                     "args": ["selected_val"],
-                    "function_param": self._t_specification[fct],
+                    "function_param": vars(self._t_specification[fct]),
                     "function": "set_enum",
                 }
             elif self._t_specification[fct].type == "Integer":
@@ -101,19 +101,19 @@ class tuya_smartlife_device:
                     "options": slider,
                     "args": ["selected_val"],
                     "params": {"selected_val": {"format": "int"}},
-                    "function_param": self._t_specification[fct],
+                    "function_param": vars(self._t_specification[fct]),
                     "function": "set_integer",
                 }
             elif self._t_specification[fct].type == "String":
                 set_conf[self._t_specification[fct].code] = {
                     "args": ["new_val"],
-                    "function_param": self._t_specification[fct],
+                    "function_param": vars(self._t_specification[fct]),
                     "function": "set_string",
                 }
             elif self._t_specification[fct].type == "Json":
                 set_conf[self._t_specification[fct].code] = {
                     "args": ["new_val"],
-                    "function_param": self._t_specification[fct],
+                    "function_param": vars(self._t_specification[fct]),
                     "function": "set_json",
                 }
                 if self._t_specification[fct].code == "colour_data":
