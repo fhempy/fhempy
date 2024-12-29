@@ -2045,17 +2045,14 @@ files = [
 
 [[package]]
 name = "janus"
-version = "1.0.0"
+version = "2.0.0"
 description = "Mixed sync-async queue to interoperate between asyncio tasks and classic threads"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 files = [
-    {file = "janus-1.0.0-py3-none-any.whl", hash = "sha256:2596ea5482711c1ee3ef2df6c290aaf370a13c55a007826e8f7c32d696d1d00a"},
-    {file = "janus-1.0.0.tar.gz", hash = "sha256:df976f2cdcfb034b147a2d51edfc34ff6bfb12d4e2643d3ad0e10de058cb1612"},
+    {file = "janus-2.0.0-py3-none-any.whl", hash = "sha256:7e6449d34eab04cd016befbd7d8c0d8acaaaab67cb59e076a69149f9031745f9"},
+    {file = "janus-2.0.0.tar.gz", hash = "sha256:0970f38e0e725400496c834a368a67ee551dc3b5ad0a257e132f5b46f2e77770"},
 ]
-
-[package.dependencies]
-typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "kconfiglib"
@@ -4831,4 +4828,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "17c1070cb567293a9fd59df3e1ebfe3d60f0f149128bcd3f8b23bcdf6fe88cad"
+content-hash = "2839f45bea6737396fed078cf7fd7312d65b66a9820a1b7bb581604ade001a0a"
