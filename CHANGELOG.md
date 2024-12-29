@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.745 (2024-12-29)
+
+### Bug Fixes
+
+- **tuya_smartlife**: Update lib to 0.2.1
+  ([`be6f26f`](https://github.com/fhempy/fhempy/commit/be6f26fd790abc57aeee83985a01356c68cc5772))
+
+
 ## v0.1.744 (2024-12-29)
 
 ### Chores
