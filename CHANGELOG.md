@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.746 (2025-01-24)
+
+### Bug Fixes
+
+- **ddnssde**: Add csrf_token support
+  ([`354bf6a`](https://github.com/fhempy/fhempy/commit/354bf6a87333b5577ad418fe1f282e4700292566))
+
+
 ## v0.1.745 (2024-12-29)
 
 ### Bug Fixes
