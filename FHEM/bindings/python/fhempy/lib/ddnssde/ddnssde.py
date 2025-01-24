@@ -171,7 +171,6 @@ class ddnssde(generic.FhemModule):
                     "username": self.username,
                     "passwd": self.password,
                 },
-                headers=ddnssde.headers,
             ) as resp:
                 if resp.status != 200:
                     raise Exception(
