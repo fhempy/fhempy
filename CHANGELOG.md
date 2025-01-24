@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.748 (2025-01-24)
+
+### Bug Fixes
+
+- **ddnssde**: Fix csrf token
+  ([`8dcc773`](https://github.com/fhempy/fhempy/commit/8dcc7736066554dd34b44141c135cc546efce9ad))
+
+
 ## v0.1.747 (2025-01-24)
 
 ### Bug Fixes
