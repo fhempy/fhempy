@@ -159,9 +159,9 @@ class ddnssde(generic.FhemModule):
                 if resp.status != 200:
                     raise Exception(f"Open ddnss.de failed with status {resp.status}")
 
-            data = await resp.text()
-            soup = BeautifulSoup(data, "html.parser")
-            self.csrf_token = soup.find("input", {"name": "csrf_token"})["value"]
+                data = await resp.text()
+                soup = BeautifulSoup(data, "html.parser")
+                self.csrf_token = soup.find("input", {"name": "csrf_token"})["value"]
 
             async with session.post(
                 "https://ddnss.de/do.php",
