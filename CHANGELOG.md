@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.747 (2025-01-24)
+
+### Bug Fixes
+
+- **ddnssde**: Fix indent
+  ([`b4864c6`](https://github.com/fhempy/fhempy/commit/b4864c6d22aaedbbef421e580893a81c19e4d1f1))
+
+
 ## v0.1.746 (2025-01-24)
 
 ### Bug Fixes
