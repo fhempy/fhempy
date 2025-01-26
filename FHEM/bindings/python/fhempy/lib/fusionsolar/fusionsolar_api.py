@@ -1,6 +1,8 @@
 """API client for FusionSolar Kiosk."""
+
 import asyncio
 import codecs
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -107,9 +109,11 @@ class FusionSolarRestApi:
             "multiRegionName": "",
             "organizationName": "",
             "username": self._username,
-            "password": self._password_encrypted
-            if self._validate_user_ver == "v3"
-            else self._password,
+            "password": (
+                self._password_encrypted
+                if self._validate_user_ver == "v3"
+                else self._password
+            ),
         }
 
         headers = {
@@ -360,11 +364,20 @@ class FusionSolarRestApi:
                             await self.login()
                             continue
                         else:
-                            if resp.headers["Content-Type"].startswith("text/html"):
+                            if resp.content._buffer[0][0] != 123:
                                 await self.login()
                                 continue
                             else:
-                                response = await resp.json()
+                                all_data = b""
+                                while True:
+                                    data = await resp.content.read(
+                                        4096
+                                    )  # Read in chunks of 4096 bytes
+                                    if not data:
+                                        break
+                                    all_data += data
+                                json_string = all_data.decode("utf-8")
+                                response = json.loads(json_string)
                                 break
 
             if "success" in response and response["success"] is True:
