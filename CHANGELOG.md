@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.749 (2025-01-26)
+
+### Bug Fixes
+
+- **fusionsolar**: Fix fusionsolar API ([#487](https://github.com/fhempy/fhempy/pull/487),
+  [`15e6d48`](https://github.com/fhempy/fhempy/commit/15e6d48138de1830723a738886372463b3a5dae0))
+
+
 ## v0.1.748 (2025-01-24)
 
 ### Bug Fixes
