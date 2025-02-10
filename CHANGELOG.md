@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.750 (2025-02-10)
+
+### Features
+
+- **zigbee2mqtt**: Support 2.x.x version
+  ([`15c7906`](https://github.com/fhempy/fhempy/commit/15c790646ee1e520ca7dd702a58659b5709699a0))
+
+
 ## v0.1.749 (2025-01-26)
 
 ### Bug Fixes
