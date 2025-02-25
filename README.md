@@ -4,10 +4,16 @@
 [![LastCommit](https://img.shields.io/github/last-commit/fhempy/fhempy)](https://github.com/fhempy/fhempy/commits/master)
 [![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
 
-# Attention (12/2023)
-Please make sure that you have python3-venv installed before you do an update!
+# Seeking Contributors for fhempy!
 
-`sudo apt install python3-venv`
+Hi everyone,
+
+Due to limited time, I’m unable to fully support the fhempy project on my own. I'm looking for developers to help maintain and enhance the project.
+
+If you’re interested in contributing—whether it’s bug fixes, feature development, or documentation improvements—please get in touch via issues or pull requests.
+
+Your support would mean a lot!
+
 
 # fhempy
 

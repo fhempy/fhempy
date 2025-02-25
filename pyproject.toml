@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "fhempy"
 description = "Python binding for FHEM to support Python modules"
-version = "0.1.742"
+version = "0.1.750"
 authors = [ "Dominik Karall <dominik.karall@gmail.com>",]
 readme = "README.md"
 homepage = "https://github.com/fhempy/fhempy"
@@ -35,7 +35,7 @@ websockets = "==12.0"
 importlib_metadata = "7.1.0"
 pycryptodomex = "3.20.0"
 ifaddr = "==0.2.0"
-zeroconf = "==0.131.0"
+zeroconf = "==0.132.2"
 markdown2 = "2.4.13"
 requests = "2.32.2"
 async-upnp-client = "0.38.3"
@@ -74,9 +74,9 @@ bluetooth-auto-recovery = "==1.4.2"
 bt_proximity = "==0.2.1"
 btsocket = "==0.3.0"
 construct = "==2.10.70"
-cryptography = "==42.0.2"
-esphome = "==2024.4.2"
-goodwe = "==0.4.0"
+cryptography = "==43.0.0"
+esphome = "==2024.12.2"
+goodwe = "==0.4.8"
 greeclimate = "==1.4.1"
 httpx = "==0.27.0"
 huawei-solar = "==2.2.9"
@@ -93,7 +93,7 @@ netifaces = "==0.11.0"
 opencv-python-headless = "==4.9.0.80"
 paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
-pillow = "==10.3.0"
+pillow = "==10.4.0"
 playwright = "==1.43.0"
 # remove pytibber from here as it requires websockets < 12.0
 # pyTibber = {version = "==0.29.0", python = "^3.11" }
@@ -121,29 +121,18 @@ skodaconnect = "==1.3.10"
 spotipy = "==2.23.0"
 tflite-runtime = "==2.14.0"
 tuya-connector-python = "==0.1.2"
-tuya-device-sharing-sdk = "==0.2.0"
+tuya-device-sharing-sdk = "==0.2.1"
 tuya-iot-py-sdk = "==0.6.6"
 vaillant-netatmo-api = "==0.11.0"
 warema-wms-controller = "==0.2.4"
 xmodem = "==0.4.7"
 youtube_dl = "==2021.12.17"
 
-
-
-
-
-
-
-
-
-
-
-
 [tool.poetry.group.dev.dependencies]
 tox = "4.15.1"
 pytest = "8.2.2"
 pytest-env = "1.1.3"
 pytest-mock = "3.14.0"
-pytest-asyncio = ">=0.21.1,<0.24.0"
+pytest-asyncio = ">=0.21.1,<0.26.0"
 requests-mock = "1.12.1"
-pyyaml = "==6.0.1"
+pyyaml = "==6.0.2"

@@ -43,6 +43,10 @@ class zigbee2mqtt(FhemModule):
         if res is False:
             return
 
+        res = await self.check_pnpm_installation()
+        if res is False:
+            return
+
         res = await self.install_z2m()
         if res is False:
             return
@@ -81,7 +85,18 @@ class zigbee2mqtt(FhemModule):
             await utils.run_blocking(functools.partial(o.pull))
 
             await utils.run_blocking(
-                functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
+                functools.partial(
+                    subprocess.call,
+                    ["pnpm", "i", "--frozen-lockfile"],
+                    cwd=z2m_directory,
+                )
+            )
+            await utils.run_blocking(
+                functools.partial(
+                    subprocess.call,
+                    ["pnpm", "run", "build"],
+                    cwd=z2m_directory,
+                )
             )
 
             source_folder = z2m_directory + "/data-backup"
@@ -142,7 +157,18 @@ class zigbee2mqtt(FhemModule):
                     1,
                 )
                 await utils.run_blocking(
-                    functools.partial(subprocess.call, ["npm", "ci"], cwd=z2m_directory)
+                    functools.partial(
+                        subprocess.call,
+                        ["pnpm", "i", "--frozen-lockfile"],
+                        cwd=z2m_directory,
+                    )
+                )
+                await utils.run_blocking(
+                    functools.partial(
+                        subprocess.call,
+                        ["pnpm", "run", "build"],
+                        cwd=z2m_directory,
+                    )
                 )
 
                 z2m_conf = (
@@ -208,6 +234,21 @@ class zigbee2mqtt(FhemModule):
         except Exception:
             await fhem.readingsSingleUpdate(
                 self.hash, "npm", "npm installation missing", 1
+            )
+            return False
+
+    async def check_pnpm_installation(self):
+        try:
+            ver = await utils.run_blocking(
+                functools.partial(subprocess.check_output, ["pnpm", "--version"])
+            )
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "pnpm", ver.decode("ascii").rstrip(), 1
+            )
+            return True
+        except Exception:
+            await fhem.readingsSingleUpdate(
+                self.hash, "pnpm", "pnpm installation missing", 1
             )
             return False
 

@@ -2,6 +2,7 @@ import asyncio
 
 import aiohttp
 from bs4 import BeautifulSoup
+
 from fhempy.lib import utils
 
 from .. import fhem, generic
@@ -158,14 +159,18 @@ class ddnssde(generic.FhemModule):
                 if resp.status != 200:
                     raise Exception(f"Open ddnss.de failed with status {resp.status}")
 
+                data = await resp.text()
+                soup = BeautifulSoup(data, "html.parser")
+                self.csrf_token = soup.find("input", {"name": "csrf_token"})["value"]
+
             async with session.post(
                 "https://ddnss.de/do.php",
                 data={
+                    "csrf_token": self.csrf_token,
                     "action": "login",
                     "username": self.username,
                     "passwd": self.password,
                 },
-                headers=ddnssde.headers,
             ) as resp:
                 if resp.status != 200:
                     raise Exception(
