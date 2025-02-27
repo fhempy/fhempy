@@ -11,6 +11,7 @@ class tuya_smartlife(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.device = None
+        self.setup_device = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
