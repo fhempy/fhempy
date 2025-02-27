@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.1.751 (2025-02-27)
+
+### Bug Fixes
+
+- **meross**: Update manifest.json ([#496](https://github.com/fhempy/fhempy/pull/496),
+  [`0e270e2`](https://github.com/fhempy/fhempy/commit/0e270e25b713de08669983845bf881129d8ea6f9))
+
+Getting mfaLockExpired due to a meross API change. Updating to 0.4.8.0 fixed it.
+
+- **tuya_smartlife**: Fix for issue 498 ([#499](https://github.com/fhempy/fhempy/pull/499),
+  [`67ef9e4`](https://github.com/fhempy/fhempy/commit/67ef9e4664d8f075cb227d4856557f3126151614))
+
+
 ## v0.1.750 (2025-02-10)
 
 ### Features
