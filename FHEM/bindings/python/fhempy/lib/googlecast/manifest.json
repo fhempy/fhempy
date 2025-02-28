@@ -2,7 +2,7 @@
   "requirements": [
     "pychromecast==13.1.0",
     "youtube_dl==2021.12.17",
-    "spotipy==2.23.0",
+    "spotipy==2.25.1",
     "six==1.16.0"
   ]
 }
