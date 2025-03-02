@@ -159,7 +159,7 @@ class tuya_smartlife_setup:
                 self.logger = logger
                 self.manager = manager
 
-            def update_device(self, device: CustomerDevice):
+            def update_device(self, device: CustomerDevice, updated_status_properties):
                 self.logger.debug(f"update_device received for {device.id}")
                 for dev in t_cloud_setup.tuya_devices:
                     if dev.id == device.id:
