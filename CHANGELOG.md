@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.1.752 (2025-03-02)
+
+### Bug Fixes
+
+- **tuya_smartlife**: Fix signature of update_device callback
+  ([#501](https://github.com/fhempy/fhempy/pull/501),
+  [`0b4a321`](https://github.com/fhempy/fhempy/commit/0b4a32122faada57795ed636e25547715cb9e3c7))
+
+Co-authored-by: Qowy <marco.drummer@outlook.com>
+
+
 ## v0.1.751 (2025-02-27)
 
 ### Bug Fixes
