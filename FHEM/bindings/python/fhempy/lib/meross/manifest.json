@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "meross-iot==0.4.8.0",
+    "meross-iot==0.4.7.1",
     "setuptools==70.0.0"
   ]
 }
