@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.1.753 (2025-03-09)
+
+### Bug Fixes
+
+- **piclock**: Update pillow library ([#502](https://github.com/fhempy/fhempy/pull/502),
+  [`1ca056b`](https://github.com/fhempy/fhempy/commit/1ca056bd26ee733144335d717c85da0dc686b039))
+
+
 ## v0.1.752 (2025-03-02)
 
 ### Bug Fixes
