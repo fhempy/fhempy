@@ -49,6 +49,11 @@ Device 00:1A:22:06:A7:83 (public)
 Be aware that sometimes if you pair your device then mobile application (calor BT) can't connect with thermostat and vice versa.
 
 ## Installation
+Install following system dependencies:
+```
+sudo apt install python3-dev libdbus-1-dev libglib2.0-dev libgirepository1.0-dev libcairo2-dev
+```
+
 Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 ```
   <policy user="fhem">

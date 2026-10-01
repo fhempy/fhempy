@@ -16,7 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
-from .bluetoothctl import Bluetoothctl, PairingState
+from .bt_manager import BluetoothManager, PairingState
 
 
 class BluetoothLE:
@@ -92,37 +92,48 @@ class BluetoothLE:
         return ret
 
     def _pair(self, pin, retry=3):
-        btctl = Bluetoothctl(self.logger)
+        # Instantiate manager and agent
+        bt_mgr = BluetoothManager(self.logger)
 
-        paired_devices = btctl.get_paired_devices()
-        if self.addr in [d["mac_address"] for d in paired_devices]:
-            btctl.exit()
+        # Check if device is already paired
+        if bt_mgr.is_device_paired(self.addr):
             return PairingState.SUCCESS
+
+        bt_mgr.register_agent(pin)
 
         while retry > 0:
             try:
-                btctl.power_on()
-                btctl.agent_on()
-                btctl.default_agent()
-                btctl.start_scan()
-                time.sleep(10)
-                btctl.stop_scan()
-                pairing_successfull = btctl.pair(self.addr, pin)
-                if pairing_successfull == PairingState.SUCCESS:
-                    btctl.trust(self.addr)
-                    btctl.disconnect(self.addr)
-                    btctl.exit()
-                    return pairing_successfull
+                # 1. Clean up stale/cached keys if device path exists
+                device_path = bt_mgr.find_device_path(self.addr)
+                if device_path:
+                    bt_mgr.remove_device(device_path)
+
+                # 2. Discover device path (scans up to 10s)
+                device_path = bt_mgr.discover_device_path(self.addr, timeout=60)
+
+                if not device_path:
+                    self.logger.warning(
+                        f"Device {self.addr} not found during discovery scan."
+                    )
+                    retry -= 1
+                    time.sleep(5)
+                    continue
+
+                # 3. Attempt synchronous pairing
+                ret = bt_mgr.pair_device(device_path, timeout=60)
+                if ret == PairingState.SUCCESS or ret == PairingState.WRONG_PIN:
+                    bt_mgr.unregister_agent()
+                    return ret
                 else:
                     retry -= 1
                     time.sleep(5)
+
             except Exception as e:
-                self.logger.error(e)
+                self.logger.error(f"Error during pairing attempt: {e}")
                 retry -= 1
                 time.sleep(5)
 
-        btctl.exit()
-
+        bt_mgr.unregister_agent()
         return PairingState.FAILED
 
     async def update_adapters(self):
@@ -176,15 +187,14 @@ class BluetoothLE:
                 async with aiofiles.open(btconf, mode="r") as f:
                     content = await f.read()
                     if not all(line in content for line in policy_lines):
-                        self.logger.error(
+                        self.logger.warn(
                             "Not all required policy lines are present in bluetooth.conf"
                         )
-                        self.logger.error(
-                            "Please add the following lines to the file /etc/dbus-1/system.d/bluetooth.conf:"
+                        self.logger.warn(
+                            "If you experience pairing / connection issues, please add the following lines to the file /etc/dbus-1/system.d/bluetooth.conf:"
                         )
                         for line in policy_lines:
-                            self.logger.error(line)
-                        return
+                            self.logger.warn(line)
             self.conf_checked = True
 
         if self.pairing_required and not self.paired:
@@ -192,8 +202,10 @@ class BluetoothLE:
                 self._dev_hash, "connection", "pairing", 1
             )
             ret = await self.pair()
-            if ret:
+            if ret == PairingState.SUCCESS:
                 self.paired = True
+            else:
+                return
 
         if self._client and self._client.is_connected:
             return
