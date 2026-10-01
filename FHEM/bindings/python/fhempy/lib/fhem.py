@@ -246,6 +246,11 @@ async def CommandDefine(hash, definition: str):
             await CommandAttr(hash, f"{devname} room fhempy")
 
 
+async def CommandList(hash, listcmd):
+    cmd = 'CommandList(undef, "' + listcmd + '")'
+    return await sendCommandHash(hash, cmd)
+
+
 async def CommandAttr(hash, attrdef):
     cmd = 'CommandAttr(undef, "' + attrdef.replace('"', '\\"') + '")'
     return await sendCommandHash(hash, cmd)
