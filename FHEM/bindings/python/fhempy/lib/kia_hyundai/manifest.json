@@ -1,7 +1,6 @@
 {
   "requirements": [
-    "hyundai_kia_connect_api==3.19.1",
-    "pytz==2024.1",
+    "hyundai_kia_connect_api==4.21.0",    
     "python-dateutil==2.9.0.post0"
   ]
 }

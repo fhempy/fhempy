@@ -77,8 +77,8 @@ class kia_hyundai(generic.FhemModule):
             self.username,
             self.password,
             self.pin,
-            geocode_api_enable=True,
-            geocode_api_use_email=True,
+            geocode_api_enable=False,
+            geocode_api_use_email=False,
         )
         while True:
             try:
