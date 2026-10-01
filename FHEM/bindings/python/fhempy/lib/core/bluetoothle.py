@@ -122,6 +122,7 @@ class BluetoothLE:
                 # 3. Attempt synchronous pairing
                 ret = bt_mgr.pair_device(device_path, timeout=60)
                 if ret == PairingState.SUCCESS or ret == PairingState.WRONG_PIN:
+                    bt_mgr.unregister_agent()
                     return ret
                 else:
                     retry -= 1
@@ -132,6 +133,7 @@ class BluetoothLE:
                 retry -= 1
                 time.sleep(5)
 
+        bt_mgr.unregister_agent()
         return PairingState.FAILED
 
     async def update_adapters(self):

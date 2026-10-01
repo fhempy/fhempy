@@ -111,6 +111,16 @@ class BluetoothManager:
         agent_manager.RequestDefaultAgent(AGENT_PATH)
         self.logger.info(f"[Manager] Agent registered with capability {capability} at {AGENT_PATH}")
 
+    def unregister_agent(self):
+        if (self.agent):
+            agent_manager = dbus.Interface(
+                self.bus.get_object(BUS_NAME, "/org/bluez"), "org.bluez.AgentManager1"
+            )
+            agent_manager.UnregisterAgent(dbus.ObjectPath(AGENT_PATH))
+            self.agent.remove_from_connection()
+            self.agent = None
+            self.logger.info(f"[Manager] Agent unregistered at {AGENT_PATH}")
+
     def is_device_paired(self, mac_address):
         """Checks if a given MAC address is already in the paired devices list."""
         managed_objects = self.object_manager.GetManagedObjects()
