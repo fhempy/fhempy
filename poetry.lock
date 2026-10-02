@@ -5566,25 +5566,23 @@ files = [
 
 [[package]]
 name = "spotipy"
-version = "2.23.0"
+version = "2.25.2"
 description = "A light weight Python library for the Spotify Web API"
 optional = false
-python-versions = "*"
+python-versions = ">3.8"
 files = [
-    {file = "spotipy-2.23.0-py2-none-any.whl", hash = "sha256:da850fbf62faaa05912132d2886c293a5fbbe8350d0821e7208a6a2fdd6a0079"},
-    {file = "spotipy-2.23.0-py3-none-any.whl", hash = "sha256:6bf8b963c10d0a3e51037e4baf92e29732dee36b2a1f1b7dcc8cd5771e662a5b"},
-    {file = "spotipy-2.23.0.tar.gz", hash = "sha256:0dfafe08239daae6c16faa68f60b5775d40c4110725e1a7c545ad4c7fb66d4e8"},
+    {file = "spotipy-2.25.2-py3-none-any.whl", hash = "sha256:694bc9734d94171716257bf18eea9f1cb2ff8c581e59c74464137433830cf890"},
+    {file = "spotipy-2.25.2.tar.gz", hash = "sha256:5ed45c044156ca5518997e2502b1f2c1e7336407cb1fb8fe112d144b4d5282c8"},
 ]
 
 [package.dependencies]
 redis = ">=3.5.3"
 requests = ">=2.25.0"
-six = ">=1.15.0"
 urllib3 = ">=1.26.0"
 
 [package.extras]
-doc = ["Sphinx (>=1.5.2)"]
-test = ["mock (==2.0.0)"]
+memcache = ["pymemcache (>=3.5.2)"]
+test = ["autopep8 (>=2.3.2)", "flake8 (>=7.1.1)", "flake8-string-format (>=0.3.0)", "isort (>=5.13.2)"]
 
 [[package]]
 name = "starlette"
@@ -6632,4 +6630,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.15"
-content-hash = "2990d3c05aa1c42f4907f295f2d931b1f94aae39c05afdab9f20e53e81a71011"
+content-hash = "4562a89e1d475c1ae8e4730ff540c088c9efbbd9b18833529bd4ec3376e9b5da"
