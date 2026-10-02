@@ -116,6 +116,10 @@ class fhem_forum(generic.FhemModule):
         entries = soup.select(".windowbg.unread_pm")
         return entries
 
+    async def reading_changed(self, reading, value):
+        # readingsBulkUpdateIfChanged doesn't return FHEM's result anymore
+        return await fhem.ReadingsVal(self.hash["NAME"], reading, "") != value
+
     async def handle_private_messages(self, response):
         stateset = False
         entries = await utils.run_blocking(
@@ -135,15 +139,17 @@ class fhem_forum(generic.FhemModule):
                 link_to_msg = entry.select(".pm_subject")[0].next.next["href"]
                 link_to_msg = "https://forum.fhem.de/index.php?action=pm" + link_to_msg
 
-                ret = await fhem.readingsBulkUpdateIfChanged(
-                    self.hash,
-                    f"private_message",
+                private_message = (
                     f'<html><a href="{link_to_msg}" target="_blank">'
                     + f"{title}</a>"
-                    + f"<br>{date_sent} von {user_from}</html>",
+                    + f"<br>{date_sent} von {user_from}</html>"
+                )
+                changed = await self.reading_changed("private_message", private_message)
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "private_message", private_message
                 )
 
-                if ret:
+                if changed:
                     stateset = True
                     ret = await fhem.readingsBulkUpdateIfChanged(
                         self.hash,
@@ -195,15 +201,17 @@ class fhem_forum(generic.FhemModule):
                     last_post_name["target"] = "_blank"
                     last_post_str = f"{last_post_date} von {last_post_name}"
 
-                    ret = await fhem.readingsBulkUpdateIfChanged(
-                        self.hash,
-                        f"{reading}_{i:02d}",
+                    topic = (
                         f'<html><a href="{link_to_new}" target="_blank">'
                         + f"{title_to_new}</a>"
-                        + f"<br>{last_post_str}</html>",
+                        + f"<br>{last_post_str}</html>"
+                    )
+                    changed = await self.reading_changed(f"{reading}_{i:02d}", topic)
+                    await fhem.readingsBulkUpdateIfChanged(
+                        self.hash, f"{reading}_{i:02d}", topic
                     )
 
-                    if i == 1 and (ret is not None or self.first_run is True):
+                    if i == 1 and (changed or self.first_run is True):
                         self.first_run = False
                         await fhem.readingsBulkUpdateIfChanged(
                             self.hash,
