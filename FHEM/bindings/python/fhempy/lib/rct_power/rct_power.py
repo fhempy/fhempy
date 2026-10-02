@@ -15,10 +15,10 @@ class rct_power(generic.FhemModule):
         "battery.soc_target",
         "battery.cycles",
         "battery.soh",
-        "power_mng.battery_power_extern"
+        "power_mng.battery_power_extern",
         "power_mng.soc_max",
         "power_mng.soc_min",
-        "power_mng.soc_strategy"
+        "power_mng.soc_strategy",
         "battery.temperature",
         "battery.efficiency",
         "g_sync.p_acc_lp",
@@ -38,7 +38,7 @@ class rct_power(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "interval": {
                 "default": 10,
@@ -229,7 +229,7 @@ class rct_power(generic.FhemModule):
             },
         }
         await self.set_set_config(set_config)
-        
+
         if len(args) < 4 or len(args) > 5:
             return "Usage: define my_rct fhempy rct_power IP [PORT]"
 
@@ -251,11 +251,11 @@ class rct_power(generic.FhemModule):
 
     async def set_attr_disable(self, hash):
         if self._attr_disable == 1:
-            self.cancel_async_task(self.update_loop_task)
-            self.update_loop_task = None
-        else:
             if self.update_loop_task is not None:
-                self.update_loop_task = self.create_async_task(self.update_loop())
+                self.cancel_async_task(self.update_loop_task)
+                self.update_loop_task = None
+        elif self.update_loop_task is None and hasattr(self, "rctclient"):
+            self.update_loop_task = self.create_async_task(self.update_loop())
 
     async def setup_rct(self):
         self.rctclient = RctPowerApiClient(
@@ -288,9 +288,10 @@ class rct_power(generic.FhemModule):
                     *retrieve_objects,
                 ]
             for val in retrieve_objects:
-                for object_info in REGISTRY.all():
-                    if object_info.name == val:
-                        object_ids.append(object_info.object_id)
+                try:
+                    object_ids.append(REGISTRY.get_by_name(val).object_id)
+                except KeyError:
+                    self.logger.warning(f"Unknown RCT object {val}, skipping it")
 
             response = await self.rctclient.async_get_data(object_ids)
             for object_id in response:
@@ -342,9 +343,12 @@ class rct_power(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
 
         except Exception:
-            await fhem.readingsBulkUpdateIfChanged(hash, "state", "connection error")
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "state", "connection error"
+            )
             self.logger.exception("Failed to update_readings")
-        await fhem.readingsEndUpdate(self.hash, 1)
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def readingsBulkUpdate(self, hash, reading, value):
         if self._attr_update_readings == "always":
