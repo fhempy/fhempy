@@ -425,9 +425,6 @@ async def sendCommandName(name, cmd, hash=None):
     except asyncio.TimeoutError:
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
-    except asyncio.CancelledError:
-        # task was cancelled, propagate cancellation to the caller
-        raise
     except Exception as e:
         logger.exception(f"Exception while waiting for reply: {e}")
         ret = str(e)

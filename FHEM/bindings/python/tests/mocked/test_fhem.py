@@ -20,6 +20,7 @@ async def test_send_command_name_propagates_cancel(monkeypatch):
 @pytest.mark.asyncio
 async def test_send_command_name_returns_exception_text(monkeypatch):
     async def fail(name, cmd):
+        await asyncio.sleep(0)
         raise Exception("boom")
 
     monkeypatch.setattr(fhem, "send_and_wait", fail)
