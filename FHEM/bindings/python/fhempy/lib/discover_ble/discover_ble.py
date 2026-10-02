@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from bleak import discover
+from bleak import BleakScanner
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem
@@ -18,8 +18,8 @@ class discover_ble(FhemModule):
     async def runBleScan(self):
         while True:
             try:
-                devices = await discover()
-                for d in devices:
+                devices = await BleakScanner.discover(return_adv=True)
+                for d, adv in devices.values():
                     if d.name == "GfBT Project":
                         if not await fhem.checkIfDeviceExists(
                             self.hash, "TYPE", "GFPROBT", "MAC", d.address
@@ -30,7 +30,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                             await fhem.CommandDefine(
                                 self.hash,
@@ -48,7 +48,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                     elif d.name == "CC-RT-BLE":
                         if not await fhem.checkIfDeviceExists(
@@ -60,7 +60,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                             await fhem.CommandDefine(
                                 self.hash,
@@ -78,7 +78,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                     elif d.name[0:7] == "Expert_":
                         if not await fhem.checkIfDeviceExists(
@@ -90,7 +90,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                             await fhem.CommandDefine(
                                 self.hash,
@@ -108,7 +108,7 @@ class discover_ble(FhemModule):
                                 + " / "
                                 + d.address
                                 + " / rssi: "
-                                + str(d.rssi)
+                                + str(adv.rssi)
                             )
                     else:
                         self.logger.debug(
@@ -117,7 +117,7 @@ class discover_ble(FhemModule):
                             + ", "
                             + d.address
                             + ", rssi: "
-                            + str(d.rssi)
+                            + str(adv.rssi)
                         )
             except Exception:
                 self.logger.error("BLE Scan failed, retry in 600s", exc_info=True)

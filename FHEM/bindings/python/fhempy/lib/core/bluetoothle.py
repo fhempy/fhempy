@@ -38,6 +38,7 @@ class BluetoothLE:
     ) -> None:
         self._disconnect_called = False
         self._device = None
+        self._rssi = None
         self._client = None
         self._dev_hash = device_hash
 
@@ -144,11 +145,19 @@ class BluetoothLE:
 
     async def find_device(self, timeout=30, adapter=None):
         self._device = None
+        self._rssi = None
+
+        def match_address(device, adv):
+            if device.address.upper() == self.addr.upper():
+                # rssi is only available via advertisement data
+                self._rssi = adv.rssi
+                return True
+            return False
 
         async with BluetoothLE.bluetoothctl_lock:
             try:
-                self._device = await BleakScanner.find_device_by_address(
-                    self.addr, timeout=timeout, adapter=adapter
+                self._device = await BleakScanner.find_device_by_filter(
+                    match_address, timeout=timeout, adapter=adapter
                 )
                 self.logger.info(f"Device found via adapter {adapter}")
             except (asyncio.TimeoutError, BleakError):
@@ -264,7 +273,7 @@ class BluetoothLE:
                     1,
                 )
                 await fhem.readingsSingleUpdateIfChanged(
-                    self._dev_hash, "rssi", self._device.rssi, 1
+                    self._dev_hash, "rssi", self._rssi, 1
                 )
 
                 self._client = BleakClient(
