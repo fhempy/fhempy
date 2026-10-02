@@ -119,7 +119,7 @@ async def get_room_mapping(cloud: MiCloud, host: str, token: str):
             result += f"\n- {local_id}: {cloud_name}"
         return result
 
-    except:
+    except Exception:
         return "Can't get from cloud"
 
 
@@ -218,7 +218,7 @@ async def update_zigbee_firmware(host: str, custom: bool):
     try:
         if not await sh.connect(host) or not await sh.run_zigbee_flash():
             return False
-    except:
+    except Exception:
         pass
     finally:
         await sh.close()
