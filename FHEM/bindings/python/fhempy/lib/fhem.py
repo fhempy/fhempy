@@ -16,6 +16,8 @@ from .version import __version__
 logger = logging.getLogger(__name__)
 
 function_active = []
+# futures of commands waiting for a change of function_active
+function_waiters = []
 update_locks = {}
 wsconnection = None
 
@@ -30,6 +32,7 @@ def updateConnection(ws):
 
 def setFunctionActive(hash):
     function_active.append(hash["NAME"])
+    notifyFunctionWaiters()
 
 
 def setFunctionInactive(hash):
@@ -39,6 +42,27 @@ def setFunctionInactive(hash):
             f"Set wrong function inactive, tried {hash['NAME']}, "
             f"current function_active: {function_active},{element}"
         )
+    notifyFunctionWaiters()
+
+
+def notifyFunctionWaiters():
+    for waiter in function_waiters:
+        if not waiter.done():
+            waiter.set_result(None)
+    function_waiters.clear()
+
+
+async def waitForFunction(name):
+    # while FHEM waits for a function reply, it only handles
+    # commands of the device which called the function
+    while len(function_active) != 0 and function_active[-1] != name:
+        waiter = asyncio.get_running_loop().create_future()
+        function_waiters.append(waiter)
+        try:
+            await waiter
+        finally:
+            if waiter in function_waiters:
+                function_waiters.remove(waiter)
 
 
 async def getDeviceHashName(hash, typeinternal, typevalue, internal, value):
@@ -411,10 +435,7 @@ async def sendCommandName(name, cmd, hash=None):
     timeout = 180
     try:
         start = time.time()
-        while len(function_active) != 0:
-            if function_active[-1] == name:
-                break
-            await asyncio.sleep(0.1)
+        await waitForFunction(name)
         end = time.time()
         duration = end - start
         if duration > 5:
