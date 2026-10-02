@@ -33,8 +33,11 @@ async def test_setup(mocker):
         ],
         {},
     )
-    # wait for realtime data 10s
-    await asyncio.sleep(10)
+    # wait up to 30s for realtime data from the tibber demo api
+    for _ in range(30):
+        if "rt_currentL3" in mock_fhem.readings.get("testdevice", {}):
+            break
+        await asyncio.sleep(1)
 
     assert mock_fhem.readings["testdevice"]["tibber_name"] == "Arya Stark"
     assert mock_fhem.readings["testdevice"]["address"] == "Winterfell Castle 1"
