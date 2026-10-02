@@ -2,6 +2,7 @@
 Based on
 https://github.com/weltenwort/home-assistant-rct-power-integration/blob/main/custom_components/rct_power/lib/api.py
 """
+import asyncio
 from asyncio import StreamReader, StreamWriter, TimeoutError, open_connection
 from asyncio.locks import Lock
 from dataclasses import dataclass
@@ -9,7 +10,6 @@ from datetime import datetime
 import struct
 from typing import Dict, List, Optional, Tuple, TypeVar, Union
 
-import async_timeout
 from rctclient.exceptions import FrameCRCMismatch, FrameLengthExceeded, InvalidCommand
 from rctclient.frame import ReceiveFrame, SendFrame
 from rctclient.registry import REGISTRY
@@ -88,7 +88,7 @@ class RctPowerApiClient:
 
     async def async_send_data(self, object_id: int, value) -> RctPowerData:
         async with self._connection_lock:
-            async with async_timeout.timeout(CONNECTION_TIMEOUT):
+            async with asyncio.timeout(CONNECTION_TIMEOUT):
                 reader, writer = await open_connection(
                     host=self._hostname, port=self._port
                 )
@@ -122,7 +122,7 @@ class RctPowerApiClient:
         request_time = datetime.now()
 
         try:
-            async with async_timeout.timeout(READ_TIMEOUT):
+            async with asyncio.timeout(READ_TIMEOUT):
                 await writer.drain()
                 writer.write(send_command_frame.data)
 
@@ -254,7 +254,7 @@ class RctPowerApiClient:
 
     async def async_get_data(self, object_ids: List[int]) -> RctPowerData:
         async with self._connection_lock:
-            async with async_timeout.timeout(CONNECTION_TIMEOUT):
+            async with asyncio.timeout(CONNECTION_TIMEOUT):
                 reader, writer = await open_connection(
                     host=self._hostname, port=self._port
                 )
@@ -284,7 +284,7 @@ class RctPowerApiClient:
         request_time = datetime.now()
 
         try:
-            async with async_timeout.timeout(READ_TIMEOUT):
+            async with asyncio.timeout(READ_TIMEOUT):
                 await writer.drain()
                 writer.write(read_command_frame.data)
 
