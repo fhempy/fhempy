@@ -1,6 +1,205 @@
 # CHANGELOG
 
 
+## v0.1.757 (2026-10-02)
+
+### Bug Fixes
+
+- Propagate cancellation in sendCommandName ([#537](https://github.com/fhempy/fhempy/pull/537),
+  [`fe01d12`](https://github.com/fhempy/fhempy/commit/fe01d120a46f8fd2caee03c586d138c0b09a1846))
+
+sendCommandName no longer swallows asyncio.CancelledError and returns "", so callers see the
+  cancellation. Error logging no longer concatenates str and Exception (which raised TypeError and,
+  in send_and_wait, left the future unresolved until the 180s timeout) and logs tracebacks via
+  logger.exception.
+
+Fixes #527
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01DPeuHmKf6rG9FhaSkss2P5
+
+- Support Python 3.14 ([#534](https://github.com/fhempy/fhempy/pull/534),
+  [`a10fd73`](https://github.com/fhempy/fhempy/commit/a10fd73e4b9ae756445207e7cb918b75cda05247))
+
+* fix: support Python 3.14
+
+- create the event loop explicitly in run(), asyncio.get_event_loop() no longer creates one in
+  Python 3.14 ("There is no current event loop in thread 'MainThread'") - update aiohttp to 3.13.5,
+  aiohttp 3.9.5 fails to import on Python 3.14 (typing.ByteString was removed) - update
+  async-upnp-client to 0.48.2, 0.38.3 requires aiohttp<3.10 - regenerate poetry.lock
+
+Closes #520
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_015fxf4QnqeMV6PfVn8M1BVG
+
+* fix: drop async_timeout dependency and test on Python 3.14
+
+aiohttp 3.13 no longer pulls in async-timeout on Python >= 3.11, so wienernetze_smartmeter and
+  pyit600 failed to import in CI.
+
+- rct_power, wienernetze_smartmeter: use asyncio.timeout (Python 3.11+) - pyit600: add async-timeout
+  to the manifest, pyit600 0.5.1 imports it without declaring it - tox/CI: test on Python 3.11-3.14
+  (tox envs were still py38-py311)
+
+Claude-Session: https://claude.ai/code/session_01R9jxufMHwSUDXmCTCJEovv
+
+* test(tibber): wait up to 30s for realtime data instead of a fixed 10s
+
+The demo api sometimes needs longer than 10s to deliver the first realtime measurement, which made
+  the 3.13 job fail with KeyError rt_currentL3 while the other Python versions passed.
+
+* test(tibber): accept both demo homes
+
+The tibber demo account has two homes ('Winterfell Castle 1' and '123 Main St') and the api returns
+  them in varying order, so the module picks either one as first home. Accept both addresses and
+  only require realtime readings when the home supports realtime consumption.
+
+* test(tibber): reset leaked readings and wait for the home update
+
+mock_fhem.readings is shared between tests and the ring test also uses 'testdevice', so its
+  'address' reading made the wait loop stop before tibber had written its home readings. Clear the
+  device readings first, wait for 'home_id' and allow for one 60s retry of the home update.
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **fhempyServer**: Don't crash FHEM when python version can't be parsed
+  ([#538](https://github.com/fhempy/fhempy/pull/538),
+  [`8ae6417`](https://github.com/fhempy/fhempy/commit/8ae6417e651c7bf0b8aabd15fce981f5d0c5b4d4))
+
+version->declare died on output like "Python 3.14.3" when sed is not available (Windows) or on empty
+  output, which took down FHEM. Parse the version in Perl, catch errors and report a reading
+  instead.
+
+Claude-Session: https://claude.ai/code/session_01KrLUuFHoihvHcsrEnSTSik
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **xiaomi_gateway3**: Let cancellation propagate in get_room_mapping
+  ([#539](https://github.com/fhempy/fhempy/pull/539),
+  [`32b9400`](https://github.com/fhempy/fhempy/commit/32b9400b926f7e45f31af2da0706621a8a952f4b))
+
+* fix(xiaomi_gateway3): let cancellation propagate in get_room_mapping
+
+Bare except clauses in get_room_mapping and update_zigbee_firmware also caught
+  asyncio.CancelledError, so a cancelled task returned the "Can't get from cloud" error string
+  instead of being cancelled. Catch Exception instead and add regression tests.
+
+Fixes #529
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_017WFE459qRjppa6QtmyYW3i
+
+* test(xiaomi_gateway3): install module dependencies before import
+
+The mocked test env only has core deps; install the module's manifest requirements first, like the
+  other module tests do.
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **xiaomi_gateway3**: Let task cancellation propagate in AsyncMiIO
+  ([#535](https://github.com/fhempy/fhempy/pull/535),
+  [`ebcec93`](https://github.com/fhempy/fhempy/commit/ebcec934ff3d7c7d34e22957c1cd74af6a00f3e5))
+
+Bare except clauses in AsyncMiIO.ping, send and send_bulk caught asyncio.CancelledError, so a
+  cancelled ping returned False and a cancelled send kept retrying. Catch Exception instead.
+
+Fixes #528
+
+Claude-Session: https://claude.ai/code/session_015aeaHyUoaANR4Fad8XZrgg
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **zappi**: Detect zappi serial behind external hub
+  ([#540](https://github.com/fhempy/fhempy/pull/540),
+  [`2342ae2`](https://github.com/fhempy/fhempy/commit/2342ae2d5bf74a6781094f42d01a07407c9556b8))
+
+The API key belongs to the myenergi hub, so the serial given at define is the hub serial. For a
+  zappi v1 with external hub this differs from the zappi serial, and /cgi-jstatus-Z<hub serial> has
+  no "zappi" key, which raised KeyError: 'zappi'. Look the zappi up via /cgi-jstatus-* instead and
+  set a state reading when none is found or the request fails.
+
+Claude-Session: https://claude.ai/code/session_01FESmgaezJpinm5sLWcnLao
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Features
+
+- **kia_hyundai**: Add force_update set command ([#533](https://github.com/fhempy/fhempy/pull/533),
+  [`add5152`](https://github.com/fhempy/fhempy/commit/add5152364e2b8da9617d0e28a572c2890458d1b))
+
+* fix: repair failing tests after dependency update
+
+- core: migrate websocket server to websockets>=14 asyncio API and bump websockets to 15.0.1
+  (pyTibber/gql 4 requires websockets>=14.2) - bluetoothle: import BluetoothManager lazily so that
+  modules without pairing (gfprobt, mitemp2, blue_connect) do not require dbus/PyGObject;
+  PairingState moved to core/bt_pairing_state.py - object_detection: opencv-python-headless
+  4.14.0.94 (numpy 2 support), replace tflite-runtime with ai-edge-litert 2.1.6 (wheels for py3.11+)
+  - skodaconnect, wienernetze_smartmeter: lxml 6.1.3 (wheels for py3.13) - spotify_connect_player:
+  playwright 1.63.0 (py3.13 support) - alphaess: rename module directory to alphaesscloud to match
+  its module name and documented define syntax - CI: install cairo and gobject-introspection headers
+  for PyGObject - regenerate poetry.lock
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_015fxf4QnqeMV6PfVn8M1BVG
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+* fix(kia_hyundai): update hyundai_kia_connect_api to 4.23.0
+
+pyproject.toml still pinned 3.19.1, so the manifest auto-update action reverted the manifest from
+  4.21.0 to 3.19.1. 4.23.0 is the latest release supporting Python 3.11. It requires
+  beautifulsoup4>=4.15.0, therefore beautifulsoup4 is updated to 4.15.0 for all modules.
+
+* test(tibber): use current Tibber demo token
+
+The demo token shipped with pyTibber 0.29.0 is no longer accepted by the Tibber API (no viewer name,
+  no homes). Use the demo token from pyTibber 0.38.0 instead.
+
+* fix(tibber): update pyTibber to 0.38.0
+
+pyTibber 0.29.0 is incompatible with gql 4 (realtime subscription fails with
+  "'TibberWebsocketsTransport' object has no attribute 'websocket'") and ships a demo token that is
+  no longer valid.
+
+- port the module to the pyTibber 0.38 API: update_price_info(), current_price_info and _price_info
+  were removed, prices are read from update_info() / price_total / info - Tibber provides
+  quarter-hourly prices now, hourly readings (today_HH00, cheapest/highest hour and windows) use
+  hourly averages - current_price_* readings are updated every quarter hour - test: use DEMO_TOKEN
+  from pyTibber again, the demo address changed - add pyTibber to the "all" dependency group and
+  regenerate poetry.lock
+
+* test(tibber): restore expected demo address
+
+With pyTibber 0.38 the demo account returns 'Winterfell Castle 1' again, '123 Main St' was only
+  returned by pyTibber 0.29.
+
+* feat(kia_hyundai): add force_update set command
+
+set <device> force_update requests the current state directly from the car
+  (VehicleManager.force_refresh_vehicle_state) and updates the readings afterwards. update_data and
+  the periodic update keep using the cached cloud state, as a forced refresh wakes up the car and
+  may be rate limited.
+
+Closes #530
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+
 ## v0.1.756 (2026-10-02)
 
 ### Bug Fixes
