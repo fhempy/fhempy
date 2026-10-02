@@ -12,7 +12,7 @@ Special thanks to CJNE for proving the myenergi API
 
  - Create an api key for your zappi device via the "advanced..." button 
 
- - Copy the SN (serial number) for your Zappi wallbox
+ - Copy the SN (serial number) of the hub the API key was created for. For a Zappi v2 this is the serial of the Zappi wallbox itself, for a Zappi v1 with external hub it is the serial of the hub. The Zappi connected to the hub is detected automatically.
 
  - optional copy the SNs for the installed harvis
 
@@ -21,7 +21,7 @@ Special thanks to CJNE for proving the myenergi API
 define myZappiBox fhempy zappi serialnumber API_Key [harvi1] [harvi2] ... [harviN] 
 ```
 
-SERIALNO: serial number of the zappi wallbox
-APIKEY: apikey for the zappi wallbox from the myEnergi portal
+SERIALNO: serial number of the hub (Zappi v2: serial of the zappi wallbox, Zappi v1: serial of the external hub)
+APIKEY: apikey for this hub from the myEnergi portal
 [hari1] ... [harviN] are optional harvi serials
 

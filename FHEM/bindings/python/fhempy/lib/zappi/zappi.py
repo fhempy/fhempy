@@ -58,7 +58,21 @@ class zappi(generic.FhemModule):
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting",1)
 
             conn = Connection(self.serialNo, self.Apikey)
-            self.zappi_box = Zappi(conn, self.serialNo)
+            try:
+                zappi_serial = await self.find_zappi_serial(conn)
+            except Exception:
+                self.logger.exception("Failed to query myenergi devices")
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "error", 1)
+                return
+            if zappi_serial is None:
+                self.logger.error(
+                    f"No zappi found for hub {self.serialNo}, check serial and API key"
+                )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "no zappi found", 1
+                )
+                return
+            self.zappi_box = Zappi(conn, zappi_serial)
            
             #iterate through harvi serials and create harvi objects
             for serial in self.harvi_serials:
@@ -83,6 +97,31 @@ class zappi(generic.FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "disconnected")
 
       
+
+    async def find_zappi_serial(self, conn):
+        """
+        Returns the serial number of the zappi connected to the hub.
+
+        The serial used for authentication is the hub serial. For a zappi v2
+        with built-in hub it equals the zappi serial, for a zappi v1 with
+        external hub it differs, therefore the zappi serial is looked up.
+        """
+        response = await conn.get("/cgi-jstatus-*")
+        zappi_serials = []
+        for group in response if isinstance(response, list) else [response]:
+            if not isinstance(group, dict):
+                continue
+            for device in group.get("zappi") or []:
+                if "sno" in device:
+                    zappi_serials.append(str(device["sno"]))
+        if str(self.serialNo) in zappi_serials:
+            return str(self.serialNo)
+        if zappi_serials:
+            self.logger.info(
+                f"Using zappi {zappi_serials[0]} found at hub {self.serialNo}"
+            )
+            return zappi_serials[0]
+        return None
 
     async def set_green_energy_ratio(self, hash, params):
         # update green energy ratio
