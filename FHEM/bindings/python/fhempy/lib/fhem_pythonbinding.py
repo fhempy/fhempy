@@ -377,6 +377,9 @@ class fhempy:
                     else:
                         await self.sendBackError(hash, errorMsg)
                     return 0
+                finally:
+                    # allow a new Define after loading failed
+                    moduleLoadingRunning.pop(hash["NAME"], None)
 
         try:
             nmInstance = loadedModuleInstances[hash["NAME"]]
@@ -427,7 +430,6 @@ class fhempy:
         )
 
         loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
-        del moduleLoadingRunning[hash["NAME"]]
 
         # check if module is disabled
         disable_attr = await fhem.AttrVal(hash["NAME"], "disable", "0")

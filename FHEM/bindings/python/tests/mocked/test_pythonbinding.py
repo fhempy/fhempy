@@ -65,3 +65,36 @@ class FakeWebsocket:
 
 def fhempy_instance():
     return fhem_pythonbinding.fhempy(FakeWebsocket())
+
+
+@pytest.mark.asyncio
+async def test_define_is_retried_after_module_loading_failed(monkeypatch):
+    pb = fhempy_instance()
+    attempts = []
+
+    async def fail_install(hash):
+        attempts.append(hash["id"])
+        raise ModuleNotFoundError("network not ready")
+
+    async def readings_update(*args):
+        pass
+
+    monkeypatch.setattr(pb, "check_and_install_dependencies", fail_install)
+    monkeypatch.setattr(fhem, "readingsSingleUpdate", readings_update)
+    monkeypatch.setattr(fhem, "function_active", [])
+
+    for msg_id in (1, 2):
+        hash = {
+            "id": msg_id,
+            "NAME": "retry_dev",
+            "function": "Define",
+            "FHEMPYTYPE": "helloworld",
+            "args": [],
+            "argsh": {},
+            "defargs": [],
+            "defargsh": {},
+        }
+        await pb.handle_function(hash, "")
+
+    assert attempts == [1, 2]
+    assert "retry_dev" not in fhem_pythonbinding.moduleLoadingRunning
