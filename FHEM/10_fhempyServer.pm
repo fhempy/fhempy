@@ -64,13 +64,27 @@ sub fhempyServer_getCmd($)
   return "FHEM/bindings/python/bin/fhempy --local";
 }
 
+# returns a version object for output like "Python 3.11.2" or undef if it can't be parsed
+sub fhempyServer_parsePythonVersion($)
+{
+  my ($output) = @_;
+  return undef if (!defined($output));
+  return undef if ($output !~ m/Python\s+(\d+\.\d+(?:\.\d+)?)/);
+  my $ver = $1;
+  my $ver_obj = eval { version->declare($ver) };
+  return $ver_obj;
+}
+
 sub fhempyServer_checkPythonVersion($)
 {
   my ($hash) = @_;
-  my $ver = qx(python3 -V|sed "s/.*\ //");
-  chomp($ver);
-  my $ver_obj = version->declare($ver);
-  if ($ver eq "" || $ver_obj < version->declare("3.7.2")) {
+  my $output = qx(python3 -V 2>&1);
+  my $ver_obj = fhempyServer_parsePythonVersion($output);
+  if (!defined($ver_obj)) {
+    readingsSingleUpdate($hash, "python", "Python 3 not found (python3 -V failed)", 1);
+    return 0;
+  }
+  if ($ver_obj < version->declare("3.7.2")) {
     readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
     return 0;
   }
@@ -191,7 +205,7 @@ sub fhempyServer_Set($$$)
   my ($hash, $a, $h) = @_;
 
   if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 0) {
-    return "Python 3.7.2 or higher required (recommended: 3.8)";
+    return ReadingsVal($hash->{NAME}, "python", "Python 3.7.2 or higher required");
   }
 
   return CoProcess::setCommands($hash, "", @$a[1], @$a);
