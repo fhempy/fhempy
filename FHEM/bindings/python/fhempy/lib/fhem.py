@@ -1,9 +1,9 @@
 import asyncio
+import itertools
 import json
 import logging
 import os
 import platform
-import random
 import socket
 import time
 from datetime import datetime
@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 function_active = []
 update_locks = {}
 wsconnection = None
+# ids to match FHEM replies to commands sent by fhempy
+await_ids = itertools.count(1)
 
 # TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
 # this would make all functions threadsafe
@@ -371,7 +373,7 @@ async def send_default_response(hash, set_default_response):
 async def send_and_wait(name, cmd):
     fut = asyncio.get_running_loop().create_future()
     msg = {
-        "awaitId": random.randint(10000000, 99999999),
+        "awaitId": next(await_ids),
         "NAME": name,
         "msgtype": "command",
         "command": cmd,
@@ -385,25 +387,27 @@ async def send_and_wait(name, cmd):
             if fhem_time > 5000:
                 # log error message if fhem took too long to handle cmd
                 logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
-            rmsg = json.loads(rmsg)
             logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
             logger.error(f"Failed to set result, received: {rmsg}")
 
-    global wsconnection
-    wsconnection.register_msg_listener(listener, msg["awaitId"])
+    connection = wsconnection
+    connection.register_msg_listener(listener, msg["awaitId"])
     logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
-    msg = json.dumps(msg, ensure_ascii=False)
     try:
-        await wsconnection.send(msg)
-    except websockets.exceptions.ConnectionClosed:
-        logger.error("Connection closed, can't send message.")
-    except Exception as e:
-        logger.exception(f"Failed to send message via websocket: {e}")
-        fut.set_exception(Exception("Failed to send message via websocket"))
+        try:
+            await connection.send(json.dumps(msg, ensure_ascii=False))
+        except websockets.exceptions.ConnectionClosed:
+            logger.error("Connection closed, can't send message.")
+        except Exception as e:
+            logger.exception(f"Failed to send message via websocket: {e}")
+            fut.set_exception(Exception("Failed to send message via websocket"))
 
-    return await fut
+        return await fut
+    finally:
+        # also cleans up when the reply didn't arrive in time
+        connection.unregister_msg_listener(msg["awaitId"])
 
 
 async def sendCommandName(name, cmd, hash=None):

@@ -101,11 +101,15 @@ class fhempy:
         self.wsconnection = websocket
         self.shutdown_started = 0
         self._event_listener = []
-        self._msg_listeners = []
+        # awaitId -> callback for replies to commands sent to FHEM
+        self._msg_listeners = {}
         self.msg_received_time = {}
 
     def register_msg_listener(self, listener, awaitid):
-        self._msg_listeners.append({"func": listener, "awaitId": awaitid})
+        self._msg_listeners[awaitid] = listener
+
+    def unregister_msg_listener(self, awaitid):
+        self._msg_listeners.pop(awaitid, None)
 
     async def send(self, msg):
         if stop_event.is_set():
@@ -225,14 +229,13 @@ class fhempy:
             await self.sendBackError(hash, "fhempy failed to handle message")
 
     async def handle_message(self, msg, hash):
-        if "awaitId" in hash and len(self._msg_listeners) > 0:
-            removeElement = None
-            for listener in self._msg_listeners:
-                if listener["awaitId"] == hash["awaitId"]:
-                    listener["func"](msg)
-                    removeElement = listener
-            if removeElement:
-                self._msg_listeners.remove(removeElement)
+        if "awaitId" in hash:
+            # reply to a command fhempy sent to FHEM
+            listener = self._msg_listeners.pop(hash["awaitId"], None)
+            if listener is not None:
+                listener(hash)
+            else:
+                logger.debug(f"No listener waiting for reply: {msg}")
         else:
             id_received_timestamp[hash["id"]] = time.time()
             logger.debug(f">>> {int(hash['id']):08d}: {hash}")
