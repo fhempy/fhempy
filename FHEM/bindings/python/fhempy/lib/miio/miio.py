@@ -22,7 +22,7 @@ class miio(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         self._attr_list = {
             "update_functions": {
                 "default": "status:60,info:600",
@@ -49,7 +49,9 @@ class miio(generic.FhemModule):
         if self._miio_device_class is None:
             return f"Device {self._miio_devtype} not found."
 
-        for dev_cmd in self._miio_device_class.get_device_group().commands.keys():
+        # DeviceGroup.commands is overwritten by click >= 8.2 (Group takes commands
+        # as second positional argument), use the metaclass registry instead
+        for dev_cmd in self._miio_device_class._device_group_commands.keys():
             self._set_list[dev_cmd] = {"function": "set_command", "default": None}
             fct = self._miio_device_class._device_group_commands[dev_cmd].func
             sig = inspect.signature(fct)
