@@ -49,6 +49,10 @@ class kia_hyundai(generic.FhemModule):
                 },
             },
             "update_data": {},
+            "force_update": {
+                "help": "Request current data from the car (wakes up the car, "
+                + "use rarely due to rate limits)",
+            },
         }
         await self.set_set_config(set_config)
 
@@ -96,9 +100,16 @@ class kia_hyundai(generic.FhemModule):
             await self.update_once()
             await asyncio.sleep(self._attr_update_interval * 60)
 
-    async def update_once(self):
+    async def update_once(self, force=False):
         try:
             await utils.run_blocking(functools.partial(self.vm.check_and_refresh_token))
+            if force:
+                # request current state from the car instead of the cloud cache
+                await utils.run_blocking(
+                    functools.partial(
+                        self.vm.force_refresh_vehicle_state, self.first_vehicle_id()
+                    )
+                )
             await utils.run_blocking(
                 functools.partial(self.vm.update_all_vehicles_with_cached_state)
             )
@@ -107,9 +118,12 @@ class kia_hyundai(generic.FhemModule):
             self.logger.exception("Failed to update car data")
             await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
 
-    async def update_readings(self):
+    def first_vehicle_id(self):
         # use only first vehicle
-        self.vehicle = self.vm.vehicles[list(self.vm.vehicles)[0]]
+        return list(self.vm.vehicles)[0]
+
+    async def update_readings(self):
+        self.vehicle = self.vm.vehicles[self.first_vehicle_id()]
         flat_json = utils.flatten_json(self.vehicle.data)
         await fhem.readingsBeginUpdate(self.hash)
         try:
@@ -126,6 +140,9 @@ class kia_hyundai(generic.FhemModule):
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
     async def set_update_data(self, hash, params):
         self.create_async_task(self.update_once())
+
+    async def set_force_update(self, hash, params):
+        self.create_async_task(self.update_once(force=True))
 
     async def set_lock(self, hash, params):
         self.create_async_task(self.execute_command(self.vm.lock, self.vehicle.id))
