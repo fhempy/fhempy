@@ -37,7 +37,7 @@ async def test_setup(mocker):
     await asyncio.sleep(10)
 
     assert mock_fhem.readings["testdevice"]["tibber_name"] == "Arya Stark"
-    assert mock_fhem.readings["testdevice"]["address"] == "123 Main St"
+    assert mock_fhem.readings["testdevice"]["address"] == "Winterfell Castle 1"
     # current_price_level is not provided in demo data
     # assert len(mock_fhem.readings["testdevice"]["current_price_level"]) > 0
     assert mock_fhem.readings["testdevice"]["current_price_total"] >= 0
