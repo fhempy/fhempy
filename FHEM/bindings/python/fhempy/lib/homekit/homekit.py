@@ -1,86 +1,28 @@
 import asyncio
 import json
 import logging
-from typing import cast
 
 import aiohomekit
 from aiohomekit.model.characteristics.characteristic import NUMBER_TYPES
 from aiohomekit.model.characteristics.characteristic_formats import (
     CharacteristicFormats,
 )
-from zeroconf import ServiceStateChange
-from zeroconf.asyncio import AsyncServiceBrowser, AsyncServiceInfo
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhempy
 from .. import generic, utils
 from ..core import zeroconf
 
-HOMEKIT_SERVICES = ["_hap._udp.local.", "_hap._tcp.local."]
-
 
 class homekit(generic.FhemModule):
 
     controller: aiohomekit.Controller = None
-    aiobrowser: AsyncServiceBrowser = None
-
-    def async_on_service_state_change(
-        zeroconf,
-        service_type: str,
-        name: str,
-        state_change: ServiceStateChange,
-    ) -> None:
-        if service_type in HOMEKIT_SERVICES:
-            # print(
-            #    f"Service {name} of type {service_type} state changed: {state_change}"
-            # )
-            if state_change is not ServiceStateChange.Added:
-                return
-            asyncio.ensure_future(
-                homekit.async_display_service_info(zeroconf, service_type, name)
-            )
-
-    async def async_display_service_info(
-        zeroconf, service_type: str, name: str
-    ) -> None:
-        info = AsyncServiceInfo(service_type, name)
-        await info.async_request(zeroconf, 3000)
-        # print("Info from zeroconf.get_service_info: %r" % (info))
-        if info:
-            addresses = [
-                "%s:%d" % (addr, cast(int, info.port))
-                for addr in info.parsed_scoped_addresses()
-            ]
-            # print("  Name: %s" % name)
-            # print("  Addresses: %s" % ", ".join(addresses))
-            # print("  Weight: %d, priority: %d" % (info.weight, info.priority))
-            # print(f"  Server: {info.server}")
-        # else:
-        #    print("  No info")
-        # print("\n")
-        discovery_info = info
-        properties = {
-            key.lower().decode(): value
-            for (key, value) in discovery_info.properties.items()
-        }
-        # print(f"props: {properties}")
-        status_flags = int(properties["sf"])
-        paired = not status_flags & 0x01
-        # print(f"paired: {paired}")
-        hkid = properties["id"].lower()
-        model = properties["md"]
 
     async def get_controller():
         if homekit.controller is None:
             aio_zc = zeroconf.zeroconf.get_instance(
                 logging.Logger("homekit")
             ).get_async_zeroconf()
-            services = HOMEKIT_SERVICES
-            homekit.aiobrowser = AsyncServiceBrowser(
-                aio_zc.zeroconf,
-                services,
-                handlers=[homekit.async_on_service_state_change],
-            )
             homekit.controller = aiohomekit.Controller(aio_zc)
             await homekit.controller.async_start()
         return homekit.controller
