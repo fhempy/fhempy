@@ -400,7 +400,7 @@ async def send_and_wait(name, cmd):
     except websockets.exceptions.ConnectionClosed:
         logger.error("Connection closed, can't send message.")
     except Exception as e:
-        logger.error(f"Failed to send message via websocket: {e}")
+        logger.exception(f"Failed to send message via websocket: {e}")
         fut.set_exception(Exception("Failed to send message via websocket"))
 
     return await fut
