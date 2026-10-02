@@ -766,7 +766,9 @@ def _cancel_all_tasks_with_timeout(
 def run():
     global exit_code
     logging.getLogger("asyncio").setLevel(logging.WARNING)
-    loop = asyncio.get_event_loop()
+    # Python 3.14+ doesn't create an event loop in get_event_loop() anymore
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(async_main())
     finally:
