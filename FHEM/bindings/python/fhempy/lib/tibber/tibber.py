@@ -32,7 +32,11 @@ class tibber(generic.FhemModule):
         self.create_async_task(self.setup_connection())
 
     async def setup_connection(self):
-        self.tibber_connection = Tibber(self.token, user_agent="fhempy")
+        self.tibber_connection = Tibber(
+            self.token,
+            user_agent="fhempy",
+            time_zone=datetime.datetime.now().astimezone().tzinfo,
+        )
         await self.tibber_connection.update_info()
         await fhem.readingsSingleUpdateIfChanged(
             self.hash, "tibber_name", self.tibber_connection.name, 1
@@ -47,6 +51,25 @@ class tibber(generic.FhemModule):
         if data is None:
             return
         self.create_async_task(self.update_rt_data(data.get("liveMeasurement")))
+
+    @staticmethod
+    def _hourly_prices(home):
+        """
+        Returns the prices of today and tomorrow as hourly averages.
+
+        Tibber provides quarter-hourly prices, the readings are based on hourly prices.
+        The returned dict maps the ISO timestamp of each hour to its average price.
+        """
+        hourly = {}
+        for starts_at, price in home.price_total.items():
+            hour = datetime.datetime.fromisoformat(starts_at).replace(
+                minute=0, second=0, microsecond=0
+            )
+            hourly.setdefault(hour.isoformat(), []).append(price)
+        return {
+            starts_at: round(sum(prices) / len(prices), 4)
+            for starts_at, prices in hourly.items()
+        }
 
     async def update_rt_data(self, data):
         await fhem.readingsBeginUpdate(self.hash)
@@ -74,7 +97,6 @@ class tibber(generic.FhemModule):
             try:
                 await home.fetch_consumption_data()
                 await home.update_info()
-                await home.update_price_info()
             except Exception:
                 self.logger.error("Failed to update data from tibber, retry in 60s")
                 await asyncio.sleep(60)
@@ -82,7 +104,9 @@ class tibber(generic.FhemModule):
 
             await fhem.readingsBeginUpdate(self.hash)
             try:
-                for i, (timestamp, value) in enumerate(home._price_info.items()):
+                for i, (timestamp, value) in enumerate(
+                    self._hourly_prices(home).items()
+                ):
                     # Extracting date and time
                     date, time = timestamp.split('T')
                     time = time.split('+')[0]  # Removing timezone offset
@@ -138,7 +162,6 @@ class tibber(generic.FhemModule):
             while True:
                 try:
                     await home.update_info()
-                    await home.update_price_info()
                 except Exception:
                     self.logger.error("Failed to update data from tibber, retry in 60s")
                     await asyncio.sleep(60)
@@ -147,27 +170,28 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBeginUpdate(self.hash)
                 try:
                     #  price information incl price rank
-                    price, level, time, rank = home.current_price_data()
-                   
-                    
-                    
+                    price, time, rank = home.current_price_data()
+                    current_price_info = home.info["viewer"]["home"][
+                        "currentSubscription"
+                    ]["priceInfo"]["current"]
+
                     # price info
                     await fhem.readingsBulkUpdate(
-                        self.hash, "current_price_energy", home.current_price_info["energy"]
+                        self.hash, "current_price_energy", current_price_info["energy"]
                     )
                     await fhem.readingsBulkUpdate(
-                        self.hash, "current_price_tax", home.current_price_info["tax"]
+                        self.hash, "current_price_tax", current_price_info["tax"]
                     )
                     await fhem.readingsBulkUpdate(
-                        self.hash, "current_price_total", home.current_price_info["total"]
+                        self.hash, "current_price_total", current_price_info["total"]
                     )
                     await fhem.readingsBulkUpdate(
                         self.hash,
                         "current_price_startsat",
-                        home.current_price_info["startsAt"],
+                        current_price_info["startsAt"],
                     )
                     await fhem.readingsBulkUpdate(
-                        self.hash, "current_price_level", home.current_price_info["level"]
+                        self.hash, "current_price_level", current_price_info["level"]
                     )
                     await fhem.readingsBulkUpdate(
                         self.hash, "current_price_rank", rank
@@ -178,10 +202,10 @@ class tibber(generic.FhemModule):
                     self.logger.error("Failed to update readings")
                 await fhem.readingsEndUpdate(self.hash, 1)
                 
-                #  update readings every new hour to fetch new current_* data
+                #  update readings every quarter hour to fetch new current_* data
                 now = datetime.datetime.now()
-                remaining_seconds = 3600 - (now.minute * 60 + now.second)
-                await asyncio.sleep(remaining_seconds+5)
+                remaining_seconds = 900 - ((now.minute % 15) * 60 + now.second)
+                await asyncio.sleep(remaining_seconds + 5)
 
     async def Undefine(self, hash):
         if self.tibber_connection:
@@ -204,7 +228,6 @@ class tibber(generic.FhemModule):
             while True:
                 try:
                     await home.update_info()
-                    await home.update_price_info()
                 except Exception:
                     self.logger.error("Failed to update data from tibber, retry in 60s")
                     await asyncio.sleep(60)
@@ -213,8 +236,9 @@ class tibber(generic.FhemModule):
                 await fhem.readingsBeginUpdate(self.hash)
                 try:
 
-                    time_list = list(home._price_info.keys())
-                    price_list = list(home._price_info.values())
+                    hourly_prices = self._hourly_prices(home)
+                    time_list = list(hourly_prices.keys())
+                    price_list = list(hourly_prices.values())
                     now = datetime.datetime.now()
 
                     # find the index of the element with lowest price today
