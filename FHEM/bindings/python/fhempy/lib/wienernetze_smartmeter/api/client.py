@@ -6,7 +6,6 @@ from datetime import datetime
 from urllib import parse
 
 import aiohttp
-import async_timeout
 from lxml import html
 
 from . import constants as const
@@ -205,7 +204,7 @@ class AsyncSmartmeter:
             headers.update({"X-Gateway-APIKey": self._api_gateway_token})
 
         try:
-            async with async_timeout.timeout(self._timeout):
+            async with asyncio.timeout(self._timeout):
                 response = await self._session.request(
                     method, url, headers=headers, json=data
                 )

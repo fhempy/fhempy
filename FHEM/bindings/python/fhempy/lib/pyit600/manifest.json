@@ -1,5 +1,6 @@
 {
   "requirements": [
-    "pyit600==0.5.1"
+    "pyit600==0.5.1",
+    "async-timeout==4.0.3"
   ]
 }
