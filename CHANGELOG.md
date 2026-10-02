@@ -1,6 +1,35 @@
 # CHANGELOG
 
 
+## v0.1.756 (2026-10-02)
+
+### Bug Fixes
+
+- Repair failing tests after dependency update ([#532](https://github.com/fhempy/fhempy/pull/532),
+  [`64e1c39`](https://github.com/fhempy/fhempy/commit/64e1c3960667066958bfce11f23290900a957d9e))
+
+- core: migrate websocket server to websockets>=14 asyncio API, websockets 15.0.1 - bluetoothle:
+  import BluetoothManager lazily, dbus/PyGObject only needed for pairing - tibber: update to
+  pyTibber 0.38.0, hourly readings use averages of quarter-hourly prices - object_detection:
+  opencv-python-headless 4.14.0.94, ai-edge-litert instead of tflite-runtime - lxml 6.1.3,
+  playwright 1.63.0, hyundai_kia_connect_api 4.23.0, beautifulsoup4 4.15.0 - alphaess: rename module
+  directory to alphaesscloud - CI: install cairo and gobject-introspection headers for PyGObject
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_015fxf4QnqeMV6PfVn8M1BVG
+
+### Chores
+
+- Update GitHub Actions workflows to use Ubuntu 24.04 and latest action versions
+  ([`4f068ed`](https://github.com/fhempy/fhempy/commit/4f068edbdc1cb91890e3a0075eff7fa5d348a1f4))
+
+### Features
+
+- **fhempy**: Add CommandList
+  ([`1cf1d26`](https://github.com/fhempy/fhempy/commit/1cf1d2651fadf53cdd7391873ba410337ebb1f79))
+
+
 ## v0.1.755 (2026-10-01)
 
 
