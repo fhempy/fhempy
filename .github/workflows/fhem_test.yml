@@ -19,11 +19,14 @@ on:
 jobs:
   update_controls:
     needs: [runtest]
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
 
     steps: 
     - name: Checkout Repostory
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
@@ -54,14 +57,14 @@ jobs:
   runtest:
     strategy:
       matrix:
-        os: ['ubuntu-latest']
+        os: ['ubuntu-24.04']
         perl: [ '5.28', '5.32' ]
 
     runs-on: ${{ matrix.os }}
 
     steps: 
     - name: Checkout Repostory
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - uses: shogo82148/actions-setup-perl@v1.33.0
       with:
