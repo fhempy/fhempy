@@ -12,6 +12,7 @@ from git import Repo
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
+from ..core import child_process
 
 
 class zigbee2mqtt(FhemModule):
@@ -265,7 +266,9 @@ class zigbee2mqtt(FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "z2m_version", version, 1)
 
         try:
-            self.proc = subprocess.Popen(["bash", "-i", "-c", "node ./index.js"], cwd=z2m_directory)
+            self.proc = child_process.start(
+                ["bash", "-i", "-c", "node ./index.js"], cwd=z2m_directory
+            )
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:
                 self.check_process_task = self.create_async_task(self.check_process())
@@ -301,27 +304,17 @@ class zigbee2mqtt(FhemModule):
         if self.check_process_task:
             self.cancel_async_task(self.check_process_task)
             self.check_process_task = None
-        if self.proc:
-            await fhem.readingsSingleUpdate(self.hash, "state", "stopping", 1)
-            self.proc.send_signal(signal.SIGINT)
-
-            stop_tries = 0
-            # give zigbee2mqtt some time to stop
-            await asyncio.sleep(15)
-            while self.proc.poll is None and stop_tries < 5:
-                await asyncio.sleep(5)
-                self.proc.kill()
-                stop_tries += 1
-
-            if self.proc.poll is None:
-                self.logger.error("Failed to stop zigbee2mqtt process")
-                await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
-            else:
-                # this should never block, as poll says process finished already
-                # this should prevent zombie processes
-                self.proc.wait(0.1)
-                self.proc = None
-                await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
+        if self.proc is None:
+            return
+        # stop the process before talking to FHEM, FHEM might not answer
+        # anymore during fhempy update or shutdown
+        # give zigbee2mqtt some time to stop
+        if await child_process.stop(self.proc, signal.SIGINT, timeout=15):
+            self.proc = None
+            await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
+        else:
+            self.logger.error("Failed to stop zigbee2mqtt process")
+            await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
 
     async def create_weblink(self):
         ip_list = [
