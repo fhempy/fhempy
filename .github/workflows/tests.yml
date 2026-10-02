@@ -26,7 +26,7 @@ jobs:
     - name: Install apt depencies
       run: |
         sudo apt update
-        sudo apt install libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev
+        sudo apt install libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev libcairo2-dev libgirepository1.0-dev pkg-config
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:

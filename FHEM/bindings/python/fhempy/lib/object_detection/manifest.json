@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "opencv-python-headless==4.9.0.80",
-    "tflite-runtime==2.14.0"
+    "opencv-python-headless==4.14.0.94",
+    "ai-edge-litert==2.1.6"
   ]
 }

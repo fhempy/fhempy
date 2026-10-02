@@ -16,7 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
-from .bt_manager import BluetoothManager, PairingState
+from .bt_pairing_state import PairingState
 
 
 class BluetoothLE:
@@ -93,6 +93,9 @@ class BluetoothLE:
         return ret
 
     def _pair(self, pin, retry=3):
+        # import here, dbus and PyGObject are only required for pairing
+        from .bt_manager import BluetoothManager
+
         # Instantiate manager and agent
         bt_mgr = BluetoothManager(self.logger)
 

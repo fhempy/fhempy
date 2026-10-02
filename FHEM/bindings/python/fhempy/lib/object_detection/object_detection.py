@@ -7,7 +7,7 @@ import time
 import cv2
 import numpy as np
 from fhempy.lib.generic import FhemModule
-from tflite_runtime.interpreter import Interpreter
+from ai_edge_litert.interpreter import Interpreter
 
 from .. import fhem, utils
 

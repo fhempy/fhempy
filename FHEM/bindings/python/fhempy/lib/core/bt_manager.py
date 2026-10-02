@@ -1,20 +1,14 @@
-import enum
 import dbus
 import dbus.service
 import dbus.mainloop.glib
 from gi.repository import GLib
 
+from .bt_pairing_state import PairingState
+
 
 AGENT_PATH = "/fhempy/agent"
 AGENT_INTERFACE = "org.bluez.Agent1"
 BUS_NAME = "org.bluez"
-
-
-class PairingState(enum.Enum):
-    SUCCESS = 0
-    WRONG_PIN = 1
-    TIMEOUT = 2
-    FAILED = 3
 
 
 class AutoAgent(dbus.service.Object):

@@ -7,13 +7,10 @@ This module is used to detect objects within an image.
 sudo apt install libatlas3-base libsm6 libtiff5 libjasper1 libpng12-0 libavcodec-extra58 libavformat58 libswscale5
 ```
 
-Install TensorFlow Lite, the link below is for RPi ARM32 Python 3.7
-```
-sudo pip3 install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_armv7l.whl
-```
-for other configuration please find the proper link here:
+TensorFlow Lite is provided by LiteRT (`ai-edge-litert`), which is installed automatically.
+Prebuilt packages are available for 64-bit Linux (x86_64 and aarch64), see:
 
-https://www.tensorflow.org/lite/guide/python
+https://ai.google.dev/edge/litert
 
 ## Usage
 Stream

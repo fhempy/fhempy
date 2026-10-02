@@ -13,6 +13,7 @@ import time
 import traceback
 
 import websockets
+import websockets.asyncio.server
 
 from . import fhem, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
@@ -58,7 +59,7 @@ async def activate_internal_modules():
         active_internal_modules.append(instance)
 
 
-async def pybinding(websocket, path):
+async def pybinding(websocket):
     global zc_info
     if zc_info is not None:
         # FHEM discovered us, stop zeroconf
@@ -635,9 +636,9 @@ def usage():
     print("  --help    This help text")
 
 
-async def health_check(path, request_headers):
-    if path == "/healthcheck":
-        return http.HTTPStatus.OK, [], b"OK\n"
+async def health_check(connection, request):
+    if request.path == "/healthcheck":
+        return connection.respond(http.HTTPStatus.OK, "OK\n")
 
 
 async def async_main():
@@ -663,7 +664,7 @@ async def async_main():
 
     logger.info("Waiting for FHEM connection")
     try:
-        async with websockets.serve(
+        async with websockets.asyncio.server.serve(
             pybinding,
             bindip,
             port,
