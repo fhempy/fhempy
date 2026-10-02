@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 function_active = []
 update_locks = {}
+# readings commands collected between readingsBeginUpdate and readingsEndUpdate,
+# they are sent to FHEM in one roundtrip on readingsEndUpdate
+bulk_updates = {}
 wsconnection = None
 
 # TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
@@ -108,8 +111,9 @@ async def readingsBeginUpdate(hash):
             f"{hash['NAME']}: readingsBeginUpdate couldn't acquire lock,"
             + " caused by readingsBeginUpdate without End or Single update inbetween"
         )
-    cmd = "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
-    return await sendCommandHash(hash, cmd)
+    bulk_updates[hash["NAME"]] = [
+        "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
+    ]
 
 
 async def readingsBulkUpdateIfChanged(hash, reading, value):
@@ -121,7 +125,7 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
             + "'},'"
             + reading
             + "','"
-            + value.replace("'", "\\'")
+            + escapeValue(value)
             + "');;"
         )
         if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
@@ -130,7 +134,7 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
                 + f"readingsBeginUpdate: {cmd}"
             )
             return
-        return await sendCommandHash(hash, cmd)
+        bulk_updates[hash["NAME"]].append(cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdateIfChanged")
 
@@ -145,7 +149,7 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + "'},'"
                 + reading
                 + "','"
-                + value.replace("'", "\\'")
+                + escapeValue(value)
                 + "');;"
             )
         else:
@@ -155,7 +159,7 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + "'},'"
                 + reading
                 + "','"
-                + value.replace("'", "\\'")
+                + escapeValue(value)
                 + "', "
                 + str(changed)
                 + ");;"
@@ -166,7 +170,7 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + f"readingsBeginUpdate: {cmd}"
             )
             return
-        return await sendCommandHash(hash, cmd)
+        bulk_updates[hash["NAME"]].append(cmd)
     except Exception:
         logger.exception("Failed to do readingsBulkUpdate")
 
@@ -174,10 +178,14 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
 async def readingsEndUpdate(hash, do_trigger):
     if hash["NAME"] not in update_locks:
         logger.error("readingsEndUpdate without active readingsBeginUpdate")
-    cmd = "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
-    res = await sendCommandHash(hash, cmd)
-    update_locks[hash["NAME"]].release()
-    return res
+    cmds = bulk_updates.pop(hash["NAME"], [])
+    cmds.append(
+        "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
+    )
+    try:
+        return await sendCommandHash(hash, "".join(cmds))
+    finally:
+        update_locks[hash["NAME"]].release()
 
 
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
@@ -191,7 +199,7 @@ async def readingsSingleUpdate(hash, reading, value, do_trigger):
             + "'},'"
             + reading
             + "','"
-            + value.replace("'", "\\'")
+            + escapeValue(value)
             + "',"
             + str(do_trigger)
             + ")"
@@ -212,7 +220,7 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
             + "'},'"
             + reading
             + "','"
-            + value.replace("'", "\\'")
+            + escapeValue(value)
             + "');;readingsEndUpdate($defs{'"
             + hash["NAME"]
             + "'},"
@@ -288,6 +296,11 @@ async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
 
 
 # UTILS FUNCTIONS TO SEND COMMAND TO FHEM
+def escapeValue(value):
+    # escape value for a single quoted perl string
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
 def convertValue(value):
     if value is None:
         value = ""

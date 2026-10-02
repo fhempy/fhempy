@@ -226,7 +226,8 @@ class fhempy:
             await self.sendBackError(hash, "fhempy failed to handle message")
 
     async def handle_message(self, msg, hash):
-        if "awaitId" in hash and len(self._msg_listeners) > 0:
+        if "awaitId" in hash:
+            # reply to a command fhempy sent to FHEM
             removeElement = None
             for listener in self._msg_listeners:
                 if listener["awaitId"] == hash["awaitId"]:
@@ -234,6 +235,8 @@ class fhempy:
                     removeElement = listener
             if removeElement:
                 self._msg_listeners.remove(removeElement)
+            else:
+                logger.debug(f"No listener waiting for reply: {msg}")
         else:
             id_received_timestamp[hash["id"]] = time.time()
             logger.debug(f">>> {int(hash['id']):08d}: {hash}")
