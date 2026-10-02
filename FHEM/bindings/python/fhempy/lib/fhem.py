@@ -116,17 +116,9 @@ async def waitForFunction(name):
 async def getDeviceHashName(hash, typeinternal, typevalue, internal, value):
     cmd = (
         "foreach my $fhem_dev (sort keys %main::defs) {"
-        + "  return $main::defs($fhem_dev}{NAME}) if(defined($main::defs{$fhem_dev}{"
-        + typeinternal
-        + "}) && $main::defs{$fhem_dev}{"
-        + typeinternal
-        + "} eq '"
-        + typevalue
-        + "' && $main::defs{$fhem_dev}{"
-        + internal
-        + "} eq '"
-        + value
-        + "');;"
+        + "  return $main::defs{$fhem_dev}{NAME} if("
+        + _perlDeviceMatch(typeinternal, typevalue, internal, value)
+        + ");;"
         + "}"
         + "return 0;;"
     )
@@ -145,33 +137,35 @@ async def init_done(hash):
 
 
 async def ReadingsVal(name, reading, default):
-    cmd = "ReadingsVal('" + name + "', '" + reading + "', '" + default + "')"
+    cmd = (
+        f"ReadingsVal({perlString(name)}, {perlString(reading)}, {perlString(default)})"
+    )
     return await sendCommandName(name, cmd)
 
 
 async def AttrVal(name, attr, default):
-    cmd = "AttrVal('" + name + "', '" + attr + "', '" + default + "')"
+    cmd = f"AttrVal({perlString(name)}, {perlString(attr)}, {perlString(default)})"
     return await sendCommandName(name, cmd)
 
 
 async def InternalVal(name, internal, default):
-    cmd = "InternalVal('" + name + "', '" + internal + "', '" + default + "')"
+    cmd = (
+        f"InternalVal({perlString(name)}, {perlString(internal)}, "
+        f"{perlString(default)})"
+    )
     return await sendCommandName(name, cmd)
 
 
 async def addToDevAttrList(name, attr_list):
-    cmd = "addToDevAttrList('" + name + "', '" + attr_list + "')"
+    cmd = f"addToDevAttrList({perlString(name)}, {perlString(attr_list)})"
     return await sendCommandName(name, cmd)
 
 
 def _setDevAttrListCmd(name, attr_list):
-    attr_list = escapeValue(attr_list + " IODev disable:0,1")
+    attr_list += " IODev disable:0,1 "
     return (
-        "setDevAttrList('"
-        + escapeValue(name)
-        + "', '"
-        + attr_list
-        + " '.$readingFnAttributes)"
+        f"setDevAttrList({perlString(name)}, "
+        f"{perlString(attr_list)}.$readingFnAttributes)"
     )
 
 
@@ -222,7 +216,7 @@ async def readingsBeginUpdate(hash):
             + " caused by readingsBeginUpdate without End or Single update inbetween"
         )
     bulk_updates[hash["NAME"]] = [
-        "readingsBeginUpdate($defs{'" + hash["NAME"] + "'});;"
+        "readingsBeginUpdate($defs{'" + escapeValue(hash["NAME"]) + "'});;"
     ]
 
 
@@ -231,9 +225,9 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
         value = convertValue(value)
         cmd = (
             "readingsBulkUpdateIfChanged($defs{'"
-            + hash["NAME"]
+            + escapeValue(hash["NAME"])
             + "'},'"
-            + reading
+            + escapeValue(reading)
             + "','"
             + escapeValue(value)
             + "');;"
@@ -255,9 +249,9 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
         if changed is None:
             cmd = (
                 "readingsBulkUpdate($defs{'"
-                + hash["NAME"]
+                + escapeValue(hash["NAME"])
                 + "'},'"
-                + reading
+                + escapeValue(reading)
                 + "','"
                 + escapeValue(value)
                 + "');;"
@@ -265,9 +259,9 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
         else:
             cmd = (
                 "readingsBulkUpdate($defs{'"
-                + hash["NAME"]
+                + escapeValue(hash["NAME"])
                 + "'},'"
-                + reading
+                + escapeValue(reading)
                 + "','"
                 + escapeValue(value)
                 + "', "
@@ -290,7 +284,11 @@ async def readingsEndUpdate(hash, do_trigger):
         logger.error("readingsEndUpdate without active readingsBeginUpdate")
     cmds = bulk_updates.pop(hash["NAME"], [])
     cmds.append(
-        "readingsEndUpdate($defs{'" + hash["NAME"] + "'}," + str(do_trigger) + ");;"
+        "readingsEndUpdate($defs{'"
+        + escapeValue(hash["NAME"])
+        + "'},"
+        + str(do_trigger)
+        + ");;"
     )
     try:
         return await sendCommandHash(hash, "".join(cmds))
@@ -305,9 +303,9 @@ async def readingsSingleUpdate(hash, reading, value, do_trigger):
         value = convertValue(value)
         cmd = (
             "readingsSingleUpdate($defs{'"
-            + hash["NAME"]
+            + escapeValue(hash["NAME"])
             + "'},'"
-            + reading
+            + escapeValue(reading)
             + "','"
             + escapeValue(value)
             + "',"
@@ -324,15 +322,15 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
         value = convertValue(value)
         cmd = (
             "readingsBeginUpdate($defs{'"
-            + hash["NAME"]
+            + escapeValue(hash["NAME"])
             + "'});;readingsBulkUpdateIfChanged($defs{'"
-            + hash["NAME"]
+            + escapeValue(hash["NAME"])
             + "'},'"
-            + reading
+            + escapeValue(reading)
             + "','"
             + escapeValue(value)
             + "');;readingsEndUpdate($defs{'"
-            + hash["NAME"]
+            + escapeValue(hash["NAME"])
             + "'},"
             + str(do_trigger)
             + ");;"
@@ -341,7 +339,7 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 
 async def CommandDefine(hash, definition: str):
-    cmd = 'CommandDefine(undef, "' + definition + '")'
+    cmd = f"CommandDefine(undef, {perlString(definition)})"
     ret = await sendCommandHash(hash, cmd)
     if ret is not None:
         return ret
@@ -364,51 +362,56 @@ async def CommandDefine(hash, definition: str):
 
 
 async def CommandList(hash, listcmd):
-    cmd = 'CommandList(undef, "' + listcmd + '")'
+    cmd = f"CommandList(undef, {perlString(listcmd)})"
     return await sendCommandHash(hash, cmd)
 
 
 async def CommandAttr(hash, attrdef):
-    cmd = 'CommandAttr(undef, "' + attrdef.replace('"', '\\"') + '")'
+    cmd = f"CommandAttr(undef, {perlString(attrdef)})"
     return await sendCommandHash(hash, cmd)
 
 
 async def CommandDeleteAttr(hash, deldef):
-    cmd = 'CommandDeleteAttr(undef, "' + deldef + '")'
+    cmd = f"CommandDeleteAttr(undef, {perlString(deldef)})"
     return await sendCommandHash(hash, cmd)
 
 
 async def CommandDeleteReading(hash, deldef):
-    cmd = 'CommandDeleteReading(undef, "' + deldef + '")'
+    cmd = f"CommandDeleteReading(undef, {perlString(deldef)})"
     return await sendCommandHash(hash, cmd)
 
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
     cmd = (
         "foreach my $fhem_dev (sort keys %main::defs) {"
-        + "  return 1 if(defined($main::defs{$fhem_dev}{"
-        + typeinternal
-        + "}) && $main::defs{$fhem_dev}{"
-        + typeinternal
-        + "} eq '"
-        + typevalue
-        + "' && defined($main::defs{$fhem_dev}{"
-        + internal
-        + "}) && $main::defs{$fhem_dev}{"
-        + internal
-        + "} eq '"
-        + value
-        + "');;"
+        + "  return 1 if("
+        + _perlDeviceMatch(typeinternal, typevalue, internal, value)
+        + ");;"
         + "}"
         + "return 0;;"
     )
     return await sendCommandHash(hash, cmd)
 
 
+def _perlDeviceMatch(typeinternal, typevalue, internal, value):
+    dev = "$main::defs{$fhem_dev}"
+    return (
+        f"defined({dev}{{{perlString(typeinternal)}}})"
+        f" && {dev}{{{perlString(typeinternal)}}} eq {perlString(typevalue)}"
+        f" && defined({dev}{{{perlString(internal)}}})"
+        f" && {dev}{{{perlString(internal)}}} eq {perlString(value)}"
+    )
+
+
 # UTILS FUNCTIONS TO SEND COMMAND TO FHEM
 def escapeValue(value):
     # escape value for a single quoted perl string
     return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
+def perlString(value):
+    # single quoted perl string literal, perl doesn't interpolate its content
+    return "'" + escapeValue(str(value)) + "'"
 
 
 def convertValue(value):

@@ -287,3 +287,41 @@ async def test_get_device_info_uses_defaults_without_reply(monkeypatch):
     info = await fhem.getDeviceInfo("dev", {"verbose": "3", "room": ""})
 
     assert info == {"init_done": 0, "attr": {"verbose": "3", "room": ""}}
+
+
+def test_perl_string_is_not_interpolated():
+    assert fhem.perlString("a'b\\c $x @{[1]}") == "'a\\'b\\\\c $x @{[1]}'"
+
+
+@pytest.mark.asyncio
+async def test_commands_quote_values_as_perl_strings(monkeypatch):
+    sent = []
+
+    async def send(hash, cmd):
+        sent.append(cmd)
+
+    monkeypatch.setattr(fhem, "sendCommandHash", send)
+    hash = {"NAME": "dev"}
+
+    await fhem.CommandAttr(hash, "dev alias it's $name")
+    await fhem.checkIfDeviceExists(hash, "TYPE", "BindingsIo", "IP", "1'2")
+
+    assert sent[0] == "CommandAttr(undef, 'dev alias it\\'s $name')"
+    assert "eq '1\\'2'" in sent[1]
+
+
+@pytest.mark.asyncio
+async def test_reading_names_are_escaped(monkeypatch):
+    sent = []
+
+    async def send(hash, cmd):
+        sent.append(cmd)
+
+    monkeypatch.setattr(fhem, "sendCommandHash", send)
+    hash = {"NAME": "dev_reading_escape"}
+
+    await fhem.readingsSingleUpdate(hash, "a'b", "v", 1)
+
+    assert sent[0] == (
+        "readingsSingleUpdate($defs{'dev_reading_escape'},'a\\'b','v',1)"
+    )

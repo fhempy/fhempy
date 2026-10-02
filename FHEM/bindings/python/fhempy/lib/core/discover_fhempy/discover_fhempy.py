@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import logging
 
 from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
@@ -50,15 +51,20 @@ class discover_fhempy:
 
             if info.type == "_http._tcp.local." and info.name[0:6] == "fhempy":
                 if get_value("ip") is not None:
+                    try:
+                        # values are announced by any device in the network
+                        ip = str(ipaddress.ip_address(get_value("ip")))
+                        port = int(get_value("port"))
+                    except (TypeError, ValueError):
+                        self.logger.warning(f"Ignore invalid fhempy service {name}")
+                        return
                     if not (
                         await fhem.checkIfDeviceExists(
-                            self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
+                            self.hash, "TYPE", "BindingsIo", "IP", ip
                         )
                     ):
-                        ip = get_value("ip")
                         # prevent adding local ip
                         if ip != "127.0.1.1":
-                            port = get_value("port")
                             ipstr = ip.replace(".", "_")
                             await fhem.CommandDefine(
                                 self.hash,
