@@ -11,6 +11,8 @@ from fhempy.lib.pkg_installer import check_and_install_dependencies
 async def test_setup(mocker):
     # prepare
     mock_fhem.mock_module(mocker)
+    # readings are global, drop the ones other tests wrote for testdevice
+    mock_fhem.readings.pop("testdevice", None)
     testhash = {
         "NAME": "testdevice",
         "FHEMPYTYPE": "tibber",
@@ -33,10 +35,11 @@ async def test_setup(mocker):
         ],
         {},
     )
-    # wait up to 30s for realtime data from the tibber demo api
-    for _ in range(30):
+    # wait for home, price and realtime data from the tibber demo api,
+    # failed updates are retried after 60s
+    for _ in range(90):
         readings = mock_fhem.readings.get("testdevice", {})
-        if "address" in readings and "current_price_total" in readings and (
+        if "home_id" in readings and "current_price_total" in readings and (
             not readings.get("has_real_time_consumption")
             or "rt_currentL3" in readings
         ):
