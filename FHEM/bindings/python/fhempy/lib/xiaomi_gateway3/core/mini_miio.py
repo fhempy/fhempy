@@ -256,7 +256,7 @@ class AsyncMiIO(BasemiIO, BaseProtocol):
                 self.device_id = int.from_bytes(raw[8:12], "big")
                 self.delta_ts = time.time() - int.from_bytes(raw[12:16], "big")
                 return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -310,7 +310,7 @@ class AsyncMiIO(BasemiIO, BaseProtocol):
             except asyncio.TimeoutError:
                 # _LOGGER.debug(f"{self.addr[0]} | timeout {times}")
                 pass
-            except:
+            except Exception:
                 _LOGGER.debug(f"{self.addr[0]} | {traceback.format_exc(1)}")
             finally:
                 sock.close()
@@ -335,7 +335,7 @@ class AsyncMiIO(BasemiIO, BaseProtocol):
                 resp = await self.send(method, params[i : i + 15])
                 result += resp["result"]
             return result
-        except:
+        except Exception:
             return None
 
     async def info(self):
