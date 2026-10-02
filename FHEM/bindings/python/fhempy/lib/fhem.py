@@ -6,7 +6,6 @@ import platform
 import random
 import socket
 import time
-import traceback
 from datetime import datetime
 
 import aiohttp
@@ -401,7 +400,7 @@ async def send_and_wait(name, cmd):
     except websockets.exceptions.ConnectionClosed:
         logger.error("Connection closed, can't send message.")
     except Exception as e:
-        logger.error("Failed to send message via websocket: " + e)
+        logger.exception(f"Failed to send message via websocket: {e}")
         fut.set_exception(Exception("Failed to send message via websocket"))
 
     return await fut
@@ -426,12 +425,8 @@ async def sendCommandName(name, cmd, hash=None):
     except asyncio.TimeoutError:
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
-    except asyncio.CancelledError:
-        # task was cancelled
-        pass
     except Exception as e:
-        logger.error("Exception while waiting for reply: " + e)
-        traceback.format_exc()
+        logger.exception(f"Exception while waiting for reply: {e}")
         ret = str(e)
 
     return ret
