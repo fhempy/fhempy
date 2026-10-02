@@ -6,6 +6,9 @@ from tests.utils import mock_fhem
 
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 
+# demo token from pyTibber >= 0.38, the token shipped with pyTibber 0.29 is no longer valid
+DEMO_TOKEN = "3A77EECF61BD445F47241A5A36202185C35AF3AF58609E19B53F3A8872AD7BE1-1"
+
 
 @pytest.mark.asyncio
 async def test_setup(mocker):
@@ -16,8 +19,6 @@ async def test_setup(mocker):
         "FHEMPYTYPE": "tibber",
     }
     await check_and_install_dependencies("tibber")
-
-    from tibber.const import DEMO_TOKEN
 
     from fhempy.lib.tibber.tibber import tibber
 
