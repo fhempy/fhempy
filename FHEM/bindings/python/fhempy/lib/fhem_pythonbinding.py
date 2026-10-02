@@ -101,11 +101,15 @@ class fhempy:
         self.wsconnection = websocket
         self.shutdown_started = 0
         self._event_listener = []
-        self._msg_listeners = []
+        # awaitId -> callback for replies to commands sent to FHEM
+        self._msg_listeners = {}
         self.msg_received_time = {}
 
     def register_msg_listener(self, listener, awaitid):
-        self._msg_listeners.append({"func": listener, "awaitId": awaitid})
+        self._msg_listeners[awaitid] = listener
+
+    def unregister_msg_listener(self, awaitid):
+        self._msg_listeners.pop(awaitid, None)
 
     async def send(self, msg):
         if stop_event.is_set():
@@ -119,8 +123,9 @@ class fhempy:
         retHash["returnval"] = ret
         retHash["id"] = hash["id"]
         msg = json.dumps(retHash)
-        duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
-        del id_received_timestamp[retHash["id"]]
+        duration = (
+            time.time() - id_received_timestamp.pop(retHash["id"], time.time())
+        ) * 1000
         if duration > 1000:
             logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         else:
@@ -137,8 +142,9 @@ class fhempy:
         if "id" in hash:
             retHash["id"] = hash["id"]
         msg = json.dumps(retHash, ensure_ascii=False)
-        duration = (time.time() - id_received_timestamp[retHash["id"]]) * 1000
-        del id_received_timestamp[retHash["id"]]
+        duration = (
+            time.time() - id_received_timestamp.pop(retHash["id"], time.time())
+        ) * 1000
         if duration > 1000:
             logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
         else:
@@ -176,10 +182,9 @@ class fhempy:
                     logger.warning(f"fhempy took {time_duration:.0f}ms for {payload}")
                 del self.msg_received_time[hash["id"]]
 
-                # cleanup old messages
-                for id in self.msg_received_time:
-                    time_received = self.msg_received_time[id]["time"]
-                    time_duration = (time_finished - time_received) * 1000
+                # cleanup old messages, iterate over a copy to allow deletion
+                for id, received in list(self.msg_received_time.items()):
+                    time_duration = (time_finished - received["time"]) * 1000
                     if time_duration > 60000:
                         logger.error(
                             f"fhempy didn't send response for {time_duration}ms"
@@ -227,13 +232,9 @@ class fhempy:
     async def handle_message(self, msg, hash):
         if "awaitId" in hash:
             # reply to a command fhempy sent to FHEM
-            removeElement = None
-            for listener in self._msg_listeners:
-                if listener["awaitId"] == hash["awaitId"]:
-                    listener["func"](msg)
-                    removeElement = listener
-            if removeElement:
-                self._msg_listeners.remove(removeElement)
+            listener = self._msg_listeners.pop(hash["awaitId"], None)
+            if listener is not None:
+                listener(hash)
             else:
                 logger.debug(f"No listener waiting for reply: {msg}")
         else:
