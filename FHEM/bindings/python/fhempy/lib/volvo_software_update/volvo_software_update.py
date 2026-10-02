@@ -89,7 +89,11 @@ class volvo_software_update(generic.FhemModule):
                     release_number = release_text
                     state_text = ""
 
-                updated = await fhem.readingsBulkUpdateIfChanged(
+                updated = (
+                    await fhem.ReadingsVal(self.hash["NAME"], "latest_release", "")
+                    != release_number
+                )
+                await fhem.readingsBulkUpdateIfChanged(
                     self.hash, "latest_release", release_number
                 )
                 await fhem.readingsBulkUpdateIfChanged(
