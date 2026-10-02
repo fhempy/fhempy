@@ -1,6 +1,38 @@
 # CHANGELOG
 
 
+## v0.1.758 (2026-10-02)
+
+### Bug Fixes
+
+- **miio**: Fix Define crash with click >= 8.2 ([#542](https://github.com/fhempy/fhempy/pull/542),
+  [`c979825`](https://github.com/fhempy/fhempy/commit/c97982569d80e853d67c7f9909742ed6bfe84572))
+
+python-miio 0.5.12 passes invoke_without_command positionally to click.MultiCommand; since click 8.2
+  the second positional argument is 'commands', so DeviceGroup.commands becomes False. Read the
+  commands from the DeviceGroupMeta registry (_device_group_commands) instead.
+
+Claude-Session: https://claude.ai/code/session_01RgfCHxsjuGt1yntRFqb5aA
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **rct_power**: Read all default objects and keep updating after errors
+  ([#541](https://github.com/fhempy/fhempy/pull/541),
+  [`9c27761`](https://github.com/fhempy/fhempy/commit/9c277619d1fd8ff80c15218cc97b6416be607b95))
+
+- two missing commas in DEFAULT_OBJECTS merged power_mng.battery_power_extern with power_mng.soc_max
+  and power_mng.soc_strategy with battery.temperature, so these four objects were never read - the
+  error path used the builtin hash instead of self.hash, which raised and skipped readingsEndUpdate
+  after a connection error - re-enabling via attr disable 0 never restarted the update loop - log
+  unknown object names from device_readings instead of ignoring them
+
+Refs #518
+
+Claude-Session: https://claude.ai/code/session_01VLo1dhjisDN5kx7gWTqq6J
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.757 (2026-10-02)
 
 ### Bug Fixes
