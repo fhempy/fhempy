@@ -2096,14 +2096,14 @@ test = ["basedpyright (==1.39.9) ; python_version >= \"3.9\" and sys_platform !=
 
 [[package]]
 name = "goodwe"
-version = "0.4.8"
+version = "0.4.10"
 description = "Read data from GoodWe inverter via local network"
 optional = false
 python-versions = ">=3.8"
 groups = ["all"]
 files = [
-    {file = "goodwe-0.4.8-py3-none-any.whl", hash = "sha256:571626900958d749ffc7d3138af9dce12f821635775b735d5b7d4ecd90bd7ad5"},
-    {file = "goodwe-0.4.8.tar.gz", hash = "sha256:e20d9a6ce4a603cd303a3d0246f031f08cd307da17125ec3faa75d674c55b3cc"},
+    {file = "goodwe-0.4.10-py3-none-any.whl", hash = "sha256:5b1e4e8ab420f2edc2effd9fab3c3a4e0f65fe4274965ae0e26055d72431c6a0"},
+    {file = "goodwe-0.4.10.tar.gz", hash = "sha256:8c0786f32b1f59bb0209773bf6b9d3333b33e5628039de95c1efc3b49c593e26"},
 ]
 
 [[package]]
@@ -6912,4 +6912,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "5f790548044bb456da513d869d296b7f99b968f6717a7c5376cdc75dff61329b"
+content-hash = "4745f59e858bc89e342eb09de4166aeee5d3c70482d822115f4092d1bed24a01"
