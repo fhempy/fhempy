@@ -17,6 +17,8 @@ Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 Set the user to the one which runs fhempy. On FHEM installations it's fhem, on remote peers it's normally pi.
 Restart dbus afterwards: `sudo systemctl restart dbus`
 
+A stuck Bluetooth adapter is recovered automatically, see [Bluetooth auto recovery](../../../../../../README.md#bluetooth-auto-recovery) for the optional permissions.
+
 ## Usage
 ```
 define my_blueconnect fhempy blue_connect MAC
