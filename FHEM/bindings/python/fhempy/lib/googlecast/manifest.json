@@ -1,7 +1,7 @@
 {
   "requirements": [
     "pychromecast==14.0.10",
-    "youtube_dl==2021.12.17",
+    "yt-dlp==2026.8.19",
     "spotipy==2.25.2",
     "six==1.16.0"
   ]
