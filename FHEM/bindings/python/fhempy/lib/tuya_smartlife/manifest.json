@@ -2,6 +2,6 @@
   "requirements": [
     "pyqrcode==1.2.1",
     "tuya-device-sharing-sdk==0.2.1",
-    "cryptography==48.0.1"
+    "cryptography==50.0.1"
   ]
 }
