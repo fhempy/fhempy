@@ -83,7 +83,7 @@ cryptography = [
 dbus-python = "==1.5.0"
 esphome = "==2026.9.1"
 goodwe = "==0.4.10"
-greeclimate = "==1.4.1"
+greeclimate = "==3.2.0"
 httpx = "==0.27.0"
 huawei-solar = "==3.0.7"
 hyundai_kia_connect_api = "==4.35.0"
