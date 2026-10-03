@@ -5973,14 +5973,14 @@ websocket-client = "*"
 
 [[package]]
 name = "tuya-device-sharing-sdk"
-version = "0.2.1"
+version = "0.2.15"
 description = "A Python sdk for Tuya Open API, which provides IoT capabilities, maintained by Tuya official"
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
 files = [
-    {file = "tuya-device-sharing-sdk-0.2.1.tar.gz", hash = "sha256:72e2c97c22109a7c9208dd727b3c72aad1669d351d843f6d63db0160d87d8942"},
-    {file = "tuya_device_sharing_sdk-0.2.1-py2.py3-none-any.whl", hash = "sha256:1bea74893d3775f8d873fb0997c40cd3abd256a409b886984816a1e0cd22d7d0"},
+    {file = "tuya_device_sharing_sdk-0.2.15-py3-none-any.whl", hash = "sha256:415ef070c7b6059f9df97b0f89462d5834af99115f2c6a548c888658cf23e420"},
+    {file = "tuya_device_sharing_sdk-0.2.15.tar.gz", hash = "sha256:360e29e95b63019ba179b8b9b43530fd4f02647ec41deaedd735b753d7877041"},
 ]
 
 [package.dependencies]
@@ -6935,4 +6935,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "dce3018fb6cbc8c7f43a8cef4a760ae4a0eeb5c08712fcb95ae4edb177ba84c6"
+content-hash = "8914380f5fd9012a2fd5d3bdc99a4c6348742183e1892b5833f28211c4a90abc"
