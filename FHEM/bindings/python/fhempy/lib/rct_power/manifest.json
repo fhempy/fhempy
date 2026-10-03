@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "rctclient==0.0.3"
+    "rctclient==0.0.6"
   ]
 }
