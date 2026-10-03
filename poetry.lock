@@ -399,6 +399,21 @@ yarl = ">=1.17.0,<2.0"
 speedups = ["Brotli (>=1.2) ; platform_python_implementation == \"CPython\" and sys_platform != \"android\" and sys_platform != \"ios\"", "aiodns (>=3.3.0) ; sys_platform != \"android\" and sys_platform != \"ios\"", "backports.zstd ; platform_python_implementation == \"CPython\" and python_version < \"3.14\" and sys_platform != \"android\" and sys_platform != \"ios\"", "brotlicffi (>=1.2) ; platform_python_implementation != \"CPython\""]
 
 [[package]]
+name = "aiomqtt"
+version = "1.2.1"
+description = "The idiomatic asyncio MQTT client, wrapped around paho-mqtt"
+optional = false
+python-versions = ">=3.8,<4.0"
+groups = ["all"]
+files = [
+    {file = "aiomqtt-1.2.1-py3-none-any.whl", hash = "sha256:3925b40b2b95b1905753d53ef3a9162e903cfab35ebe9647ab4d52e45ffb727f"},
+    {file = "aiomqtt-1.2.1.tar.gz", hash = "sha256:7582f4341f08ef7110dd9ab3a559454dc28ccda1eac502ff8f08a73b238ecede"},
+]
+
+[package.dependencies]
+paho-mqtt = ">=1.6.0,<2.0.0"
+
+[[package]]
 name = "aionefit"
 version = "0.14"
 description = "asyncio library for Bosch thermostats"
@@ -601,25 +616,6 @@ files = [
 [package.dependencies]
 anyio = "*"
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
-
-[[package]]
-name = "asyncio-mqtt"
-version = "0.16.2"
-description = "Idiomatic asyncio wrapper around paho-mqtt"
-optional = false
-python-versions = ">=3.7"
-groups = ["all"]
-files = [
-    {file = "asyncio_mqtt-0.16.2-py3-none-any.whl", hash = "sha256:fe70ea2c648b248779a7ff3d9218262cdd739083743dfaa7c0d52ba458a8ad71"},
-]
-
-[package.dependencies]
-paho-mqtt = ">=1.6.0"
-
-[package.extras]
-format = ["black (>=22.10.0)"]
-lint = ["mypy (>=0.991)", "ruff (>=0.0.158)", "types-paho-mqtt (>=1.6.0.1)"]
-tests = ["anyio (>=3.6.2)", "pytest (>=7.2.0)", "pytest-cov (>=4.0.0)"]
 
 [[package]]
 name = "attrs"
@@ -6935,4 +6931,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "6a4c8ec3e89615fdc83a20f0411f9dcd3dad2d96d339a8b8741752fb7c7e90a2"
+content-hash = "30310273fa8fd733851f16dc7c783ff17b761af72b4ad45d96ae255d983e94bf"
