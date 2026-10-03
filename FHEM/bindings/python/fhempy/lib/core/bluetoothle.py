@@ -58,6 +58,7 @@ class BluetoothLE:
 
         self.connection_task = None
         self.connected = asyncio.Event()
+        self._no_adapter_logged = False
 
         # initialize bluetoothctl_lock here to avoid thread without event loop error
         if BluetoothLE.bluetoothctl_lock is None:
@@ -272,8 +273,11 @@ class BluetoothLE:
             await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection", "no adapter", 1
             )
-            self.logger.error("No Bluetooth adapter found")
+            if not self._no_adapter_logged:
+                self._no_adapter_logged = True
+                self.logger.error("No Bluetooth adapter found")
             return
+        self._no_adapter_logged = False
 
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection", "connecting", 1
@@ -359,7 +363,7 @@ class BluetoothLE:
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection", "not found", 1
         )
-        self.logger.error(
+        self.logger.debug(
             f"Unable to connect to {self.addr} after {max_retries} attempts"
         )
 
