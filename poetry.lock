@@ -6226,6 +6226,23 @@ files = [
 dev = ["build", "hypothesis (>=6.151.0)", "pyright (>=1.1.389)", "pytest (>=9.0.0)", "pytest-benchmark (>=5.2.0)"]
 
 [[package]]
+name = "tinytuya"
+version = "1.20.0"
+description = "Python module to interface with Tuya WiFi smart devices"
+optional = false
+python-versions = "*"
+groups = ["all"]
+files = [
+    {file = "tinytuya-1.20.0-py3-none-any.whl", hash = "sha256:ac5650c30f1153b1eae0b8d75f67043fb2397a168d3834e47da2d88d2c08c722"},
+    {file = "tinytuya-1.20.0.tar.gz", hash = "sha256:54bfcd0b3411ae4c94cf473e1ca28a2ffa4d376ed2d8e7e4e4adfcdf4ca1657c"},
+]
+
+[package.dependencies]
+colorama = "*"
+cryptography = "*"
+requests = "*"
+
+[[package]]
 name = "tmodbus"
 version = "0.6.2"
 description = "A modern, strongly typed Modbus client library."
@@ -7384,4 +7401,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "7fb9acc6c722b25ca9fa1b98b7720bc12d57e06fd7cd2cadcc0108334e817991"
+content-hash = "e815e9e63678ef7c4bc165913125575693f9e5c21eb85a78acfb6bb1e563ba14"
