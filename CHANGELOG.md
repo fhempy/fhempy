@@ -1,6 +1,36 @@
 # CHANGELOG
 
 
+## v0.1.762 (2026-10-03)
+
+### Features
+
+- **tuya**: Replace aiotinytuya with tinytuya Monitor
+  ([#582](https://github.com/fhempy/fhempy/pull/582),
+  [`006d606`](https://github.com/fhempy/fhempy/commit/006d606146bf59b2e7e115aa039edc4bb16835a8))
+
+* feat(tuya): replace aiotinytuya with tinytuya Monitor
+
+Local Tuya devices now keep one persistent connection that is watched by tinytuya's Monitor. Status
+  changes pushed by the device update the readings immediately; the 5s updatedps and 60s status
+  polling loops are gone. The Monitor sends heartbeats and reconnects automatically, and a full
+  status is requested after every (re)connect.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01CDfLogSQhvH3mFGBbvBLNm
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+
 ## v0.1.761 (2026-10-03)
 
 ### Bug Fixes
