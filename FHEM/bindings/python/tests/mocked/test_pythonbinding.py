@@ -98,3 +98,23 @@ async def test_define_is_retried_after_module_loading_failed(monkeypatch):
 
     assert attempts == [1, 2]
     assert "retry_dev" not in fhem_pythonbinding.moduleLoadingRunning
+
+
+@pytest.mark.asyncio
+async def test_version_request_sends_version(monkeypatch):
+    pb = fhempy_instance()
+    sent = []
+
+    async def send(msg):
+        sent.append(json.loads(msg))
+
+    monkeypatch.setattr(pb, "send", send)
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+    msg = {"id": 4711, "msgtype": "version", "NAME": "fhempy_local"}
+
+    await pb.handle_message(json.dumps(msg), msg)
+
+    assert len(sent) == 1
+    assert sent[0]["msgtype"] == "version"
+    assert sent[0]["version"] == fhem.__version__
+    assert 4711 not in fhem_pythonbinding.id_received_timestamp

@@ -244,6 +244,11 @@ class fhempy:
                 await self.update_and_exit(hash)
             elif hash["msgtype"] == "restart":
                 await self.restart(hash)
+            elif hash["msgtype"] == "version":
+                # FHEM requests the version after the connection setup, the
+                # version sent on connect might have been dropped by FHEM
+                id_received_timestamp.pop(hash["id"], None)
+                await fhem.send_version()
             elif hash["msgtype"] == "function":
                 if "id" in hash:
                     time_received = time.time()
