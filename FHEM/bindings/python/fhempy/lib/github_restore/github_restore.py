@@ -1,11 +1,13 @@
 import asyncio
 import base64
 import pathlib
+import shutil
 from datetime import datetime
 
 import aiohttp
 
 from .. import fhem, generic
+from ..core import pending_restore
 
 
 class github_restore(generic.FhemModule):
@@ -106,17 +108,28 @@ class github_restore(generic.FhemModule):
             if entry["path"].startswith(self.directory):
                 backup_files.append(entry)
 
+        # drop zigbee2mqtt data of an earlier restore which wasn't applied yet
+        shutil.rmtree(pending_restore.Z2M_PENDING_DIR, ignore_errors=True)
+
         # retrieve all backup files
+        z2m_pending = False
         for backup_file in backup_files:
             if backup_file["type"] == "blob":
-                await self.restore_backup_file(backup_file)
+                restored_path = await self.restore_backup_file(backup_file)
+                if restored_path is not None and restored_path.is_relative_to(
+                    pending_restore.Z2M_PENDING_DIR
+                ):
+                    z2m_pending = True
 
-        await fhem.readingsSingleUpdate(
-            self.hash,
-            "state",
-            "Backup restored<br>YOU MUST RESTART FHEM NOW, DO NOT SAVE BEFORE RESTARTING",
-            1,
+        state = (
+            "Backup restored<br>YOU MUST RESTART FHEM NOW, DO NOT SAVE BEFORE RESTARTING"
         )
+        if z2m_pending:
+            state += (
+                "<br>zigbee2mqtt data will be applied "
+                + "after the zigbee2mqtt installation, before it starts"
+            )
+        await fhem.readingsSingleUpdate(self.hash, "state", state, 1)
 
     async def restore_backup_file(self, backup_file):
         # get blob
@@ -124,27 +137,24 @@ class github_restore(generic.FhemModule):
         blob = await self.github_get(url)
         if not blob:
             await fhem.readingsSingleUpdate(self.hash, "state", "Failed to get blob", 1)
-            return
+            return None
 
         # decode blob
         content = base64.b64decode(blob["content"])
 
-        # create directory, but remove self.directory from path
-        file_path = pathlib.Path(backup_file["path"])
-        path = file_path.parent
-        path = path.relative_to(self.directory)
-        path = pathlib.Path(f"{path}")
-        path.mkdir(parents=True, exist_ok=True)
-
-        # write file
-        path = file_path.relative_to(self.directory)
-        path = pathlib.Path(f"{path}")
+        # remove self.directory from path, zigbee2mqtt data is stored as
+        # pending restore which zigbee2mqtt applies after its installation
+        path = pending_restore.restore_path(
+            pathlib.Path(backup_file["path"]).relative_to(self.directory)
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
 
         # update reading
         await fhem.readingsSingleUpdate(
             self.hash, "state", f"Restored {backup_file['path']}", 1
         )
+        return path
 
     async def github_get(self, url):
         ret = None

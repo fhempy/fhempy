@@ -12,7 +12,7 @@ from git import Repo
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
-from ..core import child_process
+from ..core import child_process, pending_restore
 
 
 class zigbee2mqtt(FhemModule):
@@ -147,8 +147,11 @@ class zigbee2mqtt(FhemModule):
                     functools.partial(Repo.clone_from, GIT_URL, z2m_directory)
                 )
 
+            # the installation reading might come from a restored fhem.save,
+            # a fresh clone always needs to be installed
             if (
-                await fhem.ReadingsVal(self.hash["NAME"], "installation", "nok")
+                clone_needed
+                or await fhem.ReadingsVal(self.hash["NAME"], "installation", "nok")
                 != "successful"
             ):
                 await fhem.readingsSingleUpdate(
@@ -253,9 +256,30 @@ class zigbee2mqtt(FhemModule):
             )
             return False
 
+    async def apply_restored_backup(self, z2m_directory):
+        # data restored by github_restore is applied after the installation
+        # and before zigbee2mqtt starts, otherwise it would be overwritten
+        try:
+            applied = await utils.run_blocking(
+                functools.partial(pending_restore.apply_z2m_restore, z2m_directory)
+            )
+        except Exception:
+            self.logger.exception("Failed to apply restored zigbee2mqtt backup")
+            await fhem.readingsSingleUpdate(
+                self.hash, "restore", "failed to apply backup, check log", 1
+            )
+            return
+        if applied:
+            self.logger.info(f"Applied restored zigbee2mqtt backup: {applied}")
+            await fhem.readingsSingleUpdate(
+                self.hash, "restore", "backup applied: " + ", ".join(applied), 1
+            )
+
     async def start_process(self):
         current_directory = os.getcwd()
         z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
+
+        await self.apply_restored_backup(z2m_directory)
 
         # Load the package.json file
         with open(z2m_directory + "/package.json", "r") as f:
