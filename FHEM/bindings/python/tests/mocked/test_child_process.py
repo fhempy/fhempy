@@ -15,8 +15,12 @@ def process_exists(pid):
     except ProcessLookupError:
         return False
     # zombies of already stopped processes don't count
-    with open(f"/proc/{pid}/stat") as f:
-        return f.read().split()[2] != "Z"
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().split()[2] != "Z"
+    except FileNotFoundError:
+        # process was reaped between kill and open
+        return False
 
 
 @pytest.mark.asyncio
