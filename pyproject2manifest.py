@@ -45,6 +45,10 @@ def update_manifest_requirements(directory, latest_versions):
                                 req
                             )
                             latest_version = latest_versions.get(package_name)
+                            if isinstance(latest_version, list):
+                                # multiple constraints with markers, the first one
+                                # is the default for module installs
+                                latest_version = latest_version[0]
                             if latest_version and "version" in latest_version:
                                 latest_version = latest_version["version"]
                             if latest_version and latest_version != "*":

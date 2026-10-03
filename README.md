@@ -87,7 +87,7 @@ This repository includes following working modules:
 |[zigbee2mqtt](FHEM/bindings/python/fhempy/lib/zigbee2mqtt/README.md)|Install, update and run Zigbee2MQTT server|
 
 ## Installation
-Python >=3.9 is required, Python 2 won't work\! Python 3.11 or higher recommended.
+Python >=3.12 is required, Python 2 won't work\!
 
 ### Console
 #### Debian 11/12 (Bullseye/Bookworm)
