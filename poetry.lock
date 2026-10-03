@@ -4920,18 +4920,22 @@ testing = ["covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-cov (>=4.1)", "pytes
 
 [[package]]
 name = "pyprusalink"
-version = "2.1.1"
+version = "3.1.0"
 description = "Library to interact with PrusaLink v2"
 optional = false
 python-versions = "*"
 groups = ["all"]
 files = [
-    {file = "pyprusalink-2.1.1-py3-none-any.whl", hash = "sha256:6ec304b286da0e9416838c3ac0c3e99b17f469dcaba8399f409921fd5653894c"},
-    {file = "pyprusalink-2.1.1.tar.gz", hash = "sha256:c06d3f60620ec52609622536db8ac9121de57673f8a6b6e0462d8c064cfed61a"},
+    {file = "pyprusalink-3.1.0-py3-none-any.whl", hash = "sha256:a5da044ebdfcff887e4bae20b2d417d427c8cbd837be76139aa016f6e92feae2"},
+    {file = "pyprusalink-3.1.0.tar.gz", hash = "sha256:61782d52f5c6f5e145efbb545aae807033f0457a72ec234c793ea2577d7ef91b"},
 ]
 
 [package.dependencies]
 httpx = "*"
+
+[package.extras]
+lint = ["black (==26.5.1)", "flake8 (==7.3.0)", "isort (==8.0.1)", "mypy (==2.2.0)"]
+test = ["pytest (>=9.0.3)", "pytest-asyncio (>=1.3.0)", "respx (>=0.23.1)"]
 
 [[package]]
 name = "pyqrcode"
@@ -6935,4 +6939,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "6a4c8ec3e89615fdc83a20f0411f9dcd3dad2d96d339a8b8741752fb7c7e90a2"
+content-hash = "62d6326367e14e9f6c269930b7bb4afbb052b693d9f38948f79b9658ea9ba556"

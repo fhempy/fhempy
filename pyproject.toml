@@ -110,7 +110,7 @@ pyit600 = "==0.5.1"
 pyjwt = "==2.15.1"
 # pymyenergi fails to resolve by poetry
 # pymyenergi = "==0.1.1"
-pyprusalink = "==2.1.1"
+pyprusalink = "==3.1.0"
 pyqrcode = "==1.2.1"
 pyric = "==0.1.6.3"
 python-dateutil = "==2.9.0.post0"
