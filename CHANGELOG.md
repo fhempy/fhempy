@@ -1,6 +1,44 @@
 # CHANGELOG
 
 
+## v0.1.763 (2026-10-03)
+
+### Bug Fixes
+
+- **eq3bt**: Handle offline thermostats and failed pairing without timeout spam
+  ([#583](https://github.com/fhempy/fhempy/pull/583),
+  [`b54e78f`](https://github.com/fhempy/fhempy/commit/b54e78fd050c153740b828ca398e1927c066010d))
+
+* fix(bluetooth): keep retrying when eq3bt pairing or connection setup fails
+
+A failed pairing attempt ended connect() without starting the connection loop, and nothing called
+  connect() again, so every update and set command waited 30s for a connection that never came
+  ("Timeout on update"). Pairing is now part of the connection loop and retried every 5 minutes,
+  write/read restart the loop if it isn't running anymore, and the connection reading shows "pairing
+  failed", "no adapter" or "not found" instead of staying silent.
+
+gfprobt registered a coroutine object as connection listener, it now passes the method; connected is
+  set before the listener runs so it can write to the device.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01D2SffnEe6emHRemmbKDVdk
+
+* fix(eq3bt): log an unreachable thermostat once instead of a timeout every update
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **googlecast**: Catch RequestTimeout on wait during discovery
+  ([#584](https://github.com/fhempy/fhempy/pull/584),
+  [`3e81310`](https://github.com/fhempy/fhempy/commit/3e81310fe304d8a1ea33d2e9f138749edd66f4c5))
+
+Due to a change of behavior in pychromecast v14+ (it will raise pychromecast.error.RequestTimeout
+  when cast.wait(timeout) expires before the socket connection completes!), we have to wrap that
+  wait into a try/except handler to avoid exceptions in the fhempy log.
+
+
 ## v0.1.762 (2026-10-03)
 
 ### Features
