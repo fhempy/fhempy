@@ -88,6 +88,11 @@ sub fhempyServer_checkPythonVersion($)
     readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
     return 0;
   }
+  if ($ver_obj < version->declare("3.12.0")) {
+    # fhempy releases require Python 3.12, older Pythons keep the last compatible fhempy
+    readingsSingleUpdate($hash, "python", $ver_obj->normal . " (Python 3.12 or higher required for fhempy updates)", 1);
+    return 1;
+  }
   readingsSingleUpdate($hash, "python", $ver_obj->normal, 1);
   return 1;
 }

@@ -145,6 +145,11 @@ class BluetoothLE:
         await adapters.refresh()
         self.adapter_details = adapters.adapters
 
+    @staticmethod
+    def _bluez_args(adapter):
+        # bleak >= 3 takes the adapter via the bluez args instead of adapter=
+        return {"adapter": adapter} if adapter else {}
+
     async def find_device(self, timeout=30, adapter=None):
         """Returns False if the adapter didn't work (no advertisements at all)."""
         self._device = None
@@ -163,7 +168,7 @@ class BluetoothLE:
         async with BluetoothLE.bluetoothctl_lock:
             try:
                 self._device = await BleakScanner.find_device_by_filter(
-                    match_address, timeout=timeout, adapter=adapter
+                    match_address, timeout=timeout, bluez=self._bluez_args(adapter)
                 )
                 self.logger.info(f"Device found via adapter {adapter}")
             except asyncio.TimeoutError:
@@ -296,7 +301,7 @@ class BluetoothLE:
                     self._device,
                     disconnected_callback=self._disconnect_callback,
                     timeout=timeout,
-                    adapter=adapter,
+                    bluez=self._bluez_args(adapter),
                 )
                 try:
                     await self._client.connect()

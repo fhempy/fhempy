@@ -64,3 +64,22 @@ async def test_force_update(mocker):
     )
     assert mock_fhem.readings["testcar"]["ev_battery_percentage"] == 80
     assert mock_fhem.readings["testcar"]["state"] == "online"
+
+
+@pytest.mark.asyncio
+async def test_start_climate(mocker):
+    device, testhash, calls = await setup_device(mocker)
+    device.vehicle = device.vm.vehicles["vehicle1"]
+
+    await device.Set(
+        testhash, ["testcar", "start_climate", "22", "10", "on", "on", "off"], {}
+    )
+    await asyncio.sleep(1)
+
+    vehicle_id, options = device.vm.start_climate.call_args.args
+    assert vehicle_id == "vehicle1"
+    assert options.set_temp == 22
+    assert options.duration == 10
+    assert options.defrost is True
+    assert options.climate is True
+    assert options.heating == 0
