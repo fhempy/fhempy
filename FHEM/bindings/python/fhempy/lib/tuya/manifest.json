@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "git+https://github.com/fhempy/aiotinytuya#aiotinytuya==1.12.3"
+    "tinytuya==1.20.0"
   ]
 }

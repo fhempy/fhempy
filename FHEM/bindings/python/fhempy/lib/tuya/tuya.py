@@ -5,7 +5,7 @@ import json
 import re
 import time
 
-import aiotinytuya as tt
+import tinytuya as tt
 
 from .. import fhem, generic, utils
 from . import mappings
@@ -14,7 +14,9 @@ from . import mappings
 class tuya(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
-        self._connected_device = None
+        self._tt_device = None
+        self._monitor = None
+        self._loop = None
         self.tuya_cloud = None
         self.tt_key = ""
         self.tt_secret = ""
@@ -22,8 +24,6 @@ class tuya(generic.FhemModule):
         self.create_device_list = []
         self.update_lock = asyncio.Lock()
         self.master_switch = ""
-        self.update_dps_loop_task = None
-        self.status_quick_loop_task = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -116,9 +116,7 @@ class tuya(generic.FhemModule):
             )
             return
         else:
-            if self._connected_device:
-                await self._connected_device.close()
-                self._connected_device = None
+            await self.close_connection()
 
             self.tt_localkey = self._attr_localkey
             await self.setup_cloud()
@@ -165,8 +163,7 @@ class tuya(generic.FhemModule):
 
         await self._generate_set()
 
-        await self.setup_connection()
-        status = await self._connected_device.detect_available_dps()
+        status = await self.setup_connection()
         await self.update_readings(status, set_ready=True)
 
     async def set_attr_dp(self, hash):
@@ -316,8 +313,7 @@ class tuya(generic.FhemModule):
         else:
             if params["cmd"] == "on":
                 onoff = True
-        if self._connected_device:
-            await self._connected_device.set_dp(onoff, switch_id)
+        self.send_dp(switch_id, onoff)
 
     async def set_integer(self, hash, params):
         index = params["function_param"]["id"]
@@ -335,8 +331,7 @@ class tuya(generic.FhemModule):
             new_val = int(
                 params["new_val"] * (10 ** params["function_param"]["values"]["scale"])
             )
-        if self._connected_device:
-            await self._connected_device.set_dp(new_val, index)
+        self.send_dp(index, new_val)
 
     async def set_other_types(self, hash, params):
         index = params["function_param"]["id"]
@@ -348,28 +343,32 @@ class tuya(generic.FhemModule):
                 ):
                     params["new_val"] = val
         new_val = params["new_val"]
-        if self._connected_device:
-            await self._connected_device.set_dp(new_val, index)
+        self.send_dp(index, new_val)
 
     async def set_colour_data(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
         hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "A")
         await self.change_to_colour_mode()
-        await self._connected_device.set_dp(hexvalue, index)
+        self.send_dp(index, hexvalue)
 
     async def set_colour_data_v2(self, hash, params):
         index = params["function_param"]["id"]
         rgb = self.fhemrgb2rgb(params["new_val"])
         hexvalue = tt.BulbDevice._rgb_to_hexvalue(rgb["r"], rgb["g"], rgb["b"], "B")
         await self.change_to_colour_mode()
-        await self._connected_device.set_dp(hexvalue, index)
+        self.send_dp(index, hexvalue)
 
     async def change_to_colour_mode(self):
         if "work_mode" in self._conf_set:
-            await self._connected_device.set_dp(
-                "colour", self._conf_set["work_mode"]["function_param"]["id"]
-            )
+            self.send_dp(self._conf_set["work_mode"]["function_param"]["id"], "colour")
+
+    def send_dp(self, index, value):
+        # commands are queued and sent by the monitor thread
+        if self._monitor is None:
+            self.logger.warning(f"Device not connected, can't set dp {index}")
+            return
+        self._monitor.command(self._tt_device, "set_value", index, value)
 
     def fhemrgb2rgb(self, rgb):
         red = int(rgb[0:2], base=16)
@@ -440,12 +439,6 @@ class tuya(generic.FhemModule):
         async with self.update_lock:
             await self.update_readings(status)
 
-    def status_updated(self, status):
-        self.create_async_task(self.async_status_updated(status))
-
-    def disconnected(self):
-        self.create_async_task(self.async_disconnected())
-
     async def _add_desc_to_spec(self, spec_fcts, desc):
         for spec in spec_fcts:
             if spec["code"] in desc:
@@ -487,9 +480,7 @@ class tuya(generic.FhemModule):
                 "category": await fhem.ReadingsVal(self.hash["NAME"], "category", "")
             }
 
-        await self.setup_connection()
-
-        status = await self._connected_device.detect_available_dps()
+        status = await self.setup_connection()
 
         await self.prepare_attributes(status)
         await self.update_readings(status, set_ready=True)
@@ -534,42 +525,48 @@ class tuya(generic.FhemModule):
                         )
         await self.set_attr_dp(self.hash)
 
-    async def update_dps_loop(self):
-        while True:
-            await asyncio.sleep(5)
-            # this is required to force update measurements (power, current, voltage)
-            if self._connected_device:
-                await self._connected_device.device.device.updatedps()
-
-    async def status_quick_loop(self):
-        while True:
-            await asyncio.sleep(60)
-            # this loop just ensures that all dps are updated every 60s
-            if self._connected_device:
-                await self._connected_device.device.device.status_quick()
+    def _open_device(self):
+        # blocking: connect, detect available dps and read the current status
+        device = tt.Device(
+            self.tt_did,
+            self.tt_ip,
+            self.tt_localkey,
+            version=self.tt_version,
+            persist=True,
+            connection_timeout=5,
+            connection_retry_limit=2,
+            connection_retry_delay=1,
+        )
+        try:
+            dps = device.detect_available_dps()
+            status = device.status()
+            if not isinstance(status, dict) or "dps" not in status:
+                raise ConnectionError(f"Failed to read status: {status}")
+            if device.socket is None:
+                raise ConnectionError("Connection closed after reading status")
+        except Exception:
+            device.close()
+            raise
+        available = dict.fromkeys(dps)
+        available.update(status["dps"])
+        return device, available
 
     async def setup_connection(self):
+        """Connect to the device and start monitoring it.
+
+        Returns the current status of all available dps. The connection
+        stays open and the device pushes every status change, which is
+        received by the tinytuya Monitor. The Monitor sends heartbeats and
+        reconnects automatically.
+        """
+        self._loop = asyncio.get_running_loop()
         state_set = False
-        connected = False
-        while not connected:
+        while True:
             try:
-                connect_fct = tt.connect(
-                    self.tt_ip,
-                    self.tt_did,
-                    self.tt_localkey,
-                    self.tt_version,
-                    self,
+                device, status = await utils.run_blocking(
+                    functools.partial(self._open_device)
                 )
-                self._connected_device = await asyncio.wait_for(connect_fct, timeout=15)
-                if self.update_dps_loop_task is None:
-                    self.update_dps_loop_task = self.create_async_task(
-                        self.update_dps_loop()
-                    )
-                if self.status_quick_loop_task is None:
-                    self.status_quick_loop_task = self.create_async_task(
-                        self.status_quick_loop()
-                    )
-                connected = True
+                break
             except Exception:
                 if not state_set:
                     await fhem.readingsSingleUpdateIfChanged(
@@ -577,8 +574,58 @@ class tuya(generic.FhemModule):
                     )
                     state_set = True
                     self.logger.exception("Failed to connect to device")
-                # short sleep is required for passive devices
-                await asyncio.sleep(1)
+                await asyncio.sleep(5)
+
+        monitor = tt.Monitor(
+            on_status=self._monitor_status,
+            on_connect=self._monitor_connect,
+            on_disconnect=self._monitor_disconnect,
+            auto_reconnect=True,
+            reconnect_backoff=5.0,
+        )
+        self._tt_device = device
+        self._monitor = monitor
+        # socket is already open, add() doesn't block
+        handle = monitor.add(device)
+        if isinstance(handle, (str, dict)):
+            self._tt_device = None
+            self._monitor = None
+            device.close()
+            raise ConnectionError(f"Failed to monitor device: {handle}")
+        monitor.start()
+        return status
+
+    async def close_connection(self):
+        monitor = self._monitor
+        self._monitor = None
+        self._tt_device = None
+        if monitor is not None:
+            await utils.run_blocking(functools.partial(monitor.stop))
+
+    def _schedule(self, coro):
+        # called from the monitor thread
+        if self._loop is None or self._loop.is_closed():
+            coro.close()
+            return
+        asyncio.run_coroutine_threadsafe(coro, self._loop)
+
+    def _monitor_status(self, device, result):
+        if not isinstance(result, dict) or "dps" not in result:
+            self.logger.debug(f"Ignore message from device: {result}")
+            return
+        self._schedule(self.async_status_updated(result))
+
+    def _monitor_connect(self, device, error):
+        monitor = self._monitor
+        if monitor is None:
+            return
+        # status changes while offline are not pushed, request the full status
+        monitor.command(device, "status")
+        self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "1", 1))
+
+    def _monitor_disconnect(self, device, error):
+        self.logger.info(f"Connection to device lost: {error}")
+        self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1))
 
     async def create_device(self):
         try:
@@ -592,12 +639,6 @@ class tuya(generic.FhemModule):
                 )
         except Exception:
             self.logger.exception("Failed create_device")
-
-    async def async_disconnected(self):
-        await fhem.readingsSingleUpdate(self.hash, "online", "0", 1)
-        self._connected_device = None
-        await asyncio.sleep(5)
-        await self.setup_connection()
 
     def convert(self, value, schema):
         if schema["type"] == "Integer":
@@ -687,6 +728,9 @@ class tuya(generic.FhemModule):
         try:
             stateused = False
             for dp in status:
+                if status[dp] is None:
+                    # dp detected, but no value reported yet
+                    continue
                 found = False
                 for st in self.tuya_spec_status:
                     if "dp_id" in st and st["dp_id"] == int(dp):
@@ -759,10 +803,8 @@ class tuya(generic.FhemModule):
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def Undefine(self, hash):
-        if self._connected_device:
-            await self._connected_device.close()
-            self._connected_device = None
         await super().Undefine(hash)
+        await self.close_connection()
 
     # The following code is only for setup/scan process via tuya cloud
     async def set_scan_devices(self, hash, params):
@@ -838,7 +880,7 @@ class tuya(generic.FhemModule):
         for i in tuyadevices:
             name = i["name"]
             id = i["id"]
-            (ip, ver) = getIP(devices, i["id"])
+            ip, ver = getIP(devices, i["id"])
             local_key = i["key"]
             productid = i["product_id"]
 
@@ -893,9 +935,9 @@ class tuya(generic.FhemModule):
     async def update_readings_colour(self, code, hexcolour):
         if code == "colour_data":
             # only category dj (light) has old colour_data
-            (red, green, blue) = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
+            red, green, blue = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "A")
         else:
-            (red, green, blue) = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "B")
+            red, green, blue = tt.BulbDevice._hexvalue_to_rgb(hexcolour, "B")
 
         rgb_hex = f"{red:02x}{green:02x}{blue:02x}"
         await fhem.readingsBulkUpdate(
