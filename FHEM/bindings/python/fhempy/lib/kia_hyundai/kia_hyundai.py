@@ -155,11 +155,13 @@ class kia_hyundai(generic.FhemModule):
             self.execute_command(
                 self.vm.start_climate,
                 self.vehicle.id,
-                params["set_temp"],
-                params["duration"],
-                params["defrost"],
-                params["climate"],
-                params["heating"],
+                api.ClimateRequestOptions(
+                    set_temp=params["set_temp"],
+                    duration=params["duration"],
+                    defrost=params["defrost"],
+                    climate=params["climate"],
+                    heating=int(params["heating"]),
+                ),
             )
         )
 
