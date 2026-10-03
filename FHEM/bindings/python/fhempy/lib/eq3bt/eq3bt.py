@@ -30,6 +30,7 @@ class eq3bt(generic.FhemModule):
         self._mac = None
         self._pin = "0000"
         self.thermostat = None
+        self._offline = False
         self.notification_lock = asyncio.Lock()
 
     # FHEM FUNCTION
@@ -185,11 +186,15 @@ class eq3bt(generic.FhemModule):
                         self.hash, "state", "update", 1
                     )
                 await self.update_all()
+                if self._offline:
+                    self._offline = False
+                    self.logger.info("Thermostat reachable again")
             except asyncio.CancelledError:
                 self.logger.info("Stopped update loop")
                 return
             except asyncio.TimeoutError:
-                self.logger.error(f"Timeout on update, retry in {waittime}s")
+                await self._set_offline()
+                self.logger.debug(f"Timeout on update, retry in {waittime}s")
             except Exception:
                 self.logger.exception(f"Failed to update, retry in {waittime}s")
             await asyncio.sleep(waittime)
@@ -353,8 +358,20 @@ class eq3bt(generic.FhemModule):
                     await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
         await fhem.readingsEndUpdate(self.hash, 1)
 
+    async def _set_offline(self):
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
+        if not self._offline:
+            # log only once until the thermostat is reachable again
+            self._offline = True
+            self.logger.error("Thermostat not reachable, retrying in the background")
+
     async def set_and_update(self, fct):
-        await fct
+        try:
+            await fct
+        except asyncio.TimeoutError:
+            await self._set_offline()
+            self.logger.error("Thermostat not reachable, command not executed")
+            return
         await self.update_readings()
 
     def string_to_seconds(self, timestr):

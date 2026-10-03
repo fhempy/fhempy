@@ -19,6 +19,9 @@ from .. import fhem, utils
 from . import bt_recovery
 from .bt_pairing_state import PairingState
 
+# wait time after a failed pairing attempt
+PAIRING_RETRY = 300
+
 
 class BluetoothLE:
     # run bluetoothctl only once
@@ -55,6 +58,7 @@ class BluetoothLE:
 
         self.connection_task = None
         self.connected = asyncio.Event()
+        self._no_adapter_logged = False
 
         # initialize bluetoothctl_lock here to avoid thread without event loop error
         if BluetoothLE.bluetoothctl_lock is None:
@@ -170,7 +174,8 @@ class BluetoothLE:
                 self._device = await BleakScanner.find_device_by_filter(
                     match_address, timeout=timeout, bluez=self._bluez_args(adapter)
                 )
-                self.logger.info(f"Device found via adapter {adapter}")
+                if self._device:
+                    self.logger.info(f"Device found via adapter {adapter}")
             except asyncio.TimeoutError:
                 # nothing found
                 self._device = None
@@ -221,16 +226,6 @@ class BluetoothLE:
                             self.logger.warn(line)
             self.conf_checked = True
 
-        if self.pairing_required and not self.paired:
-            await fhem.readingsSingleUpdateIfChanged(
-                self._dev_hash, "connection", "pairing", 1
-            )
-            ret = await self.pair()
-            if ret == PairingState.SUCCESS:
-                self.paired = True
-            else:
-                return
-
         if self._client and self._client.is_connected:
             return
 
@@ -242,10 +237,26 @@ class BluetoothLE:
     async def connect_loop(self, timeout, max_retries):
         while True:
             try:
+                if self.pairing_required and not self.paired:
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self._dev_hash, "connection", "pairing", 1
+                    )
+                    ret = await self.pair()
+                    if ret == PairingState.SUCCESS:
+                        self.paired = True
+                    else:
+                        await fhem.readingsSingleUpdateIfChanged(
+                            self._dev_hash, "connection", "pairing failed", 1
+                        )
+                        self.logger.error(
+                            f"Pairing failed ({ret}), retry in {PAIRING_RETRY}s"
+                        )
+                        await asyncio.sleep(PAIRING_RETRY)
+                        continue
+
                 await self.connect_once(timeout, max_retries)
                 if self._client and self._client.is_connected:
                     # loop is started again on disconnect
-                    self.connected.set()
                     return
             except asyncio.CancelledError:
                 return
@@ -258,6 +269,15 @@ class BluetoothLE:
     async def connect_once(self, timeout, max_retries):
         # get latest adapter list
         await self.update_adapters()
+        if not self.adapters:
+            await fhem.readingsSingleUpdateIfChanged(
+                self._dev_hash, "connection", "no adapter", 1
+            )
+            if not self._no_adapter_logged:
+                self._no_adapter_logged = True
+                self.logger.error("No Bluetooth adapter found")
+            return
+        self._no_adapter_logged = False
 
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection", "connecting", 1
@@ -312,6 +332,8 @@ class BluetoothLE:
 
                 if self._client and self._client.is_connected:
                     bt_recovery.report_success(adapter)
+                    # set before the listener, it might write to the device
+                    self.connected.set()
                     try:
                         await self._subscribe_notifies()
                     except BleakError:
@@ -338,7 +360,12 @@ class BluetoothLE:
                     continue
 
         # connection failed
-        return
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection", "not found", 1
+        )
+        self.logger.debug(
+            f"Unable to connect to {self.addr} after {max_retries} attempts"
+        )
 
     async def _adapter_failed(self, adapter):
         """Returns True if the adapter was recovered."""
@@ -365,15 +392,19 @@ class BluetoothLE:
                         characteristic.uuid, self.notification_listener
                     )
 
-    async def write_gatt_char(self, uuid, data):
+    async def _wait_connected(self):
+        if not self.connected.is_set() and not self._disconnect_called:
+            # restart the connection loop in case it isn't running anymore
+            await self.connect()
         await asyncio.wait_for(self.connected.wait(), 30)
-        if self.connected.is_set():
-            await self._client.write_gatt_char(uuid, data)
+
+    async def write_gatt_char(self, uuid, data):
+        await self._wait_connected()
+        await self._client.write_gatt_char(uuid, data)
 
     async def read_gatt_char(self, uuid):
-        await asyncio.wait_for(self.connected.wait(), 30)
-        if self.connected.is_set():
-            return await self._client.read_gatt_char(uuid)
+        await self._wait_connected()
+        return await self._client.read_gatt_char(uuid)
 
     async def disconnect(self):
         self._disconnect_called = True
