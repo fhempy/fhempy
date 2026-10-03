@@ -1,6 +1,38 @@
 # CHANGELOG
 
 
+## v0.1.760 (2026-10-03)
+
+### Bug Fixes
+
+- Show fhempy version after restart instead of "restart...please wait"
+  ([#555](https://github.com/fhempy/fhempy/pull/555),
+  [`e03f9f2`](https://github.com/fhempy/fhempy/commit/e03f9f24d41127118145a2edda568e02d752f5ca))
+
+fhempy sends its version right after the websocket handshake. When that frame arrives together with
+  the handshake response, FHEM's HttpUtils drops it and the version reading keeps "restart...please
+  wait". BindingsIo now requests the version after connecting and fhempy answers the request.
+
+Claude-Session: https://claude.ai/code/session_01D45LZg6WfZq8ipvGh2cSd9
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Features
+
+- Recover stuck Bluetooth adapters automatically ([#556](https://github.com/fhempy/fhempy/pull/556),
+  [`fe31fff`](https://github.com/fhempy/fhempy/commit/fe31fff623d208550e6967f6060ecf94ce12877b))
+
+BLE modules using core/bluetoothle (blue_connect, eq3bt, gfprobt, mitemp2) now detect a stuck
+  adapter (3 failed connects or scans without any advertisement) and recover it in escalating
+  stages: D-Bus power cycle, bluetooth-auto-recovery reset (CAP_NET_ADMIN), sudo systemctl restart
+  bluetooth (sudoers). A bluetoothd which doesn't answer on D-Bus is restarted right away. ble_reset
+  passed "hci" instead of the adapter index to recover_adapter, so its reset never worked.
+
+Claude-Session: https://claude.ai/code/session_01CyJVtoXgUpT1NpQNQdgfN4
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.759 (2026-10-03)
 
 ### Bug Fixes
