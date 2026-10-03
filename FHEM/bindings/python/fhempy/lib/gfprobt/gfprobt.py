@@ -147,7 +147,7 @@ class gfprobt(generic.FhemModule):
         await self.commit_code()
 
     async def update_loop(self):
-        self._conn.register_connection_established_listener(self.write_password())
+        self._conn.register_connection_established_listener(self.write_password)
         await self._conn.connect()
         while True:
             try:
