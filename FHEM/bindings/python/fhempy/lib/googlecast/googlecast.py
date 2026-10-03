@@ -239,7 +239,7 @@ class googlecast(generic.FhemModule):
         if url != "":
             self.playUrl(url)
         else:
-            self.cast.media_controller.play()
+            await utils.run_blocking(functools.partial(self.cast.media_controller.play))
 
     async def set_addToQueue(self, hash, params):
         url = params["url"]
@@ -254,50 +254,50 @@ class googlecast(generic.FhemModule):
         self.playUrl(url)
 
     async def set_stop(self, hash, params):
-        self.cast.media_controller.stop()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.stop))
 
     async def set_pause(self, hash, params):
-        self.cast.media_controller.pause()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.pause))
 
     async def set_quitApp(self, hash, params):
-        self.cast.quit_app()
+        await utils.run_blocking(functools.partial(self.cast.quit_app))
 
     async def set_startApp(self, hash, params):
         appId = params["appid"]
-        self.cast.start_app(appId)
+        await utils.run_blocking(functools.partial(self.cast.start_app, appId))
 
     async def set_skip(self, hash, params):
-        self.cast.media_controller.skip()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.skip))
 
     async def set_rewind(self, hash, params):
-        self.cast.media_controller.rewind()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.rewind))
 
     async def set_seek(self, hash, params):
         position = params["pos"]
-        self.cast.media_controller.seek(position)
+        await utils.run_blocking(functools.partial(self.cast.media_controller.seek, position))
 
     async def set_next(self, hash, params):
-        self.cast.media_controller.queue_next()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.queue_next))
 
     async def set_prev(self, hash, params):
-        self.cast.media_controller.queue_prev()
+        await utils.run_blocking(functools.partial(self.cast.media_controller.queue_prev))
 
     async def set_volUp(self, hash, params):
-        self.cast.volume_up()
+        await utils.run_blocking(functools.partial(self.cast.volume_up))
 
     async def set_volDown(self, hash, params):
-        self.cast.volume_down()
+        await utils.run_blocking(functools.partial(self.cast.volume_down))
 
     async def set_subtitles(self, hash, params):
         onoff = params["onoff"]
         if onoff == "on":
-            self.cast.media_controller.enable_subtitle(1)
+            await utils.run_blocking(functools.partial(self.cast.media_controller.enable_subtitle, 1))
         else:
-            self.cast.media_controller.disable_subtitle()
+            await utils.run_blocking(functools.partial(self.cast.media_controller.disable_subtitle))
 
     async def set_volume(self, hash, params):
         vol = params["vol"]
-        self.cast.set_volume(vol / 100)
+        await utils.run_blocking(functools.partial(self.cast.set_volume, vol / 100))
 
     async def set_speak(self, hash, params):
         self.create_async_task(self.do_set_speak(hash, params))

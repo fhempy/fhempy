@@ -10,7 +10,7 @@ import hashlib
 from .const import APP_SPOTIFY
 
 from pychromecast.controllers import BaseController
-from pychromecast.error import LaunchError
+from pychromecast.error import RequestTimeout
 
 APP_NAMESPACE = "urn:x-cast:com.spotify.chromecast.secure.v1"
 TYPE_GET_INFO = "getInfo"
@@ -85,15 +85,17 @@ class SpotifyController(BaseController):
         """
         Launch Spotify application.
 
-        Will raise a LaunchError exception if there is no response from the
+        Will raise a RequestTimeout exception if there is no response from the
         Spotify app within timeout seconds.
         """
 
         if self.access_token is None or self.expires is None:
             raise ValueError("access_token and expires cannot be empty")
 
-        def callback():
+        def callback(msg_sent=True, _response=None):
             """Callback function"""
+            if not msg_sent:
+                return
             self.send_message({"type": TYPE_GET_INFO, "payload": {
                 "remoteName": self.castDevice.cast_info.friendly_name,
                 "deviceID": self.getSpotifyDeviceID(),
@@ -113,9 +115,7 @@ class SpotifyController(BaseController):
             counter += 1
 
         if not self.is_launched:
-            raise LaunchError(
-                "Timeout when waiting for status response from Spotify app"
-            )
+            raise RequestTimeout("Spotify app launch", timeout)
 
     # pylint: disable=too-many-locals
     def quick_play(self, **kwargs):
