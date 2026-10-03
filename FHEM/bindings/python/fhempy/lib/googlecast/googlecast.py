@@ -16,8 +16,8 @@ import pychromecast
 import pychromecast.controllers.dashcast as dashcast
 import spotipy
 
-# youtube_dl
-import youtube_dl
+# yt-dlp
+import yt_dlp
 
 # BubbleUPNP
 from pychromecast.controllers.bubbleupnp import BubbleUPNPController
@@ -513,7 +513,7 @@ class googlecast(generic.FhemModule):
             self.cast.play_media(video_url, "audio/mp4")
 
     def getYoutubeAudioUrl(self, uri):
-        ydl = youtube_dl.YoutubeDL(
+        ydl = yt_dlp.YoutubeDL(
             {
                 "forceurl": True,
                 "simulate": True,
