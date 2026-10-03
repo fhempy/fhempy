@@ -2219,19 +2219,19 @@ files = [
 
 [[package]]
 name = "greeclimate"
-version = "1.4.1"
+version = "3.2.0"
 description = "Discover, connect and control Gree based minisplit systems"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.10"
 groups = ["all"]
 files = [
-    {file = "greeclimate-1.4.1-py3-none-any.whl", hash = "sha256:62f832f9078d94ebf26d30a301395c244890c63ea49e8f9f106864b72a042626"},
-    {file = "greeclimate-1.4.1.tar.gz", hash = "sha256:864f138e385afb0947b544a07120a0921b0e38e8a1c3e8f6811ea462abff7f32"},
+    {file = "greeclimate-3.2.0-py3-none-any.whl", hash = "sha256:957df51df79c49148c639ef36b464ee1df2ea923ffacfa1fe37d063d886b685e"},
+    {file = "greeclimate-3.2.0.tar.gz", hash = "sha256:e67d59cf29b2d2917dc49d18d915f0819a9302d2e0edca0cfa89634be233212d"},
 ]
 
 [package.dependencies]
 netifaces = "*"
-pycryptodome = ">=3.10,<4.0"
+pycryptodome = ">=3.23,<4.0"
 
 [[package]]
 name = "greenlet"
@@ -6935,4 +6935,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "6a4c8ec3e89615fdc83a20f0411f9dcd3dad2d96d339a8b8741752fb7c7e90a2"
+content-hash = "09f86c328ce4434d106f6cb1fefe5d37f591f76dd950014603135d67e4053383"
