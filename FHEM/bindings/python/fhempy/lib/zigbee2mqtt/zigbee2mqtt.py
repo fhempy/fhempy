@@ -6,7 +6,7 @@ import shutil
 import signal
 import subprocess
 
-import netifaces
+import ifaddr
 from git import Repo
 
 from fhempy.lib.generic import FhemModule
@@ -342,9 +342,11 @@ class zigbee2mqtt(FhemModule):
 
     async def create_weblink(self):
         ip_list = [
-            netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
-            for iface in netifaces.interfaces()
-            if netifaces.AF_INET in netifaces.ifaddresses(iface) and iface != "lo"
+            ip.ip
+            for adapter in ifaddr.get_adapters()
+            if adapter.name != "lo"
+            for ip in adapter.ips
+            if ip.is_IPv4
         ]
         await fhem.CommandDefine(
             self.hash, "z2m_frontend weblink iframe http://" + ip_list[0] + ":8080/"
