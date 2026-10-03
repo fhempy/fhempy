@@ -35,6 +35,16 @@ class alphaesscloud(generic.FhemModule):
         
         self.create_async_task(self.setup_connection())
 
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        await self.close_client()
+
+    async def close_client(self):
+        # alphaessopenapi keeps one aiohttp session per client
+        if self.client is not None:
+            await self.client.close()
+            self.client = None
+
     async def setup_connection(self):
             """
             Sets up the connection to the AlphaESS cloud and retrieves necessary information.
@@ -58,6 +68,7 @@ class alphaesscloud(generic.FhemModule):
                
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting",1)
 
+            await self.close_client()
             self.client: alphaess = alphaess(self.appID,self.appSecret)
             ESSList = await self.client.getESSList()
             if ESSList != None:
