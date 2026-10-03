@@ -18,8 +18,8 @@ def process_exists(pid):
     try:
         with open(f"/proc/{pid}/stat") as f:
             return f.read().split()[2] != "Z"
-    except FileNotFoundError:
-        # process was reaped between kill and open
+    except (FileNotFoundError, ProcessLookupError):
+        # process was reaped between kill and open/read
         return False
 
 
