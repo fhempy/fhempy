@@ -1811,57 +1811,12 @@ ssh = ["bcrypt (>=3.1.5)"]
 
 [[package]]
 name = "dbus-fast"
-version = "1.95.2"
-description = "A faster version of dbus-next"
-optional = false
-python-versions = ">=3.7,<4.0"
-groups = ["all"]
-markers = "platform_system == \"Darwin\" and platform_machine == \"x86_64\" and sys_platform == \"linux\""
-files = [
-    {file = "dbus_fast-1.95.2-cp310-cp310-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:69f19fb94ac714b917c51fcc329b51695f085f779841edd6e429170f1f073f47"},
-    {file = "dbus_fast-1.95.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c71e84a7ce3b050745dfb2bcd32ade891ecf6f4b06d3baa4dfe30ad09720a0be"},
-    {file = "dbus_fast-1.95.2-cp310-cp310-manylinux_2_31_x86_64.whl", hash = "sha256:3ffcd1c999599da7806d7887d5ce1e9f0d814aa35af92daecab542c9b70794c1"},
-    {file = "dbus_fast-1.95.2-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:85739b90e6f983494c3c7187d4daaa50f4f4369aa1e87e876066de97ca1bcd58"},
-    {file = "dbus_fast-1.95.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:e2c107caefa186919169e07a852edea3d931dfb6112584fa2c6e5653d91c0d2d"},
-    {file = "dbus_fast-1.95.2-cp311-cp311-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:99902ca6c10368492fdf5a28321d86c7e92e50fd742f0163599602c442232d29"},
-    {file = "dbus_fast-1.95.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c3241252a744b0960e7eb9dcad2892af2bc695b4f47636bab2f17f6012d914ce"},
-    {file = "dbus_fast-1.95.2-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:f52ef5edef41a0ed29645d7c6e1ee89b5e8f5e5c1ba9901699dcec9cfaf8d961"},
-    {file = "dbus_fast-1.95.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:9706e10a6c24d4c03d28b1631e3882009964d5207a86cae2b42466635d7546be"},
-    {file = "dbus_fast-1.95.2-cp312-cp312-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:3277944b418063ad051e8e49144151962691188b972f1fbca7af39fdef4f8a47"},
-    {file = "dbus_fast-1.95.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cab158bcf86c4b2e03c2f3453738a61de83c82cbed11f23331ccc9a9aba6d5b1"},
-    {file = "dbus_fast-1.95.2-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:17d743d13dbde0691adb98f1a6c87f0cf5617a4c9169b4820972dc8869095c6b"},
-    {file = "dbus_fast-1.95.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:aefa695088405d313c703790ac503ad0b2ac1e4807393f1f02e410b6984aedd0"},
-    {file = "dbus_fast-1.95.2-cp37-cp37m-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:ffd3665a6fbe318aadac998ae117b19214e0782397c86ab47792a120979783a6"},
-    {file = "dbus_fast-1.95.2-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:43093d8e42342841c7ac69e236370c31949c35b659032888dae8b3af1fa35e9e"},
-    {file = "dbus_fast-1.95.2-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:4f4b26849254fafb11656fc8c10f8bce67deab683694e0fc7b56edd891d4e118"},
-    {file = "dbus_fast-1.95.2-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:331c4a26e010fd8ad3168b9680f39a7d0765507d3aadcbe5f250da0474877f14"},
-    {file = "dbus_fast-1.95.2-cp38-cp38-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:7aee30619c79334980a25a1e94299a751b3f276644ec0a69c76bfe57be184e7a"},
-    {file = "dbus_fast-1.95.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5c5d344e3fe3c4b16593fad70448c66ca3130c8c692c74a921c15f18650581a7"},
-    {file = "dbus_fast-1.95.2-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:9180d4d39d8688b9d8d43f427f0f2883354fa9df18a1f46d14f1762b82249d1f"},
-    {file = "dbus_fast-1.95.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:e19173e65967581186666a47cd0af06111c7e957fb529198e532b35a47171460"},
-    {file = "dbus_fast-1.95.2-cp39-cp39-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:fae11a8ed320013decd2bf6a982f010fff011bf935c4f32141e804ba7963719b"},
-    {file = "dbus_fast-1.95.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5f653085d9f96ed2e48434ba951cf4bf0229cc273a87b9799e7cf3a9a6612a56"},
-    {file = "dbus_fast-1.95.2-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:05d53e0db08de6b3ba43eb110e01b9e6264e7143849ea9772af45b15575c21b2"},
-    {file = "dbus_fast-1.95.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:4e73b7dcbac5f418bd4b334ad112e40e8b3bc05c53a3fc451926450ce3bb805e"},
-    {file = "dbus_fast-1.95.2-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:76fb9d11bd6ebe1f832350ec57ada352f096f24b5731e38bcbad86ab9b27190b"},
-    {file = "dbus_fast-1.95.2-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:26045c50bbd8c1674814759332333799b073216b2b2cac9e1cfebf757c7f926d"},
-    {file = "dbus_fast-1.95.2-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:bd68b5e7d7c6cd10d804d072062100a4893ad0c19bdac03b53b1809c51a4e3c7"},
-    {file = "dbus_fast-1.95.2-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ea2692efe0d6d6d58fb427cd0ed53ab44ced0c2ada642b0c15fd139c60a706d6"},
-    {file = "dbus_fast-1.95.2-pp38-pypy38_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:33cee333a15241e516ee84aaabdd952dbb1a63f9e986028574451475e97a113f"},
-    {file = "dbus_fast-1.95.2-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6dfd99cf624f769cf838e62d75ceb737b2866b1783a4f11a928cf38e4c906a5f"},
-    {file = "dbus_fast-1.95.2-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:b842e94140e39a196d4d83e02eddcbc461b906871ba02f1c5374055f2d628c47"},
-    {file = "dbus_fast-1.95.2-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:08ca9968dd46b854e5c7b00be32cb273edaf17ddc9647811ff63ae3b9dca822d"},
-    {file = "dbus_fast-1.95.2.tar.gz", hash = "sha256:3dd64c5cd362ceead6cc02603b6b4cbda58b2cbb6ec816a2f21b1901dfc3cb61"},
-]
-
-[[package]]
-name = "dbus-fast"
 version = "5.2.0"
 description = "A faster version of dbus-next"
 optional = false
 python-versions = ">=3.11"
 groups = ["all"]
-markers = "(platform_system != \"Darwin\" or platform_machine != \"x86_64\") and (sys_platform == \"linux\" or platform_system == \"Linux\")"
+markers = "sys_platform == \"linux\" or platform_system == \"Linux\""
 files = [
     {file = "dbus_fast-5.2.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:78fe0dd5dbdaaf281d32d4e609f99cdc7eac3872f9ca805d27d30b3f53d893b3"},
     {file = "dbus_fast-5.2.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ddf103405d0fe9b0c764d3ce8d59e557bed1d68aff7d3b16f6eab94bf6f85d91"},
@@ -6171,21 +6126,21 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.2.2"
+version = "2.8.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main", "all", "dev"]
 files = [
-    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
-    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
+    {file = "urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"},
+    {file = "urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63"},
 ]
 
 [package.extras]
-brotli = ["brotli (>=1.0.9) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; platform_python_implementation != \"CPython\""]
+brotli = ["brotli (>=1.2.0) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=1.2.0.0) ; platform_python_implementation != \"CPython\""]
 h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
-zstd = ["zstandard (>=0.18.0)"]
+zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
 [[package]]
 name = "usb-devices"
