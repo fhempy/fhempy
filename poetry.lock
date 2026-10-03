@@ -443,14 +443,14 @@ files = [
 
 [[package]]
 name = "alphaessopenapi"
-version = "0.0.7"
+version = "0.0.21"
 description = "A python library to retrieve energy statistics from your Alpha ESS inverter by polling the Official Alpha ESS Open API."
 optional = false
 python-versions = "*"
 groups = ["all"]
 files = [
-    {file = "alphaessopenapi-0.0.7-py3-none-any.whl", hash = "sha256:f67590ddb86f48d0ead6ebc1641a1673688ad3b1102db9171f06b243a302b390"},
-    {file = "alphaessopenapi-0.0.7.tar.gz", hash = "sha256:b5d56a910450d090d8f666ae498332b8021a36b0ae6333998686c23ad2b3bb5f"},
+    {file = "alphaessopenapi-0.0.21-py3-none-any.whl", hash = "sha256:c6aa12832ee0d53469c434e1c452ff55ff5f9fca185053da280f7d773d3165c7"},
+    {file = "alphaessopenapi-0.0.21.tar.gz", hash = "sha256:a46ebe99730632eea9b2907d94bbc828bfcd0e437c9ee8ef60ae1ee7ff81146d"},
 ]
 
 [[package]]
@@ -6935,4 +6935,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "768ab53ec4a931da7985c56037d257ed83d9a3ae9648a804154a88648c13cd88"
+content-hash = "dce3018fb6cbc8c7f43a8cef4a760ae4a0eeb5c08712fcb95ae4edb177ba84c6"
