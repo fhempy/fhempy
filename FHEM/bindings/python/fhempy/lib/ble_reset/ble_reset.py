@@ -6,6 +6,7 @@ from bluetooth_auto_recovery import recover_adapter
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem
+from ..core import bt_recovery
 
 
 class ble_reset(FhemModule):
@@ -93,7 +94,9 @@ class ble_reset(FhemModule):
             adapter_details = adapters.adapters
 
             for adapter in adapter_list:
-                await recover_adapter(adapter[:-1], adapter_details[adapter]["address"])
+                await recover_adapter(
+                    bt_recovery.hci_index(adapter), adapter_details[adapter]["address"]
+                )
         except Exception:
             self.logger.exception("Failed to reset bluetooth")
 

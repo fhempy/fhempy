@@ -1,16 +1,16 @@
-
 # BLE Reset
-BLE reset module is used if you have troubles with BLE issues on your Raspberry Pi. It restarts the bluetooth service and resets all hci devices. After the restart/reset bluetooth should work again as expected.
+BLE reset module is used if you have troubles with BLE issues on your Raspberry Pi. It resets all Bluetooth adapters (power cycle, USB reset if needed) every X hours. After the reset bluetooth should work again as expected.
+
+Modules using Bluetooth LE via bleak also recover stuck adapters automatically, see [Bluetooth auto recovery](../../../../../../README.md#bluetooth-auto-recovery).
 
 ## Installation
+The reset requires `CAP_NET_ADMIN` for the fhempy process. Add it to the service which starts fhempy (`fhem` on FHEM installations, `fhempy` on remote peers):
 ```
-sudo visudo
+sudo systemctl edit fhem
 ```
-add the following entries in the "User privilege specification" section
 ```
-fhem    ALL=NOPASSWD: /bin/systemctl restart bluetooth
-fhem    ALL=NOPASSWD: /bin/hciconfig hci? reset
-fhem    ALL=NOPASSWD: /bin/hciconfig hci? up
+[Service]
+AmbientCapabilities=CAP_NET_ADMIN
 ```
 
 ## Usage

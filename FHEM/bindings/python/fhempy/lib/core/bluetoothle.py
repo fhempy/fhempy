@@ -16,6 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
+from . import bt_recovery
 from .bt_pairing_state import PairingState
 
 
@@ -24,9 +25,7 @@ class BluetoothLE:
     bluetoothctl_lock = None
 
     # keep connected (get manuf uuid every x seconds)
-    # reset hci devices on errors
     # find by name
-    # add bluetooth-auto-recovery
     def __init__(
         self,
         logger,
@@ -147,10 +146,14 @@ class BluetoothLE:
         self.adapter_details = adapters.adapters
 
     async def find_device(self, timeout=30, adapter=None):
+        """Returns False if the adapter didn't work (no advertisements at all)."""
         self._device = None
         self._rssi = None
+        adapter_working = False
 
         def match_address(device, adv):
+            nonlocal adapter_working
+            adapter_working = True
             if device.address.upper() == self.addr.upper():
                 # rssi is only available via advertisement data
                 self._rssi = adv.rssi
@@ -163,9 +166,13 @@ class BluetoothLE:
                     match_address, timeout=timeout, adapter=adapter
                 )
                 self.logger.info(f"Device found via adapter {adapter}")
-            except (asyncio.TimeoutError, BleakError):
+            except asyncio.TimeoutError:
                 # nothing found
                 self._device = None
+            except BleakError:
+                self.logger.exception(f"Scan via adapter {adapter} failed")
+                self._device = None
+        return adapter_working
 
     def register_disconnect_listener(self, disconnect_listener):
         self.disconnect_listener = disconnect_listener
@@ -254,9 +261,15 @@ class BluetoothLE:
 
         for i in range(0, max_retries):
             for adapter in self.adapters:
-                await self.find_device(timeout=timeout, adapter=adapter)
+                adapter_working = await self.find_device(
+                    timeout=timeout, adapter=adapter
+                )
                 if not self._device:
-                    # device not found
+                    # device not found, only a problem of the adapter if it
+                    # didn't see any other device either
+                    if not adapter_working and await self._adapter_failed(adapter):
+                        # adapters might have changed, start over
+                        return
                     await asyncio.sleep(20)
                     continue
 
@@ -293,6 +306,7 @@ class BluetoothLE:
                     pass
 
                 if self._client and self._client.is_connected:
+                    bt_recovery.report_success(adapter)
                     try:
                         await self._subscribe_notifies()
                     except BleakError:
@@ -312,11 +326,26 @@ class BluetoothLE:
                         await self.connected_listener()
                     return
                 else:
+                    if await self._adapter_failed(adapter):
+                        # adapters might have changed, start over
+                        return
                     await asyncio.sleep(20)
                     continue
 
         # connection failed
         return
+
+    async def _adapter_failed(self, adapter):
+        """Returns True if the adapter was recovered."""
+        result = await bt_recovery.report_failure(
+            adapter, self.adapter_details[adapter]["address"]
+        )
+        if result:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection_recovery", f"{adapter} {result}", 1
+            )
+            return True
+        return False
 
     async def _subscribe_notifies(self):
         if not self.notification_listener:

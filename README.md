@@ -128,6 +128,28 @@ This are just a few examples for some modules, please see the modules readme lin
  - `define eq3bt fhempy eq3bt 00:11:22:33:44:66:77`
  - `define upnp fhempy discover_upnp`
 
+## Bluetooth auto recovery
+Modules using Bluetooth LE via bleak (blue_connect, eq3bt, gfprobt, mitemp2) detect a stuck Bluetooth adapter and try to recover it automatically. After 3 failed connection attempts in a row (connect errors, or scans which don't see any device at all) the adapter gets recovered, each time escalating one stage further:
+1. Power cycle the adapter via BlueZ D-Bus. No extra permissions needed besides the `bluetooth.conf` policy from the module README.
+2. Reset the adapter via [bluetooth-auto-recovery](https://github.com/Bluetooth-Devices/bluetooth-auto-recovery) (MGMT power cycle, USB reset). Requires `CAP_NET_ADMIN` for the fhempy process.
+3. Restart bluetoothd via `sudo -n systemctl restart bluetooth`. Requires a sudoers entry.
+
+If bluetoothd doesn't answer on D-Bus at all, it gets restarted right away. Stages without the required permissions are skipped. Two recoveries of the same adapter are at least 5 minutes apart (doubling up to 1 hour while the adapter doesn't recover). The reading `connection_recovery` shows the last recovery of a device.
+
+Allow stage 2 by adding `CAP_NET_ADMIN` to the service which starts fhempy (`fhem` on FHEM installations, `fhempy` on remote peers):
+```
+sudo systemctl edit fhem
+```
+```
+[Service]
+AmbientCapabilities=CAP_NET_ADMIN
+```
+
+Allow stage 3 via `sudo visudo` (replace `fhem` with the user running fhempy, e.g. `pi` on remote peers):
+```
+fhem    ALL=NOPASSWD: /usr/bin/systemctl restart bluetooth
+```
+
 ## fhempy peers (e.g. extend Bluetooth range)
 fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
 
