@@ -41,7 +41,7 @@ requests = "2.34.2"
 async-upnp-client = "0.48.2"
 packaging = "24.0"
 pexpect = "==4.9.0"
-aiofiles = "==23.2.1"
+aiofiles = "==25.1.0"
 
 [tool.setuptools.package-data]
 "*" = [ "README.md",]
