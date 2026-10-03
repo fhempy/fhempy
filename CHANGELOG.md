@@ -1,6 +1,320 @@
 # CHANGELOG
 
 
+## v0.1.761 (2026-10-03)
+
+### Bug Fixes
+
+- **alphaesscloud**: Update alphaessopenapi to 0.0.21
+  ([#562](https://github.com/fhempy/fhempy/pull/562),
+  [`e0f35b4`](https://github.com/fhempy/fhempy/commit/e0f35b4ca6e7296664bca7c9c0d3f9cc98e608d6))
+
+0.0.21 keeps one aiohttp session per client instead of opening one per request, so the module now
+  closes the client on Undefine and before reconnecting.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **ble_monitor**: Update janus to 2.0.0 ([#578](https://github.com/fhempy/fhempy/pull/578),
+  [`be69ecb`](https://github.com/fhempy/fhempy/commit/be69ecbdf45538dd1f679718220b6e1a28ff30ad))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Update aiofiles to 25.1.0 ([#581](https://github.com/fhempy/fhempy/pull/581),
+  [`43c80c2`](https://github.com/fhempy/fhempy/commit/43c80c24e49c352c2d4f6fc3343f18d29d972948))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Update bleak to 3.0.2 together with esphome 2026.9.1
+  ([#567](https://github.com/fhempy/fhempy/pull/567),
+  [`4f42238`](https://github.com/fhempy/fhempy/commit/4f42238608fbf40c396f2966d4e22d90877b15d2))
+
+* feat: require Python 3.12 or newer
+
+Several maintained libraries (esphome, hyundai_kia_connect_api, huawei-solar, and through esphome
+  pillow/cryptography security fixes) no longer support Python 3.11.
+
+- pyproject: python >=3.12,<3.15, poetry.lock regenerated - CI matrix, tox envs and helper workflows
+  moved to 3.12-3.14 - fhempyServer shows in the python reading that fhempy updates need Python
+  3.12; it still starts on older versions so existing installs keep running the last compatible
+  release
+
+Installations on Python 3.11 (e.g. Debian 12 / Raspberry Pi OS Bookworm) stay on the last 3.11
+  compatible version until Python is upgraded.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+* fix(deps): update bleak to 3.0.2 together with esphome 2026.9.1
+
+esphome pins bleak, pillow, cryptography and zeroconf exactly, so they move together: - bleak 2.1.1
+  -> 3.0.2 (BLE modules); the adapter is now passed via the bluez args, the adapter= keyword is
+  deprecated in bleak 3 - esphome 2026.6.5 -> 2026.9.1 (needs Python 3.12) - pillow 12.2.0 -> 12.3.0
+  and cryptography 48.0.1 -> 50.0.1 (CVE fixes) - zeroconf 0.150.0 -> 0.151.2 (core)
+
+cryptography uses per-platform constraints in pyproject.toml because esphome keeps 48.0.1 on macOS
+  x86_64; pyproject2manifest takes the first constraint for module manifests.
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Update bluetooth-adapters to 2.4.0 ([#575](https://github.com/fhempy/fhempy/pull/575),
+  [`462017d`](https://github.com/fhempy/fhempy/commit/462017d7e906580099596133bc3664637f36cf97))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Update GitPython, pyjwt and setuptools for security fixes
+  ([#558](https://github.com/fhempy/fhempy/pull/558),
+  [`590bb0a`](https://github.com/fhempy/fhempy/commit/590bb0affe8e8831c49cf695dd74c54cb4ea0073))
+
+- GitPython 3.1.43 -> 3.1.60 (zigbee2mqtt) - pyjwt 2.8.0 -> 2.15.1 (skodaconnect) - setuptools
+  70.0.0 -> 84.0.0 (meross, miflora)
+
+poetry.lock regenerated with Poetry 2.5.1.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Update websockets to 17.1 ([#577](https://github.com/fhempy/fhempy/pull/577),
+  [`c4b5715`](https://github.com/fhempy/fhempy/commit/c4b57157194df39f54a057df29c8d965e6ed062b))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **github_restore**: Apply restored zigbee2mqtt data after installation
+  ([#557](https://github.com/fhempy/fhempy/pull/557),
+  [`24ccfeb`](https://github.com/fhempy/fhempy/commit/24ccfeb06d7b6010064ce4ffa459576aaa3cce0c))
+
+github_restore wrote zigbee2mqtt data directly to .fhempy/zigbee2mqtt. After the FHEM restart the
+  zigbee2mqtt installation cloned into that directory and wrote a default configuration.yaml,
+  overwriting the restored data. Restored zigbee2mqtt files are now staged in
+  .fhempy/zigbee2mqtt_restore and zigbee2mqtt applies them after the installation, right before it
+  starts, then removes the staging dir. A fresh clone is installed even if a restored fhem.save says
+  the installation was successful.
+
+Claude-Session: https://claude.ai/code/session_01SP2kJ4VoUgbC6i6E57FYYM
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **goodwe**: Update goodwe to 0.4.10 ([#563](https://github.com/fhempy/fhempy/pull/563),
+  [`38a10ca`](https://github.com/fhempy/fhempy/commit/38a10ca51e1b95351a9669d9fe98d0ab71a4ad0c))
+
+Bugfix release; the API used by the module (connect, read_runtime_data, get/set_operation_mode,
+  sensors, OperationMode) is unchanged.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **googlecast**: Replace unmaintained youtube_dl with yt-dlp
+  ([#559](https://github.com/fhempy/fhempy/pull/559),
+  [`3f055a1`](https://github.com/fhempy/fhempy/commit/3f055a159fa06748c9b8055b5ea2f0ebb30be5ad))
+
+youtube_dl has had no release since 2021, carries an unfixed advisory (GHSA-22fp-mf44-f2mq) and no
+  longer extracts current YouTube pages. yt-dlp is the maintained fork with the same YoutubeDL API.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **googlecast**: Update pychromecast to 14.0.10 ([#560](https://github.com/fhempy/fhempy/pull/560),
+  [`7442d21`](https://github.com/fhempy/fhempy/commit/7442d21c9a0a650e50f6fc03c58caa72c8875904))
+
+pychromecast 14 changed a few APIs used by googlecast: - launch() callbacks now receive (msg_sent,
+  response); the Spotify controller callback accepts them and skips sending when the launch failed -
+  LaunchError was removed; the Spotify launch timeout raises RequestTimeout - media/receiver
+  commands (play, pause, seek, volume, ...) now block until the device answers, so they run via
+  utils.run_blocking instead of on the event loop
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **gree_climate**: Update greeclimate to 3.2.0 ([#576](https://github.com/fhempy/fhempy/pull/576),
+  [`3741bfb`](https://github.com/fhempy/fhempy/commit/3741bfb1aff20acc4562b91e6418d14df4e7cd2a))
+
+greeclimate 2+ answers state requests asynchronously, so readings are now updated from the
+  DATA/RESULT handlers. Missing values no longer break the readings update, unused devices found
+  during a scan are closed, and set mode now changes the mode instead of the power flag.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **huawei_modbus**: Update huawei-solar to 3.0.7
+  ([#571](https://github.com/fhempy/fhempy/pull/571),
+  [`5a0f7be`](https://github.com/fhempy/fhempy/commit/5a0f7be19bc1a0deb802710b15568c2d40762e6a))
+
+huawei-solar 3 removed HuaweiSolarBridge. The module now creates the device via
+  create_tcp_client/create_device_instance and requests the same registers the old bridge update
+  read, via batch_update.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **kia_hyundai**: Update hyundai_kia_connect_api to 4.35.0
+  ([#568](https://github.com/fhempy/fhempy/pull/568),
+  [`1a21d42`](https://github.com/fhempy/fhempy/commit/1a21d42294f47b9db10dab81232a5109b59c4b43))
+
+* feat: require Python 3.12 or newer
+
+Several maintained libraries (esphome, hyundai_kia_connect_api, huawei-solar, and through esphome
+  pillow/cryptography security fixes) no longer support Python 3.11.
+
+- pyproject: python >=3.12,<3.15, poetry.lock regenerated - CI matrix, tox envs and helper workflows
+  moved to 3.12-3.14 - fhempyServer shows in the python reading that fhempy updates need Python
+  3.12; it still starts on older versions so existing installs keep running the last compatible
+  release
+
+Installations on Python 3.11 (e.g. Debian 12 / Raspberry Pi OS Bookworm) stay on the last 3.11
+  compatible version until Python is upgraded.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+* fix(kia_hyundai): update hyundai_kia_connect_api to 4.35.0
+
+4.23.0 was the last release supporting Python 3.11; 4.35.0 brings the current Hyundai/Kia cloud API
+  fixes. The VehicleManager API used by the module is unchanged.
+
+Also fixes set start_climate: VehicleManager.start_climate expects a ClimateRequestOptions object,
+  the module passed the values as separate positional arguments, which raised a TypeError.
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **mqtt_ha_discovery**: Replace asyncio_mqtt with aiomqtt 1.2.1
+  ([#574](https://github.com/fhempy/fhempy/pull/574),
+  [`9f11aab`](https://github.com/fhempy/fhempy/commit/9f11aab4e81c6b3e1b8d78639b1a472083ef28e9))
+
+asyncio_mqtt was renamed to aiomqtt. aiomqtt 1.2.1 still uses paho-mqtt 1.x, which esphome pins to
+  1.6.1, so all modules can share one environment. aiomqtt 2.x and paho-mqtt 2 need a newer esphome.
+  Also drops the unused paho-mqtt and asyncio_mqtt requirements of xiaomi_gateway3 and
+  xiaomi_gateway3_device and makes the broker reconnect actually loop.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **object_detection**: Update opencv-python-headless to 5.0.0.93
+  ([#580](https://github.com/fhempy/fhempy/pull/580),
+  [`0ad58cb`](https://github.com/fhempy/fhempy/commit/0ad58cb9337f5fa456bbc3b5d514f10ac900abce))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **prusalink**: Update pyprusalink to 3.1.0 ([#579](https://github.com/fhempy/fhempy/pull/579),
+  [`7a6a031`](https://github.com/fhempy/fhempy/commit/7a6a03134892d1951fd83d7115be38070bc9aabb))
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **rct_power**: Update rctclient to 0.0.6 ([#564](https://github.com/fhempy/fhempy/pull/564),
+  [`81b364a`](https://github.com/fhempy/fhempy/commit/81b364a0172e2e347a56c9dfaef4e513ec9ba48c))
+
+The frame, registry and decode APIs used by the module are unchanged; 0.0.6 adds decoders for the
+  battery cell objects, which were raw bytes before.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **skodaconnect**: Update skodaconnect to 1.3.11
+  ([#565](https://github.com/fhempy/fhempy/pull/565),
+  [`6274c2b`](https://github.com/fhempy/fhempy/commit/6274c2bcc1079040dce013aba5ae204b6d601f9d))
+
+Only metadata changed upstream (project URL, Python >= 3.11); no code change in the library.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **tuya_smartlife**: Update tuya-device-sharing-sdk to 0.2.15
+  ([#561](https://github.com/fhempy/fhempy/pull/561),
+  [`26693fb`](https://github.com/fhempy/fhempy/commit/26693fb3de8de1545be1951e8145331c462cce70))
+
+The SDK now calls SharingDeviceListener.update_device() with an extra dp_timestamps argument, so the
+  listener accepts it; otherwise every status push from Tuya would raise a TypeError. 0.2.15 also
+  rebuilds the MQTT connection with fresh credentials after disconnects.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **zigbee2mqtt**: Replace unmaintained netifaces with ifaddr
+  ([#573](https://github.com/fhempy/fhempy/pull/573),
+  [`92e2e98`](https://github.com/fhempy/fhempy/commit/92e2e986b6e801ffbacd983fc394a6fb1afed811))
+
+* fix(zigbee2mqtt): replace unmaintained netifaces with ifaddr
+
+netifaces has had no release since 2021 and ships no wheels for current Python versions. ifaddr is
+  already a core dependency.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+* fix(tests): don't fail child process test when the child is reaped during the /proc read
+
+Reading /proc/<pid>/stat of a process that is reaped after open() raises ProcessLookupError (ESRCH),
+  not FileNotFoundError.
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Chores
+
+- **deps**: Refresh poetry.lock and update test tooling
+  ([#572](https://github.com/fhempy/fhempy/pull/572),
+  [`d97328f`](https://github.com/fhempy/fhempy/commit/d97328fb5d2ace002f50ba1365f3c0c90371d83a))
+
+Updates all transitive dependencies in poetry.lock to their latest compatible versions (idna,
+  urllib3, h11, starlette and others with known advisories) and the dev tools tox 4.64.7, pytest
+  9.1.1, pytest-asyncio 1.4.0, pytest-env 1.7.1, pytest-mock 3.16.0. tox needs packaging >= 26, so
+  the core packaging pin moves to 26.3.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Features
+
+- Require Python 3.12 or newer ([#566](https://github.com/fhempy/fhempy/pull/566),
+  [`cbea887`](https://github.com/fhempy/fhempy/commit/cbea887f3ad5854844f53cf91b9d56d70cce6a56))
+
+Several maintained libraries (esphome, hyundai_kia_connect_api, huawei-solar, and through esphome
+  pillow/cryptography security fixes) no longer support Python 3.11.
+
+- pyproject: python >=3.12,<3.15, poetry.lock regenerated - CI matrix, tox envs and helper workflows
+  moved to 3.12-3.14 - fhempyServer shows in the python reading that fhempy updates need Python
+  3.12; it still starts on older versions so existing installs keep running the last compatible
+  release
+
+Installations on Python 3.11 (e.g. Debian 12 / Raspberry Pi OS Bookworm) stay on the last 3.11
+  compatible version until Python is upgraded.
+
+Claude-Session: https://claude.ai/code/session_018qRqrbvESbh62u7Q9PesjR
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.760 (2026-10-03)
 
 ### Bug Fixes
