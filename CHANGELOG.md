@@ -1,6 +1,205 @@
 # CHANGELOG
 
 
+## v0.1.759 (2026-10-03)
+
+### Bug Fixes
+
+- Ignore late FHEM replies instead of treating them as function calls
+  ([#548](https://github.com/fhempy/fhempy/pull/548),
+  [`a1c618d`](https://github.com/fhempy/fhempy/commit/a1c618d85687a9291f1f926b1265d4621fa00991))
+
+When a command reply (awaitId) arrived while no listener was registered, for example after the
+  command timed out, handle_message fell through to the function branch and failed with KeyError
+  'id'.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Retry Define after a module failed to load ([#552](https://github.com/fhempy/fhempy/pull/552),
+  [`9042daf`](https://github.com/fhempy/fhempy/commit/9042daff7e391d3afaad91761b98b452f6071049))
+
+moduleLoadingRunning was only cleared after a successful load, so when installing dependencies or
+  importing the module failed (e.g. network not ready at boot), every later Define of that device
+  returned silently and the device stayed dead until fhempy was restarted.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Stop crashing on replies once a message waited longer than 60s
+  ([#547](https://github.com/fhempy/fhempy/pull/547),
+  [`ffd30f4`](https://github.com/fhempy/fhempy/commit/ffd30f419ffc73e7c24b80e47fd4f1f35e065515))
+
+msg_handling_completed deleted stale entries from msg_received_time while iterating over it, so
+  every reply raised "dictionary changed size during iteration" as soon as one message stayed
+  unanswered for 60s. The resulting sendBackError then failed with a KeyError because the received
+  timestamp was already removed.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Stop esphome and zigbee2mqtt processes reliably on fhempy update
+  ([#553](https://github.com/fhempy/fhempy/pull/553),
+  [`405fd59`](https://github.com/fhempy/fhempy/commit/405fd59b9f013700669b7cd407fe946cf9c76984))
+
+The external processes kept running after a fhempy update or restart and blocked the new fhempy
+  version: - stop_process checked `proc.poll is None` (the method, never None) - it talked to FHEM
+  before stopping the process, so it never got to kill() when FHEM didn't answer during
+  update/shutdown - processes started by the child (e.g. node behind bash) were not stopped -
+  os._exit on restart left the child running
+
+New core/child_process starts programs in their own process group and, on Linux, lets the kernel
+  terminate them when fhempy exits. stop() signals the whole group and escalates to SIGKILL.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Bump aiohttp to 3.14.3 and use Poetry 2.5.1 in CI
+  ([#545](https://github.com/fhempy/fhempy/pull/545),
+  [`1cd081d`](https://github.com/fhempy/fhempy/commit/1cd081d27c52bdf02fed0a6e45ac0bbb5d92d263))
+
+Dependabot regenerates poetry.lock with Poetry 2.x, so CI now uses the same Poetry version and the
+  lock file is regenerated with it. Replaces Dependabot PR #544.
+
+Claude-Session: https://claude.ai/code/session_01VGKamXnHTzRoc1J8yNzaSS
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Bump spotipy from 2.23.0 to 2.25.2 ([#543](https://github.com/fhempy/fhempy/pull/543),
+  [`a2b5c4f`](https://github.com/fhempy/fhempy/commit/a2b5c4fe90e9cbd1050a701e9a2cbbbefecdbb8f))
+
+Replaces the stale Dependabot PR #500, which conflicted with master. 2.25.x restricts permissions on
+  the token cache file.
+
+Claude-Session: https://claude.ai/code/session_01VGKamXnHTzRoc1J8yNzaSS
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Chores
+
+- **deps**: Bump actions/stale from 9 to 10 ([#513](https://github.com/fhempy/fhempy/pull/513),
+  [`257a32a`](https://github.com/fhempy/fhempy/commit/257a32ac93371c1c6756c580d69c60bacbaf6795))
+
+* chore(deps): bump actions/stale from 9 to 10
+
+Bumps [actions/stale](https://github.com/actions/stale) from 9 to 10. - [Release
+  notes](https://github.com/actions/stale/releases) -
+  [Changelog](https://github.com/actions/stale/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/actions/stale/compare/v9...v10)
+
+--- updated-dependencies: - dependency-name: actions/stale dependency-version: '10'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+- **deps**: Bump shogo82148/actions-setup-perl from 1.33.0 to 1.35.0
+  ([#511](https://github.com/fhempy/fhempy/pull/511),
+  [`c95e877`](https://github.com/fhempy/fhempy/commit/c95e87725a54a563693929dbfca53843593c5b49))
+
+* chore(deps): bump shogo82148/actions-setup-perl from 1.33.0 to 1.35.0
+
+--- updated-dependencies: - dependency-name: shogo82148/actions-setup-perl dependency-version:
+  1.35.0
+
+dependency-type: direct:production
+
+update-type: version-update:semver-minor
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+### Continuous Integration
+
+- Fix red master (setup-perl attestation, child_process test race)
+  ([#554](https://github.com/fhempy/fhempy/pull/554),
+  [`ea2fd3c`](https://github.com/fhempy/fhempy/commit/ea2fd3c1db0d32cf5c4e6615211b15da5d5b61a6))
+
+- actions-setup-perl 1.35.0 fails to verify the perl download attestation, so the FHEM module tests
+  never ran since #511; go back to 1.33.0 - process_exists in test_child_process raced with the
+  kernel reaping the stopped child between os.kill and reading /proc/<pid>/stat
+
+Claude-Session: https://claude.ai/code/session_017XoP2it5p6F7D463oHG1Gg
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Performance Improvements
+
+- Match FHEM replies to commands by awaitId lookup
+  ([#551](https://github.com/fhempy/fhempy/pull/551),
+  [`0036f63`](https://github.com/fhempy/fhempy/commit/0036f6341913a45af3a5f57ee7b291cf5659535c))
+
+Replies from FHEM were matched by scanning a list of all waiting listeners and every reply was
+  JSON-decoded twice. Listeners are now kept in a dict keyed by awaitId, receive the already decoded
+  message and are removed when the command times out, so they no longer pile up. awaitIds come from
+  a counter instead of random numbers, which could collide.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Send readings bulk updates to FHEM in one roundtrip
+  ([#549](https://github.com/fhempy/fhempy/pull/549),
+  [`4ecd563`](https://github.com/fhempy/fhempy/commit/4ecd563a082de6c8405228a61381a7f4c5c1b40e))
+
+readingsBeginUpdate, every readingsBulkUpdate(IfChanged) and readingsEndUpdate were each a separate
+  websocket roundtrip with its own perl eval in FHEM. The commands are now collected per device and
+  sent together on readingsEndUpdate, like readingsSingleUpdateIfChanged already does. With 20
+  readings an update goes from 22 roundtrips to 1 (5.2 ms -> 0.3 ms on loopback with an instantly
+  answering FHEM).
+
+readingsBulkUpdate(IfChanged) no longer returns FHEM's result, so fhem_forum and
+  volvo_software_update now check for changes with ReadingsVal. Values are escaped for perl single
+  quoted strings, including backslashes, so one value can't break the whole batch. readingsEndUpdate
+  releases the device lock even if sending fails.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Wake waiting FHEM commands immediately instead of polling
+  ([#550](https://github.com/fhempy/fhempy/pull/550),
+  [`1612e37`](https://github.com/fhempy/fhempy/commit/1612e37ab3edd414a884aeae156cca9b97ecf574))
+
+While FHEM waits for a function reply, fhempy holds back commands of other devices. They polled
+  function_active every 100 ms, which added up to 100 ms latency per waiting command and woke every
+  waiting coroutine 10 times a second. They now wait on a future that is resolved when
+  function_active changes.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.758 (2026-10-02)
 
 ### Bug Fixes
