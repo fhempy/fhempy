@@ -577,7 +577,10 @@ class googlecast(generic.FhemModule):
                 self.logger.debug("wait for chromecast")
                 # timeout 0.001 just waits for status to be ready
                 # but we just need the thread to start by calling wait()
-                self.cast.wait(0.001)
+                try:
+                    self.cast.wait(0.001)
+                except Exception:
+                    pass
                 self.logger.debug("wait finished")
 
         self.logger.debug("Start discovery")
