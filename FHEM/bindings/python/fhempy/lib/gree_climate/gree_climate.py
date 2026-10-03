@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from greeclimate.device import (
     Device,
@@ -9,8 +10,13 @@ from greeclimate.device import (
     VerticalSwing,
 )
 from greeclimate.discovery import Discovery
+from greeclimate.network import Response
 
 from .. import fhem, generic
+
+
+def _enum_name(enum, value):
+    return enum(value).name if value is not None else None
 
 
 class gree_climate(generic.FhemModule):
@@ -18,6 +24,7 @@ class gree_climate(generic.FhemModule):
         super().__init__(logger)
 
         self.device = None
+        self._last_state = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -106,20 +113,37 @@ class gree_climate(generic.FhemModule):
                         f"fhempy gree_climate {device.device_info.name}"
                     ),
                 )
-            else:
-                if device.device_info.name == name:
-                    return device
+            elif device.device_info.name == name:
+                return device
+            device.close()
         return None
 
     async def connect_device(self):
+        if self.device is not None:
+            self.device.close()
         self.device = await self.scan_devices(self.name)
+        self._last_state = None
+        if self.device is not None:
+            # greeclimate >= 2 answers state requests asynchronously
+            self.device.add_handler(Response.DATA, self._handle_state)
+            self.device.add_handler(Response.RESULT, self._handle_state)
+            self._last_state = time.monotonic()
+
+    def _handle_state(self, *args):
+        self._last_state = time.monotonic()
+        self.create_async_task(self.update_readings())
 
     async def update_once(self):
+        if time.monotonic() - self._last_state > 3 * max(self._attr_interval, 60):
+            self.logger.error("Device stopped responding, searching it again")
+            await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+            await self.connect_device()
+            if self.device is None:
+                return
         try:
             await self.device.update_state()
-            await self.update_readings()
         except Exception:
-            self.logger.exception("Failed to update readings")
+            self.logger.exception("Failed to request device state")
             await self.connect_device()
 
     async def update_loop(self):
@@ -135,6 +159,8 @@ class gree_climate(generic.FhemModule):
             await asyncio.sleep(self._attr_interval)
 
     async def update_readings(self):
+        if self.device is None or not self.device.has_valid_state:
+            return
         await fhem.readingsBeginUpdate(self.hash)
         try:
             await fhem.readingsBulkUpdateIfChanged(
@@ -144,15 +170,15 @@ class gree_climate(generic.FhemModule):
                 self.hash, "temperature", self.device.current_temperature
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "mode", Mode(self.device.mode).name
+                self.hash, "mode", _enum_name(Mode, self.device.mode)
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
                 "temperature_units",
-                TemperatureUnits(self.device.temperature_units).name,
+                _enum_name(TemperatureUnits, self.device.temperature_units),
             )
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "fan_speed", FanSpeed(self.device.fan_speed).name
+                self.hash, "fan_speed", _enum_name(FanSpeed, self.device.fan_speed)
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "fresh_air", "on" if self.device.fresh_air else "off"
@@ -172,12 +198,12 @@ class gree_climate(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
                 "horizontal_swing",
-                HorizontalSwing(self.device.horizontal_swing).name,
+                _enum_name(HorizontalSwing, self.device.horizontal_swing),
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash,
                 "vertical_swing",
-                VerticalSwing(self.device.vertical_swing).name,
+                _enum_name(VerticalSwing, self.device.vertical_swing),
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "quiet", "on" if self.device.quiet else "off"
@@ -229,7 +255,8 @@ class gree_climate(generic.FhemModule):
         self.create_async_task(self.send_command())
 
     async def set_mode(self, hash, params):
-        self.device.power = Mode[params["mode"]]
+        self.device.power = True
+        self.device.mode = Mode[params["mode"]]
         self.create_async_task(self.send_command())
 
     async def set_desiredTemp(self, hash, params):
@@ -285,5 +312,5 @@ class gree_climate(generic.FhemModule):
         self.create_async_task(self.send_command())
 
     async def send_command(self):
+        # the device confirms the new values, readings follow via _handle_state
         await self.device.push_state_update()
-        await self.update_once()

@@ -1,6 +1,6 @@
 {
   "requirements": [
     "bleak==3.0.2",
-    "bluetooth-adapters==0.16.2"
+    "bluetooth-adapters==2.4.0"
   ]
 }

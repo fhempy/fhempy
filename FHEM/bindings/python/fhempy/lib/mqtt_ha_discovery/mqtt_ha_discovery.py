@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-import asyncio_mqtt as aiomqtt
+import aiomqtt
 
 from .. import fhem, generic, utils
 
@@ -60,21 +60,22 @@ class mqtt_ha_discovery(generic.FhemModule):
         await self.connect_to_broker()
 
     async def connect_to_broker(self):
-        try:
-            async with aiomqtt.Client(
-                self.mqtt_host,
-                self.mqtt_port,
-                username=self.mqtt_user,
-                password=self.mqtt_pw,
-                logger=self.logger,
-            ) as client:
-                async with client.messages() as messages:
-                    await client.subscribe("homeassistant/#")
-                    async for message in messages:
-                        await self.handle_ha_msg(message)
-        except aiomqtt.MqttError:
-            self.logger.error("Connection lost; Reconnecting in 5 seconds ...")
-            await asyncio.sleep(5)
+        while True:
+            try:
+                async with aiomqtt.Client(
+                    self.mqtt_host,
+                    self.mqtt_port,
+                    username=self.mqtt_user,
+                    password=self.mqtt_pw,
+                    logger=self.logger,
+                ) as client:
+                    async with client.messages() as messages:
+                        await client.subscribe("homeassistant/#")
+                        async for message in messages:
+                            await self.handle_ha_msg(message)
+            except aiomqtt.MqttError:
+                self.logger.error("Connection lost; Reconnecting in 5 seconds ...")
+                await asyncio.sleep(5)
 
     async def handle_ha_msg(self, msg):
         topic = msg.topic.value

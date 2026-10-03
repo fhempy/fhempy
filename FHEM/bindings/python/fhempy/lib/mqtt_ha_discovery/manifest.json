@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "asyncio_mqtt==0.16.2"
+    "aiomqtt==1.2.1"
   ]
 }
