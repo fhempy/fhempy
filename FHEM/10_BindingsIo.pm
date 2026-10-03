@@ -239,6 +239,10 @@ BindingsIo_doInit($) {
 
   BindingsIo_initFrame($hash);
 
+  # request the version, fhempy sends it right after the connection setup
+  # but HttpUtils drops data received together with the websocket handshake
+  BindingsIo_Write($hash, $hash, "version", [], {});
+
   # initialize all devices (send Define)
   my $bindingType = uc($hash->{BindingType})."TYPE";
   foreach my $fhem_dev (sort keys %main::defs) {
@@ -367,6 +371,9 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   } elsif ($function eq "event") {
     $msg{"msgtype"} = "event";
+    $waitforresponse = 0;
+  } elsif ($function eq "version") {
+    $msg{"msgtype"} = "version";
     $waitforresponse = 0;
   }
 
