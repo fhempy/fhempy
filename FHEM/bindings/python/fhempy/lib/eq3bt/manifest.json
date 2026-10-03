@@ -1,7 +1,7 @@
 {
   "requirements": [
     "construct==2.10.70",
-    "bleak==2.1.1",
+    "bleak==3.0.2",
     "bluetooth-adapters==0.16.2",
     "dbus-python==1.5.0",
     "PyGObject<=3.50.0"
