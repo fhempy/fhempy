@@ -2617,18 +2617,15 @@ files = [
 
 [[package]]
 name = "janus"
-version = "1.0.0"
+version = "2.0.0"
 description = "Mixed sync-async queue to interoperate between asyncio tasks and classic threads"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 groups = ["all"]
 files = [
-    {file = "janus-1.0.0-py3-none-any.whl", hash = "sha256:2596ea5482711c1ee3ef2df6c290aaf370a13c55a007826e8f7c32d696d1d00a"},
-    {file = "janus-1.0.0.tar.gz", hash = "sha256:df976f2cdcfb034b147a2d51edfc34ff6bfb12d4e2643d3ad0e10de058cb1612"},
+    {file = "janus-2.0.0-py3-none-any.whl", hash = "sha256:7e6449d34eab04cd016befbd7d8c0d8acaaaab67cb59e076a69149f9031745f9"},
+    {file = "janus-2.0.0.tar.gz", hash = "sha256:0970f38e0e725400496c834a368a67ee551dc3b5ad0a257e132f5b46f2e77770"},
 ]
-
-[package.dependencies]
-typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "jinja2"
@@ -7062,4 +7059,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "1d8f8aeecc535d11058a52fd229cca76f4295a476066a60ff14e96b78d918f00"
+content-hash = "7bffacfa6e4897ece6025d9b58a3c509543d37cf92809f66ca4fae0f4e943685"
