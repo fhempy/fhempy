@@ -2428,25 +2428,26 @@ test = ["black", "codecov", "flake8", "mutmut", "pylint", "pytest (>=3.0.3)", "p
 
 [[package]]
 name = "hyundai-kia-connect-api"
-version = "4.23.0"
+version = "4.35.0"
 description = "Python API for Hyundai, Kia, and Genesis car infotainment systems"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "hyundai_kia_connect_api-4.23.0-py2.py3-none-any.whl", hash = "sha256:ea30026297cd820edf967fb8fff17ac472e7f8cdc3315381febe0f78fb90697e"},
-    {file = "hyundai_kia_connect_api-4.23.0.tar.gz", hash = "sha256:08303a07aaaf741fb5748de461e1af1f4e256493b4dcc584289b7aab4763effd"},
+    {file = "hyundai_kia_connect_api-4.35.0-py3-none-any.whl", hash = "sha256:06e4e738fd22b59464c27665a2337271e913376923992f25d7ec075fca876a68"},
+    {file = "hyundai_kia_connect_api-4.35.0.tar.gz", hash = "sha256:6313f8a4943818567a5c87f269cc38277fe44f8a3f507a7c2258170e61379862"},
 ]
 
 [package.dependencies]
 beautifulsoup4 = ">=4.15.0"
-certifi = ">=2026.6.17"
+certifi = ">=2026.7.22"
 pycryptodome = ">=3.23.0"
 requests = "*"
-tzdata = ">=2026.2"
+tzdata = ">=2026.4"
 
 [package.extras]
 google = ["geopy (>=2.2.0)"]
+image = ["Pillow (>=10.0.0)", "numpy (>=1.26.0)"]
 
 [[package]]
 name = "idna"
@@ -6936,4 +6937,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "46ccf44ceb323898bf25dfcd74258a2e305ab0208d52371db74d18c0738aa588"
+content-hash = "fdac1cd2c1f45ca00d7f65e557615df1c6d7a16d3ec82bc261bfe9d5384c1edc"
