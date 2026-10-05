@@ -45,7 +45,7 @@ def test_msg_handling_completed_removes_stale_messages():
 
 @pytest.mark.asyncio
 async def test_send_back_error_without_received_timestamp(monkeypatch):
-    monkeypatch.setattr(fhem, "function_active", ["dev"])
+    monkeypatch.setattr(fhem, "function_active", [])
     pb = fhempy_instance()
     sent = []
 

@@ -344,6 +344,16 @@ BindingsIo_Write($$$$$) {
     return undef;
   }
 
+  my $py_timeout = 3000;
+  my $cur_time = time;
+  if (($cur_time - $hash->{connecttime}) < 120) {
+    $py_timeout = 60000;
+  }
+  if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
+    # wait 10s on Define, this might happen on startup
+    $py_timeout = 30000;
+  }
+
   my $waitingForId = int(rand()*100000000);
   my $bindingType = uc($hash->{BindingType})."TYPE";
 
@@ -355,7 +365,9 @@ BindingsIo_Write($$$$$) {
     "args" => $a,
     "argsh" => $h,
     "defargs" => $devhash->{args},
-    "defargsh" => $devhash->{argsh}
+    "defargsh" => $devhash->{argsh},
+    # fhempy stops blocking other devices after this time (ms)
+    "timeout" => $py_timeout
   );
   $msg{$bindingType} =  $devhash->{$bindingType};
   # keep this for one year (written on 11.10.2021)
@@ -389,15 +401,6 @@ BindingsIo_Write($$$$$) {
   $write_deep_recursion = $write_deep_recursion + 1;
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
 
-  my $py_timeout = 3000;
-  my $cur_time = time;
-  if (($cur_time - $hash->{connecttime}) < 120) {
-    $py_timeout = 60000;
-  }
-  if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
-    # wait 10s on Define, this might happen on startup
-    $py_timeout = 30000;
-  }
   my $returnval = "";
   my $t1 = time * 1000;
   while (1) {
