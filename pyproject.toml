@@ -32,8 +32,8 @@ fhempy = "fhempy.lib.fhem_pythonbinding:run"
 [tool.poetry.dependencies]
 python = ">=3.12,<3.15"
 websockets = "==17.1"
-importlib_metadata = "7.1.0"
-pycryptodomex = "3.23.0"
+importlib_metadata = "7.2.1"
+pycryptodomex = "3.20.0"
 ifaddr = "==0.2.0"
 zeroconf = "==0.151.2"
 markdown2 = "2.4.13"
@@ -58,7 +58,7 @@ where = [ "FHEM/bindings/python",]
 exclude = [ "tests*",]
 
 [tool.poetry.group.all.dependencies]
-GitPython = "==3.1.60"
+GitPython = "==3.2.0"
 PyGObject = "<=3.50.0"
 aioblescan = "==0.2.14"
 aiohomekit = "==2.6.16"
@@ -119,7 +119,7 @@ ring_doorbell = "==0.8.5"
 rpi_gpio = "==0.7.1"
 seatconnect = "==1.1.9"
 setuptools = "==84.0.0"
-six = "==1.16.0"
+six = "==1.17.0"
 skodaconnect = "==1.3.11"
 spotipy = "==2.25.2"
 ai-edge-litert = "==2.1.6"
