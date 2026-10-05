@@ -2,6 +2,7 @@ import asyncio
 import json
 
 import pytest
+import websockets
 from fhempy.lib import fhem, fhem_pythonbinding
 
 
@@ -130,3 +131,56 @@ async def test_command_waits_for_active_function_of_other_device(monkeypatch):
     await asyncio.wait_for(task, 1)
     assert sent == ["busy", "other"]
     assert fhem.function_waiters == []
+
+
+class ClosedWebsocket:
+    async def send(self, msg):
+        raise websockets.exceptions.ConnectionClosedOK(None, None)
+
+
+@pytest.mark.asyncio
+async def test_command_returns_at_once_when_connection_is_closed(monkeypatch):
+    pb = fhem_pythonbinding.fhempy(ClosedWebsocket())
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+
+    # without the fix this waits for the 180s timeout
+    ret = await asyncio.wait_for(fhem.sendCommandName("dev", "1+1"), 1)
+
+    assert ret == ""
+    assert pb._msg_listeners == {}
+
+
+@pytest.mark.asyncio
+async def test_waiting_commands_fail_when_connection_closes(monkeypatch):
+    pb = fhem_pythonbinding.fhempy(FakeWebsocket())
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+    monkeypatch.setattr(fhem, "function_active", [])
+
+    task = asyncio.create_task(fhem.sendCommandName("dev", "1+1"))
+    await asyncio.sleep(0.01)
+    assert len(pb._msg_listeners) == 1
+
+    pb.connection_closed()
+
+    assert await asyncio.wait_for(task, 1) == ""
+    assert pb._msg_listeners == {}
+
+    # later commands on the old connection aren't sent at all
+    assert await asyncio.wait_for(fhem.sendCommandName("dev", "1+1"), 1) == ""
+    assert len(pb.wsconnection.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_connection_close_releases_commands_of_other_devices(monkeypatch):
+    pb = fhem_pythonbinding.fhempy(FakeWebsocket())
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+    monkeypatch.setattr(fhem, "function_active", ["busy"])
+
+    task = asyncio.create_task(fhem.sendCommandName("other", "1+1"))
+    await asyncio.sleep(0.01)
+    assert not task.done()
+
+    pb.connection_closed()
+
+    assert await asyncio.wait_for(task, 1) == ""
+    assert fhem.function_active == []
