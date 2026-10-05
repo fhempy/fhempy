@@ -23,6 +23,7 @@ def mock_module(mocker):
     mocker.patch("fhempy.lib.fhem.InternalVal", InternalVal)
     mocker.patch("fhempy.lib.fhem.addToDevAttrList", addToDevAttrList)
     mocker.patch("fhempy.lib.fhem.setDevAttrList", setDevAttrList)
+    mocker.patch("fhempy.lib.fhem.getDeviceInfo", getDeviceInfo)
     mocker.patch("fhempy.lib.fhem.readingsBeginUpdate", readingsBeginUpdate)
     mocker.patch(
         "fhempy.lib.fhem.readingsBulkUpdateIfChanged", readingsBulkUpdateIfChanged
@@ -100,6 +101,16 @@ async def addToDevAttrList(name, attr_list):
 
 async def setDevAttrList(name, attr_list):
     return
+
+
+async def getDeviceInfo(name, attrs, dev_attr_list=None):
+    return {
+        "init_done": 1,
+        "attr": {
+            attr: await AttrVal(name, attr, str(default))
+            for attr, default in attrs.items()
+        },
+    }
 
 
 async def readingsBeginUpdate(hash):

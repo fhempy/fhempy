@@ -39,17 +39,16 @@ async def test_run_blocking_task():
 
 @pytest.mark.asyncio
 async def test_handle_define_attr(mocker):
-    async def setDevAttrList(hashname, attrlist):
-        assert hashname == "test"
-        assert str(attrlist) == "attr1 attr2 attr3 attr4 attr5:on,off,test"
+    sent = []
 
-    async def AttrVal(hashname, attr, default):
-        if attr == "attr3":
-            return "test33"
-        return ""
+    async def sendCommandName(name, cmd):
+        sent.append((name, cmd))
+        return (
+            '{"init_done":1,"attr":{"attr1":"","attr2":"","attr3":"test33",'
+            '"attr4":"","attr5":"","room":"Wohnzimmer"}}'
+        )
 
-    mocker.patch("fhempy.lib.fhem.setDevAttrList", setDevAttrList)
-    mocker.patch("fhempy.lib.fhem.AttrVal", AttrVal)
+    mocker.patch("fhempy.lib.fhem.sendCommandName", sendCommandName)
 
     class TestClass:
         async def set_attr(self, hash):
@@ -64,12 +63,24 @@ async def test_handle_define_attr(mocker):
         "attr5": {"default": "test5", "options": "on,off,test"},
     }
     hash = {"NAME": "test"}
-    await utils.handle_define_attr(attr_conf, testinstance, hash)
+    info = await utils.handle_define_attr(attr_conf, testinstance, hash, {"room": ""})
     assert testinstance._attr_attr1 == ""
     assert testinstance._attr_attr2 == 1
     assert testinstance._attr_attr3 == "test33"
     assert testinstance._attr_attr4 == "test4"
     assert testinstance._attr_attr5 == "test5"
+    assert info["init_done"] == 1
+    assert info["attr"]["room"] == "Wohnzimmer"
+    # attribute list and all values in one roundtrip
+    assert len(sent) == 1
+    name, cmd = sent[0]
+    assert name == "test"
+    assert cmd.startswith(
+        "setDevAttrList('test', 'attr1 attr2 attr3 attr4 attr5:on,off,test "
+        "IODev disable:0,1 '.$readingFnAttributes);;to_json({init_done=>$init_done,"
+    )
+    assert "'attr3'=>AttrVal('test','attr3','')" in cmd
+    assert "'room'=>AttrVal('test','room','')" in cmd
 
 
 @pytest.mark.asyncio
