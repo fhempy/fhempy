@@ -470,7 +470,7 @@ async def sendCommandName(name, cmd, hash=None):
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
     except ConnectionError:
-        logger.error(f"FHEM connection closed, can't send: {cmd}")
+        logger.error("FHEM connection closed, command not sent")
         ret = ""
     except Exception as e:
         logger.exception(f"Exception while waiting for reply: {e}")
