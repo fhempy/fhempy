@@ -1,111 +1,52 @@
-[![Download](https://img.shields.io/pypi/dm/fhempy)](https://pypistats.org/packages/fhempy)
-[![python](https://img.shields.io/badge/python-3.9+-critical)](https://github.com/fhempy/fhempy)
-[![Version](https://img.shields.io/pypi/v/fhempy)](https://pypi.org/project/fhempy/)
-[![LastCommit](https://img.shields.io/github/last-commit/fhempy/fhempy)](https://github.com/fhempy/fhempy/commits/master)
-[![BuyCoffee](https://img.shields.io/badge/buycoffee-thx-blue)](https://paypal.me/todominik)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/logo-dark.svg">
+    <img alt="fhempy" src="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/logo-light.svg" width="440">
+  </picture>
+</p>
 
-# Seeking Contributors for fhempy!
+<p align="center">
+  <b>62 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python.</b>
+</p>
 
-Hi everyone,
+<p align="center">
+  <a href="https://pypistats.org/packages/fhempy"><img src="https://img.shields.io/pypi/dm/fhempy" alt="Downloads"></a>
+  <a href="https://github.com/fhempy/fhempy"><img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+"></a>
+  <a href="https://pypi.org/project/fhempy/"><img src="https://img.shields.io/pypi/v/fhempy" alt="Version"></a>
+  <a href="https://github.com/fhempy/fhempy/commits/master"><img src="https://img.shields.io/github/last-commit/fhempy/fhempy" alt="Last commit"></a>
+  <a href="https://paypal.me/todominik"><img src="https://img.shields.io/badge/buy%20me%20a%20coffee-thx-yellow" alt="Buy me a coffee"></a>
+</p>
 
-Due to limited time, I’m unable to fully support the fhempy project on my own. I'm looking for developers to help maintain and enhance the project.
+<p align="center">
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-modules">Modules</a> ·
+  <a href="#-troubleshooting">Troubleshooting</a> ·
+  <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
+  <a href="#write-your-own-module">Write your own module</a>
+</p>
 
-If you’re interested in contributing—whether it’s bug fixes, feature development, or documentation improvements—please get in touch via issues or pull requests.
+## ✨ Why fhempy?
+- **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
+- **No Python fiddling**: fhempy sets up its own Python environment and every module installs its libraries automatically the first time you use it.
+- **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
+- **Extend your range**: run modules on a remote Raspberry Pi, e.g. close to your Bluetooth devices.
 
-Your support would mean a lot!
+## 🚀 Quick start
 
-
-# fhempy
-
-fhempy allows the usage of Python 3 (NOT 2!) language to write FHEM modules. Python 3.9 or higher is required, therefore I recommend using bullseye.
-
-This repository includes following working modules:
-
-|Module | Description|
-|-------|--------------|
-|[aktionsfinder](FHEM/bindings/python/fhempy/lib/aktionsfinder/)|Keep informed about product promotions|
-|[alphaesscloud](FHEM/bindings/python/fhempy/lib/alphaesscloud/)|Alpha ESS inverter cloud integration|
-|[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
-|[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
-|[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
-|[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours|
-|[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
-|[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect|
-|[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for free ddnss.de service|
-|discover_mdns|Discover mDNS (e.g. googlecast) devices|
-|discover_ble|Discover Bluetooth LE devices|
-|discover_upnp|Discover UPnP devices|
-|dlna_dmr|Control DLNA MediaRenderer devices|
-|[energie_gv_at](FHEM/bindings/python/fhempy/lib/energie_gv_at/)|Retrieve current Austrian energy status|
-|[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostat|
-|[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
-|[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESP Home dashboard for easy ESP Home device management|
-|[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve data from FusionSolar|
-|[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
-|gfprobt|Control GF Pro Bluetooth irrigation control|
-|[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to github|
-|[github_restore](FHEM/bindings/python/fhempy/lib/github_restore/)|Restore FHEM config from github|
-|[goodwe](FHEM/bindings/python/fhempy/lib/goodwe/)|Get data from GoodWe inverters|
-|[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
-|[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
-|[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control gree HVAC devices|
-|helloworld|Hello World example for developers to start writing their own module|
-|[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control homekit devices|
-|[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverter, requires Python 3.10 or higher|
-|[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for ikos resorts|
-|[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
-|[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
-|[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
-|[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE Plant Sensor|
-|[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
-|[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE Temperature/Humidity Sensor|
-|[mqtt_ha_discovery](FHEM/bindings/python/fhempy/lib/mqtt_ha_discovery/)|Support HomeAssistant MQTT discovery|
-|[nefit](FHEM/bindings/python/fhempy/lib/nefit/README.md)|Control nefit devices|
-|[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
-|[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
-|[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
-|[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer, requires Python 3.10 or higher|
-|[pyit600](FHEM/bindings/python/fhempy/lib/pyit600/README.md)|Control Salus iT600 devices|
-|[rct_power](FHEM/bindings/python/fhempy/lib/rct_power/README.md)|RCT Power inverter|
-|[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
-|[tibber](FHEM/bindings/python/fhempy/lib/tibber/README.md)|Get consumption data from tibber|
-|[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
-|[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
-|[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your skoda car|
-|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Recommended: Control tuya devices localy incl. real-time updates (only WiFi devices)|
-|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
-|[tuya_smartlife](FHEM/bindings/python/fhempy/lib/tuya_smartlife/README.md)|Recommended: Control tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
-|[warema](FHEM/bindings/python/fhempy/lib/warema/)|Control Warema devices|
-|[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
-|[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
-|[wienernetze_smartmeter](FHEM/bindings/python/fhempy/lib/wienernetze_smartmeter/)|Retrieve data from Wiener Netze smartmeter|
-|[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3\!)|
-|[xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi Tokens from Cloud|
-|[volvo](FHEM/bindings/python/fhempy/lib/volvo/)|Retrieve infos from your Volvo car (only new API)|
-|[volvo_software_update](FHEM/bindings/python/fhempy/lib/volvo_software_update/README.md)|Get notified about Volvo software updates|
-|[zappi](FHEM/bindings/python/fhempy/lib/zappi/README.md)|Zappi charger|
-|[zigbee2mqtt](FHEM/bindings/python/fhempy/lib/zigbee2mqtt/README.md)|Install, update and run Zigbee2MQTT server|
-
-## Installation
-Python >=3.12 is required, Python 2 won't work\!
-
-### Console
-#### Debian 11/12 (Bullseye/Bookworm)
-Copy & paste this command if you are running Debian Bullseye.
+### 1. Install the system packages
+fhempy needs **Python 3.12 or newer**. Debian 13 (Trixie) and Raspberry Pi OS Trixie come with it, so they are the recommended base.
+Copy & paste this command on the machine running FHEM:
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
+sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libjson-xs-perl
 ```
 
-#### Others
-Use the following 2 commands if you run Debian 10 (Buster) or older (e.g. stretch, jessie, ...).
-```
-sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
-```
-```
-sudo cpan Protocol::WebSocket
-```
+> [!NOTE]
+> Debian 12 (Bookworm) and Raspberry Pi OS Bookworm ship Python 3.11. fhempy still starts there, but stays on an older release and doesn't get updates anymore. Check your version with `python3 -V`.
 
-### FHEM
+On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
+
+### 2. Add fhempy to FHEM
+Enter these commands one after another in the FHEM command field:
 ```
 update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt
 ```
@@ -119,14 +60,117 @@ shutdown restart
 define fhempy_local BindingsIo fhempy
 ```
 
-Wait a few minutes until fhempy is installed. **This might take up to 15 minutes!** fhempy_local will show up with a green circle when finished.
-All further requirements are installed automatically via pip as soon as the specific module is used the first time.
- 
-## Usage in FHEM (examples)
-This are just a few examples for some modules, please see the modules readme linked in the table above for more details
- - `define castdevice fhempy googlecast "Living Room"`
- - `define eq3bt fhempy eq3bt 00:11:22:33:44:66:77`
- - `define upnp fhempy discover_upnp`
+Now lean back: the first start sets up fhempy and **can take up to 15 minutes** on a Raspberry Pi. `fhempy_local` shows a green circle as soon as it's ready.
+
+### 3. Define your first device
+Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
+```
+define castdevice fhempy googlecast "Living Room"
+define eq3bt fhempy eq3bt 00:11:22:33:44:66:77
+define upnp fhempy discover_upnp
+```
+The module's README (linked in the list) explains its options. Its Python libraries are installed automatically on first use.
+
+### 🐳 Docker
+Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a ready-made image per module, e.g. `ghcr.io/fhem/fhempy-docker-<modulename>:latest`. Start the container in the same network as FHEM and connect it with `define fhempy_peer_<modulename> BindingsIo fhempy-<modulename>:15733 fhempy`.
+
+## 🧩 Modules
+
+### ☀️ Energy & solar
+|Module | Description|
+|-------|------------|
+|[alphaesscloud](FHEM/bindings/python/fhempy/lib/alphaesscloud/)|Alpha ESS inverter cloud integration|
+|[energie_gv_at](FHEM/bindings/python/fhempy/lib/energie_gv_at/)|Retrieve current Austrian energy status|
+|[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve data from FusionSolar|
+|[goodwe](FHEM/bindings/python/fhempy/lib/goodwe/)|Get data from GoodWe inverters|
+|[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverters|
+|[rct_power](FHEM/bindings/python/fhempy/lib/rct_power/README.md)|RCT Power inverter|
+|[tibber](FHEM/bindings/python/fhempy/lib/tibber/README.md)|Get consumption data from tibber|
+|[wienernetze_smartmeter](FHEM/bindings/python/fhempy/lib/wienernetze_smartmeter/)|Retrieve data from Wiener Netze smartmeter|
+|[zappi](FHEM/bindings/python/fhempy/lib/zappi/README.md)|Zappi charger|
+
+### 🚗 Cars
+|Module | Description|
+|-------|------------|
+|[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
+|[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
+|[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your Skoda car|
+|[volvo](FHEM/bindings/python/fhempy/lib/volvo/)|Retrieve infos from your Volvo car (only new API)|
+|[volvo_software_update](FHEM/bindings/python/fhempy/lib/volvo_software_update/README.md)|Get notified about Volvo software updates|
+
+### 🏠 Smart home devices
+|Module | Description|
+|-------|------------|
+|[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
+|[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESPHome dashboard for easy ESPHome device management|
+|[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control Gree HVAC devices|
+|[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control HomeKit devices|
+|[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
+|[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
+|[mqtt_ha_discovery](FHEM/bindings/python/fhempy/lib/mqtt_ha_discovery/)|Support Home Assistant MQTT discovery|
+|[nefit](FHEM/bindings/python/fhempy/lib/nefit/README.md)|Control Nefit devices|
+|[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
+|[pyit600](FHEM/bindings/python/fhempy/lib/pyit600/README.md)|Control Salus iT600 devices|
+|[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Recommended: control Tuya devices locally incl. real-time updates (only WiFi devices)|
+|[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control Tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
+|[tuya_smartlife](FHEM/bindings/python/fhempy/lib/tuya_smartlife/README.md)|Recommended: control Tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
+|[warema](FHEM/bindings/python/fhempy/lib/warema/)|Control Warema devices|
+|[xiaomi_gateway3](FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/README.md)|Xiaomi Gateway V3 (only V3!)|
+|[xiaomi_tokens](FHEM/bindings/python/fhempy/lib/xiaomi_tokens/README.md)|Retrieve all Xiaomi tokens from the cloud|
+|[zigbee2mqtt](FHEM/bindings/python/fhempy/lib/zigbee2mqtt/README.md)|Install, update and run a Zigbee2MQTT server|
+
+### 📶 Bluetooth
+|Module | Description|
+|-------|------------|
+|[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
+|[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
+|[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours|
+|[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
+|[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
+|[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
+|gfprobt|Control GF Pro Bluetooth irrigation control|
+|[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
+|[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
+|[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
+|[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
+
+### 🎵 Media
+|Module | Description|
+|-------|------------|
+|dlna_dmr|Control DLNA MediaRenderer devices|
+|[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
+|[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
+
+### 🔍 Presence & discovery
+|Module | Description|
+|-------|------------|
+|[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
+|discover_ble|Discover Bluetooth LE devices|
+|discover_mdns|Discover mDNS (e.g. Google Cast) devices|
+|discover_upnp|Discover UPnP devices|
+
+### 🧰 Information & tools
+|Module | Description|
+|-------|------------|
+|[aktionsfinder](FHEM/bindings/python/fhempy/lib/aktionsfinder/)|Keep informed about product promotions|
+|[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for the free ddnss.de service|
+|[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
+|[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
+|[github_restore](FHEM/bindings/python/fhempy/lib/github_restore/)|Restore FHEM config from GitHub|
+|[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
+|[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for Ikos resorts|
+|[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
+|[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
+|[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
+|[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
+|[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
+|helloworld|Hello World example for developers to start writing their own module|
+
+## 🩺 Troubleshooting
+- **`fhempy_local` stays red**: open the device `fhempyserver_15733` in FHEM. Its reading `python` shows the Python version fhempy found, or why it can't start.
+- **Where is the log?** fhempy writes its own log file next to the FHEM log: `log/fhempy-YYYY-MM-DD.log`. Set `attr fhempyserver_15733 verbose 5` for debug output.
+- **`Please make sure that python3-venv package is installed`**: run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
+- **A module doesn't work**: check its README first. Questions are welcome in the [FHEM forum](https://forum.fhem.de/), bugs in the [GitHub issues](https://github.com/fhempy/fhempy/issues).
 
 ## Bluetooth auto recovery
 Modules using Bluetooth LE via bleak (blue_connect, eq3bt, gfprobt, mitemp2) detect a stuck Bluetooth adapter and try to recover it automatically. After 3 failed connection attempts in a row (connect errors, or scans which don't see any device at all) the adapter gets recovered, each time escalating one stage further:
@@ -207,7 +251,12 @@ This example shows how Define function is called from the Python module.
 
 At any time within the functions FHEM functons like readingsSingleUpdate(...) can be called by using the fhem.py module (fhem.readingsSingleUpdate(...)). There are just a few functions supported at the moment.
 
-![Flow Chart](/flowchart.png)
+![Flow Chart](https://raw.githubusercontent.com/fhempy/fhempy/master/flowchart.png)
 
 ## Write your own module
 Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.
+
+## 🤝 Contributing
+Due to limited time I'm unable to fully support fhempy on my own and I'm looking for developers to help maintain and enhance the project. Bug fixes, new modules and documentation improvements are all welcome, just open an issue or a pull request. See [DEVELOPMENT.md](DEVELOPMENT.md) to get started.
+
+Your support would mean a lot!
