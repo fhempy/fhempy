@@ -7,6 +7,25 @@
 
 FHEMPY_START=FHEM/bindings/python/bin/start_fhempy.py
 
+# default python executable unless overridden via --python
+PYTHON="python3"
+PASS_ARGS=()
+
+# only keep remaining arguments to pass to start_fhempy.py
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --python)
+      # strip any quotes
+      PYTHON="${2//[\"\']/}"
+      shift 2
+      ;;
+    *)
+      PASS_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
 # run from users $HOME directory (e.g. /opt/fhem or /home/pi) if FHEM is installed there,
 # otherwise from the FHEM directory this script belongs to (e.g. /opt/fhem/fhem)
 if [ -n "$HOME" ] && [ -f "$HOME/$FHEMPY_START" ]; then
@@ -24,7 +43,7 @@ if [ ! -f "$FHEMPY_START" ]; then
 fi
 
 # Get the Python version
-python_version=$(python3 -c 'import sys; print(sys.version_info[:3])')
+python_version=$("$PYTHON" -c 'import sys; print(sys.version_info[:3])')
 
 # TODO add python version check > 3.8.0
 
@@ -53,7 +72,7 @@ then
   then
     echo -n "Creating fhempy virtual environment..."
     mkdir -p .fhempy
-    python3 -m venv .fhempy/fhempy_venv
+    "$PYTHON" -m venv .fhempy/fhempy_venv
     
     if [[ $? -ne 0 ]]
     then
@@ -81,8 +100,8 @@ fi
 # make sure that start_fhempy.py is executable
 chmod +x "$FHEMPY_START"
 
-# run fhempy.py and push all args to it
-exec "./$FHEMPY_START" "$@"
+# run fhempy.py and push all remaining args to it
+exec "./$FHEMPY_START" "${PASS_ARGS[@]}"
 
 deactivate
 

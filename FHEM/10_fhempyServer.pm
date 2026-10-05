@@ -30,7 +30,7 @@ sub fhempyServer_Initialize($)
   $hash->{SetFn}    = 'fhempyServer_Set';
   $hash->{AttrFn}   = 'fhempyServer_Attr';
   $hash->{ReadFn}   = 'fhempyServer_Read';
-  $hash->{AttrList} = 'nrarchive logfile '.$readingFnAttributes;
+  $hash->{AttrList} = 'fhempy-python-cmd nrarchive logfile '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempyServer_detailFn";
   $hash->{FW_deviceOverview} = 1;
 
@@ -57,11 +57,16 @@ sub fhempyServer_detailFn($$$$)
 sub fhempyServer_getCmd($)
 {
   my ($hash) = @_;
+  my $cmd = "FHEM/bindings/python/bin/fhempy --local";
   my $verbose = AttrVal($hash->{NAME}, "verbose", "");
   if ($verbose eq "5") {
-    return "FHEM/bindings/python/bin/fhempy --local --debug"
+    $cmd .= " --debug";
   }
-  return "FHEM/bindings/python/bin/fhempy --local";
+  my $python_bin = AttrVal($hash->{NAME}, "fhempy-python-cmd", "");
+  if ($python_bin ne "") {
+    $cmd .= " --python $python_bin";
+  }
+  return $cmd;
 }
 
 # returns a version object for output like "Python 3.11.2" or undef if it can't be parsed
@@ -78,14 +83,15 @@ sub fhempyServer_parsePythonVersion($)
 sub fhempyServer_checkPythonVersion($)
 {
   my ($hash) = @_;
-  my $output = qx(python3 -V 2>&1);
+  my $python_bin = AttrVal($hash->{NAME}, "fhempy-python-cmd", "python3");
+  my $output = qx($python_bin -V 2>&1);
   my $ver_obj = fhempyServer_parsePythonVersion($output);
   if (!defined($ver_obj)) {
-    readingsSingleUpdate($hash, "python", "Python 3 not found (python3 -V failed)", 1);
+    readingsSingleUpdate($hash, "python", "Python 3 not found ($python_bin -V failed)", 1);
     return 0;
   }
   if ($ver_obj < version->declare("3.7.2")) {
-    readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
+    readingsSingleUpdate($hash, "python", "$python_bin: Python 3.7.2 or higher required", 1);
     return 0;
   }
   if ($ver_obj < version->declare("3.12.0")) {
@@ -238,6 +244,16 @@ sub fhempyServer_Attr($$$)
     }
   }
 
+  if( $attrName eq 'fhempy-python-cmd' ) {
+    if( $cmd eq "set" ) {
+      $attr{$name}{$attrName} = $attrVal;
+    } else {
+      delete $attr{$name}{$attrName};
+    }
+    fhempyServer_checkPythonVersion($hash);
+    return undef;
+  }
+
   return undef;
 }
 
@@ -276,27 +292,31 @@ sub fhempyServer_Shutdown($)
 =item summary_DE Python Binding zur Nutzung von Python Modulen
 =begin html
 
-<a name="fhempyServer"></a>
+<a id="fhempyServer"></a>
 <h3>fhempyServer</h3>
 <ul>
   fhempyServer runs the fhempy server.<br><br>
 
-  <a name="fhempyServer_Set"></a>
+  <a id="fhempyServer-set"></a>
   <b>Set</b>
   <ul>
   -
   </ul>
 
-  <a name="fhempyServer_Get"></a>
+  <a id="fhempyServer-get"></a>
   <b>Get</b>
   <ul>
   -
   </ul>
 
-  <a name="fhempyServer_Attr"></a>
+  <a id="fhempyServer-attr"></a>
   <b>Attr</b>
   <ul>
-  -
+    <li><a id="fhempyServer-attr-fhempy-python-cmd"></a><b>fhempy-python-cmd</b> &lt;command/path&gt;<br>
+      Specifies the Python executable to use for version checking, virtual environment creation, and running fhempy (e.g. <code>python3.12</code> or <code>/usr/local/bin/python3.12</code>).<br>
+      This is particularly useful on distributions like Debian 12 (Bookworm), where the default system Python is 3.11, but a newer Python (3.12+) is installed side-by-side.<br>
+      If unset, it defaults to <code>python3</code>.
+    </li>
   </ul>
 </ul><br>
 
