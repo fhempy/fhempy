@@ -309,6 +309,9 @@ BindingsIo_Read($)
   my $name = $hash->{NAME};
 
   BindingsIo_readWebsocketMessage($hash, undef, 0);
+  # commands left over after the 300ms limit must not wait for the next
+  # websocket frame, which might only be the next ping
+  BindingsIo_scheduleOtherResponses($hash);
 }
 
 sub
@@ -440,7 +443,7 @@ BindingsIo_Write($$$$$) {
 
   # do not wait for others to finish within function reply
   if ($write_deep_recursion == 1) {
-    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
+    BindingsIo_scheduleOtherResponses($hash);
   }
 
   $write_deep_recursion = $write_deep_recursion - 1;
@@ -451,13 +454,23 @@ BindingsIo_Write($$$$$) {
 sub
 BindingsIo_handleOtherResponses($) {
   my ($hash) = @_;
-  
+
+  delete $hash->{".otherResponsesPending"};
   BindingsIo_checkResponse($hash, undef, 0);
 
   # check if there are still commands on the queue
-  if (@{$hash->{messages}{0}} > 0) {
-    InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
-  }
+  BindingsIo_scheduleOtherResponses($hash);
+}
+
+sub
+BindingsIo_scheduleOtherResponses($) {
+  my ($hash) = @_;
+
+  return if (!defined($hash->{messages}{0}) || @{$hash->{messages}{0}} == 0);
+  # one pending timer is enough, don't postpone it
+  return if ($hash->{".otherResponsesPending"});
+  $hash->{".otherResponsesPending"} = 1;
+  InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
 }
 
 sub
