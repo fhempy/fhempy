@@ -5,8 +5,23 @@
 # This shell script is used to create and/or activate the virtual environment.
 # Since Python 3.11 it is required to have virtual environments.
 
-# run from users $HOME directory (e.g. /opt/fhem or /home/pi)
-cd $HOME
+FHEMPY_START=FHEM/bindings/python/bin/start_fhempy.py
+
+# run from users $HOME directory (e.g. /opt/fhem or /home/pi) if FHEM is installed there,
+# otherwise from the FHEM directory this script belongs to (e.g. /opt/fhem/fhem)
+if [ -n "$HOME" ] && [ -f "$HOME/$FHEMPY_START" ]; then
+  cd "$HOME"
+else
+  FHEM_DIR=$(cd "$(dirname "$0")/../../../.." 2>/dev/null && pwd)
+  if [ -n "$FHEM_DIR" ] && [ -f "$FHEM_DIR/$FHEMPY_START" ]; then
+    cd "$FHEM_DIR"
+  fi
+fi
+
+if [ ! -f "$FHEMPY_START" ]; then
+  echo "$FHEMPY_START not found in $PWD. Please start fhempy from the FHEM directory."
+  exit 1
+fi
 
 # Get the Python version
 python_version=$(python3 -c 'import sys; print(sys.version_info[:3])')
@@ -64,10 +79,10 @@ then
 fi
 
 # make sure that start_fhempy.py is executable
-chmod +x FHEM/bindings/python/bin/start_fhempy.py
+chmod +x "$FHEMPY_START"
 
 # run fhempy.py and push all args to it
-exec FHEM/bindings/python/bin/start_fhempy.py "$@"
+exec "./$FHEMPY_START" "$@"
 
 deactivate
 
