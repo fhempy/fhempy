@@ -164,6 +164,17 @@ then
   if [ -n "$UV" ]
   then
     export FHEMPY_UV="$UV"
+    # uv doesn't read pip.conf, pass extra indexes like piwheels (Raspberry Pi OS)
+    if [ -z "$UV_EXTRA_INDEX_URL" ] && [ -z "$UV_INDEX" ]
+    then
+      extra_index_urls=$(python -m pip config list 2>/dev/null \
+        | sed -n "s/^\(global\|install\)\.extra-index-url='\(.*\)'$/\2/p" | tr '\n' ' ')
+      if [ -n "${extra_index_urls// /}" ]
+      then
+        export UV_EXTRA_INDEX_URL="$extra_index_urls"
+        export UV_INDEX_STRATEGY=unsafe-best-match
+      fi
+    fi
   fi
 fi
 

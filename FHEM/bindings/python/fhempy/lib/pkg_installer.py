@@ -138,7 +138,14 @@ def pip_args(package, upgrade, constraints, find_links, no_cache_dir):
 
 def uv_index_args():
     """Return the index arguments for uv, taken from the pip configuration."""
-    if os.environ.get("UV_INDEX_URL") or os.environ.get("UV_DEFAULT_INDEX"):
+    uv_index_vars = (
+        "UV_INDEX_URL",
+        "UV_DEFAULT_INDEX",
+        "UV_INDEX",
+        "UV_EXTRA_INDEX_URL",
+    )
+    if any(os.environ.get(var) for var in uv_index_vars):
+        # set by bin/fhempy or the user, uv reads them itself
         return []
     args = []
     index_url, extra_urls = pip_config_indexes()
