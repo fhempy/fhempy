@@ -1,6 +1,317 @@
 # CHANGELOG
 
 
+## v0.1.764 (2026-10-06)
+
+### Bug Fixes
+
+- Start fhempy from the FHEM directory when it is not $HOME
+  ([#593](https://github.com/fhempy/fhempy/pull/593),
+  [`6f7a1ea`](https://github.com/fhempy/fhempy/commit/6f7a1ea2d9089dc46f4cc4c6c10ec4f03317f97a))
+
+Fixes #507
+
+- **zigbee2mqtt**: Don't start a second instance on update
+  ([#594](https://github.com/fhempy/fhempy/pull/594),
+  [`716ce32`](https://github.com/fhempy/fhempy/commit/716ce3227bd2e515cde569f7461d9e65e7c17e96))
+
+set update started the new zigbee2mqtt while the old one could still hold the serial port ("Cannot
+  lock port"). The update now aborts if the old process doesn't stop, waits for the port to be
+  released like restart does, and starts zigbee2mqtt again also when the update fails.
+
+Claude-Session: https://claude.ai/code/session_013YiffuHqZrBUzvn6mkPMrf
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Chores
+
+- **deps**: Bump actions/checkout from 5 to 7 ([#589](https://github.com/fhempy/fhempy/pull/589),
+  [`4263dd2`](https://github.com/fhempy/fhempy/commit/4263dd25649b95485f2ff1f913d56bc5b3451f99))
+
+Bumps [actions/checkout](https://github.com/actions/checkout) from 5 to 7. - [Release
+  notes](https://github.com/actions/checkout/releases) -
+  [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/actions/checkout/compare/v5...v7)
+
+--- updated-dependencies: - dependency-name: actions/checkout dependency-version: '7'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump actions/setup-python from 6 to 7
+  ([#592](https://github.com/fhempy/fhempy/pull/592),
+  [`50a61c6`](https://github.com/fhempy/fhempy/commit/50a61c6f591bbc5fd98fb69e62d545f65e82273c))
+
+Bumps [actions/setup-python](https://github.com/actions/setup-python) from 6 to 7. - [Release
+  notes](https://github.com/actions/setup-python/releases) -
+  [Commits](https://github.com/actions/setup-python/compare/v6...v7)
+
+--- updated-dependencies: - dependency-name: actions/setup-python dependency-version: '7'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump actions/stale from 10 to 11 ([#591](https://github.com/fhempy/fhempy/pull/591),
+  [`364c901`](https://github.com/fhempy/fhempy/commit/364c901845405cb947fde07af3656308b829a007))
+
+Bumps [actions/stale](https://github.com/actions/stale) from 10 to 11. - [Release
+  notes](https://github.com/actions/stale/releases) -
+  [Changelog](https://github.com/actions/stale/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/actions/stale/compare/v10...v11)
+
+--- updated-dependencies: - dependency-name: actions/stale dependency-version: '11'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump EndBug/add-and-commit from 9 to 11
+  ([#590](https://github.com/fhempy/fhempy/pull/590),
+  [`b938dfb`](https://github.com/fhempy/fhempy/commit/b938dfbfaf4d6fa053298378c76a19c66a734033))
+
+Bumps [EndBug/add-and-commit](https://github.com/endbug/add-and-commit) from 9 to 11. - [Release
+  notes](https://github.com/endbug/add-and-commit/releases) -
+  [Commits](https://github.com/endbug/add-and-commit/compare/v9...v11)
+
+--- updated-dependencies: - dependency-name: EndBug/add-and-commit dependency-version: '11'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump importlib-metadata from 7.1.0 to 7.2.1
+  ([#587](https://github.com/fhempy/fhempy/pull/587),
+  [`b385b2f`](https://github.com/fhempy/fhempy/commit/b385b2f648481f846d8c2be8b80eb53c9a6a5838))
+
+* chore(deps-dev): bump six from 1.16.0 to 1.17.0
+
+Bumps [six](https://github.com/benjaminp/six) from 1.16.0 to 1.17.0. -
+  [Changelog](https://github.com/benjaminp/six/blob/main/CHANGES) -
+  [Commits](https://github.com/benjaminp/six/compare/1.16.0...1.17.0)
+
+--- updated-dependencies: - dependency-name: six dependency-version: 1.17.0
+
+dependency-type: direct:development
+
+update-type: version-update:semver-minor
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* chore(deps): bump importlib-metadata from 7.1.0 to 7.2.1
+
+Bumps [importlib-metadata](https://github.com/python/importlib_metadata) from 7.1.0 to 7.2.1. -
+  [Release notes](https://github.com/python/importlib_metadata/releases) -
+  [Changelog](https://github.com/python/importlib_metadata/blob/main/NEWS.rst) -
+  [Commits](https://github.com/python/importlib_metadata/compare/v7.1.0...v7.2.1)
+
+--- updated-dependencies: - dependency-name: importlib-metadata dependency-version: 7.2.1
+
+dependency-type: direct:production
+
+* chore(deps-dev): bump gitpython from 3.1.60 to 3.2.0
+
+Bumps [gitpython](https://github.com/gitpython-developers/GitPython) from 3.1.60 to 3.2.0. -
+  [Release notes](https://github.com/gitpython-developers/GitPython/releases) -
+  [Changelog](https://github.com/gitpython-developers/GitPython/blob/main/CHANGES) -
+  [Commits](https://github.com/gitpython-developers/GitPython/compare/3.1.60...3.2.0)
+
+--- updated-dependencies: - dependency-name: gitpython dependency-version: 3.2.0
+
+* chore: update zigbee2mqtt manifest for GitPython 3.2.0
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01EcUDabxDKbPPAQhqsH3SFZ
+
+* chore: relock poetry.lock and update manifests
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps**: Bump pycryptodomex from 3.20.0 to 3.23.0
+  ([#585](https://github.com/fhempy/fhempy/pull/585),
+  [`e2fedb9`](https://github.com/fhempy/fhempy/commit/e2fedb9a1136f72ef052b1e53134acc6caa60601))
+
+* chore(deps): bump pycryptodomex from 3.20.0 to 3.23.0
+
+Bumps [pycryptodomex](https://github.com/Legrandin/pycryptodome) from 3.20.0 to 3.23.0. - [Release
+  notes](https://github.com/Legrandin/pycryptodome/releases) -
+  [Changelog](https://github.com/Legrandin/pycryptodome/blob/master/Changelog.rst) -
+  [Commits](https://github.com/Legrandin/pycryptodome/compare/v3.20.0...v3.23.0)
+
+--- updated-dependencies: - dependency-name: pycryptodomex dependency-version: 3.23.0
+
+dependency-type: direct:production
+
+update-type: version-update:semver-minor
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* chore(deps-dev): bump six from 1.16.0 to 1.17.0
+
+Bumps [six](https://github.com/benjaminp/six) from 1.16.0 to 1.17.0. -
+  [Changelog](https://github.com/benjaminp/six/blob/main/CHANGES) -
+  [Commits](https://github.com/benjaminp/six/compare/1.16.0...1.17.0)
+
+--- updated-dependencies: - dependency-name: six dependency-version: 1.17.0
+
+dependency-type: direct:development
+
+* chore(deps): bump importlib-metadata from 7.1.0 to 7.2.1
+
+Bumps [importlib-metadata](https://github.com/python/importlib_metadata) from 7.1.0 to 7.2.1. -
+  [Release notes](https://github.com/python/importlib_metadata/releases) -
+  [Changelog](https://github.com/python/importlib_metadata/blob/main/NEWS.rst) -
+  [Commits](https://github.com/python/importlib_metadata/compare/v7.1.0...v7.2.1)
+
+--- updated-dependencies: - dependency-name: importlib-metadata dependency-version: 7.2.1
+
+* chore(deps-dev): bump gitpython from 3.1.60 to 3.2.0
+
+Bumps [gitpython](https://github.com/gitpython-developers/GitPython) from 3.1.60 to 3.2.0. -
+  [Release notes](https://github.com/gitpython-developers/GitPython/releases) -
+  [Changelog](https://github.com/gitpython-developers/GitPython/blob/main/CHANGES) -
+  [Commits](https://github.com/gitpython-developers/GitPython/compare/3.1.60...3.2.0)
+
+--- updated-dependencies: - dependency-name: gitpython dependency-version: 3.2.0
+
+* chore: update zigbee2mqtt manifest for GitPython 3.2.0
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01EcUDabxDKbPPAQhqsH3SFZ
+
+* chore: relock poetry.lock and update manifests
+
+* chore: keep pycryptodomex 3.23.0 after merge and relock
+
+* chore: fix merge conflict in pyproject.toml and relock
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps-dev**: Bump gitpython from 3.1.60 to 3.2.0
+  ([#588](https://github.com/fhempy/fhempy/pull/588),
+  [`cc957e4`](https://github.com/fhempy/fhempy/commit/cc957e4858b44dff37503a2f6b1e87b7d77e1411))
+
+* chore(deps-dev): bump gitpython from 3.1.60 to 3.2.0
+
+Bumps [gitpython](https://github.com/gitpython-developers/GitPython) from 3.1.60 to 3.2.0. -
+  [Release notes](https://github.com/gitpython-developers/GitPython/releases) -
+  [Changelog](https://github.com/gitpython-developers/GitPython/blob/main/CHANGES) -
+  [Commits](https://github.com/gitpython-developers/GitPython/compare/3.1.60...3.2.0)
+
+--- updated-dependencies: - dependency-name: gitpython dependency-version: 3.2.0
+
+dependency-type: direct:development
+
+update-type: version-update:semver-minor
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* chore: update zigbee2mqtt manifest for GitPython 3.2.0
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01EcUDabxDKbPPAQhqsH3SFZ
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **deps-dev**: Bump six from 1.16.0 to 1.17.0 ([#586](https://github.com/fhempy/fhempy/pull/586),
+  [`0fed6c3`](https://github.com/fhempy/fhempy/commit/0fed6c31bf65a1f16d082af65bdd219674acd44d))
+
+* chore(deps-dev): bump six from 1.16.0 to 1.17.0
+
+Bumps [six](https://github.com/benjaminp/six) from 1.16.0 to 1.17.0. -
+  [Changelog](https://github.com/benjaminp/six/blob/main/CHANGES) -
+  [Commits](https://github.com/benjaminp/six/compare/1.16.0...1.17.0)
+
+--- updated-dependencies: - dependency-name: six dependency-version: 1.17.0
+
+dependency-type: direct:development
+
+update-type: version-update:semver-minor
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+* chore(deps-dev): bump gitpython from 3.1.60 to 3.2.0
+
+Bumps [gitpython](https://github.com/gitpython-developers/GitPython) from 3.1.60 to 3.2.0. -
+  [Release notes](https://github.com/gitpython-developers/GitPython/releases) -
+  [Changelog](https://github.com/gitpython-developers/GitPython/blob/main/CHANGES) -
+  [Commits](https://github.com/gitpython-developers/GitPython/compare/3.1.60...3.2.0)
+
+--- updated-dependencies: - dependency-name: gitpython dependency-version: 3.2.0
+
+* chore: update zigbee2mqtt manifest for GitPython 3.2.0
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01EcUDabxDKbPPAQhqsH3SFZ
+
+* chore: relock poetry.lock and update manifests
+
+---------
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Features
+
+- Use uv for Python and package installation ([#602](https://github.com/fhempy/fhempy/pull/602),
+  [`b898a25`](https://github.com/fhempy/fhempy/commit/b898a25d34389e5effe2bc76651cf1f30f3a08e0))
+
+bin/fhempy installs uv and creates the fhempy venv with it. If the system Python is older than 3.13,
+  uv installs Python 3.13. Venvs with Python < 3.12 or a broken interpreter are recreated. Packages
+  are installed with uv pip install, pip stays as fallback. piwheels is only used if the venv Python
+  matches the system Python.
+
+
 ## v0.1.763 (2026-10-03)
 
 ### Bug Fixes
