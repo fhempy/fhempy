@@ -4,6 +4,7 @@
 
 import logging
 import os
+import re
 import sys
 import time
 from subprocess import PIPE, Popen
@@ -97,6 +98,30 @@ def pip_kwargs(config_dir):
     return kwargs
 
 
+def install_command(package, upgrade, no_cache_dir, use_uv):
+    """Return the command to install package.
+
+    Uses uv if bin/fhempy provided it (FHEMPY_UV), pip otherwise.
+    Package indexes from pip.conf are passed to uv by bin/fhempy.
+    """
+    uv = os.environ.get("FHEMPY_UV") if use_uv and is_virtual_env() else None
+    if uv:
+        cmd = [uv, "pip", "install", "--python", sys.executable, "--quiet", package]
+        name = re.match(r"[A-Za-z0-9._-]+", package)
+        if upgrade and name:
+            # upgrade only the package itself like pip --upgrade
+            cmd += ["--upgrade-package", name.group(0)]
+        if no_cache_dir:
+            cmd.append("--no-cache")
+        return cmd
+    cmd = [sys.executable, "-m", "pip", "install", "--quiet", package]
+    if upgrade:
+        cmd.append("--upgrade")
+    if no_cache_dir:
+        cmd.append("--no-cache-dir")
+    return cmd
+
+
 def install_package(
     package,
     upgrade=True,
@@ -109,30 +134,33 @@ def install_package(
     Return boolean if install successful.
     """
     # Not using 'import pip; pip.main([])' because it breaks the logger
-    logging.getLogger(__name__).info("Attempting install of %s", package)
+    log = logging.getLogger(__name__)
+    log.info("Attempting install of %s", package)
     env = os.environ.copy()
-    args = [sys.executable, "-m", "pip", "install", "--quiet", package]
-    if no_cache_dir:
-        args.append("--no-cache-dir")
-    if upgrade:
-        args.append("--upgrade")
-    if constraints is not None:
-        args += ["--constraint", constraints]
-    if find_links is not None:
-        args += ["--find-links", find_links, "--prefer-binary"]
-    process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
-    _, stderr = process.communicate()
-    if process.returncode != 0:
-        logging.getLogger(__name__).error(
-            "Unable to install package %s: %s",
-            package,
-            stderr.decode("utf-8").lstrip().strip(),
-        )
-        return False
-    else:
-        logging.getLogger(__name__).info("Successfully installed " + package)
+    for use_uv in (True, False):
+        args = install_command(package, upgrade, no_cache_dir, use_uv)
+        if args[0] == sys.executable and os.environ.get("FHEMPY_NO_PIWHEELS"):
+            # bin/fhempy found piwheels wheels unsuitable for this Python
+            env["PIP_CONFIG_FILE"] = os.devnull
+            env.pop("PIP_EXTRA_INDEX_URL", None)
+            for url in os.environ.get("UV_EXTRA_INDEX_URL", "").split():
+                args += ["--extra-index-url", url]
+        if constraints is not None:
+            args += ["--constraint", constraints]
+        if find_links is not None:
+            args += ["--find-links", find_links]
+        process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
+        _, stderr = process.communicate()
+        error = stderr.decode("utf-8").strip()
+        if process.returncode == 0:
+            log.info("Successfully installed " + package)
+            return True
+        if args[0] == sys.executable:
+            break
+        log.warning("uv failed to install %s, retry with pip: %s", package, error)
 
-    return True
+    log.error("Unable to install package %s: %s", package, error)
+    return False
 
 
 kwargs = pip_kwargs(None)

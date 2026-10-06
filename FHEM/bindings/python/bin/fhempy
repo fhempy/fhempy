@@ -23,10 +23,86 @@ if [ ! -f "$FHEMPY_START" ]; then
   exit 1
 fi
 
-# Get the Python version
-python_version=$(python3 -c 'import sys; print(sys.version_info[:3])')
+FHEMPY_DIR=.fhempy
+FHEMPY_VENV=$FHEMPY_DIR/fhempy_venv
+# uv (https://docs.astral.sh/uv/) is installed here if it isn't available on the system
+UV_DIR=$FHEMPY_DIR/bin
+# Python version uv installs for fhempy if the system Python is older
+UV_PYTHON_VERSION=3.13
+UV_INSTALLER_URL=https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh
+# Python versions installed by uv are kept within the fhempy directory
+export UV_PYTHON_INSTALL_DIR="$PWD/$FHEMPY_DIR/python"
 
-# TODO add python version check > 3.8.0
+# prints the version of the given Python as number (e.g. 313 for 3.13), nothing if it doesn't run
+python_version_num() {
+  "$1" -c 'import sys; print(sys.version_info[0] * 100 + sys.version_info[1])' 2>/dev/null
+}
+
+# sets UV to the uv binary, installs uv to $UV_DIR if it's missing
+find_or_install_uv() {
+  UV=""
+  if [ -n "$FHEMPY_NO_UV" ]; then
+    return 1
+  fi
+  if [ -x "$UV_DIR/uv" ]; then
+    UV="$PWD/$UV_DIR/uv"
+    return 0
+  fi
+  if command -v uv >/dev/null 2>&1; then
+    UV=$(command -v uv)
+    return 0
+  fi
+
+  echo -n "Installing uv..."
+  mkdir -p "$UV_DIR"
+  if command -v curl >/dev/null 2>&1; then
+    curl -LsSf "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$PWD/$UV_DIR" sh >/dev/null 2>&1
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$PWD/$UV_DIR" sh >/dev/null 2>&1
+  fi
+  if [ ! -x "$UV_DIR/uv" ]; then
+    # fallback: install uv from PyPI into a small helper venv
+    python3 -m venv "$FHEMPY_DIR/uv_venv" >/dev/null 2>&1 \
+      && "$FHEMPY_DIR/uv_venv/bin/python" -m pip install --quiet uv >/dev/null 2>&1 \
+      && ln -sf "$PWD/$FHEMPY_DIR/uv_venv/bin/uv" "$UV_DIR/uv"
+  fi
+  if [ -x "$UV_DIR/uv" ]; then
+    UV="$PWD/$UV_DIR/uv"
+    echo "OK"
+    return 0
+  fi
+  rm -rf "$FHEMPY_DIR/uv_venv"
+  echo "FAILED, using pip instead"
+  return 1
+}
+
+# creates the fhempy virtual environment
+# uses uv if available and lets uv install Python $UV_PYTHON_VERSION if the system Python is older
+create_venv() {
+  if [ -n "$UV" ]; then
+    local system_version
+    system_version=$(python_version_num python3)
+    if [ -n "$system_version" ] && [ "$system_version" -ge 313 ]; then
+      echo -n "Creating fhempy virtual environment with uv..."
+      "$UV" venv --quiet --seed --python "$(command -v python3)" "$FHEMPY_VENV" && echo "OK" && return 0
+    else
+      echo -n "Creating fhempy virtual environment with uv and Python $UV_PYTHON_VERSION (this might take a while)..."
+      "$UV" venv --quiet --seed --python "$UV_PYTHON_VERSION" "$FHEMPY_VENV" && echo "OK" && return 0
+    fi
+    echo "FAILED, trying system Python"
+    rm -rf "$FHEMPY_VENV"
+  fi
+
+  echo -n "Creating fhempy virtual environment..."
+  if ! python3 -m venv "$FHEMPY_VENV"; then
+    echo "FAILED"
+    echo "Please make sure that python3-venv package is installed"
+    echo "sudo apt install python3-venv"
+    return 1
+  fi
+  echo "OK"
+  return 0
+}
 
 CONTAINER=0
 # Check if Docker-specific environment variables are set
@@ -44,31 +120,77 @@ fi
 # check if I run in a fhempy_venv
 if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
 then
-  
-  # if not, check if "fhempy_venv" exists
-  test -e .fhempy/fhempy_venv/bin/activate
+  mkdir -p "$FHEMPY_DIR"
+  find_or_install_uv
+
+  # recreate the venv if its Python doesn't run anymore (e.g. after a system upgrade)
+  # or is too old for current fhempy versions and uv can provide a newer one
+  if [ -e "$FHEMPY_VENV/bin/activate" ]
+  then
+    venv_version=$(python_version_num "$FHEMPY_VENV/bin/python")
+    if [ -z "$venv_version" ] || { [ "$venv_version" -lt 312 ] && [ -n "$UV" ]; }
+    then
+      echo "Python of fhempy virtual environment is too old or broken, recreating it..."
+      rm -rf "$FHEMPY_VENV.old"
+      mv "$FHEMPY_VENV" "$FHEMPY_VENV.old"
+      new_version=""
+      if create_venv
+      then
+        new_version=$(python_version_num "$FHEMPY_VENV/bin/python")
+      fi
+      if [ -n "$new_version" ] && { [ -z "$venv_version" ] || [ "$new_version" -ge 312 ]; }
+      then
+        rm -rf "$FHEMPY_VENV.old"
+      else
+        echo "Recreating fhempy virtual environment failed, keep using the old one"
+        rm -rf "$FHEMPY_VENV"
+        mv "$FHEMPY_VENV.old" "$FHEMPY_VENV"
+      fi
+    fi
+  fi
 
   # if not, create fhempy_venv
-  if [[ $? -ne 0 ]]
+  if [ ! -e "$FHEMPY_VENV/bin/activate" ]
   then
-    echo -n "Creating fhempy virtual environment..."
-    mkdir -p .fhempy
-    python3 -m venv .fhempy/fhempy_venv
-    
-    if [[ $? -ne 0 ]]
-    then
-      echo "FAILED"
-      echo "Please make sure that python3-venv package is installed"
-      echo "sudo apt install python3-venv"
-      exit 1
-    fi
-    echo "OK"
+    create_venv || exit 1
   fi
 
   # activate fhempy_venv
   echo -n "Activating virtual environment..."
-  source .fhempy/fhempy_venv/bin/activate
+  source "$FHEMPY_VENV/bin/activate"
   echo "OK"
+
+  # fhempy installs packages with uv if this is set
+  if [ -n "$UV" ]
+  then
+    export FHEMPY_UV="$UV"
+    # uv doesn't read pip.conf, pass extra indexes like piwheels (Raspberry Pi OS)
+    if [ -z "$UV_EXTRA_INDEX_URL" ] && [ -z "$UV_INDEX" ]
+    then
+      extra_index_urls=$(python -m pip config list 2>/dev/null \
+        | sed -n "s/^\(global\|install\)\.extra-index-url='\(.*\)'$/\2/p" | tr '\n' ' ')
+      # piwheels builds wheels for the Python of the Raspberry Pi OS release (cp311 on
+      # Bookworm, cp313 on Trixie). If the venv runs another Python (e.g. 3.13 from uv
+      # on Bookworm) those wheels come from another release and might need a newer glibc.
+      if [ "$(python_version_num /usr/bin/python3)" != "$(python_version_num python)" ]
+      then
+        usable_index_urls=""
+        for url in $extra_index_urls
+        do
+          case "$url" in
+            *piwheels*) export FHEMPY_NO_PIWHEELS=1 ;;
+            *) usable_index_urls="$usable_index_urls $url" ;;
+          esac
+        done
+        extra_index_urls=$usable_index_urls
+      fi
+      if [ -n "${extra_index_urls// /}" ]
+      then
+        export UV_EXTRA_INDEX_URL="$extra_index_urls"
+        export UV_INDEX_STRATEGY=unsafe-best-match
+      fi
+    fi
+  fi
 fi
 
 # check if virtual env was activated
