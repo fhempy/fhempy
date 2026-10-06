@@ -1,6 +1,5 @@
-import os
-import site
 import socket
+import sys
 
 from fhempy.lib.generic import FhemModule
 
@@ -35,35 +34,24 @@ class esphome(FhemModule):
             self.create_async_task(self.create_weblink())
 
     async def start_process(self):
+        # ESPHome 2026.9 removed the built-in dashboard, it is now provided by
+        # the separate ESPHome Device Builder. Run it with fhempy's own Python
+        # so it finds the esphome CLI from the same environment.
         self._esphomeargs = [
-            "esphome",
-            "dashboard",
+            sys.executable,
+            "-m",
+            "esphome_device_builder",
             "esphome_config/",
             "--port",
-            self._attr_port_dashboard,
+            str(self._attr_port_dashboard),
         ]
 
         try:
             self.proc = child_process.start(self._esphomeargs)
         except Exception:
-            self.logger.exception("Failed to execute esphome, trying with env")
-
-            try:
-                my_env = os.environ.copy()
-                my_env["PATH"] = site.getuserbase() + "/bin:" + my_env["PATH"]
-                self._esphomeargs = [
-                    site.getuserbase() + "/bin/esphome",
-                    "dashboard",
-                    "esphome_config/",
-                    "--port",
-                    self._attr_port_dashboard,
-                ]
-
-                self.proc = child_process.start(self._esphomeargs, env=my_env)
-            except Exception:
-                self.logger.exception("Failed to execute esphome, trying with site")
-
-                return "Failed to execute esphome"
+            self.logger.exception("Failed to start ESPHome Device Builder")
+            await fhem.readingsSingleUpdate(self.hash, "state", "failed to start", 1)
+            return "Failed to start ESPHome Device Builder"
 
         await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
 
@@ -88,7 +76,12 @@ class esphome(FhemModule):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         await fhem.CommandDefine(
-            self.hash, "esphome_dashboard weblink iframe http://" + local_ip + ":6052/"
+            self.hash,
+            "esphome_dashboard weblink iframe http://"
+            + local_ip
+            + ":"
+            + str(self._attr_port_dashboard)
+            + "/",
         )
         await fhem.CommandAttr(
             self.hash,

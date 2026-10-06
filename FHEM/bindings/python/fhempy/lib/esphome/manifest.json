@@ -1,5 +1,6 @@
 {
   "requirements": [
-    "esphome==2026.9.1"
+    "esphome==2026.9.1",
+    "esphome-device-builder==1.21.0"
   ]
 }
