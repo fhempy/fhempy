@@ -1,6 +1,135 @@
 # CHANGELOG
 
 
+## v0.1.765 (2026-10-06)
+
+### Bug Fixes
+
+- Don't block other devices after FHEM stopped waiting for a function
+  ([#595](https://github.com/fhempy/fhempy/pull/595),
+  [`877590b`](https://github.com/fhempy/fhempy/commit/877590bbbb07b745bc5efabbdc74ecf2137992d4))
+
+FHEM waits only 3s (30s on Define, 60s shortly after connect) for a function reply. fhempy kept the
+  device in function_active until the Python function finished, so every command of all other
+  devices was held back for up to fct_timeout.
+
+BindingsIo now sends its timeout with each function call. fhempy releases the device when it expires
+  (3s/30s if an older BindingsIo doesn't send it) and removes finished functions by id instead of
+  popping the last one.
+
+Claude-Session: https://claude.ai/code/session_01AVyHvXifx6id77ATPkeLbs
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- Don't wait 180s for replies when the FHEM connection is closed
+  ([#596](https://github.com/fhempy/fhempy/pull/596),
+  [`94c7b1c`](https://github.com/fhempy/fhempy/commit/94c7b1ca8b3ba4a9b5f4b3289c398b635ac020b7))
+
+* fix: don't wait 180s for replies when the FHEM connection is closed
+
+send_and_wait only logged ConnectionClosed and then waited for the 180s timeout. Commands already
+  waiting when FHEM closed the connection (e.g. FHEM restart) hung the same way, and so did commands
+  sent while fhempy was stopping.
+
+Commands now fail at once with ConnectionError on a closed connection and sendCommandName returns ""
+  as on a timeout. When the websocket loop ends, all waiting commands are failed and function_active
+  is cleared, since FHEM doesn't wait for any function anymore.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_01AVyHvXifx6id77ATPkeLbs
+
+* fix: don't log the command text when the FHEM connection is closed
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **esphome**: Start ESPHome Device Builder instead of removed dashboard
+  ([#603](https://github.com/fhempy/fhempy/pull/603),
+  [`13cd2e1`](https://github.com/fhempy/fhempy/commit/13cd2e134e15cbaf32b43f06dc6d5b3123072cf3))
+
+* fix(esphome): start ESPHome Device Builder instead of removed dashboard
+
+ESPHome 2026.9 removed the built-in "esphome dashboard" command. The esphome module now installs
+  esphome-device-builder and runs it with fhempy's own Python, so it finds the esphome CLI in the
+  same venv. The weblink also uses the configured port_dashboard.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_016vjnJPHSJifkARTF2Kb6br
+
+* action: auto update manifest.json
+
+Signed-off-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+Co-authored-by: github-actions <41898282+github-actions[bot]@users.noreply.github.com>
+
+- **fhempyServer**: Show the Python of the venv after uv installed it
+  ([#604](https://github.com/fhempy/fhempy/pull/604),
+  [`a148c60`](https://github.com/fhempy/fhempy/commit/a148c6098c0da06f47d4f424518477ce0a5bf536))
+
+The python reading was only updated before bin/fhempy created the venv, so it kept showing the
+  system Python with the note that fhempy installs Python 3.13 via uv. It is now updated once the
+  venv exists, and a Python installed by fhempy with uv is marked as such.
+
+Claude-Session: https://claude.ai/code/session_01Rps5Xvf5hUayWjQPjyugKX
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Documentation
+
+- Friendlier README with logo, quick start and module categories
+  ([#598](https://github.com/fhempy/fhempy/pull/598),
+  [`30673f5`](https://github.com/fhempy/fhempy/commit/30673f5fd010fa1ca69a8090ebf3cfe3cbab335e))
+
+* docs: friendlier README with logo, quick start and module categories
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_016GWgfy5UEKN1iz2kzWSKvA
+
+* docs: mention that fhempy installs Python 3.13 via uv on older systems
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+### Performance Improvements
+
+- Define devices with 4 instead of 9 roundtrips to FHEM
+  ([#599](https://github.com/fhempy/fhempy/pull/599),
+  [`ecfee1d`](https://github.com/fhempy/fhempy/commit/ecfee1dc9ff3b0daba38a9d837725e4808b25342))
+
+Define asked FHEM for verbose, disable, $init_done, room, group, the attribute list and every module
+  attribute one by one. fhem.getDeviceInfo now gets $init_done and any number of attribute values
+  (optionally together with setDevAttrList) in one roundtrip, which brings a helloworld Define on
+  restart from 9 to 4 sequential roundtrips.
+
+The README is rendered when the detail page is opened (once per module type) instead of on every
+  Define, and aiohttp and Cryptodome are imported when used, which cuts fhempy's import time by more
+  than half.
+
+Claude-Session: https://claude.ai/code/session_01A2Ea7GL4XaHUhrzGquwwad
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **bindingsio**: Warn when JSON::XS is missing ([#597](https://github.com/fhempy/fhempy/pull/597),
+  [`d266699`](https://github.com/fhempy/fhempy/commit/d26669914296fcd1940cbd6cddf505f9e1536100))
+
+Without libjson-xs-perl, JSON falls back to the pure Perl JSON::PP, which needs ~1ms to decode a
+  20-reading fhempy message instead of ~4us. BindingsIo now shows the backend in the JSON_BACKEND
+  internal and logs a hint on define if it's JSON::PP. The install instructions add libjson-xs-perl.
+
+Claude-Session: https://claude.ai/code/session_01A2Ea7GL4XaHUhrzGquwwad
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.764 (2026-10-06)
 
 ### Bug Fixes
