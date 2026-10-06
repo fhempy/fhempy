@@ -10,14 +10,12 @@ from codecs import decode
 from datetime import datetime
 from functools import partial, reduce
 
-from Cryptodome.Cipher import AES
-from Cryptodome.Hash import HMAC, SHA256
-from Cryptodome.Util.Padding import unpad
-
 from . import fhem
 
 
 def encrypt_string(plain_text, fhem_unique_id):
+    from Cryptodome.Cipher import AES
+
     key = fhem_unique_id.encode("utf-8")
     b_text = plain_text.encode("utf-8")
     e_cipher = AES.new(key, AES.MODE_EAX, nonce=key[0:16])
@@ -28,6 +26,8 @@ def encrypt_string(plain_text, fhem_unique_id):
 def decrypt_string(encrypted_text, fhem_unique_id):
     if encrypted_text[0:10] != "crypt-aes:":
         return decrypt_fernet(encrypted_text, fhem_unique_id)
+    from Cryptodome.Cipher import AES
+
     key = fhem_unique_id.encode("utf-8")
     encrypted_data = urlsafe_b64decode(encrypted_text[10:])
     d_cipher = AES.new(key, AES.MODE_EAX, nonce=key[0:16])
@@ -35,6 +35,10 @@ def decrypt_string(encrypted_text, fhem_unique_id):
 
 
 def decrypt_fernet(token_b64, key_str):
+    from Cryptodome.Cipher import AES
+    from Cryptodome.Hash import HMAC, SHA256
+    from Cryptodome.Util.Padding import unpad
+
     try:
         keys = key_str.encode("utf-8")
         token_z = token_b64.encode("utf-8")
@@ -131,7 +135,10 @@ def get_local_ip():
             sock.close()
 
 
-async def handle_define_attr(attr_list, obj, hash):
+async def handle_define_attr(attr_list, obj, hash, extra_attrs=None):
+    """Set the attribute list in FHEM and read all attribute values in one
+    roundtrip. extra_attrs ({attribute: default}) are read as well.
+    Returns the result of fhem.getDeviceInfo."""
     add_to_list = []
     for attr in attr_list:
         if "options" in attr_list[attr]:
@@ -139,25 +146,19 @@ async def handle_define_attr(attr_list, obj, hash):
         else:
             attr_opt = attr
         add_to_list.append(attr_opt)
-    await fhem.setDevAttrList(hash["NAME"], " ".join(add_to_list))
+
+    attrs = {attr: "" for attr in attr_list}
+    if extra_attrs:
+        attrs.update(extra_attrs)
+    info = await fhem.getDeviceInfo(hash["NAME"], attrs, " ".join(add_to_list))
 
     for attr in attr_list:
-        curr_val = await fhem.AttrVal(hash["NAME"], attr, "")
+        curr_val = info["attr"][attr]
         if curr_val == "" and "default" in attr_list[attr]:
             curr_val = attr_list[attr]["default"]
         setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
 
-        # call set_attr_....
-        # fct_name = "set_attr_" + attr
-        # if "function" in attr_list[attr]:
-        #    fct_name = attr_list[attr]["function"]
-        # try:
-        #    fct_call = getattr(obj, fct_name)
-        #    await fct_call(hash)
-        # except AttributeError:
-        #    pass
-
-    return
+    return info
 
 
 def flatten_json(y):

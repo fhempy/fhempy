@@ -451,15 +451,13 @@ class fhempy:
         # create instance of class with logger
         target_class = getattr(module_object, hash["FHEMPYTYPE"])
         moduleLogger = logging.getLogger(hash["NAME"])
-        moduleLogger.setLevel(
-            self.getLogLevel(await fhem.AttrVal(hash["NAME"], "verbose", "3"))
-        )
+        info = await fhem.getDeviceInfo(hash["NAME"], {"verbose": "3", "disable": "0"})
+        moduleLogger.setLevel(self.getLogLevel(info["attr"]["verbose"]))
 
         loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
 
         # check if module is disabled
-        disable_attr = await fhem.AttrVal(hash["NAME"], "disable", "0")
-        if disable_attr == "1":
+        if info["attr"]["disable"] == "1":
             raise ModuleDisabledException
 
         if hash["function"] != "Define":

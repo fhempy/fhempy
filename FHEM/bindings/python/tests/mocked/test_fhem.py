@@ -255,3 +255,35 @@ async def test_function_timeout_defaults(monkeypatch):
     fhem.setFunctionInactive({"NAME": "e", "id": 2})
     fhem.setFunctionInactive({"NAME": "d", "id": 1})
     assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_get_device_info_in_one_command(monkeypatch):
+    sent = []
+
+    async def send(name, cmd):
+        sent.append(cmd)
+        # FHEM's JSON encoder might send numbers for numeric attribute values
+        return '{"init_done":1,"attr":{"verbose":5,"disable":"0"}}'
+
+    monkeypatch.setattr(fhem, "sendCommandName", send)
+    info = await fhem.getDeviceInfo("dev'x", {"verbose": "3", "disable": "0"})
+
+    assert sent == [
+        "to_json({init_done=>$init_done,attr=>{"
+        "'verbose'=>AttrVal('dev\\'x','verbose','3'),"
+        "'disable'=>AttrVal('dev\\'x','disable','0')}})"
+    ]
+    assert info == {"init_done": 1, "attr": {"verbose": "5", "disable": "0"}}
+
+
+@pytest.mark.asyncio
+async def test_get_device_info_uses_defaults_without_reply(monkeypatch):
+    async def send(name, cmd):
+        # sendCommandName returns "" on timeout
+        return ""
+
+    monkeypatch.setattr(fhem, "sendCommandName", send)
+    info = await fhem.getDeviceInfo("dev", {"verbose": "3", "room": ""})
+
+    assert info == {"init_done": 0, "attr": {"verbose": "3", "room": ""}}

@@ -4,10 +4,12 @@ import inspect
 import json
 import os
 
-import markdown2
 from fhempy.lib import fhem
 
 from . import utils
+
+# rendered README per FHEMPYTYPE
+_readme_cache = {}
 
 
 class FhemModule:
@@ -143,7 +145,14 @@ class FhemModule:
             self.hash["FHEMPYTYPE"],
         )
 
-        # add readme as help
+        # add readme as help, it's only rendered when needed and once per type
+        if self.readme_str is None:
+            fhempytype = self.hash["FHEMPYTYPE"]
+            if fhempytype not in _readme_cache:
+                _readme_cache[fhempytype] = await utils.run_blocking(
+                    functools.partial(self._get_readme_content)
+                )
+            self.readme_str = _readme_cache[fhempytype]
         if self.readme_str is not None:
             ret = ret.replace(
                 "###README_HELP_STRING###",
@@ -155,6 +164,7 @@ class FhemModule:
         return ret
 
     def _get_readme_content(self):
+        import markdown2
         from fhempy import lib
 
         initfile = inspect.getfile(lib)
@@ -185,19 +195,17 @@ class FhemModule:
         if self._conf_set == {}:
             await self.set_set_config(self._conf_set)
 
-        check_init_done = await fhem.init_done(self.hash)
-        if check_init_done == 1:
-            if await fhem.AttrVal(self.hash["NAME"], "room", "") == "":
+        info = await utils.handle_define_attr(
+            self._conf_attr, self, self.hash, {"room": "", "group": ""}
+        )
+        if info["init_done"] == 1:
+            if info["attr"]["room"] == "":
                 await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} room fhempy")
-            if await fhem.AttrVal(self.hash["NAME"], "group", "") == "":
+            if info["attr"]["group"] == "":
                 await fhem.CommandAttr(
                     self.hash,
                     (f"{self.hash['NAME']} group " f"{self.hash['FHEMPYTYPE']}"),
                 )
-        self.readme_str = await utils.run_blocking(
-            functools.partial(self._get_readme_content)
-        )
-        await utils.handle_define_attr(self._conf_attr, self, self.hash)
 
     # FHEM FUNCTION
     async def Attr(self, hash, args, argsh):

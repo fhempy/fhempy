@@ -8,7 +8,6 @@ import socket
 import time
 from datetime import datetime
 
-import aiohttp
 import websockets
 
 from .version import __version__
@@ -164,10 +163,51 @@ async def addToDevAttrList(name, attr_list):
     return await sendCommandName(name, cmd)
 
 
+def _setDevAttrListCmd(name, attr_list):
+    attr_list = escapeValue(attr_list + " IODev disable:0,1")
+    return (
+        "setDevAttrList('"
+        + escapeValue(name)
+        + "', '"
+        + attr_list
+        + " '.$readingFnAttributes)"
+    )
+
+
 async def setDevAttrList(name, attr_list):
-    attr_list += " IODev disable:0,1"
-    cmd = "setDevAttrList('" + name + "', '" + attr_list + " '.$readingFnAttributes)"
-    return await sendCommandName(name, cmd)
+    return await sendCommandName(name, _setDevAttrListCmd(name, attr_list))
+
+
+async def getDeviceInfo(name, attrs, dev_attr_list=None):
+    """Get $init_done and attribute values of a device in one roundtrip.
+
+    attrs maps attribute names to their default values. If dev_attr_list is
+    given, setDevAttrList is executed within the same roundtrip.
+    Returns {"init_done": int, "attr": {attribute: value}}.
+    """
+    name_esc = escapeValue(name)
+    attr_vals = ",".join(
+        f"'{escapeValue(attr)}'=>AttrVal('{name_esc}','{escapeValue(attr)}',"
+        f"'{escapeValue(str(default))}')"
+        for attr, default in attrs.items()
+    )
+    cmd = ""
+    if dev_attr_list is not None:
+        # needs to be the first command, BindingsIo adds the IODev list to it
+        cmd = _setDevAttrListCmd(name, dev_attr_list) + ";;"
+    cmd += "to_json({init_done=>$init_done,attr=>{" + attr_vals + "}})"
+
+    info = {"init_done": 0, "attr": {attr: str(d) for attr, d in attrs.items()}}
+    res = await sendCommandName(name, cmd)
+    try:
+        reply = json.loads(res)
+        info["init_done"] = int(reply["init_done"])
+        for attr, value in reply["attr"].items():
+            if attr in info["attr"] and value is not None:
+                info["attr"][attr] = str(value)
+    except Exception:
+        logger.error(f"{name}: failed to get attribute values from FHEM")
+    return info
 
 
 async def readingsBeginUpdate(hash):
@@ -384,6 +424,9 @@ def convertValue(value):
 
 
 async def get_github_data():
+    # imported here as aiohttp takes ~45% of fhempy's import time
+    import aiohttp
+
     res_json = {}
     try:
         async with aiohttp.ClientSession() as session:
