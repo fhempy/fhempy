@@ -93,17 +93,19 @@ Python >=3.12 is required, Python 2 won't work\!
 #### Debian 11/12 (Bullseye/Bookworm)
 Copy & paste this command if you are running Debian Bullseye.
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl
+sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libjson-xs-perl
 ```
 
 #### Others
 Use the following 2 commands if you run Debian 10 (Buster) or older (e.g. stretch, jessie, ...).
 ```
-sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
+sudo apt install python3 python3-pip python3-dev libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libjson-xs-perl
 ```
 ```
 sudo cpan Protocol::WebSocket
 ```
+
+`libjson-xs-perl` (JSON::XS) isn't required, but without it FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` in FHEM, `JSON::Backend::XS` is the fast one.
 
 ### FHEM
 ```

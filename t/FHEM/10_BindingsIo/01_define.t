@@ -25,7 +25,7 @@ InternalTimer(time()+0.5, sub {
 
 
 	subtest 'define fhempy_local BindingsIo fhempy' => sub {
-		plan(6);
+		plan(7);
 		
         my $deviceName=q[fhempy_local];
         my $ret = CommandDefine(undef,qq[$deviceName BindingsIo fhempy]); 
@@ -35,6 +35,7 @@ InternalTimer(time()+0.5, sub {
 		is ($defs{$deviceName}{localBinding},1, q[check localBinding] );
 		is ($defs{$deviceName}{BindingType},q[fhempy], q[check bindingtype] );
 		is (IsDevice(q[fhempyserver_15733]),T(), q[check fhempyserver created] );
+		like ($defs{$deviceName}{JSON_BACKEND}, qr/(PP|XS)/, q[check JSON backend detected] );
 	};
 
 

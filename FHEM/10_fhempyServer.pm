@@ -75,6 +75,19 @@ sub fhempyServer_parsePythonVersion($)
   return $ver_obj;
 }
 
+# returns the python binary of the fhempy virtual environment or undef if it doesn't exist yet
+# same directory logic as FHEM/bindings/python/bin/fhempy
+sub fhempyServer_venvPython()
+{
+  my @dirs = (".");
+  unshift(@dirs, $ENV{HOME}) if ($ENV{HOME} && -f "$ENV{HOME}/FHEM/bindings/python/bin/start_fhempy.py");
+  foreach my $dir (@dirs) {
+    my $python = "$dir/.fhempy/fhempy_venv/bin/python";
+    return $python if (-x $python);
+  }
+  return undef;
+}
+
 sub fhempyServer_checkPythonVersion($)
 {
   my ($hash) = @_;
@@ -84,13 +97,22 @@ sub fhempyServer_checkPythonVersion($)
     readingsSingleUpdate($hash, "python", "Python 3 not found (python3 -V failed)", 1);
     return 0;
   }
-  if ($ver_obj < version->declare("3.7.2")) {
-    readingsSingleUpdate($hash, "python", "Python 3.7.2 or higher required", 1);
-    return 0;
+
+  # report the Python fhempy runs with, uv might have installed a newer one than the system Python
+  my $venv_python = fhempyServer_venvPython();
+  if (defined($venv_python)) {
+    my $venv_ver_obj = fhempyServer_parsePythonVersion(qx("$venv_python" -V 2>&1));
+    if (defined($venv_ver_obj)) {
+      my $text = $venv_ver_obj->normal;
+      $text .= " (Python 3.12 or higher required for fhempy updates)" if ($venv_ver_obj < version->declare("3.12.0"));
+      readingsSingleUpdate($hash, "python", $text, 1);
+      return 1;
+    }
   }
-  if ($ver_obj < version->declare("3.12.0")) {
-    # fhempy releases require Python 3.12, older Pythons keep the last compatible fhempy
-    readingsSingleUpdate($hash, "python", $ver_obj->normal . " (Python 3.12 or higher required for fhempy updates)", 1);
+
+  if ($ver_obj < version->declare("3.13.0")) {
+    # bin/fhempy lets uv install Python 3.13 if the system Python is older
+    readingsSingleUpdate($hash, "python", $ver_obj->normal . " (system Python, fhempy installs Python 3.13 via uv)", 1);
     return 1;
   }
   readingsSingleUpdate($hash, "python", $ver_obj->normal, 1);
@@ -210,7 +232,7 @@ sub fhempyServer_Set($$$)
   my ($hash, $a, $h) = @_;
 
   if (@$a[1] ne "?" && fhempyServer_checkPythonVersion($hash) == 0) {
-    return ReadingsVal($hash->{NAME}, "python", "Python 3.7.2 or higher required");
+    return ReadingsVal($hash->{NAME}, "python", "Python 3 not found");
   }
 
   return CoProcess::setCommands($hash, "", @$a[1], @$a);
