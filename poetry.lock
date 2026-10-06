@@ -399,6 +399,23 @@ yarl = ">=1.17.0,<2.0"
 speedups = ["Brotli (>=1.2) ; platform_python_implementation == \"CPython\" and sys_platform != \"android\" and sys_platform != \"ios\"", "aiodns (>=3.3.0) ; sys_platform != \"android\" and sys_platform != \"ios\"", "backports.zstd ; platform_python_implementation == \"CPython\" and python_version < \"3.14\" and sys_platform != \"android\" and sys_platform != \"ios\"", "brotlicffi (>=1.2) ; platform_python_implementation != \"CPython\""]
 
 [[package]]
+name = "aiohttp-asyncmdnsresolver"
+version = "0.2.0"
+description = "An async resolver for aiohttp that supports MDNS"
+optional = false
+python-versions = ">=3.10"
+groups = ["all"]
+files = [
+    {file = "aiohttp_asyncmdnsresolver-0.2.0-py3-none-any.whl", hash = "sha256:1e6dc01719dc563346ae051122fa7dc3a757317e3e6bf4ef8b23cfd034089c22"},
+    {file = "aiohttp_asyncmdnsresolver-0.2.0.tar.gz", hash = "sha256:aab2cef7ef8ae45b94abf1fc92aa9f4d70cbef7ac0a3d495a86fb96fce357262"},
+]
+
+[package.dependencies]
+aiodns = ">=3.2.0"
+aiohttp = ">=3.10.0"
+zeroconf = ">=0.142.0"
+
+[[package]]
 name = "aiomqtt"
 version = "1.2.1"
 description = "The idiomatic asyncio MQTT client, wrapped around paho-mqtt"
@@ -1698,6 +1715,24 @@ files = [
 ]
 
 [[package]]
+name = "colorlog"
+version = "6.12.0"
+description = "Add colours to the output of Python's logging module."
+optional = false
+python-versions = ">=3.6"
+groups = ["all"]
+files = [
+    {file = "colorlog-6.12.0-py3-none-any.whl", hash = "sha256:30d392604e9110045a2c2aeefc27d7a017abbab63f3a8aee594eac0801df784e"},
+    {file = "colorlog-6.12.0.tar.gz", hash = "sha256:2a7924c1dadf18b22a0eb8b06d1c7b01d5341707ec1641eb6fcc4fde0c3e8e5f"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "sys_platform == \"win32\""}
+
+[package.extras]
+development = ["black", "flake8", "mypy", "pytest", "types-colorama"]
+
+[[package]]
 name = "commentjson"
 version = "0.9.0"
 description = "Add Python and JavaScript style comments in your JSON files."
@@ -2051,6 +2086,52 @@ dev = ["clang-format (==13.0.1)", "clang-tidy (==22.1.8)", "yamllint (==1.38.0)"
 test = ["asyncmock (==0.4.2)", "flake8 (==7.3.0)", "hypothesis (==6.92.1)", "importtime-waterfall (==1.0.0)", "prek (==0.5.0)", "pylint (==4.0.8)", "pytest (==9.1.1)", "pytest-asyncio (==1.4.0)", "pytest-codspeed (==5.0.3)", "pytest-cov (==7.1.0)", "pytest-mock (==3.15.1)", "pytest-xdist (==3.8.0)", "pyupgrade (==3.21.2)", "ruff (==0.16.5)"]
 
 [[package]]
+name = "esphome-device-builder"
+version = "1.21.0"
+description = "ESPHome Device Builder"
+optional = false
+python-versions = ">=3.12"
+groups = ["all"]
+files = [
+    {file = "esphome_device_builder-1.21.0-py3-none-any.whl", hash = "sha256:fd9d63cf8aec4b3b9da927a20311d2364005b127fdf9380448c1c32225a9404f"},
+    {file = "esphome_device_builder-1.21.0.tar.gz", hash = "sha256:9a271c67189c4bb492635908f2eacc76d6efca796ff384bde1e0f47e92fa25e5"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.9.0"
+aiohttp-asyncmdnsresolver = ">=0.1.1"
+colorlog = ">=6.8.0"
+cryptography = ">=42.0.2"
+esphome-device-builder-frontend = "0.1.360"
+fnv-hash-fast = ">=2.0.0"
+icmplib = ">=3.0.4"
+ifaddr = ">=0.2.0"
+mashumaro = ">=3.13"
+orjson = ">=3.9.0"
+pywin32 = {version = ">=311", markers = "sys_platform == \"win32\""}
+pyyaml = ">=6.0"
+"ruamel.yaml" = ">=0.18.0"
+voluptuous = ">=0.13.1"
+zeroconf = ">=0.150.0"
+
+[package.extras]
+esphome = ["esphome (>=2026.9.1)"]
+mcp-interop = ["mcp (>=1.26,<2)"]
+test = ["blockbuster (>=1.5.5,<1.6)", "codespell (==2.4.3)", "importtime-waterfall (==1.0.0)", "jsonschema (>=4.20.0)", "mypy (==2.3.1)", "pre-commit (==4.6.2)", "pre-commit-hooks (==6.0.0)", "pytest (==9.1.1)", "pytest-aiohttp (==1.1.1)", "pytest-codspeed (==5.0.3)", "pytest-cov (==7.1.0)", "pytest-timeout (==2.4.0)", "pytest-xdist (==3.8.0)", "ruff (==0.16.9)", "types-PyYAML"]
+
+[[package]]
+name = "esphome-device-builder-frontend"
+version = "0.1.360"
+description = "Prebuilt web frontend for the ESPHome Device Builder Dashboard"
+optional = false
+python-versions = ">=3.12"
+groups = ["all"]
+files = [
+    {file = "esphome_device_builder_frontend-0.1.360-py3-none-any.whl", hash = "sha256:08d61c06546fa812e3831d75c2f347c6cc543ec38e451cc63929bfafbd7f60c3"},
+    {file = "esphome_device_builder_frontend-0.1.360.tar.gz", hash = "sha256:717b605c8c6b2e1aeea35f817eb5cc93b48ad799a815e11d075166bec72ac586"},
+]
+
+[[package]]
 name = "esphome-glyphsets"
 version = "0.2.0"
 description = "A lightweight version of glyphsets for ESPHome"
@@ -2112,6 +2193,74 @@ python-versions = "*"
 groups = ["all"]
 files = [
     {file = "flatbuffers-25.12.19-py2.py3-none-any.whl", hash = "sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4"},
+]
+
+[[package]]
+name = "fnv-hash-fast"
+version = "2.0.3"
+description = "A fast version of fnv1a"
+optional = false
+python-versions = ">=3.10"
+groups = ["all"]
+files = [
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:2a357ec05179dc4e4ebf421560221e29af40b75481abad634ead7646e4531db5"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:0181f12916e4e9b17151926c0406ff65b618614281d1ca8bccae71b4d8a0a30b"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0e685d64ee75874b11514f773b58052ce00e3df7ffa455738144ac2a503e4800"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:487aeda157e39fd764f7448ce8ffd367cabbcbd32554751eca82edf7e2c81105"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:f7075442377cf639721e311672846c3a20bb188924fbcc48dad8d5728d1f6c59"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-musllinux_1_2_armv7l.whl", hash = "sha256:064395e7cb425501b4e58c80752b91913091db2d6ddc6b992a50893e749486b7"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:f4766fa8bdd4010336c38fe647a587cc7b080a0705cfb021b70f81538f8f5e8b"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-win32.whl", hash = "sha256:2c260ffc28c53dcf27a3447f12a26215d8616070b5f3d597f0df728e89e60f46"},
+    {file = "fnv_hash_fast-2.0.3-cp311-cp311-win_amd64.whl", hash = "sha256:7a65ca6ace7d4c83fb27e7c5fcc28d74a36ab405774043d8170f9ad95de3988f"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:574d2b1d5b00ec026eb25f2cfe3f7150813e6f12938ae6f14e8e5305e464ac94"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:d3a6ba0e54d761edc19785829ce82b3947f90c17d6b9a910b0aecd980ece16a2"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d57c1da0aeb33260a8e2de00d1e0f6f2a2657a547ead57998f1620bca4f42dc8"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:66ce1a96bc1fa42efb1eb16ba5a9a29e36c0f1ba1fc4cbcb959c49b58bf4b2f4"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:bd2d3eb2e276c650ad6a075016f79d54dde02e902130e7b05914de3b9f241dfe"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-musllinux_1_2_armv7l.whl", hash = "sha256:f0e2516fdf3160e206c150827e27984c06eec78903afa633120fa8930e72f4ed"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7e5c27949b2bea394d205bd0907b0ecc7abb3e1a380adbd77109b5d3b719f538"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-win32.whl", hash = "sha256:092d393c72639010d2b47337c0b563e3b6553bdf7e18191e00e7448077b8ee93"},
+    {file = "fnv_hash_fast-2.0.3-cp312-cp312-win_amd64.whl", hash = "sha256:7fbe6b919ecadbb149f7db91b36f6d6c87e44101372d607a5cd93c671dd4adb8"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b5c085ce57003b356eb1b4ea8cd9479a8c2451682f2fccb2ea63b872534cb7b9"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:02de40e6547205ff29bed36ccff36488e9a5404fcb8cd6fdcaf982ec09b49de1"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dec92c363e6a969dd4e3b921c0ae18533a679c0d9275c361e9da06f46720590f"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:4e1dcd0ffd6f56272c6a74600f649a8edf52a7a3158f84bd3df70373535921d5"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:95915eb03222ff482765d66bf47eb17457e864b05136da6be429099a0b7c0927"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:c38164d10e99bf5a0c0758662fd8c0849c6efb981af43590b40b1f129c94b90c"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:26375d14b1523879447ffd7b5a5a6096b94bf226307c1dcdad373f8e96ff1fc1"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-win32.whl", hash = "sha256:0c0ecf9be946f2df6a8d2f6f4fd5aea2590f86929176fd913c3c9fdb641a5901"},
+    {file = "fnv_hash_fast-2.0.3-cp313-cp313-win_amd64.whl", hash = "sha256:ea2bdc562870637842dce2a7048a21db3d6809ab4a8fde1cdfd5dd4f8a628eb1"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:381df4fd4891fb20483673d7ff1973395a5a81c4fa736a685ad05e74653c4dbf"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:2f50c18835bdc7c92a62801778dd5fdc6593c603b4cbadd7adae9d5f17305a52"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c45838d0383438696d815b6de92c841215d4f9f39b8dbaf58071a1af84ea35fc"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:cabf3cc36b0f5eb26eb19716842edf709b032a54e1d18a72981c21458c52c632"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:fe4da9446b554365a24d026c0f08b6ee96e30f31b8db7eb683ea167c923755e6"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:c89aa84df2bfe2cc280694a8cf9fca3955640ce5f5c6f30f6b1bb020b30f2175"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-win32.whl", hash = "sha256:f25e37526b2898677f0b6a99a441bf0a86eab9e354d5d9222c4960f49e3795d7"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314-win_amd64.whl", hash = "sha256:7a45f7050c4e99e2f04122508ec4efb568c93fcbece8482371a177ac89e6db8c"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:642bc26dbc906f86ee7a888cb66c149455c1a2a841a7ea72f19ffb969d0f0b14"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:d63dcae2fd15c307f8a333f77aa6a5146538e9e9ef606b1883c8b5f06d5f86e8"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a852d5c3278153378c04dcf5e45514477beeccd4268ceb775a3cf553dc5102b0"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:2a805cc43c45e3452ff4a4b76e77fb40b452c795bf04d0f6f76c06fb7b02f755"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:fd413f1b171188cbf8ea6bb10f1e8c3aed3a88d239a682870e3727021b246700"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-win32.whl", hash = "sha256:13f4284c5521df53b2fc54e2f595e8534fba03656ef3d92f099503980c09b15b"},
+    {file = "fnv_hash_fast-2.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:b4e44c9764bf0fa8387251bb806538976b0c641b89bfb6de3c8f242eb6bffdda"},
+    {file = "fnv_hash_fast-2.0.3.tar.gz", hash = "sha256:57b499a80ea8f7daf901aff047377264ef21577b40575183807dba37bcc00d6f"},
+]
+
+[package.dependencies]
+fnvhash = ">=0.1,<0.3"
+
+[[package]]
+name = "fnvhash"
+version = "0.2.1"
+description = "Pure Python FNV hash implementation."
+optional = false
+python-versions = ">=3.9"
+groups = ["all"]
+files = [
+    {file = "fnvhash-0.2.1-py3-none-any.whl", hash = "sha256:00fab14bec841e4cb29b4fd2ed9358f8bf9f4600d9d8149cde27a191193a33e8"},
+    {file = "fnvhash-0.2.1.tar.gz", hash = "sha256:0c7e885f44c8f06de07f442befebc590ee9ca0cc88846681f608496284ce9cd5"},
 ]
 
 [[package]]
@@ -2584,6 +2733,18 @@ tzdata = ">=2026.4"
 [package.extras]
 google = ["geopy (>=2.2.0)"]
 image = ["Pillow (>=10.0.0)", "numpy (>=1.26.0)"]
+
+[[package]]
+name = "icmplib"
+version = "3.0.4"
+description = "Easily forge ICMP packets and make your own ping and traceroute."
+optional = false
+python-versions = ">=3.7"
+groups = ["all"]
+files = [
+    {file = "icmplib-3.0.4-py3-none-any.whl", hash = "sha256:336b75c6c23c5ce99ddec33f718fab09661f6ad698e35b6f1fc7cc0ecf809398"},
+    {file = "icmplib-3.0.4.tar.gz", hash = "sha256:57868f2cdb011418c0e1d5586b16d1fabd206569fe9652654c27b6b2d6a316de"},
+]
 
 [[package]]
 name = "idna"
@@ -3259,6 +3420,27 @@ packaging = ">=17.0"
 dev = ["marshmallow[tests]", "pre-commit (>=3.5,<5.0)", "tox"]
 docs = ["autodocsumm (==0.2.14)", "furo (==2024.8.6)", "sphinx (==8.1.3)", "sphinx-copybutton (==0.5.2)", "sphinx-issues (==5.0.0)", "sphinxext-opengraph (==0.9.1)"]
 tests = ["pytest", "simplejson"]
+
+[[package]]
+name = "mashumaro"
+version = "3.23"
+description = "Fast and well tested serialization library"
+optional = false
+python-versions = ">=3.10"
+groups = ["all"]
+files = [
+    {file = "mashumaro-3.23-py3-none-any.whl", hash = "sha256:a671279ce93119d41c54adcd767753ae68adb32b9473de2f9d5d1720d2376231"},
+    {file = "mashumaro-3.23.tar.gz", hash = "sha256:ed69d5bc548c76efbb5286cc0e541a6b8796e621385f986e25b750364011abf5"},
+]
+
+[package.dependencies]
+typing_extensions = ">=4.14.0"
+
+[package.extras]
+msgpack = ["msgpack (>=0.5.6)"]
+orjson = ["orjson"]
+toml = ["tomli (>=1.1.0) ; python_version < \"3.11\"", "tomli-w (>=1.0)"]
+yaml = ["pyyaml (>=3.13)"]
 
 [[package]]
 name = "mdurl"
@@ -5424,7 +5606,7 @@ description = "Python for Windows Extensions"
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
-markers = "platform_system == \"Windows\""
+markers = "sys_platform == \"win32\" or platform_system == \"Windows\""
 files = [
     {file = "pywin32-312-cp310-cp310-win32.whl", hash = "sha256:772235332b5d1024c696f11cea1ae4be7930f0a8b894bb43db14e3f435f1ff7e"},
     {file = "pywin32-312-cp310-cp310-win_amd64.whl", hash = "sha256:5dbc35d2b5320dc07f25fa31269cfb767471002b17de5eb067d03da68c7cb2db"},
@@ -7409,4 +7591,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "e34ef2427b1d19278d2834a4e096edd25c32d8509f57c5e327396ea3fada05a2"
+content-hash = "5a5f7c5fc14a2b883049fdfe0d05840c66aaead52e79bb73f2122401e2817c98"
