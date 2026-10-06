@@ -93,6 +93,11 @@ sub BindingsIo_Define {
   $hash->{devioLoglevel} = 0;
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
+  # JSON::PP (pure Perl fallback of JSON) needs ~1ms to decode a fhempy message, JSON::XS a few us
+  $hash->{JSON_BACKEND} = eval { JSON->backend } // q[unknown];
+  if ($hash->{JSON_BACKEND} =~ m/PP/) {
+    Log3 $name, 2, qq[BindingsIo ($name): JSON::XS is not installed, fhempy messages are decoded much slower. Install it with: sudo apt install libjson-xs-perl];
+  }
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();
   # send binary data via websocket
