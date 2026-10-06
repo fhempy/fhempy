@@ -1,6 +1,6 @@
 {
   "requirements": [
     "python-miio==0.5.12",
-    "six==1.16.0"
+    "six==1.17.0"
   ]
 }

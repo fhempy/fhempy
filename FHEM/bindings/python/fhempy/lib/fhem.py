@@ -35,18 +35,61 @@ def updateConnection(ws):
     wsconnection = ws
 
 
+# FHEM waits this long (ms) for a function reply if it doesn't send its timeout,
+# see BindingsIo_Write in 10_BindingsIo.pm
+DEFAULT_FUNCTION_TIMEOUT = 3000
+DEFAULT_DEFINE_TIMEOUT = 30000
+
+
 def setFunctionActive(hash):
-    function_active.append(hash["NAME"])
+    entry = {"NAME": hash["NAME"], "id": hash.get("id"), "timer": None}
+    timeout = hash.get("timeout")
+    if timeout is None:
+        if hash.get("function") == "Define":
+            timeout = DEFAULT_DEFINE_TIMEOUT
+        else:
+            timeout = DEFAULT_FUNCTION_TIMEOUT
+    try:
+        entry["timer"] = asyncio.get_running_loop().call_later(
+            int(timeout) / 1000, expireFunction, entry
+        )
+    except RuntimeError:
+        # no running loop, the function stays active until it finishes
+        pass
+    function_active.append(entry)
     notifyFunctionWaiters()
 
 
-def setFunctionInactive(hash):
-    element = function_active.pop()
-    if element != hash["NAME"]:
-        logger.error(
-            f"Set wrong function inactive, tried {hash['NAME']}, "
-            f"current function_active: {function_active},{element}"
+def removeActiveFunction(entry):
+    for i, active in enumerate(function_active):
+        if active is entry:
+            del function_active[i]
+            return True
+    return False
+
+
+def expireFunction(entry):
+    # FHEM stopped waiting for the reply, it handles commands of all devices again
+    if removeActiveFunction(entry):
+        logger.warning(
+            f"FHEM stopped waiting for {entry['NAME']}, "
+            "commands of other devices are sent again"
         )
+        notifyFunctionWaiters()
+
+
+def setFunctionInactive(hash):
+    entry = None
+    for active in reversed(function_active):
+        if active["NAME"] == hash.get("NAME") and active["id"] == hash.get("id"):
+            entry = active
+            break
+    if entry is None:
+        # function already expired or wasn't a function call
+        return
+    if entry["timer"] is not None:
+        entry["timer"].cancel()
+    removeActiveFunction(entry)
     notifyFunctionWaiters()
 
 
@@ -60,7 +103,7 @@ def notifyFunctionWaiters():
 async def waitForFunction(name):
     # while FHEM waits for a function reply, it only handles
     # commands of the device which called the function
-    while len(function_active) != 0 and function_active[-1] != name:
+    while len(function_active) != 0 and function_active[-1]["NAME"] != name:
         waiter = asyncio.get_running_loop().create_future()
         function_waiters.append(waiter)
         try:
