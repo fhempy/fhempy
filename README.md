@@ -27,21 +27,20 @@
 
 ## ✨ Why fhempy?
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
-- **No Python fiddling**: fhempy sets up its own Python environment and every module installs its libraries automatically the first time you use it.
+- **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
 - **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
 - **Extend your range**: run modules on a remote Raspberry Pi, e.g. close to your Bluetooth devices.
 
 ## 🚀 Quick start
 
 ### 1. Install the system packages
-fhempy needs **Python 3.12 or newer**. Debian 13 (Trixie) and Raspberry Pi OS Trixie come with it, so they are the recommended base.
 Copy & paste this command on the machine running FHEM:
 ```
 sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libjson-xs-perl
 ```
 
 > [!NOTE]
-> Debian 12 (Bookworm) and Raspberry Pi OS Bookworm ship Python 3.11. fhempy still starts there, but stays on an older release and doesn't get updates anymore. Check your version with `python3 -V`.
+> fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
 On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
 
