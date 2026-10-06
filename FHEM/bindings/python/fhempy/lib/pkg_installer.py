@@ -13,7 +13,7 @@ import shutil
 import sys
 from importlib.metadata import PackageNotFoundError, distribution, version
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, SubprocessError, run
 from urllib.parse import urlparse
 
 from packaging.requirements import InvalidRequirement, Requirement
@@ -136,6 +136,68 @@ def pip_args(package, upgrade, constraints, find_links, no_cache_dir):
     return args
 
 
+SYSTEM_PYTHON = "/usr/bin/python3"
+
+
+@functools.lru_cache(maxsize=None)
+def system_python_version():
+    """Return (major, minor) of the system Python or None if it doesn't run."""
+    try:
+        result = run(
+            [SYSTEM_PYTHON, "-c", "import sys; print(*sys.version_info[:2])"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return tuple(int(v) for v in result.stdout.split())
+    except (OSError, ValueError, SubprocessError):
+        return None
+
+
+def piwheels_compatible():
+    """Return if piwheels wheels fit to the running Python.
+
+    piwheels builds the wheels for one Python version on the Raspberry Pi OS
+    release which ships it (cp311 on Bookworm, cp313 on Trixie). If fhempy runs
+    with another Python (e.g. Python 3.13 from uv on Bookworm), those wheels were
+    built for another release and might need a newer glibc, so skip piwheels.
+    """
+    return system_python_version() == tuple(sys.version_info[:2])
+
+
+def usable_indexes():
+    """Return (index_url, extra_index_urls, piwheels_skipped) from pip config."""
+    index_url, extra_urls = pip_config_indexes()
+    if piwheels_compatible():
+        return index_url, extra_urls, False
+    usable_extra_urls = [url for url in extra_urls if "piwheels" not in url]
+    skipped = len(usable_extra_urls) != len(extra_urls)
+    if index_url and "piwheels" in index_url:
+        index_url = None
+        skipped = True
+    return index_url, usable_extra_urls, skipped
+
+
+def index_args(index_url, extra_urls):
+    """Return pip/uv arguments for the given indexes."""
+    args = ["--index-url", index_url] if index_url else []
+    for url in extra_urls:
+        args += ["--extra-index-url", url]
+    return args
+
+
+def pip_index_args(env):
+    """Return pip index arguments, adjusts env so that pip skips piwheels if needed."""
+    index_url, extra_urls, skipped = usable_indexes()
+    if not skipped:
+        return []
+    # pip reads piwheels from pip.conf, ignore the config files and pass the rest
+    env["PIP_CONFIG_FILE"] = os.devnull
+    env.pop("PIP_INDEX_URL", None)
+    env.pop("PIP_EXTRA_INDEX_URL", None)
+    return index_args(index_url, extra_urls)
+
+
 def uv_index_args():
     """Return the index arguments for uv, taken from the pip configuration."""
     uv_index_vars = (
@@ -147,12 +209,8 @@ def uv_index_args():
     if any(os.environ.get(var) for var in uv_index_vars):
         # set by bin/fhempy or the user, uv reads them itself
         return []
-    args = []
-    index_url, extra_urls = pip_config_indexes()
-    if index_url:
-        args += ["--index-url", index_url]
-    for url in extra_urls:
-        args += ["--extra-index-url", url]
+    index_url, extra_urls, _ = usable_indexes()
+    args = index_args(index_url, extra_urls)
     if extra_urls:
         # pick the best version of all indexes like pip does
         args += ["--index-strategy", "unsafe-best-match"]
@@ -298,6 +356,8 @@ def install_package(
     env = os.environ.copy()
     # uv is only used within a virtual environment, target is only used outside of it
     args = install_args(package, upgrade, constraints, find_links, no_cache_dir)
+    if args[0] == sys.executable and is_virtual_env():
+        args += pip_index_args(env)
     if target:
         assert not is_virtual_env()
         # This only works if not running in venv
@@ -318,6 +378,8 @@ def install_package(
         args = install_args(
             package, upgrade, constraints, find_links, no_cache_dir, use_uv=False
         )
+        if is_virtual_env():
+            args += pip_index_args(env)
         process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
         _, stderr = process.communicate()
     if process.returncode != 0:

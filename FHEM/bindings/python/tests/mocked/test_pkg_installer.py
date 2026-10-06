@@ -1,3 +1,4 @@
+import os
 import sys
 
 from fhempy.lib import pkg_installer
@@ -23,6 +24,9 @@ def no_pip_config(monkeypatch):
     ):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setattr(pkg_installer, "pip_config_indexes", lambda: (None, []))
+    monkeypatch.setattr(
+        pkg_installer, "system_python_version", lambda: tuple(sys.version_info[:2])
+    )
 
 
 def test_uses_uv_in_venv(tmp_path, monkeypatch):
@@ -115,3 +119,44 @@ def test_falls_back_to_pip_if_uv_fails(tmp_path, monkeypatch):
     assert pkg_installer.install_package("helloworld-pkg") is True
     assert calls[0][0] == str(failing_uv)
     assert calls[1][:4] == [sys.executable, "-m", "pip", "install"]
+
+
+PIWHEELS = "https://www.piwheels.org/simple"
+
+
+def test_piwheels_kept_for_system_python(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "pip_config_indexes", lambda: (None, [PIWHEELS]))
+    monkeypatch.setattr(
+        pkg_installer, "system_python_version", lambda: tuple(sys.version_info[:2])
+    )
+
+    assert pkg_installer.usable_indexes() == (None, [PIWHEELS], False)
+
+
+def test_piwheels_skipped_for_other_python(monkeypatch):
+    # e.g. Python 3.13 from uv on Raspberry Pi OS Bookworm (system Python 3.11)
+    other = "https://example.org/simple"
+    monkeypatch.setattr(
+        pkg_installer, "pip_config_indexes", lambda: (None, [PIWHEELS, other])
+    )
+    monkeypatch.setattr(pkg_installer, "system_python_version", lambda: (3, 1))
+
+    assert pkg_installer.usable_indexes() == (None, [other], True)
+
+    env = {"PIP_EXTRA_INDEX_URL": PIWHEELS}
+    assert pkg_installer.pip_index_args(env) == ["--extra-index-url", other]
+    assert env["PIP_CONFIG_FILE"] == os.devnull
+    assert "PIP_EXTRA_INDEX_URL" not in env
+
+
+def test_uv_skips_piwheels_for_other_python(tmp_path, monkeypatch):
+    no_pip_config(monkeypatch)
+    monkeypatch.setattr(pkg_installer, "pip_config_indexes", lambda: (None, [PIWHEELS]))
+    monkeypatch.setattr(pkg_installer, "system_python_version", lambda: (3, 1))
+    monkeypatch.setenv("FHEMPY_UV", fake_uv(tmp_path))
+    monkeypatch.setattr(pkg_installer, "is_virtual_env", lambda: True)
+
+    args = pkg_installer.install_args("pyit600==0.5.1", False, None, None, False)
+
+    assert "--extra-index-url" not in args
+    assert "--index-strategy" not in args

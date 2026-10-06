@@ -139,6 +139,12 @@ def install_package(
     env = os.environ.copy()
     for use_uv in (True, False):
         args = install_command(package, upgrade, no_cache_dir, use_uv)
+        if args[0] == sys.executable and os.environ.get("FHEMPY_NO_PIWHEELS"):
+            # bin/fhempy found piwheels wheels unsuitable for this Python
+            env["PIP_CONFIG_FILE"] = os.devnull
+            env.pop("PIP_EXTRA_INDEX_URL", None)
+            for url in os.environ.get("UV_EXTRA_INDEX_URL", "").split():
+                args += ["--extra-index-url", url]
         if constraints is not None:
             args += ["--constraint", constraints]
         if find_links is not None:

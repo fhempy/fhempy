@@ -40,6 +40,8 @@ if [ -x "$UV" ]; then
   if python3 -c 'import sys; sys.exit(sys.version_info < (3, 13))' 2>/dev/null; then
     "$UV" venv --quiet --seed --allow-existing --python "$(command -v python3)" "$FHEMPY_VENV" || exit 1
   else
+    # piwheels wheels are built for the system Python of the OS release, not for uv's Python
+    SKIP_PIWHEELS=1
     "$UV" venv --quiet --seed --allow-existing --python "$UV_PYTHON_VERSION" "$FHEMPY_VENV" || exit 1
   fi
   echo "OK"
@@ -48,6 +50,9 @@ if [ -x "$UV" ]; then
   # uv doesn't read pip.conf, pass e.g. piwheels on Raspberry Pi OS
   index_args=()
   for url in $(sed -n 's/^[[:space:]]*extra-index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf 2>/dev/null); do
+    if [ -n "$SKIP_PIWHEELS" ] && [[ "$url" == *piwheels* ]]; then
+      continue
+    fi
     index_args+=(--extra-index-url "$url")
   done
   if [ ${#index_args[@]} -gt 0 ]; then

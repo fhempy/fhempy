@@ -169,6 +169,21 @@ then
     then
       extra_index_urls=$(python -m pip config list 2>/dev/null \
         | sed -n "s/^\(global\|install\)\.extra-index-url='\(.*\)'$/\2/p" | tr '\n' ' ')
+      # piwheels builds wheels for the Python of the Raspberry Pi OS release (cp311 on
+      # Bookworm, cp313 on Trixie). If the venv runs another Python (e.g. 3.13 from uv
+      # on Bookworm) those wheels come from another release and might need a newer glibc.
+      if [ "$(python_version_num /usr/bin/python3)" != "$(python_version_num python)" ]
+      then
+        usable_index_urls=""
+        for url in $extra_index_urls
+        do
+          case "$url" in
+            *piwheels*) export FHEMPY_NO_PIWHEELS=1 ;;
+            *) usable_index_urls="$usable_index_urls $url" ;;
+          esac
+        done
+        extra_index_urls=$usable_index_urls
+      fi
       if [ -n "${extra_index_urls// /}" ]
       then
         export UV_EXTRA_INDEX_URL="$extra_index_urls"
