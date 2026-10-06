@@ -6,6 +6,7 @@ package main;
 use strict;
 use warnings;
 use version;
+use Cwd qw(abs_path);
 
 use CoProcess;
 
@@ -104,7 +105,12 @@ sub fhempyServer_checkPythonVersion($)
     my $venv_ver_obj = fhempyServer_parsePythonVersion(qx("$venv_python" -V 2>&1));
     if (defined($venv_ver_obj)) {
       my $text = $venv_ver_obj->normal;
-      $text .= " (Python 3.12 or higher required for fhempy updates)" if ($venv_ver_obj < version->declare("3.12.0"));
+      if ($venv_ver_obj < version->declare("3.12.0")) {
+        $text .= " (Python 3.12 or higher required for fhempy updates)";
+      } elsif ((abs_path($venv_python) // "") =~ m{/\.fhempy/python/}) {
+        # Python installed by bin/fhempy with uv (UV_PYTHON_INSTALL_DIR=.fhempy/python)
+        $text .= " (installed by fhempy via uv)";
+      }
       readingsSingleUpdate($hash, "python", $text, 1);
       return 1;
     }
@@ -198,6 +204,12 @@ sub fhempyServer_Read($)
   my $name = $hash->{NAME};
 
   CoProcess::readFn($hash);
+
+  # bin/fhempy creates the venv (with uv's Python if the system Python is older) after the version check,
+  # update the python reading once the venv exists
+  if (ReadingsVal($name, "python", "") =~ m/fhempy installs Python/ && defined(fhempyServer_venvPython())) {
+    fhempyServer_checkPythonVersion($hash);
+  }
   return undef;
 }
 
