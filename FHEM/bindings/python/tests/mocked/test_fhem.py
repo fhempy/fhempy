@@ -174,7 +174,8 @@ async def test_waiting_commands_fail_when_connection_closes(monkeypatch):
 async def test_connection_close_releases_commands_of_other_devices(monkeypatch):
     pb = fhem_pythonbinding.fhempy(FakeWebsocket())
     monkeypatch.setattr(fhem, "wsconnection", pb)
-    monkeypatch.setattr(fhem, "function_active", ["busy"])
+    monkeypatch.setattr(fhem, "function_active", [])
+    fhem.setFunctionActive({"NAME": "busy", "id": 1, "function": "Set"})
 
     task = asyncio.create_task(fhem.sendCommandName("other", "1+1"))
     await asyncio.sleep(0.01)
@@ -183,4 +184,74 @@ async def test_connection_close_releases_commands_of_other_devices(monkeypatch):
     pb.connection_closed()
 
     assert await asyncio.wait_for(task, 1) == ""
+
+
+@pytest.mark.asyncio
+async def test_other_devices_are_released_when_fhem_stops_waiting(monkeypatch):
+    sent = []
+
+    async def send_and_wait(name, cmd):
+        sent.append(name)
+        return {"result": ""}
+
+    monkeypatch.setattr(fhem, "send_and_wait", send_and_wait)
+    monkeypatch.setattr(fhem, "function_active", [])
+    slow = {"NAME": "slow", "id": 1, "function": "Set", "timeout": 50}
+    fhem.setFunctionActive(slow)
+
+    task = asyncio.create_task(fhem.sendCommandName("other", "cmd"))
+    await asyncio.sleep(0.01)
+    assert sent == []
+
+    # FHEM gave up waiting for "slow", other devices must not wait any longer
+    await asyncio.wait_for(task, 1)
+    assert sent == ["other"]
+    assert fhem.function_active == []
+
+    # the late reply of the slow function doesn't touch the list anymore
+    fhem.setFunctionInactive(slow)
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_functions_finishing_out_of_order(monkeypatch):
+    monkeypatch.setattr(fhem, "function_active", [])
+    first = {"NAME": "dev1", "id": 1, "function": "Set"}
+    second = {"NAME": "dev2", "id": 2, "function": "Set"}
+    fhem.setFunctionActive(first)
+    fhem.setFunctionActive(second)
+
+    fhem.setFunctionInactive(first)
+    assert [f["NAME"] for f in fhem.function_active] == ["dev2"]
+
+    fhem.setFunctionInactive(second)
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_error_reply_for_non_function_message_keeps_active_function(
+    monkeypatch,
+):
+    monkeypatch.setattr(fhem, "function_active", [])
+    fhem.setFunctionActive({"NAME": "dev1", "id": 1, "function": "Set"})
+
+    # e.g. sendBackError for a failed event, which never was active
+    fhem.setFunctionInactive({"NAME": "dev2", "id": 99})
+    assert [f["NAME"] for f in fhem.function_active] == ["dev1"]
+    fhem.setFunctionInactive({"NAME": "dev1", "id": 1})
+
+
+@pytest.mark.asyncio
+async def test_function_timeout_defaults(monkeypatch):
+    # older 10_BindingsIo.pm doesn't send its timeout
+    monkeypatch.setattr(fhem, "function_active", [])
+    fhem.setFunctionActive({"NAME": "d", "id": 1, "function": "Set"})
+    fhem.setFunctionActive({"NAME": "e", "id": 2, "function": "Define"})
+    now = asyncio.get_running_loop().time()
+    set_entry, define_entry = fhem.function_active
+    assert set_entry["timer"].when() - now == pytest.approx(3, abs=0.1)
+    assert define_entry["timer"].when() - now == pytest.approx(30, abs=0.1)
+
+    fhem.setFunctionInactive({"NAME": "e", "id": 2})
+    fhem.setFunctionInactive({"NAME": "d", "id": 1})
     assert fhem.function_active == []

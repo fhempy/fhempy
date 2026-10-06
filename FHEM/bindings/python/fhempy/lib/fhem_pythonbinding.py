@@ -123,6 +123,9 @@ class fhempy:
         for listener in listeners:
             listener(None)
         # FHEM doesn't wait for any function of this connection anymore
+        for entry in fhem.function_active:
+            if entry["timer"] is not None:
+                entry["timer"].cancel()
         fhem.function_active.clear()
         fhem.notifyFunctionWaiters()
 
