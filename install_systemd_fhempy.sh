@@ -1,30 +1,96 @@
 #!/bin/bash
 
-sudo -u $SUDO_USER -s -- bash -c '
-echo -n "Creating .fhempy directory in $HOME...";
-mkdir .fhempy;
-echo "OK";
+# Installs fhempy on a remote peer and runs it as systemd service
+# curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
 
-echo -n "Creating virtual environment...";
-python3 -m venv .fhempy/fhempy_venv;
-echo "OK";
+if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" == "root" ]; then
+  echo "Please run this script with sudo as the user which should run fhempy (e.g. pi)"
+  exit 1
+fi
 
-echo -n "Activate virtual environment...";
-source .fhempy/fhempy_venv/bin/activate;
-echo "OK";
+FHEMPY_USER=$SUDO_USER
+FHEMPY_HOME=$(getent passwd "$FHEMPY_USER" | cut -d: -f6)
 
-echo -n "Install fhempy...";
-pip3 install fhempy > /dev/null;
-deactivate;
-echo "OK";
-'
+sudo -u "$FHEMPY_USER" -H bash <<'USEREOF'
+cd "$HOME"
+FHEMPY_DIR="$HOME/.fhempy"
+FHEMPY_VENV="$FHEMPY_DIR/fhempy_venv"
+UV="$FHEMPY_DIR/bin/uv"
+# Python version uv installs for fhempy if the system Python is older
+UV_PYTHON_VERSION=3.13
+UV_INSTALLER_URL=https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh
+export UV_PYTHON_INSTALL_DIR="$FHEMPY_DIR/python"
 
-echo -n "Download fhempy.service file..."
-wget https://raw.githubusercontent.com/fhempy/fhempy/master/fhempy.service -O /tmp/fhempy.service > /dev/null
+echo -n "Creating .fhempy directory in $HOME..."
+mkdir -p "$FHEMPY_DIR"
 echo "OK"
 
-echo -n "Move fhempy.service to /etc/systemd/system/..."
-mv /tmp/fhempy.service /etc/systemd/system/
+if [ ! -x "$UV" ]; then
+  echo -n "Installing uv..."
+  if command -v curl >/dev/null 2>&1; then
+    curl -LsSf "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
+  else
+    wget -qO- "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
+  fi
+  if [ -x "$UV" ]; then echo "OK"; else echo "FAILED, using pip instead"; fi
+fi
+
+if [ -x "$UV" ]; then
+  echo -n "Creating virtual environment with uv..."
+  if python3 -c 'import sys; sys.exit(sys.version_info < (3, 13))' 2>/dev/null; then
+    "$UV" venv --quiet --seed --allow-existing --python "$(command -v python3)" "$FHEMPY_VENV" || exit 1
+  else
+    "$UV" venv --quiet --seed --allow-existing --python "$UV_PYTHON_VERSION" "$FHEMPY_VENV" || exit 1
+  fi
+  echo "OK"
+
+  echo -n "Install fhempy..."
+  # uv doesn't read pip.conf, pass e.g. piwheels on Raspberry Pi OS
+  index_args=()
+  for url in $(sed -n 's/^[[:space:]]*extra-index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf 2>/dev/null); do
+    index_args+=(--extra-index-url "$url")
+  done
+  if [ ${#index_args[@]} -gt 0 ]; then
+    index_args+=(--index-strategy unsafe-best-match)
+  fi
+  "$UV" pip install --quiet --python "$FHEMPY_VENV/bin/python" "${index_args[@]}" --upgrade-package fhempy fhempy || exit 1
+  echo "OK"
+else
+  echo -n "Creating virtual environment..."
+  python3 -m venv "$FHEMPY_VENV" || exit 1
+  echo "OK"
+
+  echo -n "Install fhempy..."
+  "$FHEMPY_VENV/bin/pip" install --quiet --upgrade fhempy > /dev/null || exit 1
+  echo "OK"
+fi
+USEREOF
+
+if [ $? -ne 0 ]; then
+  echo "FAILED"
+  echo "fhempy installation failed, please check the output above."
+  exit 1
+fi
+
+echo -n "Create fhempy.service file..."
+cat > /etc/systemd/system/fhempy.service <<SERVICEEOF
+# Source: https://github.com/fhempy/fhempy
+
+[Unit]
+Description=fhempy
+Wants=network.target
+After=network.target
+
+[Service]
+User=$FHEMPY_USER
+Group=dialout
+WorkingDirectory=$FHEMPY_HOME/
+ExecStart=$FHEMPY_HOME/.fhempy/fhempy_venv/bin/fhempy
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SERVICEEOF
 echo "OK"
 
 echo -n "Reload systemd..."
@@ -36,7 +102,7 @@ systemctl enable fhempy
 echo "OK"
 
 echo -n "Start fhempy service..."
-systemctl start fhempy
+systemctl restart fhempy
 sleep 10
 echo "OK"
 
