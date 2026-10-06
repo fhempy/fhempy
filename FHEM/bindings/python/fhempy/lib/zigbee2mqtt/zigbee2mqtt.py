@@ -55,6 +55,7 @@ class zigbee2mqtt(FhemModule):
         await self.start_process()
 
     async def update_z2m(self):
+        stopped = False
         try:
             await fhem.readingsSingleUpdate(
                 self.hash, "update", "started, may take a few minutes", 1
@@ -62,7 +63,14 @@ class zigbee2mqtt(FhemModule):
             current_directory = os.getcwd()
             z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
 
-            await self.stop_process()
+            if not await self.stop_process():
+                # a second zigbee2mqtt can't open the serial port while the
+                # old one is still running
+                await fhem.readingsSingleUpdate(
+                    self.hash, "update", "failed, zigbee2mqtt did not stop", 1
+                )
+                return
+            stopped = True
             try:
                 await utils.run_blocking(
                     functools.partial(
@@ -110,12 +118,15 @@ class zigbee2mqtt(FhemModule):
                     )
 
             await fhem.readingsSingleUpdate(self.hash, "update", "successful", 1)
-            await self.start_process()
         except Exception:
             self.logger.exception("Failed to update")
             await fhem.readingsSingleUpdate(
                 self.hash, "update", "failed to update, check log", 1
             )
+        if stopped:
+            # start zigbee2mqtt again, also if the update failed
+            await self._wait_for_port_release()
+            await self.start_process()
 
     async def install_z2m(self):
         GIT_URL = "https://github.com/Koenkk/zigbee2mqtt.git"
@@ -329,16 +340,17 @@ class zigbee2mqtt(FhemModule):
             self.cancel_async_task(self.check_process_task)
             self.check_process_task = None
         if self.proc is None:
-            return
+            return True
         # stop the process before talking to FHEM, FHEM might not answer
         # anymore during fhempy update or shutdown
         # give zigbee2mqtt some time to stop
         if await child_process.stop(self.proc, signal.SIGINT, timeout=15):
             self.proc = None
             await fhem.readingsSingleUpdate(self.hash, "state", "stopped", 1)
-        else:
-            self.logger.error("Failed to stop zigbee2mqtt process")
-            await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
+            return True
+        self.logger.error("Failed to stop zigbee2mqtt process")
+        await fhem.readingsSingleUpdate(self.hash, "state", "failed to stop", 1)
+        return False
 
     async def create_weblink(self):
         ip_list = [
@@ -383,10 +395,14 @@ class zigbee2mqtt(FhemModule):
         self.create_async_task(self._restart())
 
     async def _restart(self):
-        await self.stop_process()
+        if not await self.stop_process():
+            return
+        await self._wait_for_port_release()
+        await self.start_process()
+
+    async def _wait_for_port_release(self):
         # wait for z2m to release hardware connection
         await asyncio.sleep(10)
-        await self.start_process()
 
     async def set_update(self, hash, params):
         self.create_async_task(self.update_z2m())
