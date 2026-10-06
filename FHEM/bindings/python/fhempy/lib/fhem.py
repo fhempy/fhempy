@@ -504,6 +504,10 @@ async def send_and_wait(name, cmd):
     sent_time = time.time()
 
     def listener(rmsg):
+        if rmsg is None:
+            if not fut.done():
+                fut.set_exception(ConnectionError("FHEM connection closed"))
+            return
         try:
             recv_time = time.time()
             fhem_time = (recv_time - sent_time) * 1000
@@ -516,13 +520,15 @@ async def send_and_wait(name, cmd):
             logger.error(f"Failed to set result, received: {rmsg}")
 
     connection = wsconnection
+    if connection.is_closed():
+        raise ConnectionError("FHEM connection closed")
     connection.register_msg_listener(listener, msg["awaitId"])
     logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
     try:
         try:
             await connection.send(json.dumps(msg, ensure_ascii=False))
         except websockets.exceptions.ConnectionClosed:
-            logger.error("Connection closed, can't send message.")
+            fut.set_exception(ConnectionError("FHEM connection closed"))
         except Exception as e:
             logger.exception(f"Failed to send message via websocket: {e}")
             fut.set_exception(Exception("Failed to send message via websocket"))
@@ -548,6 +554,9 @@ async def sendCommandName(name, cmd, hash=None):
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
+        ret = ""
+    except ConnectionError:
+        logger.error("FHEM connection closed, command not sent")
         ret = ""
     except Exception as e:
         logger.exception(f"Exception while waiting for reply: {e}")

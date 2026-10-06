@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 128" width="440" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4B8BBE"/>
+      <stop offset="1" stop-color="#2B5B84"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <path d="M64 22 L108 58 L98 58 L98 104 L30 104 L30 58 L20 58 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M40 86 C46 72 54 72 58 84 C62 96 72 96 76 84 L80 74" fill="none" stroke="#FFD43B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="84" cy="70" rx="9" ry="7.5" fill="#FFD43B"/>
+  <circle cx="86" cy="68" r="2" fill="#2B5B84"/>
+  <text x="152" y="84" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="68" font-weight="700" fill="#1F2D3A">fhem<tspan fill="#2B5B84">py</tspan></text>
+  <text x="155" y="114" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="19" fill="#1F2D3A" opacity="0.75">Python modules for FHEM</text>
+</svg>

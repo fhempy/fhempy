@@ -94,6 +94,8 @@ async def pybinding(websocket):
             global exit_code
             exit_code = 1
             stop_event.set()
+    finally:
+        pb.connection_closed()
 
 
 class fhempy:
@@ -103,10 +105,29 @@ class fhempy:
         self._event_listener = []
         # awaitId -> callback for replies to commands sent to FHEM
         self._msg_listeners = {}
+        self._closed = False
         self.msg_received_time = {}
 
     def register_msg_listener(self, listener, awaitid):
         self._msg_listeners[awaitid] = listener
+
+    def is_closed(self):
+        # no replies will arrive on this connection anymore
+        return self._closed or stop_event.is_set()
+
+    def connection_closed(self):
+        self._closed = True
+        # commands still waiting for a reply would wait for the full timeout
+        listeners = list(self._msg_listeners.values())
+        self._msg_listeners.clear()
+        for listener in listeners:
+            listener(None)
+        # FHEM doesn't wait for any function of this connection anymore
+        for entry in fhem.function_active:
+            if entry["timer"] is not None:
+                entry["timer"].cancel()
+        fhem.function_active.clear()
+        fhem.notifyFunctionWaiters()
 
     def unregister_msg_listener(self, awaitid):
         self._msg_listeners.pop(awaitid, None)
