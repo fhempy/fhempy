@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import re
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -92,7 +93,10 @@ class geizhals(generic.FhemModule):
         # get product page infos
         try:
             await self.update_product_page_infos()
-            product_name = getattr(self, "product_name", None)
+            # the alias comes from the web page, keep plain text only
+            product_name = re.sub(
+                r"[^\w .,+()/-]", "", getattr(self, "product_name", None) or ""
+            )
             if (
                 product_name
                 and await fhem.AttrVal(self.hash["NAME"], "alias", "") == ""
