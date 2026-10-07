@@ -70,10 +70,11 @@ def removeActiveFunction(entry):
 def expireFunction(entry):
     # FHEM stopped waiting for the reply, it handles commands of all devices again
     if removeActiveFunction(entry):
-        logger.warning(
-            f"FHEM stopped waiting for {entry['NAME']}, "
-            "commands of other devices are sent again"
-        )
+        if wsconnection is None or not wsconnection.is_closed():
+            logger.warning(
+                f"FHEM stopped waiting for {entry['NAME']}, "
+                "commands of other devices are sent again"
+            )
         notifyFunctionWaiters()
 
 
@@ -556,7 +557,8 @@ async def sendCommandName(name, cmd, hash=None):
         logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
         ret = ""
     except ConnectionError:
-        logger.error("FHEM connection closed, command not sent")
+        # the closed connection itself is logged by the binding
+        logger.debug("FHEM connection closed, command not sent")
         ret = ""
     except Exception as e:
         logger.exception(f"Exception while waiting for reply: {e}")
