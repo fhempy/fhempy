@@ -248,10 +248,27 @@ class BluetoothManager:
             self.trust_device(device_path)
             self.disconnect_device(device_path)
             return PairingState.SUCCESS
-        else:
-            self.logger.error(f"Pairing failed for {device_path}: {result['error']}")
-            if result['error'].get_dbus_name() == "org.bluez.Error.AuthenticationCanceled":
-                return PairingState.WRONG_PIN
-            elif result['error'].get_dbus_name() == "org.bluez.Error.org.bluez.Error.ConnectionAttemptFailed":
-                return PairingState.TIMEOUT
-            return PairingState.FAILED
+
+        if result["error"] is None:
+            self.logger.error(f"Pairing timed out waiting for event loop for {device_path}")
+            try:
+                device_obj.CancelPairing()
+            except dbus.DBusException:
+                pass
+            return PairingState.TIMEOUT
+
+        error = result["error"]
+        self.logger.error(f"Pairing failed for {device_path}: {error}")
+
+        dbus_error_name = getattr(error, "get_dbus_name", lambda: "")()
+
+        if dbus_error_name == "org.bluez.Error.AuthenticationCanceled":
+            return PairingState.WRONG_PIN
+        elif dbus_error_name in (
+            "org.bluez.Error.ConnectionAttemptFailed",
+            "org.freedesktop.DBus.Error.NoReply",
+            "org.freedesktop.DBus.Error.Timeout",
+        ):
+            return PairingState.TIMEOUT
+
+        return PairingState.FAILED
