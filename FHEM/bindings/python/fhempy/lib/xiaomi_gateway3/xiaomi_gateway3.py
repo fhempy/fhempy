@@ -101,6 +101,16 @@ class xiaomi_gateway3(generic.FhemModule):
         else:
             self.create_async_task(self.connect_gw())
 
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        # the gateway tasks aren't created with create_async_task
+        if self.gw is not None and hasattr(self.gw, "gw"):
+            try:
+                await self.gw.stop()
+            except Exception:
+                self.logger.exception("Failed to stop gateway")
+        self.gw = None
+
     async def register_device(self, fhempy_device, handler):
         did = fhempy_device.did
         self.fhempy_devices[did] = fhempy_device

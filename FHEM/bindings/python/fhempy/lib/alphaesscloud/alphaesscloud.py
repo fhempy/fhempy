@@ -74,7 +74,9 @@ class alphaesscloud(generic.FhemModule):
             if ESSList != None:
                 self.logger.error(f"Retrieved: {len(ESSList)} ESS units")
             else:
+                # wrong credentials or no network
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "no ESS units found ",1)
+                return
 
             for unit in ESSList:
                 if "sysSn" in unit:

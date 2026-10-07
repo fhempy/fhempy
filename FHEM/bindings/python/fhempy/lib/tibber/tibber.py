@@ -208,9 +208,12 @@ class tibber(generic.FhemModule):
                 await asyncio.sleep(remaining_seconds + 5)
 
     async def Undefine(self, hash):
+        await super().Undefine(hash)
         if self.tibber_connection:
-            await self.tibber_connection.close_connection()
-        return await super().Undefine(hash)
+            try:
+                await self.tibber_connection.close_connection()
+            except Exception:
+                self.logger.exception("Failed to close Tibber connection")
     
     async def update_prices_forPeriods(self):
             """

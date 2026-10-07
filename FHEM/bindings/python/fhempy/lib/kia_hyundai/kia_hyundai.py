@@ -64,14 +64,24 @@ class kia_hyundai(generic.FhemModule):
         self.username = args[3]
         self.password = args[4]
         self.pin = args[5]
-        self.car_brand = [
+        brands = [
             k for k, v in api.const.BRANDS.items() if v.lower() == args[6].lower()
-        ][0]
+        ]
+        if len(brands) == 0:
+            return "Unknown CAR_BRAND, use one of: " + ", ".join(
+                api.const.BRANDS.values()
+            )
+        self.car_brand = brands[0]
         if args[7].lower() == "eu":
             args[7] = "Europe"
-        self.region_code = [
+        regions = [
             k for k, v in api.const.REGIONS.items() if v.lower() == args[7].lower()
-        ][0]
+        ]
+        if len(regions) == 0:
+            return "Unknown REGION_CODE, use one of: " + ", ".join(
+                api.const.REGIONS.values()
+            )
+        self.region_code = regions[0]
         self.create_async_task(self.connect_to_car())
 
     async def connect_to_car(self):

@@ -26,7 +26,7 @@ class tuya_smartlife(FhemModule):
 
         # define my_tuya_smartlife fhempy tuya_smartlife USERCODE
         # check if len(args) is between 4 and 5
-        if not (4 <= len(args) <= 5):
+        if len(args) != 5:
             return (
                 "Usage: define my_tuya_smartlife fhempy tuya_smartlife setup USERCODE"
             )

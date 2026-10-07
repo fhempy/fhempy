@@ -90,11 +90,18 @@ class geizhals(generic.FhemModule):
 
     async def update_loop(self):
         # get product page infos
-        await self.update_product_page_infos()
-        if await fhem.AttrVal(self.hash["NAME"], "alias", "") == "":
-            await fhem.CommandAttr(
-                self.hash, f"{self.hash['NAME']} alias {self.product_name}"
-            )
+        try:
+            await self.update_product_page_infos()
+            product_name = getattr(self, "product_name", None)
+            if (
+                product_name
+                and await fhem.AttrVal(self.hash["NAME"], "alias", "") == ""
+            ):
+                await fhem.CommandAttr(
+                    self.hash, f"{self.hash['NAME']} alias {product_name}"
+                )
+        except Exception:
+            self.logger.exception("Failed to get product page")
 
         while True:
             # aiohttp post

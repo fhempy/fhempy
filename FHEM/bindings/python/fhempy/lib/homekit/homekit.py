@@ -73,6 +73,16 @@ class homekit(generic.FhemModule):
             self.aid = int(args[4])
             self.create_async_task(self.setup_device(args[3], int(args[4])))
 
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        pairing = getattr(self, "pairing", None)
+        self.pairing = None
+        if pairing is not None:
+            try:
+                await pairing.close()
+            except Exception:
+                self.logger.exception("Failed to close HomeKit connection")
+
     async def set_attr_pairing_data(self, hash):
         await self.setup_gateway_device(hash["HOMEKIT_ID"], hash["HOMEKIT_PIN"])
 

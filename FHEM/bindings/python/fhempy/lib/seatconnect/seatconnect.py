@@ -48,10 +48,17 @@ class seatconnect(FhemModule):
     async def start_login(self):
         async with ClientSession(headers={"Connection": "keep-alive"}) as session:
             connection = Connection(session, self.username, self.password, False)
-            while await connection.doLogin() is False:
-                await asyncio.sleep(5)
-
-            await connection.get_vehicles()
+            while True:
+                try:
+                    if await connection.doLogin() is not False:
+                        await connection.get_vehicles()
+                        break
+                except Exception:
+                    self.logger.exception("Login failed")
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "login failed", 1
+                    )
+                await asyncio.sleep(60)
 
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
@@ -359,7 +366,13 @@ class seatconnect(FhemModule):
     async def update_readings(self):
         self.instruments = self.vehicle.dashboard(mutable=True).instruments
         while True:
-            await self.update_readings_once()
+            try:
+                await self.update_readings_once()
+            except Exception:
+                self.logger.exception("Failed to update readings")
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "update failed", 1
+                )
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):

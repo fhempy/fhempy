@@ -66,9 +66,9 @@ class blue_connect(generic.FhemModule):
     async def Undefine(self, hash):
         if self.task_update_loop:
             self.task_update_loop.cancel()
+        await super().Undefine(hash)
         if self.ble_dev:
             await self.ble_dev.disconnect()
-        return await super().Undefine(self.hash)
 
     async def set_measure(self, hash, params):
         self.create_async_task(self.measure_once())

@@ -311,6 +311,14 @@ class object_detection(FhemModule):
     async def set_stop(self, hash, params):
         self._stop_detection = True
 
+    async def Undefine(self, hash):
+        # the stream detection thread checks this flag and stops the camera
+        self._stop_detection = True
+        detection_task = getattr(self, "_detection_task", None)
+        if detection_task is not None:
+            detection_task.cancel()
+        await super().Undefine(hash)
+
     async def image_detect_objects_loop(self):
         while True:
             await self.image_detect_objects()

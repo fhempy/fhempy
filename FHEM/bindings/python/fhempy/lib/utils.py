@@ -72,8 +72,13 @@ async def run_blocking(function):
     if isinstance(function, partial) is False:
         raise Exception("Use functools.partial to call run_blocking")
 
-    with concurrent.futures.ThreadPoolExecutor() as pool:
+    pool = concurrent.futures.ThreadPoolExecutor()
+    try:
         return await asyncio.get_event_loop().run_in_executor(pool, function)
+    finally:
+        # don't block the event loop if the task was cancelled (Undefine),
+        # the thread finishes in the background
+        pool.shutdown(wait=False)
 
 
 def run_blocking_task(function):

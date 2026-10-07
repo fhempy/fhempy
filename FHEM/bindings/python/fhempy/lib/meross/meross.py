@@ -16,7 +16,7 @@ class meross(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        if len(args) < 5:
+        if len(args) < 5 or (args[3] == "setup" and len(args) < 6):
             return (
                 "Usage: define meross_integration fhempy meross"
                 " setup <USERNAME> <PASSWORD>"
@@ -28,6 +28,12 @@ class meross(FhemModule):
             self.device = meross_device(self.logger, self)
 
         await self.device.Define(self.hash, args, argsh)
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        undefine = getattr(self.device, "Undefine", None)
+        if undefine is not None:
+            await undefine(hash)
 
     async def set_on(self, hash, params):
         self.create_async_task(self.device.set_on(hash, params))

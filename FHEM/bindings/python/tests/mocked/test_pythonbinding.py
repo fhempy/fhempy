@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 
@@ -118,3 +119,127 @@ async def test_version_request_sends_version(monkeypatch):
     assert sent[0]["msgtype"] == "version"
     assert sent[0]["version"] == fhem.__version__
     assert 4711 not in fhem_pythonbinding.id_received_timestamp
+
+
+class CountingModule:
+    calls = []
+
+    def __init__(self, logger):
+        pass
+
+    async def Define(self, hash, args, argsh):
+        self.hash = hash
+        CountingModule.calls.append("Define")
+
+    async def Undefine(self, hash):
+        # fails like modules which use attributes set in Define
+        self.hash
+        CountingModule.calls.append("Undefine")
+
+
+def counting_binding(monkeypatch, disable_attr):
+    pb = fhempy_instance()
+    CountingModule.calls = []
+    module = type("module", (), {"counting": CountingModule})
+
+    async def no_install(hash):
+        pass
+
+    async def import_module(hash):
+        return module
+
+    async def get_device_info(name, attrs):
+        # FHEM calls the Attr function before it stores the new value
+        return {"attr": {"verbose": "3", "disable": disable_attr["value"]}}
+
+    async def readings_update(*args):
+        pass
+
+    monkeypatch.setattr(pb, "check_and_install_dependencies", no_install)
+    monkeypatch.setattr(pb, "import_module", import_module)
+    monkeypatch.setattr(fhem, "getDeviceInfo", get_device_info)
+    monkeypatch.setattr(fhem, "readingsSingleUpdate", readings_update)
+    monkeypatch.setattr(fhem, "function_active", [])
+    monkeypatch.setattr(fhem_pythonbinding, "loadedModuleInstances", {})
+    return pb
+
+
+def function_hash(function, args=None):
+    return {
+        "id": 1,
+        "NAME": "counting_dev",
+        "function": function,
+        "FHEMPYTYPE": "counting",
+        "args": args or [],
+        "argsh": {},
+        "defargs": ["counting_dev", "fhempy", "counting"],
+        "defargsh": {},
+    }
+
+
+def attr_disable(value):
+    return function_hash("Attr", ["set", "counting_dev", "disable", value])
+
+
+@pytest.mark.asyncio
+async def test_disable_toggle_calls_define_and_undefine_once(monkeypatch):
+    disable_attr = {"value": "0"}
+    pb = counting_binding(monkeypatch, disable_attr)
+
+    await pb.handle_function(function_hash("Define"), "")
+    # running device, disable 0 must not call Define a second time
+    await pb.handle_function(attr_disable("0"), "")
+    await pb.handle_function(attr_disable("1"), "")
+    disable_attr["value"] = "1"
+    await pb.handle_function(attr_disable("0"), "")
+
+    assert CountingModule.calls == ["Define", "Undefine", "Define"]
+    assert "counting_dev" in fhem_pythonbinding.loadedModuleInstances
+
+
+@pytest.mark.asyncio
+async def test_disabled_device_is_not_undefined(monkeypatch):
+    pb = counting_binding(monkeypatch, {"value": "1"})
+
+    await pb.handle_function(function_hash("Define"), "")
+    assert "counting_dev" in fhem_pythonbinding.loadedModuleInstances
+    await pb.handle_function(
+        function_hash("Rename", ["counting_new", "counting_dev"]), ""
+    )
+    hash = function_hash("Undefine")
+    hash["NAME"] = "counting_new"
+    await pb.handle_function(hash, "")
+
+    assert CountingModule.calls == []
+    assert fhem_pythonbinding.loadedModuleInstances == {}
+
+
+@pytest.mark.asyncio
+async def test_tasks_are_cancelled_when_undefine_fails(monkeypatch):
+    from fhempy.lib import generic
+
+    class BrokenUndefine(generic.FhemModule):
+        async def Define(self, hash, args, argsh):
+            self.hash = hash
+            self.loop_task = self.create_async_task(asyncio.sleep(3600))
+
+        async def Undefine(self, hash):
+            raise RuntimeError("connection close failed")
+
+    pb = counting_binding(monkeypatch, {"value": "0"})
+    module = type("module", (), {"counting": BrokenUndefine})
+
+    async def import_module(hash):
+        return module
+
+    monkeypatch.setattr(pb, "import_module", import_module)
+
+    await pb.handle_function(function_hash("Define"), "")
+    instance = fhem_pythonbinding.loadedModuleInstances["counting_dev"]
+    # let the task start
+    await asyncio.sleep(0)
+    await pb.handle_function(function_hash("Undefine"), "")
+    await asyncio.sleep(0)
+
+    assert instance.loop_task.done()
+    assert instance._tasks == []

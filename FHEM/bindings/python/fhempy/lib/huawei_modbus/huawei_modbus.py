@@ -34,13 +34,8 @@ class huawei_modbus(generic.FhemModule):
         if len(args) >= 5:
             self.port = int(args[4])
 
-            if len(args) == 6:
+            if len(args) >= 6:
                 self.slave_id = int(args[5])
-            else:
-                return (
-                    "Usage: define my_sun2000 fhempy fusionsolar_modbus IP PORT"
-                    + " SLAVE_ID"
-                )
 
         self.hash["IP"] = self.ip
         self.hash["PORT"] = self.port
@@ -49,9 +44,14 @@ class huawei_modbus(generic.FhemModule):
         self.create_async_task(self.start())
 
     async def Undefine(self, hash):
-        if self.bridge:
-            await self.bridge.stop()
-        return await super().Undefine(self.hash)
+        try:
+            if self.bridge:
+                await self.bridge.stop()
+        except Exception:
+            self.logger.exception("Failed to stop modbus connection")
+        finally:
+            self.bridge = None
+            await super().Undefine(hash)
 
     async def start(self):
         # try to connect until successful
@@ -68,9 +68,19 @@ class huawei_modbus(generic.FhemModule):
             except Exception as e:
                 self.logger.error(e)
                 # try to reconnect
-                await self.bridge.stop()
-                await asyncio.sleep(60)
-                await self.connect()
+                try:
+                    if self.bridge:
+                        await self.bridge.stop()
+                except Exception:
+                    self.logger.debug("Failed to stop modbus connection", exc_info=True)
+                self.bridge = None
+                while not self.bridge:
+                    await asyncio.sleep(60)
+                    try:
+                        await self.connect()
+                    except Exception as e:
+                        self.logger.error(e)
+                continue
 
             await asyncio.sleep(self._attr_interval)
 

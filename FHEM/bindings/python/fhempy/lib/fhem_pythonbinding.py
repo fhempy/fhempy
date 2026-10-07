@@ -15,7 +15,7 @@ import traceback
 import websockets
 import websockets.asyncio.server
 
-from . import fhem, pkg_installer, utils, version
+from . import fhem, generic, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
 
 logger = logging.getLogger(__name__)
@@ -457,7 +457,11 @@ class fhempy:
         loadedModuleInstances[hash["NAME"]] = target_class(moduleLogger)
 
         # check if module is disabled
-        if info["attr"]["disable"] == "1":
+        disabled = info["attr"]["disable"] == "1"
+        if hash["function"] == "Attr" and hash["args"][2] == "disable":
+            # FHEM calls Attr before it stores the new value
+            disabled = hash["args"][0] == "set" and hash["args"][3] == "1"
+        if disabled:
             raise ModuleDisabledException
 
         if hash["function"] != "Define":
@@ -503,6 +507,15 @@ class fhempy:
                 hash["args"] = hash["defargs"]
                 hash["argsh"] = hash["defargsh"]
 
+        # Define sets hash, it wasn't called for disabled devices
+        defined = getattr(nmInstance, "hash", None) is not None
+        if hash["function"] == "Undefine" and not defined:
+            return ret
+        if hash["function"] == "Define" and defined:
+            # attr disable 0 on a running device, or Define was just
+            # called while loading the module
+            return ret
+
         # call Set/Attr/Define/...
         func = getattr(nmInstance, hash["function"], "nofunction")
         if func != "nofunction":
@@ -511,6 +524,11 @@ class fhempy:
                     ret = await asyncio.wait_for(func(hash), fct_timeout)
                 except Exception:
                     logger.exception(f"Undefine failed for {hash['NAME']}")
+                finally:
+                    if isinstance(nmInstance, generic.FhemModule):
+                        # cancel tasks even if the module's Undefine failed
+                        # or didn't call FhemModule.Undefine
+                        await generic.FhemModule.Undefine(nmInstance, hash)
             else:
                 ret = await asyncio.wait_for(
                     func(hash, hash["args"], hash["argsh"]),
@@ -527,7 +545,10 @@ class fhempy:
         loadedModuleInstances[new_name] = loadedModuleInstances[old_name]
         del loadedModuleInstances[old_name]
         await self.sendBackReturn(hash, "")
-        loadedModuleInstances[new_name].hash["NAME"] = new_name
+        # disabled devices have no hash, Define wasn't called
+        dev_hash = getattr(loadedModuleInstances[new_name], "hash", None)
+        if dev_hash is not None:
+            dev_hash["NAME"] = new_name
 
     async def update_and_exit(self, hash):
         await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)

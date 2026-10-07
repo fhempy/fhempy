@@ -1,4 +1,5 @@
 import asyncio
+import functools
 
 from warema_wms import Shade, WmsController
 
@@ -60,14 +61,30 @@ class warema(FhemModule):
         self._warema_channel = int(args[4])
         self.hash["CHANNEL"] = args[4]
 
-        self._warema_shades = Shade.get_all_shades(
-            WmsController("http://" + self._warema_ip)
-        )
+        self.updateTask = self.create_async_task(self.update_task())
 
-        self._warema_room = self._warema_shades[self._warema_channel].get_room_name()
+    def _connect(self):
+        # blocking HTTP requests, runs in a thread
+        shades = Shade.get_all_shades(WmsController("http://" + self._warema_ip))
+        room = shades[self._warema_channel].get_room_name()
+        state = shades[self._warema_channel].get_shade_state()
+        return shades, room, state
+
+    async def connect(self):
+        while True:
+            try:
+                (shades, room, state) = await utils.run_blocking(
+                    functools.partial(self._connect)
+                )
+                break
+            except Exception:
+                self.logger.exception("Failed to connect to WMS gateway")
+                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+                await asyncio.sleep(60)
+
+        self._warema_shades = shades
+        self._warema_room = room
         self.hash["ROOM"] = self._warema_room
-
-        state = self._warema_shades[self._warema_channel].get_shade_state()
         (position, ismoving, date) = state
 
         self._warema_position = str(int(position))
@@ -83,23 +100,30 @@ class warema(FhemModule):
         else:
             pos = self._warema_position
 
-        await fhem.readingsBeginUpdate(hash)
-        await fhem.readingsBulkUpdate(hash, "state", pos)
-        await fhem.readingsBulkUpdate(hash, "room", self._warema_room)
-        await fhem.readingsBulkUpdate(hash, "channel", self._warema_channel)
-        await fhem.readingsBulkUpdate(hash, "position", self._warema_position)
-        await fhem.readingsBulkUpdate(hash, "ismoving", self._warema_ismoving)
-        await fhem.readingsEndUpdate(hash, 1)
-
-        self.updateTask = self.create_async_task(self.update_task())
+        await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdate(self.hash, "state", pos)
+        await fhem.readingsBulkUpdate(self.hash, "room", self._warema_room)
+        await fhem.readingsBulkUpdate(self.hash, "channel", self._warema_channel)
+        await fhem.readingsBulkUpdate(self.hash, "position", self._warema_position)
+        await fhem.readingsBulkUpdate(self.hash, "ismoving", self._warema_ismoving)
+        await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_task(self):
+        await self.connect()
+        await asyncio.sleep(self._attr_interval)
         while True:
-            await self.do_update()
+            try:
+                await self.do_update()
+            except Exception:
+                self.logger.exception("Failed to update shade state")
             await asyncio.sleep(self._attr_interval)
 
     async def do_update(self):
-        state = self._warema_shades[self._warema_channel].get_shade_state()
+        state = await utils.run_blocking(
+            functools.partial(
+                self._warema_shades[self._warema_channel].get_shade_state
+            )
+        )
         (position, ismoving, date) = state
 
         self._warema_position = int(position)
@@ -109,10 +133,10 @@ class warema(FhemModule):
         return
 
     async def set_attr_interval(self, hash):
+        # update_task reads the interval on each run
         await fhem.readingsSingleUpdate(
             self.hash, "interval", str(self._attr_interval), 1
         )
-        self.updateTask = self.create_async_task(self.update_task())
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
     async def set_status(self, hash, params):

@@ -446,10 +446,7 @@ class nefit(generic.FhemModule):
                 await self.update_gasusage()
             except Exception:
                 self.logger.exception("Failed to update readings")
-            try:
-                await asyncio.sleep(self._attr_interval)
-            except asyncio.CancelledError:
-                pass
+            await asyncio.sleep(self._attr_interval)
 
     async def update_dayassunday(self, day=None):
         if day is None:
@@ -466,5 +463,12 @@ class nefit(generic.FhemModule):
         self._nefit_client.get(nefit.URL_REC_GASUSAGEPOINTER)
 
     async def Undefine(self, hash):
-        await super().Undefine(hash)
+        # set first, session_end_callback reconnects otherwise
         self.module_shutdown = True
+        await super().Undefine(hash)
+        client = getattr(self, "_nefit_client", None)
+        if client is not None:
+            try:
+                await client.disconnect()
+            except Exception:
+                self.logger.exception("Failed to disconnect")

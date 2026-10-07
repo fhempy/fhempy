@@ -158,6 +158,10 @@ class NespressoDetect:
     def set_keep_connected(self, keep_connected):
         self.keep_connected = keep_connected
 
+    def stop(self):
+        # stops gatttool, which also drops the BLE connection
+        self.adapter.stop()
+
     def get_info(self, tries=0):
         # Try to get some info from the discovered Nespresso devices
         self.devices = {}

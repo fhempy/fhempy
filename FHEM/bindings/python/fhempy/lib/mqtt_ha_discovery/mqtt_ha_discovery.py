@@ -72,7 +72,13 @@ class mqtt_ha_discovery(generic.FhemModule):
                     async with client.messages() as messages:
                         await client.subscribe("homeassistant/#")
                         async for message in messages:
-                            await self.handle_ha_msg(message)
+                            try:
+                                await self.handle_ha_msg(message)
+                            except Exception:
+                                # e.g. empty payload, HA removes the entity
+                                self.logger.exception(
+                                    f"Failed to handle {message.topic.value}"
+                                )
             except aiomqtt.MqttError:
                 self.logger.error("Connection lost; Reconnecting in 5 seconds ...")
                 await asyncio.sleep(5)

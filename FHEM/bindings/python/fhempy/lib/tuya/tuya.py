@@ -121,8 +121,11 @@ class tuya(generic.FhemModule):
             self.tt_localkey = self._attr_localkey
             await self.setup_cloud()
 
-            # create device
-            self.create_async_task(self.create_device())
+            # create device, stop a create_device still running for the old key
+            create_task = getattr(self, "_create_device_task", None)
+            if create_task is not None and not create_task.done():
+                self.cancel_async_task(create_task)
+            self._create_device_task = self.create_async_task(self.create_device())
 
     async def setup_cloud(self):
         # create cloud device for cloud calls
@@ -417,7 +420,8 @@ class tuya(generic.FhemModule):
             self.logger.error(f"getdevices: {resp}")
             return {}
 
-        self.logger.debug(f"getdevices: {resp}")
+        # the response contains the local keys, don't log it
+        self.logger.debug(f"getdevices: {len(resp.get('result', []))} devices")
         for dev in resp["result"]:
             if dev["id"] == self.tt_did:
                 return dev
@@ -852,9 +856,8 @@ class tuya(generic.FhemModule):
             tuyadevices.append(item)
 
         # Display device list
-        self.logger.debug("Device Listing")
-        output = json.dumps(tuyadevices, indent=4)  # sort_keys=True)
-        self.logger.debug(output)
+        # the device list contains the local keys, don't log it
+        self.logger.debug(f"Found {len(tuyadevices)} devices")
         await fhem.readingsSingleUpdate(
             self.hash,
             "state",

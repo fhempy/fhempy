@@ -53,7 +53,8 @@ class pyit600(generic.FhemModule):
         self.euid = args[4]
         self.debug = 1
         self.min_interval_timer = 1
-        _LOGGER.debug(f"host: %s, euid: %s", self.host, self.euid)
+        # the euid is the gateway's encryption key, don't log it
+        _LOGGER.debug("host: %s", self.host)
         self.create_async_task(self.start_login())
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
 
