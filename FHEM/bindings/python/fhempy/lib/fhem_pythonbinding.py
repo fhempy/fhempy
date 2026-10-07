@@ -38,8 +38,24 @@ active_internal_modules = []
 conf = {"internal_modules": ["discover_fhempy"]}
 
 
+UNDEFINE_TIMEOUT = 60
+
+
 class ModuleDisabledException(Exception):
     pass
+
+
+def describe_hash(hash):
+    # NAME and function only, args and defargs might contain credentials
+    return f"{hash.get('NAME')} {hash.get('function', hash.get('msgtype'))}"
+
+
+def stopping_reply(hash):
+    args = hash.get("args", [])
+    if len(args) > 1 and args[1] == "?":
+        # FHEMWEB asks for the set/get list, no message needed
+        return ""
+    return "fhempy is restarting, command ignored"
 
 
 def getFhemPyDeviceByName(name):
@@ -106,6 +122,8 @@ class fhempy:
         # awaitId -> callback for replies to commands sent to FHEM
         self._msg_listeners = {}
         self._closed = False
+        # restart or shutdown started, modules are being undefined
+        self._stopping = False
         self.msg_received_time = {}
 
     def register_msg_listener(self, listener, awaitid):
@@ -132,6 +150,19 @@ class fhempy:
     def unregister_msg_listener(self, awaitid):
         self._msg_listeners.pop(awaitid, None)
 
+    def _stop(self):
+        stop_event.set()
+        # the server closes the connection now, nothing is sent to FHEM anymore
+        self.connection_closed()
+
+    async def _send_reply(self, msg):
+        if self.is_closed():
+            return
+        try:
+            await self.wsconnection.send(msg.encode("utf-8"))
+        except websockets.exceptions.ConnectionClosed:
+            logger.debug("FHEM connection closed, reply not sent")
+
     async def send(self, msg):
         if stop_event.is_set():
             return
@@ -147,16 +178,14 @@ class fhempy:
         duration = (
             time.time() - id_received_timestamp.pop(retHash["id"], time.time())
         ) * 1000
-        if duration > 1000:
-            logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
-        else:
-            logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
-        await self.wsconnection.send(msg.encode("utf-8"))
+        self._log_reply(retHash, duration)
+        await self._send_reply(msg)
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
 
     async def sendBackError(self, hash, error):
-        logger.error(error + f" with hash: {hash}")
+        # the hash contains the define arguments, which might be credentials
+        logger.error(f"{error} ({describe_hash(hash)})")
         retHash = hash.copy()
         retHash["finished"] = 1
         retHash["error"] = error
@@ -166,13 +195,19 @@ class fhempy:
         duration = (
             time.time() - id_received_timestamp.pop(retHash["id"], time.time())
         ) * 1000
-        if duration > 1000:
-            logger.error(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
-        else:
-            logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
-        await self.wsconnection.send(msg.encode("utf-8"))
+        self._log_reply(retHash, duration)
+        await self._send_reply(msg)
         self.msg_handling_completed(hash)
         fhem.setFunctionInactive(hash)
+
+    def _log_reply(self, retHash, duration):
+        if duration > 1000:
+            logger.error(
+                f"<<< {int(retHash['id']):08d} {duration:.2f}ms: "
+                f"{describe_hash(retHash)}"
+            )
+        else:
+            logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
 
     async def updateHash(self, hash):
         retHash = hash.copy()
@@ -180,7 +215,7 @@ class fhempy:
         del retHash["id"]
         msg = json.dumps(retHash, ensure_ascii=False)
         logger.debug("<<< WS: " + msg)
-        await self.wsconnection.send(msg.encode("utf-8"))
+        await self._send_reply(msg)
 
     def getLogLevel(self, verbose_level):
         if verbose_level == "5":
@@ -196,11 +231,11 @@ class fhempy:
         if "id" in hash:
             if hash["id"] in self.msg_received_time:
                 time_received = self.msg_received_time[hash["id"]]["time"]
-                payload = self.msg_received_time[hash["id"]]["payload"]
+                desc = self.msg_received_time[hash["id"]]["desc"]
                 time_finished = time.time()
                 time_duration = (time_finished - time_received) * 1000
                 if time_duration > 5000:
-                    logger.warning(f"fhempy took {time_duration:.0f}ms for {payload}")
+                    logger.warning(f"fhempy took {time_duration:.0f}ms for {desc}")
                 del self.msg_received_time[hash["id"]]
 
                 # cleanup old messages, iterate over a copy to allow deletion
@@ -216,7 +251,8 @@ class fhempy:
         try:
             await self._onMessage(payload)
         except Exception:
-            logger.exception(f"Failed to handle message: {payload}")
+            # don't log the payload, it contains the define arguments
+            logger.exception("Failed to handle message")
 
     async def _onMessage(self, payload):
         if type(payload) is bytes:
@@ -247,6 +283,9 @@ class fhempy:
         try:
             await self.handle_message(msg, hash)
         except Exception:
+            if self.is_closed():
+                logger.debug("Failed to handle message", exc_info=True)
+                return
             logger.error("Failed to handle message: ", exc_info=True)
             await self.sendBackError(hash, "fhempy failed to handle message")
 
@@ -275,7 +314,7 @@ class fhempy:
                     time_received = time.time()
                     self.msg_received_time[hash["id"]] = {
                         "time": time_received,
-                        "payload": msg,
+                        "desc": describe_hash(hash),
                     }
                 await self.handle_function(hash, msg)
             elif hash["msgtype"] == "event":
@@ -321,6 +360,10 @@ class fhempy:
 
     async def handle_function(self, hash, msg):
         ret = ""
+        if self._stopping:
+            # modules are being undefined, don't call them anymore
+            await self.sendBackReturn(hash, stopping_reply(hash))
+            return 0
         # this is needed to avoid 2 replies on dep installation
         fhem_reply_done = False
         fhem.setFunctionActive(hash)
@@ -411,7 +454,9 @@ class fhempy:
             nmInstance = loadedModuleInstances[hash["NAME"]]
         except Exception:
             if hash["function"] != "Undefine":
-                logging.getLogger(hash["NAME"]).exception(f"Couldn't handle {msg}")
+                logging.getLogger(hash["NAME"]).exception(
+                    f"Couldn't handle {hash['function']}"
+                )
             nmInstance = None
 
         if nmInstance is not None:
@@ -566,8 +611,9 @@ class fhempy:
         global exit_code
         exit_code = 1
         logger.info("Restart initiated...")
+        self._stopping = True
         await self.undefine_all()
-        stop_event.set()
+        self._stop()
 
     async def shutdown(self, *args):
         global exit_code
@@ -575,47 +621,47 @@ class fhempy:
         if self.shutdown_started == 0:
             self.shutdown_started = 1
             logger.info("Shutdown initiated...")
+            self._stopping = True
             await self.undefine_all()
-            stop_event.set()
+            self._stop()
         else:
             logger.info("Shutdown is already running, keep calm.")
             asyncio.get_event_loop().remove_signal_handler(signal.SIGTERM)
             asyncio.get_event_loop().remove_signal_handler(signal.SIGINT)
 
     async def undefine_all(self):
-        tasks = []
-        for name in loadedModuleInstances:
-            dev_instance = loadedModuleInstances[name]
-            func = getattr(dev_instance, "Undefine", "nofunction")
-            if func != "nofunction":
-                try:
-                    task = asyncio.create_task(
-                        asyncio.wait_for(func(dev_instance.hash), 60)
-                    )
-                    tasks.append(task)
-                except Exception:
-                    global exit_code
-                    exit_code = 2
-                    logger.exception("Undefine failed")
+        tasks = {}
+        for name, dev_instance in list(loadedModuleInstances.items()):
+            func = getattr(dev_instance, "Undefine", None)
+            dev_hash = getattr(dev_instance, "hash", None)
+            if func is None or dev_hash is None:
+                # Define wasn't called, e.g. disabled device
+                continue
+            try:
+                tasks[asyncio.create_task(func(dev_hash))] = name
+            except Exception:
+                global exit_code
+                exit_code = 2
+                logger.exception(f"Undefine failed for {name}")
 
         if len(tasks) == 0:
             return
 
-        try:
-            await asyncio.wait(tasks, timeout=60)
-            for task in tasks:
-                if task.cancelled():
-                    continue
-                if not task.done():
-                    logger.error(f"Task {task} couldn't be cancelled.")
-                    continue
-                if task.exception() is not None:
-                    logger.error(
-                        f"Failed to cancel task {task}, exception: {task.exception()}"
-                    )
-            logger.info("All modules successfully undefined!")
-        except Exception:
-            logger.exception("Undefined failed")
+        done, pending = await asyncio.wait(tasks, timeout=UNDEFINE_TIMEOUT)
+        for task in pending:
+            task.cancel()
+            logger.warning(
+                f"Undefine of {tasks[task]} didn't finish within {UNDEFINE_TIMEOUT}s"
+            )
+        for task in done:
+            if task.cancelled():
+                continue
+            exc = task.exception()
+            if exc is not None:
+                logger.warning(
+                    f"Undefine of {tasks[task]} failed: {exc!r}", exc_info=exc
+                )
+        logger.info("All modules undefined")
 
     async def import_module(self, hash):
         # import module
@@ -724,6 +770,8 @@ async def async_main():
             process_request=health_check,
             max_size=None,
             write_limit=2**20,
+            # FHEM doesn't answer the close frame, don't delay the restart
+            close_timeout=2,
         ):
             await stop_event.wait()
     except OSError:

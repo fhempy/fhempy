@@ -21,6 +21,12 @@ our $modules;
 my $timeouts = 0;
 my $write_deep_recursion = 0;
 
+# A peer that disappears without closing the connection (power loss, cable
+# unplugged) is never noticed by TCP alone, so ping fhempy regularly and
+# reconnect if nothing was received for a while.
+my $keepalive_interval = 30;
+my $keepalive_timeout = 90;
+
 sub BindingsIo_Initialize {
   my ($hash) = @_;
 
@@ -208,6 +214,31 @@ BindingsIo_connectDev($) {
 }
 
 sub
+BindingsIo_scheduleKeepAlive($) {
+  my ($hash) = @_;
+  RemoveInternalTimer($hash, 'BindingsIo_keepAlive');
+  InternalTimer(gettimeofday()+$keepalive_interval, 'BindingsIo_keepAlive', $hash, 0);
+}
+
+sub
+BindingsIo_keepAlive($) {
+  my ($hash) = @_;
+
+  return if ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash) || !defined($hash->{TCPDev}));
+
+  my $silence = time - ($hash->{".lastReceived"} // $hash->{connecttime} // time);
+  if ($silence > $keepalive_timeout) {
+    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): no data from ".$hash->{BindingType}." for ".int($silence)."s, closing connection";
+    DevIo_Disconnected($hash);
+    return;
+  }
+
+  # fhempy (websockets) answers with a pong, which updates .lastReceived
+  syswrite($hash->{TCPDev}, Protocol::WebSocket::Frame->new(buffer => "fhem", type => 'ping', masked => 1)->to_bytes);
+  BindingsIo_scheduleKeepAlive($hash);
+}
+
+sub
 BindingsIo_setIODevAttr($) {
   my ($hash) = @_;
 
@@ -238,11 +269,13 @@ BindingsIo_doInit($) {
   my ($hash) = @_;
 
   $hash->{connecttime} = time;
+  $hash->{".lastReceived"} = time;
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();
   $write_deep_recursion = 0;
 
   BindingsIo_initFrame($hash);
+  BindingsIo_scheduleKeepAlive($hash);
 
   # request the version, fhempy sends it right after the connection setup
   # but HttpUtils drops data received together with the websocket handshake
@@ -712,6 +745,7 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       # connection closed
       return "connectionclosed";
     } else {
+      $hash->{".lastReceived"} = time;
       return $buf;
     }
   }
@@ -733,9 +767,15 @@ sub BindingsIo_readWebsocketMessage($$$) {
 
   if (defined($response) && $response ne "") {
     $hash->{frame}->append($response);
-    while (my $r = $hash->{frame}->next) {
-      if ($hash->{frame}->is_ping or $hash->{frame}->is_pong or $hash->{frame}->is_close) {
+    # empty frames (e.g. a pong) are defined but false, keep going
+    while (defined(my $r = $hash->{frame}->next)) {
+      if ($hash->{frame}->is_pong) {
+        # answer to our keepalive ping, receiving it is all we need
+        next;
+      } elsif ($hash->{frame}->is_ping or $hash->{frame}->is_close) {
         DevIo_DecodeWS($hash, $response);
+      } elsif ($r eq "") {
+        next;
       } else {
         Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
         BindingsIo_storeMessage($hash, $r);

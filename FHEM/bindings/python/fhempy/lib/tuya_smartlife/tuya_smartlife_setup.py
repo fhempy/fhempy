@@ -235,7 +235,9 @@ class tuya_smartlife_setup:
         self._t_devicelist.append(device)
 
     def unregister_tuya_device(self, device):
-        self._t_devicelist.remove(device)
+        # the device registers only after the setup device is ready
+        if device in self._t_devicelist:
+            self._t_devicelist.remove(device)
 
     @property
     def tuya_devices(self):

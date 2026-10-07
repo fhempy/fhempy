@@ -3,6 +3,7 @@ import json
 import time
 
 import pytest
+import websockets
 from fhempy.lib import fhem, fhem_pythonbinding
 
 
@@ -34,9 +35,9 @@ def test_msg_handling_completed_removes_stale_messages():
     pb = fhempy_instance()
     now = time.time()
     pb.msg_received_time = {
-        1: {"time": now, "payload": "done"},
-        2: {"time": now - 120, "payload": "stale"},
-        3: {"time": now, "payload": "running"},
+        1: {"time": now, "desc": "done"},
+        2: {"time": now - 120, "desc": "stale"},
+        3: {"time": now, "desc": "running"},
     }
 
     pb.msg_handling_completed({"id": 1})
@@ -243,3 +244,154 @@ async def test_tasks_are_cancelled_when_undefine_fails(monkeypatch):
 
     assert instance.loop_task.done()
     assert instance._tasks == []
+
+
+class ClosedWebsocket:
+    async def send(self, msg):
+        raise AssertionError("must not send on a closed connection")
+
+
+class UndefineModule:
+    def __init__(self, name, error=None):
+        self.hash = {"NAME": name}
+        self.error = error
+        self.undefined = False
+
+    async def Undefine(self, hash):
+        self.undefined = True
+        if self.error:
+            raise self.error
+
+
+@pytest.mark.asyncio
+async def test_undefine_all_skips_devices_without_define(monkeypatch, caplog):
+    working = UndefineModule("working")
+    failing = UndefineModule("failing", ValueError("list.remove(x): x not in list"))
+    disabled = UndefineModule("disabled")
+    del disabled.hash
+    monkeypatch.setattr(
+        fhem_pythonbinding,
+        "loadedModuleInstances",
+        {"working": working, "failing": failing, "disabled": disabled},
+    )
+    monkeypatch.setattr(fhem_pythonbinding, "exit_code", 1)
+    pb = fhempy_instance()
+
+    await pb.undefine_all()
+
+    assert working.undefined and failing.undefined
+    assert not disabled.undefined
+    assert fhem_pythonbinding.exit_code == 1
+    errors = [r for r in caplog.records if r.levelname == "ERROR"]
+    assert errors == []
+    assert any("Undefine of failing failed" in r.message for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_undefine_all_cancels_hanging_undefine(monkeypatch, caplog):
+    class Hanging(UndefineModule):
+        async def Undefine(self, hash):
+            await asyncio.sleep(10)
+
+    monkeypatch.setattr(
+        fhem_pythonbinding, "loadedModuleInstances", {"hanging": Hanging("hanging")}
+    )
+    monkeypatch.setattr(fhem_pythonbinding, "UNDEFINE_TIMEOUT", 0.01)
+    pb = fhempy_instance()
+
+    await pb.undefine_all()
+
+    assert any("Undefine of hanging didn't finish" in r.message for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_function_call_while_stopping_is_not_passed_to_module(monkeypatch):
+    class Module:
+        async def Set(self, hash, args, argsh):
+            raise AssertionError("module must not be called")
+
+    monkeypatch.setattr(fhem, "function_active", [])
+    monkeypatch.setattr(fhem_pythonbinding, "loadedModuleInstances", {"dev": Module()})
+    pb = fhempy_instance()
+    sent = []
+
+    async def send(msg):
+        sent.append(json.loads(msg))
+
+    pb.wsconnection.send = send
+    pb._stopping = True
+    for msg_id, arg in ((1, "?"), (2, "on")):
+        hash = {"id": msg_id, "NAME": "dev", "function": "Set"}
+        hash["args"] = ["dev", arg]
+        hash["argsh"] = {}
+        await pb.handle_function(hash, "")
+
+    assert [s["returnval"] for s in sent] == [
+        "",
+        "fhempy is restarting, command ignored",
+    ]
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_reply_on_closed_connection_is_dropped(monkeypatch, caplog):
+    monkeypatch.setattr(fhem, "function_active", [])
+    pb = fhempy_instance()
+    pb.wsconnection = ClosedWebsocket()
+    hash = {"id": 4712, "NAME": "dev", "function": "Set"}
+    fhem.setFunctionActive(hash)
+    pb.connection_closed()
+
+    await pb.sendBackReturn(hash, "")
+    await pb.sendBackError(hash, "failed")
+
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_reply_after_connection_closed_by_peer(monkeypatch):
+    monkeypatch.setattr(fhem, "function_active", [])
+    pb = fhempy_instance()
+
+    async def send(msg):
+        raise websockets.exceptions.ConnectionClosedError(None, None)
+
+    pb.wsconnection.send = send
+    hash = {"id": 4713, "NAME": "dev", "function": "Set"}
+    fhem.setFunctionActive(hash)
+
+    await pb.sendBackReturn(hash, "")
+
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_send_back_error_does_not_log_define_arguments(monkeypatch, caplog):
+    monkeypatch.setattr(fhem, "function_active", [])
+    pb = fhempy_instance()
+    hash = {
+        "id": 4714,
+        "NAME": "dev",
+        "function": "Set",
+        "defargs": ["dev", "fhempy", "volvo", "secret-password"],
+    }
+
+    await pb.sendBackError(hash, "failed")
+
+    assert "secret-password" not in caplog.text
+    assert "dev Set" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_expired_function_is_quiet_after_connection_closed(monkeypatch, caplog):
+    monkeypatch.setattr(fhem, "function_active", [])
+    pb = fhempy_instance()
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+    entry = {"NAME": "dev", "id": 1, "timer": None}
+    fhem.function_active.append(entry)
+    pb._closed = True
+
+    fhem.expireFunction(entry)
+
+    assert fhem.function_active == []
+    assert "stopped waiting" not in caplog.text
