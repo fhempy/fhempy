@@ -175,7 +175,8 @@ class ring(FhemModule):
                 self.poll_dings()
                 # handle alerts
                 alerts = self._ring.active_alerts()
-                self.logger.debug("Received dings: " + str(alerts))
+                # alerts contain sip credentials, don't log them
+                self.logger.debug(f"Received {len(alerts)} dings")
                 if len(alerts) > 0:
                     for alert in alerts:
                         if alert["doorbot_id"] == self._rdevice.id:

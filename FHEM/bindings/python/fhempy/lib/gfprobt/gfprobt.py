@@ -90,9 +90,12 @@ class gfprobt(generic.FhemModule):
         self.create_async_task(self.update_loop())
 
     async def Undefine(self, hash):
+        await super().Undefine(hash)
         if self._conn:
-            await self._conn.disconnect()
-        return await super().Undefine(self.hash)
+            try:
+                await self._conn.disconnect()
+            except Exception:
+                self.logger.exception("Failed to disconnect")
 
     # write_password is running in another thread
     async def write_password(self):

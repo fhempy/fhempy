@@ -1,5 +1,7 @@
 import asyncio
 
+import aiohttp
+
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
@@ -23,19 +25,29 @@ class wienernetze_smartmeter(FhemModule):
         self._updateloop = self.create_async_task(self.update_loop())
 
     async def update_loop(self):
-        client = AsyncSmartmeter(self.username, self.password)
-        await client.refresh_token()
-        data = await client.base_information()
-        await self.update_readings(data)
-        while True:
-            try:
-                data = await client.consumptions()
-                await self.update_readings(data)
-                data = await client.meter_readings()
-                await self.update_readings(data)
-            except Exception:
-                self.logger.exception("Failed to update values")
-            await asyncio.sleep(3600)
+        async with aiohttp.ClientSession() as session:
+            client = AsyncSmartmeter(self.username, self.password, session)
+            while True:
+                try:
+                    await client.refresh_token()
+                    data = await client.base_information()
+                    await self.update_readings(data)
+                    break
+                except Exception:
+                    self.logger.exception("Login failed, retry in 5 minutes")
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "state", "login failed", 1
+                    )
+                    await asyncio.sleep(300)
+            while True:
+                try:
+                    data = await client.consumptions()
+                    await self.update_readings(data)
+                    data = await client.meter_readings()
+                    await self.update_readings(data)
+                except Exception:
+                    self.logger.exception("Failed to update values")
+                await asyncio.sleep(3600)
 
     async def update_readings(self, data):
         flat_data = utils.flatten_json(data)

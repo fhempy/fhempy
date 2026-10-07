@@ -29,10 +29,16 @@ class wienerlinien(FhemModule):
         if len(args) < 4:
             return "Usage: define devname fhempy wienerlinien <STOPID>"
         self._stopid = args[3]
-        self.api = WienerlinienAPI(self._stopid)
+        self.api = WienerlinienAPI(self._stopid, self.logger)
         self._updateloop = self.create_async_task(self.update_loop())
         # delete all readings on define
         self.create_async_task(fhem.CommandDeleteReading(hash, hash["NAME"] + " .*"))
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        api = getattr(self, "api", None)
+        if api is not None:
+            await api.session.close()
 
     async def set_update(self, hash, params):
         self.create_async_task(self.update())
@@ -114,10 +120,11 @@ class wienerlinien(FhemModule):
 class WienerlinienAPI:
     """Call API."""
 
-    def __init__(self, stopid):
+    def __init__(self, stopid, logger):
         """Initialize."""
         self.session = aiohttp.ClientSession()
         self.stopid = stopid
+        self.logger = logger
 
     async def get_json(self):
         """Get json from API endpoint."""

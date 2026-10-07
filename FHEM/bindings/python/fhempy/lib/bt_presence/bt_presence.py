@@ -36,10 +36,12 @@ class bt_presence(FhemModule):
 
                 if device_name:
                     self._btrssi = BluetoothRSSI(self._address)
-                    rssi = await utils.run_blocking(
-                        functools.partial(self._btrssi.request_rssi)
-                    )
-                    self._btrssi.close()
+                    try:
+                        rssi = await utils.run_blocking(
+                            functools.partial(self._btrssi.request_rssi)
+                        )
+                    finally:
+                        self._btrssi.close()
                     rssi = rssi[0]
                     if curr_name != device_name:
                         curr_name = device_name

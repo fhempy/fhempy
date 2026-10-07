@@ -93,7 +93,7 @@ class piclock(generic.FhemModule):
         if len(args) >= 5:
             self.weather_dev, self.weather_reading = args[4].split(":")
         if len(args) == 6:
-            self.buttons = args[5].split(",")
+            self.buttons = [int(button) for button in args[5].split(",")]
 
         # init buttons
         GPIO.setmode(GPIO.BCM)
@@ -146,8 +146,6 @@ class piclock(generic.FhemModule):
                     # no weather data, show only time
                     return
 
-            except asyncio.CancelledError:
-                await self._notification_inactive.wait()
             except Exception:
                 self.logger.exception("Failed run_piclock_mainloop")
 
@@ -248,7 +246,19 @@ class piclock(generic.FhemModule):
             return 0
 
     def button_pressed(self, channel):
-        self.create_async_task(self.async_button_pressed(channel))
+        # called from the GPIO thread
+        self.loop.call_soon_threadsafe(
+            self.create_async_task, self.async_button_pressed(channel)
+        )
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        # otherwise a new Define fails with "Conflicting edge detection"
+        for button in self.buttons:
+            try:
+                GPIO.remove_event_detect(button)
+            except Exception:
+                self.logger.exception("Failed to remove GPIO event detection")
 
     async def async_button_pressed(self, button):
         if button > 0:

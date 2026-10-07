@@ -29,6 +29,14 @@ class meross_device:
         await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
         self.fhemdev.create_async_task(self._init_device())
 
+    async def Undefine(self, hash):
+        # the device object belongs to the setup device and outlives this one
+        if self._device is not None:
+            self._device.unregister_push_notification_handler_coroutine(
+                self._async_push_notification_received
+            )
+            self._device = None
+
     async def _get_set_commands(self):
         set_conf = {}
 

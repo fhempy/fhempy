@@ -103,8 +103,12 @@ class miio(generic.FhemModule):
         if self._attr_update_functions != "":
             fct_upd_list = self._attr_update_functions.split(",")
             for fct_upd in fct_upd_list:
-                sec = int(fct_upd.split(":")[1])
-                fct = fct_upd.split(":")[0]
+                try:
+                    (fct, sec) = fct_upd.split(":")
+                    sec = int(sec)
+                except ValueError:
+                    self.logger.error("update_functions format is FUNCTION:SECONDS")
+                    continue
                 self._fct_update_tasks[fct] = self.create_async_task(
                     self.fct_update_loop(fct, sec)
                 )

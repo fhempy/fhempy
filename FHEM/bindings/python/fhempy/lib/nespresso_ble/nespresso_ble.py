@@ -53,7 +53,6 @@ class nespresso_ble(generic.FhemModule):
             self.auth = await fhem.ReadingsVal(self.hash["NAME"], "authkey", "")
 
         if self.auth != "":
-            self.auth = args[4]
             self.nespressodetect = NespressoDetect(self.auth, self.mac)
             self.nespressodetect.set_keep_connected(True)
             self.task = self.create_async_task(self.update_status_task())
@@ -77,10 +76,25 @@ class nespresso_ble(generic.FhemModule):
         await self.set_set_config(self.set_conf_list)
         await fhem.readingsSingleUpdateIfChanged(self.hash, "authkey", self.auth, 1)
         if self.task:
-            self.task.cancel()
+            self.cancel_async_task(self.task)
+        await self.stop_nespressodetect()
         self.nespressodetect = NespressoDetect(self.auth, self.mac)
         self.nespressodetect.set_keep_connected(True)
         self.task = self.create_async_task(self.update_status_task())
+
+    async def stop_nespressodetect(self):
+        if self.nespressodetect is None:
+            return
+        nespressodetect = self.nespressodetect
+        self.nespressodetect = None
+        try:
+            await fpyutils.run_blocking(functools.partial(nespressodetect.stop))
+        except Exception:
+            self.logger.exception("Failed to stop BLE connection")
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        await self.stop_nespressodetect()
 
     async def set_easybrew(self, hash, params):
         params["temperature"] = "medium"

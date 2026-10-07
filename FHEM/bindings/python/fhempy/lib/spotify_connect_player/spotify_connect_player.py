@@ -13,6 +13,8 @@ class spotify_connect_player(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.browser = None
+        self.runner = None
+        self.spotipy = None
         # Spotipy PKCE authenticator instance
         self.spotipy_pkce = None
         self.spotipy_scope = (
@@ -107,9 +109,6 @@ class spotify_connect_player(generic.FhemModule):
                     1,
                 )
                 await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
-                await self.update_devices()
-                self.create_async_task(self.update_playback_loop())
-                self.create_async_task(self.update_devices_loop())
 
     async def set_start(self, hash, params):
         self.create_async_task(self.run_spotify())
@@ -202,6 +201,16 @@ class spotify_connect_player(generic.FhemModule):
 
     async def stop_spotify(self):
         # stop aiohttp server and stop chrome headless
-        await self.runner.cleanup()
+        if self.runner:
+            await self.runner.cleanup()
+            self.runner = None
         if self.browser:
             await self.browser.close()
+            self.browser = None
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        try:
+            await self.stop_spotify()
+        except Exception:
+            self.logger.exception("Failed to stop player")

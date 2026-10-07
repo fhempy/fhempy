@@ -70,8 +70,12 @@ class goodwe(generic.FhemModule):
     async def update_loop(self):
         self.inverter = None
         while self.inverter is None:
-            self.inverter = await gw.connect(self.ip)
-            await asyncio.sleep(30)
+            try:
+                self.inverter = await gw.connect(self.ip)
+            except Exception:
+                self.logger.exception("Failed to connect to inverter")
+                await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+                await asyncio.sleep(30)
 
         while True:
             try:
@@ -79,7 +83,7 @@ class goodwe(generic.FhemModule):
                 await self.handle_data(runtime_data)
 
                 operation_mode = await self.inverter.get_operation_mode()
-                await fhem.readingsSingleUpdate(self.hash, "operation_mode", self.get_enum_name(operation_mode))
+                await fhem.readingsSingleUpdate(self.hash, "operation_mode", self.get_enum_name(operation_mode), 1)
             except Exception:
                 await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
             await asyncio.sleep(self._attr_interval)
