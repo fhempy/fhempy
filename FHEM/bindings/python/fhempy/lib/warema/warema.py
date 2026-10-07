@@ -65,7 +65,9 @@ class warema(FhemModule):
 
     def _connect(self):
         # blocking HTTP requests, runs in a thread
-        shades = Shade.get_all_shades(WmsController("http://" + self._warema_ip))
+        shades = Shade.get_all_shades(
+            WmsController("http://" + self._warema_ip)
+        )
         room = shades[self._warema_channel].get_room_name()
         state = shades[self._warema_channel].get_shade_state()
         return shades, room, state

@@ -54,35 +54,35 @@ class huawei_modbus(generic.FhemModule):
             await super().Undefine(hash)
 
     async def start(self):
-        # try to connect until successful
-        while not self.bridge:
-            try:
-                await self.connect()
-            except Exception as e:
-                self.logger.error(e)
-                await asyncio.sleep(10)
+        await self.connect_until_successful(10)
 
         while True:
             try:
                 await self.update()
             except Exception as e:
                 self.logger.error(e)
-                # try to reconnect
-                try:
-                    if self.bridge:
-                        await self.bridge.stop()
-                except Exception:
-                    self.logger.debug("Failed to stop modbus connection", exc_info=True)
-                self.bridge = None
-                while not self.bridge:
-                    await asyncio.sleep(60)
-                    try:
-                        await self.connect()
-                    except Exception:
-                        self.logger.exception("Reconnect failed")
+                await self.reconnect()
                 continue
 
             await asyncio.sleep(self._attr_interval)
+
+    async def connect_until_successful(self, retry_delay):
+        while not self.bridge:
+            try:
+                await self.connect()
+            except Exception:
+                self.logger.exception("Connect failed")
+                await asyncio.sleep(retry_delay)
+
+    async def reconnect(self):
+        try:
+            if self.bridge:
+                await self.bridge.stop()
+        except Exception:
+            self.logger.debug("Failed to stop modbus connection", exc_info=True)
+        self.bridge = None
+        await asyncio.sleep(60)
+        await self.connect_until_successful(60)
 
     async def connect(self):
         from huawei_solar import (

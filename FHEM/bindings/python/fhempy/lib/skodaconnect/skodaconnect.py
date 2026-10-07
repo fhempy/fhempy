@@ -74,21 +74,7 @@ class skodaconnect(generic.FhemModule):
                 if await connection.restore_tokens(TOKENS):
                     print("Token restore succeeded")
                     login_success = True
-            while True:
-                try:
-                    if not login_success:
-                        login_success = await connection.doLogin() is not False
-                    if login_success:
-                        await connection.get_vehicles()
-                        await connection.update_all()
-                        break
-                except Exception:
-                    self.logger.exception("Login failed")
-                    await fhem.readingsSingleUpdateIfChanged(
-                        self.hash, "state", "login failed", 1
-                    )
-                    login_success = False
-                await asyncio.sleep(60)
+            await self.login_until_successful(connection, login_success)
 
             await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
 
@@ -115,6 +101,23 @@ class skodaconnect(generic.FhemModule):
             await self.prepare_set_commands()
 
             await self.update_readings()
+
+    async def login_until_successful(self, connection, login_success):
+        while True:
+            try:
+                if not login_success:
+                    login_success = await connection.doLogin() is not False
+                if login_success:
+                    await connection.get_vehicles()
+                    await connection.update_all()
+                    return
+            except Exception:
+                self.logger.exception("Login failed")
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "login failed", 1
+                )
+                login_success = False
+            await asyncio.sleep(60)
 
     async def prepare_set_commands(self):
         self.set_config = {
