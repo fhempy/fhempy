@@ -229,28 +229,27 @@ files = [
 
 [[package]]
 name = "aiohomekit"
-version = "2.6.16"
+version = "4.0.1"
 description = "An asyncio HomeKit client"
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = ">=3.10"
 groups = ["all"]
 files = [
-    {file = "aiohomekit-2.6.16-py3-none-any.whl", hash = "sha256:393c82f9695aff360b166540ffb68012211fa1e7344c26b9de8497c70a483ba4"},
-    {file = "aiohomekit-2.6.16.tar.gz", hash = "sha256:3fd7d19a4350999ba00af5e7a30ae565ed371d091a962b7d0413f4a96bb7d390"},
+    {file = "aiohomekit-4.0.1-py3-none-any.whl", hash = "sha256:ea517f27d6c6034ad6259a0bf87505f2b68c9a0aebd4067ac4bd7913b7026266"},
+    {file = "aiohomekit-4.0.1.tar.gz", hash = "sha256:5e00f87a9fae4829da6499bec91b0e55fa8d0565f8ce571da50737743fc91cd8"},
 ]
 
 [package.dependencies]
 aiocoap = ">=0.4.5"
+aiohappyeyeballs = ">=2.7.1"
 async-interrupt = ">=1.1.1"
-async-timeout = ">=4.0.2,<5.0.0"
-bleak = ">=0.19.0"
-bleak-retry-connector = ">=2.9.0"
+bleak = ">=2"
+bleak-retry-connector = ">=4.6.0"
 chacha20poly1305 = ">=0.0.3,<0.0.4"
-chacha20poly1305-reuseable = ">=0.0.4"
-commentjson = ">=0.9.0,<0.10.0"
-cryptography = ">=2.9.2"
-orjson = ">=3.7.8"
-zeroconf = ">=0.73.0"
+chacha20poly1305-reuseable = ">=0.12.1"
+cryptography = ">=48.0.1"
+orjson = ">=3.11.6"
+zeroconf = ">=0.149.16"
 
 [[package]]
 name = "aiohttp"
@@ -1733,20 +1732,6 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 development = ["black", "flake8", "mypy", "pytest", "types-colorama"]
 
 [[package]]
-name = "commentjson"
-version = "0.9.0"
-description = "Add Python and JavaScript style comments in your JSON files."
-optional = false
-python-versions = "*"
-groups = ["all"]
-files = [
-    {file = "commentjson-0.9.0.tar.gz", hash = "sha256:42f9f231d97d93aff3286a4dc0de39bfd91ae823d1d9eba9fa901fe0c7113dd4"},
-]
-
-[package.dependencies]
-lark-parser = ">=0.7.1,<0.8.0"
-
-[[package]]
 name = "construct"
 version = "2.10.70"
 description = "A powerful declarative symmetric parser/builder for binary data"
@@ -2949,17 +2934,6 @@ files = [
 build = ["build", "twine"]
 data = ["language-data (>=1.2)"]
 test = ["pytest", "pytest-cov"]
-
-[[package]]
-name = "lark-parser"
-version = "0.7.8"
-description = "a modern parsing library"
-optional = false
-python-versions = "*"
-groups = ["all"]
-files = [
-    {file = "lark-parser-0.7.8.tar.gz", hash = "sha256:26215ebb157e6fb2ee74319aa4445b9f3b7e456e26be215ce19fdaaa901c20a4"},
-]
 
 [[package]]
 name = "luma-core"
@@ -7591,4 +7565,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "5a5f7c5fc14a2b883049fdfe0d05840c66aaead52e79bb73f2122401e2817c98"
+content-hash = "8d250d8065ea70da643c65d8d8309c4b362bb2a4b989e7ce72cc380537dc85ae"
