@@ -76,9 +76,7 @@ class mqtt_ha_discovery(generic.FhemModule):
                                 await self.handle_ha_msg(message)
                             except Exception:
                                 # e.g. empty payload, HA removes the entity
-                                self.logger.exception(
-                                    f"Failed to handle {message.topic.value}"
-                                )
+                                self.logger.exception("Failed to handle message")
             except aiomqtt.MqttError:
                 self.logger.error("Connection lost; Reconnecting in 5 seconds ...")
                 await asyncio.sleep(5)

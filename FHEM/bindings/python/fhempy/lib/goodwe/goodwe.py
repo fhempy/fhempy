@@ -73,7 +73,7 @@ class goodwe(generic.FhemModule):
             try:
                 self.inverter = await gw.connect(self.ip)
             except Exception:
-                self.logger.exception(f"Failed to connect to inverter {self.ip}")
+                self.logger.exception("Failed to connect to inverter")
                 await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
                 await asyncio.sleep(30)
 

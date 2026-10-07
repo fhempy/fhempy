@@ -258,7 +258,7 @@ class piclock(generic.FhemModule):
             try:
                 GPIO.remove_event_detect(button)
             except Exception:
-                self.logger.exception(f"Failed to remove GPIO {button}")
+                self.logger.exception("Failed to remove GPIO event detection")
 
     async def async_button_pressed(self, button):
         if button > 0:

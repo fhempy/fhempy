@@ -380,7 +380,6 @@ class volvo(generic.FhemModule):
                 else:
                     self.logger.error(
                         f"Failed to get data from {url} with status {resp.status}"
-                        f" and message: {response}"
                     )
         except Exception:
             self.logger.exception(f"Failed to get data from {url}")

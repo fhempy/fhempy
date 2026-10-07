@@ -78,8 +78,8 @@ class huawei_modbus(generic.FhemModule):
                     await asyncio.sleep(60)
                     try:
                         await self.connect()
-                    except Exception as e:
-                        self.logger.error(e)
+                    except Exception:
+                        self.logger.exception("Reconnect failed")
                 continue
 
             await asyncio.sleep(self._attr_interval)

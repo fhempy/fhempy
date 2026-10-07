@@ -107,9 +107,7 @@ class miio(generic.FhemModule):
                     (fct, sec) = fct_upd.split(":")
                     sec = int(sec)
                 except ValueError:
-                    self.logger.error(
-                        f"update_functions: {fct_upd} isn't FUNCTION:SECONDS"
-                    )
+                    self.logger.error("update_functions format is FUNCTION:SECONDS")
                     continue
                 self._fct_update_tasks[fct] = self.create_async_task(
                     self.fct_update_loop(fct, sec)

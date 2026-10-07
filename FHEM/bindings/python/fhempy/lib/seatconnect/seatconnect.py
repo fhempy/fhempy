@@ -370,9 +370,6 @@ class seatconnect(FhemModule):
                 await self.update_readings_once()
             except Exception:
                 self.logger.exception("Failed to update readings")
-                await fhem.readingsSingleUpdateIfChanged(
-                    self.hash, "state", "update failed", 1
-                )
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):
