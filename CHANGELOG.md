@@ -1,6 +1,28 @@
 # CHANGELOG
 
 
+## v0.1.768 (2026-10-08)
+
+### Bug Fixes
+
+- **eq3bt**: Validate weekprofile before sending it to the thermostat
+  ([#615](https://github.com/fhempy/fhempy/pull/615),
+  [`9557593`](https://github.com/fhempy/fhempy/commit/95575935303c8d222ce9637b7227b67927cb4c6d))
+
+Invalid weekprofiles (mismatched time/temp lists, unordered times, not in 10 minute steps, not
+  ending at 24:00, temps outside 4.5-30 in 0.5 steps) are returned as set error instead of failing
+  in the background task.
+
+### Features
+
+- **eq3bt**: Set schedule via weekprofile ([#614](https://github.com/fhempy/fhempy/pull/614),
+  [`e58515c`](https://github.com/fhempy/fhempy/commit/e58515c43af5370c1cfa4f55817a43d8020d2b1b))
+
+Adds `set weekprofile` (JSON, compatible with 98_weekprofile) and shows 24:00 schedule ends
+  correctly in schedule readings. Fixes a crash in bt_manager pairing when the event loop times out
+  without an error.
+
+
 ## v0.1.767 (2026-10-07)
 
 ### Bug Fixes
