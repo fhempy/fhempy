@@ -493,21 +493,51 @@ class eq3bt(generic.FhemModule):
             )
         )
 
+    def check_weekprofile(self, profile_dict):
+        """Return an error message if the weekprofile can't be sent to the device."""
+        if not isinstance(profile_dict, dict):
+            return "Weekprofile must be a JSON object with days as keys"
+        for day_name, data in profile_dict.items():
+            if day_name.lower() not in DAY_MAP:
+                return f"Invalid day: '{day_name}'. Choose one of {list(DAY_MAP.keys())}"
+            if not isinstance(data, dict):
+                return f"Invalid data for day '{day_name}'"
+            times = data.get("time", [])
+            temps = data.get("temp", [])
+            if len(times) != len(temps) or len(times) == 0:
+                return f"Day '{day_name}' needs the same number of times and temps"
+            if len(times) > 7:
+                return f"Weekprofile contains too many datapoints (>7) for day: '{day_name}'"
+            last_minutes = 0
+            for time_str, temp in zip(times, temps):
+                try:
+                    h, m = map(int, str(time_str).split(":"))
+                    temp = float(temp)
+                except (TypeError, ValueError):
+                    return f"Invalid time '{time_str}' or temp '{temp}' for day '{day_name}'"
+                minutes = h * 60 + m
+                if m % 10 or not 0 <= m < 60 or minutes <= last_minutes or minutes > 1440:
+                    return (
+                        f"Invalid time '{time_str}' for day '{day_name}': times must "
+                        "be ascending, in 10 minute steps and not later than 24:00"
+                    )
+                if not 4.5 <= temp <= 30 or temp * 2 != int(temp * 2):
+                    return f"Invalid temp '{temp}' for day '{day_name}' (4.5-30 in 0.5 steps)"
+                last_minutes = minutes
+            if last_minutes != 1440:
+                return f"Last time for day '{day_name}' must be 24:00"
+        return None
+
     async def set_weekprofile(self, hash, params):
         try:
             profile_dict = json.loads(params["weekprofile"])
         except Exception as err:
             return f"Failed to parse weekprofile JSON payload: {err}"
 
-        for day_name, data in profile_dict.items():
-            if not day_name.lower() in DAY_MAP.keys():
-                return f"Invalid day: '{day_name}'. Choose one of {[day for day in DAY_MAP.keys()]}"
+        err = self.check_weekprofile(profile_dict)
+        if err:
+            return err
 
-            times = data.get("time", [])
-            temps = data.get("temp", [])
-            if max(len(times), len(temps)) > 7:
-                return f"Weekprofile contains too many datapoints (>7) for day: '{day_name}'"
-              
         self.create_async_task(
             self.set_and_update(
                 self.thermostat.set_weekprofile(profile_dict)
