@@ -48,6 +48,7 @@ class BluetoothLE:
         self.pin = pin
         self.disconnect_listener = None
         self.connected_listener = None
+        self.notification_listener = None
 
         self.logger = logger
         self.addr = address

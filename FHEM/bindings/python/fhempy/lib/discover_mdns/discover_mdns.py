@@ -19,8 +19,8 @@ class discover_mdns(FhemModule):
     # zeroconf callback
     def update_service(self, zeroconf, type, name):
         self.logger.debug("Service %s updated" % (name))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(type, name), self.loop)
-        res.result()
+        # zeroconf calls this in the event loop, waiting here would block it
+        self.create_async_task(self.foundDevice(type, name))
 
     # zeroconf callback
     def remove_service(self, zeroconf, type, name):
@@ -29,8 +29,8 @@ class discover_mdns(FhemModule):
     # zeroconf callback
     def add_service(self, zeroconf, type, name):
         self.logger.debug("Service %s added" % (name))
-        res = asyncio.run_coroutine_threadsafe(self.foundDevice(type, name), self.loop)
-        res.result()
+        # zeroconf calls this in the event loop, waiting here would block it
+        self.create_async_task(self.foundDevice(type, name))
 
     async def foundDevice(self, type, name):
         try:
@@ -138,6 +138,11 @@ class discover_mdns(FhemModule):
 
     # FHEM
     async def Undefine(self, hash):
-        if self.browser:
-            self.browser.cancel()
         await super().Undefine(hash)
+        if self.browser:
+            browser = self.browser
+            self.browser = None
+            try:
+                await browser.async_cancel()
+            except Exception:
+                self.logger.exception("Failed to stop mDNS browser")

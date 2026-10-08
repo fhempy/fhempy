@@ -1,6 +1,94 @@
 # CHANGELOG
 
 
+## v0.1.767 (2026-10-07)
+
+### Bug Fixes
+
+- Define/undefine error handling in core and modules
+  ([#611](https://github.com/fhempy/fhempy/pull/611),
+  [`79c896f`](https://github.com/fhempy/fhempy/commit/79c896f7df4aaac29140162c6fe20798f7c3ef23))
+
+* fix: Define/Undefine error handling in core and modules
+
+Core: - attr disable 0 after disable 1 defines the device again (FHEM calls Attr before it stores
+  the value, the old value was read) - attr disable 0 on a running device no longer calls Define
+  twice - Undefine/Rename of a disabled device (never defined) doesn't crash - tasks of FhemModule
+  are cancelled even if a module's Undefine fails - run_blocking doesn't block the event loop when
+  its task is cancelled
+
+Modules: Undefine closes connections/sessions/threads (discover_mdns,
+
+gree_climate, homekit, mitemp2, nefit, nespresso_ble, object_detection, piclock,
+  spotify_connect_player, volvo, wienerlinien, xiaomi_gateway3, meross devices), ssdp listeners are
+  removed per device, discover_mdns no longer deadlocks the event loop, startup/login errors set a
+  state and retry instead of ending the task (goodwe, huawei_modbus, erelax_vaillant, seatconnect,
+  skodaconnect, warema, wienernetze_smartmeter, geizhals, mqtt_ha_discovery), wrong define arguments
+  return the usage text, and tokens/keys are no longer logged (volvo, tuya, tuya_smartlife, ring,
+  pyit600).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+Claude-Session: https://claude.ai/code/session_014q59aEHF9wFgwitb4eCG5j
+
+* fix: don't log values from define args, MQTT or HTTP responses
+
+* fix: geizhals alias as plain text, volvo error log without url
+
+* fix: warema keeps the WMS http URL line, split long connect/login functions
+
+---------
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
+## v0.1.766 (2026-10-07)
+
+### Bug Fixes
+
+- Quiet fhempy restart and shutdown ([#610](https://github.com/fhempy/fhempy/pull/610),
+  [`38822d6`](https://github.com/fhempy/fhempy/commit/38822d6a3032c4e7958e4374b46870388564c617))
+
+- undefine_all skips devices without Define (disabled devices made the restart exit with code 2),
+  logs failures per device as warning and cancels Undefine calls that don't finish within 60s -
+  function calls arriving during restart/shutdown are answered without calling the module that is
+  being undefined - replies on a closed connection are dropped instead of raising, so no
+  ConnectionClosedError tracebacks and "FHEM stopped waiting" warnings after the server closes the
+  connection - don't log define arguments (credentials) in error messages -
+  tuya_cloud/tuya_smartlife: unregister of a device that never registered doesn't raise ValueError
+  anymore - websocket close_timeout 2s, FHEM doesn't answer the close frame
+
+Claude-Session: https://claude.ai/code/session_01FQSH7KYNTJjvVBaKfUC1yz
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **bindingsio**: Detect an unreachable fhempy peer via websocket keepalive
+  ([#612](https://github.com/fhempy/fhempy/pull/612),
+  [`bce7d78`](https://github.com/fhempy/fhempy/commit/bce7d78985f1b55044d614c08bf8db27a2fc10d2))
+
+A peer that disappears without closing the TCP connection (power loss, unplugged cable) stayed
+  'opened' forever, because neither side sent anything while idle. BindingsIo now pings fhempy every
+  30s and disconnects (and reconnects via ReadyFn) when nothing was received for 90s. Empty frames
+  such as pongs no longer stop frame processing.
+
+Claude-Session: https://claude.ai/code/session_01Gd5wvpKp9Jd2MP7V7VTvRU
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **bindingsio**: Process queued fhempy commands without waiting for the next frame
+  ([#605](https://github.com/fhempy/fhempy/pull/605),
+  [`a319540`](https://github.com/fhempy/fhempy/commit/a319540747a5201b5db5e06341ce3a883a112174))
+
+BindingsIo handles queued commands from fhempy for at most 300ms per read. Commands left over waited
+  until the next websocket frame arrived, which in a quiet system can be the next ping, so fhempy
+  logged 'FHEM took 10000ms for readingsBeginUpdate(...)'. The read path now schedules the same 0.1s
+  follow-up timer as the function path, and only one such timer is pending at a time.
+
+Claude-Session: https://claude.ai/code/session_01V6mG93UkpuHvAeABPQ6LFX
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.765 (2026-10-06)
 
 ### Bug Fixes

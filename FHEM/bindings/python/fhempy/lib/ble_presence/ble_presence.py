@@ -97,8 +97,8 @@ class scanner:
             self._scan_task = asyncio.create_task(self.loop_scan())
 
     def unregister_mac_listener(self, mac):
-        if mac in self._mac_listener:
-            del self._mac_listener[mac]
+        # registered in lower case
+        self._mac_listener.pop(mac.lower(), None)
         if len(self._mac_listener) == 0:
             if self._scan_task:
                 self._scan_task.cancel()

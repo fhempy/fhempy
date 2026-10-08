@@ -56,7 +56,6 @@ class tuya_smartlife_setup:
             if response.get("success", False):
                 qr_code = response["result"]["qrcode"]
                 self._qr_code = qr_code
-                self.logger.debug("qr_code=%s", qr_code)
                 img = self._generate_qr_code(APP_QR_CODE_HEADER + qr_code)
 
                 # set reading qr_code to img
@@ -236,7 +235,9 @@ class tuya_smartlife_setup:
         self._t_devicelist.append(device)
 
     def unregister_tuya_device(self, device):
-        self._t_devicelist.remove(device)
+        # the device registers only after the setup device is ready
+        if device in self._t_devicelist:
+            self._t_devicelist.remove(device)
 
     @property
     def tuya_devices(self):
@@ -294,7 +295,8 @@ class TokenListener(SharingTokenListener):
         self.tuya_smartlife_setup = tuya_smartlife_setup
 
     def update_token(self, token_info):
-        self.logger.debug("update token info : %s", token_info)
+        # token_info contains access and refresh token, don't log it
+        self.logger.debug("update token info")
         self.tuya_smartlife_setup.token_info = token_info
         asyncio.run_coroutine_threadsafe(
             self.tuya_smartlife_setup.save_token_info(),

@@ -106,9 +106,9 @@ class dlna_dmr(FhemModule):
 
     # FHEM Function
     async def Undefine(self, hash):
-        await ssdp.getInstance(self.logger).stop_search()
-        if self.server:
-            await self.server.stop_server()
+        await ssdp.getInstance(self.logger).stop_search(self)
+        # the notify server (self.server) is shared by all dlna_dmr devices
+        # (dlna_dmr.event_handler), it keeps running
         if self.device:
             await self.device.cleanup()
             del self.device

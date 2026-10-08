@@ -71,8 +71,10 @@ class volvo(generic.FhemModule):
         self.create_async_task(self.update_loop())
 
     async def Undefine(self, hash):
+        await super().Undefine(hash)
         if self.session:
             await self.session.close()
+            self.session = None
 
     async def login(self):
         url = "https://volvoid.eu.volvocars.com/as/token.oauth2"
@@ -138,7 +140,7 @@ class volvo(generic.FhemModule):
             response = {}
             async with self.session.post(url, headers=headers, data=params) as resp:
                 if resp.content_type != "application/json":
-                    await fhem.readingsSingleUpdate(self.hash, "state", "Login failed")
+                    await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
                     return
 
                 response = await resp.json()
@@ -147,7 +149,7 @@ class volvo(generic.FhemModule):
                     self.access_token = response["access_token"]
                     self.refresh_token = response["refresh_token"]
                     self.expires_in = response["expires_in"]
-                    self.logger.error(f"Got new access token {self.access_token}")
+                    self.logger.debug("Got new access token")
                 else:
                     self.logger.error(f"Failed to get data from {url}: {response}")
         except Exception:
@@ -173,7 +175,7 @@ class volvo(generic.FhemModule):
             response = {}
             async with self.session.post(url, headers=headers, data=params) as resp:
                 if resp.content_type != "application/json":
-                    await fhem.readingsSingleUpdate(self.hash, "state", "Login failed")
+                    await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
                     return
 
                 response = await resp.json()
@@ -376,7 +378,7 @@ class volvo(generic.FhemModule):
                 ) 
                                                      
                 else:
-                    self.logger.error(f"Failed to get data from {url} and header {headers} with status {resp.status} and message: {response}")
+                    self.logger.error(f"Failed to get data, status {resp.status}")
         except Exception:
             self.logger.exception(f"Failed to get data from {url}")
             return {}

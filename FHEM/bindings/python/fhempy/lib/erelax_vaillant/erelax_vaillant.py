@@ -72,7 +72,7 @@ class erelax_vaillant(generic.FhemModule):
         }
         await self.set_set_config(set_config)
         await self.set_icon("sani_heating_temp")
-        if len(args) < 4:
+        if len(args) < 5:
             return "Usage: define erelax_vaillant fhempy USERNAME PASSWORD [STATION]"
         await fhem.readingsSingleUpdate(hash, "state", "connecting", 1)
         self.username = args[3]
@@ -154,7 +154,16 @@ class erelax_vaillant(generic.FhemModule):
                 None,
                 None,
             )
-            await self.async_get_token(client, token_store)
+            while True:
+                try:
+                    await self.async_get_token(client, token_store)
+                    break
+                except Exception:
+                    self.logger.exception("Login failed, retry in 5 minutes")
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "login failed", 1
+                    )
+                    await asyncio.sleep(300)
             self.thermostat_client = ThermostatClient(client, token_store)
 
             while True:

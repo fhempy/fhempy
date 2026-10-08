@@ -74,14 +74,9 @@ class skodaconnect(generic.FhemModule):
                 if await connection.restore_tokens(TOKENS):
                     print("Token restore succeeded")
                     login_success = True
-            if not login_success:
-                print("Attempting to login to the Skoda Connect service")
-                while await connection.doLogin() is False:
-                    await asyncio.sleep(5)
+            await self.login_until_successful(connection, login_success)
 
-            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)            
-            await connection.get_vehicles()
-            await connection.update_all()
+            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
 
             self.connection = connection
             if len(connection.vehicles) > 1 and self._attr_vin == "":
@@ -106,6 +101,23 @@ class skodaconnect(generic.FhemModule):
             await self.prepare_set_commands()
 
             await self.update_readings()
+
+    async def login_until_successful(self, connection, login_success):
+        while True:
+            try:
+                if not login_success:
+                    login_success = await connection.doLogin() is not False
+                if login_success:
+                    await connection.get_vehicles()
+                    await connection.update_all()
+                    return
+            except Exception:
+                self.logger.exception("Login failed")
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "login failed", 1
+                )
+                login_success = False
+            await asyncio.sleep(60)
 
     async def prepare_set_commands(self):
         self.set_config = {
@@ -272,7 +284,10 @@ class skodaconnect(generic.FhemModule):
     async def update_readings(self):
         self.instruments = self.vehicle.dashboard(mutable=True).instruments
         while True:
-            await self.update_readings_once()
+            try:
+                await self.update_readings_once()
+            except Exception:
+                self.logger.exception("Failed to update readings")
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):

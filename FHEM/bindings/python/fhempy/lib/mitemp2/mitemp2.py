@@ -5,6 +5,7 @@ from ..core import bluetoothle
 class mitemp2(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._conn = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -18,7 +19,13 @@ class mitemp2(generic.FhemModule):
             self.hash,
             self._mac,
         )
+        self._conn.register_notification_listener(self.received_notification)
         self.create_async_task(self.async_connection_setup())
+
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        if self._conn:
+            await self._conn.disconnect()
 
     async def async_connection_setup(self):
         await self._conn.connect()

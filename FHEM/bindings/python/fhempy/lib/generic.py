@@ -228,6 +228,8 @@ class FhemModule:
             pass
 
     def _handle_task_result(self, task):
+        if task in self._tasks:
+            self._tasks.remove(task)
         try:
             task.result()
         except asyncio.CancelledError:
@@ -236,11 +238,14 @@ class FhemModule:
             self.logger.exception("Exception raised by task: %r", task)
 
     def cancel_async_task(self, task):
-        self._tasks.remove(task)
+        if task in self._tasks:
+            self._tasks.remove(task)
         task.cancel()
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        # cancel all tasks
-        for task in self._tasks:
+        # cancel all tasks, Define might be called again (attr disable 0)
+        tasks = self._tasks
+        self._tasks = []
+        for task in tasks:
             task.cancel()

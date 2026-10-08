@@ -118,6 +118,12 @@ class gree_climate(generic.FhemModule):
             device.close()
         return None
 
+    async def Undefine(self, hash):
+        await super().Undefine(hash)
+        if self.device is not None:
+            self.device.close()
+            self.device = None
+
     async def connect_device(self):
         if self.device is not None:
             self.device.close()

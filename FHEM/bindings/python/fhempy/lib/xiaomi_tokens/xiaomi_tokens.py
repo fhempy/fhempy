@@ -123,7 +123,7 @@ class xiaomi_tokens(FhemModule):
         try:
             await utils.run_blocking(functools.partial(self.thread_get_tokens))
         except Exception as ex:
-            await self.logger.error(f"Failed to get tokens: {ex}")
+            self.logger.exception("Failed to get tokens")
             await fhem.readingsSingleUpdate(self.hash, "state", f"{ex}", 1)
             return
 
