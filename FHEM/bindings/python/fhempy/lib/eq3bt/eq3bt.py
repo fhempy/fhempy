@@ -1,10 +1,12 @@
 import asyncio
 import time
-from datetime import datetime
+import json
+import datetime
 from enum import IntEnum
 
 from .. import fhem, generic
 from . import eq3btsmart as eq3
+from .structures import HOUR_24_PLACEHOLDER as END_OF_DAY, NAME_TO_DAY as DAY_MAP
 
 
 class Mode(IntEnum):
@@ -17,10 +19,6 @@ class Mode(IntEnum):
     Manual = 3
     Away = 4
     Boost = 5
-
-
-# TODO set schedules
-# TODO set windowOpen, windowOpenTime, eco/comfortTemperature
 
 
 class eq3bt(generic.FhemModule):
@@ -97,6 +95,13 @@ class eq3bt(generic.FhemModule):
                 "params": {"temp": {"format": "float"}},
                 "options": "slider,4.5,0.5,30,1",
             },
+            "weekprofile": {
+                "args": ["weekprofile"],
+                "params": {
+                    "weekprofile": {"format": "str"}
+                },
+                "help": 'Set a weekprofile in JSON format like: {"Mon":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]},"Tue":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]}}<br>JSON must not contain spaces'
+            }
         }
         await self.set_set_config(set_list_conf)
 
@@ -136,7 +141,7 @@ class eq3bt(generic.FhemModule):
 
     def seconds_till_midnight(self):
         """Get the number of seconds until midnight."""
-        n = datetime.now()
+        n = datetime.datetime.now()
         return (
             ((24 - n.hour - 1) * 60 * 60) + ((60 - n.minute - 1) * 60) + (60 - n.second)
         )
@@ -315,11 +320,18 @@ class eq3bt(generic.FhemModule):
         await fhem.readingsBeginUpdate(self.hash)
         for day in list(self.thermostat.schedule.keys()):
             reading = f"schedule_{day}_1"
-            if self.thermostat.schedule[day].base_temp == 0 or isinstance(
-                self.thermostat.schedule[day].next_change_at, int
-            ):
+            if self.thermostat.schedule[day].base_temp == 0:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, reading, "-")
                 last_change = "00:00"
+                last_schedule = True
+            elif self.thermostat.schedule[day].next_change_at == END_OF_DAY:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash,
+                    reading,
+                    f"00:00 - 24:00: {self.thermostat.schedule[day].base_temp}",
+                )
+                last_change = "00:00"
+                last_schedule = True
             else:
                 await fhem.readingsBulkUpdateIfChanged(
                     self.hash,
@@ -329,32 +341,32 @@ class eq3bt(generic.FhemModule):
                 last_change = self.thermostat.schedule[day].next_change_at.strftime(
                     "%H:%M"
                 )
-            last_schedule = False
+                last_schedule = False
+
             for h in range(0, 6):
                 reading = f"schedule_{day}_{h+2}"
                 if (
                     h == 6
-                    or self.thermostat.schedule[day].hours[h].target_temp == 0
-                    or isinstance(
-                        self.thermostat.schedule[day].hours[h].next_change_at, int
-                    )
                     or last_schedule
+                    or self.thermostat.schedule[day].hours[h].target_temp == 0
                 ):
                     if last_schedule:
                         await fhem.readingsBulkUpdateIfChanged(self.hash, reading, "-")
                     else:
-                        value = f"{last_change} - 00:00: {self.thermostat.schedule[day].base_temp}"
+                        value = f"{last_change} - 24:00: {self.thermostat.schedule[day].base_temp}"
                         await fhem.readingsBulkUpdateIfChanged(
                             self.hash, reading, value
                         )
                     last_schedule = True
                 else:
-                    value = f"{last_change} - {self.thermostat.schedule[day].hours[h].next_change_at.strftime('%H:%M')}: {self.thermostat.schedule[day].hours[h].target_temp}"
-                    last_change = (
-                        self.thermostat.schedule[day]
-                        .hours[h]
-                        .next_change_at.strftime("%H:%M")
-                    )
+                    if self.thermostat.schedule[day].hours[h].next_change_at == END_OF_DAY:
+                        next_change = "24:00"
+                        last_schedule = True
+                    else:
+                        next_change = self.thermostat.schedule[day].hours[h].next_change_at.strftime('%H:%M')
+                    
+                    value = f"{last_change} - {next_change}: {self.thermostat.schedule[day].hours[h].target_temp}"
+                    last_change = next_change
                     await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
         await fhem.readingsEndUpdate(self.hash, 1)
 
@@ -481,6 +493,27 @@ class eq3bt(generic.FhemModule):
             )
         )
 
+    async def set_weekprofile(self, hash, params):
+        try:
+            profile_dict = json.loads(params["weekprofile"])
+        except Exception as err:
+            return f"Failed to parse weekprofile JSON payload: {err}"
+
+        for day_name, data in profile_dict.items():
+            if not day_name.lower() in DAY_MAP.keys():
+                return f"Invalid day: '{day_name}'. Choose one of {[day for day in DAY_MAP.keys()]}"
+
+            times = data.get("time", [])
+            temps = data.get("temp", [])
+            if max(len(times), len(temps)) > 7:
+                return f"Weekprofile contains too many datapoints (>7) for day: '{day_name}'"
+              
+        self.create_async_task(
+            self.set_and_update(
+                self.thermostat.set_weekprofile(profile_dict)
+            )
+        )
+
     # SET Functions END
 
 
@@ -529,6 +562,38 @@ class FhemThermostat(eq3.Thermostat):
 
     async def set_fhem_mode(self, mode):
         await super().set_mode(mode)
+    
+    async def set_weekprofile(self, profile: dict) -> None:
+        schedule_list = []
+        for day_name, data in profile.items():
+            times = data.get("time", [])
+            temps = data.get("temp", [])
+
+            hours_list = []
+            for time_str, temp in zip(times, temps):
+                h, m = map(int, time_str.split(":"))
+                
+                hours_list.append(
+                    {
+                        "target_temp": float(temp),
+                        "next_change_at": END_OF_DAY if h == 24 and m == 0 else datetime.time(hour=h, minute=m),
+                    }
+                )
+
+            if len(hours_list) > 0:
+                schedule_list.append({
+                    "cmd": "write",
+                    "day": day_name.lower(),
+                    "base_temp": hours_list[0]["target_temp"],
+                    "next_change_at": hours_list[0]["next_change_at"],
+                    "hours": hours_list[1:]
+                })
+
+        for day_schedule in schedule_list:
+            await super().set_schedule(day_schedule)
+            await asyncio.sleep(1)
+
+        await self.update_all()
 
     @property
     def fhem_mode(self):
