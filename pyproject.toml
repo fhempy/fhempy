@@ -61,7 +61,7 @@ exclude = [ "tests*",]
 GitPython = "==3.2.0"
 PyGObject = "<=3.50.0"
 aioblescan = "==0.2.14"
-aiohomekit = "==2.6.16"
+aiohomekit = "==4.0.1"
 aionefit = "==0.14"
 alphaessopenapi = "==0.0.21"
 async-timeout = "==4.0.3"
