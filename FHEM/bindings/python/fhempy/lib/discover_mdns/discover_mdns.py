@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import traceback
 
 from fhempy.lib.generic import FhemModule
@@ -83,13 +84,18 @@ class discover_mdns(FhemModule):
                 info.type == "_http._tcp.local."
                 and info.name == "fhempy._http._tcp.local."
             ):
+                try:
+                    # values are announced by any device in the network
+                    ip = str(ipaddress.ip_address(get_value("ip")))
+                    port = int(get_value("port"))
+                except (TypeError, ValueError):
+                    self.logger.warning(f"Ignore invalid fhempy service {name}")
+                    return
                 if not (
                     await fhem.checkIfDeviceExists(
-                        self.hash, "TYPE", "BindingsIo", "IP", get_value("ip")
+                        self.hash, "TYPE", "BindingsIo", "IP", ip
                     )
                 ):
-                    ip = get_value("ip")
-                    port = get_value("port")
                     ipstr = ip.replace(".", "_")
                     await fhem.CommandDefine(
                         self.hash, f"fhempy_peer_{ipstr} BindingsIo {ip}:{port} Python"
