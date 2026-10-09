@@ -7,25 +7,53 @@ from aiohomekit.model.characteristics.characteristic import NUMBER_TYPES
 from aiohomekit.model.characteristics.characteristic_formats import (
     CharacteristicFormats,
 )
+from zeroconf import ServiceStateChange
+from zeroconf.asyncio import AsyncServiceBrowser
 
 from .. import fhem
 from .. import fhem_pythonbinding as fhempy
 from .. import generic, utils
 from ..core import zeroconf
 
+# aiohomekit doesn't browse by itself, it attaches to an existing
+# AsyncServiceBrowser for these types (find_brower_for_hap_type)
+HOMEKIT_SERVICES = ["_hap._tcp.local.", "_hap._udp.local."]
+
+
+def _on_service_state_change(
+    zc, service_type: str, name: str, state_change: ServiceStateChange
+) -> None:
+    # aiohomekit registers its own handler on the browser
+    pass
+
 
 class homekit(generic.FhemModule):
 
     controller: aiohomekit.Controller = None
+    aiobrowser: AsyncServiceBrowser = None
+    _controller_lock = asyncio.Lock()
 
+    @staticmethod
     async def get_controller():
-        if homekit.controller is None:
-            aio_zc = zeroconf.zeroconf.get_instance(
-                logging.Logger("homekit")
-            ).get_async_zeroconf()
-            homekit.controller = aiohomekit.Controller(aio_zc)
-            await homekit.controller.async_start()
+        async with homekit._controller_lock:
+            if homekit.controller is None:
+                await homekit._start_controller()
         return homekit.controller
+
+    @staticmethod
+    async def _start_controller():
+        aio_zc = zeroconf.zeroconf.get_instance(
+            logging.Logger("homekit")
+        ).get_async_zeroconf()
+        if homekit.aiobrowser is None:
+            homekit.aiobrowser = AsyncServiceBrowser(
+                aio_zc.zeroconf,
+                HOMEKIT_SERVICES,
+                handlers=[_on_service_state_change],
+            )
+        controller = aiohomekit.Controller(aio_zc)
+        await controller.async_start()
+        homekit.controller = controller
 
     def __init__(self, logger):
         self._ready = asyncio.Event()
