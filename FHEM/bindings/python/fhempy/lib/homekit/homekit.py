@@ -21,7 +21,7 @@ HOMEKIT_SERVICES = ["_hap._tcp.local.", "_hap._udp.local."]
 
 
 def _on_service_state_change(
-    zeroconf, service_type: str, name: str, state_change: ServiceStateChange
+    zc, service_type: str, name: str, state_change: ServiceStateChange
 ) -> None:
     # aiohomekit registers its own handler on the browser
     pass
@@ -33,12 +33,14 @@ class homekit(generic.FhemModule):
     aiobrowser: AsyncServiceBrowser = None
     _controller_lock = asyncio.Lock()
 
+    @staticmethod
     async def get_controller():
         async with homekit._controller_lock:
             if homekit.controller is None:
                 await homekit._start_controller()
         return homekit.controller
 
+    @staticmethod
     async def _start_controller():
         aio_zc = zeroconf.zeroconf.get_instance(
             logging.Logger("homekit")
