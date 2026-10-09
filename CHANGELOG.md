@@ -1,6 +1,35 @@
 # CHANGELOG
 
 
+## v0.1.769 (2026-10-09)
+
+### Bug Fixes
+
+- Quote all values in FHEM commands as single quoted perl strings
+  ([#616](https://github.com/fhempy/fhempy/pull/616),
+  [`a0e13e4`](https://github.com/fhempy/fhempy/commit/a0e13e4770c0498e0532f88768a52c90d26c5075))
+
+Values in the perl commands sent to FHEM were inserted without escaping, partly into double quoted
+  strings that perl interpolates. Values coming from the network, e.g. zeroconf announcements
+  handled by discover_fhempy and discover_mdns, could therefore change the executed perl code. All
+  values, device and reading names are now passed as escaped single quoted strings and the zeroconf
+  discovery only accepts a valid ip address and port. getDeviceHashName had a perl syntax error and
+  works again.
+
+Claude-Session: https://claude.ai/code/session_01LxBGTkhdnEhpLRGGyG1j9w
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+- **homekit**: Restore zeroconf browser needed by aiohomekit, update aiohomekit to 4.0.1
+  ([#617](https://github.com/fhempy/fhempy/pull/617),
+  [`3473a5f`](https://github.com/fhempy/fhempy/commit/3473a5f54b1b3013199ec61122d5c344bd75c8a4))
+
+#536 removed the AsyncServiceBrowser together with its unused handler. aiohomekit doesn't browse by
+  itself, it attaches to an existing browser for _hap._tcp/_hap._udp, so Controller.async_start()
+  raised TransportNotSupportedError and no HomeKit device worked. The browser is created again with
+  a no-op handler; the controller is started only once. aiohomekit updated from 2.6.16 to 4.0.1.
+
+
 ## v0.1.768 (2026-10-08)
 
 ### Bug Fixes
