@@ -1,16 +1,9 @@
 
 # google_weather
-This module retrieves weather data from Google.
+Renamed to [openmeteo_weather](../openmeteo_weather/README.md). Google only shows weather data
+to browsers with JavaScript, therefore the data now comes from Open-Meteo.
 
-# Usage
+Existing `google_weather` devices keep working with the same readings. For new devices use:
 ```
-define my_weather fhempy google_weather LOCATION
-```
-
-LOCATION=Name of the location. E.g. Berlin. Locations with spaces in the name must be quoted.
-
-Examples
-```
-define my_weather fhempy google_weather Berlin
-define my_weather fhempy google_weather "New York"
+define my_weather fhempy openmeteo_weather LOCATION
 ```

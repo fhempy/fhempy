@@ -158,9 +158,9 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
 |[github_restore](FHEM/bindings/python/fhempy/lib/github_restore/)|Restore FHEM config from GitHub|
-|[google_weather](FHEM/bindings/python/fhempy/lib/google_weather/README.md)|Retrieve weather from Google|
 |[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for Ikos resorts|
 |[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
+|[openmeteo_weather](FHEM/bindings/python/fhempy/lib/openmeteo_weather/README.md)|Weather and forecast from Open-Meteo (replaces google_weather)|
 |[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
