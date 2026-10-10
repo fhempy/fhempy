@@ -616,7 +616,8 @@ sub BindingsIo_checkResponseByName($$) {
   
   my @temp = ();
   while (my $msg = shift @{$hash->{messages}{0}}) {
-    if ($msg->{NAME} eq $devhash->{NAME}) {
+    # e.g. version messages have no NAME
+    if (defined($msg->{NAME}) && $msg->{NAME} eq $devhash->{NAME}) {
       BindingsIo_processCommand($hash, $msg);
     } else {
       push @temp, $msg;

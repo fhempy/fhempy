@@ -11,6 +11,10 @@ from .. import fhem, generic, utils
 from . import mappings
 
 
+class TuyaCloudError(Exception):
+    pass
+
+
 class tuya(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
@@ -410,7 +414,21 @@ class tuya(generic.FhemModule):
             functools.partial(self.tuya_cloud.getdps, self.tt_did)
         )
         self.logger.debug(f"getdps: {resp}")
-        return resp["result"]
+        return self._cloud_result(resp, "getdps")
+
+    def _cloud_result(self, resp, call):
+        # tinytuya returns {"Error": ...} or the Tuya response with success=False
+        # and msg instead of raising
+        if isinstance(resp, dict) and "result" in resp:
+            return resp["result"]
+        if isinstance(resp, dict):
+            error = resp.get("msg") or resp.get("Error") or "unknown error"
+            code = resp.get("code") or resp.get("Err")
+            if code:
+                error = f"{error} (code {code})"
+        else:
+            error = str(resp)
+        raise TuyaCloudError(f"Tuya cloud request {call} failed: {error}")
 
     async def get_tuya_dev_info(self):
         resp = await utils.run_blocking(
@@ -432,8 +450,8 @@ class tuya(generic.FhemModule):
         response_dict = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getfunctions, self.tt_did)
         )
-        self.logger.debug("getfunctions: f{response_dict}")
-        fct_desc = response_dict["result"]["functions"]
+        self.logger.debug(f"getfunctions: {response_dict}")
+        fct_desc = self._cloud_result(response_dict, "getfunctions")["functions"]
         fct_code_desc = {}
         for fct in fct_desc:
             fct_code_desc[fct["code"]] = fct["desc"]
@@ -641,6 +659,9 @@ class tuya(generic.FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "Please use API_KEY and API_SECRET", 1
                 )
+        except TuyaCloudError as exc:
+            self.logger.error(f"Failed create_device: {exc}")
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", str(exc), 1)
         except Exception:
             self.logger.exception("Failed create_device")
 

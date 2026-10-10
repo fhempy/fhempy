@@ -97,6 +97,8 @@ miflora = "==0.7.2"
 mitemp-bt = "==0.0.5"
 mytoyota = "==2.2.2"
 opencv-python-headless = "==5.0.0.93"
+# tuya-iot-py-sdk and tuya-device-sharing-sdk use the paho-mqtt 1.x API
+paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
 pillow = "==12.3.0"
 playwright = "==1.63.0"
