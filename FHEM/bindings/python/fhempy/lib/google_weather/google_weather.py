@@ -1,18 +1,79 @@
+# comment to allow FHEM update
+# Google search only returns weather data to browsers running JavaScript,
+# therefore the data is retrieved from Open-Meteo (https://open-meteo.com).
 import asyncio
-import functools
-import json
-from random import randrange
+import re
+from datetime import datetime
 
 import aiohttp
-from bs4 import BeautifulSoup
-from fhempy.lib import utils
 
 from .. import fhem, generic
+
+GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+ICON_URL = "https://ssl.gstatic.com/onebox/weather/64/{}.png"
+COORDINATES = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$")
+NEXT_HOURS = 25
+FORECAST_DAYS = 8
+
+# WMO weather code: (english, german, icon)
+WEATHER_CODES = {
+    0: ("Clear sky", "Klar", "sunny"),
+    1: ("Mainly clear", "Überwiegend klar", "sunny_s_cloudy"),
+    2: ("Partly cloudy", "Teilweise bewölkt", "partly_cloudy"),
+    3: ("Overcast", "Bedeckt", "cloudy"),
+    45: ("Fog", "Nebel", "fog"),
+    48: ("Rime fog", "Reifnebel", "fog"),
+    51: ("Light drizzle", "Leichter Nieselregen", "rain_light"),
+    53: ("Drizzle", "Nieselregen", "rain_light"),
+    55: ("Dense drizzle", "Starker Nieselregen", "rain_light"),
+    56: ("Freezing drizzle", "Gefrierender Nieselregen", "sleet"),
+    57: ("Freezing drizzle", "Gefrierender Nieselregen", "sleet"),
+    61: ("Light rain", "Leichter Regen", "rain_light"),
+    63: ("Rain", "Regen", "rain"),
+    65: ("Heavy rain", "Starker Regen", "rain_heavy"),
+    66: ("Freezing rain", "Gefrierender Regen", "sleet"),
+    67: ("Freezing rain", "Gefrierender Regen", "sleet"),
+    71: ("Light snow", "Leichter Schneefall", "snow_light"),
+    73: ("Snow", "Schneefall", "snow"),
+    75: ("Heavy snow", "Starker Schneefall", "snow_heavy"),
+    77: ("Snow grains", "Schneegriesel", "snow_light"),
+    80: ("Light showers", "Leichte Regenschauer", "rain_s_cloudy"),
+    81: ("Showers", "Regenschauer", "rain_s_cloudy"),
+    82: ("Heavy showers", "Starke Regenschauer", "rain_heavy"),
+    85: ("Snow showers", "Schneeschauer", "snow_s_cloudy"),
+    86: ("Heavy snow showers", "Starke Schneeschauer", "snow_heavy"),
+    95: ("Thunderstorm", "Gewitter", "thunderstorms"),
+    96: ("Thunderstorm with hail", "Gewitter mit Hagel", "thunderstorms"),
+    99: ("Thunderstorm with hail", "Gewitter mit Hagel", "thunderstorms"),
+}
+
+DAY_NAMES = {
+    "en": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ],
+    "de": [
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+        "Sonntag",
+    ],
+}
 
 
 class google_weather(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._location = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -23,7 +84,12 @@ class google_weather(generic.FhemModule):
                 "default": 61,
                 "format": "int",
                 "help": "Change interval in minutes, default is 61.",
-            }
+            },
+            "language": {
+                "default": "en",
+                "options": "en,de",
+                "help": "Language of weather conditions and day names, default en.",
+            },
         }
         await self.set_attr_config(attr_config)
 
@@ -31,291 +97,197 @@ class google_weather(generic.FhemModule):
             return "Usage: define my_weather fhempy google_weather CITY"
 
         self.city = args[3]
-        self.update_url = f"https://www.google.com/search?q={self.city}+weather"
+        self._location = None
 
         self.create_async_task(self.update_loop())
 
-    def set_user_agent(self, headers):
-        user_agent = [
-            (
-                "Mozilla/5.0 (X11; CrOS x86_64 14909.100.0) AppleWebKit/537.36"
-                " (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (X11; CrOS x86_64 15054.63.0) AppleWebKit/537.36"
-                " (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (X11; CrOS x86_64 15117.28.0) AppleWebKit/537.36"
-                " (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
-            ),
-        ]
-        sec_ch_ua = [
-            '"Chromium";v="104", " Not A;Brand";v="99", "Google Chrome";v="104"',
-            '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
-            '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
-        ]
-        sec_ch_full_version = ['"104.0.5112.83"', '"106.0.5249.49"', '"107.0.5304.22"']
-        sec_ch_full_version_list = [
-            (
-                '"Chromium";v="104.0.5112.83", " Not A;Brand";v="99.0.0.0", '
-                '"Google Chrome";v="104.0.5112.83"'
-            ),
-            (
-                '"Chromium";v="106.0.5249.49", "Google Chrome";v="106.0.5249.49",'
-                ' "Not;A=Brand";v="99.0.0.0"'
-            ),
-            (
-                '"Google Chrome";v="107.0.5304.22", "Chromium";v="107.0.5304.22",'
-                ' "Not=A?Brand";v="24.0.0.0"'
-            ),
-        ]
-        sec_ch_ua_platform_version = ['"14909.100.0"', '"15054.63.0"', '"15117.28.0"']
-        ua_id = randrange(len(user_agent))
-        headers["user-agent"] = user_agent[ua_id]
-        headers["sec-ch-ua"] = sec_ch_ua[ua_id]
-        headers["sec-ch-ua-full-version"] = sec_ch_full_version[ua_id]
-        headers["sec-ch-ua-full-version-list"] = sec_ch_full_version_list[ua_id]
-        headers["sec-ch-ua-platform-version"] = sec_ch_ua_platform_version[ua_id]
-        headers["sec-ch-ua-arch"] = '"x86"'
-        headers["sec-ch-ua-bitness"] = '"64"'
-        headers["sec-ch-ua-mobile"] = "?0"
-        headers["sec-ch-ua-model"] = '""'
-        headers["sec-ch-ua-platform"] = '"Chrome OS"'
-        headers["sec-ch-ua-wow64"] = "?0"
-
     async def update_loop(self):
-        headers = {
-            "accept": (
-                "text/html,application/xhtml+xml,application/xml;"
-                "q=0.9,image/avif,image/webp,image/apng,*/*;"
-                "q=0.8,application/signed-exchange;v=b3;q=0.9"
-            ),
-            "accept-language": (
-                "en-DE,en;q=0.9,de-DE;q=0.8,de;q=0.7,en-GB;q=0.6,en-US;q=0.5"
-            ),
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "none",
-            "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": "1",
-            "x-chrome-connected": (
-                "source=Chrome,mode=0,enable_account_consistency=true,"
-                "supervised=false,consistency_enabled_by_default=false"
-            ),
-        }
-        self.set_user_agent(headers)
-
         while True:
-            # aiohttp get
             try:
-                async with aiohttp.ClientSession(trust_env=True) as session:
-                    async with session.get(self.update_url, headers=headers) as resp:
-                        if resp.status == 200:
-                            await self.handle_response(await resp.text())
-                        else:
-                            await fhem.readingsSingleUpdate(
-                                self.hash,
-                                "state",
-                                f"failed: HTTP error {resp.status}",
-                                1,
-                            )
-                            self.logger.error(
-                                f"Failed to fetch {self.update_url}, "
-                                f"failed with status {resp.status}"
-                            )
-            except Exception:
+                async with aiohttp.ClientSession(
+                    trust_env=True, timeout=aiohttp.ClientTimeout(total=30)
+                ) as session:
+                    await self.update(session)
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
                 self.logger.exception("Failed to update")
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", f"failed: {type(ex).__name__}", 1
+                )
             await asyncio.sleep(self._attr_interval * 60)
 
-    def soup_extract(self, soup, element, search_obj):
-        element = soup.find(element, search_obj)
-        if element is None:
-            self.logger.error(f"Element {element} with {search_obj} not found!")
-        return element
+    def _lang(self):
+        return "de" if self._attr_language == "de" else "en"
 
-    def soup_extract_text(self, soup, element, search_obj):
-        element = self.soup_extract(soup, element, search_obj)
-        if element is None:
+    async def _get_json(self, session, url, params):
+        async with session.get(url, params=params) as resp:
+            if resp.status != 200:
+                raise WeatherError(f"HTTP error {resp.status}: {await resp.text()}")
+            return await resp.json()
+
+    async def resolve_location(self, session):
+        lang = self._lang()
+        if self._location is not None and self._location["language"] == lang:
+            return self._location
+
+        match = COORDINATES.match(self.city)
+        if match:
+            self._location = {
+                "latitude": float(match.group(1)),
+                "longitude": float(match.group(2)),
+                "name": self.city,
+                "language": lang,
+            }
+            return self._location
+
+        data = await self._get_json(
+            session,
+            GEOCODING_URL,
+            {"name": self.city, "count": 1, "language": lang, "format": "json"},
+        )
+        results = data.get("results") or []
+        if len(results) == 0:
+            raise WeatherError(f"location {self.city} not found")
+        res = results[0]
+        name = ", ".join(part for part in [res.get("name"), res.get("country")] if part)
+        self._location = {
+            "latitude": res["latitude"],
+            "longitude": res["longitude"],
+            "name": name,
+            "language": lang,
+        }
+        return self._location
+
+    async def update(self, session):
+        try:
+            location = await self.resolve_location(session)
+        except WeatherError as ex:
+            self.logger.error(f"Failed to resolve location: {ex}")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"failed: {ex}", 1)
+            return
+
+        data = await self._get_json(
+            session,
+            FORECAST_URL,
+            {
+                "latitude": location["latitude"],
+                "longitude": location["longitude"],
+                "current": (
+                    "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+                ),
+                "hourly": (
+                    "temperature_2m,relative_humidity_2m,precipitation_probability,"
+                    "weather_code,wind_speed_10m"
+                ),
+                "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+                "wind_speed_unit": "kmh",
+                "timezone": "auto",
+                "forecast_days": FORECAST_DAYS,
+            },
+        )
+        await self.update_readings(location, data)
+
+    def _condition(self, code):
+        lang_idx = 1 if self._lang() == "de" else 0
+        entry = WEATHER_CODES.get(code)
+        if entry is None:
+            return "-", "-"
+        return entry[lang_idx], f'<img src="{ICON_URL.format(entry[2])}"/>'
+
+    def _day_name(self, timestamp):
+        return DAY_NAMES[self._lang()][datetime.fromisoformat(timestamp).weekday()]
+
+    @staticmethod
+    def _num(value):
+        if value is None:
             return "-"
-        return element.text
+        return str(round(value))
 
-    def get_current_temperature(self, soup):
-        return self.soup_extract_text(soup, "span", {"id": "wob_tm"})
+    async def update_readings(self, location, data):
+        current = data["current"]
+        hourly = data["hourly"]
+        daily = data["daily"]
 
-    def get_current_condition(self, soup):
-        return self.soup_extract(soup, "img", {"id": "dimg_1"})
-
-    def get_current_windspeed(self, soup):
-        return self.soup_extract_text(soup, "span", {"id": "wob_ws"})
-
-    def get_last_update(self, soup):
-        return self.soup_extract_text(soup, "div", {"id": "wob_dts"})
-
-    def get_location_name(self, soup):
-        return self.soup_extract_text(soup, "div", {"id": "wob_loc"})
-
-    def get_current_precipitation(self, soup):
-        return self.soup_extract_text(soup, "span", {"id": "wob_pp"})
-
-    def get_current_humidity(self, soup):
-        return self.soup_extract_text(soup, "span", {"id": "wob_hm"}).replace("%", "")
-
-    def get_next_days(self, soup):
-        next_days = []
-        days = soup.find("div", attrs={"id": "wob_dp"})
-        for day in days.findAll("div", attrs={"class": "wob_df"}):
-            # extract the name of the day
-            day_name = day.findAll("div")[0].attrs["aria-label"]
-            # get weather status for that day
-            image = day.find("img")
-            base64_img = self.get_image(soup, day.find("img")["id"])
-            weather = image.attrs["alt"]
-            temp = day.findAll("span", {"class": "wob_t"})
-            # maximum temparature in Celsius, use temp[1].text if you want fahrenheit
-            max_temp = temp[0].text
-            # minimum temparature in Celsius, use temp[3].text if you want fahrenheit
-            min_temp = temp[2].text
-            next_days.append(
-                {
-                    "name": day_name,
-                    "weather": weather,
-                    "max_temp": max_temp,
-                    "min_temp": min_temp,
-                    "image": '<img src="' + base64_img + '"/>',
-                }
-            )
-        return next_days
-
-    def extract_weather(self, response):
-        soup = BeautifulSoup(response, "html.parser")
-        self.cur_temp = self.get_current_temperature(soup)
-        cur_condition_element = self.get_current_condition(soup)
-        if cur_condition_element is None:
-            self.cur_condition = "-"
-            self.cur_condition_img = "-"
-        else:
-            self.cur_condition = cur_condition_element["alt"]
-            base64_img = self.get_image(soup, cur_condition_element["id"])
-            self.cur_condition_img = '<img src="' + base64_img + '"/>'
-        self.cur_windspeed = self.get_current_windspeed(soup)
-        self.cur_windspeed_number = self.cur_windspeed.split(" ")[0]
-        self.cur_precipitation = self.get_current_precipitation(soup).replace("%", "")
-        self.cur_humidity = self.get_current_humidity(soup)
-        self.next_days = self.get_next_days(soup)
-        self.last_update = self.get_last_update(soup)
-        self.location = self.get_location_name(soup)
-
-        wdata = None
-        for script in soup.find_all("script"):
-            if script.text.find("\\x22wobnm\\x22") > -1:
-                wdata = script.text
-                break
-        if wdata is not None:
-            start_json = wdata.find("\\x22wobnm\\x22")
-            end_json = wdata.find("';google.pmc=")
-            weather_json = json.loads(
-                "{" + wdata[start_json:end_json].replace("\\x22", '"')
-            )
-
-        self.next_hours = []
-        for x in weather_json["wobnm"]["wobhl"]:
-            self.next_hours.append(x)
-            if len(self.next_hours) > 24:
+        # first hourly entry of the current hour
+        current_hour = current["time"][:13]
+        start = 0
+        for idx, hour_time in enumerate(hourly["time"]):
+            if hour_time[:13] >= current_hour:
+                start = idx
                 break
 
-    def get_image(self, soup, image_id):
-        for script in soup.find_all("script"):
-            if script.text.find(image_id) != -1:
-                start = script.text.find("data:image")
-                end = script.text.find(";var") - 1
-                return script.text[start:end].replace("\\x3d", "=")
-
-    async def handle_response(self, response):
-        # bs4
-        await utils.run_blocking(functools.partial(self.extract_weather, response))
+        cur_condition, cur_condition_img = self._condition(current["weather_code"])
+        cur_temp = self._num(current["temperature_2m"])
+        cur_windspeed = self._num(current["wind_speed_10m"])
+        cur_precipitation = self._num(hourly["precipitation_probability"][start])
 
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_temperature", self.cur_temp
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_humidity", self.cur_humidity
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_precipitation", self.cur_precipitation
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_weather", self.cur_condition
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_weather_img", f"<html>{self.cur_condition_img}</html>"
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_windspeed_with_unit", self.cur_windspeed
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "cur_windspeed", self.cur_windspeed_number
-        )
+        try:
+            await self._bulk("cur_temperature", cur_temp)
+            await self._bulk("cur_humidity", self._num(current["relative_humidity_2m"]))
+            await self._bulk("cur_precipitation", cur_precipitation)
+            await self._bulk("cur_weather", cur_condition)
+            await self._bulk("cur_weather_img", f"<html>{cur_condition_img}</html>")
+            await self._bulk("cur_windspeed_with_unit", f"{cur_windspeed} km/h")
+            await self._bulk("cur_windspeed", cur_windspeed)
 
-        i = 0
-        for day in self.next_days:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_days_{i}_name", day["name"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_days_{i}_weather", day["weather"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_days_{i}_weather_img", f"<html>{day['image']}</html>"
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_days_{i}_max_temp", day["max_temp"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_days_{i}_min_temp", day["min_temp"]
-            )
-            i += 1
+            for i, day in enumerate(daily["time"]):
+                condition, img = self._condition(daily["weather_code"][i])
+                await self._bulk(f"next_days_{i}_name", self._day_name(day))
+                await self._bulk(f"next_days_{i}_weather", condition)
+                await self._bulk(f"next_days_{i}_weather_img", f"<html>{img}</html>")
+                await self._bulk(
+                    f"next_days_{i}_max_temp", self._num(daily["temperature_2m_max"][i])
+                )
+                await self._bulk(
+                    f"next_days_{i}_min_temp", self._num(daily["temperature_2m_min"][i])
+                )
 
-        i = 0
-        for nh in self.next_hours:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_condition", nh["c"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_time", nh["dts"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_humidity", nh["h"].replace("%", "")
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                f"next_hours_{i:02d}_img",
-                '<html><img src="' + nh["iu"] + '"/></html>',
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_precipitation", nh["p"].replace("%", "")
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, f"next_hours_{i:02d}_temperature", nh["tm"]
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                f"next_hours_{i:02d}_windspeed",
-                nh["ws"].replace(" km/h", ""),
-            )
-            i += 1
+            for i, idx in enumerate(
+                range(start, min(start + NEXT_HOURS, len(hourly["time"])))
+            ):
+                hour_time = hourly["time"][idx]
+                condition, img = self._condition(hourly["weather_code"][idx])
+                prefix = f"next_hours_{i:02d}"
+                await self._bulk(f"{prefix}_condition", condition)
+                await self._bulk(
+                    f"{prefix}_time", f"{self._day_name(hour_time)} {hour_time[11:16]}"
+                )
+                await self._bulk(
+                    f"{prefix}_humidity",
+                    self._num(hourly["relative_humidity_2m"][idx]),
+                )
+                await self._bulk(f"{prefix}_img", f"<html>{img}</html>")
+                await self._bulk(
+                    f"{prefix}_precipitation",
+                    self._num(hourly["precipitation_probability"][idx]),
+                )
+                await self._bulk(
+                    f"{prefix}_temperature", self._num(hourly["temperature_2m"][idx])
+                )
+                await self._bulk(
+                    f"{prefix}_windspeed", self._num(hourly["wind_speed_10m"][idx])
+                )
 
-        await fhem.readingsBulkUpdateIfChanged(self.hash, "location", self.location)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "last_update", self.last_update
-        )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash,
-            "state",
-            (
-                f"<html>{self.cur_condition_img}<br>{self.cur_temp}°C / "
-                f"{self.cur_precipitation}% / {self.cur_windspeed}</html>"
-            ),
-        )
-        await fhem.readingsEndUpdate(self.hash, 1)
+            await self._bulk("location", location["name"])
+            await self._bulk(
+                "last_update",
+                f"{self._day_name(current['time'])} {current['time'][11:16]}",
+            )
+            await self._bulk(
+                "state",
+                (
+                    f"<html>{cur_condition_img}<br>{cur_temp}°C / "
+                    f"{cur_precipitation}% / {cur_windspeed} km/h</html>"
+                ),
+            )
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
+
+    async def _bulk(self, reading, value):
+        await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
+
+
+class WeatherError(Exception):
+    pass

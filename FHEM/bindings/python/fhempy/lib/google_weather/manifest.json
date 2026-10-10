@@ -1,5 +1,3 @@
 {
-  "requirements": [
-    "beautifulsoup4==4.15.0"
-  ]
+  "requirements": []
 }
