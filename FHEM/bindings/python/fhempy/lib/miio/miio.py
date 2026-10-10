@@ -67,7 +67,7 @@ class miio(generic.FhemModule):
                         # set options if there is only one parameter
                         annot = sig.parameters[par].annotation
                         if not inspect.isclass(annot):
-                            self.logger.error("Annotation is not class: " + str(annot))
+                            self.logger.debug("Annotation is not class: " + str(annot))
                         if inspect.isclass(annot) and issubclass(annot, enum.Enum):
                             self._set_list[dev_cmd]["options"] = ",".join(
                                 list(map(lambda x: x.name, annot))
@@ -122,12 +122,15 @@ class miio(generic.FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
-            except Exception:
+            except Exception as exc:
                 if fct_name != "status":
-                    self.logger.error(f"Failed to send_command: {fct_name}")
+                    self.logger.warning(f"Failed to send_command {fct_name}: {exc}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )
+                # e.g. the device didn't answer yet after startup, retry soon
+                await asyncio.sleep(min(sec, 30))
+                continue
             await asyncio.sleep(sec)
 
     async def set_command(self, hash, params):

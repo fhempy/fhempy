@@ -256,7 +256,7 @@ def check_dependencies(module):
                     else:
                         logger.debug("  OK")
     except FileNotFoundError:
-        logger.error("manifest.json not found!")
+        logger.error(f"manifest.json not found for module {module}!")
 
     return True
 

@@ -2,6 +2,7 @@
   "requirements": [
     "pyqrcode==1.2.1",
     "tuya-device-sharing-sdk==0.2.15",
-    "cryptography==50.0.1"
+    "cryptography==50.0.1",
+    "paho-mqtt==1.6.1"
   ]
 }

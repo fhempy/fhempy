@@ -67,3 +67,21 @@ async def test_setup(mocker):
     assert mock_fhem.readings["testdevice"]["state"] == "ready"
 
     await fhempy_device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_cloud_error_is_reported(mocker):
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("tuya")
+    from fhempy.lib.tuya.tuya import TuyaCloudError, tuya
+
+    fhempy_device = tuya(logging.getLogger(__name__))
+    assert fhempy_device._cloud_result({"result": {"a": 1}}, "getdps") == {"a": 1}
+    with pytest.raises(TuyaCloudError, match="permission deny \\(code 1106\\)"):
+        fhempy_device._cloud_result(
+            {"success": False, "code": 1106, "msg": "permission deny"}, "getdps"
+        )
+    with pytest.raises(TuyaCloudError, match="Cloud token failed"):
+        fhempy_device._cloud_result(
+            {"Error": "Cloud token failed", "Err": "907"}, "getdps"
+        )
