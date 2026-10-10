@@ -1,6 +1,23 @@
 # CHANGELOG
 
 
+## v0.1.770 (2026-10-10)
+
+### Bug Fixes
+
+- Issues after updating from 0.1.755, new xiaomi_tokens login
+  ([#618](https://github.com/fhempy/fhempy/pull/618),
+  [`61f5c48`](https://github.com/fhempy/fhempy/commit/61f5c48d36ed9d9702700c914cc6c3a85cdf1967))
+
+- BindingsIo: no uninitialized warning for queued messages without NAME - tuya_cloud/tuya_smartlife:
+  pin paho-mqtt 1.6.1 (tuya SDKs use the paho 1.x API) - tuya: report Tuya cloud errors in log and
+  state instead of KeyError 'result' - miio: retry failed update functions after 30s, quieter logs -
+  pkg_installer: name the module when its manifest.json is missing - xiaomi_tokens: replace micloud
+  login with captcha, email code (2FA) and QR login
+
+Fixes #613
+
+
 ## v0.1.769 (2026-10-09)
 
 ### Bug Fixes
