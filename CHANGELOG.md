@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.1.772 (2026-10-10)
+
+### Bug Fixes
+
+- Homekit zeroconf handler, miio update_functions and xiaomi_tokens QR login
+  ([#621](https://github.com/fhempy/fhempy/pull/621),
+  [`9090047`](https://github.com/fhempy/fhempy/commit/9090047ea7c20e8600fa07d14e7084c1efa3825d))
+
+- homekit: zeroconf calls service handlers with keyword arguments, the handler parameter 'zc' raised
+  TypeError on every mDNS packet (endless log) - miio: update_functions (e.g. info:60) failed with
+  'argument of type NoneType is not iterable' because send_command got params=None - xiaomi_tokens:
+  QR login passed bound methods to run_blocking, which only accepts functools.partial
+
+Fixes #620
+
+
 ## v0.1.771 (2026-10-10)
 
 ### Features
