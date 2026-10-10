@@ -9,7 +9,8 @@ import hashlib
 import json
 import logging
 import os
-import random
+import secrets
+import string
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 SERVERS = ["cn", "de", "us", "ru", "tw", "sg", "in", "i2"]
 
 ACCOUNT_URL = "https://account.xiaomi.com"
+STS_URL = "https://sts.api.io.mi.com/sts"
 REQUEST_TIMEOUT = 30
 
 
@@ -47,7 +49,7 @@ class XiaomiCloud:
     def __init__(self):
         self._agent = self._generate_agent()
         self._device_id = "".join(
-            random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(6)
+            secrets.choice(string.ascii_lowercase) for _ in range(6)
         )
         self._session = requests.Session()
         self._ssecurity = None
@@ -67,8 +69,8 @@ class XiaomiCloud:
 
     @staticmethod
     def _generate_agent():
-        agent_id = "".join(chr(random.randint(65, 69)) for _ in range(13))
-        random_text = "".join(chr(random.randint(97, 122)) for _ in range(18))
+        agent_id = "".join(secrets.choice("ABCDE") for _ in range(13))
+        random_text = "".join(secrets.choice(string.ascii_lowercase) for _ in range(18))
         return f"{random_text}-{agent_id} APP/com.xiaomi.mihome APPV/10.5.201"
 
     @staticmethod
@@ -113,7 +115,7 @@ class XiaomiCloud:
             "sid": "xiaomiio",
             # the Xiaomi login expects the MD5 hash of the password
             "hash": hashlib.md5(password.encode()).hexdigest().upper(),  # NOSONAR
-            "callback": "https://sts.api.io.mi.com/sts",
+            "callback": STS_URL,
             "qs": "%3Fsid%3Dxiaomiio%26_json%3Dtrue",
             "user": username,
             "_sign": self._sign,
@@ -300,10 +302,12 @@ class XiaomiCloud:
         if not pragma.get("ssecurity"):
             raise XiaomiCloudError("Verification failed: no ssecurity received")
         self._ssecurity = pragma["ssecurity"]
+        self._finish_sts(resp)
 
+    def _finish_sts(self, resp):
         sts_url = resp.headers.get("Location")
         if not sts_url:
-            idx = resp.text.find("https://sts.api.io.mi.com/sts")
+            idx = resp.text.find(STS_URL)
             if idx != -1:
                 end = resp.text.find('"', idx)
                 sts_url = resp.text[idx:end] if end != -1 else resp.text[idx:]
@@ -331,7 +335,7 @@ class XiaomiCloud:
             params={
                 "_qrsize": "240",
                 "qs": "%3Fsid%3Dxiaomiio%26_json%3Dtrue",
-                "callback": "https://sts.api.io.mi.com/sts",
+                "callback": STS_URL,
                 "_hasLogo": "false",
                 "sid": "xiaomiio",
                 "serviceParam": "",
@@ -375,6 +379,24 @@ class XiaomiCloud:
     # devices
     def get_devices(self, server):
         """Returns all devices of own and shared homes of the server."""
+        devices = []
+        for home_id, owner in self._get_homes(server):
+            resp = self._api_call(
+                server,
+                "/v2/home/home_device_list",
+                '{"home_owner": '
+                + str(owner)
+                + ',"home_id": '
+                + str(home_id)
+                + ',  "limit": 200,  "get_split_device": true, '
+                '"support_smart_home": true}',
+            )
+            if resp and resp.get("result"):
+                devices.extend(resp["result"].get("device_info") or [])
+        return devices
+
+    def _get_homes(self, server):
+        """Returns (home id, owner) of own and shared homes."""
         homes = []
         resp = self._api_call(
             server,
@@ -394,22 +416,7 @@ class XiaomiCloud:
             share = resp["result"].get("share") or {}
             for home in share.get("share_family") or []:
                 homes.append((home["home_id"], home["home_owner"]))
-
-        devices = []
-        for home_id, owner in homes:
-            resp = self._api_call(
-                server,
-                "/v2/home/home_device_list",
-                '{"home_owner": '
-                + str(owner)
-                + ',"home_id": '
-                + str(home_id)
-                + ',  "limit": 200,  "get_split_device": true, '
-                '"support_smart_home": true}',
-            )
-            if resp and resp.get("result"):
-                devices.extend(resp["result"].get("device_info") or [])
-        return devices
+        return homes
 
     @staticmethod
     def _api_url(server):
