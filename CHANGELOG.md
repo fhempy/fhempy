@@ -1,6 +1,20 @@
 # CHANGELOG
 
 
+## v0.1.771 (2026-10-10)
+
+### Features
+
+- **openmeteo_weather**: Replace google_weather with Open-Meteo weather module
+  ([#619](https://github.com/fhempy/fhempy/pull/619),
+  [`2295688`](https://github.com/fhempy/fhempy/commit/2295688c49b421fe9e33d47ec943658b8fefb881))
+
+Google search only returns weather data to browsers running JavaScript, so google_weather got no
+  data. The new module openmeteo_weather gets current weather and forecasts from Open-Meteo;
+  locations (names, addresses, LAT,LON) are resolved via Nominatim with Open-Meteo geocoding as
+  fallback. Readings are unchanged and google_weather stays as alias for existing devices.
+
+
 ## v0.1.770 (2026-10-10)
 
 ### Bug Fixes
