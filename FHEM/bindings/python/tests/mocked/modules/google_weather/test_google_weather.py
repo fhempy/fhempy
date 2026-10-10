@@ -55,13 +55,27 @@ async def define_device(mocker, city="Berlin"):
     return device
 
 
-def mock_api(mocker, device, geocoding=GEOCODING):
+NOMINATIM = [
+    {
+        "lat": "48.2085",
+        "lon": "16.3721",
+        "display_name": "1, Stephansplatz, Innere Stadt, Wien, 1010, Österreich",
+        "address": {"road": "Stephansplatz", "city": "Wien", "country": "Österreich"},
+    }
+]
+
+
+def mock_api(mocker, device, geocoding=GEOCODING, nominatim=None):
     from fhempy.lib.google_weather import google_weather as gw
 
     calls = []
 
-    async def get_json(session, url, params):
+    async def get_json(session, url, params, headers=None):
         calls.append((url, params))
+        if url == gw.NOMINATIM_URL:
+            if isinstance(nominatim, Exception):
+                raise nominatim
+            return nominatim if nominatim is not None else []
         if url == gw.GEOCODING_URL:
             return geocoding
         return FORECAST
@@ -95,11 +109,36 @@ async def test_update_sets_readings(mocker):
     assert "next_hours_25_time" not in readings
     assert readings["location"] == "Berlin, Deutschland"
     assert readings["state"].startswith("<html><img")
-    assert calls[1][1]["latitude"] == 52.52
+    assert calls[2][1]["latitude"] == 52.52
 
     # location is resolved only once
     await device.update(None)
-    assert len(calls) == 3
+    assert len(calls) == 4
+
+
+@pytest.mark.asyncio
+async def test_address_via_nominatim(mocker):
+    device = await define_device(mocker, "Stephansplatz 1, Wien")
+    calls = mock_api(mocker, device, nominatim=NOMINATIM)
+
+    await device.update(None)
+
+    from fhempy.lib.google_weather import google_weather as gw
+
+    assert [c[0] for c in calls] == [gw.NOMINATIM_URL, gw.FORECAST_URL]
+    assert calls[0][1]["q"] == "Stephansplatz 1, Wien"
+    assert calls[1][1]["latitude"] == 48.2085
+    assert mock_fhem.readings["testweather"]["location"] == "Wien, Österreich"
+
+
+@pytest.mark.asyncio
+async def test_nominatim_error_falls_back_to_open_meteo(mocker):
+    device = await define_device(mocker)
+    mock_api(mocker, device, nominatim=RuntimeError("HTTP error 429"))
+
+    await device.update(None)
+
+    assert mock_fhem.readings["testweather"]["location"] == "Berlin, Deutschland"
 
 
 @pytest.mark.asyncio

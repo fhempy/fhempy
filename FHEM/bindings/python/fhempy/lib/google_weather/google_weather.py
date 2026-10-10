@@ -10,6 +10,11 @@ import aiohttp
 from .. import fhem, generic
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+# Nominatim (OpenStreetMap) also finds addresses, Open-Meteo only place names.
+# Nominatim usage policy: identifying user agent, max 1 request per second.
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_HEADERS = {"User-Agent": "fhempy-google_weather (github.com/fhempy/fhempy)"}
+PLACE_KEYS = ["city", "town", "village", "municipality", "suburb", "county", "state"]
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ICON_URL = "https://ssl.gstatic.com/onebox/weather/64/{}.png"
 COORDINATES = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$")
@@ -120,8 +125,8 @@ class google_weather(generic.FhemModule):
     def _lang(self):
         return "de" if self._attr_language == "de" else "en"
 
-    async def _get_json(self, session, url, params):
-        async with session.get(url, params=params) as resp:
+    async def _get_json(self, session, url, params, headers=None):
+        async with session.get(url, params=params, headers=headers) as resp:
             if resp.status != 200:
                 raise WeatherError(f"HTTP error {resp.status}: {await resp.text()}")
             return await resp.json()
@@ -141,6 +146,45 @@ class google_weather(generic.FhemModule):
             }
             return self._location
 
+        try:
+            location = await self._search_nominatim(session, lang)
+        except Exception:
+            self.logger.exception("Nominatim search failed, using Open-Meteo")
+            location = None
+        if location is None:
+            location = await self._search_open_meteo(session, lang)
+        if location is None:
+            raise WeatherError(f"location {self.city} not found")
+        location["language"] = lang
+        self._location = location
+        return self._location
+
+    async def _search_nominatim(self, session, lang):
+        data = await self._get_json(
+            session,
+            NOMINATIM_URL,
+            {
+                "q": self.city,
+                "format": "jsonv2",
+                "limit": 1,
+                "addressdetails": 1,
+                "accept-language": lang,
+            },
+            headers=NOMINATIM_HEADERS,
+        )
+        if not data:
+            return None
+        res = data[0]
+        address = res.get("address", {})
+        place = next((address[key] for key in PLACE_KEYS if key in address), None)
+        name = ", ".join(part for part in [place, address.get("country")] if part)
+        return {
+            "latitude": float(res["lat"]),
+            "longitude": float(res["lon"]),
+            "name": name or res.get("display_name", self.city),
+        }
+
+    async def _search_open_meteo(self, session, lang):
         data = await self._get_json(
             session,
             GEOCODING_URL,
@@ -148,16 +192,14 @@ class google_weather(generic.FhemModule):
         )
         results = data.get("results") or []
         if len(results) == 0:
-            raise WeatherError(f"location {self.city} not found")
+            return None
         res = results[0]
         name = ", ".join(part for part in [res.get("name"), res.get("country")] if part)
-        self._location = {
+        return {
             "latitude": res["latitude"],
             "longitude": res["longitude"],
             "name": name,
-            "language": lang,
         }
-        return self._location
 
     async def update(self, session):
         try:
