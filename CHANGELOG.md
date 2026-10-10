@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v0.1.774 (2026-10-10)
+
+### Bug Fixes
+
+- **esphome**: Fixed MQTT client id for the Device Builder
+  ([#623](https://github.com/fhempy/fhempy/pull/623),
+  [`ad9fccf`](https://github.com/fhempy/fhempy/commit/ad9fccfed14a5386043d0797497bc6f2b65d7fd1))
+
+esphome-device-builder connects to the MQTT broker of devices with mqtt: using
+  esphome-dashboard-<random>, so FHEM's MQTT2_SERVER autocreated a new MQTT2_DEVICE on every
+  dashboard start. Start it through a small launcher which fixes the client id to
+  esphome-dashboard-fhempy-<NAME>.
+
+Claude-Session: https://claude.ai/code/session_012RxFkmnErti7mPUZApeSnK
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.773 (2026-10-10)
 
 ### Bug Fixes
