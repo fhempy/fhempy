@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.1.773 (2026-10-10)
+
+### Bug Fixes
+
+- **homekit**: Gateway state ready, no KeyError on pairing_data Attr
+  ([#622](https://github.com/fhempy/fhempy/pull/622),
+  [`d2333d6`](https://github.com/fhempy/fhempy/commit/d2333d63e4c302531ed267bd027e3ef9e608e2f2))
+
+- set_attr_pairing_data used the Attr message hash, which has no HOMEKIT_ID internal (KeyError on
+  every startup); it now uses the device hash and only re-runs the setup if the pairing data changed
+  - the gateway sets state connecting/ready/error, it stayed at 'fhempy server offline' after a
+  reconnect
+
+Refs #620
+
+
 ## v0.1.772 (2026-10-10)
 
 ### Bug Fixes
