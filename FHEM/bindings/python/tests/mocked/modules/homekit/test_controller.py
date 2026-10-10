@@ -35,3 +35,20 @@ async def test_controller_starts_with_zeroconf_browser(mocker):
         if homekit.aiobrowser is not None:
             await homekit.aiobrowser.async_cancel()
         await azc.async_close()
+
+
+def test_service_state_handler_accepts_zeroconf_kwargs():
+    from zeroconf import ServiceStateChange
+    from zeroconf._services import Signal
+
+    from fhempy.lib.homekit.homekit import _on_service_state_change
+
+    # zeroconf fires handlers with keyword arguments only
+    signal = Signal()
+    signal.registration_interface.register_handler(_on_service_state_change)
+    signal.fire(
+        zeroconf=None,
+        service_type="_hap._tcp.local.",
+        name="test._hap._tcp.local.",
+        state_change=ServiceStateChange.Added,
+    )

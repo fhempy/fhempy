@@ -179,7 +179,9 @@ class xiaomi_tokens(FhemModule):
         self._cloud = XiaomiCloud()
         cloud = self._cloud
         try:
-            image, login_url = await utils.run_blocking(cloud.qr_login_start)
+            image, login_url = await utils.run_blocking(
+                functools.partial(cloud.qr_login_start)
+            )
         except Exception as ex:
             await self._login_failed(ex)
             return
@@ -195,7 +197,7 @@ class xiaomi_tokens(FhemModule):
         await fhem.readingsSingleUpdate(
             self.hash, "state", "Please scan the QR code with the Mi Home app", 1
         )
-        await self._login(cloud.qr_login_wait)
+        await self._login(functools.partial(cloud.qr_login_wait))
 
     async def _login(self, login_step):
         cloud = self._cloud

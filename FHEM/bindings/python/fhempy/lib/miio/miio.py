@@ -104,7 +104,7 @@ class miio(generic.FhemModule):
             fct_upd_list = self._attr_update_functions.split(",")
             for fct_upd in fct_upd_list:
                 try:
-                    (fct, sec) = fct_upd.split(":")
+                    fct, sec = fct_upd.split(":")
                     sec = int(sec)
                 except ValueError:
                     self.logger.error("update_functions format is FUNCTION:SECONDS")
@@ -145,6 +145,8 @@ class miio(generic.FhemModule):
             return False
 
     async def send_command(self, fct_name, params, raise_exc=False):
+        if params is None:
+            params = {}
         fct = self._device._device_group_commands[fct_name].func
         sig = inspect.signature(fct)
         args = []

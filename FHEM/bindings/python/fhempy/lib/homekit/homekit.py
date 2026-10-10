@@ -21,8 +21,10 @@ HOMEKIT_SERVICES = ["_hap._tcp.local.", "_hap._udp.local."]
 
 
 def _on_service_state_change(
-    zc, service_type: str, name: str, state_change: ServiceStateChange
+    zeroconf, service_type: str, name: str, state_change: ServiceStateChange
 ) -> None:
+    # zeroconf calls handlers with keyword arguments (zeroconf=, service_type=,
+    # name=, state_change=), so the parameter names must match exactly.
     # aiohomekit registers its own handler on the browser
     pass
 
