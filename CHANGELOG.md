@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.1.775 (2026-10-10)
+
+### Bug Fixes
+
+- **tibber**: Clear message for invalid token and missing subscription
+  ([#624](https://github.com/fhempy/fhempy/pull/624),
+  [`50e2b0c`](https://github.com/fhempy/fhempy/commit/50e2b0c30dfd25b226aa6cb251be989573c7129d))
+
+- invalid token: error log without traceback and state 'invalid token' - no home with an active
+  subscription: warning and state, retried after the interval instead of IndexError - other
+  connection errors at startup are retried after 60s - lock zipp 4.1.1 (CI install crashed when
+  poetry downgraded zipp)
+
+Refs #620
+
+
 ## v0.1.774 (2026-10-10)
 
 ### Bug Fixes
