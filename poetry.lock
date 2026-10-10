@@ -5035,13 +5035,14 @@ files = [
 
 [[package]]
 name = "pygatt"
-version = "4.0.5"
+version = "5.0.0"
 description = "Python Bluetooth LE (Low Energy) and GATT Library"
 optional = false
 python-versions = "*"
 groups = ["all"]
 files = [
-    {file = "pygatt-4.0.5.tar.gz", hash = "sha256:7f4e0ec72f03533a3ef5fdd532f08d30ab7149213495e531d0f6580e9fcb1a7d"},
+    {file = "pygatt-5.0.0-py3-none-any.whl", hash = "sha256:7caf467a35b3ab1f82aebb16a125a5be71b6d5e79b3b568baaf676699b238063"},
+    {file = "pygatt-5.0.0.tar.gz", hash = "sha256:926f08935b19eda282cddeaf52bdd1e22cd8dd518e3fed34a870c8a9aa333e1f"},
 ]
 
 [package.dependencies]
@@ -7565,4 +7566,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "3bb20c634bc53745f6bde2a325fee23882f5c616794351467941ac38d5ffa9d0"
+content-hash = "dd925aaaa3626f39cb149822822a67e02c6d74ced95826b4af360b04b93e7ca4"
