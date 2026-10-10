@@ -44,14 +44,16 @@ GEOCODING = {
 
 async def define_device(mocker, city="Berlin"):
     mock_fhem.mock_module(mocker)
-    await check_and_install_dependencies("google_weather")
-    from fhempy.lib.google_weather.google_weather import google_weather
+    await check_and_install_dependencies("openmeteo_weather")
+    from fhempy.lib.openmeteo_weather.openmeteo_weather import openmeteo_weather
 
     mock_fhem.readings.pop("testweather", None)
-    testhash = {"NAME": "testweather", "FHEMPYTYPE": "google_weather"}
-    device = google_weather(logging.getLogger(__name__))
+    testhash = {"NAME": "testweather", "FHEMPYTYPE": "openmeteo_weather"}
+    device = openmeteo_weather(logging.getLogger(__name__))
     mocker.patch.object(device, "create_async_task", lambda coro: coro.close())
-    await device.Define(testhash, ["testweather", "fhempy", "google_weather", city], {})
+    await device.Define(
+        testhash, ["testweather", "fhempy", "openmeteo_weather", city], {}
+    )
     return device
 
 
@@ -66,7 +68,7 @@ NOMINATIM = [
 
 
 def mock_api(mocker, device, geocoding=GEOCODING, nominatim=None):
-    from fhempy.lib.google_weather import google_weather as gw
+    from fhempy.lib.openmeteo_weather import openmeteo_weather as gw
 
     calls = []
 
@@ -123,7 +125,7 @@ async def test_address_via_nominatim(mocker):
 
     await device.update(None)
 
-    from fhempy.lib.google_weather import google_weather as gw
+    from fhempy.lib.openmeteo_weather import openmeteo_weather as gw
 
     assert [c[0] for c in calls] == [gw.NOMINATIM_URL, gw.FORECAST_URL]
     assert calls[0][1]["q"] == "Stephansplatz 1, Wien"
@@ -164,3 +166,12 @@ async def test_unknown_location(mocker):
     await device.update(None)
 
     assert "not found" in mock_fhem.readings["testweather"]["state"]
+
+
+@pytest.mark.asyncio
+async def test_google_weather_alias(mocker):
+    mock_fhem.mock_module(mocker)
+    from fhempy.lib.google_weather.google_weather import google_weather
+    from fhempy.lib.openmeteo_weather.openmeteo_weather import openmeteo_weather
+
+    assert issubclass(google_weather, openmeteo_weather)
