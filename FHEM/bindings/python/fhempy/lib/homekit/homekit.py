@@ -59,6 +59,8 @@ class homekit(generic.FhemModule):
 
     def __init__(self, logger):
         self._ready = asyncio.Event()
+        self._setup_running = False
+        self.pairing = None
         super().__init__(logger)
 
     @property
@@ -94,6 +96,8 @@ class homekit(generic.FhemModule):
             # homekit pin found
             hash["HOMEKIT_ID"] = args[3]
             hash["HOMEKIT_PIN"] = args[4]
+            # Attr calls (startup) must not start a second setup meanwhile
+            self._setup_running = True
             self.create_async_task(
                 self.setup_gateway_device(hash["HOMEKIT_ID"], args[4])
             )
@@ -114,9 +118,32 @@ class homekit(generic.FhemModule):
                 self.logger.exception("Failed to close HomeKit connection")
 
     async def set_attr_pairing_data(self, hash):
-        await self.setup_gateway_device(hash["HOMEKIT_ID"], hash["HOMEKIT_PIN"])
+        # hash is the Attr message from FHEM, it doesn't carry the internals.
+        # FHEM calls Attr on startup and when setup_gateway_device stores new
+        # pairing data, only a changed pairing on a gateway needs a new setup.
+        if "HOMEKIT_ID" not in self.hash or self._setup_running:
+            return
+        pairing = getattr(self, "pairing", None)
+        if pairing is not None and pairing.pairing_data == self._attr_pairing_data:
+            return
+        self.create_async_task(
+            self.setup_gateway_device(self.hash["HOMEKIT_ID"], self.hash["HOMEKIT_PIN"])
+        )
 
     async def setup_gateway_device(self, homekitid, pin):
+        self._setup_running = True
+        try:
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "state", "connecting", 1
+            )
+            await self._setup_gateway_device(homekitid, pin)
+        except Exception as ex:
+            self.logger.exception("Failed to set up HomeKit device")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"error: {ex}", 1)
+        finally:
+            self._setup_running = False
+
+    async def _setup_gateway_device(self, homekitid, pin):
         controller = await homekit.get_controller()
 
         self.pairing = None
@@ -158,6 +185,7 @@ class homekit(generic.FhemModule):
                 f"{devname} fhempy homekit {self.hash['NAME']} {accessory['aid']}",
             )
 
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "ready", 1)
         self._ready.set()
 
     async def setup_device(self, gw_device_name, aid):
