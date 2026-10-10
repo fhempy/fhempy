@@ -111,7 +111,8 @@ class XiaomiCloud:
             return
         fields = {
             "sid": "xiaomiio",
-            "hash": hashlib.md5(password.encode()).hexdigest().upper(),
+            # the Xiaomi login expects the MD5 hash of the password
+            "hash": hashlib.md5(password.encode()).hexdigest().upper(),  # NOSONAR
             "callback": "https://sts.api.io.mi.com/sts",
             "qs": "%3Fsid%3Dxiaomiio%26_json%3Dtrue",
             "user": username,
@@ -467,7 +468,8 @@ class XiaomiCloud:
         parts += [f"{k}={v}" for k, v in params.items()]
         parts.append(signed_nonce)
         return base64.b64encode(
-            hashlib.sha1("&".join(parts).encode("utf-8")).digest()
+            # signature algorithm of the Xiaomi cloud API
+            hashlib.sha1("&".join(parts).encode("utf-8")).digest()  # NOSONAR
         ).decode()
 
     def _enc_params(self, url, method, signed_nonce, nonce, params):
@@ -485,7 +487,8 @@ class XiaomiCloud:
 
     @staticmethod
     def _rc4(password):
-        cipher = ARC4.new(base64.b64decode(password))
+        # the Xiaomi cloud API requires RC4, there is no other option
+        cipher = ARC4.new(base64.b64decode(password))  # NOSONAR
         cipher.encrypt(bytes(1024))
         return cipher
 
