@@ -30,7 +30,9 @@ class wienernetze_smartmeter(FhemModule):
 
     async def update_loop(self):
         async with aiohttp.ClientSession() as session:
-            client = AsyncSmartmeter(self.username, self.password, session)
+            client = AsyncSmartmeter(
+                self.username, self.password, session, logger=self.logger
+            )
             await self.login(client)
             await self.update_endpoint(client.base_information, "baseInformation")
             while True:

@@ -23,7 +23,7 @@ from .errors import (
     SmartmeterQueryError,
 )
 
-logger = logging.getLogger(__name__)
+module_logger = logging.getLogger(__name__)
 
 TIMEOUT = 20
 # renew the access token a bit before it really expires
@@ -57,10 +57,33 @@ def _code_from_location(location):
     return None
 
 
+def _url_path(url):
+    """URL without query/fragment, they can contain session codes."""
+    parsed = parse.urlparse(url or "")
+    return f"{parsed.netloc}{parsed.path}"
+
+
+def _page_message(text):
+    """Error/info message Keycloak shows on a login page."""
+    try:
+        tree = html.fromstring(text)
+    except Exception:
+        return ""
+    texts = tree.xpath(
+        "//*[contains(@class, 'alert') or contains(@class, 'kc-feedback-text')"
+        " or contains(@id, 'input-error') or contains(@class, 'error')]//text()"
+    )
+    message = " ".join(" ".join(texts).split())
+    if not message:
+        title = tree.xpath("//title/text()")
+        message = " ".join(" ".join(title).split())
+    return message[:200]
+
+
 class AsyncSmartmeter:
     """Async Smartmeter Client."""
 
-    def __init__(self, username, password, session=None, timeout=TIMEOUT):
+    def __init__(self, username, password, session=None, timeout=TIMEOUT, logger=None):
         """Access the Smart Meter API asynchronously.
 
         Args:
@@ -68,11 +91,13 @@ class AsyncSmartmeter:
             password (str): Password used for API Login
             session (aiohttp.ClientSession): An optional session object
             timeout (int): Timeout for all session calls. Defaults to TIMEOUT.
+            logger (logging.Logger): Logger, defaults to the module logger
         """
         self._username = username
         self._password = password
         self._session = session or aiohttp.ClientSession()
         self._timeout = timeout
+        self._logger = logger or module_logger
         self._access_token = None
         self._refresh_token = None
         self._access_token_expiration = None
@@ -91,12 +116,16 @@ class AsyncSmartmeter:
 
     async def _get(self, url, **kwargs):
         async with asyncio.timeout(self._timeout):
-            async with self._session.get(url, **kwargs) as response:
+            async with self._session.get(
+                url, headers=const.LOGIN_HEADERS, **kwargs
+            ) as response:
                 return response.status, dict(response.headers), await response.text()
 
     async def _post(self, url, **kwargs):
         async with asyncio.timeout(self._timeout):
-            async with self._session.post(url, **kwargs) as response:
+            async with self._session.post(
+                url, headers=const.LOGIN_HEADERS, **kwargs
+            ) as response:
                 return response.status, dict(response.headers), await response.text()
 
     async def _load_login_page(self, code_challenge):
@@ -105,14 +134,21 @@ class AsyncSmartmeter:
         try:
             status, _, text = await self._get(login_url)
         except Exception as exception:
-            raise SmartmeterConnectionError("Could not load login page") from exception
+            raise SmartmeterConnectionError(
+                f"Could not load login page: {exception!r}"
+            ) from exception
+        action = _form_action(text)
+        self._logger.debug(
+            f"Login page: HTTP {status}, form action {_url_path(action)}"
+        )
         if status != 200:
             raise SmartmeterConnectionError(
-                f"Could not load login page (HTTP {status})"
+                f"Could not load login page (HTTP {status}): {_page_message(text)}"
             )
-        action = _form_action(text)
         if action is None:
-            raise SmartmeterConnectionError("No form found on the login page")
+            raise SmartmeterConnectionError(
+                f"No form found on the login page: {_page_message(text)}"
+            )
         return action
 
     async def _credentials_login(self, action):
@@ -125,10 +161,16 @@ class AsyncSmartmeter:
                 allow_redirects=False,
             )
             password_action = _form_action(text)
+            self._logger.debug(
+                f"Username step: HTTP {status}, "
+                f"form action {_url_path(password_action)}, "
+                f"location {_url_path(headers.get('Location'))}, "
+                f"message '{_page_message(text)}'"
+            )
             if password_action is None:
                 raise SmartmeterLoginError(
-                    "Login failed, no password form after username "
-                    f"(HTTP {status}). Check username."
+                    f"Login failed after username (HTTP {status}): "
+                    f"{_page_message(text) or 'no password form'}"
                 )
             status, headers, text = await self._post(
                 password_action,
@@ -139,16 +181,24 @@ class AsyncSmartmeter:
             raise
         except Exception as exception:
             raise SmartmeterConnectionError(
-                "Could not login with credentials"
+                f"Could not login with credentials: {exception!r}"
             ) from exception
 
         location = headers.get("Location")
+        self._logger.debug(
+            f"Password step: HTTP {status}, location {_url_path(location)}, "
+            f"message '{_page_message(text) if location is None else ''}'"
+        )
         if location is None:
-            raise SmartmeterLoginError("Login failed. Check username/password.")
+            raise SmartmeterLoginError(
+                f"Login failed (HTTP {status}): "
+                f"{_page_message(text) or 'check username/password'}"
+            )
         code = _code_from_location(location)
         if code is None:
             raise SmartmeterLoginError(
-                "Login failed. Could not extract 'code' from 'Location'"
+                "Login failed, no code in redirect to "
+                f"{_url_path(location)} (2FA or required action in log.wien?)"
             )
         return code
 
@@ -162,14 +212,22 @@ class AsyncSmartmeter:
                     ),
                 ) as response:
                     status = response.status
-                    if status == 200:
-                        tokens = await response.json(content_type=None)
+                    text = await response.text()
         except Exception as exception:
             raise SmartmeterConnectionError(
-                "Could not obtain access token"
+                f"Could not obtain access token: {exception!r}"
             ) from exception
-        if status != 200:
-            raise SmartmeterLoginError(f"Could not obtain access token (HTTP {status})")
+        self._logger.debug(f"Token request: HTTP {status}")
+        try:
+            tokens = json.loads(text)
+        except ValueError:
+            tokens = {}
+        if status != 200 or "access_token" not in tokens:
+            error = tokens.get("error_description") or tokens.get("error")
+            raise SmartmeterLoginError(
+                f"Could not obtain access token (HTTP {status}): "
+                f"{error or text[:200]}"
+            )
         if tokens.get("token_type", "Bearer").lower() != "bearer":
             raise SmartmeterLoginError(
                 f"Bearer token required, but got {tokens['token_type']!r}"
@@ -187,7 +245,9 @@ class AsyncSmartmeter:
                 ) as response:
                     config = await response.json(content_type=None)
         except Exception as exception:
-            raise SmartmeterConnectionError("Could not obtain API key") from exception
+            raise SmartmeterConnectionError(
+                f"Could not obtain API key: {exception!r}"
+            ) from exception
         if not isinstance(config, dict):
             raise SmartmeterConnectionError("Unexpected app-config.json format")
         for key in ("b2cApiKey", "b2bApiKey"):
@@ -216,7 +276,7 @@ class AsyncSmartmeter:
                 datetime.now() + expires_in - TOKEN_EXPIRY_MARGIN
             )
             await self._load_api_keys()
-            logger.debug("Successfully authenticated Smart Meter API")
+            self._logger.debug("Successfully authenticated Smart Meter API")
 
     async def refresh_token(self):
         """Create a valid access token (kept for compatibility)."""
@@ -291,7 +351,7 @@ class AsyncSmartmeter:
         elif base_url == self.api_url_b2b:
             headers["X-Gateway-APIKey"] = self._api_gateway_b2b_token
 
-        logger.debug(f"REQUEST: {url}")
+        self._logger.debug(f"REQUEST: {_url_path(url)}")
         try:
             async with asyncio.timeout(self._timeout):
                 async with self._session.request(
