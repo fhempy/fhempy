@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.1.778 (2026-10-12)
+
+### Bug Fixes
+
+- **bluetooth**: Stop long discovery scans for unreachable pairing devices
+  ([#629](https://github.com/fhempy/fhempy/pull/629),
+  [`ed18992`](https://github.com/fhempy/fhempy/commit/ed18992ea29427957978a0a5dd23100c096c37a9))
+
+A device that needs pairing but doesn't advertise was searched with three 60s classic+LE discovery
+  scans every 5 minutes while holding the shared Bluetooth lock, so other BLE devices couldn't
+  reconnect and the adapter (and the WiFi of Raspberry Pi combo chips) was busy ~40% of the time.
+
+Pairing now does one LE-only 30s scan per attempt, reports connection 'not found' and backs off from
+  5 minutes up to 1 hour.
+
+Claude-Session: https://claude.ai/code/session_01ScyUix2gXmfq81iGG4Pbjq
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.777 (2026-10-12)
 
 ### Bug Fixes
