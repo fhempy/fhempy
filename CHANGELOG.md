@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v0.1.779 (2026-10-12)
+
+### Bug Fixes
+
+- **wienernetze_smartmeter**: Adapt login and API to Wiener Netze changes
+  ([#632](https://github.com/fhempy/fhempy/pull/632),
+  [`45f0af5`](https://github.com/fhempy/fhempy/commit/45f0af5c8d3a4eb799e5e9e5bf9ea681cce95133))
+
+- log.wien login with PKCE (S256) and two-step username/password form - authorization code parsed
+  from the Location fragment - API keys and URLs from app-config.json instead of scraping JS bundles
+  - API errors raise instead of returning None, re-login once on 401, token expiry tracked - state
+  reading: online / login failed / connection error / update failed
+
+Claude-Session: https://claude.ai/code/session_01PSfi1tMioNAMzKV1Kzjtns
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.778 (2026-10-12)
 
 ### Bug Fixes
