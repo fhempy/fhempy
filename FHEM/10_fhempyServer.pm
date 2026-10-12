@@ -95,8 +95,9 @@ sub fhempyServer_checkPythonVersion($)
   my $output = qx(python3 -V 2>&1);
   my $ver_obj = fhempyServer_parsePythonVersion($output);
   if (!defined($ver_obj)) {
-    readingsSingleUpdate($hash, "python", "Python 3 not found (python3 -V failed)", 1);
-    return 0;
+    # bin/fhempy lets uv install Python, it only needs curl or wget for that
+    readingsSingleUpdate($hash, "python", "Python 3 not found, fhempy installs Python 3.13 via uv", 1);
+    return 1;
   }
 
   # report the Python fhempy runs with, uv might have installed a newer one than the system Python
@@ -198,12 +199,34 @@ sub fhempyServer_Notify($$)
   return undef;
 }
 
+# bin/fhempy and start_fhempy.py report installation steps as lines like
+# "fhempy-install: 2/4 creating Python 3.13 environment" or "fhempy-install: failed: <reason>"
+sub fhempyServer_parseInstallSteps($$)
+{
+  my ($hash, $buf) = @_;
+  return if (!defined($buf));
+
+  # a line might be split between two reads
+  $buf = ($hash->{".partialLine"} // "").$buf;
+  my $nl = rindex($buf, "\n");
+  $hash->{".partialLine"} = substr($buf, $nl + 1);
+  $hash->{".partialLine"} = "" if (length($hash->{".partialLine"}) > 4096);
+  return if ($nl < 0);
+
+  my $step;
+  foreach my $line (split(/\r?\n/, substr($buf, 0, $nl))) {
+    $step = $1 if ($line =~ m/fhempy-install: (.+?)\s*$/);
+  }
+  readingsSingleUpdate($hash, "install", $step, 1) if (defined($step));
+}
+
 sub fhempyServer_Read($)
 {
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  CoProcess::readFn($hash);
+  my $buf = CoProcess::readFn($hash);
+  fhempyServer_parseInstallSteps($hash, $buf);
 
   # bin/fhempy creates the venv (with uv's Python if the system Python is older) after the version check,
   # update the python reading once the venv exists

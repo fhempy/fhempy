@@ -53,6 +53,7 @@ find_or_install_uv() {
     return 0
   fi
 
+  echo "fhempy-install: 1/4 installing uv"
   echo -n "Installing uv..."
   mkdir -p "$UV_DIR"
   if command -v curl >/dev/null 2>&1; then
@@ -83,9 +84,11 @@ create_venv() {
     local system_version
     system_version=$(python_version_num python3)
     if [ -n "$system_version" ] && [ "$system_version" -ge 313 ]; then
+      echo "fhempy-install: 2/4 creating Python environment"
       echo -n "Creating fhempy virtual environment with uv..."
       "$UV" venv --quiet --seed --python "$(command -v python3)" "$FHEMPY_VENV" && echo "OK" && return 0
     else
+      echo "fhempy-install: 2/4 installing Python $UV_PYTHON_VERSION"
       echo -n "Creating fhempy virtual environment with uv and Python $UV_PYTHON_VERSION (this might take a while)..."
       "$UV" venv --quiet --seed --python "$UV_PYTHON_VERSION" "$FHEMPY_VENV" && echo "OK" && return 0
     fi
@@ -93,11 +96,17 @@ create_venv() {
     rm -rf "$FHEMPY_VENV"
   fi
 
+  echo "fhempy-install: 2/4 creating Python environment"
   echo -n "Creating fhempy virtual environment..."
   if ! python3 -m venv "$FHEMPY_VENV"; then
     echo "FAILED"
     echo "Please make sure that python3-venv package is installed"
     echo "sudo apt install python3-venv"
+    if [ -z "$UV" ]; then
+      echo "fhempy-install: failed: uv could not be downloaded from github.com and python3-venv is missing (sudo apt install python3-venv)"
+    else
+      echo "fhempy-install: failed: creating the Python environment failed, see fhempy log"
+    fi
     return 1
   fi
   echo "OK"

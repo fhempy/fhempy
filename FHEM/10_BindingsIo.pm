@@ -7,8 +7,6 @@ use warnings;
 
 use Encode;
 
-use Protocol::WebSocket::Frame;
-
 use DevIo;
 use CoProcess;
 
@@ -126,9 +124,9 @@ sub BindingsIo_Define {
     InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
   }
 
-  if ($init_done == 0 && $localServer == 1) {
-    readingsSingleUpdate($hash, 'state', 'Installing fhempy (15min)...', 1);
-    $hash->{installing} = 0;
+  # show the installation progress until fhempy answers the first time
+  if ($localServer == 1 && ReadingsVal($name, "version", "") eq "") {
+    readingsSingleUpdate($hash, 'state', 'Installing fhempy...', 1);
     InternalTimer(gettimeofday()+2, 'BindingsIo_installing', $hash, 0);
   }
 
@@ -150,9 +148,14 @@ sub BindingsIo_Define {
 
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.1.0") == -1) {
+  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.2.0") == -1) {
     my $devstate_cmd = '{
-      my $attr_ver = "1.1.0";;
+      my $attr_ver = "1.2.0";;
+      my $state = ReadingsVal($name, "state", "");;
+      if ($state =~ m/^Installing/) {
+        my $img = ($state =~ m/failed/) ? "10px-kreis-rot" : "10px-kreis-gelb";;
+        return "<div><a>".FW_makeImage($img, "installing")."</a><a> ".$state." </a></div>";;
+      }
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
       my $ver = ReadingsVal($name, "version", "-");;
@@ -179,29 +182,119 @@ sub BindingsIo_Define {
   return undef;
 }
 
+# Websocket frames (RFC 6455) are handled here instead of with Protocol::WebSocket,
+# so fhempy doesn't need an extra Perl package from the system.
 sub
 BindingsIo_initFrame($) {
   my ($hash) = @_;
-  $hash->{frame} = Protocol::WebSocket::Frame->new;
-  $hash->{frame}->{max_fragments_amount} = 1000;
-  $hash->{frame}->{max_payload_size} = 0;
+  $hash->{".wsBuffer"} = "";
+  $hash->{".wsFragments"} = "";
+  delete $hash->{".wsFragmentsOpcode"};
 }
 
+# returns a masked websocket frame (FHEM is the client) with the given opcode
+sub
+BindingsIo_wsFrame($$) {
+  my ($opcode, $payload) = @_;
+  my $len = length($payload);
+  my $header = pack("C", 0x80 | $opcode);
+  if ($len < 126) {
+    $header .= pack("C", 0x80 | $len);
+  } elsif ($len < 65536) {
+    $header .= pack("Cn", 0x80 | 126, $len);
+  } else {
+    # 64 bit length as two 32 bit values, works with 32 bit Perl too
+    $header .= pack("CNN", 0x80 | 127, int($len / 4294967296), $len % 4294967296);
+  }
+  my @mask = map { int(rand(256)) } 1..4;
+  my $i = 0;
+  my $masked = pack("C*", map { $_ ^ $mask[$i++ % 4] } unpack("C*", $payload));
+  return $header.pack("C4", @mask).$masked;
+}
+
+# returns the next complete frame from the receive buffer as (opcode, payload)
+# data frames are returned once all fragments arrived (opcode of the first fragment)
+# returns an empty list if more data is needed
+sub
+BindingsIo_wsNextFrame($) {
+  my ($hash) = @_;
+  while (1) {
+    my $buf = $hash->{".wsBuffer"};
+    return () if (length($buf) < 2);
+    my ($b0, $b1) = unpack("C2", $buf);
+    my $fin = $b0 & 0x80;
+    my $opcode = $b0 & 0x0F;
+    my $masked = $b1 & 0x80;
+    my $len = $b1 & 0x7F;
+    my $pos = 2;
+    if ($len == 126) {
+      return () if (length($buf) < 4);
+      $len = unpack("n", substr($buf, 2, 2));
+      $pos = 4;
+    } elsif ($len == 127) {
+      return () if (length($buf) < 10);
+      my ($hi, $lo) = unpack("NN", substr($buf, 2, 8));
+      $len = $hi * 4294967296 + $lo;
+      $pos = 10;
+    }
+    my @mask;
+    if ($masked) {
+      return () if (length($buf) < $pos + 4);
+      @mask = unpack("C4", substr($buf, $pos, 4));
+      $pos += 4;
+    }
+    return () if (length($buf) < $pos + $len);
+
+    my $payload = substr($buf, $pos, $len);
+    $hash->{".wsBuffer"} = substr($buf, $pos + $len);
+    if ($masked) {
+      my $i = 0;
+      $payload = pack("C*", map { $_ ^ $mask[$i++ % 4] } unpack("C*", $payload));
+    }
+
+    # control frames (close, ping, pong) can come between fragments
+    return ($opcode, $payload) if ($opcode >= 8);
+
+    if ($opcode != 0) {
+      $hash->{".wsFragmentsOpcode"} = $opcode;
+      $hash->{".wsFragments"} = "";
+    }
+    $hash->{".wsFragments"} .= $payload;
+    next if (!$fin);
+
+    $opcode = delete $hash->{".wsFragmentsOpcode"} // 1;
+    $payload = $hash->{".wsFragments"};
+    $hash->{".wsFragments"} = "";
+    return ($opcode, $payload);
+  }
+}
+
+# shows the installation step reported by the fhempy server (reading install) as state
 sub
 BindingsIo_installing($) {
   my ($hash) = @_;
-  my $state_reading = ReadingsVal($hash->{NAME}, "version", "");
-  if ($state_reading ne "") {
+  my $name = $hash->{NAME};
+
+  my @servers = devspec2array("TYPE=".$hash->{BindingType}."Server");
+  my $server = IsDevice($servers[0]) ? $servers[0] : undef;
+
+  if (ReadingsVal($name, "version", "") ne "") {
+    # fhempy is running, the installation is done
+    CommandDeleteReading(undef, "$server install") if (defined($server) && ReadingsVal($server, "install", "") ne "");
+    if (ReadingsVal($name, "state", "") =~ m/^Installing/) {
+      readingsSingleUpdate($hash, "state", DevIo_IsOpen($hash) ? "opened" : "disconnected", 1);
+    }
     return undef;
   }
-  if ($hash->{installing} == 0) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min).", 1);
-  } elsif ($hash->{installing} == 1) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)..", 1);
-  } elsif ($hash->{installing} == 2) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)...", 1);
+
+  my $step = defined($server) ? ReadingsVal($server, "install", "") : "";
+  my $state = "Installing fhempy...";
+  if ($step =~ m/^failed/) {
+    $state = "Installing fhempy $step";
+  } elsif ($step ne "") {
+    $state = "Installing fhempy: $step";
   }
-  $hash->{installing} = ($hash->{installing} + 1) % 3;
+  readingsSingleUpdate($hash, "state", $state, 1) if (ReadingsVal($name, "state", "") ne $state);
   InternalTimer(gettimeofday()+2, "BindingsIo_installing", $hash, 0);
 }
 
@@ -234,7 +327,7 @@ BindingsIo_keepAlive($) {
   }
 
   # fhempy (websockets) answers with a pong, which updates .lastReceived
-  syswrite($hash->{TCPDev}, Protocol::WebSocket::Frame->new(buffer => "fhem", type => 'ping', masked => 1)->to_bytes);
+  syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0x9, "fhem"));
   BindingsIo_scheduleKeepAlive($hash);
 }
 
@@ -683,6 +776,7 @@ sub BindingsIo_processCommand($$) {
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
     }
+    BindingsIo_installing($hash) if ($hash->{localBinding});
   } elsif ($json->{msgtype} eq "set_update") {
     my $devname = $json->{NAME};
     my $devhash = $defs{$devname};
@@ -767,17 +861,22 @@ sub BindingsIo_readWebsocketMessage($$$) {
   }
 
   if (defined($response) && $response ne "") {
-    $hash->{frame}->append($response);
-    # empty frames (e.g. a pong) are defined but false, keep going
-    while (defined(my $r = $hash->{frame}->next)) {
-      if ($hash->{frame}->is_pong) {
+    $hash->{".wsBuffer"} .= $response;
+    while (my ($opcode, $r) = BindingsIo_wsNextFrame($hash)) {
+      if ($opcode == 0xA) {
         # answer to our keepalive ping, receiving it is all we need
         next;
-      } elsif ($hash->{frame}->is_ping or $hash->{frame}->is_close) {
-        DevIo_DecodeWS($hash, $response);
+      } elsif ($opcode == 0x9) {
+        syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0xA, $r)) if (defined($hash->{TCPDev}));
+      } elsif ($opcode == 0x8) {
+        Log3 $hash, 3, "BindingsIo ($hash->{NAME}): ".$hash->{BindingType}." closed the connection";
+        syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0x8, substr($r, 0, 2))) if (defined($hash->{TCPDev}));
+        DevIo_Disconnected($hash);
+        return "Websocket connection closed unexpected";
       } elsif ($r eq "") {
         next;
       } else {
+        $r = Encode::decode('UTF-8', $r);
         Log3 $hash, 4, "BindingsIo ($hash->{NAME}): >>> WS: ".$r;
         BindingsIo_storeMessage($hash, $r);
       }

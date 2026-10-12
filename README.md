@@ -33,35 +33,33 @@
 
 ## 🚀 Quick start
 
-### 1. Install the system packages
-Copy & paste this command on the machine running FHEM:
+### 1. Install fhempy
+Copy & paste this line into the FHEM command field and press enter:
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libjson-xs-perl
+update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt; defmod fhempy_setup notify global:UPDATE defmod fhempy_local BindingsIo fhempy;; delete fhempy_setup; update all pythonbinding
 ```
+
+That's it. FHEM downloads the fhempy files, then creates `fhempy_local`, which sets up everything else on its own. No restart and no `sudo` needed. Watch the progress in the room *fhempy*:
+
+1. `Installing fhempy: 1/4 installing uv`
+2. `Installing fhempy: 2/4 installing Python 3.13` (only if your system Python is older)
+3. `Installing fhempy: 3/4 installing fhempy`
+4. `Installing fhempy: 4/4 starting fhempy`
+
+`fhempy_local` turns green with the fhempy version as soon as it's ready. If something goes wrong, the state shows the reason in red.
 
 > [!NOTE]
 > fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
-On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
+If you already downloaded the fhempy files before (e.g. a second try), the line above doesn't create `fhempy_local` because the update finds nothing new. Just run `define fhempy_local BindingsIo fhempy` then.
 
-`libjson-xs-perl` (JSON::XS) isn't required, but without it FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` in FHEM, `JSON::Backend::XS` is the fast one.
+Optional: `sudo apt install libjson-xs-perl` makes FHEM decode fhempy messages much faster. Check it with `{JSON->backend}` in FHEM, `JSON::Backend::XS` is the fast one.
 
-### 2. Add fhempy to FHEM
-Enter these commands one after another in the FHEM command field:
+### 2. Bluetooth modules and piclock only: system packages
+Most modules need nothing else. The Bluetooth modules ble_presence, bt_presence, eq3bt, miflora, mitemp and the piclock module still build some of their libraries, which needs these packages:
 ```
-update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt
+sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
 ```
-```
-update
-```
-```
-shutdown restart
-```
-```
-define fhempy_local BindingsIo fhempy
-```
-
-Now lean back: the first start sets up fhempy and **can take up to 15 minutes** on a Raspberry Pi. `fhempy_local` shows a green circle as soon as it's ready.
 
 ### 3. Define your first device
 Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
@@ -170,7 +168,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 ## 🩺 Troubleshooting
 - **`fhempy_local` stays red**: open the device `fhempyserver_15733` in FHEM. Its reading `python` shows the Python version fhempy found, or why it can't start.
 - **Where is the log?** fhempy writes its own log file next to the FHEM log: `log/fhempy-YYYY-MM-DD.log`. Set `attr fhempyserver_15733 verbose 5` for debug output.
-- **`Please make sure that python3-venv package is installed`**: run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
+- **`Installing fhempy failed: ...`**: the state of `fhempy_local` names the reason, the fhempy log has the details. If uv can't be downloaded from github.com and the system Python has no venv support, run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
 - **A module doesn't work**: check its README first. Questions are welcome in the [FHEM forum](https://forum.fhem.de/), bugs in the [GitHub issues](https://github.com/fhempy/fhempy/issues).
 
 ## Bluetooth auto recovery
