@@ -21,6 +21,12 @@ from .bt_pairing_state import PairingState
 
 # wait time after a failed pairing attempt
 PAIRING_RETRY = 300
+# a device that isn't advertising at all (empty battery, out of range) is
+# searched less and less often, each discovery scan disturbs the other
+# Bluetooth devices and the onboard WiFi of a Raspberry Pi
+PAIRING_RETRY_MAX = 3600
+# discovery scan duration per pairing attempt
+PAIRING_DISCOVERY_TIMEOUT = 30
 
 
 class BluetoothLE:
@@ -93,6 +99,10 @@ class BluetoothLE:
             await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection_paired", "timeout", 1
             )
+        elif ret == PairingState.NOT_FOUND:
+            await fhem.readingsSingleUpdateIfChanged(
+                self._dev_hash, "connection_paired", "not found", 1
+            )
 
         return ret
 
@@ -116,16 +126,16 @@ class BluetoothLE:
                 if device_path:
                     bt_mgr.remove_device(device_path)
 
-                # 2. Discover device path (scans up to 10s)
-                device_path = bt_mgr.discover_device_path(self.addr, timeout=60)
+                # 2. Discover device path
+                device_path = bt_mgr.discover_device_path(
+                    self.addr, timeout=PAIRING_DISCOVERY_TIMEOUT
+                )
 
                 if not device_path:
-                    self.logger.warning(
-                        f"Device {self.addr} not found during discovery scan."
-                    )
-                    retry -= 1
-                    time.sleep(5)
-                    continue
+                    # the device doesn't advertise, scanning again right away
+                    # won't help and keeps the adapter busy for all others
+                    bt_mgr.unregister_agent()
+                    return PairingState.NOT_FOUND
 
                 # 3. Attempt synchronous pairing
                 ret = bt_mgr.pair_device(device_path, timeout=60)
@@ -236,6 +246,7 @@ class BluetoothLE:
             )
 
     async def connect_loop(self, timeout, max_retries):
+        not_found_count = 0
         while True:
             try:
                 if self.pairing_required and not self.paired:
@@ -245,7 +256,22 @@ class BluetoothLE:
                     ret = await self.pair()
                     if ret == PairingState.SUCCESS:
                         self.paired = True
+                    elif ret == PairingState.NOT_FOUND:
+                        waittime = min(
+                            PAIRING_RETRY * 2**not_found_count, PAIRING_RETRY_MAX
+                        )
+                        not_found_count += 1
+                        await fhem.readingsSingleUpdateIfChanged(
+                            self._dev_hash, "connection", "not found", 1
+                        )
+                        self.logger.error(
+                            f"Device {self.addr} not found for pairing (battery, "
+                            f"range?), retry in {waittime}s"
+                        )
+                        await asyncio.sleep(waittime)
+                        continue
                     else:
+                        not_found_count = 0
                         await fhem.readingsSingleUpdateIfChanged(
                             self._dev_hash, "connection", "pairing failed", 1
                         )

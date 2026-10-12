@@ -77,3 +77,44 @@ async def test_no_adapter(ble, mocker):
 
     find_device.assert_not_called()
     assert mock_fhem.readings["testble"]["connection"] == "no adapter"
+
+
+@pytest.mark.asyncio
+async def test_not_found_backs_off(ble, mocker):
+    from fhempy.lib.core import bluetoothle
+
+    mocker.patch.object(bluetoothle, "PAIRING_RETRY", 300)
+    mocker.patch.object(bluetoothle, "PAIRING_RETRY_MAX", 1000)
+    waits = []
+
+    async def sleep(seconds):
+        waits.append(seconds)
+        assert mock_fhem.readings["testble"]["connection"] == "not found"
+
+    mocker.patch.object(bluetoothle.asyncio, "sleep", side_effect=sleep)
+    mocker.patch.object(
+        ble,
+        "pair",
+        side_effect=[PairingState.NOT_FOUND] * 4 + [PairingState.SUCCESS],
+    )
+    connect_succeeds(ble, mocker)
+
+    await ble.connect_loop(30, 1)
+
+    assert waits == [300, 600, 1000, 1000]
+
+
+def test_pair_scans_once_if_not_found(ble, mocker):
+    import sys
+
+    bt_mgr = mocker.MagicMock()
+    bt_mgr.is_device_paired.return_value = False
+    bt_mgr.find_device_path.return_value = None
+    bt_mgr.discover_device_path.return_value = None
+    bt_manager = mocker.MagicMock()
+    bt_manager.BluetoothManager.return_value = bt_mgr
+    mocker.patch.dict(sys.modules, {"fhempy.lib.core.bt_manager": bt_manager})
+
+    assert ble._pair("0000") == PairingState.NOT_FOUND
+    assert bt_mgr.discover_device_path.call_count == 1
+    bt_mgr.unregister_agent.assert_called_once()
