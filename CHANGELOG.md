@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.1.777 (2026-10-12)
+
+### Bug Fixes
+
+- **homekit**: Wait for accessories that start after FHEM
+  ([#628](https://github.com/fhempy/fhempy/pull/628),
+  [`8f24467`](https://github.com/fhempy/fhempy/commit/8f24467bd6036ff826d36d114f834f1d18b673e7))
+
+The gateway gave up after the first failed connection and stayed in error state, e.g. when
+  Homebridge starts after FHEM. It now waits for aiohomekit's reconnect loop, which connects as soon
+  as zeroconf announces the accessory. Unpaired gateways keep waiting for discovery. Accessory
+  devices share the gateway connection.
+
+Fixes #625
+
+
 ## v0.1.776 (2026-10-12)
 
 ### Bug Fixes
