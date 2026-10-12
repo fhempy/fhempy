@@ -1,6 +1,28 @@
 # CHANGELOG
 
 
+## v0.1.776 (2026-10-12)
+
+### Bug Fixes
+
+- **mqtt_ha_discovery**: Support full key names and skip non-config messages
+  ([#627](https://github.com/fhempy/fhempy/pull/627),
+  [`680dd22`](https://github.com/fhempy/fhempy/commit/680dd2267aec767d32b4520457cde82734bf0210))
+
+Zigbee2MQTT and others send "device"/"state_topic" instead of the ESPHome abbreviations, which
+  failed with KeyError 'dev' (#626). Discovery payloads are now normalized (abbreviations, ~ base
+  topic), topics without node_id and device based discovery are supported, empty/invalid payloads
+  are ignored.
+
+readingList/setList used \$EVENT, which became a literal backslash since CommandAttr quotes with
+  perlString; write $EVENT and repair existing entries. Light off command sent "on", brightness used
+  a wrong JSON key.
+
+Claude-Session: https://claude.ai/code/session_01RiP2L62jYcnhU9vguQqitC
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.775 (2026-10-10)
 
 ### Bug Fixes
