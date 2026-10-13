@@ -66,6 +66,7 @@ class FakeWienerNetze:
         from aiohttp import web
 
         assert request.cookies.get("AUTH_SESSION_ID") == "session1"
+        assert "Mozilla" in request.headers["User-Agent"]
         assert request.query["b"] == "2"
         data = await request.post()
         assert data["username"] == USERNAME
@@ -82,7 +83,8 @@ class FakeWienerNetze:
         data = await request.post()
         if data["password"] != self.password:
             return web.Response(
-                text='<html><form action="/auth/password"></form>Invalid</html>',
+                text='<html><form action="/auth/password"></form>'
+                '<span id="input-error">Invalid username or password.</span></html>',
                 content_type="text/html",
             )
         return web.Response(
@@ -214,7 +216,7 @@ async def test_wrong_password(fake_server, session):
     from fhempy.lib.wienernetze_smartmeter.api.errors import SmartmeterLoginError
 
     client = AsyncSmartmeter(USERNAME, "wrong", session)
-    with pytest.raises(SmartmeterLoginError):
+    with pytest.raises(SmartmeterLoginError, match="Invalid username or password"):
         await client.login()
     assert not client.is_logged_in()
 

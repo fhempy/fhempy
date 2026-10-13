@@ -44,3 +44,14 @@ def build_verbrauchs_args(**kwargs):
     }
     args.update(**kwargs)
     return args
+
+
+# log.wien is used from a browser, send browser like headers for the login
+LOGIN_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "de-AT,de;q=0.9,en;q=0.8",
+}
