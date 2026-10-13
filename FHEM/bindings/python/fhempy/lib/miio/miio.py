@@ -3,11 +3,22 @@ import enum
 import functools
 import inspect
 import json
+import logging
 import typing
 
 from miio.click_common import DeviceGroupMeta
 
 from .. import fhem, generic, utils
+
+
+class _NoReceiveErrors(logging.Filter):
+    # python-miio logs every timeout of an unreachable device as error and
+    # raises an exception afterwards, the module logs the offline state once
+    def filter(self, record):
+        return not record.getMessage().startswith("Got error when receiving")
+
+
+logging.getLogger("miio.miioprotocol").addFilter(_NoReceiveErrors())
 
 
 class miio(generic.FhemModule):
@@ -18,6 +29,7 @@ class miio(generic.FhemModule):
         self._fct_update_tasks = {}
         self._cmd_lock = asyncio.Lock()
         self._attr_update_functions = ""
+        self._offline_logged = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -119,12 +131,22 @@ class miio(generic.FhemModule):
                 async with self._cmd_lock:
                     await asyncio.sleep(1)
                     await self.send_command(fct_name, None, raise_exc=True)
+                if self._offline_logged:
+                    self.logger.info("Device is reachable again")
+                    self._offline_logged = False
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
             except Exception as exc:
-                if fct_name != "status":
-                    self.logger.warning(f"Failed to send_command {fct_name}: {exc}")
+                # an unreachable device is logged once, not on every retry
+                if not self._offline_logged:
+                    self.logger.warning(
+                        f"Device not reachable ({fct_name}: {exc}), "
+                        "retrying in the background"
+                    )
+                    self._offline_logged = True
+                else:
+                    self.logger.debug(f"Failed to send_command {fct_name}: {exc}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )
