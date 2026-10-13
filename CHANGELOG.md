@@ -1,6 +1,30 @@
 # CHANGELOG
 
 
+## v0.1.781 (2026-10-13)
+
+### Bug Fixes
+
+- Clean up errors from fhempy log (geizhals, Smart Life, SSDP, zigbee2mqtt, miio, tuya)
+  ([#634](https://github.com/fhempy/fhempy/pull/634),
+  [`ea1fdb1`](https://github.com/fhempy/fhempy/commit/ea1fdb1e967f31934ea89f0e547352e28d3d977f))
+
+- geizhals: no AttributeError when the product page can't be loaded or parsed; price readings still
+  update, page errors logged once - tuya_smartlife: expired login (1010/sign invalid) sets state
+  "login expired, please use set relogin" instead of an unhandled traceback; other errors retry with
+  backoff - core/ssdp: pass the argument names async-upnp-client 0.48 expects; the advertisement
+  listener and the SSDP search failed with TypeError, so DLNA devices were only found by chance.
+  Listener retries on errors. - zigbee2mqtt: read PATH once from an interactive bash and run
+  commands with a non-interactive bash, no more "cannot set terminal process group" / "no job
+  control" lines in the log - miio: unreachable device logged once (and when it is back),
+  python-miio "Got error when receiving" errors filtered - tuya: unreachable local device logged as
+  one line without traceback, reconnect backoff up to 60s
+
+Claude-Session: https://claude.ai/code/session_01WvAyfgr3cJwkBsxTFpKF5P
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.780 (2026-10-13)
 
 ### Bug Fixes
