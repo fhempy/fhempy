@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.1.782 (2026-10-13)
+
+### Bug Fixes
+
+- **spotify**: Log connection errors once instead of a traceback every interval
+  ([#636](https://github.com/fhempy/fhempy/pull/636),
+  [`1590cd9`](https://github.com/fhempy/fhempy/commit/1590cd941f27e9c9880a29583bf38e87d0df1d47))
+
+Fixes #635
+
+
 ## v0.1.781 (2026-10-13)
 
 ### Bug Fixes
