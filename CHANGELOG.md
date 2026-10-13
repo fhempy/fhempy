@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v0.1.780 (2026-10-13)
+
+### Bug Fixes
+
+- **wienernetze_smartmeter**: Browser headers for log.wien login and login diagnostics
+  ([#633](https://github.com/fhempy/fhempy/pull/633),
+  [`671612a`](https://github.com/fhempy/fhempy/commit/671612a8a80ece90feb34597b7406fa86c488624))
+
+- send browser like User-Agent/Accept headers in the log.wien login steps - error messages name the
+  failing login step, the HTTP status and the message log.wien shows (e.g. invalid password,
+  2FA/required action) - token errors include Keycloak's error_description - client logs each login
+  step through the device logger (verbose 5), without query strings, codes or credentials
+
+Claude-Session: https://claude.ai/code/session_01PSfi1tMioNAMzKV1Kzjtns
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.779 (2026-10-12)
 
 ### Bug Fixes
