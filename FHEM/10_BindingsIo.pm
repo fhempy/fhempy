@@ -372,6 +372,10 @@ BindingsIo_Write($$$$$) {
   }
 
   if($function ne "event" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
+    # Keep saved devices during startup, but never accept an unchecked new DEF.
+    if ($function eq "Define" && $init_done && !$initrun) {
+      return $hash->{BindingType}." server offline; definition not checked";
+    }
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
 
@@ -447,12 +451,14 @@ BindingsIo_Write($$$$$) {
   while (1) {
     if (not defined(DevIo_IsOpen($hash))) {
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): WARNING: Connection closed while waiting for function to finish (id: $waitingForId)";
+      $returnval = "Connection closed; definition not completed" if ($function eq "Define");
       last;
     }
     my $t2 = time * 1000;
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
+      $returnval = "Timeout; definition not completed" if ($function eq "Define");
       while (my ($key, $value) = each (%msg))
       {
         Log3 $hash, 1, "  $key =>  $msg{$key}";
@@ -472,6 +478,10 @@ BindingsIo_Write($$$$$) {
 
   if ($returnval eq "" || $returnval eq "continue") {
     $returnval = undef;
+  }
+  # Reconnect/startup has no interactive caller to display a rejected DEF.
+  if ($function eq "Define" && ($initrun || !$init_done) && defined($returnval)) {
+    readingsSingleUpdate($devhash, "state", $returnval, 1);
   }
 
   # do not wait for others to finish within function reply

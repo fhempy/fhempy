@@ -39,10 +39,15 @@ conf = {"internal_modules": ["discover_fhempy"]}
 
 
 UNDEFINE_TIMEOUT = 60
+DEFINE_CLEANUP_TIMEOUT = 1
 
 
 class ModuleDisabledException(Exception):
     pass
+
+
+class ModuleDefineException(Exception):
+    """Carry a module's rejected definition through lazy module loading."""
 
 
 def describe_hash(hash):
@@ -116,6 +121,7 @@ async def pybinding(websocket):
 
 class fhempy:
     def __init__(self, websocket):
+        """Track connection state, active definitions and shared installations."""
         self.wsconnection = websocket
         self.shutdown_started = 0
         self._event_listener = []
@@ -125,6 +131,8 @@ class fhempy:
         # restart or shutdown started, modules are being undefined
         self._stopping = False
         self.msg_received_time = {}
+        self._defining = set()
+        self._dependency_tasks = {}
 
     def register_msg_listener(self, listener, awaitid):
         self._msg_listeners[awaitid] = listener
@@ -184,6 +192,9 @@ class fhempy:
         fhem.setFunctionInactive(hash)
 
     async def sendBackError(self, hash, error):
+        """Report a failed call and release any failed definition first."""
+        if hash.get("function") == "Define":
+            await self._discard_module(hash)
         # the hash contains the define arguments, which might be credentials
         logger.error(f"{error} ({describe_hash(hash)})")
         retHash = hash.copy()
@@ -359,6 +370,68 @@ class fhempy:
                 await listener["callback"](event_device, event_name, event_value)
 
     async def handle_function(self, hash, msg):
+        """Wait for warm redefinitions; initialize unloaded devices asynchronously."""
+        name = hash["NAME"]
+        if name in self._defining:
+            # Define may set attributes through FHEM and receive an Attr callback.
+            if hash["function"] == "Attr" and hash["args"][2] != "disable":
+                return await self._handle_function(hash, msg)
+            await self.sendBackReturn(hash, "Device initialization in progress; retry")
+            return
+        if hash["function"] != "Define" or self._stopping:
+            return await self._handle_function(hash, msg)
+        if name in moduleLoadingRunning:
+            await self.sendBackReturn(hash, "Module loading in progress; retry")
+            return
+        instance = loadedModuleInstances.get(name)
+        previous_hash = getattr(instance, "hash", None)
+        wait_for_define = (
+            previous_hash is not None
+            and previous_hash.get("FHEMPYTYPE") == hash["FHEMPYTYPE"]
+        )
+        self._defining.add(name)
+        # Leave time for cleanup and the reply before BindingsIo stops waiting.
+        timeout = max(
+            0.001,
+            min(fct_timeout, hash.get("timeout", fct_timeout * 1000) / 1000)
+            - DEFINE_CLEANUP_TIMEOUT - 1,
+        )
+        try:
+            if not wait_for_define:
+                # A saved FHEM device may still need its first Python instance.
+                await self._handle_function(hash, msg)
+                return
+            async with asyncio.timeout(timeout):
+                await self._handle_function(hash, msg, wait_for_define=True)
+        except asyncio.TimeoutError:
+            await self.sendBackError(hash, "Define timed out; device not initialized")
+        except asyncio.CancelledError:
+            await self._discard_module(hash)
+            fhem.setFunctionInactive(hash)
+            raise
+        finally:
+            self._defining.discard(name)
+
+    async def _discard_module(self, hash):
+        """Release a rejected instance, even if its Undefine fails or hangs."""
+        instance = loadedModuleInstances.pop(hash["NAME"], None)
+        if instance is None:
+            return
+        cleanup_hash = dict(hash, function="Undefine")
+        try:
+            func = getattr(instance, "Undefine", None)
+            if func is not None:
+                await asyncio.wait_for(func(cleanup_hash), DEFINE_CLEANUP_TIMEOUT)
+        except Exception:
+            logger.exception(
+                "Cleanup after rejected Define failed for %s", hash["NAME"]
+            )
+        finally:
+            if isinstance(instance, generic.FhemModule):
+                await generic.FhemModule.Undefine(instance, cleanup_hash)
+
+    async def _handle_function(self, hash, msg, wait_for_define=False):
+        """Load and dispatch calls; forward each module's own Define result."""
         ret = ""
         if self._stopping:
             # modules are being undefined, don't call them anymore
@@ -367,6 +440,10 @@ class fhempy:
         # this is needed to avoid 2 replies on dep installation
         fhem_reply_done = False
         fhem.setFunctionActive(hash)
+        if hash["function"] == "Define" and not wait_for_define:
+            # Reply before cleanup, imports or installations, which can be slow.
+            await self.sendBackReturn(hash, "")
+            fhem_reply_done = True
         # load module
         nmInstance = None
         if hash["function"] == "Rename":
@@ -384,13 +461,12 @@ class fhempy:
                 # this code is called on defmod
                 # if module is loaded and Define is called, do Undefine first
                 # call undefine
-                hash["function"] = "Undefine"
                 await self.execute_function(
-                    hash, fhem_reply_done, loadedModuleInstances[hash["NAME"]]
+                    dict(hash, function="Undefine"), fhem_reply_done,
+                    loadedModuleInstances[hash["NAME"]],
                 )
                 # delete module from loadedModuleInstances
                 del loadedModuleInstances[hash["NAME"]]
-                hash["function"] = "Define"
 
             if not (hash["NAME"] in loadedModuleInstances):
                 if hash["NAME"] in moduleLoadingRunning:
@@ -399,18 +475,27 @@ class fhempy:
 
                 moduleLoadingRunning[hash["NAME"]] = True
 
-                # loading a module might take some time,
-                # therefore sendBackReturn now
-                await self.sendBackReturn(hash, "")
-                fhem_reply_done = True
+                if not wait_for_define and not fhem_reply_done:
+                    await self.sendBackReturn(hash, "")
+                    fhem_reply_done = True
 
                 try:
-                    await self.check_and_install_dependencies(hash)
+                    # A warm redefinition reuses the already installed module.
+                    if not wait_for_define:
+                        await self.check_and_install_dependencies(hash)
 
                     module_object = await self.import_module(hash)
 
                     await self.define_module(hash, module_object)
                 except ModuleDisabledException:
+                    if not fhem_reply_done:
+                        await self.sendBackReturn(hash, "")
+                    return 0
+                except ModuleDefineException as exc:
+                    if fhem_reply_done:
+                        await fhem.readingsSingleUpdate(hash, "state", str(exc), 1)
+                    else:
+                        await self.sendBackReturn(hash, str(exc))
                     return 0
                 except asyncio.TimeoutError:
                     errorMsg = (
@@ -493,6 +578,7 @@ class fhempy:
                 del loadedModuleInstances[hash["NAME"]]
 
     async def define_module(self, hash, module_object):
+        """Create an instance and reject errors from an implicit Define too."""
         # create instance of class with logger
         target_class = getattr(module_object, hash["FHEMPYTYPE"])
         moduleLogger = logging.getLogger(hash["NAME"])
@@ -515,12 +601,20 @@ class fhempy:
                 "Define",
                 "nofunction",
             )
-            await asyncio.wait_for(
-                func(hash, hash["defargs"], hash["defargsh"]),
-                fct_timeout,
-            )
+            try:
+                ret = await asyncio.wait_for(
+                    func(hash, hash["defargs"], hash["defargsh"]),
+                    fct_timeout,
+                )
+            except (Exception, asyncio.CancelledError):
+                await self._discard_module(hash)
+                raise
+            if ret:
+                await self._discard_module(hash)
+                raise ModuleDefineException(ret)
 
     async def execute_function(self, hash, fhem_reply_done, nmInstance):
+        """Run a device call and discard instances whose Define rejects input."""
         ret = ""
         # handle verbose level of logging
         if hash["function"] == "Attr" and hash["args"][2] == "verbose":
@@ -575,12 +669,21 @@ class fhempy:
                         # or didn't call FhemModule.Undefine
                         await generic.FhemModule.Undefine(nmInstance, hash)
             else:
-                ret = await asyncio.wait_for(
-                    func(hash, hash["args"], hash["argsh"]),
-                    fct_timeout,
-                )
+                try:
+                    ret = await asyncio.wait_for(
+                        func(hash, hash["args"], hash["argsh"]),
+                        fct_timeout,
+                    )
+                except (Exception, asyncio.CancelledError):
+                    if hash["function"] == "Define":
+                        await self._discard_module(hash)
+                    raise
             if ret is None:
                 ret = ""
+            if hash["function"] == "Define" and ret:
+                await self._discard_module(hash)
+                if fhem_reply_done:
+                    await fhem.readingsSingleUpdate(hash, "state", ret, 1)
             if fhem_reply_done:
                 await self.updateHash(hash)
 
@@ -674,7 +777,22 @@ class fhempy:
 
         return module_object
 
+    def _dependency_install_done(self, module, task):
+        """Finish shared installations without referring to a rejected device."""
+        self._dependency_tasks.pop(module, None)
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            logger.exception("Dependency installation failed for %s", module)
+        else:
+            if site.getusersitepackages() not in sys.path:
+                sys.path.append(site.getusersitepackages())
+            importlib.invalidate_caches()
+
     async def check_and_install_dependencies(self, hash):
+        """Install dependencies; let an in-flight installer finish after timeout."""
         # check dependencies
         deps_ok = await utils.run_blocking(
             functools.partial(
@@ -695,16 +813,20 @@ class fhempy:
                 # changed for dependencies
                 deps_ok = pkg_installer.check_dependencies(hash["FHEMPYTYPE"])
                 if deps_ok is False:
-                    # start installation in
-                    # a separate asyncio thread
-                    await pkg_installer.check_and_install_dependencies(
-                        hash["FHEMPYTYPE"]
-                    )
-                    # update cache again after install
-                    if not site.getusersitepackages() in sys.path:
-                        logger.debug("add pip path: " + site.getusersitepackages())
-                        sys.path.append(site.getusersitepackages())
-                    importlib.invalidate_caches()
+                    # Cancelling the installer's ThreadPoolExecutor would join
+                    # its worker on the event loop. Keep one shared install per
+                    # module alive, but do not continue the cancelled Define.
+                    module = hash["FHEMPYTYPE"]
+                    task = self._dependency_tasks.get(module)
+                    if task is None:
+                        task = asyncio.create_task(
+                            pkg_installer.check_and_install_dependencies(module)
+                        )
+                        self._dependency_tasks[module] = task
+                        task.add_done_callback(
+                            functools.partial(self._dependency_install_done, module)
+                        )
+                    await asyncio.shield(task)
                     # when installation finished, inform user
             await fhem.readingsSingleUpdate(
                 hash,

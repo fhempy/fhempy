@@ -38,6 +38,11 @@ sub
 fhempy_Define($$$)
 {
   my ($hash, $a, $h) = @_;
+  # FHEM restores DEF after a rejected modify; preserve the matching arguments
+  # used by BindingsIo for later lazy initialization and reconnects as well.
+  my @definition_keys = qw(args argsh FHEMPYTYPE PYTHONTYPE);
+  my %previous = map { exists($hash->{$_}) ? ($_ => $hash->{$_}) : () }
+    @definition_keys;
   $hash->{args} = $a;
   $hash->{argsh} = $h;
   $hash->{FHEMPYTYPE} = @$a[2];
@@ -62,7 +67,17 @@ fhempy_Define($$$)
 
   AssignIoPort($hash, "fhempy_local");
 
-  return IOWrite($hash, $hash, "Define", $a, $h);
+  my $ret = IOWrite($hash, $hash, "Define", $a, $h);
+  if (defined($ret) && $ret ne "") {
+    for my $key (@definition_keys) {
+      if (exists($previous{$key})) {
+        $hash->{$key} = $previous{$key};
+      } else {
+        delete $hash->{$key};
+      }
+    }
+  }
+  return $ret;
 }
 
 sub
