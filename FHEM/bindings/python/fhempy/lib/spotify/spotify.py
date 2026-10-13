@@ -1,6 +1,7 @@
 import asyncio
 import functools
 
+import requests
 import spotipy
 from spotipy.oauth2 import CacheFileHandler
 
@@ -42,6 +43,8 @@ class spotify(generic.FhemModule):
             + "user-read-private"
         )
         self.loggedin = False
+        # connection problems are logged once, not on every update interval
+        self._connection_error_logged = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -233,18 +236,16 @@ class spotify(generic.FhemModule):
 
     async def update_playback_loop(self):
         while True:
-            try:
-                await self.update_playback()
-            except Exception:
-                self.logger.exception("Failed to update playback")
+            await self.update_playback()
             await asyncio.sleep(self._attr_update_status_interval)
 
     async def update_devices_loop(self):
         while True:
             try:
                 await self.update_devices()
-            except Exception:
-                self.logger.exception("Failed to update devices")
+                self._connection_ok()
+            except Exception as exc:
+                self._log_update_error("devices", exc)
             await asyncio.sleep(self._attr_update_devices_interval)
 
     async def set_update_devices(self, hash, params):
@@ -367,6 +368,34 @@ class spotify(generic.FhemModule):
                 await fhem.CommandDeleteReading(
                     self.hash, self.hash["NAME"] + " current_" + del_reading
                 )
-            self._last_current = flat_status
-        except Exception:
-            self.logger.exception("Failed to update status")
+            self._last_data = flat_status
+            self._connection_ok()
+        except Exception as exc:
+            self._log_update_error("status", exc)
+
+    @staticmethod
+    def _is_connection_error(exc):
+        if isinstance(exc, (requests.exceptions.RequestException, OSError)):
+            return True
+        # spotipy raises SpotifyException after its retries for 429/5xx
+        if isinstance(exc, spotipy.SpotifyException):
+            status = exc.http_status or 0
+            return status == 429 or status >= 500
+        return False
+
+    def _log_update_error(self, what, exc):
+        if not self._is_connection_error(exc):
+            self.logger.exception(f"Failed to update {what}")
+        elif not self._connection_error_logged:
+            self.logger.warning(
+                f"Spotify not reachable ({type(exc).__name__}: {exc}), "
+                "retrying in the background"
+            )
+            self._connection_error_logged = True
+        else:
+            self.logger.debug(f"Failed to update {what}: {exc}")
+
+    def _connection_ok(self):
+        if self._connection_error_logged:
+            self.logger.info("Spotify is reachable again")
+            self._connection_error_logged = False
