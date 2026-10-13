@@ -14,12 +14,61 @@ from fhempy.lib.generic import FhemModule
 from .. import fhem, utils
 from ..core import child_process, pending_restore
 
+PATH_MARKER = "__FHEMPY_PATH__="
+
+
+def interactive_shell_env():
+    """Environment with the PATH of an interactive bash.
+
+    node/npm/pnpm are often installed via nvm, which is set up in .bashrc
+    and only runs in interactive shells. Instead of running every command
+    with bash -i (prints job control warnings to the fhempy log), the PATH
+    is read once and the commands run in a non-interactive bash.
+    """
+    env = os.environ.copy()
+    try:
+        out = subprocess.run(
+            ["bash", "-i", "-c", f'printf "\\n{PATH_MARKER}%s\\n" "$PATH"'],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=30,
+            check=False,
+        ).stdout.decode(errors="replace")
+    except Exception:
+        return env
+    for line in out.splitlines():
+        if line.startswith(PATH_MARKER) and line[len(PATH_MARKER) :]:
+            env["PATH"] = line[len(PATH_MARKER) :]
+    return env
+
 
 class zigbee2mqtt(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.proc = None
         self.check_process_task = None
+        self._shell_env = None
+
+    async def _get_shell_env(self):
+        if self._shell_env is None:
+            self._shell_env = await utils.run_blocking(
+                functools.partial(interactive_shell_env)
+            )
+        return self._shell_env
+
+    async def _shell(self, func, command, **kwargs):
+        # run command in bash with the PATH of an interactive shell
+        env = await self._get_shell_env()
+        return await utils.run_blocking(
+            functools.partial(
+                func,
+                ["bash", "-c", command],
+                env=env,
+                stdin=subprocess.DEVNULL,
+                **kwargs,
+            )
+        )
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -93,20 +142,10 @@ class zigbee2mqtt(FhemModule):
             o = rep.remotes.origin
             await utils.run_blocking(functools.partial(o.pull))
 
-            await utils.run_blocking(
-                functools.partial(
-                    subprocess.call,
-                    ["bash", "-i", "-c", "pnpm i --frozen-lockfile"],
-                    cwd=z2m_directory,
-                )
+            await self._shell(
+                subprocess.call, "pnpm i --frozen-lockfile", cwd=z2m_directory
             )
-            await utils.run_blocking(
-                functools.partial(
-                    subprocess.call,
-                    ["bash", "-i", "-c", "pnpm run build"],
-                    cwd=z2m_directory,
-                )
-            )
+            await self._shell(subprocess.call, "pnpm run build", cwd=z2m_directory)
 
             source_folder = z2m_directory + "/data-backup"
             destination_folder = z2m_directory + "/data"
@@ -171,20 +210,10 @@ class zigbee2mqtt(FhemModule):
                     "installing dependencies, might take some minutes",
                     1,
                 )
-                await utils.run_blocking(
-                    functools.partial(
-                        subprocess.call,
-                        ["bash", "-i", "-c", "pnpm i --frozen-lockfile"],
-                        cwd=z2m_directory,
-                    )
+                await self._shell(
+                    subprocess.call, "pnpm i --frozen-lockfile", cwd=z2m_directory
                 )
-                await utils.run_blocking(
-                    functools.partial(
-                        subprocess.call,
-                        ["bash", "-i", "-c", "pnpm run build"],
-                        cwd=z2m_directory,
-                    )
-                )
+                await self._shell(subprocess.call, "pnpm run build", cwd=z2m_directory)
 
                 z2m_conf = (
                     "homeassistant: false\n"
@@ -222,11 +251,7 @@ class zigbee2mqtt(FhemModule):
     async def check_node_installation(self):
         try:
             # call subprocess and respect the users PATH from .bashrc
-            ver = await utils.run_blocking(
-                functools.partial(
-                    subprocess.check_output, ["bash", "-i", "-c", "node --version"]
-                )
-            )
+            ver = await self._shell(subprocess.check_output, "node --version")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "node", ver.decode("ascii").rstrip(), 1
             )
@@ -239,9 +264,7 @@ class zigbee2mqtt(FhemModule):
 
     async def check_npm_installation(self):
         try:
-            ver = await utils.run_blocking(
-                functools.partial(subprocess.check_output, ["bash", "-i", "-c", "npm --version"])
-            )
+            ver = await self._shell(subprocess.check_output, "npm --version")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "npm", ver.decode("ascii").rstrip(), 1
             )
@@ -254,9 +277,7 @@ class zigbee2mqtt(FhemModule):
 
     async def check_pnpm_installation(self):
         try:
-            ver = await utils.run_blocking(
-                functools.partial(subprocess.check_output, ["bash", "-i", "-c", "pnpm --version"])
-            )
+            ver = await self._shell(subprocess.check_output, "pnpm --version")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "pnpm", ver.decode("ascii").rstrip(), 1
             )
@@ -302,7 +323,10 @@ class zigbee2mqtt(FhemModule):
 
         try:
             self.proc = child_process.start(
-                ["bash", "-i", "-c", "node ./index.js"], cwd=z2m_directory
+                ["bash", "-c", "exec node ./index.js"],
+                cwd=z2m_directory,
+                env=await self._get_shell_env(),
+                stdin=subprocess.DEVNULL,
             )
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:

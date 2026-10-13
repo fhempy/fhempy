@@ -26,6 +26,11 @@ class geizhals(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self.img = None
+        self.product_name = None
+        self.store = None
+        self.store_availability = None
+        self._page_error = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -65,38 +70,46 @@ class geizhals(generic.FhemModule):
                 self.url,
                 headers=geizhals.headers,
             ) as resp:
-                if resp.status == 200:
-                    html = await resp.text()
-                    await utils.run_blocking(
-                        functools.partial(self.handle_product_page, html)
-                    )
+                if resp.status != 200:
+                    # e.g. geizhals blocks the request, log it only once
+                    error = f"HTTP error {resp.status}"
+                    if self._page_error != error:
+                        self.logger.warning(
+                            f"Failed to load product page {self.url}: {error}"
+                        )
+                    self._page_error = error
+                    return
+                self._page_error = None
+                html = await resp.text()
+                await utils.run_blocking(
+                    functools.partial(self.handle_product_page, html)
+                )
 
     def handle_product_page(self, html):
         soup = BeautifulSoup(html, "html.parser")
-        try:
-            self.img = soup.find("img", {"class": "swiper-slide__image"})
-            self.img = "<html>" + str(self.img) + "</html>"
-            self.product_name = soup.find(
-                "h1", {"class": "variant__header__headline"}
-            ).text
-            self.best_offer = soup.find("div", {"id": "offer__0"})
-            self.store = self.best_offer.find(
-                "div", {"class": "merchant__logo-caption"}
-            ).text.strip()
-            self.store_availability = self.best_offer.find(
-                "div", {"class": "offer__delivery-time"}
-            ).text
-        except Exception:
-            self.logger.exception("Failed to parse product page")
+        # every value is parsed on its own, a changed page layout only
+        # affects the readings which can't be found anymore
+        img = soup.find("img", {"class": "swiper-slide__image"})
+        if img is not None:
+            self.img = "<html>" + str(img) + "</html>"
+        headline = soup.find("h1", {"class": "variant__header__headline"})
+        if headline is not None:
+            self.product_name = headline.text.strip()
+        best_offer = soup.find("div", {"id": "offer__0"})
+        if best_offer is not None:
+            store = best_offer.find("div", {"class": "merchant__logo-caption"})
+            if store is not None:
+                self.store = store.text.strip()
+            availability = best_offer.find("div", {"class": "offer__delivery-time"})
+            if availability is not None:
+                self.store_availability = availability.text.strip()
 
     async def update_loop(self):
         # get product page infos
         try:
             await self.update_product_page_infos()
             # the alias comes from the web page, keep plain text only
-            product_name = re.sub(
-                r"[^\w .,+()/-]", "", getattr(self, "product_name", None) or ""
-            )
+            product_name = re.sub(r"[^\w .,+()/-]", "", self.product_name or "")
             if (
                 product_name
                 and await fhem.AttrVal(self.hash["NAME"], "alias", "") == ""
@@ -133,11 +146,15 @@ class geizhals(generic.FhemModule):
                             )
 
                 await self.update_product_page_infos()
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "store", self.store)
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, "store_availability", self.store_availability
-                )
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "image", self.img)
+                for reading, value in (
+                    ("store", self.store),
+                    ("store_availability", self.store_availability),
+                    ("image", self.img),
+                ):
+                    if value is not None:
+                        await fhem.readingsBulkUpdateIfChanged(
+                            self.hash, reading, value
+                        )
 
             except Exception:
                 self.logger.exception("Failed to update")
