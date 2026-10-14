@@ -8,6 +8,12 @@ on:
   #  types: [created]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump (major for 1.0.0)"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -35,10 +41,10 @@ jobs:
 
       - name: Python Semantic Release
         id: release
-        uses: python-semantic-release/python-semantic-release@v9.15.2
+        uses: python-semantic-release/python-semantic-release@v10.7.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          force: "patch"
+          force: ${{ inputs.bump }}
           push: "true"
 
       - name: Publish package distributions to PyPI
