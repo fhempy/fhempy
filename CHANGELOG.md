@@ -1,5 +1,6 @@
 # CHANGELOG
 
+<!-- version list -->
 
 ## v0.1.783 (2026-10-14)
 
