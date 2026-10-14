@@ -124,3 +124,38 @@ async def test_library_receive_errors_are_filtered(mocker, caplog):
     messages = [r.getMessage() for r in caplog.records]
     assert "Got error when receiving: timed out" not in messages
     assert "failed to send msg: x" in messages
+
+
+@pytest.mark.asyncio
+async def test_connection_error_logged_without_traceback(mocker, caplog):
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("miio")
+    from miio.exceptions import DeviceException
+
+    from fhempy.lib.miio.miio import miio
+
+    device = miio(logging.getLogger(__name__))
+    mocker.patch.object(device, "create_async_task", lambda coro: coro.close())
+    await device.Define(
+        {"NAME": "testmiio5", "FHEMPYTYPE": "miio"},
+        ["testmiio5", "fhempy", "miio", "roborockvacuum", "127.0.0.1", "00" * 16],
+        {},
+    )
+    mocker.patch.object(
+        device._device,
+        "status",
+        side_effect=DeviceException("Unable to discover the device 127.0.0.1"),
+    )
+    caplog.set_level(logging.DEBUG)
+
+    await device.send_command("status", None)
+    errors = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert len(errors) == 1
+    assert errors[0].exc_info is None
+    assert "Unable to discover the device" in errors[0].getMessage()
+
+    # device already reported offline: no further warning or error
+    caplog.clear()
+    device._offline_logged = True
+    await device.send_command("status", None)
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]

@@ -7,6 +7,7 @@ import logging
 import typing
 
 from miio.click_common import DeviceGroupMeta
+from miio.exceptions import DeviceException
 
 from .. import fhem, generic, utils
 
@@ -200,7 +201,15 @@ class miio(generic.FhemModule):
         except Exception as exc:
             if raise_exc:
                 raise exc
-            self.logger.exception(f"Failed to call {fct_name}")
+            if isinstance(exc, DeviceException):
+                # connection errors (e.g. device offline) don't need a traceback,
+                # an already reported offline device isn't logged again
+                if self._offline_logged:
+                    self.logger.debug(f"Failed to call {fct_name}: {exc}")
+                else:
+                    self.logger.error(f"Failed to call {fct_name}: {exc}")
+            else:
+                self.logger.exception(f"Failed to call {fct_name}")
             return
 
         # handle reply
