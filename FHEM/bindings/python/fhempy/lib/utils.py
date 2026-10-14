@@ -93,6 +93,11 @@ def to_float(value, default=0.0):
         return default
 
 
+async def readings_float(name, reading, default=0.0):
+    """Reading value as float, default if missing or not a number."""
+    return to_float(await fhem.ReadingsVal(name, reading, default), default)
+
+
 # example config
 # attr_list = {
 #   "attribute1": {"default": 10, "format": "int", "options":"1,2,3"}

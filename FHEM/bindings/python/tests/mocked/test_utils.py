@@ -338,3 +338,15 @@ def test_to_float():
     assert utils.to_float("off") == 0.0
     assert utils.to_float(None) == 0.0
     assert utils.to_float("", default=1.0) == 1.0
+
+
+@pytest.mark.asyncio
+async def test_readings_float(mocker):
+    from tests.utils import mock_fhem
+
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings["floatdev"] = {"energy": "off", "power": "12.5"}
+    assert await utils.readings_float("floatdev", "energy") == 0.0
+    assert await utils.readings_float("floatdev", "power") == 12.5
+    assert await utils.readings_float("floatdev", "missing", 3.0) == 3.0
+    mock_fhem.readings.pop("floatdev")
