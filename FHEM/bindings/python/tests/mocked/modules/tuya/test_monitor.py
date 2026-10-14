@@ -114,3 +114,36 @@ async def test_local_device_monitor(mocker):
     await fhempy_device.Undefine(testhash)
     assert fhempy_device._monitor is None
     assert dev.socket is None
+
+
+@pytest.mark.asyncio
+async def test_define_with_non_numeric_energy_reading(mocker):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings[DEVICE_NAME] = {"energy": "off"}
+    await check_and_install_dependencies("tuya")
+    from fhempy.lib.tuya.tuya import tuya
+
+    FakeDevice.instances = []
+    mocker.patch("tinytuya.Device", FakeDevice)
+
+    fhempy_device = tuya(logging.getLogger(__name__))
+    testhash = {"NAME": DEVICE_NAME, "FHEMPYTYPE": "tuya"}
+    try:
+        await fhempy_device.Define(
+            testhash,
+            [
+                DEVICE_NAME,
+                "fhempy",
+                "tuya",
+                "PaYQNcPunOhPeS1X",
+                "345678345673456567",
+                "192.168.1.10",
+                "0123456789abcdef",
+                "3.3",
+            ],
+            {},
+        )
+        assert fhempy_device.energy == 0.0
+    finally:
+        await fhempy_device.Undefine(testhash)
+        mock_fhem.readings.pop(DEVICE_NAME, None)

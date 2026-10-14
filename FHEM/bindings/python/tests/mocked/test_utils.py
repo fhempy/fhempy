@@ -330,3 +330,11 @@ async def test_handle_set():
     )
     assert retval == None
     assert newstate == {"seconds": 300}
+
+
+def test_to_float():
+    assert utils.to_float("12.5") == 12.5
+    assert utils.to_float(3) == 3.0
+    assert utils.to_float("off") == 0.0
+    assert utils.to_float(None) == 0.0
+    assert utils.to_float("", default=1.0) == 1.0

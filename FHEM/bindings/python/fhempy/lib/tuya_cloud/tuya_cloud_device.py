@@ -28,7 +28,9 @@ class tuya_cloud_device:
         self.default_code = None
 
         # read current energy just on define
-        self.energy = float(await fhem.ReadingsVal(self.hash["NAME"], "energy", "0"))
+        self.energy = utils.to_float(
+            await fhem.ReadingsVal(self.hash["NAME"], "energy", "0")
+        )
         self.last_energy_ts = None
         self.last_energy_value = 0
 
