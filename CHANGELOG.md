@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v0.1.784 (2026-10-14)
+
+### Bug Fixes
+
+- Pin semantic-release action to commit SHA ([#645](https://github.com/fhempy/fhempy/pull/645),
+  [`f5decc0`](https://github.com/fhempy/fhempy/commit/f5decc0a16822c178e6e14566e8c56f90fa5c2e2))
+
+- **deps**: Bump ai-edge-litert from 2.1.6 to 2.3.0
+  ([#631](https://github.com/fhempy/fhempy/pull/631),
+  [`69c669a`](https://github.com/fhempy/fhempy/commit/69c669aebc4129dc3fdf465d822f9cf0b9cbe562))
+
+- **deps**: Bump bluetooth-auto-recovery from 1.4.2 to 1.6.4
+  ([#607](https://github.com/fhempy/fhempy/pull/607),
+  [`9df344b`](https://github.com/fhempy/fhempy/commit/9df344bf2e355607481b05b1f6c5b30819f08302))
+
+- **deps**: Bump markdown2 from 2.4.13 to 2.5.5 ([#601](https://github.com/fhempy/fhempy/pull/601),
+  [`083fa2d`](https://github.com/fhempy/fhempy/commit/083fa2dacbfb0943c25ceaee83e55861503e56b5))
+
+- **deps**: Bump pygatt from 4.0.5 to 5.0.0 ([#606](https://github.com/fhempy/fhempy/pull/606),
+  [`5b00dbe`](https://github.com/fhempy/fhempy/commit/5b00dbeb4eda240cf57a5bd1a5ec7523129210e6))
+
+- **deps**: Bump websockets from 17.1 to 17.2 ([#630](https://github.com/fhempy/fhempy/pull/630),
+  [`ed42eb2`](https://github.com/fhempy/fhempy/commit/ed42eb25a7c24bb688de3d8f2e39736fdef090f8))
+
+### Features
+
+- Release workflow on semantic-release 10 with selectable bump
+  ([#645](https://github.com/fhempy/fhempy/pull/645),
+  [`f5decc0`](https://github.com/fhempy/fhempy/commit/f5decc0a16822c178e6e14566e8c56f90fa5c2e2))
+
+
 ## v0.1.783 (2026-10-14)
 
 ### Bug Fixes
