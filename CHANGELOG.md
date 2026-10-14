@@ -1,6 +1,155 @@
 # CHANGELOG
 
 
+## v0.1.783 (2026-10-14)
+
+### Bug Fixes
+
+- Spotify command errors as reading, tuya Define with non-numeric energy
+  ([#644](https://github.com/fhempy/fhempy/pull/644),
+  [`a553c5d`](https://github.com/fhempy/fhempy/commit/a553c5dea5a7daea35d5edfb22bd9ba7a7e536a8))
+
+Spotify commands report failures in the last_error reading and the set return text instead of
+  tracebacks, and use default_device when no deviceid is given (#642). tuya, tuya_cloud and
+  tuya_smartlife no longer fail Define on a non-numeric energy reading (#643).
+
+Closes #642 Closes #643
+
+- **arp_presence**: Validate targets and support MAC addresses
+  ([#637](https://github.com/fhempy/fhempy/pull/637),
+  [`ee35097`](https://github.com/fhempy/fhempy/commit/ee35097246df972df840ec3b8be737bb03a4cfa6))
+
+ARP presence currently accepts malformed definitions and relies on external neighbour-table
+  commands. This change validates targets in the module and uses Linux Netlink to read neighbour
+  state directly.
+
+- Accept one IPv4 address or a case-insensitive MAC address in colon, hyphen, Cisco dotted, or plain
+  hexadecimal notation. - Keep validation and usage text in arp_presence; no module-specific rules
+  are added to the Perl bridge. - Run bounded scans in the background, coalesce manual updates, and
+  discard results belonging to an old definition. - Resolve MAC targets from the neighbour table,
+  retain interface information for UDP probes, and count only REACHABLE/DELAY entries as present. -
+  Reset presence/state consistently, log invalid definitions as errors, and omit empty task-stopping
+  messages. - Document IP_OR_MAC, the accepted MAC formats, set update, and the interval attribute.
+
+This is the cumulative ARP change through patch v0.04, including the README update. It is based
+  directly on master at 8e78a0d7dc7041a7ed5b1e637107945ad828d64e and can be reviewed independently
+  of the binding and help changes.
+
+Local validation on Python 3.12: 45 ARP regression tests passed; one live Netlink test was skipped
+  because this execution environment denies AF_NETLINK. The checks include real UDP loopback probes,
+  parser/error cases, MAC normalization and resolution, scan ownership, cancellation, and readings.
+  The harness also emitted two coroutine-not-awaited warnings when the existing generic task wrapper
+  was cancelled before its first execution; this PR does not change that shared wrapper.
+
+MAC mode needs an IPv4 mapping already present in the neighbour table; it does not sweep the subnet
+  to discover an unknown MAC. A live FHEM/device test is still pending. The reported test results
+  are local harness results, not GitHub Actions results.
+
+- **help**: Render Markdown cleanly and reload README content
+  ([#639](https://github.com/fhempy/fhempy/pull/639),
+  [`d88697c`](https://github.com/fhempy/fhempy/commit/d88697c9efcfeb6b12e2bef8dba681556772714e))
+
+The device help renderer inserts an extra HTML line break for every newline in the already-rendered
+  Markdown, producing excessive spacing. Its process-wide and per-instance caches also keep README
+  edits invisible until fhempy is restarted.
+
+- Insert the Markdown renderer's HTML directly, without adding extra line breaks. - Enable fenced
+  code blocks and serialize README HTML as JSON when embedding it in the page script. - Read and
+  render the current README on each device-detail-page request, using the existing background
+  helper.
+
+After this code change is loaded, editing a module README only requires reloading the device detail
+  page. Toggling the help section on a page that is already open does not fetch the file again. No
+  file watcher or additional cache is introduced.
+
+This is the cumulative help change through patch v0.02, based directly on master at
+  8e78a0d7dc7041a7ed5b1e637107945ad828d64e. The arp_presence README content change is in its
+  separate ARP branch.
+
+Local validation on Python 3.12: four help-rendering tests passed, covering headings/code without
+  added breaks, script-string escaping and intentional whitespace, edits visible to existing
+  instances, and recovery when a README is created or removed. Python syntax and changed lines were
+  checked. A live FHEMWEB rendering test remains pending; these are local harness results, not
+  GitHub Actions results.
+
+- **miio**: Log connection errors without traceback
+  ([#641](https://github.com/fhempy/fhempy/pull/641),
+  [`b7023a7`](https://github.com/fhempy/fhempy/commit/b7023a73cc7231a1312defcb3e8c721be2322b62))
+
+Fixes #640
+
+
+## v0.1.782 (2026-10-13)
+
+### Bug Fixes
+
+- **spotify**: Log connection errors once instead of a traceback every interval
+  ([#636](https://github.com/fhempy/fhempy/pull/636),
+  [`1590cd9`](https://github.com/fhempy/fhempy/commit/1590cd941f27e9c9880a29583bf38e87d0df1d47))
+
+Fixes #635
+
+
+## v0.1.781 (2026-10-13)
+
+### Bug Fixes
+
+- Clean up errors from fhempy log (geizhals, Smart Life, SSDP, zigbee2mqtt, miio, tuya)
+  ([#634](https://github.com/fhempy/fhempy/pull/634),
+  [`ea1fdb1`](https://github.com/fhempy/fhempy/commit/ea1fdb1e967f31934ea89f0e547352e28d3d977f))
+
+- geizhals: no AttributeError when the product page can't be loaded or parsed; price readings still
+  update, page errors logged once - tuya_smartlife: expired login (1010/sign invalid) sets state
+  "login expired, please use set relogin" instead of an unhandled traceback; other errors retry with
+  backoff - core/ssdp: pass the argument names async-upnp-client 0.48 expects; the advertisement
+  listener and the SSDP search failed with TypeError, so DLNA devices were only found by chance.
+  Listener retries on errors. - zigbee2mqtt: read PATH once from an interactive bash and run
+  commands with a non-interactive bash, no more "cannot set terminal process group" / "no job
+  control" lines in the log - miio: unreachable device logged once (and when it is back),
+  python-miio "Got error when receiving" errors filtered - tuya: unreachable local device logged as
+  one line without traceback, reconnect backoff up to 60s
+
+Claude-Session: https://claude.ai/code/session_01WvAyfgr3cJwkBsxTFpKF5P
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
+## v0.1.780 (2026-10-13)
+
+### Bug Fixes
+
+- **wienernetze_smartmeter**: Browser headers for log.wien login and login diagnostics
+  ([#633](https://github.com/fhempy/fhempy/pull/633),
+  [`671612a`](https://github.com/fhempy/fhempy/commit/671612a8a80ece90feb34597b7406fa86c488624))
+
+- send browser like User-Agent/Accept headers in the log.wien login steps - error messages name the
+  failing login step, the HTTP status and the message log.wien shows (e.g. invalid password,
+  2FA/required action) - token errors include Keycloak's error_description - client logs each login
+  step through the device logger (verbose 5), without query strings, codes or credentials
+
+Claude-Session: https://claude.ai/code/session_01PSfi1tMioNAMzKV1Kzjtns
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
+## v0.1.779 (2026-10-12)
+
+### Bug Fixes
+
+- **wienernetze_smartmeter**: Adapt login and API to Wiener Netze changes
+  ([#632](https://github.com/fhempy/fhempy/pull/632),
+  [`45f0af5`](https://github.com/fhempy/fhempy/commit/45f0af5c8d3a4eb799e5e9e5bf9ea681cce95133))
+
+- log.wien login with PKCE (S256) and two-step username/password form - authorization code parsed
+  from the Location fragment - API keys and URLs from app-config.json instead of scraping JS bundles
+  - API errors raise instead of returning None, re-login once on 401, token expiry tracked - state
+  reading: online / login failed / connection error / update failed
+
+Claude-Session: https://claude.ai/code/session_01PSfi1tMioNAMzKV1Kzjtns
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
+
 ## v0.1.778 (2026-10-12)
 
 ### Bug Fixes

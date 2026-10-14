@@ -6,6 +6,10 @@ from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
 from .api.client import AsyncSmartmeter
+from .api.errors import SmartmeterLoginError
+
+LOGIN_RETRY_INTERVAL = 300
+UPDATE_INTERVAL = 3600
 
 
 class wienernetze_smartmeter(FhemModule):
@@ -26,28 +30,50 @@ class wienernetze_smartmeter(FhemModule):
 
     async def update_loop(self):
         async with aiohttp.ClientSession() as session:
-            client = AsyncSmartmeter(self.username, self.password, session)
+            client = AsyncSmartmeter(
+                self.username, self.password, session, logger=self.logger
+            )
+            await self.login(client)
+            await self.update_endpoint(client.base_information, "baseInformation")
             while True:
-                try:
-                    await client.refresh_token()
-                    data = await client.base_information()
-                    await self.update_readings(data)
-                    break
-                except Exception:
-                    self.logger.exception("Login failed, retry in 5 minutes")
-                    await fhem.readingsSingleUpdate(
-                        self.hash, "state", "login failed", 1
-                    )
-                    await asyncio.sleep(300)
-            while True:
-                try:
-                    data = await client.consumptions()
-                    await self.update_readings(data)
-                    data = await client.meter_readings()
-                    await self.update_readings(data)
-                except Exception:
-                    self.logger.exception("Failed to update values")
-                await asyncio.sleep(3600)
+                await self.update(client)
+                await asyncio.sleep(UPDATE_INTERVAL)
+
+    async def login(self, client):
+        while True:
+            try:
+                await client.login()
+                return
+            except SmartmeterLoginError as err:
+                self.logger.error(f"Login failed: {err}, retry in 5 minutes")
+                await fhem.readingsSingleUpdate(self.hash, "state", "login failed", 1)
+            except Exception as err:
+                self.logger.error(f"Login not possible: {err!r}, retry in 5 minutes")
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", "connection error", 1
+                )
+            await asyncio.sleep(LOGIN_RETRY_INTERVAL)
+
+    async def update(self, client):
+        ok = await self.update_endpoint(client.consumptions, "consumptions")
+        ok = await self.update_endpoint(client.meter_readings, "meterReadings") or ok
+        if ok:
+            await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
+
+    async def update_endpoint(self, func, name):
+        try:
+            data = await func()
+        except SmartmeterLoginError as err:
+            self.logger.error(f"Login failed: {err}")
+            await fhem.readingsSingleUpdate(self.hash, "state", "login failed", 1)
+            return False
+        except Exception as err:
+            self.logger.error(f"Failed to update {name}: {err!r}")
+            await fhem.readingsSingleUpdate(self.hash, "state", "update failed", 1)
+            return False
+        if data is not None:
+            await self.update_readings(data)
+        return True
 
     async def update_readings(self, data):
         flat_data = utils.flatten_json(data)

@@ -10,11 +10,17 @@ from tuya_sharing import (
     SharingDeviceListener,
     SharingTokenListener,
 )
+from tuya_sharing.exceptions import ApiRequestException
 
 import fhempy.lib.fhem as fhem
 import fhempy.lib.utils as utils
 
 from .const import APP_QR_CODE_HEADER, CONF_CLIENT_ID, CONF_SCHEMA
+
+# the refresh token expired (1010) or the token isn't accepted anymore,
+# a new login with the QR code is needed
+LOGIN_EXPIRED_CODES = ("1010", "-9999999")
+RETRY_CONNECT = 300
 
 
 class tuya_smartlife_setup:
@@ -189,9 +195,35 @@ class tuya_smartlife_setup:
             def remove_device(self, device_id: str):
                 self.logger.info(f"remove_device received for {device_id}")
 
-        await utils.run_blocking(
-            functools.partial(self.device_manager.update_device_cache)
-        )
+        retry = RETRY_CONNECT
+        while True:
+            try:
+                await utils.run_blocking(
+                    functools.partial(self.device_manager.update_device_cache)
+                )
+                break
+            except ApiRequestException as exc:
+                if str(exc.error_code) in LOGIN_EXPIRED_CODES:
+                    self.logger.error(
+                        f"Smart Life login expired ({exc.error_message}), "
+                        "please execute 'set relogin' and scan the QR code"
+                    )
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "state", "login expired, please use set relogin", 1
+                    )
+                    return
+                self.logger.error(
+                    f"Failed to connect to Smart Life: {exc}, retry in {retry}s"
+                )
+            except Exception as exc:
+                self.logger.error(
+                    f"Failed to connect to Smart Life: {exc}, retry in {retry}s"
+                )
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", "connection failed, retrying", 1
+            )
+            await asyncio.sleep(retry)
+            retry = min(retry * 2, 3600)
 
         listener = DeviceListener(self.logger, self.device_manager)
         self.device_manager.add_device_listener(listener)

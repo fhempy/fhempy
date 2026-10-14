@@ -8,9 +8,6 @@ from fhempy.lib import fhem
 
 from . import utils
 
-# rendered README per FHEMPYTYPE
-_readme_cache = {}
-
 
 class FhemModule:
     def __init__(self, logger):
@@ -19,7 +16,6 @@ class FhemModule:
         self._tasks = []
         self._conf_set = {}
         self._conf_attr = {}
-        self.readme_str = None
 
     async def set_attr_config(self, attr_config):
         self._conf_attr = attr_config
@@ -39,6 +35,7 @@ class FhemModule:
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
+        """Read current module help for each detail page, preserving Markdown."""
         (FW_wname, d, room, pageHash) = args
 
         if not hasattr(self, "hash"):
@@ -61,7 +58,7 @@ class FhemModule:
         
         $(document).ready(function() {
           $("#content").append('<div class="makeTable help" id="fhempyReadme"></div>');
-          $("#fhempyReadme").html(`###README_HELP_STRING###`);
+          $("#fhempyReadme").html(###README_HELP_STRING###);
           document.getElementById("fhempyReadme").style.display = "none";
 
           var helpCmdStr = '###SET_CMD_CONFIG_STRING###';
@@ -145,25 +142,19 @@ class FhemModule:
             self.hash["FHEMPYTYPE"],
         )
 
-        # add readme as help, it's only rendered when needed and once per type
-        if self.readme_str is None:
-            fhempytype = self.hash["FHEMPYTYPE"]
-            if fhempytype not in _readme_cache:
-                _readme_cache[fhempytype] = await utils.run_blocking(
-                    functools.partial(self._get_readme_content)
-                )
-            self.readme_str = _readme_cache[fhempytype]
-        if self.readme_str is not None:
-            ret = ret.replace(
-                "###README_HELP_STRING###",
-                self.readme_str.replace("\n", "<br>")
-                .replace("\\", "\\\\")
-                .replace("`", "\\`"),
-            )
+        # Reload on each detail page request so README edits need no restart.
+        readme_str = await utils.run_blocking(
+            functools.partial(self._get_readme_content)
+        )
+        ret = ret.replace(
+            "###README_HELP_STRING###",
+            json.dumps(readme_str).replace("<", "\\u003c"),
+        )
 
         return ret
 
     def _get_readme_content(self):
+        """Read and convert the module's Markdown, including fenced code blocks."""
         import markdown2
         from fhempy import lib
 
@@ -176,7 +167,7 @@ class FhemModule:
             ) as f:
                 readme_md = f.read()
 
-            readme_str = markdown2.markdown(readme_md)
+            readme_str = markdown2.markdown(readme_md, extras=["fenced-code-blocks"])
             return readme_str
             # make_html_images_inline(
             #    readme_str, fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/"

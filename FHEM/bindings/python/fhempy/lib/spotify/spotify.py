@@ -1,6 +1,7 @@
 import asyncio
 import functools
 
+import requests
 import spotipy
 from spotipy.oauth2 import CacheFileHandler
 
@@ -42,11 +43,13 @@ class spotify(generic.FhemModule):
             + "user-read-private"
         )
         self.loggedin = False
+        # connection problems are logged once, not on every update interval
+        self._connection_error_logged = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "update_status_interval": {
                 "default": 60,
@@ -116,7 +119,7 @@ class spotify(generic.FhemModule):
             },
         }
         await self.set_set_config(self.set_config)
-        
+
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "disconnected")
         await fhem.readingsEndUpdate(hash, 1)
@@ -233,18 +236,16 @@ class spotify(generic.FhemModule):
 
     async def update_playback_loop(self):
         while True:
-            try:
-                await self.update_playback()
-            except Exception:
-                self.logger.exception("Failed to update playback")
+            await self.update_playback()
             await asyncio.sleep(self._attr_update_status_interval)
 
     async def update_devices_loop(self):
         while True:
             try:
                 await self.update_devices()
-            except Exception:
-                self.logger.exception("Failed to update devices")
+                self._connection_ok()
+            except Exception as exc:
+                self._log_update_error("devices", exc)
             await asyncio.sleep(self._attr_update_devices_interval)
 
     async def set_update_devices(self, hash, params):
@@ -292,49 +293,64 @@ class spotify(generic.FhemModule):
         if not self.loggedin:
             return "Please login first"
 
-        if params["cmd"] == "pause":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.pause_playback, params["deviceid"])
-            )
-        elif params["cmd"] == "play":
-            if "track" in params["uri"]:
-                utils.run_blocking_task(
-                    functools.partial(
-                        self.spotipy.start_playback,
-                        device_id=params["deviceid"],
-                        uris=[params["uri"]],
-                    )
+        cmd = params["cmd"]
+        if cmd == "status":
+            self.create_async_task(self.update_playback())
+            return
+
+        # without a device id Spotify uses the active device, which fails
+        # with NO_ACTIVE_DEVICE if nothing is playing: use default_device
+        device_id = params.get("deviceid") or self._attr_default_device
+
+        if cmd == "pause":
+            function = functools.partial(self.spotipy.pause_playback, device_id)
+        elif cmd == "play":
+            uri = params["uri"]
+            if ":track:" in uri or ":episode:" in uri:
+                function = functools.partial(
+                    self.spotipy.start_playback, device_id=device_id, uris=[uri]
                 )
             else:
-                utils.run_blocking_task(
-                    functools.partial(
-                        self.spotipy.start_playback,
-                        device_id=params["deviceid"],
-                        context_uri=params["uri"],
-                    )
+                function = functools.partial(
+                    self.spotipy.start_playback, device_id=device_id, context_uri=uri
                 )
-        elif params["cmd"] == "next_track":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.next_track, params["deviceid"])
+        elif cmd == "next_track":
+            function = functools.partial(self.spotipy.next_track, device_id)
+        elif cmd == "previous_track":
+            function = functools.partial(self.spotipy.previous_track, device_id)
+        elif cmd == "shuffle":
+            function = functools.partial(
+                self.spotipy.shuffle, params["onoff"] == "on", device_id
             )
-        elif params["cmd"] == "previous_track":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.previous_track, params["deviceid"])
+        elif cmd == "volume":
+            function = functools.partial(
+                self.spotipy.volume, int(params["vol"]), device_id
             )
-        elif params["cmd"] == "status":
-            self.create_async_task(self.update_playback())
-        elif params["cmd"] == "shuffle":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.shuffle, params["onoff"] == "on")
-            )
-        elif params["cmd"] == "volume":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.volume, params["vol"])
-            )
-        elif params["cmd"] == "transfer_playback":
-            utils.run_blocking_task(
-                functools.partial(self.spotipy.transfer_playback, params["deviceid"])
-            )
+        elif cmd == "transfer_playback":
+            function = functools.partial(self.spotipy.transfer_playback, device_id)
+        else:
+            return
+
+        return await self._run_command(cmd, function)
+
+    async def _run_command(self, cmd, function):
+        try:
+            await utils.run_blocking(function)
+        except Exception as exc:
+            msg = self._command_error_message(exc)
+            self.logger.warning(f"{cmd} failed: {msg}")
+            await fhem.readingsSingleUpdate(self.hash, "last_error", f"{cmd}: {msg}", 1)
+            return f"{cmd} failed: {msg}"
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "last_error", "none", 1)
+
+    @staticmethod
+    def _command_error_message(exc):
+        if isinstance(exc, spotipy.SpotifyException):
+            msg = exc.msg.split("\n")[-1].strip()
+            if exc.reason:
+                msg += f" ({exc.reason})"
+            return msg
+        return f"{type(exc).__name__}: {exc}"
 
     async def update_playback(self):
         try:
@@ -367,6 +383,34 @@ class spotify(generic.FhemModule):
                 await fhem.CommandDeleteReading(
                     self.hash, self.hash["NAME"] + " current_" + del_reading
                 )
-            self._last_current = flat_status
-        except Exception:
-            self.logger.exception("Failed to update status")
+            self._last_data = flat_status
+            self._connection_ok()
+        except Exception as exc:
+            self._log_update_error("status", exc)
+
+    @staticmethod
+    def _is_connection_error(exc):
+        if isinstance(exc, (requests.exceptions.RequestException, OSError)):
+            return True
+        # spotipy raises SpotifyException after its retries for 429/5xx
+        if isinstance(exc, spotipy.SpotifyException):
+            status = exc.http_status or 0
+            return status == 429 or status >= 500
+        return False
+
+    def _log_update_error(self, what, exc):
+        if not self._is_connection_error(exc):
+            self.logger.exception(f"Failed to update {what}")
+        elif not self._connection_error_logged:
+            self.logger.warning(
+                f"Spotify not reachable ({type(exc).__name__}: {exc}), "
+                "retrying in the background"
+            )
+            self._connection_error_logged = True
+        else:
+            self.logger.debug(f"Failed to update {what}: {exc}")
+
+    def _connection_ok(self):
+        if self._connection_error_logged:
+            self.logger.info("Spotify is reachable again")
+            self._connection_error_logged = False

@@ -1,4 +1,5 @@
 """Smartmeter Errors."""
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,3 +26,7 @@ class SmartmeterLoginError(SmartmeterError):
 
 class SmartmeterConnectionError(SmartmeterError):
     """Raised due to network connectivity-related issues."""
+
+
+class SmartmeterQueryError(SmartmeterError):
+    """Raised if a query went not as expected."""
