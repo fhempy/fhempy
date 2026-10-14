@@ -3,11 +3,23 @@ import enum
 import functools
 import inspect
 import json
+import logging
 import typing
 
 from miio.click_common import DeviceGroupMeta
+from miio.exceptions import DeviceException
 
 from .. import fhem, generic, utils
+
+
+class _NoReceiveErrors(logging.Filter):
+    # python-miio logs every timeout of an unreachable device as error and
+    # raises an exception afterwards, the module logs the offline state once
+    def filter(self, record):
+        return not record.getMessage().startswith("Got error when receiving")
+
+
+logging.getLogger("miio.miioprotocol").addFilter(_NoReceiveErrors())
 
 
 class miio(generic.FhemModule):
@@ -18,6 +30,7 @@ class miio(generic.FhemModule):
         self._fct_update_tasks = {}
         self._cmd_lock = asyncio.Lock()
         self._attr_update_functions = ""
+        self._offline_logged = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -104,7 +117,7 @@ class miio(generic.FhemModule):
             fct_upd_list = self._attr_update_functions.split(",")
             for fct_upd in fct_upd_list:
                 try:
-                    (fct, sec) = fct_upd.split(":")
+                    fct, sec = fct_upd.split(":")
                     sec = int(sec)
                 except ValueError:
                     self.logger.error("update_functions format is FUNCTION:SECONDS")
@@ -119,12 +132,22 @@ class miio(generic.FhemModule):
                 async with self._cmd_lock:
                     await asyncio.sleep(1)
                     await self.send_command(fct_name, None, raise_exc=True)
+                if self._offline_logged:
+                    self.logger.info("Device is reachable again")
+                    self._offline_logged = False
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
             except Exception as exc:
-                if fct_name != "status":
-                    self.logger.warning(f"Failed to send_command {fct_name}: {exc}")
+                # an unreachable device is logged once, not on every retry
+                if not self._offline_logged:
+                    self.logger.warning(
+                        f"Device not reachable ({fct_name}: {exc}), "
+                        "retrying in the background"
+                    )
+                    self._offline_logged = True
+                else:
+                    self.logger.debug(f"Failed to send_command {fct_name}: {exc}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )
@@ -145,6 +168,8 @@ class miio(generic.FhemModule):
             return False
 
     async def send_command(self, fct_name, params, raise_exc=False):
+        if params is None:
+            params = {}
         fct = self._device._device_group_commands[fct_name].func
         sig = inspect.signature(fct)
         args = []
@@ -176,7 +201,15 @@ class miio(generic.FhemModule):
         except Exception as exc:
             if raise_exc:
                 raise exc
-            self.logger.exception(f"Failed to call {fct_name}")
+            if isinstance(exc, DeviceException):
+                # connection errors (e.g. device offline) don't need a traceback,
+                # an already reported offline device isn't logged again
+                if self._offline_logged:
+                    self.logger.debug(f"Failed to call {fct_name}: {exc}")
+                else:
+                    self.logger.error(f"Failed to call {fct_name}: {exc}")
+            else:
+                self.logger.exception(f"Failed to call {fct_name}")
             return
 
         # handle reply

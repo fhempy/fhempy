@@ -1,3 +1,5 @@
+import os
+import re
 import socket
 import sys
 
@@ -37,10 +39,13 @@ class esphome(FhemModule):
         # ESPHome 2026.9 removed the built-in dashboard, it is now provided by
         # the separate ESPHome Device Builder. Run it with fhempy's own Python
         # so it finds the esphome CLI from the same environment.
+        # The launcher fixes the MQTT client id of the Device Builder, it is
+        # random otherwise and MQTT2_SERVER autocreates a new device on every
+        # start.
         self._esphomeargs = [
             sys.executable,
-            "-m",
-            "esphome_device_builder",
+            os.path.join(os.path.dirname(__file__), "device_builder_launcher.py"),
+            "fhempy-" + re.sub(r"[^A-Za-z0-9_.-]", "_", self.hash["NAME"]),
             "esphome_config/",
             "--port",
             str(self._attr_port_dashboard),

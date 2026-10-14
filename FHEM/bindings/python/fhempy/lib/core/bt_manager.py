@@ -187,8 +187,16 @@ class BluetoothManager:
             pass
 
     def start_discovery(self):
-        """Starts scanning for nearby Bluetooth devices."""
+        """Starts scanning for nearby Bluetooth LE devices."""
         self.logger.info("[Manager] Starting Discovery...")
+        try:
+            # LE only: a classic inquiry blocks the radio for other
+            # connections and the WiFi of combo chips (Raspberry Pi)
+            self.adapter_obj.SetDiscoveryFilter(
+                {"Transport": dbus.String("le")}
+            )
+        except dbus.DBusException as e:
+            self.logger.debug(f"[Manager] SetDiscoveryFilter failed: {e}")
         self.adapter_obj.StartDiscovery()
 
     def stop_discovery(self):

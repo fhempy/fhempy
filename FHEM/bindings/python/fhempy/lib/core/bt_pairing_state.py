@@ -6,3 +6,4 @@ class PairingState(enum.Enum):
     WRONG_PIN = 1
     TIMEOUT = 2
     FAILED = 3
+    NOT_FOUND = 4

@@ -1,6 +1,5 @@
 import asyncio
 import sys
-from ipaddress import IPv4Address
 
 from aiohttp import ClientSession
 from async_upnp_client.advertisement import SsdpAdvertisementListener
@@ -137,62 +136,52 @@ class ssdp:
         except asyncio.CancelledError:
             pass
 
-    async def search_once(self):
-        timeout = 30
-        service_type = "ssdp:all"
-        source_ip = None
-        if sys.platform == "win32" and not source_ip:
-            self.logger.debug(
-                'Running on win32 without --bind argument, forcing to "0.0.0.0"'
-            )
-            source_ip = (
-                "0.0.0.0"  # force to IPv4 to prevent asyncio crash/WinError 10022
-            )
-        if source_ip:
-            source_ip = IPv4Address(source_ip)
+    @staticmethod
+    def _source():
+        if sys.platform == "win32":
+            # force to IPv4 to prevent asyncio crash/WinError 10022
+            return ("0.0.0.0", 0)
+        return None
 
+    async def search_once(self):
         async def on_response(data):
             await self.handle_msg("alive", data)
 
         try:
             await async_ssdp_search(
-                service_type=service_type,
-                source_ip=source_ip,
-                timeout=timeout,
                 async_callback=on_response,
+                timeout=30,
+                search_target="ssdp:all",
+                source=self._source(),
             )
         except asyncio.CancelledError:
             self.logger.debug("search cancelled")
+        except Exception as exc:
+            self.logger.error(f"SSDP search failed: {exc}")
 
     async def advertisements(self):
         """Listen for advertisements."""
-        try:
-            source_ip = None
-            if sys.platform == "win32" and not source_ip:
-                self.logger.debug(
-                    'Running on win32 without --bind argument, forcing to "0.0.0.0"'
+
+        async def on_alive(data):
+            await self.handle_msg("alive", data)
+
+        async def on_byebye(data):
+            await self.handle_msg("byebye", data)
+
+        retry = 60
+        while True:
+            try:
+                self.listener = SsdpAdvertisementListener(
+                    async_on_alive=on_alive,
+                    async_on_byebye=on_byebye,
+                    source=self._source(),
                 )
-                source_ip = (
-                    "0.0.0.0"  # force to IPv4 to prevent asyncio crash/WinError 10022
-                )
-            if source_ip:
-                source_ip = IPv4Address(source_ip)
-
-            async def on_alive(data):
-                await self.handle_msg("alive", data)
-
-            async def on_byebye(data):
-                await self.handle_msg("byebye", data)
-
-            async def on_update(data):
+                await self.listener.async_start()
                 return
-
-            self.listener = SsdpAdvertisementListener(
-                on_alive=on_alive,
-                on_byebye=on_byebye,
-                on_update=on_update,
-                source_ip=source_ip,
-            )
-            await self.listener.async_start()
-        except Exception:
-            self.logger.error("Error in advertisements listener")
+            except Exception as exc:
+                self.listener = None
+                self.logger.error(
+                    f"Error in advertisements listener: {exc}, retry in {retry}s"
+                )
+            await asyncio.sleep(retry)
+            retry = min(retry * 2, 3600)

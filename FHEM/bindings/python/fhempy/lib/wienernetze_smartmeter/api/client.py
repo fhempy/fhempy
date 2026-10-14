@@ -1,25 +1,89 @@
-"""Contains the Async Smartmeter API Client."""
+"""Contains the Async Smartmeter API Client.
+
+Login flow and endpoints follow
+https://github.com/DarwinsBuddy/WienerNetzeSmartmeter (api/client.py).
+"""
+
 import asyncio
+import base64
+import hashlib
+import json
 import logging
-import socket
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 from urllib import parse
 
 import aiohttp
 from lxml import html
 
 from . import constants as const
-from .errors import SmartmeterConnectionError, SmartmeterLoginError
+from .errors import (
+    SmartmeterConnectionError,
+    SmartmeterLoginError,
+    SmartmeterQueryError,
+)
 
-logger = logging.getLogger(__name__)
+module_logger = logging.getLogger(__name__)
 
 TIMEOUT = 20
+# renew the access token a bit before it really expires
+TOKEN_EXPIRY_MARGIN = timedelta(seconds=30)
+
+
+def generate_code_verifier():
+    return base64.urlsafe_b64encode(os.urandom(32)).decode("utf-8").rstrip("=")
+
+
+def generate_code_challenge(code_verifier):
+    digest = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
+
+
+def _form_action(text):
+    try:
+        forms = html.fromstring(text).xpath("(//form/@action)")
+    except Exception:
+        forms = []
+    return forms[0] if forms else None
+
+
+def _code_from_location(location):
+    parsed = parse.urlparse(location)
+    # response_mode=fragment returns the code in the fragment
+    for part in (parsed.fragment, parsed.query):
+        params = parse.parse_qs(part)
+        if "code" in params:
+            return params["code"][0]
+    return None
+
+
+def _url_path(url):
+    """URL without query/fragment, they can contain session codes."""
+    parsed = parse.urlparse(url or "")
+    return f"{parsed.netloc}{parsed.path}"
+
+
+def _page_message(text):
+    """Error/info message Keycloak shows on a login page."""
+    try:
+        tree = html.fromstring(text)
+    except Exception:
+        return ""
+    texts = tree.xpath(
+        "//*[contains(@class, 'alert') or contains(@class, 'kc-feedback-text')"
+        " or contains(@id, 'input-error') or contains(@class, 'error')]//text()"
+    )
+    message = " ".join(" ".join(texts).split())
+    if not message:
+        title = tree.xpath("//title/text()")
+        message = " ".join(" ".join(title).split())
+    return message[:200]
 
 
 class AsyncSmartmeter:
     """Async Smartmeter Client."""
 
-    def __init__(self, username, password, session=None, timeout=TIMEOUT):
+    def __init__(self, username, password, session=None, timeout=TIMEOUT, logger=None):
         """Access the Smart Meter API asynchronously.
 
         Args:
@@ -27,146 +91,224 @@ class AsyncSmartmeter:
             password (str): Password used for API Login
             session (aiohttp.ClientSession): An optional session object
             timeout (int): Timeout for all session calls. Defaults to TIMEOUT.
+            logger (logging.Logger): Logger, defaults to the module logger
         """
         self._username = username
         self._password = password
         self._session = session or aiohttp.ClientSession()
         self._timeout = timeout
+        self._logger = logger or module_logger
         self._access_token = None
         self._refresh_token = None
+        self._access_token_expiration = None
         self._api_gateway_token = None
+        self._api_gateway_b2b_token = None
+        self.api_url = const.API_URL
+        self.api_url_b2b = const.API_URL_B2B
+        self._login_lock = asyncio.Lock()
 
-    async def _get_login_action(self):
-        login_url = const.AUTH_URL + "auth?" + parse.urlencode(const.LOGIN_ARGS)
-        self._session.cookie_jar.clear()
-        async with self._session.get(login_url) as response:
-            tree = html.fromstring(await response.text())
-            return tree.xpath("(//form/@action)")[0]
+    def is_logged_in(self):
+        return (
+            self._access_token is not None
+            and self._access_token_expiration is not None
+            and datetime.now() < self._access_token_expiration
+        )
 
-    async def _get_auth_code(self):
+    async def _get(self, url, **kwargs):
+        async with asyncio.timeout(self._timeout):
+            async with self._session.get(
+                url, headers=const.LOGIN_HEADERS, **kwargs
+            ) as response:
+                return response.status, dict(response.headers), await response.text()
 
-        action = await self._get_login_action()
+    async def _post(self, url, **kwargs):
+        async with asyncio.timeout(self._timeout):
+            async with self._session.post(
+                url, headers=const.LOGIN_HEADERS, **kwargs
+            ) as response:
+                return response.status, dict(response.headers), await response.text()
 
-        async with self._session.request(
-            "POST",
-            action,
-            data={"username": self._username, "password": self._password},
-            allow_redirects=False,
-        ) as resp:
-            if "Location" not in resp.headers:
+    async def _load_login_page(self, code_challenge):
+        login_args = dict(const.LOGIN_ARGS, code_challenge=code_challenge)
+        login_url = const.AUTH_URL + "auth?" + parse.urlencode(login_args)
+        try:
+            status, _, text = await self._get(login_url)
+        except Exception as exception:
+            raise SmartmeterConnectionError(
+                f"Could not load login page: {exception!r}"
+            ) from exception
+        action = _form_action(text)
+        self._logger.debug(
+            f"Login page: HTTP {status}, form action {_url_path(action)}"
+        )
+        if status != 200:
+            raise SmartmeterConnectionError(
+                f"Could not load login page (HTTP {status}): {_page_message(text)}"
+            )
+        if action is None:
+            raise SmartmeterConnectionError(
+                f"No form found on the login page: {_page_message(text)}"
+            )
+        return action
+
+    async def _credentials_login(self, action):
+        """log.wien asks for the username first and for the password on a
+        second page."""
+        try:
+            status, headers, text = await self._post(
+                action,
+                data={"username": self._username, "login": " "},
+                allow_redirects=False,
+            )
+            password_action = _form_action(text)
+            self._logger.debug(
+                f"Username step: HTTP {status}, "
+                f"form action {_url_path(password_action)}, "
+                f"location {_url_path(headers.get('Location'))}, "
+                f"message '{_page_message(text)}'"
+            )
+            if password_action is None:
                 raise SmartmeterLoginError(
-                    "Authentication failed. Check user credentials."
+                    f"Login failed after username (HTTP {status}): "
+                    f"{_page_message(text) or 'no password form'}"
                 )
-            auth_code = resp.headers["Location"].split("&code=", 1)[1]
-            return auth_code
+            status, headers, text = await self._post(
+                password_action,
+                data={"username": self._username, "password": self._password},
+                allow_redirects=False,
+            )
+        except SmartmeterLoginError:
+            raise
+        except Exception as exception:
+            raise SmartmeterConnectionError(
+                f"Could not login with credentials: {exception!r}"
+            ) from exception
 
-    async def _get_api_key(self, access_token):
-        async with self._session.request(
-            "GET", const.PAGE_URL, headers={"Authorization": f"Bearer {access_token}"}
-        ) as result:
-            tree = html.fromstring(await result.text())
-            scripts = tree.xpath("(//script/@src)")
-            for script in scripts:
-                async with self._session.request(
-                    "GET", const.PAGE_URL + script
+        location = headers.get("Location")
+        self._logger.debug(
+            f"Password step: HTTP {status}, location {_url_path(location)}, "
+            f"message '{_page_message(text) if location is None else ''}'"
+        )
+        if location is None:
+            raise SmartmeterLoginError(
+                f"Login failed (HTTP {status}): "
+                f"{_page_message(text) or 'check username/password'}"
+            )
+        code = _code_from_location(location)
+        if code is None:
+            raise SmartmeterLoginError(
+                "Login failed, no code in redirect to "
+                f"{_url_path(location)} (2FA or required action in log.wien?)"
+            )
+        return code
+
+    async def _load_tokens(self, code, code_verifier):
+        try:
+            async with asyncio.timeout(self._timeout):
+                async with self._session.post(
+                    const.AUTH_URL + "token",
+                    data=const.build_access_token_args(
+                        code=code, code_verifier=code_verifier
+                    ),
                 ) as response:
-                    res_text = await response.text()
-            for match in const.API_GATEWAY_TOKEN_REGEX.findall(res_text):
-                return match
-            raise SmartmeterConnectionError("Could not obtain API key - no match")
-        return None
+                    status = response.status
+                    text = await response.text()
+        except Exception as exception:
+            raise SmartmeterConnectionError(
+                f"Could not obtain access token: {exception!r}"
+            ) from exception
+        self._logger.debug(f"Token request: HTTP {status}")
+        try:
+            tokens = json.loads(text)
+        except ValueError:
+            tokens = {}
+        if status != 200 or "access_token" not in tokens:
+            error = tokens.get("error_description") or tokens.get("error")
+            raise SmartmeterLoginError(
+                f"Could not obtain access token (HTTP {status}): "
+                f"{error or text[:200]}"
+            )
+        if tokens.get("token_type", "Bearer").lower() != "bearer":
+            raise SmartmeterLoginError(
+                f"Bearer token required, but got {tokens['token_type']!r}"
+            )
+        return tokens
+
+    async def _load_api_keys(self):
+        """API keys and URLs are published in the app-config.json of the
+        smartmeter web portal."""
+        try:
+            async with asyncio.timeout(self._timeout):
+                async with self._session.get(
+                    const.API_CONFIG_URL,
+                    headers={"Authorization": f"Bearer {self._access_token}"},
+                ) as response:
+                    config = await response.json(content_type=None)
+        except Exception as exception:
+            raise SmartmeterConnectionError(
+                f"Could not obtain API key: {exception!r}"
+            ) from exception
+        if not isinstance(config, dict):
+            raise SmartmeterConnectionError("Unexpected app-config.json format")
+        for key in ("b2cApiKey", "b2bApiKey"):
+            if key not in config:
+                raise SmartmeterConnectionError(f"{key} not found in app-config.json")
+        self._api_gateway_token = config["b2cApiKey"]
+        self._api_gateway_b2b_token = config["b2bApiKey"]
+        self.api_url = config.get("b2cApiUrl") or const.API_URL
+        self.api_url_b2b = config.get("b2bApiUrl") or const.API_URL_B2B
+
+    async def login(self, force=False):
+        """Login with username/password if there is no valid access token."""
+        async with self._login_lock:
+            if self.is_logged_in() and not force:
+                return
+            self._access_token = None
+            self._session.cookie_jar.clear()
+            code_verifier = generate_code_verifier()
+            action = await self._load_login_page(generate_code_challenge(code_verifier))
+            code = await self._credentials_login(action)
+            tokens = await self._load_tokens(code, code_verifier)
+            self._access_token = tokens["access_token"]
+            self._refresh_token = tokens.get("refresh_token")
+            expires_in = timedelta(seconds=int(tokens.get("expires_in", 300)))
+            self._access_token_expiration = (
+                datetime.now() + expires_in - TOKEN_EXPIRY_MARGIN
+            )
+            await self._load_api_keys()
+            self._logger.debug("Successfully authenticated Smart Meter API")
 
     async def refresh_token(self):
-        """Create a valid access token."""
-        async with self._session.request(
-            "POST",
-            const.AUTH_URL + "token",
-            data=const.build_access_token_args(code=await self._get_auth_code()),
-        ) as response:
-            if response.status != 200:
-                raise SmartmeterLoginError(
-                    "Authentication failed. Check user credentials."
-                )
-            result_json = await response.json()
-            self._access_token = result_json["access_token"]
-            self._refresh_token = result_json["refresh_token"]
-            self._api_gateway_token = await self._get_api_key(self._access_token)
-
-        logger.debug("Successfully authenticated Smart Meter API")
-
-    async def async_get_access_token(self):
-        """Return a valid access token."""
-        pass
+        """Create a valid access token (kept for compatibility)."""
+        await self.login(force=True)
 
     def _dt_string(self, dt):
         return dt.strftime(const.API_DATE_FORMAT)[:-3] + "Z"
 
-    async def _get_first_zaehlpunkt(self):
-        """Get first zaehlpunkt."""
-        zaehlpunkte = await self.get_zaehlpunkte()
-        return zaehlpunkte[0]["zaehlpunkte"][0]["zaehlpunktnummer"]
-
-    async def get_zaehlpunkte(self):
-        """Get zaehlpunkte for currently logged in user."""
+    async def zaehlpunkte(self):
+        """Returns zaehlpunkte (contracts) for currently logged in user."""
         return await self._request("zaehlpunkte")
 
-    async def get_verbrauch_raw(
-        self,
-        date_from,
-        date_to=None,
-        zaehlpunkt=None,
-    ):
-        """Get verbrauch_raw from the API."""
-        if date_to is None:
-            date_to = datetime.now()
-        if zaehlpunkt is None:
-            zaehlpunkt = await self._get_first_zaehlpunkt()
-        endpoint = f"messdaten/zaehlpunkt/{zaehlpunkt}/verbrauchRaw"
-        query = {
-            "dateFrom": self._dt_string(date_from),
-            "dateTo": self._dt_string(date_to),
-            "granularity": "DAY",
-        }
-        return await self._request(endpoint, query=query)
+    async def get_zaehlpunkt(self, zaehlpunkt=None):
+        """Returns (customer_id, zaehlpunktnummer) of the given or first
+        zaehlpunkt."""
+        contracts = await self.zaehlpunkte()
+        for contract in contracts or []:
+            for zp in contract.get("zaehlpunkte", []):
+                if zaehlpunkt is None or zp.get("zaehlpunktnummer") == zaehlpunkt:
+                    return contract.get("geschaeftspartner"), zp["zaehlpunktnummer"]
+        raise SmartmeterQueryError(f"Zaehlpunkt {zaehlpunkt} not found")
 
-    async def get_verbrauch(
-        self,
-        date_from,
-        date_to=None,
-        zaehlpunkt=None,
-    ):
-        """Get verbrauch_raw from the API."""
-        if date_to is None:
-            date_to = datetime.now()
-        if zaehlpunkt is None:
-            zaehlpunkt = await self._get_first_zaehlpunkt()
-        endpoint = f"messdaten/zaehlpunkt/{zaehlpunkt}/verbrauch"
-        query = const.build_verbrauchs_args(
-            dateFrom=self._dt_string(date_from), dateTo=self._dt_string(date_to)
-        )
-        return await self._request(endpoint, query=query)
-
-    async def tages_verbrauch(
-        self,
-        day: datetime,
-        zaehlpunkt=None,
-    ):
-        """Get verbrauch_raw from the API."""
-        if zaehlpunkt is None:
-            zaehlpunkt = await self._get_first_zaehlpunkt()
-        endpoint = f"messdaten/zaehlpunkt/{zaehlpunkt}/verbrauch"
-        query = const.build_verbrauchs_args(
-            dateFrom=self._dt_string(day.replace(hour=0, minute=0, second=0))
-        )
+    async def verbrauch(self, date_from: datetime, zaehlpunkt=None):
+        """Returns hourly consumption of 24h starting at date_from."""
+        customer_id, zaehlpunkt = await self.get_zaehlpunkt(zaehlpunkt)
+        endpoint = f"messdaten/{customer_id}/{zaehlpunkt}/verbrauch"
+        query = const.build_verbrauchs_args(dateFrom=self._dt_string(date_from))
         return await self._request(endpoint, query=query)
 
     async def profil(self):
         """Get profil of logged in user."""
         return await self._request("user/profile", const.API_URL_ALT)
-
-    async def zaehlpunkte(self):
-        """Returns zaehlpunkte for currently logged in user."""
-        return await self._request("zaehlpunkte")
 
     async def consumptions(self):
         """Returns response from 'consumptions' endpoint."""
@@ -187,38 +329,66 @@ class AsyncSmartmeter:
         method="GET",
         data=None,
         query=None,
+        _retry=True,
     ):
         """Send requests to the Smartmeter API."""
-        if base_url is None:
-            base_url = const.API_URL
-        url = "{0}{1}".format(base_url, endpoint)
+        await self.login()
 
+        orig_base_url = base_url
+        if base_url is None:
+            base_url = self.api_url
+        url = base_url.rstrip("/") + "/" + endpoint
         if query:
             separator = "?" if "?" not in endpoint else "&"
             url += separator + parse.urlencode(query)
 
-        logger.debug(f"REQUEST: {url}")
+        headers = {
+            "Authorization": f"Bearer {self._access_token}",
+            "Accept": "application/json",
+        }
+        if base_url == self.api_url:
+            headers["X-Gateway-APIKey"] = self._api_gateway_token
+        elif base_url == self.api_url_b2b:
+            headers["X-Gateway-APIKey"] = self._api_gateway_b2b_token
 
-        headers = {"Authorization": f"Bearer {self._access_token}"}
-        if self._api_gateway_token is not None:
-            headers.update({"X-Gateway-APIKey": self._api_gateway_token})
-
+        self._logger.debug(f"REQUEST: {_url_path(url)}")
         try:
             async with asyncio.timeout(self._timeout):
-                response = await self._session.request(
+                async with self._session.request(
                     method, url, headers=headers, json=data
-                )
-                logger.debug(f"REQUEST: {response}")
-                if response.status == 401:
-                    await self.refresh_token()
-                    return await self._request(endpoint, base_url, method, data, query)
-                return await response.json()
+                ) as response:
+                    status = response.status
+                    text = await response.text()
+        except (asyncio.TimeoutError, aiohttp.ClientError, OSError) as exception:
+            raise SmartmeterConnectionError(
+                f"Error fetching {endpoint}: {exception!r}"
+            ) from exception
 
-        except asyncio.TimeoutError as exception:
-            logger.error(f"Timeout error fetching information from {url} - {exception}")
-        except (KeyError, TypeError) as exception:
-            logger.error(f"Error parsing information from {url} - {exception}")
-        except (aiohttp.ClientError, socket.gaierror) as exception:
-            logger.error(f"Error fetching information from {url} - {exception}")
-        except Exception as exception:
-            logger.exception(f"Something really wrong happened! - {exception}")
+        if status == 401 and _retry:
+            # token got invalid, login again and retry once
+            await self.login(force=True)
+            return await self._request(
+                endpoint, orig_base_url, method, data, query, _retry=False
+            )
+        return self._parse_response(endpoint, status, text)
+
+    @staticmethod
+    def _parse_response(endpoint, status, text):
+        if status >= 400:
+            raise SmartmeterQueryError(
+                f"Request {endpoint} failed (HTTP {status})",
+                code=status,
+                error_response=text[:500],
+            )
+        try:
+            result = json.loads(text) if text else None
+        except ValueError as exception:
+            raise SmartmeterQueryError(
+                f"Invalid JSON from {endpoint}", error_response=text[:500]
+            ) from exception
+        if isinstance(result, dict) and "Exception" in result:
+            raise SmartmeterQueryError(
+                f"Cannot access {endpoint}: {result['Exception']}",
+                error_response=text[:500],
+            )
+        return result

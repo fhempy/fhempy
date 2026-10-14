@@ -2,6 +2,7 @@ import asyncio
 import datetime
 
 from tibber import Tibber
+from tibber.exceptions import InvalidLoginError
 
 from .. import fhem, generic
 
@@ -32,6 +33,46 @@ class tibber(generic.FhemModule):
         self.create_async_task(self.setup_connection())
 
     async def setup_connection(self):
+        while True:
+            try:
+                home = await self._connect()
+            except InvalidLoginError:
+                self.logger.error(
+                    "Tibber login failed: invalid token, please check the token "
+                    "on https://developer.tibber.com and define the device again"
+                )
+                await fhem.readingsSingleUpdate(self.hash, "state", "invalid token", 1)
+                return
+            except Exception as ex:
+                self.logger.error(f"Failed to connect to Tibber, retry in 60s: {ex}")
+                await fhem.readingsSingleUpdate(
+                    self.hash, "state", f"connection failed: {ex}", 1
+                )
+                await asyncio.sleep(60)
+                continue
+            if home is not None:
+                break
+            self.logger.warning(
+                "No home with an active Tibber subscription found for this "
+                f"account, retry in {self._attr_interval}s"
+            )
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", "no home with active subscription", 1
+            )
+            await asyncio.sleep(self._attr_interval)
+
+        await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+        await self.update_home_data(home)
+
+    async def _connect(self):
+        """Logs in and returns the first home with an active subscription or
+        None if there is none."""
+        if self.tibber_connection is not None:
+            # previous failed attempt
+            try:
+                await self.tibber_connection.close_connection()
+            except Exception:
+                pass
         self.tibber_connection = Tibber(
             self.token,
             user_agent="fhempy",
@@ -44,7 +85,12 @@ class tibber(generic.FhemModule):
         await fhem.readingsSingleUpdateIfChanged(
             self.hash, "tibber_userid", self.tibber_connection.user_id, 1
         )
-        await self.update_home_data()
+        homes = self.tibber_connection.get_homes()
+        if not homes:
+            return None
+        home = homes[0]
+        await home.update_info()
+        return home
 
     def _rt_callback(self, pkg):
         data = pkg.get("data")
@@ -83,10 +129,7 @@ class tibber(generic.FhemModule):
         await fhem.readingsBulkUpdate(self.hash, "rt_powerNet" , data["power"]-data["powerProduction"])
         await fhem.readingsEndUpdate(self.hash, 1)
 
-    async def update_home_data(self):
-        home = self.tibber_connection.get_homes()[0]
-        await home.update_info()
-
+    async def update_home_data(self, home):
         if home.has_real_time_consumption:
             await home.rt_subscribe(self._rt_callback)
 

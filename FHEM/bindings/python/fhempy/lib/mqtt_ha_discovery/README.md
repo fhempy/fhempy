@@ -24,6 +24,8 @@ Devices are automatically detected on reboot. You can also activate respectRetai
  - light (brightness)
  - sensor
 
+Abbreviated (`stat_t`, `dev`) and full key names (`state_topic`, `device`), the base topic `~`, topics with and without node_id and device based discovery (`homeassistant/device/<id>/config`) are supported. Messages without a config payload (e.g. `homeassistant/status`) are ignored.
+
 # Supported platforms
  - ESPhome
  - Zigbee2MQTT

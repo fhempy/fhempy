@@ -95,7 +95,7 @@ class tuya(generic.FhemModule):
             return
 
         # read current energy just on define
-        self.energy = float(await fhem.ReadingsVal(self.hash["NAME"], "energy", "0"))
+        self.energy = await utils.readings_float(self.hash["NAME"], "energy")
         self.last_energy_ts = None
         self.last_energy_value = 0
 
@@ -583,20 +583,29 @@ class tuya(generic.FhemModule):
         """
         self._loop = asyncio.get_running_loop()
         state_set = False
+        retry = 5
         while True:
             try:
                 device, status = await utils.run_blocking(
                     functools.partial(self._open_device)
                 )
                 break
-            except Exception:
+            except Exception as exc:
                 if not state_set:
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "online", "0", 1
                     )
                     state_set = True
-                    self.logger.exception("Failed to connect to device")
-                await asyncio.sleep(5)
+                    if isinstance(exc, OSError):
+                        # device offline, no traceback needed
+                        self.logger.error(
+                            f"Failed to connect to device: {exc}, "
+                            "retrying in the background"
+                        )
+                    else:
+                        self.logger.exception("Failed to connect to device")
+                await asyncio.sleep(retry)
+                retry = min(retry * 2, 60)
 
         monitor = tt.Monitor(
             on_status=self._monitor_status,

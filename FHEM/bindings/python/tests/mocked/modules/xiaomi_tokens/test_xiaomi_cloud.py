@@ -190,3 +190,27 @@ async def test_module_get_tokens(mocker):
         "123456_de_(Vacuum)" in module._set_list_conf["create_miio_device"]["options"]
     )
     await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_module_qr_login(mocker):
+    mock_fhem.mock_module(mocker)
+    from fhempy.lib.xiaomi_tokens.xiaomi_tokens import xiaomi_tokens
+
+    testhash = {"NAME": "testtokensqr", "FHEMPYTYPE": "xiaomi_tokens"}
+    mock_fhem.readings.pop("testtokensqr", None)
+    module = xiaomi_tokens(logging.getLogger(__name__))
+    await module.Define(testhash, ["testtokensqr", "fhempy", "xiaomi_tokens"], {})
+
+    mocker.patch.object(
+        XiaomiCloud, "qr_login_start", return_value=(b"png", "https://login")
+    )
+    mocker.patch.object(XiaomiCloud, "qr_login_wait", return_value=None)
+    mocker.patch.object(xiaomi_tokens, "thread_get_tokens", return_value=None)
+    await module.qr_login()
+
+    readings = mock_fhem.readings["testtokensqr"]
+    assert readings["login_qr_code"] == "-"
+    assert readings["state"] == "0 devices found"
+    XiaomiCloud.qr_login_start.assert_called_once()
+    XiaomiCloud.qr_login_wait.assert_called_once()

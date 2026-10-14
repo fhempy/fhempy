@@ -25,7 +25,7 @@ async def create_device(mocker):
         mocker.patch.object(device, check, mocker.AsyncMock(return_value=True))
     started = []
 
-    def start(args, cwd):
+    def start(args, cwd, **kwargs):
         # remember the configuration zigbee2mqtt is started with
         started.append((pathlib.Path(cwd) / "data/configuration.yaml").read_text())
         return mocker.Mock()
