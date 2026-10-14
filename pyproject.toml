@@ -105,7 +105,7 @@ pyTibber = "==0.38.0"
 # pybluez 0.30 wasn't released yet, we use the github tag
 # pybluez = "==0.30"
 pychromecast = "==14.0.10"
-pygatt = "==4.0.5"
+pygatt = "==5.0.0"
 pyit600 = "==0.5.1"
 pyjwt = "==2.15.1"
 # pymyenergi fails to resolve by poetry
