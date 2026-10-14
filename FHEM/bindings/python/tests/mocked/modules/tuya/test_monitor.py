@@ -56,13 +56,7 @@ async def wait_for(condition, timeout=5):
     raise AssertionError("condition not met")
 
 
-@pytest.mark.asyncio
-async def test_local_device_monitor(mocker):
-    mock_fhem.mock_module(mocker)
-    mock_fhem.readings.pop(DEVICE_NAME, None)
-    await check_and_install_dependencies("tuya")
-    from fhempy.lib.tuya.tuya import tuya
-
+async def define_device(mocker, tuya):
     FakeDevice.instances = []
     mocker.patch("tinytuya.Device", FakeDevice)
 
@@ -82,6 +76,17 @@ async def test_local_device_monitor(mocker):
         ],
         {},
     )
+    return fhempy_device, testhash
+
+
+@pytest.mark.asyncio
+async def test_local_device_monitor(mocker):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop(DEVICE_NAME, None)
+    await check_and_install_dependencies("tuya")
+    from fhempy.lib.tuya.tuya import tuya
+
+    fhempy_device, testhash = await define_device(mocker, tuya)
 
     readings = mock_fhem.readings
     await wait_for(lambda: readings.get(DEVICE_NAME, {}).get("state") == "on")
@@ -123,26 +128,8 @@ async def test_define_with_non_numeric_energy_reading(mocker):
     await check_and_install_dependencies("tuya")
     from fhempy.lib.tuya.tuya import tuya
 
-    FakeDevice.instances = []
-    mocker.patch("tinytuya.Device", FakeDevice)
-
-    fhempy_device = tuya(logging.getLogger(__name__))
-    testhash = {"NAME": DEVICE_NAME, "FHEMPYTYPE": "tuya"}
+    fhempy_device, testhash = await define_device(mocker, tuya)
     try:
-        await fhempy_device.Define(
-            testhash,
-            [
-                DEVICE_NAME,
-                "fhempy",
-                "tuya",
-                "PaYQNcPunOhPeS1X",
-                "345678345673456567",
-                "192.168.1.10",
-                "0123456789abcdef",
-                "3.3",
-            ],
-            {},
-        )
         assert fhempy_device.energy == 0.0
     finally:
         await fhempy_device.Undefine(testhash)
