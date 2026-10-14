@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "pygatt==4.0.5",
+    "pygatt==5.0.0",
     "pexpect==4.9.0"
   ]
 }
