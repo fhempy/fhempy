@@ -77,3 +77,59 @@ async def test_unexpected_error_keeps_traceback(mocker, caplog):
 
     assert len(caplog.records) == 1
     assert caplog.records[0].exc_info is not None
+
+
+@pytest.mark.asyncio
+async def test_command_error_sets_reading(mocker, caplog):
+    import spotipy
+
+    device = await create_device(mocker)
+    device._attr_default_device = None
+    device.spotipy.start_playback.side_effect = spotipy.SpotifyException(
+        404,
+        -1,
+        "https://api.spotify.com/v1/me/player/play:\n"
+        " Player command failed: No active device found",
+        reason="NO_ACTIVE_DEVICE",
+    )
+
+    with caplog.at_level(logging.WARNING):
+        ret = await device.set_command(
+            device.hash,
+            {"cmd": "play", "uri": "spotify:playlist:abc", "deviceid": None},
+        )
+
+    expected = "Player command failed: No active device found (NO_ACTIVE_DEVICE)"
+    assert ret == "play failed: " + expected
+    assert mock_fhem.readings["testspotify"]["last_error"] == "play: " + expected
+    # no traceback in the log
+    assert all(r.exc_info is None for r in caplog.records)
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+
+    device.spotipy.start_playback.side_effect = None
+    ret = await device.set_command(
+        device.hash,
+        {"cmd": "play", "uri": "spotify:track:xyz", "deviceid": "dev1"},
+    )
+    assert ret is None
+    assert mock_fhem.readings["testspotify"]["last_error"] == "none"
+    device.spotipy.start_playback.assert_called_with(
+        device_id="dev1", uris=["spotify:track:xyz"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_command_uses_default_device(mocker):
+    device = await create_device(mocker)
+    device._attr_default_device = "default1"
+
+    await device.set_command(
+        device.hash,
+        {"cmd": "play", "uri": "spotify:album:abc", "deviceid": None},
+    )
+    device.spotipy.start_playback.assert_called_with(
+        device_id="default1", context_uri="spotify:album:abc"
+    )
+
+    await device.set_command(device.hash, {"cmd": "volume", "vol": "40"})
+    device.spotipy.volume.assert_called_with(40, "default1")

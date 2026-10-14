@@ -85,6 +85,19 @@ def run_blocking_task(function):
     return asyncio.create_task(run_blocking(function))
 
 
+def to_float(value, default=0.0):
+    """Convert a reading value to float, default if it isn't a number."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+async def readings_float(name, reading, default=0.0):
+    """Reading value as float, default if missing or not a number."""
+    return to_float(await fhem.ReadingsVal(name, reading, default), default)
+
+
 # example config
 # attr_list = {
 #   "attribute1": {"default": 10, "format": "int", "options":"1,2,3"}
