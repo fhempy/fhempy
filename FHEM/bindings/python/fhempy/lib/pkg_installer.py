@@ -238,23 +238,43 @@ def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv
     return args + uv_index_args()
 
 
+_VERIFIED_PACKAGES = set()
+_VERIFIED_MODULES = set()
+_MANIFEST_CACHE = {}
+
+
+def invalidate_dependency_cache():
+    """Clear all in-memory dependency validation caches."""
+    _VERIFIED_PACKAGES.clear()
+    _VERIFIED_MODULES.clear()
+    _MANIFEST_CACHE.clear()
+
+
 def check_dependencies(module):
     """Checks the manifest of a specific module and check installation
     of dependencies
     """
-    try:
-        fhempy_root = utils.get_fhempy_root()
-        with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
-            manifest = json.load(f)
+    if module in _VERIFIED_MODULES:
+        return True
 
-            if "requirements" in manifest:
-                for req in manifest["requirements"]:
-                    logger.debug("Check requirement: " + req)
-                    if is_installed(req) is False:
-                        logger.debug("  NOK")
-                        return False
-                    else:
-                        logger.debug("  OK")
+    try:
+        if module in _MANIFEST_CACHE:
+            manifest = _MANIFEST_CACHE[module]
+        else:
+            fhempy_root = utils.get_fhempy_root()
+            with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
+                manifest = json.load(f)
+            _MANIFEST_CACHE[module] = manifest
+
+        if "requirements" in manifest:
+            for req in manifest["requirements"]:
+                logger.debug("Check requirement: " + req)
+                if is_installed(req) is False:
+                    logger.debug("  NOK")
+                    return False
+                else:
+                    logger.debug("  OK")
+            _VERIFIED_MODULES.add(module)
     except FileNotFoundError:
         logger.error(f"manifest.json not found for module {module}!")
 
@@ -279,12 +299,13 @@ async def check_and_install_dependencies(module):
     try:
         async with pip_lock:
             kwargs = pip_kwargs(None)
-            from fhempy import lib
-
-            initfile = inspect.getfile(lib)
-            fhempy_root = os.path.dirname(initfile)
-            with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
-                manifest = json.load(f)
+            if module in _MANIFEST_CACHE:
+                manifest = _MANIFEST_CACHE[module]
+            else:
+                fhempy_root = utils.get_fhempy_root()
+                with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
+                    manifest = json.load(f)
+                _MANIFEST_CACHE[module] = manifest
 
                 if "requirements" in manifest:
                     for req in manifest["requirements"]:
@@ -314,8 +335,12 @@ def is_installed(package: str) -> bool:
     Returns True when the requirement is met.
     Returns False when the package is not installed or doesn't meet req.
     """
+    if package in _VERIFIED_PACKAGES:
+        return True
+
     try:
         distribution(package)
+        _VERIFIED_PACKAGES.add(package)
         return True
     except (IndexError, PackageNotFoundError):
         try:
@@ -335,7 +360,10 @@ def is_installed(package: str) -> bool:
                 "Installed version for %s resolved to None", req.name
             )
             return False
-        return req.specifier.contains(installed_version, prereleases=True)
+        if req.specifier.contains(installed_version, prereleases=True):
+            _VERIFIED_PACKAGES.add(package)
+            return True
+        return False
     except PackageNotFoundError:
         return False
 
@@ -390,5 +418,6 @@ def install_package(
         )
         return False
 
+    invalidate_dependency_cache()
     logger.info("Successfully installed " + package + " update!")
     return True

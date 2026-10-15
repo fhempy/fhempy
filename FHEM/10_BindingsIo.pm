@@ -41,6 +41,7 @@ use Time::HiRes qw(time);
 
 our $init_done;
 our $modules;
+our ($readingFnAttributes, %defs);
 
 my $timeouts = 0;
 my $write_deep_recursion = 0;
@@ -130,6 +131,7 @@ sub BindingsIo_Define {
   }
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();
+  $hash->{messages_count} = {};
   # send binary data via websocket
   $hash->{binary} = 1;
 
@@ -296,6 +298,7 @@ BindingsIo_doInit($) {
   $hash->{".lastReceived"} = time;
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();
+  $hash->{messages_count} = {};
   $write_deep_recursion = 0;
 
   BindingsIo_initFrame($hash);
@@ -632,6 +635,9 @@ sub BindingsIo_storeMessage($$) {
   } else {
     # messages without hash NAME
     push (@{$hash->{messages}{0}}, $json);
+    if (defined($json->{NAME})) {
+      $hash->{messages_count}{$json->{NAME}}++;
+    }
   }
   return undef;
 }
@@ -643,27 +649,44 @@ sub BindingsIo_checkResponseByAllNames($) {
   # run maximum 300ms
   my $start_time = time * 1000;
   while (my $msg = shift @{$hash->{messages}{0}}) {
+    if (defined($msg->{NAME}) && defined($hash->{messages_count}{$msg->{NAME}})) {
+      $hash->{messages_count}{$msg->{NAME}}--;
+      delete $hash->{messages_count}{$msg->{NAME}} if ($hash->{messages_count}{$msg->{NAME}} <= 0);
+    }
     BindingsIo_processCommand($hash, $msg);
     if ((time * 1000 - $start_time) > 300) {
       return;
     }
-  }  
+  }
+  $hash->{messages_count} = {} if (@{$hash->{messages}{0}} == 0);
   Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
 }
 
 sub BindingsIo_checkResponseByName($$) {
   my ($hash, $devhash) = @_;
   
+  return if (!defined($devhash) || !defined($devhash->{NAME}));
+  my $devname = $devhash->{NAME};
+  return if (!$hash->{messages_count}{$devname});
+
   my @temp = ();
   while (my $msg = shift @{$hash->{messages}{0}}) {
     # e.g. version messages have no NAME
-    if (defined($msg->{NAME}) && $msg->{NAME} eq $devhash->{NAME}) {
+    if (defined($msg->{NAME}) && $msg->{NAME} eq $devname) {
+      $hash->{messages_count}{$devname}--;
       BindingsIo_processCommand($hash, $msg);
+      if ($hash->{messages_count}{$devname} <= 0) {
+        delete $hash->{messages_count}{$devname};
+        last;
+      }
     } else {
       push @temp, $msg;
     }
   }
-  @{$hash->{messages}{0}} = @temp;
+  if (@temp) {
+    unshift @{$hash->{messages}{0}}, @temp;
+  }
+  $hash->{messages_count} = {} if (@{$hash->{messages}{0}} == 0);
 }
 
 sub BindingsIo_checkResponse($$$) {

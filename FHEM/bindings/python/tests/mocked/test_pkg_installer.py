@@ -160,3 +160,76 @@ def test_uv_skips_piwheels_for_other_python(tmp_path, monkeypatch):
 
     assert "--extra-index-url" not in args
     assert "--index-strategy" not in args
+
+
+def test_dependency_caching_and_invalidation(tmp_path, monkeypatch):
+    pkg_installer.invalidate_dependency_cache()
+    assert len(pkg_installer._VERIFIED_PACKAGES) == 0
+    assert len(pkg_installer._VERIFIED_MODULES) == 0
+    assert len(pkg_installer._MANIFEST_CACHE) == 0
+
+    # Test is_installed caching
+    call_count = 0
+
+    def mock_dist(pkg):
+        nonlocal call_count
+        if pkg == "uninstalled-pkg-xyz":
+            raise pkg_installer.PackageNotFoundError(pkg)
+        call_count += 1
+        return None
+
+    monkeypatch.setattr(pkg_installer, "distribution", mock_dist)
+
+    assert pkg_installer.is_installed("fake-pkg") is True
+    assert call_count == 1
+    assert "fake-pkg" in pkg_installer._VERIFIED_PACKAGES
+
+    # Second call should hit the cache and not call distribution() again
+    assert pkg_installer.is_installed("fake-pkg") is True
+    assert call_count == 1
+
+    # Invalidation should clear it
+    pkg_installer.invalidate_dependency_cache()
+    assert "fake-pkg" not in pkg_installer._VERIFIED_PACKAGES
+    assert pkg_installer.is_installed("fake-pkg") is True
+    assert call_count == 2
+
+    # Test check_dependencies manifest caching
+    fake_root = tmp_path / "fhempy_root"
+    mod_dir = fake_root / "test_mod"
+    mod_dir.mkdir(parents=True)
+    manifest = mod_dir / "manifest.json"
+    manifest.write_text('{"requirements": ["fake-pkg"]}')
+
+    monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(fake_root))
+
+    assert pkg_installer.check_dependencies("test_mod") is True
+    assert "test_mod" in pkg_installer._VERIFIED_MODULES
+    assert "test_mod" in pkg_installer._MANIFEST_CACHE
+
+    # Modifying manifest on disk should not matter since it's cached in _VERIFIED_MODULES
+    manifest.write_text('{"requirements": ["uninstalled-pkg-xyz"]}')
+    assert pkg_installer.check_dependencies("test_mod") is True
+
+    # After invalidation, the new manifest is read and fails because req is not installed
+    pkg_installer.invalidate_dependency_cache()
+    assert pkg_installer.check_dependencies("test_mod") is False
+
+    # Check that successful install_package invalidates cache
+    pkg_installer._VERIFIED_PACKAGES.add("some-cached-pkg")
+    pkg_installer._VERIFIED_MODULES.add("some-cached-mod")
+    pkg_installer._MANIFEST_CACHE["some-mod"] = {"requirements": []}
+
+    class FakeSuccessfulPopen:
+        def __init__(self, *args, **kwargs):
+            self.returncode = 0
+        def communicate(self):
+            return b"", b""
+
+    monkeypatch.setattr(pkg_installer, "Popen", FakeSuccessfulPopen)
+    assert pkg_installer.install_package("some-cached-pkg") is True
+    assert len(pkg_installer._VERIFIED_PACKAGES) == 0
+    assert len(pkg_installer._VERIFIED_MODULES) == 0
+    assert len(pkg_installer._MANIFEST_CACHE) == 0
+
+
