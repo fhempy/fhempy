@@ -303,8 +303,10 @@ class object_detection(FhemModule):
         if self._source_type == "image":
             self.create_async_task(self.image_detect_objects_loop())
         else:
-            self._detection_task = utils.run_blocking_task(
-                functools.partial(self.run_stream_object_detection)
+            self._detection_task = asyncio.create_task(
+                utils.run_blocking_thread(
+                    functools.partial(self.run_stream_object_detection)
+                )
             )
         return ""
 
