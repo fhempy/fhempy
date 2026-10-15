@@ -316,6 +316,7 @@ BindingsIo_doInit($) {
   @{$hash->{messages}{0}} = ();
   $hash->{messages_count} = {};
   $write_deep_recursion = 0;
+  $hash->{".waitingIds"} = {};
 
   BindingsIo_initFrame($hash);
   BindingsIo_scheduleKeepAlive($hash);
@@ -408,6 +409,10 @@ BindingsIo_Write($$$$$) {
   if ($function eq "InitDefine") {
     $initrun = 1;
     $function = "Define";
+    # sent for all devices after connect, fhempy answers Define before it
+    # loads the module and doInit ignores the result, so don't block FHEM
+    # with one roundtrip per device
+    $waitforresponse = 0;
   } elsif ($function eq "Set") {
     if (@$a[1] eq "?" && defined($devhash) && defined($devhash->{".set_default_response"}) && DevIo_IsOpen($hash)) {
       return $devhash->{".set_default_response"};
@@ -481,6 +486,8 @@ BindingsIo_Write($$$$$) {
       return undef;
     }
   }
+  # replies nobody waits for (anymore) are dropped in storeMessage
+  $hash->{".waitingIds"}{$waitingForId} = 1;
 
   $write_deep_recursion = $write_deep_recursion + 1;
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - start ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId)";
@@ -510,6 +517,11 @@ BindingsIo_Write($$$$$) {
     } else {
       $returnval = "";
     }
+  }
+  delete $hash->{".waitingIds"}{$waitingForId};
+  if (defined($hash->{messages}{$devhash->{NAME}})) {
+    # a reply which arrived after the timeout
+    delete $hash->{messages}{$devhash->{NAME}}{$waitingForId};
   }
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): $write_deep_recursion - end ".$hash->{BindingType}."Function: ".$devhash->{NAME}." => $function ($waitingForId) - result: ".$returnval;
 
@@ -546,7 +558,7 @@ BindingsIo_scheduleOtherResponses($) {
   # one pending timer is enough, don't postpone it
   return if ($hash->{".otherResponsesPending"});
   $hash->{".otherResponsesPending"} = 1;
-  InternalTimer(gettimeofday()+0.1, 'BindingsIo_handleOtherResponses', $hash, 0);
+  InternalTimer(gettimeofday()+0.01, 'BindingsIo_handleOtherResponses', $hash, 0);
 }
 
 sub
@@ -631,7 +643,11 @@ sub BindingsIo_storeMessage($$) {
   }
 
   if (defined($json->{id})) {
-    # messages from functions
+    # messages from functions, only keep replies BindingsIo_Write waits for
+    if (!$hash->{".waitingIds"}{$json->{id}}) {
+      Log3 $hash, 5, "BindingsIo ($hash->{NAME}): nobody waits for reply $json->{id}";
+      return undef;
+    }
     $hash->{messages}{$json->{NAME}}{$json->{id}} = $json;
   } else {
     # messages without hash NAME
@@ -647,7 +663,8 @@ sub BindingsIo_checkResponseByAllNames($) {
   my ($hash) = @_;
 
   Log3 $hash, 5, "BindingsIo_checkResponseByAllNames size ".@{$hash->{messages}{0}};
-  # run maximum 300ms
+  # run maximum 50ms, the rest is handled by a timer after FHEM has served
+  # other devices, so a burst of commands doesn't freeze FHEM
   my $start_time = time * 1000;
   while (my $msg = shift @{$hash->{messages}{0}}) {
     if (defined($msg->{NAME}) && defined($hash->{messages_count}{$msg->{NAME}})) {
@@ -655,7 +672,7 @@ sub BindingsIo_checkResponseByAllNames($) {
       delete $hash->{messages_count}{$msg->{NAME}} if ($hash->{messages_count}{$msg->{NAME}} <= 0);
     }
     BindingsIo_processCommand($hash, $msg);
-    if ((time * 1000 - $start_time) > 300) {
+    if ((time * 1000 - $start_time) > 50) {
       return;
     }
   }

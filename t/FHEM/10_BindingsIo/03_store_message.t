@@ -7,12 +7,14 @@ use Test2::Tools::Compare qw{is like};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(10);
+	plan(11);
 
 	my $deviceName = q[fhempy_store_msg];
 	CommandDefine(undef, qq[$deviceName BindingsIo 10.33.11.27:15733 fhempy]);
 	my $hash = $defs{$deviceName};
 	RemoveInternalTimer($hash);
+	# BindingsIo_Write waits for these replies
+	$hash->{".waitingIds"} = {42 => 1, 43 => 1};
 
 	subtest 'store command message without id' => sub {
 		plan(2);
@@ -49,6 +51,13 @@ InternalTimer(time()+0.5, sub {
 		plan(1);
 		my $json = BindingsIo_encodeJson({args => [qq[K\xfcche]]});
 		is ($json, qq[{"args":["K\xef\xbf\xbdche"]}], q[Latin-1 byte replaced by U+FFFD]);
+	};
+
+	subtest 'reply nobody waits for is dropped' => sub {
+		plan(2);
+		my $ret = BindingsIo_storeMessage($hash, q[{"id":44,"NAME":"my_device","returnval":""}]);
+		is ($ret, U(), q[storeMessage returns undef]);
+		is ($hash->{messages}{"my_device"}{44}, U(), q[reply not stored]);
 	};
 
 	subtest 'store malformed JSON returns error' => sub {
