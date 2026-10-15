@@ -1008,14 +1008,14 @@ dbus-fast = {version = ">=5.0.22", markers = "platform_system == \"Linux\""}
 
 [[package]]
 name = "bleparser"
-version = "3.7.1"
+version = "3.7.3"
 description = "Parser for passive BLE advertisements"
 optional = false
 python-versions = ">=3.8"
 groups = ["all"]
 files = [
-    {file = "bleparser-3.7.1-py3-none-any.whl", hash = "sha256:25f10e62a9442fd70aeb1e5c760c48b13784e9a33ecbd6360d2a358461a824bc"},
-    {file = "bleparser-3.7.1.tar.gz", hash = "sha256:770f68b51b07b07b95d4009507b3ab19216ae243dfbf2fae224a35d969020433"},
+    {file = "bleparser-3.7.3-py3-none-any.whl", hash = "sha256:472f626c0e15b1e3891ca373dd2c0751a43354df95beb39d39a42784b47b3858"},
+    {file = "bleparser-3.7.3.tar.gz", hash = "sha256:2db06504f772e944ef98eb5bf75a7e07085f71e243a850d7ed1872f92b202757"},
 ]
 
 [package.dependencies]
@@ -7672,4 +7672,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "141947cbb308c8c136823b1f19ad9f2cea14ef815d396fb083f4c96c60c11fd8"
+content-hash = "f6eb58074a8f7c690040a9a08cbb1953a789bf848f03c3868996933380d48e66"
