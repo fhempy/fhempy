@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-10-15)
+
+### Bug Fixes
+
+- Show the FHEMWEB balloon (devStateIcon 1.2.0) after every 1.0.x update
+  ([#660](https://github.com/fhempy/fhempy/pull/660),
+  [`2208aa1`](https://github.com/fhempy/fhempy/commit/2208aa193290f1d8d073e1fdcd86f3279b07c52e))
+
+
 ## v1.0.0 (2026-10-15)
 
 ### Features
