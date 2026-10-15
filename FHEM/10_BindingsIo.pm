@@ -126,7 +126,7 @@ sub BindingsIo_Define {
   # JSON::PP (pure Perl fallback of JSON) needs ~1ms to decode a fhempy message, JSON::XS a few us
   $hash->{JSON_BACKEND} = $json_backend // eval { JSON->backend } // eval { JSON::XS->backend } // (defined(&JSON::XS::decode_json) ? "JSON::XS" : "JSON::PP");
   if ($hash->{JSON_BACKEND} =~ m/PP/) {
-    Log3 $name, 2, qq[BindingsIo ($name): JSON::XS is not installed, fhempy messages are decoded much slower. Install it with: sudo apt install libjson-xs-perl];
+    Log3 $name, 2, qq[BindingsIo ($name): Neither Cpanel::JSON::XS nor JSON::XS is installed, fhempy messages are decoded much slower. Install it with: sudo apt install libcpanel-json-xs-perl (or libjson-xs-perl)];
   }
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();

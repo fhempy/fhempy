@@ -17,6 +17,7 @@ import websockets.asyncio.server
 
 from . import fhem, generic, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
+from .json_utils import json_dumps, json_loads
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ class fhempy:
         retHash["finished"] = 1
         retHash["returnval"] = ret
         retHash["id"] = hash["id"]
-        msg = json.dumps(retHash)
+        msg = json_dumps(retHash)
         duration = (
             time.time() - id_received_timestamp.pop(retHash["id"], time.time())
         ) * 1000
@@ -191,7 +192,7 @@ class fhempy:
         retHash["error"] = error
         if "id" in hash:
             retHash["id"] = hash["id"]
-        msg = json.dumps(retHash, ensure_ascii=False)
+        msg = json_dumps(retHash)
         duration = (
             time.time() - id_received_timestamp.pop(retHash["id"], time.time())
         ) * 1000
@@ -213,7 +214,7 @@ class fhempy:
         retHash = hash.copy()
         retHash["msgtype"] = "update_hash"
         del retHash["id"]
-        msg = json.dumps(retHash, ensure_ascii=False)
+        msg = json_dumps(retHash)
         logger.debug("<<< WS: " + msg)
         await self._send_reply(msg)
 
@@ -268,7 +269,7 @@ class fhempy:
         msg = payload
         hash = None
         try:
-            hash = json.loads(msg)
+            hash = json_loads(msg)
             # keep this for one year (written on 11.10.2021)
             if "PYTHONTYPE" in hash:
                 hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
