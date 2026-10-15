@@ -23,7 +23,10 @@ def read_file_for_github(filename):
     with open(filename, "rb") as fh:
         f_content = fh.read()
     header = f"blob {len(f_content)}\0"
-    sha = hashlib.sha1(header.encode("utf-8") + f_content).hexdigest()
+    # git identifies blobs by sha1, not used for security
+    sha = hashlib.sha1(  # NOSONAR
+        header.encode("utf-8") + f_content, usedforsecurity=False
+    ).hexdigest()
     content_view = memoryview(f_content)
     b64 = b"".join(
         base64.b64encode(content_view[i : i + B64_CHUNK])

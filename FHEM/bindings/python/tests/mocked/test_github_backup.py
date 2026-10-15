@@ -19,7 +19,8 @@ def test_read_file_for_github_matches_git(tmp_path):
 
     assert content == base64.b64encode(data)
     blob = f"blob {len(data)}\0".encode() + data
-    assert sha == hashlib.sha1(blob).hexdigest()
+    # git's blob id, not used for security
+    assert sha == hashlib.sha1(blob, usedforsecurity=False).hexdigest()  # NOSONAR
 
 
 def test_json_body_is_valid_json():
@@ -56,7 +57,8 @@ async def test_github_put_sends_json_body(tmp_path):
         content, sha = await module.b64encode_file(f)
 
         ok = await module.github_put(
-            f"http://127.0.0.1:{port}/contents/fhem.cfg",
+            # local test server without TLS
+            f"http://127.0.0.1:{port}/contents/fhem.cfg",  # NOSONAR
             {"message": "backup", "sha": "123"},
             content,
         )
