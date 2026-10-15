@@ -159,7 +159,7 @@ class ring(FhemModule):
 
     async def update_dings_loop(self):
         try:
-            self.update_dings_thread = await utils.run_blocking(
+            self.update_dings_thread = await utils.run_blocking_thread(
                 functools.partial(self.update_dings_loop_thread)
             )
         except CancelledError:

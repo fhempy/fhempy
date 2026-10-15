@@ -3,7 +3,6 @@ import functools
 import getopt
 import http
 import importlib
-import json
 import logging
 import os
 import signal

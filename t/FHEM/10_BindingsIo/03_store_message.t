@@ -1,14 +1,13 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use utf8;
 use Encode;
 use Test2::V0;
 use Test2::Tools::Compare qw{is like};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(8);
+	plan(10);
 
 	my $deviceName = q[fhempy_store_msg];
 	CommandDefine(undef, qq[$deviceName BindingsIo 10.33.11.27:15733 fhempy]);
@@ -23,20 +22,33 @@ InternalTimer(time()+0.5, sub {
 		is ($hash->{messages}{0}[0]{command}, q[test_cmd], q[message queued in messages->{0}]);
 	};
 
-	subtest 'store function reply with id and device NAME' => sub {
-		plan(2);
-		my $raw = Encode::encode("utf8", q[{"id":42,"NAME":"my_device","returnval":"München"}]);
-		my $ret = BindingsIo_storeMessage($hash, $raw);
+	subtest 'store function reply keeps UTF-8 bytes' => sub {
+		plan(3);
+		# Protocol::WebSocket::Frame->next returns decoded text
+		my $text = Encode::decode("UTF-8", qq[{"id":42,"NAME":"my_device","returnval":"M\xc3\xbcnchen \xe2\x98\xba"}]);
+		my $ret = BindingsIo_storeMessage($hash, $text);
 		is ($ret, U(), q[storeMessage returns undef on success]);
-		is ($hash->{messages}{"my_device"}{42}{returnval}, q[München], q[message indexed by device and id]);
+		is ($hash->{messages}{"my_device"}{42}{returnval}, qq[M\xc3\xbcnchen \xe2\x98\xba], q[FHEM gets UTF-8 bytes]);
+		is (length($hash->{messages}{"my_device"}{42}{returnval}), 12, q[no wide characters]);
 	};
 
-	subtest 'store wide-character decoded string fallback' => sub {
+	subtest 'store raw octets' => sub {
 		plan(2);
-		my $wide_str = q[{"id":43,"NAME":"my_device","returnval":"Küche ☺"}];
-		my $ret = BindingsIo_storeMessage($hash, $wide_str);
-		is ($ret, U(), q[storeMessage handles wide characters via fallback]);
-		is ($hash->{messages}{"my_device"}{43}{returnval}, q[Küche ☺], q[wide character string parsed correctly]);
+		my $ret = BindingsIo_storeMessage($hash, qq[{"id":43,"NAME":"my_device","returnval":"K\xc3\xbcche"}]);
+		is ($ret, U(), q[storeMessage returns undef on success]);
+		is ($hash->{messages}{"my_device"}{43}{returnval}, qq[K\xc3\xbcche], q[bytes unchanged]);
+	};
+
+	subtest 'encode FHEM byte strings without double encoding' => sub {
+		plan(1);
+		my $json = BindingsIo_encodeJson({args => [qq[M\xc3\xbcnchen]]});
+		is ($json, qq[{"args":["M\xc3\xbcnchen"]}], q[UTF-8 bytes passed through]);
+	};
+
+	subtest 'encode replaces invalid UTF-8' => sub {
+		plan(1);
+		my $json = BindingsIo_encodeJson({args => [qq[K\xfcche]]});
+		is ($json, qq[{"args":["K\xef\xbf\xbdche"]}], q[Latin-1 byte replaced by U+FFFD]);
 	};
 
 	subtest 'store malformed JSON returns error' => sub {
