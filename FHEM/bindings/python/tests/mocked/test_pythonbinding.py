@@ -485,8 +485,7 @@ async def test_fast_set_returns_its_result(monkeypatch):
     assert replies == [("usage", "Usage: set counting_dev usage <value>")]
 
 
-@pytest.mark.asyncio
-async def test_set_question_mark_is_not_run_in_background(monkeypatch):
+def test_set_question_mark_is_not_run_in_background():
     assert not fhem_pythonbinding.is_backgroundable_set(set_hash("?", 2))
     assert not fhem_pythonbinding.is_backgroundable_set(function_hash("Set"))
     assert not fhem_pythonbinding.is_backgroundable_set(attr_disable("1"))
@@ -514,7 +513,7 @@ async def test_sets_of_a_device_keep_their_order(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_late_set_error_is_logged_without_arguments(monkeypatch, caplog):
-    pb, replies = set_binding(monkeypatch)
+    pb, _ = set_binding(monkeypatch)
     await pb.handle_function(function_hash("Define"), "")
 
     await pb.handle_function(set_hash("slowfail", 2), "")
@@ -538,7 +537,7 @@ async def test_undefine_cancels_running_set(monkeypatch):
             SetModule.calls.append("start")
             await asyncio.sleep(3600)
 
-    pb, replies = set_binding(monkeypatch, GenericSetModule)
+    pb, _ = set_binding(monkeypatch, GenericSetModule)
     await pb.handle_function(function_hash("Define"), "")
     instance = fhem_pythonbinding.loadedModuleInstances["counting_dev"]
 

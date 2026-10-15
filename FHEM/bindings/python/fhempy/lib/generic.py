@@ -41,7 +41,7 @@ class FhemModule:
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
         """Read current module help for each detail page, preserving Markdown."""
-        (FW_wname, d, room, pageHash) = args
+        FW_wname, d, room, pageHash = args
 
         if not hasattr(self, "hash"):
             return (
@@ -243,6 +243,16 @@ class FhemModule:
             self.logger.exception(
                 f"Background task {task.get_name()} stopped because of an error"
             )
+
+    def track_async_task(self, task):
+        """Cancel an already running task on Undefine, e.g. a Set which
+        continues in the background."""
+        self._tasks.append(task)
+        task.add_done_callback(self._untrack_task)
+
+    def _untrack_task(self, task):
+        if task in self._tasks:
+            self._tasks.remove(task)
 
     def cancel_async_task(self, task):
         if task in self._tasks:

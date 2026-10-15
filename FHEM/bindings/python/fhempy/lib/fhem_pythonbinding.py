@@ -530,14 +530,10 @@ class fhempy:
     def finish_set_in_background(self, hash, task, nmInstance):
         if isinstance(nmInstance, generic.FhemModule):
             # Undefine cancels the module's tasks
-            nmInstance._tasks.append(task)
-        task.add_done_callback(
-            functools.partial(self.background_set_done, hash, nmInstance)
-        )
+            nmInstance.track_async_task(task)
+        task.add_done_callback(functools.partial(self.background_set_done, hash))
 
-    def background_set_done(self, hash, nmInstance, task):
-        if isinstance(nmInstance, generic.FhemModule) and task in nmInstance._tasks:
-            nmInstance._tasks.remove(task)
+    def background_set_done(self, hash, task):
         if task.cancelled():
             return
         moduleLogger = logging.getLogger(hash["NAME"])
