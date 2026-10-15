@@ -33,7 +33,7 @@ fhempy = "fhempy.lib.fhem_pythonbinding:run"
 python = ">=3.12,<3.15"
 websockets = "==17.2"
 importlib_metadata = "7.2.1"
-pycryptodomex = "3.23.0"
+pycryptodomex = "3.24.1"
 ifaddr = "==0.2.0"
 zeroconf = "==0.151.2"
 markdown2 = "2.5.5"
@@ -48,7 +48,7 @@ aiofiles = "==25.1.0"
 
 [tool.poetry.dependencies.aiohttp]
 extras = [ "speedups",]
-version = "3.14.3"
+version = "3.14.5"
 
 [tool.poetry.group.all]
 optional = true
