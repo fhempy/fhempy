@@ -11,6 +11,7 @@ from datetime import datetime
 from functools import partial, reduce
 
 from . import fhem
+from .json_utils import json_dumps, json_loads
 
 
 def encrypt_string(plain_text, fhem_unique_id):
@@ -199,7 +200,7 @@ async def handle_define_attr(attr_list, obj, hash, extra_attrs=None):
 def flatten_json(y):
     out = {}
     if type(y) is str:
-        y = json.loads(y)
+        y = json_loads(y)
 
     def flatten(x, name=""):
         if type(x) is dict:
@@ -274,7 +275,7 @@ def convert2format(value, list_def):
             return False
     elif target_format == "json":
         try:
-            return json.loads(value)
+            return json_loads(value)
         except Exception:
             return {}
     elif target_format == "time":

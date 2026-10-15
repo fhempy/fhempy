@@ -36,7 +36,7 @@
 ### 1. Install the system packages
 Copy & paste this command on the machine running FHEM:
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libjson-xs-perl
+sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libcpanel-json-xs-perl libjson-xs-perl
 ```
 
 > [!NOTE]
@@ -44,7 +44,7 @@ sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-
 
 On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
 
-`libjson-xs-perl` (JSON::XS) isn't required, but without it FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` in FHEM, `JSON::Backend::XS` is the fast one.
+`libcpanel-json-xs-perl` (Cpanel::JSON::XS) or `libjson-xs-perl` (JSON::XS) isn't strictly required, but without an XS backend FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` or `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
 
 ### 2. Add fhempy to FHEM
 Enter these commands one after another in the FHEM command field:

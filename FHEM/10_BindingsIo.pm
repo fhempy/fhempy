@@ -12,7 +12,31 @@ use Protocol::WebSocket::Frame;
 use DevIo;
 use CoProcess;
 
-use JSON;
+our $json_backend;
+BEGIN {
+  eval {
+    require Cpanel::JSON::XS;
+    Cpanel::JSON::XS->import(qw(decode_json encode_json to_json from_json));
+    $json_backend = "Cpanel::JSON::XS";
+    1;
+  } or eval {
+    require JSON::XS;
+    JSON::XS->import(qw(decode_json encode_json to_json from_json));
+    $json_backend = "JSON::XS";
+    1;
+  } or eval {
+    require JSON;
+    JSON->import(qw(decode_json encode_json to_json from_json));
+    $json_backend = eval { JSON->backend } // "JSON";
+    1;
+  } or do {
+    require JSON::PP;
+    JSON::PP->import(qw(decode_json encode_json));
+    *to_json = \&JSON::PP::encode_json unless defined(&to_json);
+    *from_json = \&JSON::PP::decode_json unless defined(&from_json);
+    $json_backend = "JSON::PP";
+  };
+}
 use Time::HiRes qw(time);
 
 our $init_done;
@@ -100,9 +124,9 @@ sub BindingsIo_Define {
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   # JSON::PP (pure Perl fallback of JSON) needs ~1ms to decode a fhempy message, JSON::XS a few us
-  $hash->{JSON_BACKEND} = eval { JSON->backend } // q[unknown];
+  $hash->{JSON_BACKEND} = $json_backend // eval { JSON->backend } // eval { JSON::XS->backend } // (defined(&JSON::XS::decode_json) ? "JSON::XS" : "JSON::PP");
   if ($hash->{JSON_BACKEND} =~ m/PP/) {
-    Log3 $name, 2, qq[BindingsIo ($name): JSON::XS is not installed, fhempy messages are decoded much slower. Install it with: sudo apt install libjson-xs-perl];
+    Log3 $name, 2, qq[BindingsIo ($name): Neither Cpanel::JSON::XS nor JSON::XS is installed, fhempy messages are decoded much slower. Install it with: sudo apt install libcpanel-json-xs-perl (or libjson-xs-perl)];
   }
   $hash->{messages} = ();
   @{$hash->{messages}{0}} = ();
@@ -430,7 +454,7 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   }
 
-  my $utf8msg = to_json(\%msg);
+  my $utf8msg = eval { encode_json(\%msg) } // to_json(\%msg);
   Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
@@ -577,13 +601,29 @@ BindingsIo_Shutdown($)
 
 sub BindingsIo_storeMessage($$) {
   my ($hash, $response) = @_;
-  $response = Encode::encode("utf8", $response);
   Log3 $hash, 5, "BindingsIo_storeMessage: ".$response;
-  my $json = eval {from_json($response)};
-  if ($@) {
-    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
-    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: ".$response;
-    return "error";
+
+  # Fast-path: decode_json directly processes UTF-8 octets via XS (or PP)
+  my $json = eval { decode_json($response) };
+  if ($@ || !defined($json)) {
+    my $decode_err = $@;
+    # Fallback: if $response was wide character string or decode_json failed,
+    # try encoding to UTF-8 or using from_json for pure-perl compatibility
+    eval {
+      $json = decode_json(Encode::encode("utf8", $response));
+      1;
+    } or eval {
+      $json = from_json($response);
+      1;
+    } or eval {
+      $json = from_json(Encode::encode("utf8", $response));
+      1;
+    };
+    if ($@ || !defined($json)) {
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: " . ($@ || $decode_err || "Empty or non-object JSON");
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: " . $response;
+      return "error";
+    }
   }
 
   if (defined($json->{id})) {
@@ -719,7 +759,7 @@ sub BindingsIo_processCommand($$) {
         result => $ret
       );
     }
-    my $utf8msg = to_json(\%res);
+    my $utf8msg = eval { encode_json(\%res) } // to_json(\%res);
     Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
     if (length $utf8msg > 0) {
       DevIo_SimpleWrite($hash, $utf8msg, 0);

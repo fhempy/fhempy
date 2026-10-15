@@ -10,6 +10,7 @@ from datetime import datetime
 
 import websockets
 
+from .json_utils import json_dumps, json_loads
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -195,7 +196,7 @@ async def getDeviceInfo(name, attrs, dev_attr_list=None):
     info = {"init_done": 0, "attr": {attr: str(d) for attr, d in attrs.items()}}
     res = await sendCommandName(name, cmd)
     try:
-        reply = json.loads(res)
+        reply = json_loads(res)
         info["init_done"] = int(reply["init_done"])
         for attr, value in reply["attr"].items():
             if attr in info["attr"] and value is not None:
@@ -460,7 +461,7 @@ async def send_latest_release():
                     "Release Notes</a></html>"
                 ),
             }
-            msg = json.dumps(msg, ensure_ascii=False)
+            msg = json_dumps(msg)
             logger.debug("<<< WS: " + msg)
             global wsconnection
             await wsconnection.send(msg)
@@ -479,7 +480,7 @@ async def send_version():
         "release": platform.release(),
         "hostname": socket.gethostname(),
     }
-    msg = json.dumps(msg, ensure_ascii=False)
+    msg = json_dumps(msg)
     logger.debug("<<< WS: " + msg)
     global wsconnection
     await wsconnection.send(msg)
@@ -491,7 +492,7 @@ async def send_default_response(hash, set_default_response):
         "NAME": hash["NAME"],
         "set_default_response": set_default_response,
     }
-    msg = json.dumps(msg, ensure_ascii=False)
+    msg = json_dumps(msg)
     logger.debug("<<< WS: " + msg)
     global wsconnection
     await wsconnection.send(msg)
@@ -530,7 +531,7 @@ async def send_and_wait(name, cmd):
     logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
     try:
         try:
-            await connection.send(json.dumps(msg, ensure_ascii=False))
+            await connection.send(json_dumps(msg))
         except websockets.exceptions.ConnectionClosed:
             fut.set_exception(ConnectionError("FHEM connection closed"))
         except Exception as e:
