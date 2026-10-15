@@ -1,5 +1,5 @@
 import pytest
-from fhempy.lib.json_utils import json_dumps, json_loads, HAS_ORJSON
+from fhempy.lib.json_utils import json_dumps, json_loads
 import json
 
 
@@ -40,3 +40,10 @@ def test_fallback_equivalence():
     std_json_str = json.dumps(data, ensure_ascii=False)
     our_json_str = json_dumps(data)
     assert json_loads(std_json_str) == json_loads(our_json_str) == data
+
+
+def test_json_dumps_non_str_keys_and_big_ints():
+    # both are valid in Python dicts returned by modules, orjson rejects them
+    assert json_loads(json_dumps({1: "a", "b": 2})) == {"1": "a", "b": 2}
+    big = 2**70
+    assert json_loads(json_dumps({"big": big})) == {"big": big}

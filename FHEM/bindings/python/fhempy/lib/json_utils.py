@@ -1,18 +1,14 @@
-"""High-performance JSON serialization helpers with automatic fallback."""
+"""JSON helpers for the FHEM websocket connection.
 
-try:
-    import orjson
+Non-ASCII characters are sent as UTF-8 (no \\u escapes), so FHEM gets the same
+UTF-8 bytes it uses internally.
+"""
 
-    def json_dumps(obj):
-        return orjson.dumps(obj).decode("utf-8")
+import json
 
-    json_loads = orjson.loads
-    HAS_ORJSON = True
-except ImportError:
-    import json
 
-    def json_dumps(obj):
-        return json.dumps(obj, ensure_ascii=False)
+def json_dumps(obj):
+    return json.dumps(obj, ensure_ascii=False)
 
-    json_loads = json.loads
-    HAS_ORJSON = False
+
+json_loads = json.loads

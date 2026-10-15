@@ -2,7 +2,6 @@ import asyncio
 import binascii
 import concurrent.futures
 import inspect
-import json
 import os
 import socket
 from base64 import urlsafe_b64decode, urlsafe_b64encode
@@ -11,7 +10,7 @@ from datetime import datetime
 from functools import partial, reduce
 
 from . import fhem
-from .json_utils import json_dumps, json_loads
+from .json_utils import json_loads
 
 
 def encrypt_string(plain_text, fhem_unique_id):
@@ -69,6 +68,12 @@ def get_fhempy_root():
     return fhempy_root
 
 
+# Threads are only started when needed and reused afterwards, so a high
+# limit costs nothing. It has to be high because blocking calls (BT scans,
+# network timeouts) can occupy a worker for a long time and every module
+# shares this pool. Endless loops have to use run_blocking_thread instead.
+BLOCKING_MAX_WORKERS = 64
+
 _blocking_executor = None
 
 
@@ -76,7 +81,7 @@ def get_blocking_executor():
     global _blocking_executor
     if _blocking_executor is None:
         _blocking_executor = concurrent.futures.ThreadPoolExecutor(
-            thread_name_prefix="fhempy_blocking"
+            max_workers=BLOCKING_MAX_WORKERS, thread_name_prefix="fhempy_blocking"
         )
     return _blocking_executor
 
@@ -92,11 +97,26 @@ async def run_blocking(function):
     if isinstance(function, partial) is False:
         raise Exception("Use functools.partial to call run_blocking")
 
+    return await asyncio.get_running_loop().run_in_executor(
+        get_blocking_executor(), function
+    )
+
+
+async def run_blocking_thread(function):
+    """Run a long running blocking function (e.g. an endless loop) in its own
+    thread, so it doesn't occupy a worker of the shared pool."""
+    if isinstance(function, partial) is False:
+        raise Exception("Use functools.partial to call run_blocking_thread")
+
+    pool = concurrent.futures.ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="fhempy_thread"
+    )
     try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(get_blocking_executor(), function)
+        return await asyncio.get_running_loop().run_in_executor(pool, function)
+    finally:
+        # don't block the event loop if the task was cancelled (Undefine),
+        # the thread finishes in the background
+        pool.shutdown(wait=False)
 
 
 def run_blocking_task(function):

@@ -1,4 +1,6 @@
+import asyncio
 import functools
+import threading
 
 import pytest
 from fhempy.lib import utils
@@ -374,14 +376,49 @@ def test_remove_special_charachters():
         utils.remove_special_charachters("Grüße aus Köln, Äpfel & Öfen!")
         == "Gruesse aus Koeln, Aepfel & Oefen!"
     )
-    assert utils.remove_special_charachters('("test`quote\')') == "testquote"
+    assert utils.remove_special_charachters("(\"test`quote')") == "testquote"
     assert utils.remove_special_charachters("plain_string_123") == "plain_string_123"
 
 
 def test_gen_reading_name():
     assert utils.gen_reading_name("Temperatur (Küche)") == "temperatur_kueche"
-    assert utils.gen_reading_name("Total-Energy Consumption") == "total_energy_consumption"
+    assert (
+        utils.gen_reading_name("Total-Energy Consumption") == "total_energy_consumption"
+    )
 
 
 def test_gen_fhemdev_name():
-    assert utils.gen_fhemdev_name("Wohnzimmer:Licht (Decke)") == "Wohnzimmer_Licht_Decke"
+    assert (
+        utils.gen_fhemdev_name("Wohnzimmer:Licht (Decke)") == "Wohnzimmer_Licht_Decke"
+    )
+
+
+@pytest.mark.asyncio
+async def test_endless_loops_do_not_block_the_pool(monkeypatch):
+    # small pool, more endless loops than workers
+    utils.shutdown_blocking_executor(wait=True)
+    monkeypatch.setattr(utils, "BLOCKING_MAX_WORKERS", 2)
+    stop = threading.Event()
+    started = threading.Semaphore(0)
+
+    def endless():
+        started.release()
+        stop.wait(10)
+        return "stopped"
+
+    loops = [
+        asyncio.create_task(utils.run_blocking_thread(functools.partial(endless)))
+        for _ in range(3)
+    ]
+    try:
+        for _ in range(3):
+            assert await asyncio.to_thread(started.acquire, True, 5)
+        res = await asyncio.wait_for(
+            utils.run_blocking(functools.partial(lambda: "pool free")), 5
+        )
+        assert res == "pool free"
+        assert utils.get_blocking_executor()._max_workers == 2
+    finally:
+        stop.set()
+        utils.shutdown_blocking_executor(wait=True)
+    assert await asyncio.gather(*loops) == ["stopped"] * 3
