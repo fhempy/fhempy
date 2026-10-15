@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.1.790 (2026-10-15)
+
+### Bug Fixes
+
+- **dlna_dmr**: Start event server with current async-upnp-client API
+  ([#659](https://github.com/fhempy/fhempy/pull/659),
+  [`4c2809b`](https://github.com/fhempy/fhempy/commit/4c2809b66392d6afc8c5cdd43683410690c98993))
+
+
 ## v0.1.789 (2026-10-15)
 
 ### Bug Fixes
