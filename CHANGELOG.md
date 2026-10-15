@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.1.786 (2026-10-15)
+
+### Performance Improvements
+
+- Reuse persistent thread pool in run_blocking ([#651](https://github.com/fhempy/fhempy/pull/651),
+  [`eabf708`](https://github.com/fhempy/fhempy/commit/eabf708b8436867e195e111e5f3b11ed6673db77))
+
+
 ## v0.1.785 (2026-10-15)
 
 ### Bug Fixes
