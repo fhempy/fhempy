@@ -367,3 +367,21 @@ async def test_readings_float(mocker):
     assert await utils.readings_float("floatdev", "power") == 12.5
     assert await utils.readings_float("floatdev", "missing", 3.0) == 3.0
     mock_fhem.readings.pop("floatdev")
+
+
+def test_remove_special_charachters():
+    assert (
+        utils.remove_special_charachters("Grüße aus Köln, Äpfel & Öfen!")
+        == "Gruesse aus Koeln, Aepfel & Oefen!"
+    )
+    assert utils.remove_special_charachters('("test`quote\')') == "testquote"
+    assert utils.remove_special_charachters("plain_string_123") == "plain_string_123"
+
+
+def test_gen_reading_name():
+    assert utils.gen_reading_name("Temperatur (Küche)") == "temperatur_kueche"
+    assert utils.gen_reading_name("Total-Energy Consumption") == "total_energy_consumption"
+
+
+def test_gen_fhemdev_name():
+    assert utils.gen_fhemdev_name("Wohnzimmer:Licht (Decke)") == "Wohnzimmer_Licht_Decke"
