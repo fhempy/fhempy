@@ -40,6 +40,14 @@ conf = {"internal_modules": ["discover_fhempy"]}
 
 
 UNDEFINE_TIMEOUT = 60
+# FHEM is blocked until it gets the reply to a Set. Set handlers which wait
+# for a device or cloud keep running in the background after this time (s).
+SET_REPLY_TIMEOUT = 0.05
+
+
+def is_backgroundable_set(hash):
+    args = hash.get("args") or []
+    return hash.get("function") == "Set" and len(args) > 1 and args[1] != "?"
 
 
 class ModuleDisabledException(Exception):
@@ -130,6 +138,10 @@ class fhempy:
         self._stopping = False
         self.msg_received_time = {}
         self._last_msg_cleanup = 0
+        # keep references, the event loop only holds weak ones
+        self._background_tasks = set()
+        # Set commands of a device run one after the other, in FHEM's order
+        self._set_locks = {}
 
     def register_msg_listener(self, listener, awaitid):
         self._msg_listeners[awaitid] = listener
@@ -469,7 +481,17 @@ class fhempy:
 
         if nmInstance is not None:
             try:
-                ret = await self.execute_function(hash, fhem_reply_done, nmInstance)
+                if not fhem_reply_done and is_backgroundable_set(hash):
+                    task = asyncio.create_task(self.execute_set(hash, nmInstance))
+                    done, _ = await asyncio.wait({task}, timeout=SET_REPLY_TIMEOUT)
+                    if not done:
+                        # don't keep FHEM blocked while the device answers
+                        await self.sendBackReturn(hash, "")
+                        self.finish_set_in_background(hash, task, nmInstance)
+                        return 0
+                    ret = task.result()
+                else:
+                    ret = await self.execute_function(hash, fhem_reply_done, nmInstance)
             except asyncio.TimeoutError:
                 errorMsg = (
                     f"Function execution >{fct_timeout}s, "
@@ -499,6 +521,43 @@ class fhempy:
         if hash["function"] == "Undefine":
             if hash["NAME"] in loadedModuleInstances:
                 del loadedModuleInstances[hash["NAME"]]
+
+    async def execute_set(self, hash, nmInstance):
+        lock = self._set_locks.setdefault(hash["NAME"], asyncio.Lock())
+        async with lock:
+            return await self.execute_function(hash, False, nmInstance)
+
+    def finish_set_in_background(self, hash, task, nmInstance):
+        if isinstance(nmInstance, generic.FhemModule):
+            # Undefine cancels the module's tasks
+            nmInstance._tasks.append(task)
+        task.add_done_callback(
+            functools.partial(self.background_set_done, hash, nmInstance)
+        )
+
+    def background_set_done(self, hash, nmInstance, task):
+        if isinstance(nmInstance, generic.FhemModule) and task in nmInstance._tasks:
+            nmInstance._tasks.remove(task)
+        if task.cancelled():
+            return
+        moduleLogger = logging.getLogger(hash["NAME"])
+        # only the set command, further arguments might be credentials
+        cmd = hash["args"][1]
+        exc = task.exception()
+        if isinstance(exc, asyncio.TimeoutError):
+            moduleLogger.error(f"set {cmd}: execution >{fct_timeout}s, cancelled")
+            return
+        if exc is not None:
+            moduleLogger.error(f"set {cmd} failed", exc_info=exc)
+            return
+        ret = task.result()
+        if ret:
+            # FHEM already got an empty reply, show the message in the log
+            moduleLogger.warning(f"set {cmd}: {ret}")
+        # the hash might have changed, FHEM gets it with the reply otherwise
+        update = asyncio.create_task(self.updateHash(hash))
+        self._background_tasks.add(update)
+        update.add_done_callback(self._background_tasks.discard)
 
     async def define_module(self, hash, module_object):
         # create instance of class with logger

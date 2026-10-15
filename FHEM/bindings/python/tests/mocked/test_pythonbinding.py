@@ -57,7 +57,6 @@ def test_msg_handling_completed_removes_stale_messages():
     assert list(pb.msg_received_time) == []
 
 
-
 @pytest.mark.asyncio
 async def test_send_back_error_without_received_timestamp(monkeypatch):
     monkeypatch.setattr(fhem, "function_active", [])
@@ -408,3 +407,146 @@ async def test_expired_function_is_quiet_after_connection_closed(monkeypatch, ca
 
     assert fhem.function_active == []
     assert "stopped waiting" not in caplog.text
+
+
+class SetModule:
+    calls = []
+
+    def __init__(self, logger):
+        pass
+
+    async def Define(self, hash, args, argsh):
+        self.hash = hash
+
+    async def Set(self, hash, args, argsh):
+        cmd = args[1]
+        SetModule.calls.append(f"start {cmd}")
+        if cmd.startswith("slow"):
+            await asyncio.sleep(0.2)
+        if cmd == "slowfail":
+            raise RuntimeError("cloud not reachable")
+        SetModule.calls.append(f"end {cmd}")
+        if cmd == "usage":
+            return "Usage: set counting_dev usage <value>"
+        return ""
+
+
+def set_binding(monkeypatch, module_class=SetModule):
+    pb = counting_binding(monkeypatch, {"value": "0"})
+    SetModule.calls = []
+    module = type("module", (), {"counting": module_class})
+
+    async def import_module(hash):
+        return module
+
+    replies = []
+    send_back_return = pb.sendBackReturn
+
+    async def record_reply(hash, ret):
+        replies.append((hash["args"][1] if len(hash["args"]) > 1 else None, ret))
+        await send_back_return(hash, ret)
+
+    monkeypatch.setattr(pb, "import_module", import_module)
+    monkeypatch.setattr(pb, "sendBackReturn", record_reply)
+    return pb, replies
+
+
+def set_hash(cmd, msg_id):
+    hash = function_hash("Set", ["counting_dev", cmd, "secret"])
+    hash["id"] = msg_id
+    return hash
+
+
+@pytest.mark.asyncio
+async def test_slow_set_replies_before_it_finishes(monkeypatch):
+    pb, replies = set_binding(monkeypatch)
+    await pb.handle_function(function_hash("Define"), "")
+    replies.clear()
+
+    start = time.monotonic()
+    await pb.handle_function(set_hash("slow", 2), "")
+    duration = time.monotonic() - start
+
+    assert duration < 0.15
+    assert replies == [("slow", "")]
+    assert SetModule.calls == ["start slow"]
+    await asyncio.sleep(0.3)
+    assert SetModule.calls == ["start slow", "end slow"]
+
+
+@pytest.mark.asyncio
+async def test_fast_set_returns_its_result(monkeypatch):
+    pb, replies = set_binding(monkeypatch)
+    await pb.handle_function(function_hash("Define"), "")
+    replies.clear()
+
+    await pb.handle_function(set_hash("usage", 2), "")
+
+    assert replies == [("usage", "Usage: set counting_dev usage <value>")]
+
+
+@pytest.mark.asyncio
+async def test_set_question_mark_is_not_run_in_background(monkeypatch):
+    assert not fhem_pythonbinding.is_backgroundable_set(set_hash("?", 2))
+    assert not fhem_pythonbinding.is_backgroundable_set(function_hash("Set"))
+    assert not fhem_pythonbinding.is_backgroundable_set(attr_disable("1"))
+    assert fhem_pythonbinding.is_backgroundable_set(set_hash("on", 2))
+
+
+@pytest.mark.asyncio
+async def test_sets_of_a_device_keep_their_order(monkeypatch):
+    pb, replies = set_binding(monkeypatch)
+    await pb.handle_function(function_hash("Define"), "")
+    replies.clear()
+
+    await pb.handle_function(set_hash("slow_on", 2), "")
+    await pb.handle_function(set_hash("slow_off", 3), "")
+    assert replies == [("slow_on", ""), ("slow_off", "")]
+    await asyncio.sleep(0.6)
+
+    assert SetModule.calls == [
+        "start slow_on",
+        "end slow_on",
+        "start slow_off",
+        "end slow_off",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_late_set_error_is_logged_without_arguments(monkeypatch, caplog):
+    pb, replies = set_binding(monkeypatch)
+    await pb.handle_function(function_hash("Define"), "")
+
+    await pb.handle_function(set_hash("slowfail", 2), "")
+    await asyncio.sleep(0.3)
+
+    errors = [r for r in caplog.records if r.name == "counting_dev"]
+    assert len(errors) == 1
+    assert errors[0].getMessage() == "set slowfail failed"
+    assert "secret" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_undefine_cancels_running_set(monkeypatch):
+    from fhempy.lib import generic
+
+    class GenericSetModule(generic.FhemModule):
+        async def Define(self, hash, args, argsh):
+            self.hash = hash
+
+        async def Set(self, hash, args, argsh):
+            SetModule.calls.append("start")
+            await asyncio.sleep(3600)
+
+    pb, replies = set_binding(monkeypatch, GenericSetModule)
+    await pb.handle_function(function_hash("Define"), "")
+    instance = fhem_pythonbinding.loadedModuleInstances["counting_dev"]
+
+    await pb.handle_function(set_hash("on", 2), "")
+    assert len(instance._tasks) == 1
+    task = instance._tasks[0]
+    await pb.handle_function(function_hash("Undefine"), "")
+    await asyncio.sleep(0)
+
+    assert task.cancelled()
+    assert instance._tasks == []
