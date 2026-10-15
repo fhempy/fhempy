@@ -99,7 +99,8 @@ async def pybinding(websocket):
     await fhem.send_version()
     asyncio.create_task(fhem.send_latest_release())
     if release_party is not None and release_party.pending:
-        asyncio.create_task(release_party.show_in_fhem())
+        # keep a reference, the event loop only holds a weak one
+        release_party.task = asyncio.create_task(release_party.show_in_fhem())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))

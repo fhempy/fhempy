@@ -113,6 +113,7 @@ class ReleaseParty:
     def __init__(self, version=__version__):
         self.version = version
         self.pending = should_celebrate(version)
+        self.task = None
 
     async def show_in_log(self, delay=0.15):
         """Countdown, rocket launch and banner in the fhempy log, ~4s."""
