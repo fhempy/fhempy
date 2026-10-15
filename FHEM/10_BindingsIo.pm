@@ -63,6 +63,12 @@ my $write_deep_recursion = 0;
 # reconnect if nothing was received for a while.
 my $keepalive_interval = 30;
 my $keepalive_timeout = 90;
+# After a function timeout the peer gets this long to answer a ping,
+# otherwise the connection is closed and further commands return at once
+# instead of freezing FHEM for the full timeout each.
+my $alive_check_timeout = 5;
+# function timeout while an alive check is running
+my $suspect_timeout = 500;
 
 sub BindingsIo_Initialize {
   my ($hash) = @_;
@@ -281,6 +287,30 @@ BindingsIo_keepAlive($) {
 }
 
 sub
+BindingsIo_checkAlive($) {
+  my ($hash) = @_;
+
+  return if (defined($hash->{".aliveCheckSent"}) || !defined($hash->{TCPDev}));
+  $hash->{".aliveCheckSent"} = time;
+  RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
+  # fhempy (websockets) answers with a pong, which updates .lastReceived
+  syswrite($hash->{TCPDev}, Protocol::WebSocket::Frame->new(buffer => "alive", type => 'ping', masked => 1)->to_bytes);
+  InternalTimer(gettimeofday()+$alive_check_timeout, 'BindingsIo_aliveCheckTimeout', $hash, 0);
+}
+
+sub
+BindingsIo_aliveCheckTimeout($) {
+  my ($hash) = @_;
+
+  my $sent = delete $hash->{".aliveCheckSent"};
+  return if (!defined($sent) || $hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash));
+  if (($hash->{".lastReceived"} // 0) < $sent) {
+    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ".$hash->{BindingType}." didn't answer within ".$alive_check_timeout."s, closing connection";
+    DevIo_Disconnected($hash);
+  }
+}
+
+sub
 BindingsIo_setIODevAttr($) {
   my ($hash) = @_;
 
@@ -316,6 +346,8 @@ BindingsIo_doInit($) {
   @{$hash->{messages}{0}} = ();
   $hash->{messages_count} = {};
   $write_deep_recursion = 0;
+  delete $hash->{".aliveCheckSent"};
+  RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
 
   BindingsIo_initFrame($hash);
   BindingsIo_scheduleKeepAlive($hash);
@@ -428,14 +460,16 @@ BindingsIo_Write($$$$$) {
     return undef;
   }
 
+  # FHEM is blocked while waiting, keep this short. fhempy answers Define
+  # before it loads the module, so a long timeout isn't needed after connect.
   my $py_timeout = 3000;
-  my $cur_time = time;
-  if (($cur_time - $hash->{connecttime}) < 120) {
-    $py_timeout = 60000;
-  }
   if ($function eq "Define" or $init_done == 0 or $initrun == 1) {
-    # wait 10s on Define, this might happen on startup
+    # defmod runs Undefine of the old instance before fhempy answers
     $py_timeout = 30000;
+  }
+  if (defined($hash->{".aliveCheckSent"})) {
+    # the peer didn't answer the last function, don't freeze FHEM again
+    $py_timeout = $suspect_timeout;
   }
 
   my $waitingForId = int(rand()*100000000);
@@ -496,14 +530,16 @@ BindingsIo_Write($$$$$) {
     if (($t2 - $t1) > $py_timeout) {
       $timeouts = $timeouts + 1;
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR: Timeout while waiting for function to finish (id: $waitingForId)";
-      while (my ($key, $value) = each (%msg))
-      {
-        Log3 $hash, 1, "  $key =>  $msg{$key}";
-      }
+      # args and defargs might contain credentials
+      Log3 $hash, 1, "  NAME => $msg{NAME}, function => $msg{function}";
+      BindingsIo_checkAlive($hash);
       last;
     }
     
-    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, $waitingForId);
+    # don't wait in select longer than the remaining timeout
+    my $wait = ($py_timeout - ($t2 - $t1)) / 1000;
+    $wait = 1 if ($wait > 1);
+    $returnval = BindingsIo_readWebsocketMessage($hash, $devhash, $waitingForId, $wait);
     if ($returnval ne "empty" && $returnval ne "continue") {
       $timeouts = 0;
       last;
@@ -811,18 +847,20 @@ sub BindingsIo_SimpleReadWithTimeout($$) {
       return "connectionclosed";
     } else {
       $hash->{".lastReceived"} = time;
+      # the peer is alive, a pending alive check has been answered
+      delete $hash->{".aliveCheckSent"};
       return $buf;
     }
   }
   return undef;
 }
 
-sub BindingsIo_readWebsocketMessage($$$) {
-  my ($hash, $devhash, $waitingForId) = @_;
+sub BindingsIo_readWebsocketMessage {
+  my ($hash, $devhash, $waitingForId, $wait) = @_;
   my $ret = "";
 
   # read message from websocket
-  my $response = BindingsIo_SimpleReadWithTimeout($hash, 1);
+  my $response = BindingsIo_SimpleReadWithTimeout($hash, $wait // 1);
 
   if (defined($response) && $response eq "connectionclosed") {
     # handle connection closed
