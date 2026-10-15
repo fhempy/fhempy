@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.1.787 (2026-10-15)
+
+### Performance Improvements
+
+- Optimize remove_special_charachters using str.translate
+  ([#652](https://github.com/fhempy/fhempy/pull/652),
+  [`c7c665a`](https://github.com/fhempy/fhempy/commit/c7c665a1768d09d5c0a43e450971c458e382909d))
+
+
 ## v0.1.786 (2026-10-15)
 
 ### Performance Improvements
