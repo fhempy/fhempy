@@ -307,23 +307,23 @@ async def check_and_install_dependencies(module):
                     manifest = json.load(f)
                 _MANIFEST_CACHE[module] = manifest
 
-                if "requirements" in manifest:
-                    for req in manifest["requirements"]:
-                        if is_installed(req) is False:
-                            inst_tries = 0
-                            while inst_tries < 3:
-                                with concurrent.futures.ThreadPoolExecutor() as pool:
-                                    ret = (
-                                        await asyncio.get_event_loop().run_in_executor(
-                                            pool,
-                                            functools.partial(
-                                                install_package, req, **kwargs
-                                            ),
-                                        )
+            if "requirements" in manifest:
+                for req in manifest["requirements"]:
+                    if is_installed(req) is False:
+                        inst_tries = 0
+                        while inst_tries < 3:
+                            with concurrent.futures.ThreadPoolExecutor() as pool:
+                                ret = (
+                                    await asyncio.get_event_loop().run_in_executor(
+                                        pool,
+                                        functools.partial(
+                                            install_package, req, **kwargs
+                                        ),
                                     )
-                                if ret:
-                                    break
-                                inst_tries += 1
+                                )
+                            if ret:
+                                break
+                            inst_tries += 1
     except FileNotFoundError:
         pass
 

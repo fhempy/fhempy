@@ -1,6 +1,8 @@
 import os
 import sys
 
+import pytest
+
 from fhempy.lib import pkg_installer
 
 
@@ -233,3 +235,26 @@ def test_dependency_caching_and_invalidation(tmp_path, monkeypatch):
     assert len(pkg_installer._MANIFEST_CACHE) == 0
 
 
+@pytest.mark.asyncio
+async def test_install_runs_after_check_cached_manifest(tmp_path, monkeypatch):
+    # Define calls check_dependencies first, which caches the manifest.
+    # check_and_install_dependencies must still install missing packages.
+    pkg_installer.invalidate_dependency_cache()
+    mod_dir = tmp_path / "test_mod"
+    mod_dir.mkdir()
+    (mod_dir / "manifest.json").write_text('{"requirements": ["missing-pkg==1.0"]}')
+    monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(tmp_path))
+    monkeypatch.setattr(pkg_installer, "is_installed", lambda req: False)
+    monkeypatch.setattr(pkg_installer, "pip_kwargs", lambda x: {})
+    installed = []
+    monkeypatch.setattr(
+        pkg_installer,
+        "install_package",
+        lambda req, **kwargs: installed.append(req) or True,
+    )
+
+    assert pkg_installer.check_dependencies("test_mod") is False
+    await pkg_installer.check_and_install_dependencies("test_mod")
+
+    assert installed == ["missing-pkg==1.0"]
+    pkg_installer.invalidate_dependency_cache()
