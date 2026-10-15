@@ -764,7 +764,7 @@ async def async_main():
 
     global release_party
     release_party = celebration.ReleaseParty()
-    await release_party.show_in_log()
+    release_party.show_in_log()
 
     await pkg_installer.check_and_install_dependencies("core")
 
