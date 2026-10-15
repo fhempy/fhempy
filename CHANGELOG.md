@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v1.0.2 (2026-10-15)
+
+### Bug Fixes
+
+- Don't freeze FHEM for 60s/3s per command when the fhempy peer hangs
+  ([#661](https://github.com/fhempy/fhempy/pull/661),
+  [`79266ac`](https://github.com/fhempy/fhempy/commit/79266ac98e047090949986ad057338e3d415590c))
+
+- Don't keep FHEM blocked while a set waits for its device
+  ([#664](https://github.com/fhempy/fhempy/pull/664),
+  [`4754da9`](https://github.com/fhempy/fhempy/commit/4754da944dc2f959f0da559d1ec6f9036bfc903a))
+
+- Keep FHEM responsive while fhempy (re)connects ([#662](https://github.com/fhempy/fhempy/pull/662),
+  [`44cda2f`](https://github.com/fhempy/fhempy/commit/44cda2f2dbfbfddd421e8143bd44872a8623b95a))
+
+- Track background sets via FhemModule.track_async_task
+  ([#664](https://github.com/fhempy/fhempy/pull/664),
+  [`4754da9`](https://github.com/fhempy/fhempy/commit/4754da944dc2f959f0da559d1ec6f9036bfc903a))
+
+### Features
+
+- Log where fhempy's event loop is blocked ([#663](https://github.com/fhempy/fhempy/pull/663),
+  [`3645d2e`](https://github.com/fhempy/fhempy/commit/3645d2e403502f290ad508f93120e55865a465c1))
+
+
 ## v1.0.1 (2026-10-15)
 
 ### Bug Fixes
