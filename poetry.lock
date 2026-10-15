@@ -6736,14 +6736,14 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 
 [[package]]
 name = "vaillant-netatmo-api"
-version = "0.11.0"
+version = "0.13.1"
 description = "Python 3 library for managing Vaillant thermostats using the Netatmo API."
 optional = false
 python-versions = ">=3.8"
 groups = ["all"]
 files = [
-    {file = "vaillant-netatmo-api-0.11.0.tar.gz", hash = "sha256:2257f920fccbc5b51d0d1441886ef87f1295a0901a74c9e6207763549ad6e864"},
-    {file = "vaillant_netatmo_api-0.11.0-py3-none-any.whl", hash = "sha256:b8dcb781b99eb5608ef4834799e66e748c98d5ccd4fd00d776b08ef88609277d"},
+    {file = "vaillant_netatmo_api-0.13.1-py3-none-any.whl", hash = "sha256:5fa891d540f9464709a5490c510e60d50ed72a355839ee217a6aa90a6e4f8d05"},
+    {file = "vaillant_netatmo_api-0.13.1.tar.gz", hash = "sha256:780615fa43b62102dfdf153157d63bf9fc6ec7602dcd5d707028d9f343235839"},
 ]
 
 [package.dependencies]
@@ -7628,4 +7628,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "6e5559325da59467d578fe27e8739410081680370363a56421cec171dce95803"
+content-hash = "30472f3ff5caedde83f11a007127971f5e8a570beea5103488968def0acee05c"
