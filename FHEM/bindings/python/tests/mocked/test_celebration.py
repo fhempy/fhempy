@@ -7,6 +7,9 @@ def marker(tmp_path, monkeypatch):
     monkeypatch.delenv("FHEMPY_CELEBRATE", raising=False)
     marker_file = tmp_path / ".fhempy" / "celebrated_major"
     monkeypatch.setattr(celebration, "MARKER_FILE", marker_file)
+    monkeypatch.setattr(
+        celebration, "BALLOON_FILE", tmp_path / ".fhempy" / "balloon_version"
+    )
     return marker_file
 
 
@@ -80,3 +83,38 @@ async def test_no_party_no_command(marker, mocker):
     await party.show_in_fhem()
     send.assert_not_awaited()
     assert not marker.exists()
+
+
+@pytest.mark.asyncio
+async def test_balloon_for_every_1_0_x(marker, mocker):
+    send = mocker.patch(
+        "fhempy.lib.fhem.sendCommandName", mocker.AsyncMock(return_value="")
+    )
+    party = celebration.ReleaseParty("1.0.0")
+    party.show_in_log()
+    await party.show_in_fhem()
+    assert send.await_count == 1
+
+    # same version again: nothing
+    party = celebration.ReleaseParty("1.0.0")
+    assert not party.log_pending and not party.pending
+
+    # next patch release: balloon again, but no banner
+    party = celebration.ReleaseParty("1.0.1")
+    assert not party.log_pending and party.pending
+    await party.show_in_fhem()
+    assert send.await_count == 2
+    assert not celebration.ReleaseParty("1.0.1").pending
+
+    # 1.1.x doesn't get the balloon anymore
+    assert not celebration.ReleaseParty("1.1.0").pending
+
+
+@pytest.mark.asyncio
+async def test_balloon_waits_for_fhem(marker, mocker):
+    mocker.patch("fhempy.lib.fhem.sendCommandName", mocker.AsyncMock(return_value=""))
+    celebration.mark_celebrated("1.0.0")
+    party = celebration.ReleaseParty("1.0.2")
+    party.show_in_log()
+    # fhempy restarted before FHEM connected: balloon still pending
+    assert celebration.ReleaseParty("1.0.2").pending
