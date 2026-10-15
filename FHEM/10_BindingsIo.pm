@@ -719,7 +719,7 @@ sub BindingsIo_processCommand($$) {
         result => $ret
       );
     }
-    my $utf8msg = Encode::encode("utf-8", Encode::decode("utf-8", to_json(\%res)));
+    my $utf8msg = to_json(\%res);
     Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
     if (length $utf8msg > 0) {
       DevIo_SimpleWrite($hash, $utf8msg, 0);

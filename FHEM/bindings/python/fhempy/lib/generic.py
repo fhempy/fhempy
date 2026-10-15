@@ -8,11 +8,16 @@ from fhempy.lib import fhem
 
 from . import utils
 
+_README_CACHE = {}
+
 
 class FhemModule:
     def __init__(self, logger):
         self.logger = logger
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = None
         self._tasks = []
         self._conf_set = {}
         self._conf_attr = {}
@@ -154,27 +159,34 @@ class FhemModule:
         return ret
 
     def _get_readme_content(self):
-        """Read and convert the module's Markdown, including fenced code blocks."""
+        """Read and convert the module's Markdown, including fenced code blocks.
+
+        Caches the rendered HTML keyed by file modification time (mtime) so
+        that subsequent views avoid disk I/O and markdown parsing while edits
+        to the README are still detected automatically without a restart.
+        """
         import markdown2
         from fhempy import lib
 
         initfile = inspect.getfile(lib)
         fhempy_root = os.path.dirname(initfile)
+        fhempy_type = self.hash["FHEMPYTYPE"]
+        readme_path = os.path.join(fhempy_root, fhempy_type, "README.md")
         try:
-            readme_md = ""
-            with open(
-                fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/README.md", "r"
-            ) as f:
+            mtime = os.path.getmtime(readme_path)
+            cached = _README_CACHE.get(fhempy_type)
+            if cached and cached[0] == mtime:
+                return cached[1]
+
+            with open(readme_path, "r", encoding="utf-8") as f:
                 readme_md = f.read()
 
             readme_str = markdown2.markdown(readme_md, extras=["fenced-code-blocks"])
+            _README_CACHE[fhempy_type] = (mtime, readme_str)
             return readme_str
-            # make_html_images_inline(
-            #    readme_str, fhempy_root + "/" + self.hash["FHEMPYTYPE"] + "/"
-            # )
-
         except FileNotFoundError:
-            return f"No README.md file found for {self.hash['FHEMPYTYPE']}."
+            _README_CACHE.pop(fhempy_type, None)
+            return f"No README.md file found for {fhempy_type}."
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
