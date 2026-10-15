@@ -1,6 +1,7 @@
 import pytest
 from fhempy.lib.json_utils import json_dumps, json_loads
 import json
+import math
 
 
 def test_json_dumps_loads_roundtrip():
@@ -47,3 +48,12 @@ def test_json_dumps_non_str_keys_and_big_ints():
     assert json_loads(json_dumps({1: "a", "b": 2})) == {"1": "a", "b": 2}
     big = 2**70
     assert json_loads(json_dumps({"big": big})) == {"big": big}
+
+
+def test_json_dumps_objects_json_cannot_handle_raise():
+    with pytest.raises(TypeError):
+        json_dumps({"obj": object()})
+
+
+def test_json_loads_nan_like_json():
+    assert math.isnan(json_loads('{"v": NaN}')["v"])
