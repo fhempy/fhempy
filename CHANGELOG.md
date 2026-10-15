@@ -2,6 +2,62 @@
 
 <!-- version list -->
 
+## v0.1.785 (2026-10-15)
+
+### Bug Fixes
+
+- **deps**: Bump aiohttp from 3.14.3 to 3.14.5 ([#650](https://github.com/fhempy/fhempy/pull/650),
+  [`f08f349`](https://github.com/fhempy/fhempy/commit/f08f3497bff646519ea2b989a4333308dc70f7d2))
+
+- **deps**: Bump async-upnp-client from 0.48.2 to 0.49.0
+  ([#647](https://github.com/fhempy/fhempy/pull/647),
+  [`8660833`](https://github.com/fhempy/fhempy/commit/86608332175615c978a2f93e1238db5738b49c1b))
+
+- **deps**: Bump bleparser from 3.7.1 to 3.7.3 ([#649](https://github.com/fhempy/fhempy/pull/649),
+  [`9a8d876`](https://github.com/fhempy/fhempy/commit/9a8d876b36ed1e7732b9b9a07801b6fdb69d4caa))
+
+- **deps**: Bump pycryptodomex from 3.23.0 to 3.24.1
+  ([#646](https://github.com/fhempy/fhempy/pull/646),
+  [`739603a`](https://github.com/fhempy/fhempy/commit/739603afe3bc7d9846eff97ee93c21664cf85cd2))
+
+- **deps**: Update manifest.json for async-upnp-client
+  ([#647](https://github.com/fhempy/fhempy/pull/647),
+  [`8660833`](https://github.com/fhempy/fhempy/commit/86608332175615c978a2f93e1238db5738b49c1b))
+
+- **deps**: Update manifest.json for bleparser ([#649](https://github.com/fhempy/fhempy/pull/649),
+  [`9a8d876`](https://github.com/fhempy/fhempy/commit/9a8d876b36ed1e7732b9b9a07801b6fdb69d4caa))
+
+- **deps-dev**: Bump bleparser from 3.7.1 to 3.7.3
+  ([#649](https://github.com/fhempy/fhempy/pull/649),
+  [`9a8d876`](https://github.com/fhempy/fhempy/commit/9a8d876b36ed1e7732b9b9a07801b6fdb69d4caa))
+
+- **deps-dev**: Bump vaillant-netatmo-api from 0.11.0 to 0.13.1
+  ([#648](https://github.com/fhempy/fhempy/pull/648),
+  [`a551985`](https://github.com/fhempy/fhempy/commit/a5519858b7c2efb2e20f7f3d472eebc95217d263))
+
+- **erelax_vaillant**: Bump vaillant-netatmo-api to 0.13.1 and use homes API for set commands
+  ([#648](https://github.com/fhempy/fhempy/pull/648),
+  [`a551985`](https://github.com/fhempy/fhempy/commit/a5519858b7c2efb2e20f7f3d472eebc95217d263))
+
+- **erelax_vaillant**: Use homes API for set commands (vaillant-netatmo-api 0.13)
+  ([#648](https://github.com/fhempy/fhempy/pull/648),
+  [`a551985`](https://github.com/fhempy/fhempy/commit/a5519858b7c2efb2e20f7f3d472eebc95217d263))
+
+### Chores
+
+- Relock after master merge ([#648](https://github.com/fhempy/fhempy/pull/648),
+  [`a551985`](https://github.com/fhempy/fhempy/commit/a5519858b7c2efb2e20f7f3d472eebc95217d263))
+
+- Relock after master merge ([#649](https://github.com/fhempy/fhempy/pull/649),
+  [`9a8d876`](https://github.com/fhempy/fhempy/commit/9a8d876b36ed1e7732b9b9a07801b6fdb69d4caa))
+
+- Relock after master merge ([#647](https://github.com/fhempy/fhempy/pull/647),
+  [`8660833`](https://github.com/fhempy/fhempy/commit/86608332175615c978a2f93e1238db5738b49c1b))
+
+- Relock after master merge ([#646](https://github.com/fhempy/fhempy/pull/646),
+  [`739603a`](https://github.com/fhempy/fhempy/commit/739603afe3bc7d9846eff97ee93c21664cf85cd2))
+
+
 ## v0.1.784 (2026-10-14)
 
 ### Bug Fixes
