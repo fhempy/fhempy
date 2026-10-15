@@ -229,37 +229,31 @@ def gen_fhemdev_name(devname):
     )
 
 
+_SPECIAL_CHARACHTERS_MAP = str.maketrans(
+    {
+        "ü": "ue",
+        "Ü": "Ue",
+        "ä": "ae",
+        "Ä": "Ae",
+        "ö": "oe",
+        "Ö": "Oe",
+        "ß": "ss",
+        "(": "",
+        ")": "",
+        "'": "",
+        "`": "",
+        '"': "",
+    }
+)
+
+
 def remove_special_charachters(string):
     """
     Removes umlauts from strings and replaces them with the letter+e convention
     :param string: string to remove umlauts from
     :return: unumlauted string
     """
-    u_enc = "ü".encode()
-    U_enc = "Ü".encode()
-    a_enc = "ä".encode()
-    A_enc = "Ä".encode()
-    o_enc = "ö".encode()
-    O_enc = "Ö".encode()
-    ss_enc = "ß".encode()
-
-    string = string.encode()
-    string = string.replace(u_enc, b"ue")
-    string = string.replace(U_enc, b"Ue")
-    string = string.replace(a_enc, b"ae")
-    string = string.replace(A_enc, b"Ae")
-    string = string.replace(o_enc, b"oe")
-    string = string.replace(O_enc, b"Oe")
-    string = string.replace(ss_enc, b"ss")
-
-    string = string.decode("utf-8")
-
-    string = string.replace("(", "")
-    string = string.replace(")", "")
-    string = string.replace("'", "")
-    string = string.replace("`", "")
-    string = string.replace('"', "")
-    return string
+    return string.translate(_SPECIAL_CHARACHTERS_MAP)
 
 
 def convert2format(value, list_def):
