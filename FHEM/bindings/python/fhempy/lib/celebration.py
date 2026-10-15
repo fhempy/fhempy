@@ -1,11 +1,13 @@
 """Release party on the first start of a new major version.
 
-The fhempy log gets a small banner once. FHEM gets a short countdown in the
-reading "release_party" of the BindingsIo device.
+The fhempy log gets a small banner once per major version. FHEM gets a short
+countdown in the reading "release_party" of the BindingsIo device, which
+shows a balloon next to the version for 24 hours. The balloon comes with
+every new 1.0.x version, later major versions get it once.
 
-The last celebrated major version is stored in .fhempy/celebrated_major, so
-the party runs once per major version. FHEMPY_CELEBRATE=1 forces it,
-FHEMPY_CELEBRATE=0 turns it off.
+The last celebrated major version is stored in .fhempy/celebrated_major, the
+last version with a balloon in .fhempy/balloon_version. FHEMPY_CELEBRATE=1
+forces both, FHEMPY_CELEBRATE=0 turns them off.
 """
 
 import logging
@@ -18,6 +20,9 @@ from .version import __version__
 logger = logging.getLogger(__name__)
 
 MARKER_FILE = pathlib.Path(".fhempy/celebrated_major")
+BALLOON_FILE = pathlib.Path(".fhempy/balloon_version")
+# every version starting with this gets the balloon
+BALLOON_SERIES = "1.0."
 RELEASES_URL = "https://github.com/fhempy/fhempy/releases"
 
 # figlet font "small"
@@ -81,24 +86,50 @@ def should_celebrate(version=__version__):
     return major > celebrated
 
 
-def mark_celebrated(version=__version__):
+def _write_marker(path, value):
     try:
-        MARKER_FILE.parent.mkdir(parents=True, exist_ok=True)
-        MARKER_FILE.write_text(f"{_major(version)}\n")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{value}\n")
     except OSError:
-        logger.debug("Failed to store celebrated version", exc_info=True)
+        logger.debug(f"Failed to write {path}", exc_info=True)
+
+
+def mark_celebrated(version=__version__):
+    _write_marker(MARKER_FILE, _major(version))
+
+
+def should_show_balloon(version=__version__, celebrate=None):
+    force = os.environ.get("FHEMPY_CELEBRATE")
+    if force in ("0", "1"):
+        return force == "1"
+    if celebrate is None:
+        celebrate = should_celebrate(version)
+    if celebrate:
+        return True
+    if not str(version).startswith(BALLOON_SERIES):
+        return False
+    try:
+        return BALLOON_FILE.read_text().strip() != version
+    except OSError:
+        return True
+
+
+def mark_balloon_shown(version=__version__):
+    _write_marker(BALLOON_FILE, version)
 
 
 class ReleaseParty:
     def __init__(self, version=__version__):
         self.version = version
-        self.pending = should_celebrate(version)
+        self.log_pending = should_celebrate(version)
+        self.pending = should_show_balloon(version, self.log_pending)
         self.task = None
 
     def show_in_log(self):
         """Small banner in the fhempy log, only on this one start."""
-        if not self.pending:
+        if not self.log_pending:
             return
+        self.log_pending = False
         try:
             for line in banner_lines(self.version):
                 logger.info(line)
@@ -113,7 +144,7 @@ class ReleaseParty:
         mark_celebrated(self.version)
 
     async def show_in_fhem(self):
-        """Countdown in the BindingsIo reading release_party."""
+        """Countdown in the BindingsIo reading release_party (balloon)."""
         if not self.pending:
             return
         self.pending = False
@@ -124,6 +155,7 @@ class ReleaseParty:
             return
         if ret:
             logger.debug(f"Release party in FHEM returned: {ret}")
+        mark_balloon_shown(self.version)
 
 
 def fhem_party_command(version=__version__):

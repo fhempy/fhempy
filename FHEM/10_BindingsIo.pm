@@ -589,8 +589,9 @@ BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
-  if ($attrName eq "devStateIcon") {
-    if (index($attrVal, "1.1.0") == -1) {
+  # keep the devStateIcon from Define, fhem.cfg must not restore an older one
+  if ($cmd eq "set" && $attrName eq "devStateIcon") {
+    if (index($attrVal, "1.2.0") == -1) {
       return "devStateIcon updated"
     }
   }
