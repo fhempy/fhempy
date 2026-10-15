@@ -15,6 +15,7 @@ import websockets
 import websockets.asyncio.server
 
 from . import celebration, fhem, generic, pkg_installer, utils, version
+from .core.loop_watchdog import LoopWatchdog
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
 
@@ -817,6 +818,10 @@ async def async_main():
 
     logger.info(f"Starting fhempy {version.__version__}...")
 
+    # logs where the event loop hangs, FHEM waits for fhempy meanwhile
+    watchdog = LoopWatchdog(asyncio.get_running_loop())
+    watchdog.start()
+
     global release_party
     release_party = celebration.ReleaseParty()
     release_party.show_in_log()
@@ -845,6 +850,8 @@ async def async_main():
         logger.error(
             "Another instance of fhempy is running, stop the other instance first."
         )
+    finally:
+        watchdog.stop()
 
 
 def handle_cmdline_options(opts):
