@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.1.789 (2026-10-15)
+
+### Bug Fixes
+
+- Log recurring errors once and handle module exceptions cleanly
+  ([#658](https://github.com/fhempy/fhempy/pull/658),
+  [`3debb7e`](https://github.com/fhempy/fhempy/commit/3debb7ec404de115479bab84c83c5e7e0fb181fe))
+
+
 ## v0.1.788 (2026-10-15)
 
 ### Bug Fixes
