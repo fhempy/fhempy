@@ -1,12 +1,46 @@
 import asyncio
 import base64
+import functools
 import hashlib
+import io
+import json
 import pathlib
 from datetime import datetime
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
+
+# multiple of 3, so the base64 chunks can be joined
+B64_CHUNK = 3 * 2**16
+
+
+def read_file_for_github(filename):
+    """Content as base64 bytes and git blob sha, run in a thread.
+
+    base64 holds the GIL, encode in chunks so the event loop keeps running.
+    """
+    with open(filename, "rb") as fh:
+        f_content = fh.read()
+    header = f"blob {len(f_content)}\0"
+    # git identifies blobs by sha1, not used for security
+    sha = hashlib.sha1(  # NOSONAR
+        header.encode("utf-8") + f_content, usedforsecurity=False
+    ).hexdigest()
+    content_view = memoryview(f_content)
+    b64 = b"".join(
+        base64.b64encode(content_view[i : i + B64_CHUNK])
+        for i in range(0, len(f_content), B64_CHUNK)
+    )
+    return b64, sha
+
+
+def json_body(data, content):
+    """JSON body with base64 content, without serializing the big string."""
+    prefix = json.dumps(data)[:-1]
+    if data:
+        prefix += ", "
+    return prefix.encode("utf-8") + b'"content": "' + content + b'"}'
 
 
 class github_backup(generic.FhemModule):
@@ -112,11 +146,17 @@ class github_backup(generic.FhemModule):
                     )
         return ret
 
-    async def github_put(self, url, json_data):
+    async def github_put(self, url, json_data, content):
+        # encode in a thread and send the body from a BytesIO, aiohttp writes
+        # it in chunks then; a plain bytes body is TLS encrypted in one go,
+        # which blocked the event loop (and FHEM) for big files
+        body = await utils.run_blocking(
+            functools.partial(json_body, json_data, content)
+        )
+        headers = dict(github_backup.headers)
+        headers["Content-Type"] = "application/json"
         async with aiohttp.ClientSession(trust_env=True) as session:
-            async with session.put(
-                url, json=json_data, headers=github_backup.headers
-            ) as resp:
+            async with session.put(url, data=io.BytesIO(body), headers=headers) as resp:
                 if resp.status < 400:
                     return True
                 else:
@@ -126,14 +166,9 @@ class github_backup(generic.FhemModule):
         return False
 
     async def b64encode_file(self, filename):
-        fh = open(filename, "rb")
-        f_content = fh.read()
-        fh.close()
-        header = f"blob {len(f_content)}\0"
-        gh_sha_content = header.encode("utf-8") + f_content
-        sha = hashlib.sha1(gh_sha_content).hexdigest()
-        b64_bytes = base64.b64encode(f_content)
-        return b64_bytes.decode("ascii"), sha
+        return await utils.run_blocking(
+            functools.partial(read_file_for_github, filename)
+        )
 
     async def get_sha_from_file(self, filename):
         resp = await self.github_get(
@@ -158,7 +193,6 @@ class github_backup(generic.FhemModule):
             # upload file
             data_msg = {
                 "message": f"{self.directory} - {filename} backup",
-                "content": content,
             }
             if f_sha:
                 data_msg["sha"] = f_sha
@@ -167,6 +201,7 @@ class github_backup(generic.FhemModule):
                 f"https://api.github.com/repos/{self.gh_user}/"
                 + f"{self.gh_repo}/contents/{self.directory}/{filename}",
                 data_msg,
+                content,
             )
             if upload_resp is False:
                 raise Exception(f"Failed to upload file {filename}")
