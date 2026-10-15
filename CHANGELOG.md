@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v1.0.3 (2026-10-15)
+
+### Bug Fixes
+
+- **github_backup**: Don't block the event loop during uploads
+  ([#665](https://github.com/fhempy/fhempy/pull/665),
+  [`030b277`](https://github.com/fhempy/fhempy/commit/030b2770bc98e7007f7876852528aa5c785b870f))
+
+- **github_backup**: Don't block the event loop while uploading big files
+  ([#665](https://github.com/fhempy/fhempy/pull/665),
+  [`030b277`](https://github.com/fhempy/fhempy/commit/030b2770bc98e7007f7876852528aa5c785b870f))
+
+- **github_backup**: Mark git blob sha1 as non-security for Sonar
+  ([#665](https://github.com/fhempy/fhempy/pull/665),
+  [`030b277`](https://github.com/fhempy/fhempy/commit/030b2770bc98e7007f7876852528aa5c785b870f))
+
+
 ## v1.0.2 (2026-10-15)
 
 ### Bug Fixes
