@@ -145,7 +145,7 @@ def fhem_party_command(version=__version__):
         "}, undef);"
         "}"
         # the reading would stay in the statefile forever otherwise
-        "InternalTimer($start + 600, sub {"
+        "InternalTimer($start + 86400, sub {"
         "CommandDeleteReading(undef, $n . ' release_party') if (defined($defs{$n}));"
         "}, undef);"
         "}"
