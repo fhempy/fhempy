@@ -14,7 +14,7 @@ import traceback
 import websockets
 import websockets.asyncio.server
 
-from . import fhem, generic, pkg_installer, utils, version
+from . import celebration, fhem, generic, pkg_installer, utils, version
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
 
@@ -32,6 +32,7 @@ fct_timeout = 100
 
 stop_event = asyncio.Event()
 exit_code = 0
+release_party = None
 
 # internal modules
 active_internal_modules = []
@@ -97,6 +98,8 @@ async def pybinding(websocket):
     await activate_internal_modules()
     await fhem.send_version()
     asyncio.create_task(fhem.send_latest_release())
+    if release_party is not None and release_party.pending:
+        asyncio.create_task(release_party.show_in_fhem())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -757,6 +760,10 @@ async def async_main():
     ip, bindip, port, local = handle_cmdline_options(opts)
 
     logger.info(f"Starting fhempy {version.__version__}...")
+
+    global release_party
+    release_party = celebration.ReleaseParty()
+    await release_party.show_in_log()
 
     await pkg_installer.check_and_install_dependencies("core")
 
