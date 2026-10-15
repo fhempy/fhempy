@@ -12,7 +12,22 @@ use Protocol::WebSocket::Frame;
 use DevIo;
 use CoProcess;
 
-use JSON;
+BEGIN {
+  eval {
+    require JSON;
+    JSON->import(qw(decode_json encode_json to_json from_json));
+    1;
+  } or eval {
+    require JSON::XS;
+    JSON::XS->import(qw(decode_json encode_json to_json from_json));
+    1;
+  } or do {
+    require JSON::PP;
+    JSON::PP->import(qw(decode_json encode_json));
+    *to_json = \&JSON::PP::encode_json unless defined(&to_json);
+    *from_json = \&JSON::PP::decode_json unless defined(&from_json);
+  };
+}
 use Time::HiRes qw(time);
 
 our $init_done;
@@ -100,7 +115,7 @@ sub BindingsIo_Define {
   $hash->{nextOpenDelay} = 10;
   $hash->{BindingType} = $bindingType;
   # JSON::PP (pure Perl fallback of JSON) needs ~1ms to decode a fhempy message, JSON::XS a few us
-  $hash->{JSON_BACKEND} = eval { JSON->backend } // q[unknown];
+  $hash->{JSON_BACKEND} = eval { JSON->backend } // eval { JSON::XS->backend } // (defined(&JSON::XS::decode_json) ? "JSON::XS" : "JSON::PP");
   if ($hash->{JSON_BACKEND} =~ m/PP/) {
     Log3 $name, 2, qq[BindingsIo ($name): JSON::XS is not installed, fhempy messages are decoded much slower. Install it with: sudo apt install libjson-xs-perl];
   }
@@ -577,13 +592,29 @@ BindingsIo_Shutdown($)
 
 sub BindingsIo_storeMessage($$) {
   my ($hash, $response) = @_;
-  $response = Encode::encode("utf8", $response);
   Log3 $hash, 5, "BindingsIo_storeMessage: ".$response;
-  my $json = eval {from_json($response)};
-  if ($@) {
-    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: ".$@;
-    Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: ".$response;
-    return "error";
+
+  # Fast-path: decode_json directly processes UTF-8 octets via XS (or PP)
+  my $json = eval { decode_json($response) };
+  if ($@ || !defined($json)) {
+    my $decode_err = $@;
+    # Fallback: if $response was wide character string or decode_json failed,
+    # try encoding to UTF-8 or using from_json for pure-perl compatibility
+    eval {
+      $json = decode_json(Encode::encode("utf8", $response));
+      1;
+    } or eval {
+      $json = from_json($response);
+      1;
+    } or eval {
+      $json = from_json(Encode::encode("utf8", $response));
+      1;
+    };
+    if ($@ || !defined($json)) {
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR JSON: " . ($@ || $decode_err || "Empty or non-object JSON");
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): received JSON was: " . $response;
+      return "error";
+    }
   }
 
   if (defined($json->{id})) {
