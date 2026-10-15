@@ -55,7 +55,8 @@ async def test_readme_caching(tmp_path, monkeypatch):
     assert cached_html2 == content3
 
 
-def test_readme_not_found(tmp_path, monkeypatch):
+@pytest.mark.asyncio
+async def test_readme_not_found(tmp_path, monkeypatch):
     dummy_init = tmp_path / "__init__.py"
     dummy_init.write_text("")
     monkeypatch.setattr(

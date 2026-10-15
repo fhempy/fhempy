@@ -14,7 +14,10 @@ _README_CACHE = {}
 class FhemModule:
     def __init__(self, logger):
         self.logger = logger
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = None
         self._tasks = []
         self._conf_set = {}
         self._conf_attr = {}
