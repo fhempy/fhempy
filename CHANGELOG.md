@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.0 (2026-10-15)
+
+### Features
+
+- Release banner and FHEMWEB balloon on the first start of a new major version
+  ([#657](https://github.com/fhempy/fhempy/pull/657),
+  [`a45d359`](https://github.com/fhempy/fhempy/commit/a45d359fa35890d2bec688948ed09f119dd74328))
+
+
 ## v0.1.790 (2026-10-15)
 
 ### Bug Fixes
