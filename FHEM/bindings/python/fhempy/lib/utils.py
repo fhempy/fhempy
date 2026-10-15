@@ -68,17 +68,34 @@ def get_fhempy_root():
     return fhempy_root
 
 
+_blocking_executor = None
+
+
+def get_blocking_executor():
+    global _blocking_executor
+    if _blocking_executor is None:
+        _blocking_executor = concurrent.futures.ThreadPoolExecutor(
+            thread_name_prefix="fhempy_blocking"
+        )
+    return _blocking_executor
+
+
+def shutdown_blocking_executor(wait=False):
+    global _blocking_executor
+    if _blocking_executor is not None:
+        _blocking_executor.shutdown(wait=wait)
+        _blocking_executor = None
+
+
 async def run_blocking(function):
     if isinstance(function, partial) is False:
         raise Exception("Use functools.partial to call run_blocking")
 
-    pool = concurrent.futures.ThreadPoolExecutor()
     try:
-        return await asyncio.get_event_loop().run_in_executor(pool, function)
-    finally:
-        # don't block the event loop if the task was cancelled (Undefine),
-        # the thread finishes in the background
-        pool.shutdown(wait=False)
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(get_blocking_executor(), function)
 
 
 def run_blocking_task(function):
