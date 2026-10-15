@@ -181,8 +181,8 @@ class meross_device:
             await self._setup_device()
             await self._get_set_commands()
             await self.update_readings()
-        except Exception as ex:
-            self.logger.exception(ex)
+        except Exception:
+            self.logger.exception("Failed to initialize device")
 
     async def _connect_to_setup_device(self):
         while self._setupdev is None or self._setupdev.ready is False:

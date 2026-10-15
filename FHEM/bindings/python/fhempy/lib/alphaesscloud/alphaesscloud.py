@@ -1,6 +1,6 @@
 import asyncio
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from alphaess.alphaess import alphaess
 from datetime import date, timedelta
 
@@ -12,6 +12,7 @@ class alphaesscloud(generic.FhemModule):
         self.serial = None
         self.ESSunit = None
         self.client = None
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -33,7 +34,7 @@ class alphaesscloud(generic.FhemModule):
         self.appSecret = args[4]
         self.serial = args[5]
         
-        self.create_async_task(self.setup_connection())
+        self.create_async_task(self.connect_loop())
 
     async def Undefine(self, hash):
         await super().Undefine(hash)
@@ -44,6 +45,20 @@ class alphaesscloud(generic.FhemModule):
         if self.client is not None:
             await self.client.close()
             self.client = None
+
+    async def connect_loop(self):
+        while True:
+            try:
+                await self.setup_connection()
+                return
+            except Exception:
+                self._errors.failed(
+                    "Failed to connect to AlphaESS cloud, retry in 300s", key="connect"
+                )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "connection failed", 1
+                )
+                await asyncio.sleep(300)
 
     async def setup_connection(self):
             """
@@ -72,7 +87,8 @@ class alphaesscloud(generic.FhemModule):
             self.client: alphaess = alphaess(self.appID,self.appSecret)
             ESSList = await self.client.getESSList()
             if ESSList != None:
-                self.logger.error(f"Retrieved: {len(ESSList)} ESS units")
+                self._errors.success(key="connect")
+                self.logger.info(f"Retrieved: {len(ESSList)} ESS units")
             else:
                 # wrong credentials or no network
                 await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "no ESS units found ",1)
@@ -95,13 +111,13 @@ class alphaesscloud(generic.FhemModule):
             if dischargingInfo != None:
                 await self.update_readings_from_itemlist(dischargingInfo)
             else:
-                self.logger.error("No discharging info found")
+                self.logger.warning("No discharging info found")
 
             chargingInfo = await self.client.getChargeConfigInfo(self.serial)
             if chargingInfo != None:
                 await self.update_readings_from_itemlist(chargingInfo)
             else:
-                self.logger.error("No charging info found")
+                self.logger.warning("No charging info found")
 
             await self.update_data_from_cloud()
 
@@ -132,8 +148,9 @@ class alphaesscloud(generic.FhemModule):
                     lastPower = await self.client.getLastPowerData(self.serial)
                     if lastPower != None:
                         await self.update_readings_from_itemlist(lastPower)
-
+                    self._errors.success()
                 except Exception:
+                    self._errors.failed("Failed to update data from AlphaESS cloud")
                     await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "data update failed", 1)
 
                 if self._attr_interval > 10:

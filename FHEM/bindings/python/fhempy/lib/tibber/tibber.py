@@ -4,12 +4,13 @@ import datetime
 from tibber import Tibber
 from tibber.exceptions import InvalidLoginError
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class tibber(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.tibber_connection = None
 
     # FHEM FUNCTION
@@ -44,12 +45,15 @@ class tibber(generic.FhemModule):
                 await fhem.readingsSingleUpdate(self.hash, "state", "invalid token", 1)
                 return
             except Exception as ex:
-                self.logger.error(f"Failed to connect to Tibber, retry in 60s: {ex}")
+                self._errors.failed(
+                    "Failed to connect to Tibber, retry in 60s", key="connect"
+                )
                 await fhem.readingsSingleUpdate(
                     self.hash, "state", f"connection failed: {ex}", 1
                 )
                 await asyncio.sleep(60)
                 continue
+            self._errors.success(key="connect")
             if home is not None:
                 break
             self.logger.warning(
@@ -122,12 +126,16 @@ class tibber(generic.FhemModule):
         try:
             for name in data:
                 await fhem.readingsBulkUpdate(self.hash, "rt_" + name, data[name])
+            # additional total consumption / production reading
+            if data.get("power") is not None and data.get("powerProduction") is not None:
+                await fhem.readingsBulkUpdate(
+                    self.hash, "rt_powerNet", data["power"] - data["powerProduction"]
+                )
+            self._errors.success(key="realtime")
         except Exception:
-            self.logger.error("Failed to update realtime readings")
-        
-        # additional total consumption / production reading
-        await fhem.readingsBulkUpdate(self.hash, "rt_powerNet" , data["power"]-data["powerProduction"])
-        await fhem.readingsEndUpdate(self.hash, 1)
+            self._errors.failed("Failed to update realtime readings", key="realtime")
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_home_data(self, home):
         if home.has_real_time_consumption:
@@ -141,9 +149,12 @@ class tibber(generic.FhemModule):
                 await home.fetch_consumption_data()
                 await home.update_info()
             except Exception:
-                self.logger.error("Failed to update data from tibber, retry in 60s")
+                self._errors.failed(
+                    "Failed to update data from tibber, retry in 60s", key="consumption"
+                )
                 await asyncio.sleep(60)
                 continue
+            self._errors.success(key="consumption")
 
             await fhem.readingsBeginUpdate(self.hash)
             try:
@@ -184,7 +195,9 @@ class tibber(generic.FhemModule):
 
                 
             except Exception:
-                self.logger.error("Failed to update readings")
+                self._errors.failed("Failed to update readings", key="consumption_readings")
+            else:
+                self._errors.success(key="consumption_readings")
             await fhem.readingsEndUpdate(self.hash, 1)
             
             await asyncio.sleep(self._attr_interval)
@@ -206,9 +219,12 @@ class tibber(generic.FhemModule):
                 try:
                     await home.update_info()
                 except Exception:
-                    self.logger.error("Failed to update data from tibber, retry in 60s")
+                    self._errors.failed(
+                        "Failed to update data from tibber, retry in 60s", key="price"
+                    )
                     await asyncio.sleep(60)
                     continue
+                self._errors.success(key="price")
 
                 await fhem.readingsBeginUpdate(self.hash)
                 try:
@@ -242,7 +258,9 @@ class tibber(generic.FhemModule):
 
                 
                 except Exception:
-                    self.logger.error("Failed to update readings")
+                    self._errors.failed("Failed to update readings", key="price_readings")
+                else:
+                    self._errors.success(key="price_readings")
                 await fhem.readingsEndUpdate(self.hash, 1)
                 
                 #  update readings every quarter hour to fetch new current_* data
@@ -275,9 +293,12 @@ class tibber(generic.FhemModule):
                 try:
                     await home.update_info()
                 except Exception:
-                    self.logger.error("Failed to update data from tibber, retry in 60s")
+                    self._errors.failed(
+                        "Failed to update data from tibber, retry in 60s", key="periods"
+                    )
                     await asyncio.sleep(60)
                     continue
+                self._errors.success(key="periods")
 
                 await fhem.readingsBeginUpdate(self.hash)
                 try:
@@ -330,10 +351,13 @@ class tibber(generic.FhemModule):
 
                 
                 except Exception:
-                    self.logger.error("Failed to update readings")
+                    self._errors.failed("Failed to update readings", key="periods_readings")
+                else:
+                    self._errors.success(key="periods_readings")
                 
                 await fhem.readingsEndUpdate(self.hash, 1)
-                # get remaining seconds until next full hour 
+                # get remaining seconds until next full hour
+                now = datetime.datetime.now()
                 remaining_seconds = 3600 - (now.minute * 60 + now.second)
                 await asyncio.sleep(remaining_seconds+5)
 

@@ -12,7 +12,7 @@ from greeclimate.device import (
 from greeclimate.discovery import Discovery
 from greeclimate.network import Response
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 def _enum_name(enum, value):
@@ -22,6 +22,7 @@ def _enum_name(enum, value):
 class gree_climate(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         self.device = None
         self._last_state = None
@@ -101,8 +102,11 @@ class gree_climate(generic.FhemModule):
             try:
                 device = Device(device_info)
                 await device.bind()
-            except Exception:
-                self.logger.exception("Failed to connect to device")
+            except Exception as ex:
+                self.logger.warning(
+                    f"Failed to connect to device {device_info.name}: "
+                    + utils.describe_exception(ex)
+                )
                 continue
 
             if name is None:
@@ -141,15 +145,16 @@ class gree_climate(generic.FhemModule):
 
     async def update_once(self):
         if time.monotonic() - self._last_state > 3 * max(self._attr_interval, 60):
-            self.logger.error("Device stopped responding, searching it again")
+            self.logger.warning("Device stopped responding, searching it again")
             await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
             await self.connect_device()
             if self.device is None:
                 return
         try:
             await self.device.update_state()
+            self._errors.success(key="state")
         except Exception:
-            self.logger.exception("Failed to request device state")
+            self._errors.failed("Failed to request device state", key="state")
             await self.connect_device()
 
     async def update_loop(self):
@@ -157,9 +162,13 @@ class gree_climate(generic.FhemModule):
             if self.device is None:
                 await self.connect_device()
                 if self.device is None:
-                    self.logger.error("Couldn't find device, retry in 60s")
+                    self._errors.failed(
+                        "Couldn't find device, retry in 60s", key="connect"
+                    )
                     # try to connect to device every 60s
                     await asyncio.sleep(60)
+                    continue
+                self._errors.success(key="connect")
                 continue
             await self.update_once()
             await asyncio.sleep(self._attr_interval)

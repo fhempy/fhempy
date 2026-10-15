@@ -7,17 +7,17 @@ from fhempy.lib.xiaomi_gateway3.xiaomi_gateway3 import FhempyGateway
 
 attr_settings = {
     "lumi.sensor_magnet": {
-        "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
+        "devStateIcon": "1:fts_door_open\\@red 0:fts_door\\@green",
         "stateFormat": "contact",
         "icon": "tuer_fenster_kontakt",
     },
     "lumi.sensor_magnet.v2": {
-        "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
+        "devStateIcon": "1:fts_door_open\\@red 0:fts_door\\@green",
         "stateFormat": "contact",
         "icon": "tuer_fenster_kontakt",
     },
     "lumi.sensor_magnet.aq2": {
-        "devStateIcon": "1:fts_door_open\@red 0:fts_door\@green",
+        "devStateIcon": "1:fts_door_open\\@red 0:fts_door\\@green",
         "stateFormat": "contact",
         "icon": "tuer_fenster_kontakt",
     },
@@ -53,25 +53,25 @@ attr_settings = {
     },
     "lumi.sensor_motion": {
         "stateFormat": "motion",
-        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
+        "devStateIcon": "1:motion_detector\\@red 0:motion_detector\\@green",
         "icon": "people_sensor",
     },
     "lumi.sensor_motion.v1": {
         "stateFormat": "motion",
-        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
+        "devStateIcon": "1:motion_detector\\@red 0:motion_detector\\@green",
         "icon": "people_sensor",
     },
     "lumi.sensor_motion.v2": {
         "stateFormat": "motion",
-        "devStateIcon": "1:motion_detector\@red 0:motion_detector\@green",
+        "devStateIcon": "1:motion_detector\\@red 0:motion_detector\\@green",
         "icon": "people_sensor",
     },
     "lumi.gateway": {
-        "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
+        "devStateIcon": "online:it_wifi\\@green offline:it_wifi\\@red",
         "icon": "tradfri_gateway",
     },
     "lumi.gateway.mgl03": {
-        "devStateIcon": "online:it_wifi\@green offline:it_wifi\@red",
+        "devStateIcon": "online:it_wifi\\@green offline:it_wifi\\@red",
         "icon": "tradfri_gateway",
     },
     # Bluetooth devices

@@ -19,6 +19,7 @@ from .. import fhem, generic, utils
 class erelax_vaillant(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         unknown_key = "thisisnotmagic012345678901234567"
         self.home = None
@@ -146,9 +147,10 @@ class erelax_vaillant(generic.FhemModule):
             while True:
                 try:
                     await self.async_get_token(client, token_store)
+                    self._errors.success(key="login")
                     break
                 except Exception:
-                    self.logger.exception("Login failed, retry in 5 minutes")
+                    self._errors.failed("Login failed, retry in 5 minutes", key="login")
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "login failed", 1
                     )
@@ -168,8 +170,9 @@ class erelax_vaillant(generic.FhemModule):
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "connected", 1
                     )
-                except Exception as ex:
-                    self.logger.exception(ex)
+                    self._errors.success()
+                except Exception:
+                    self._errors.failed("Failed to update thermostat data")
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "error", 1
                     )

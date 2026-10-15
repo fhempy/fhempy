@@ -9,6 +9,7 @@ from .. import fhem, generic, utils
 class kia_hyundai(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -100,9 +101,10 @@ class kia_hyundai(generic.FhemModule):
                     functools.partial(self.vm.check_and_refresh_token)
                 )
                 self.create_async_task(self.update_loop())
+                self._errors.success(key="login")
                 break
             except Exception:
-                self.logger.exception("Failed to login to server, retry in 120s")
+                self._errors.failed("Failed to login to server, retry in 120s", key="login")
                 await asyncio.sleep(120)
 
     async def update_loop(self):
@@ -124,8 +126,9 @@ class kia_hyundai(generic.FhemModule):
                 functools.partial(self.vm.update_all_vehicles_with_cached_state)
             )
             await self.update_readings()
+            self._errors.success()
         except Exception:
-            self.logger.exception("Failed to update car data")
+            self._errors.failed("Failed to update car data")
             await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
 
     def first_vehicle_id(self):

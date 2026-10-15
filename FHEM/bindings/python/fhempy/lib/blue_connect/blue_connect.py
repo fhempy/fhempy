@@ -1,7 +1,7 @@
 import asyncio
 import codecs
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from ..core import bluetoothle
 
 # handle: 0x0002, char properties: 0x02, char value handle: 0x0003, uuid: 00002a00-0000-1000-8000-00805f9b34fb
@@ -32,6 +32,7 @@ from ..core import bluetoothle
 class blue_connect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self._ble_lock = asyncio.Lock()
         self.task_update_loop = None
         self.ble_dev = None
@@ -120,11 +121,12 @@ class blue_connect(generic.FhemModule):
         while True:
             try:
                 await self.measure_once()
+                self._errors.success()
             except asyncio.CancelledError:
                 self.logger.info("Stopping update loop")
                 return
             except Exception:
-                self.logger.exception("Failed to update readings")
+                self._errors.failed("Failed to update readings")
             await asyncio.sleep(7200)
 
     async def measure_once(self):

@@ -84,6 +84,7 @@ class scanner:
         self._scan_interval = 10
         self._scan_duration = 10
         self._iface = 0
+        self._errors = utils.ErrorLogger(logger)
 
     @staticmethod
     def get_instance(logger):
@@ -138,8 +139,9 @@ class scanner:
                 self._mac_lastfound[mac] = 0
             try:
                 await utils.run_blocking(functools.partial(self._do_scan))
+                self._errors.success()
             except Exception:
-                self.logger.error("Failed to do scan")
+                self._errors.failed("Bluetooth scan failed")
             for mac in self._mac_listener:
                 try:
                     if mac not in self._mac_lastfound or self._mac_lastfound[mac] == 0:
@@ -160,8 +162,6 @@ class scanner:
             self.scanner.scan(self._scan_duration)
         except BTLEDisconnectError:
             return
-        except Exception as ex:
-            self.logger.error(f"Failed to scan: {ex}")
 
 
 class ble_presence(FhemModule):
@@ -177,6 +177,7 @@ class ble_presence(FhemModule):
         self._peripheral = PeripheralTimeout()
         self._last_char_update = 0
         self._hci_nr = 0
+        self._errors = utils.ErrorLogger(logger)
 
         self._attr_scan_interval = 10
         self._attr_hci_device = "hci0"
@@ -209,8 +210,11 @@ class ble_presence(FhemModule):
         if time.time() - self._last_char_update > 7200 and self._presence == "present":
             try:
                 await self.update_characteristics()
+                self._errors.success()
             except Exception:
-                self.logger.error("Failed to update characteristics")
+                self._errors.failed("Failed to read characteristics, retry in 10min")
+                # don't try to connect on every scan
+                self._last_char_update = time.time() - 7200 + 600
 
     async def update_characteristics(self):
         try:
@@ -223,8 +227,8 @@ class ble_presence(FhemModule):
                     5,
                 )
             )
-        except Exception:
-            return
+        except BTLEDisconnectError as exc:
+            raise ConnectionError(str(exc)) from exc
         services = await utils.run_blocking(
             functools.partial(self._peripheral.getServices)
         )
@@ -266,10 +270,9 @@ class ble_presence(FhemModule):
                 batt = ord(char[0].read())
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "battery", batt)
             self._last_char_update = time.time()
-        except Exception:
-            self.logger.error("Failed to get charachteristics")
-        self._peripheral.disconnect()
-        await fhem.readingsEndUpdate(self.hash, 1)
+        finally:
+            self._peripheral.disconnect()
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):

@@ -3,12 +3,13 @@ import time
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class websitetests(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -81,6 +82,7 @@ class websitetests(generic.FhemModule):
                             self.hash, "response_status", resp.status, 1
                         )
                         if resp.status == 200:
+                            self._errors.success()
                             text = await resp.text()
                             if len(text) > 5000:
                                 text = text[0:5000] + "..."
@@ -99,14 +101,14 @@ class websitetests(generic.FhemModule):
                                 f"failed: HTTP error {resp.status}",
                                 1,
                             )
-                            self.logger.error(
+                            self._errors.failed(
                                 f"Failed to fetch {self.update_url}, "
                                 f"failed with status {resp.status}"
                             )
             except Exception:
                 status = 0
                 end_time = time.time()
-                self.logger.exception("Failed to update")
+                self._errors.failed(f"Failed to fetch {self.update_url}")
 
             duration = (end_time - start_time) * 1000
             await fhem.readingsSingleUpdate(self.hash, "duration_ms", duration, 1)

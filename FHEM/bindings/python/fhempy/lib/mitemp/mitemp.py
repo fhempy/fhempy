@@ -14,6 +14,7 @@ from .. import fhem, utils
 class mitemp(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.hash = None
         self.updateTask = None
         self._poller = None
@@ -73,8 +74,9 @@ class mitemp(FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "presence", "online")
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "online")
                 await fhem.readingsEndUpdate(self.hash, 1)
+                self._errors.success()
             except Exception:
-                self.logger.error(f"Failed to get updates from mitemp {self._address}")
+                self._errors.failed(f"Failed to get updates from mitemp {self._address}")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )

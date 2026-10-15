@@ -93,7 +93,7 @@ class BLEmonitor:
                         await fhem_dev.received_data(measuring)
             except Exception:
                 self.logger.exception("Failed to receive_from_measuring")
-                asyncio.sleep(10)
+                await asyncio.sleep(10)
 
     async def receive_from_tracker(self):
         while True:
@@ -104,7 +104,7 @@ class BLEmonitor:
                         await fhem_dev.received_data(tracker)
             except Exception:
                 self.logger.exception("Failed to receive_from_tracker")
-                asyncio.sleep(10)
+                await asyncio.sleep(10)
 
     def register_device(self, fhemdevice):
         simple_mac = fhemdevice.mac().replace(":", "").lower()

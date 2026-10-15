@@ -24,6 +24,7 @@ from .. import fhem, utils
 class ring(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.loop = asyncio.get_event_loop()
         self._username = None
         self._password = ""
@@ -111,7 +112,7 @@ class ring(FhemModule):
                 await self.update_loop()
             except Exception:
                 await fhem.readingsSingleUpdate(self.hash, "state", "Login failed", 1)
-                self.logger.error("Login failed")
+                self._errors.failed("Login failed", key="login")
 
     async def update_loop(self):
         try:
@@ -150,8 +151,9 @@ class ring(FhemModule):
                         for event in self._history:
                             await self.update_history_readings(event, i)
                             i += 1
+                    self._errors.success(key="poll")
                 except Exception:
-                    self.logger.exception("Failed to poll devices")
+                    self._errors.failed("Failed to poll devices", key="poll")
                 await asyncio.sleep(self._attr_deviceUpdateInterval)
         except Exception as ex:
             self.logger.exception("Failed to update devices")
@@ -196,11 +198,16 @@ class ring(FhemModule):
                     asyncio.run_coroutine_threadsafe(
                         self.update_readings(), self.loop
                     ).result()
+                self._errors.success(key="dings")
             except Exception:
                 if self.stop_dings_loop.is_set():
                     return
-                self.logger.exception("Failed to poll dings...")
-                self.blocking_login()
+                self._errors.failed("Failed to poll dings, login again", key="dings")
+                try:
+                    self.blocking_login()
+                except Exception:
+                    # retry with the next poll, the loop must not stop
+                    self.logger.debug("Login failed", exc_info=True)
             time.sleep(self._attr_dingPollInterval)
 
     async def update_alert_readings(self, alert):

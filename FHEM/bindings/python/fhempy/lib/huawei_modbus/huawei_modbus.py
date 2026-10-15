@@ -1,11 +1,12 @@
 import asyncio
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class huawei_modbus(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.bridge = None
 
     # FHEM FUNCTION
@@ -59,8 +60,11 @@ class huawei_modbus(generic.FhemModule):
         while True:
             try:
                 await self.update()
-            except Exception as e:
-                self.logger.error(e)
+                self._errors.success(key="update")
+            except Exception:
+                self._errors.failed(
+                    "Failed to read inverter data, reconnect in 60s", key="update"
+                )
                 await self.reconnect()
                 continue
 
@@ -70,8 +74,11 @@ class huawei_modbus(generic.FhemModule):
         while not self.bridge:
             try:
                 await self.connect()
+                self._errors.success(key="connect")
             except Exception:
-                self.logger.exception("Connect failed")
+                self._errors.failed(
+                    f"Connect failed, retry in {retry_delay}s", key="connect"
+                )
                 await asyncio.sleep(retry_delay)
 
     async def reconnect(self):
@@ -194,6 +201,5 @@ class huawei_modbus(generic.FhemModule):
         try:
             for key in data:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, key, data[key].value)
-        except Exception as e:
-            self.logger.error(e)
-        await fhem.readingsEndUpdate(self.hash, 1)
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)

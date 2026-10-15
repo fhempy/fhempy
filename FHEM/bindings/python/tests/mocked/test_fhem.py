@@ -69,6 +69,57 @@ async def test_end_update_releases_lock_on_error(monkeypatch):
     assert not fhem.update_locks["dev_error"].locked()
 
 
+@pytest.mark.asyncio
+async def test_missing_end_update_does_not_block_next_update(monkeypatch):
+    sent = []
+
+    async def send(hash, cmd):
+        sent.append(cmd)
+        return ""
+
+    monkeypatch.setattr(fhem, "sendCommandHash", send)
+    hash = {"NAME": "dev_no_end"}
+
+    # module raised an exception after readingsBeginUpdate
+    await fhem.readingsBeginUpdate(hash)
+    await fhem.readingsBulkUpdate(hash, "lost", 1)
+
+    # same task updates again, must not wait 120s for the lock
+    await asyncio.wait_for(fhem.readingsBeginUpdate(hash), 1)
+    await fhem.readingsBulkUpdate(hash, "a", 1)
+    await fhem.readingsEndUpdate(hash, 1)
+    await asyncio.wait_for(
+        fhem.readingsSingleUpdate(hash, "state", "ok", 1), 1
+    )
+
+    assert sent == [
+        "readingsBeginUpdate($defs{'dev_no_end'});;"
+        "readingsBulkUpdate($defs{'dev_no_end'},'a','1');;"
+        "readingsEndUpdate($defs{'dev_no_end'},1);;",
+        "readingsSingleUpdate($defs{'dev_no_end'},'state','ok',1)",
+    ]
+    assert not fhem.update_locks["dev_no_end"].locked()
+
+
+@pytest.mark.asyncio
+async def test_missing_end_update_of_finished_task(monkeypatch):
+    async def send(hash, cmd):
+        return ""
+
+    monkeypatch.setattr(fhem, "sendCommandHash", send)
+    hash = {"NAME": "dev_task_end"}
+
+    async def failing_update():
+        await fhem.readingsBeginUpdate(hash)
+        raise ValueError("bad data")
+
+    with pytest.raises(ValueError):
+        await asyncio.create_task(failing_update())
+
+    await asyncio.wait_for(fhem.readingsSingleUpdate(hash, "state", "ok", 1), 1)
+    assert not fhem.update_locks["dev_task_end"].locked()
+
+
 def test_escape_value_for_perl_single_quotes():
     assert fhem.escapeValue("it's a\\b") == "it\\'s a\\\\b"
 

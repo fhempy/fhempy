@@ -4,13 +4,14 @@ from aiohttp import ClientSession
 from seatconnect import Connection
 from seatconnect.vehicle import Vehicle
 
-from .. import fhem
+from .. import fhem, utils
 from ..generic import FhemModule
 
 
 class seatconnect(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -52,9 +53,10 @@ class seatconnect(FhemModule):
                 try:
                     if await connection.doLogin() is not False:
                         await connection.get_vehicles()
+                        self._errors.success(key="login")
                         break
                 except Exception:
-                    self.logger.exception("Login failed")
+                    self._errors.failed("Login failed, retry in 60s", key="login")
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "login failed", 1
                     )
@@ -368,8 +370,9 @@ class seatconnect(FhemModule):
         while True:
             try:
                 await self.update_readings_once()
+                self._errors.success()
             except Exception:
-                self.logger.exception("Failed to update readings")
+                self._errors.failed("Failed to update readings")
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):

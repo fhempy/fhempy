@@ -18,6 +18,8 @@ function_active = []
 # futures of commands waiting for a change of function_active
 function_waiters = []
 update_locks = {}
+# task which called readingsBeginUpdate, to detect a missing readingsEndUpdate
+update_lock_owners = {}
 # readings commands collected between readingsBeginUpdate and readingsEndUpdate,
 # they are sent to FHEM in one roundtrip on readingsEndUpdate
 bulk_updates = {}
@@ -205,16 +207,36 @@ async def getDeviceInfo(name, attrs, dev_attr_list=None):
     return info
 
 
+def _get_update_lock(name):
+    lock = update_locks.get(name)
+    if lock is None:
+        lock = update_locks[name] = asyncio.Lock()
+    owner = update_lock_owners.get(name)
+    if (
+        lock.locked()
+        and owner is not None
+        and (owner is asyncio.current_task() or owner.done())
+    ):
+        # readingsBeginUpdate without readingsEndUpdate, usually caused by an
+        # exception in the module between both calls. Waiting for the lock
+        # would block all readings updates of this device for 120s.
+        logger.debug(f"{name}: dropping unfinished readingsBeginUpdate")
+        update_lock_owners.pop(name, None)
+        bulk_updates.pop(name, None)
+        lock.release()
+    return lock
+
+
 async def readingsBeginUpdate(hash):
-    if hash["NAME"] not in update_locks:
-        update_locks[hash["NAME"]] = asyncio.Lock()
+    lock = _get_update_lock(hash["NAME"])
     try:
-        await asyncio.wait_for(update_locks[hash["NAME"]].acquire(), 120)
+        await asyncio.wait_for(lock.acquire(), 120)
     except asyncio.TimeoutError:
-        logging.error(
+        logger.error(
             f"{hash['NAME']}: readingsBeginUpdate couldn't acquire lock,"
             + " caused by readingsBeginUpdate without End or Single update inbetween"
         )
+    update_lock_owners[hash["NAME"]] = asyncio.current_task()
     bulk_updates[hash["NAME"]] = [
         "readingsBeginUpdate($defs{'" + escapeValue(hash["NAME"]) + "'});;"
     ]
@@ -232,10 +254,10 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
             + escapeValue(value)
             + "');;"
         )
-        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
-            logging.error(
-                f"{hash['NAME']}: readingsBulkUpdateIfChanged without "
-                + f"readingsBeginUpdate: {cmd}"
+        if hash["NAME"] not in bulk_updates:
+            logger.error(
+                f"{hash['NAME']}: readingsBulkUpdateIfChanged of reading {reading} "
+                + "without readingsBeginUpdate"
             )
             return
         bulk_updates[hash["NAME"]].append(cmd)
@@ -268,10 +290,10 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
                 + str(changed)
                 + ");;"
             )
-        if hash["NAME"] not in update_locks or not update_locks[hash["NAME"]].locked():
-            logging.error(
-                f"{hash['NAME']}: readingsBulkUpdate without "
-                + f"readingsBeginUpdate: {cmd}"
+        if hash["NAME"] not in bulk_updates:
+            logger.error(
+                f"{hash['NAME']}: readingsBulkUpdate of reading {reading} "
+                + "without readingsBeginUpdate"
             )
             return
         bulk_updates[hash["NAME"]].append(cmd)
@@ -280,9 +302,10 @@ async def readingsBulkUpdate(hash, reading, value, changed=None):
 
 
 async def readingsEndUpdate(hash, do_trigger):
-    if hash["NAME"] not in update_locks:
-        logger.error("readingsEndUpdate without active readingsBeginUpdate")
-    cmds = bulk_updates.pop(hash["NAME"], [])
+    if hash["NAME"] not in bulk_updates:
+        logger.error(f"{hash['NAME']}: readingsEndUpdate without readingsBeginUpdate")
+        return None
+    cmds = bulk_updates.pop(hash["NAME"])
     cmds.append(
         "readingsEndUpdate($defs{'"
         + escapeValue(hash["NAME"])
@@ -293,13 +316,14 @@ async def readingsEndUpdate(hash, do_trigger):
     try:
         return await sendCommandHash(hash, "".join(cmds))
     finally:
-        update_locks[hash["NAME"]].release()
+        update_lock_owners.pop(hash["NAME"], None)
+        lock = update_locks.get(hash["NAME"])
+        if lock is not None and lock.locked():
+            lock.release()
 
 
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
-    if hash["NAME"] not in update_locks:
-        update_locks[hash["NAME"]] = asyncio.Lock()
-    async with update_locks[hash["NAME"]]:
+    async with _get_update_lock(hash["NAME"]):
         value = convertValue(value)
         cmd = (
             "readingsSingleUpdate($defs{'"
@@ -316,9 +340,7 @@ async def readingsSingleUpdate(hash, reading, value, do_trigger):
 
 
 async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
-    if hash["NAME"] not in update_locks:
-        update_locks[hash["NAME"]] = asyncio.Lock()
-    async with update_locks[hash["NAME"]]:
+    async with _get_update_lock(hash["NAME"]):
         value = convertValue(value)
         cmd = (
             "readingsBeginUpdate($defs{'"
@@ -497,6 +519,12 @@ async def send_default_response(hash, set_default_response):
     await wsconnection.send(msg)
 
 
+def describeCommand(cmd):
+    """Short command description for error logs, the full command can contain
+    reading values like tokens and is only logged on debug level."""
+    return cmd.split("(", 1)[0].split(" ", 1)[0][:50]
+
+
 async def send_and_wait(name, cmd):
     fut = asyncio.get_running_loop().create_future()
     msg = {
@@ -517,7 +545,11 @@ async def send_and_wait(name, cmd):
             fhem_time = (recv_time - sent_time) * 1000
             if fhem_time > 5000:
                 # log error message if fhem took too long to handle cmd
-                logger.error(f"FHEM took {fhem_time:.0f}ms for {cmd}")
+                logger.error(
+                    f"FHEM took {fhem_time:.0f}ms for {describeCommand(cmd)} "
+                    + f"of {name}"
+                )
+                logger.debug(f"Slow command: {cmd}")
             logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
@@ -552,12 +584,19 @@ async def sendCommandName(name, cmd, hash=None):
         end = time.time()
         duration = end - start
         if duration > 5:
-            logger.error(f"sendCommandName took {duration}s to send: {cmd}")
+            logger.error(
+                f"{name}: waited {duration:.0f}s for FHEM before sending "
+                + describeCommand(cmd)
+            )
         # wait max 180s for reply from FHEM
         jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
-        logger.error(f"NO RESPONSE since {timeout}s: " + cmd)
+        logger.error(
+            f"{name}: no response from FHEM since {timeout}s for "
+            + describeCommand(cmd)
+        )
+        logger.debug(f"Command without response: {cmd}")
         ret = ""
     except ConnectionError:
         # the closed connection itself is logged by the binding

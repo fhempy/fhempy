@@ -3,7 +3,7 @@ import asyncio
 from fhempy.lib.rct_power.api import RctPowerApiClient, ValidApiResponse
 from rctclient.registry import REGISTRY
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class rct_power(generic.FhemModule):
@@ -32,6 +32,8 @@ class rct_power(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
+        self._unknown_objects = set()
 
         self.update_loop_task = None
 
@@ -291,7 +293,9 @@ class rct_power(generic.FhemModule):
                 try:
                     object_ids.append(REGISTRY.get_by_name(val).object_id)
                 except KeyError:
-                    self.logger.warning(f"Unknown RCT object {val}, skipping it")
+                    if val not in self._unknown_objects:
+                        self._unknown_objects.add(val)
+                        self.logger.warning(f"Unknown RCT object {val}, skipping it")
 
             response = await self.rctclient.async_get_data(object_ids)
             for object_id in response:
@@ -341,12 +345,12 @@ class rct_power(generic.FhemModule):
                         )
 
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
-
+            self._errors.success()
         except Exception:
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "state", "connection error"
             )
-            self.logger.exception("Failed to update_readings")
+            self._errors.failed("Failed to update readings")
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
 

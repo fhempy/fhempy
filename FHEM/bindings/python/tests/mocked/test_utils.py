@@ -422,3 +422,48 @@ async def test_endless_loops_do_not_block_the_pool(monkeypatch):
         stop.set()
         utils.shutdown_blocking_executor(wait=True)
     assert await asyncio.gather(*loops) == ["stopped"] * 3
+
+
+def test_error_logger_logs_once(caplog):
+    import logging
+
+    logger = logging.getLogger("test_error_logger")
+    errors = utils.ErrorLogger(logger)
+    with caplog.at_level(logging.DEBUG, logger="test_error_logger"):
+        for _ in range(3):
+            try:
+                raise ConnectionRefusedError("refused")
+            except Exception:
+                errors.failed("Failed to update")
+        errors.success()
+        errors.success()
+
+    records = [(r.levelname, r.getMessage(), r.exc_info) for r in caplog.records]
+    assert records == [
+        ("WARNING", "Failed to update: ConnectionRefusedError: refused", None),
+        ("DEBUG", "Failed to update: ConnectionRefusedError: refused", None),
+        ("DEBUG", "Failed to update: ConnectionRefusedError: refused", None),
+        ("INFO", "Works again after previous error: Failed to update", None),
+    ]
+
+
+def test_error_logger_traceback_for_unexpected_errors(caplog):
+    import logging
+
+    logger = logging.getLogger("test_error_logger2")
+    errors = utils.ErrorLogger(logger)
+    with caplog.at_level(logging.DEBUG, logger="test_error_logger2"):
+        try:
+            raise KeyError("missing")
+        except Exception:
+            errors.failed("Failed to update readings", key="readings")
+        try:
+            raise asyncio.TimeoutError()
+        except Exception:
+            errors.failed("Failed to connect", key="connect")
+
+    assert caplog.records[0].levelname == "ERROR"
+    assert caplog.records[0].exc_info is not None
+    assert caplog.records[1].getMessage() == "Failed to connect: TimeoutError"
+    assert errors.is_failing("readings")
+    assert not errors.is_failing()

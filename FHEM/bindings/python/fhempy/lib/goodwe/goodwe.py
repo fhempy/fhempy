@@ -9,6 +9,7 @@ from .. import fhem, generic, utils
 class goodwe(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -72,8 +73,11 @@ class goodwe(generic.FhemModule):
         while self.inverter is None:
             try:
                 self.inverter = await gw.connect(self.ip)
+                self._errors.success(key="connect")
             except Exception:
-                self.logger.exception("Failed to connect to inverter")
+                self._errors.failed(
+                    "Failed to connect to inverter, retry in 30s", key="connect"
+                )
                 await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
                 await asyncio.sleep(30)
 
@@ -84,7 +88,9 @@ class goodwe(generic.FhemModule):
 
                 operation_mode = await self.inverter.get_operation_mode()
                 await fhem.readingsSingleUpdate(self.hash, "operation_mode", self.get_enum_name(operation_mode), 1)
+                self._errors.success()
             except Exception:
+                self._errors.failed("Failed to read data from inverter")
                 await fhem.readingsSingleUpdate(self.hash, "state", "error", 1)
             await asyncio.sleep(self._attr_interval)
 

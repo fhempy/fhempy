@@ -3,9 +3,7 @@ import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 
-from fhempy.lib import utils
-
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class ddnssde(generic.FhemModule):
@@ -38,6 +36,7 @@ class ddnssde(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         self.ip_infos = {}
         self.update_key_ready = asyncio.Event()
@@ -112,7 +111,7 @@ class ddnssde(generic.FhemModule):
         await self.login()
         ret = await self.retrieve_ddnss_data()
         if ret is False:
-            self.logger.error("Failed to retrieve ddnss data")
+            self.logger.warning("Failed to retrieve ddnss data")
             return
         await self.update_ddnss_readings()
 
@@ -120,9 +119,10 @@ class ddnssde(generic.FhemModule):
         while True:
             try:
                 await self.update_ddnss_data()
+                self._errors.success(key="ddnss")
                 await asyncio.sleep(7500)
             except Exception:
-                self.logger.exception("Failed to update ddnss, retry")
+                self._errors.failed("Failed to update ddnss, retry in 30s", key="ddnss")
                 await asyncio.sleep(30)
 
     async def update_ddnss_readings(self):
@@ -222,9 +222,10 @@ class ddnssde(generic.FhemModule):
             try:
                 if await self.is_ip_updated():
                     await self.set_ddnss_ip()
+                self._errors.success(key="ip")
                 await asyncio.sleep(self._attr_ip_check_interval * 60)
             except Exception:
-                self.logger.exception("Failed to check ip")
+                self._errors.failed("Failed to check ip, retry in 30s", key="ip")
                 await asyncio.sleep(30)
 
     async def set_attr_hostname(self, hash):

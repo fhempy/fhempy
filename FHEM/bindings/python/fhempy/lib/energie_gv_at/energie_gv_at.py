@@ -4,7 +4,7 @@ import json
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class energie_gv_at(generic.FhemModule):
@@ -19,6 +19,7 @@ class energie_gv_at(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -44,31 +45,11 @@ class energie_gv_at(generic.FhemModule):
             "sec-fetch-user": "?1",
             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         }
-        try:
-            async with aiohttp.ClientSession(headers=headers) as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        r_json = json.loads(await resp.text())
-                        return r_json
-                    else:
-                        await fhem.readingsSingleUpdate(
-                            self.hash,
-                            "state",
-                            f"failed: HTTP error {resp.status}",
-                            1,
-                        )
-                        self.logger.error(
-                            f"Failed to fetch, failed with status {resp.status} {url}"
-                        )
-        except Exception as ex:
-            self.logger.exception("Failed to update")
-            await fhem.readingsSingleUpdate(
-                self.hash,
-                "state",
-                f"failed: {ex}",
-                1,
-            )
-        return None
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    raise ConnectionError(f"HTTP error {resp.status} from {url}")
+                return json.loads(await resp.text())
 
     async def update_loop(self):
         while True:
@@ -85,12 +66,13 @@ class energie_gv_at(generic.FhemModule):
                 now = datetime.datetime.now()
                 next_hour = (now + delta).replace(microsecond=0, second=0, minute=0)
                 wait_seconds = (next_hour - now).seconds
+                self._errors.success()
             except Exception as ex:
-                self.logger.exception("Failed to update")
+                self._errors.failed("Failed to update, retry in 70s")
                 await fhem.readingsSingleUpdate(
                     self.hash,
                     "state",
-                    f"failed: {ex}",
+                    f"failed: {utils.describe_exception(ex)}",
                     1,
                 )
                 wait_seconds = 60

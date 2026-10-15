@@ -16,6 +16,7 @@ DEPARTURES = {
 class wienerlinien(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.firstnext = "first"
         self._updateloop = None
         self._last_data = None
@@ -111,10 +112,9 @@ class wienerlinien(FhemModule):
             return
         try:
             await self._parse_data(data, message)
-
+            self._errors.success(key="parse")
         except Exception:
-            self.logger.exception("Failed...")
-            pass
+            self._errors.failed("Failed to parse departures", key="parse")
 
 
 class WienerlinienAPI:
@@ -125,6 +125,7 @@ class WienerlinienAPI:
         self.session = aiohttp.ClientSession()
         self.stopid = stopid
         self.logger = logger
+        self._errors = utils.ErrorLogger(logger)
 
     async def get_json(self):
         """Get json from API endpoint."""
@@ -133,8 +134,8 @@ class WienerlinienAPI:
         try:
             response = await self.session.get(url)
             value = await response.json()
+            self._errors.success()
         except Exception:
-            self.logger.exception("Failed...")
-            pass
+            self._errors.failed("Failed to get departures from Wiener Linien")
 
         return value

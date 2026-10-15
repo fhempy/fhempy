@@ -126,6 +126,7 @@ class mqtt_ha_discovery(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         self.reset_existing_devices_task = None
 
@@ -185,6 +186,7 @@ class mqtt_ha_discovery(generic.FhemModule):
                 ) as client:
                     async with client.messages() as messages:
                         await client.subscribe("homeassistant/#")
+                        self._errors.success()
                         async for message in messages:
                             try:
                                 await self.handle_ha_msg(message)
@@ -193,8 +195,13 @@ class mqtt_ha_discovery(generic.FhemModule):
                                     f"Failed to handle message on {message.topic}: "
                                     f"{message.payload!r}"
                                 )
-            except aiomqtt.MqttError:
-                self.logger.error("Connection lost; Reconnecting in 5 seconds ...")
+            except aiomqtt.MqttError as exc:
+                # MqttError isn't an OSError, log it without traceback
+                self._errors.failed(
+                    f"MQTT connection to {self.mqtt_host}:{self.mqtt_port} lost, "
+                    "reconnecting every 5s",
+                    exc=ConnectionError(str(exc)),
+                )
                 await asyncio.sleep(5)
 
     async def handle_ha_msg(self, msg):
