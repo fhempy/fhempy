@@ -46,10 +46,10 @@ MD5_SER2NET = "f27a481e54f94ea7613b461bda090b0f"
 def sed(app: str, pattern: str, repl: str):
     """sed with extended regex and edit file in-place"""
     repl = (
-        repl.replace("$", "\$")
-        .replace("&", "\&")
-        .replace("=", "\=")
-        .replace("`", "\`")
+        repl.replace("$", "\\$")
+        .replace("&", "\\&")
+        .replace("=", "\\=")
+        .replace("`", "\\`")
         .replace('"', '\\"')
         .replace("\n", "\\n")
     )

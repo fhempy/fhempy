@@ -2,7 +2,7 @@ import asyncio
 import struct
 import time
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from ..core import bluetoothle
 
 DEFAULT_TIMEOUT = 1
@@ -43,6 +43,7 @@ HANDLE_RW_TIMERS = [
 class gfprobt(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self._ble_lock = asyncio.Lock()
         self._conn = None
         return
@@ -155,10 +156,11 @@ class gfprobt(generic.FhemModule):
         while True:
             try:
                 await self.update_once()
+                self._errors.success()
             except asyncio.CancelledError:
                 break
             except Exception:
-                self.logger.exception("Failed to update readings")
+                self._errors.failed("Failed to update readings")
             await asyncio.sleep(60)
 
     async def update_once(self):

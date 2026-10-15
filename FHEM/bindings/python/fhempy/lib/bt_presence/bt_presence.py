@@ -12,6 +12,7 @@ from .. import fhem, utils
 class bt_presence(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.btscan_task = None
         self._curr_state = ""
         self._count_diff_state = 0
@@ -54,8 +55,9 @@ class bt_presence(FhemModule):
                             self.hash, "rssi", rssi, 1
                         )
                     new_state = "present"
+                self._errors.success()
             except Exception:
-                self.logger.exception("BleakScanner failed")
+                self._errors.failed("Bluetooth scan failed")
 
             if self._curr_state != new_state:
                 self._count_diff_state += 1

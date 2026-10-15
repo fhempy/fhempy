@@ -246,7 +246,8 @@ class fhempy:
                         time_duration = (time_finished - received["time"]) * 1000
                         if time_duration > 60000:
                             logger.error(
-                                f"fhempy didn't send response for {time_duration}ms"
+                                "fhempy didn't send a response within "
+                                f"{time_duration / 1000:.0f}s for {received['desc']}"
                             )
                             del self.msg_received_time[id]
 

@@ -13,6 +13,8 @@ from Cryptodome.Cipher import PKCS1_OAEP
 from Cryptodome.Hash import SHA384
 from Cryptodome.PublicKey import RSA
 
+from .. import utils
+
 
 @dataclass
 class SignalSet:
@@ -281,8 +283,8 @@ class FusionSolarRestApi:
 
             return True
 
-        except Exception as ex:
-            self.logger.exception(f"Failed to get data: {ex}")
+        except Exception:
+            self.logger.exception("Login failed")
             return False
 
     async def _get_rest_data(self, path, params={}):
@@ -357,7 +359,7 @@ class FusionSolarRestApi:
                     async with session.get(url, params=params) as resp:
                         if resp.status != 200:
                             # wait a few seconds before login
-                            self.logger.error(
+                            self.logger.warning(
                                 f"Response from {url} was {resp.status}, try to relogin"
                             )
                             await asyncio.sleep(30)
@@ -387,7 +389,12 @@ class FusionSolarRestApi:
 
             return response
         except Exception as ex:
-            self.logger.exception(f"Failed to get data from {url}: {ex}")
+            if utils.is_connection_error(ex):
+                self.logger.warning(
+                    f"Failed to get data from {url}: {utils.describe_exception(ex)}"
+                )
+            else:
+                self.logger.exception(f"Failed to get data from {url}")
             return {}
 
     async def update(self):

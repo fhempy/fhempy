@@ -5,12 +5,13 @@ from datetime import datetime
 import aiohttp
 from bs4 import BeautifulSoup
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class volvo_software_update(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -54,6 +55,7 @@ class volvo_software_update(generic.FhemModule):
                     async with session.get(self.update_url) as resp:
                         if resp.status == 200:
                             await self.handle_response(await resp.text())
+                            self._errors.success()
                         else:
                             await fhem.readingsSingleUpdate(
                                 self.hash,
@@ -61,12 +63,12 @@ class volvo_software_update(generic.FhemModule):
                                 f"failed: HTTP error {resp.status}",
                                 1,
                             )
-                            self.logger.error(
+                            self._errors.failed(
                                 f"Failed to fetch {self.update_url}, "
                                 f"failed with status {resp.status}"
                             )
             except Exception:
-                self.logger.exception("Failed to update")
+                self._errors.failed("Failed to update")
             await asyncio.sleep(self._attr_interval)
 
     async def handle_response(self, response):
@@ -80,7 +82,7 @@ class volvo_software_update(generic.FhemModule):
                     self.hash, "latest_release_notes", f"<html>{entry}</html>"
                 )
                 release_text = entry.find("h2").text
-                release_numbers = re.findall("\d+\.\d+", release_text)
+                release_numbers = re.findall("\\d+\\.\\d+", release_text)
 
                 if len(release_numbers) > 0:
                     release_number = release_numbers[0]

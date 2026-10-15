@@ -4,6 +4,7 @@ import concurrent.futures
 import inspect
 import os
 import socket
+import sys
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from codecs import decode
 from datetime import datetime
@@ -117,6 +118,76 @@ async def run_blocking_thread(function):
         # don't block the event loop if the task was cancelled (Undefine),
         # the thread finishes in the background
         pool.shutdown(wait=False)
+
+
+def is_connection_error(exc):
+    """True for network errors (device offline, DNS, timeouts, ...) which
+    don't need a traceback in the log."""
+    if isinstance(exc, (OSError, asyncio.TimeoutError)):
+        # also covers requests.RequestException, ConnectionError, TimeoutError
+        return True
+    # only check libraries which are already loaded, otherwise the exception
+    # can't come from them
+    aiohttp = sys.modules.get("aiohttp")
+    if aiohttp is not None and isinstance(exc, aiohttp.ClientError):
+        return True
+    httpx = sys.modules.get("httpx")
+    if httpx is not None and isinstance(exc, httpx.TransportError):
+        return True
+    return False
+
+
+def describe_exception(exc):
+    """One line description of an exception, also for exceptions without
+    message (e.g. TimeoutError)."""
+    text = str(exc).strip()
+    if text == "":
+        return type(exc).__name__
+    return f"{type(exc).__name__}: {text}"
+
+
+class ErrorLogger:
+    """Log a recurring error once instead of in every update interval.
+
+    The first failure is logged as warning (connection errors, without
+    traceback) or error (unexpected errors, with traceback). Repeated
+    failures are only logged on debug level until success() is called,
+    which logs the recovery on info level.
+
+    Usage:
+        try:
+            await self.update()
+            self._errors.success()
+        except Exception:
+            self._errors.failed("Failed to update")
+    """
+
+    def __init__(self, logger):
+        self._logger = logger
+        self._failing = {}
+
+    def is_failing(self, key=None):
+        return (key or "default") in self._failing
+
+    def failed(self, msg, key=None, exc=None):
+        """Call within an except block or pass the exception."""
+        if exc is None:
+            exc = sys.exc_info()[1]
+        key = key or "default"
+        detail = f"{msg}: {describe_exception(exc)}" if exc is not None else msg
+        if key in self._failing:
+            self._logger.debug(detail)
+            return
+        self._failing[key] = msg
+        if exc is None or is_connection_error(exc):
+            self._logger.warning(detail)
+        else:
+            self._logger.error(msg, exc_info=exc)
+
+    def success(self, key=None):
+        msg = self._failing.pop(key or "default", None)
+        if msg is not None:
+            self._logger.info(f"Works again after previous error: {msg}")
 
 
 def run_blocking_task(function):

@@ -2,7 +2,7 @@ import asyncio
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 import datetime as dt
 
@@ -34,6 +34,7 @@ class volvo(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         self.session = None
         self.access_token = None
@@ -217,7 +218,10 @@ class volvo(generic.FhemModule):
         except Exception:
             self.logger.exception("Failed to get commands")
             return
-        
+        if not cmds or "data" not in cmds:
+            self.logger.warning("No commands received, set commands not available")
+            return
+
         set_conf = {}
         for cmd in cmds["data"]:
             set_conf[cmd["command"].lower()] = {
@@ -289,10 +293,10 @@ class volvo(generic.FhemModule):
             cars = await self.volvo_get(volvo.VEHICLELIST)
             carList = cars["vehicles"]
             if len(carList) == 0:
-                self.logger.error("No cars found")
+                self.logger.warning("No cars found")
                 return
             elif len(carList) == 1:
-                self.vin = carList["id"]
+                self.vin = carList[0]["id"]
             else:
                 carVID = await fhem.AttrVal(self.hash["NAME"], "car", "")
                 if (carVID == ""):
@@ -368,6 +372,7 @@ class volvo(generic.FhemModule):
                 response = await resp.json()
 
                 if resp.status == 200:
+                    self._errors.success(key=url)
                     return response
                 elif resp.status == 403:
                   await fhem.readingsSingleUpdateIfChanged(
@@ -378,7 +383,9 @@ class volvo(generic.FhemModule):
                 ) 
                                                      
                 else:
-                    self.logger.error(f"Failed to get data, status {resp.status}")
+                    self._errors.failed(
+                        f"Failed to get data from {url}, status {resp.status}", key=url
+                    )
         except Exception:
-            self.logger.exception(f"Failed to get data from {url}")
+            self._errors.failed(f"Failed to get data from {url}", key=url)
             return {}

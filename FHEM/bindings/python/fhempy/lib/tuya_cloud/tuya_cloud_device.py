@@ -43,8 +43,8 @@ class tuya_cloud_device:
         try:
             await self._connect_to_setup_device()
             await self._setup_device()
-        except Exception as ex:
-            self.logger.exception(ex)
+        except Exception:
+            self.logger.exception("Failed to initialize device")
 
     async def _connect_to_setup_device(self):
         while self.tuyaiot is None or self.tuyaiot.ready is False:
@@ -367,8 +367,8 @@ class tuya_cloud_device:
                             self._convert_code2fhem(st_name),
                             self._convert_value2fhem(st_name, status_dic[st_name]),
                         )
-            except Exception as ex:
-                self.logger.exception(ex)
+            except Exception:
+                self.logger.exception("Failed to update readings")
             await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_readings_hsv(self, hsv_code, hsv_json):

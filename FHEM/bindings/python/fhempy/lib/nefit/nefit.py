@@ -5,7 +5,7 @@ import re
 
 from aionefit import NefitCore
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class nefit(generic.FhemModule):
@@ -23,6 +23,7 @@ class nefit(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
         self.first_run = True
         self.module_shutdown = False
@@ -444,8 +445,9 @@ class nefit(generic.FhemModule):
                 await self.update_dayassunday()
 
                 await self.update_gasusage()
+                self._errors.success()
             except Exception:
-                self.logger.exception("Failed to update readings")
+                self._errors.failed("Failed to request readings")
             await asyncio.sleep(self._attr_interval)
 
     async def update_dayassunday(self, day=None):

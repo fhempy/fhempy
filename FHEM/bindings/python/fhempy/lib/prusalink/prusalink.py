@@ -5,12 +5,13 @@ import pyprusalink
 
 from fhempy.lib.utils import flatten_json
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class prusalink(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -30,12 +31,13 @@ class prusalink(generic.FhemModule):
         data = {}
         try:
             data["status"] = await self.pl.get_status()
+            self._errors.success()
         except Exception as ex:
-            self.logger.exception("Failed to update")
+            self._errors.failed("Failed to get printer status")
             await fhem.readingsSingleUpdate(
                 self.hash,
                 "state",
-                f"failed: {ex}",
+                f"failed: {utils.describe_exception(ex)}",
                 1,
             )
         return data
@@ -47,6 +49,9 @@ class prusalink(generic.FhemModule):
             )
             while True:
                 data = await self.retrieve_data()
+                if not data:
+                    await asyncio.sleep(30)
+                    continue
                 flat_json = flatten_json(data)
                 await fhem.readingsBeginUpdate(self.hash)
                 try:
@@ -58,7 +63,10 @@ class prusalink(generic.FhemModule):
                         self.hash, "state", flat_json["status_printer_state"]
                     )
                 except Exception:
-                    self.logger.exception("Failed to update readings")
-                await fhem.readingsEndUpdate(self.hash, 1)
+                    self._errors.failed("Failed to update readings", key="readings")
+                else:
+                    self._errors.success(key="readings")
+                finally:
+                    await fhem.readingsEndUpdate(self.hash, 1)
 
                 await asyncio.sleep(30)

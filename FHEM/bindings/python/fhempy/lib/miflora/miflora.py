@@ -14,6 +14,7 @@ from .. import fhem, utils
 class miflora(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.hash = None
         self.updateTask = None
         self._poller = None
@@ -85,8 +86,9 @@ class miflora(FhemModule):
                 await fhem.readingsSingleUpdateIfChanged(self.hash, param, param_val, 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "online", 1)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "online", 1)
+            self._errors.success()
         except Exception:
-            self.logger.error(f"Failed to get updates from miflora {self._address}")
+            self._errors.failed(f"Failed to get updates from miflora {self._address}")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "presence", "offline", 1
             )

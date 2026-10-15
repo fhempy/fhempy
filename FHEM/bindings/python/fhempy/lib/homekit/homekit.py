@@ -64,6 +64,7 @@ class homekit(generic.FhemModule):
         self._owns_pairing = False
         self.pairing = None
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     @property
     def ready(self):
@@ -253,8 +254,9 @@ class homekit(generic.FhemModule):
             try:
                 await self.pairing.list_accessories_and_characteristics()
                 await self.update_readings()
-            except Exception as e:
-                self.logger.error(f"Error during update_readings_from_homekit: {e}")
+                self._errors.success()
+            except Exception:
+                self._errors.failed("Failed to update readings from HomeKit device")
             await asyncio.sleep(self._attr_interval)
 
     async def update_readings(self):

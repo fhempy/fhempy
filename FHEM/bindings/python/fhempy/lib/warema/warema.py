@@ -10,6 +10,7 @@ from ..generic import FhemModule
 class warema(FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.hash = None
 
     # FHEM FUNCTION
@@ -40,7 +41,7 @@ class warema(FhemModule):
         if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
             await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon fts_window_1w")
         if await fhem.AttrVal(self.hash["NAME"], "devStateIcon", "") == "":
-            devStateIcon = "0:fts_shutter_10\@green 100:fts_shutter_100\@green s/[0-9]|1\d.*:fts_shutter_90 s/[0-9]|2\d.*:fts_shutter_80 s/[0-9]|3\d.*:fts_shutter_70 s/[0-9]|4\d.*:fts_shutter_60 s/[0-9]|5\d.*:fts_shutter_50 s/[0-9]|6\d.*:fts_shutter_40 s/[0-9]|7\d.*:fts_shutter_30 s/[0-9]|8\d.*:fts_shutter_20 s/[0-9]|9\d.*:fts_shutter_10 s/[0-9]|99\d.*:fts_shutter_10"
+            devStateIcon = "0:fts_shutter_10\\@green 100:fts_shutter_100\\@green s/[0-9]|1\\d.*:fts_shutter_90 s/[0-9]|2\\d.*:fts_shutter_80 s/[0-9]|3\\d.*:fts_shutter_70 s/[0-9]|4\\d.*:fts_shutter_60 s/[0-9]|5\\d.*:fts_shutter_50 s/[0-9]|6\\d.*:fts_shutter_40 s/[0-9]|7\\d.*:fts_shutter_30 s/[0-9]|8\\d.*:fts_shutter_20 s/[0-9]|9\\d.*:fts_shutter_10 s/[0-9]|99\\d.*:fts_shutter_10"
             await fhem.CommandAttr(
                 self.hash, self.hash["NAME"] + " devStateIcon " + devStateIcon
             )
@@ -78,9 +79,12 @@ class warema(FhemModule):
                 (shades, room, state) = await utils.run_blocking(
                     functools.partial(self._connect)
                 )
+                self._errors.success(key="connect")
                 break
             except Exception:
-                self.logger.exception("Failed to connect to WMS gateway")
+                self._errors.failed(
+                    "Failed to connect to WMS gateway, retry in 60s", key="connect"
+                )
                 await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
                 await asyncio.sleep(60)
 
@@ -116,8 +120,9 @@ class warema(FhemModule):
         while True:
             try:
                 await self.do_update()
+                self._errors.success()
             except Exception:
-                self.logger.exception("Failed to update shade state")
+                self._errors.failed("Failed to update shade state")
             await asyncio.sleep(self._attr_interval)
 
     async def do_update(self):

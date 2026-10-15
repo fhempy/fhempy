@@ -6,7 +6,7 @@ from datetime import datetime
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 # Nominatim (OpenStreetMap) also finds addresses, Open-Meteo only place names.
@@ -79,6 +79,7 @@ DAY_NAMES = {
 class openmeteo_weather(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self._location = None
 
     # FHEM FUNCTION
@@ -114,10 +115,11 @@ class openmeteo_weather(generic.FhemModule):
                     trust_env=True, timeout=aiohttp.ClientTimeout(total=30)
                 ) as session:
                     await self.update(session)
+                self._errors.success()
             except asyncio.CancelledError:
                 raise
             except Exception as ex:
-                self.logger.exception("Failed to update")
+                self._errors.failed("Failed to update")
                 await fhem.readingsSingleUpdate(
                     self.hash, "state", f"failed: {type(ex).__name__}", 1
                 )

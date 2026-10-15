@@ -1,6 +1,6 @@
 import asyncio
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from pymyenergi.connection import Connection
 from pymyenergi.zappi import Zappi
 from pymyenergi.harvi import Harvi
@@ -8,6 +8,7 @@ from pymyenergi.harvi import Harvi
 class zappi(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.zappi_box = None
         self.harvis = []
         self.harvi_serials = []
@@ -58,12 +59,19 @@ class zappi(generic.FhemModule):
             await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting",1)
 
             conn = Connection(self.serialNo, self.Apikey)
-            try:
-                zappi_serial = await self.find_zappi_serial(conn)
-            except Exception:
-                self.logger.exception("Failed to query myenergi devices")
-                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "error", 1)
-                return
+            while True:
+                try:
+                    zappi_serial = await self.find_zappi_serial(conn)
+                    self._errors.success(key="connect")
+                    break
+                except Exception:
+                    self._errors.failed(
+                        "Failed to query myenergi devices, retry in 60s", key="connect"
+                    )
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "error", 1
+                    )
+                    await asyncio.sleep(60)
             if zappi_serial is None:
                 self.logger.error(
                     f"No zappi found for hub {self.serialNo}, check serial and API key"
@@ -94,7 +102,7 @@ class zappi(generic.FhemModule):
                 
                 await self.update_zappi_data()
             else:
-                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "disconnected")
+                await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "disconnected", 1)
 
       
 
@@ -193,8 +201,9 @@ class zappi(generic.FhemModule):
                     """
                     await fhem.readingsBulkUpdate(self.hash, "smart_boost_amount", self.zappi_box.smart_boost_amount)
                     await fhem.readingsEndUpdate(self.hash, 1)
+                    self._errors.success()
                 except Exception:
-                    self.logger.error("Failed to update zappi readings")
+                    self._errors.failed("Failed to update zappi readings")
                     
                 
                 

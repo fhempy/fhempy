@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from skodaconnect import Connection
 from skodaconnect.vehicle import Vehicle
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 # If you wish to use stored tokens, this is an example on how to format data sent to restore_tokens method:
 TOKENS = {
@@ -21,6 +21,7 @@ TOKENS = None
 class skodaconnect(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -70,9 +71,9 @@ class skodaconnect(generic.FhemModule):
         async with ClientSession(headers={"Connection": "keep-alive"}) as session:
             connection = Connection(session, self.username, self.password, False)
             if TOKENS is not None:
-                print("Attempting restore of tokens")
+                self.logger.debug("Attempting restore of tokens")
                 if await connection.restore_tokens(TOKENS):
-                    print("Token restore succeeded")
+                    self.logger.debug("Token restore succeeded")
                     login_success = True
             await self.login_until_successful(connection, login_success)
 
@@ -110,9 +111,10 @@ class skodaconnect(generic.FhemModule):
                 if login_success:
                     await connection.get_vehicles()
                     await connection.update_all()
+                    self._errors.success(key="login")
                     return
             except Exception:
-                self.logger.exception("Login failed")
+                self._errors.failed("Login failed, retry in 60s", key="login")
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "login failed", 1
                 )
@@ -286,8 +288,9 @@ class skodaconnect(generic.FhemModule):
         while True:
             try:
                 await self.update_readings_once()
+                self._errors.success()
             except Exception:
-                self.logger.exception("Failed to update readings")
+                self._errors.failed("Failed to update readings")
             await asyncio.sleep(self._attr_update_interval)
 
     async def update_readings_once(self):

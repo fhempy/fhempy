@@ -3,12 +3,13 @@ import time
 
 from fhempy.lib.fusionsolar.fusionsolar_api import FusionSolarRestApi
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class fusionsolar(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self._stationname = None
         self._sessionid = None
 
@@ -175,11 +176,13 @@ class fusionsolar(generic.FhemModule):
                     )
 
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
+                self._errors.success()
             except Exception:
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
-                self.logger.exception("Failed to update readings")
-                self.logger.error(f"Received data:\n{self.restapi.data_string}")
-            await fhem.readingsEndUpdate(self.hash, 1)
+                self._errors.failed("Failed to update readings")
+                self.logger.debug(f"Received data:\n{self.restapi.data_string}")
+            finally:
+                await fhem.readingsEndUpdate(self.hash, 1)
             # calculate next full 5min+30s
             next_sec = (
                 (4 - time.localtime().tm_min % 5) * 60

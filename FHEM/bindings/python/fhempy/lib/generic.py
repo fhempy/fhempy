@@ -219,7 +219,9 @@ class FhemModule:
         return await utils.handle_set(self._conf_set, self, hash, args, argsh)
 
     def create_async_task(self, coro):
-        task = asyncio.create_task(self._run_coro(coro))
+        task = asyncio.create_task(
+            self._run_coro(coro), name=getattr(coro, "__qualname__", None)
+        )
         task.add_done_callback(self._handle_task_result)
         self._tasks.append(task)
         return task
@@ -238,7 +240,9 @@ class FhemModule:
         except asyncio.CancelledError:
             pass
         except Exception:
-            self.logger.exception("Exception raised by task: %r", task)
+            self.logger.exception(
+                f"Background task {task.get_name()} stopped because of an error"
+            )
 
     def cancel_async_task(self, task):
         if task in self._tasks:

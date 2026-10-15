@@ -2,7 +2,7 @@ import asyncio
 
 import aiohttp
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 
 
 class aktionsfinder(generic.FhemModule):
@@ -11,6 +11,7 @@ class aktionsfinder(generic.FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -67,6 +68,7 @@ class aktionsfinder(generic.FhemModule):
                     ) as resp:
                         if resp.status == 200:
                             await self.handle_response(await resp.json())
+                            self._errors.success()
                         else:
                             await fhem.readingsSingleUpdate(
                                 self.hash,
@@ -74,9 +76,9 @@ class aktionsfinder(generic.FhemModule):
                                 f"failed: HTTP error {resp.status}",
                                 1,
                             )
-                            self.logger.error(f"Failed with status {resp.status}")
+                            self.logger.warning(f"Failed with status {resp.status}")
             except Exception:
-                self.logger.exception("Failed to update")
+                self._errors.failed("Failed to update")
             await asyncio.sleep(self._attr_interval * 3600)
 
     async def handle_response(self, response):

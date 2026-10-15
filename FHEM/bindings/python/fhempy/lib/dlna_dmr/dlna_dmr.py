@@ -12,7 +12,7 @@ from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
 from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
 
-from .. import fhem
+from .. import fhem, utils
 from ..discover_upnp.discover_upnp import ssdp
 
 DEFAULT_LISTEN_PORT = 8301
@@ -29,8 +29,11 @@ def catch_request_errors():
             """Catch asyncio.TimeoutError, aiohttp.ClientError errors."""
             try:
                 return await func(self, *args, **kwargs)
-            except (asyncio.TimeoutError, ClientError):
-                self.logger.error("Error during call %s", func.__name__)
+            except (asyncio.TimeoutError, ClientError) as exc:
+                self.logger.error(
+                    f"Error during call {func.__name__}: "
+                    + utils.describe_exception(exc)
+                )
 
         return wrapper
 
@@ -43,6 +46,7 @@ class dlna_dmr(FhemModule):
 
     def __init__(self, logger):
         super().__init__(logger)
+        self._errors = utils.ErrorLogger(logger)
         self.server = None
         self.device = None
         # set log level to ERROR for aiohttp.access to avoid INFO notify msgs
@@ -62,7 +66,7 @@ class dlna_dmr(FhemModule):
         if server_host:
             server_host = server_host[1]
         else:
-            self.logger.error(f"Failed to add device {self.device}")
+            self.logger.error("Failed to get local IP address for DLNA events")
         server_port = DEFAULT_LISTEN_PORT
         event_handler = await self.async_start_event_handler(
             server_host, server_port, requester
@@ -221,8 +225,9 @@ class dlna_dmr(FhemModule):
                     await self.updateReadings()
                 else:
                     await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+                self._errors.success()
             except Exception:
-                self.logger.exception("Failed to update")
+                self._errors.failed("Failed to update")
             await asyncio.sleep(30)
 
     async def updateReadings(self):
@@ -319,7 +324,7 @@ class DlnaDmrDevice:
             await self._device.async_update()
             self._available = True
             self.logger.debug("Device available")
-        except (asyncio.TimeoutError, aiohttp.ClientError):
+        except (asyncio.TimeoutError, ClientError):
             self._available = False
             self.logger.debug("Device unavailable")
             return
@@ -334,7 +339,7 @@ class DlnaDmrDevice:
                 timeout = await self._device.async_subscribe_services()
                 self.logger.debug("Subscription done, resubscribe in: " + str(timeout))
                 self._subscription_renew_time = dt.datetime.now() + timeout / 2
-            except (asyncio.TimeoutError, aiohttp.ClientError):
+            except (asyncio.TimeoutError, ClientError):
                 self._available = False
                 self.logger.debug("Could not (re)subscribe")
 
