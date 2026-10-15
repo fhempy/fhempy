@@ -38,6 +38,23 @@ async def test_run_blocking_task():
 
 
 @pytest.mark.asyncio
+async def test_persistent_blocking_executor():
+    executor1 = utils.get_blocking_executor()
+    executor2 = utils.get_blocking_executor()
+    assert executor1 is executor2
+
+    res = await utils.run_blocking(functools.partial(lambda x: x * 2, 21))
+    assert res == 42
+
+    utils.shutdown_blocking_executor(wait=True)
+    assert utils._blocking_executor is None
+
+    res2 = await utils.run_blocking(functools.partial(lambda x: x + 1, 10))
+    assert res2 == 11
+    assert utils._blocking_executor is not None
+
+
+@pytest.mark.asyncio
 async def test_handle_define_attr(mocker):
     sent = []
 
