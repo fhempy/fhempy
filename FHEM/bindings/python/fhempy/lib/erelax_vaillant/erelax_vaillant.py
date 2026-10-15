@@ -6,9 +6,10 @@ import datetime
 from httpx import AsyncClient
 from vaillant_netatmo_api import (
     AuthClient,
-    SetpointMode,
-    SystemMode,
+    TemperatureControlMode,
+    ThermMode,
     ThermostatClient,
+    ThermSetpointMode,
     TokenStore,
 )
 
@@ -20,6 +21,7 @@ class erelax_vaillant(generic.FhemModule):
         super().__init__(logger)
 
         unknown_key = "thisisnotmagic012345678901234567"
+        self.home = None
         self.unknown_code = utils.decrypt_string(
             (
                 "eJwVwdsOgiAAANAvalNLrEcJM5chh"
@@ -79,70 +81,57 @@ class erelax_vaillant(generic.FhemModule):
         self.password = args[4]
         self.create_async_task(self.do_update_loop())
 
+    # vaillant-netatmo-api 0.13 removed setminormode/setsystemmode, changes go
+    # through the homes API (sethomedata/setstate). Only one home and one room
+    # are supported, like the thermostat readings.
     async def set_away(self, hash, params):
         self.create_async_task(
-            self.thermostat_client.async_set_minor_mode(
-                self.devices[0].id,
-                self.devices[0].modules[0].id,
-                SetpointMode.AWAY,
-                True,
-                None,
-                None,
+            self.thermostat_client.async_set_home_data(
+                self.home.id, TemperatureControlMode.HEATING, ThermMode.AWAY
             )
         )
 
     async def set_home(self, hash, params):
         self.create_async_task(
-            self.thermostat_client.async_set_minor_mode(
-                self.devices[0].id,
-                self.devices[0].modules[0].id,
-                SetpointMode.HWB,
-                True,
-                None,
-                None,
+            self.thermostat_client.async_set_home_data(
+                self.home.id, TemperatureControlMode.HEATING, ThermMode.SCHEDULE
             )
         )
 
     async def set_desiredTemperature(self, hash, params):
-        endtime = datetime.datetime.now() + datetime.timedelta(
-            minutes=self.devices[0].setpoint_default_duration
-        )
-        self.create_async_task(
-            self.thermostat_client.async_set_minor_mode(
-                self.devices[0].id,
-                self.devices[0].modules[0].id,
-                SetpointMode.MANUAL,
-                True,
-                endtime,
-                params["temperature"],
-            )
+        await self._set_manual_temperature(
+            params["temperature"], self.devices[0].setpoint_default_duration
         )
 
     async def set_desiredTemperatureDuration(self, hash, params):
-        endtime = datetime.datetime.now() + datetime.timedelta(
-            minutes=params["duration"]
-        )
+        await self._set_manual_temperature(params["temperature"], params["duration"])
+
+    async def _set_manual_temperature(self, temperature, duration):
+        endtime = datetime.datetime.now() + datetime.timedelta(minutes=duration)
         self.create_async_task(
-            self.thermostat_client.async_set_minor_mode(
-                self.devices[0].id,
-                self.devices[0].modules[0].id,
-                SetpointMode.MANUAL,
-                True,
-                endtime,
-                params["temperature"],
+            self.thermostat_client.async_set_state_for_room(
+                self.home.id,
+                self.home.rooms[0].id,
+                ThermSetpointMode.MANUAL,
+                therm_setpoint_temperature=temperature,
+                therm_setpoint_end_time=endtime,
             )
         )
 
     async def set_system_mode(self, hash, params):
         if params["mode"] == "winter":
-            set_mode = SystemMode.WINTER
+            control_mode, therm_mode = (
+                TemperatureControlMode.HEATING,
+                ThermMode.SCHEDULE,
+            )
         elif params["mode"] == "summer":
-            set_mode = SystemMode.SUMMER
+            # hot water only
+            control_mode, therm_mode = TemperatureControlMode.COOLING, None
         else:
-            set_mode = SystemMode.FROSTGUARD
+            control_mode, therm_mode = TemperatureControlMode.HEATING, ThermMode.HG
         self.create_async_task(
-            self.thermostat_client.async_set_system_mode(
-                self.devices[0].id, self.devices[0].modules[0].id, set_mode
+            self.thermostat_client.async_set_home_data(
+                self.home.id, control_mode, therm_mode
             )
         )
 
@@ -168,6 +157,9 @@ class erelax_vaillant(generic.FhemModule):
 
             while True:
                 try:
+                    homes = await self.thermostat_client.async_get_homes_data()
+                    if homes:
+                        self.home = homes[0]
                     self.devices = (
                         await self.thermostat_client.async_get_thermostats_data()
                     )
