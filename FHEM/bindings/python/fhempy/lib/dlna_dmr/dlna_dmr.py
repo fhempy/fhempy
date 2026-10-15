@@ -58,19 +58,20 @@ class dlna_dmr(FhemModule):
             return
 
         self.upnp_device = upnp_device
-        # build upnp/aiohttp requester
-        session = ClientSession()
-        requester = AiohttpSessionRequester(session, True)
-        # ensure event handler has been started
-        server_host = await async_get_local_ip()
-        if server_host:
-            server_host = server_host[1]
-        else:
-            self.logger.error("Failed to get local IP address for DLNA events")
-        server_port = DEFAULT_LISTEN_PORT
-        event_handler = await self.async_start_event_handler(
-            server_host, server_port, requester
-        )
+        # the event handler (and its requester/session) is shared by all
+        # dlna_dmr devices, it is only created once
+        if dlna_dmr.event_handler is None:
+            _, server_host = await async_get_local_ip()
+            session = ClientSession()
+            requester = AiohttpSessionRequester(session, True)
+            try:
+                await self.async_start_event_handler(
+                    server_host, DEFAULT_LISTEN_PORT, requester
+                )
+            except Exception:
+                await session.close()
+                raise
+        event_handler = dlna_dmr.event_handler
 
         # wrap with DmrDevice
         dlna_device = DmrDevice(self.upnp_device, event_handler)
@@ -96,12 +97,8 @@ class dlna_dmr(FhemModule):
         if dlna_dmr.event_handler:
             return dlna_dmr.event_handler
         # start event handler
-        self.server = AiohttpNotifyServer(
-            requester,
-            listen_port=server_port,
-            listen_host=server_host,
-        )
-        await self.server.start_server()
+        self.server = AiohttpNotifyServer(requester, (server_host, server_port))
+        await self.server.async_start_server()
         self.logger.info(
             "UPNP/DLNA event handler listening, url: %s", self.server.callback_url
         )
@@ -188,7 +185,7 @@ class dlna_dmr(FhemModule):
         elif onoff == "off":
             onoff = False
         else:
-            onoff = not (self.device.dlna_dmrdevice.is_volume_muted())
+            onoff = not self.device.dlna_dmrdevice.is_volume_muted
         await self.device.dlna_dmrdevice.async_mute_volume(onoff)
 
     async def set_pause(self, hash, params):
