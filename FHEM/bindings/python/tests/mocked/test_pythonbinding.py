@@ -43,6 +43,19 @@ def test_msg_handling_completed_removes_stale_messages():
     pb.msg_handling_completed({"id": 1})
 
     assert list(pb.msg_received_time) == [3]
+    assert pb._last_msg_cleanup >= now
+
+    # Message 4 is stale, but cleanup shouldn't run again immediately (< 30s)
+    pb.msg_received_time[4] = {"time": now - 120, "desc": "stale2"}
+    pb.msg_handling_completed({"id": 3})
+    assert list(pb.msg_received_time) == [4]
+
+    # After 31 seconds elapsed, cleanup runs again
+    pb._last_msg_cleanup = now - 35
+    pb.msg_received_time[5] = {"time": now, "desc": "done2"}
+    pb.msg_handling_completed({"id": 5})
+    assert list(pb.msg_received_time) == []
+
 
 
 @pytest.mark.asyncio

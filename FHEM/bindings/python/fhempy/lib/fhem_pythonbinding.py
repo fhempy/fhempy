@@ -125,6 +125,7 @@ class fhempy:
         # restart or shutdown started, modules are being undefined
         self._stopping = False
         self.msg_received_time = {}
+        self._last_msg_cleanup = 0
 
     def register_msg_listener(self, listener, awaitid):
         self._msg_listeners[awaitid] = listener
@@ -238,14 +239,16 @@ class fhempy:
                     logger.warning(f"fhempy took {time_duration:.0f}ms for {desc}")
                 del self.msg_received_time[hash["id"]]
 
-                # cleanup old messages, iterate over a copy to allow deletion
-                for id, received in list(self.msg_received_time.items()):
-                    time_duration = (time_finished - received["time"]) * 1000
-                    if time_duration > 60000:
-                        logger.error(
-                            f"fhempy didn't send response for {time_duration}ms"
-                        )
-                        del self.msg_received_time[id]
+                # cleanup old messages periodically (amortized O(1))
+                if time_finished - self._last_msg_cleanup > 30:
+                    self._last_msg_cleanup = time_finished
+                    for id, received in list(self.msg_received_time.items()):
+                        time_duration = (time_finished - received["time"]) * 1000
+                        if time_duration > 60000:
+                            logger.error(
+                                f"fhempy didn't send response for {time_duration}ms"
+                            )
+                            del self.msg_received_time[id]
 
     async def onMessage(self, payload):
         try:
