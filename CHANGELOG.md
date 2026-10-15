@@ -2,6 +2,59 @@
 
 <!-- version list -->
 
+## v0.1.788 (2026-10-15)
+
+### Bug Fixes
+
+- Umlauts between FHEM and fhempy, thread pool starvation, JSON fallbacks
+  ([#656](https://github.com/fhempy/fhempy/pull/656),
+  [`933f692`](https://github.com/fhempy/fhempy/commit/933f692bcba01fd67d3f24f763e35853f24bf2cb))
+
+- Umlauts between FHEM and fhempy, thread pool starvation, orjson with fallback
+  ([#656](https://github.com/fhempy/fhempy/pull/656),
+  [`933f692`](https://github.com/fhempy/fhempy/commit/933f692bcba01fd67d3f24f763e35853f24bf2cb))
+
+- **generic**: Safe event loop retrieval in FhemModule and async test
+  ([#653](https://github.com/fhempy/fhempy/pull/653),
+  [`2d5b3ae`](https://github.com/fhempy/fhempy/commit/2d5b3ae9008af122613834bfe8212bec0f94b2f6))
+
+- **pkg_installer**: Install missing packages when the manifest is cached
+  ([#655](https://github.com/fhempy/fhempy/pull/655),
+  [`b7f0c85`](https://github.com/fhempy/fhempy/commit/b7f0c85d0da9c08a631721e8ec6361f42e9e0c45))
+
+### Chores
+
+- Bump pycares and multidict in lock, CI pip crashes on downgrade
+  ([#656](https://github.com/fhempy/fhempy/pull/656),
+  [`933f692`](https://github.com/fhempy/fhempy/commit/933f692bcba01fd67d3f24f763e35853f24bf2cb))
+
+### Performance Improvements
+
+- Add Cpanel::JSON::XS docs & notification, adopt orjson on Python side
+  ([#654](https://github.com/fhempy/fhempy/pull/654),
+  [`fcffa6e`](https://github.com/fhempy/fhempy/commit/fcffa6e849023821b43cd5976d1bf65c9db652d4))
+
+- Cache module README html and eliminate redundant Perl utf-8 encoding
+  ([#653](https://github.com/fhempy/fhempy/pull/653),
+  [`2d5b3ae`](https://github.com/fhempy/fhempy/commit/2d5b3ae9008af122613834bfe8212bec0f94b2f6))
+
+- Dependency caching, O(1) queue checks, and amortized message cleanup
+  ([#655](https://github.com/fhempy/fhempy/pull/655),
+  [`b7f0c85`](https://github.com/fhempy/fhempy/commit/b7f0c85d0da9c08a631721e8ec6361f42e9e0c45))
+
+- Use orjson for websocket messages, json as fallback
+  ([#656](https://github.com/fhempy/fhempy/pull/656),
+  [`933f692`](https://github.com/fhempy/fhempy/commit/933f692bcba01fd67d3f24f763e35853f24bf2cb))
+
+- **bindingsio**: Fast-path decode_json with pure-perl fallback
+  ([#654](https://github.com/fhempy/fhempy/pull/654),
+  [`fcffa6e`](https://github.com/fhempy/fhempy/commit/fcffa6e849023821b43cd5976d1bf65c9db652d4))
+
+- **bindingsio**: Prioritize Cpanel::JSON::XS and accelerate outgoing serialization
+  ([#654](https://github.com/fhempy/fhempy/pull/654),
+  [`fcffa6e`](https://github.com/fhempy/fhempy/commit/fcffa6e849023821b43cd5976d1bf65c9db652d4))
+
+
 ## v0.1.787 (2026-10-15)
 
 ### Performance Improvements
