@@ -508,7 +508,7 @@ class matter_bridge(generic.FhemModule):
                 unsupported.append(name)
             for endpoint in device_endpoints:
                 endpoint["device"] = name
-                endpoint["state"] = bridge_devices.state(endpoint["type"], info)
+                endpoint["state"] = bridge_devices.endpoint_state(endpoint, info)
                 endpoints[endpoint["id"]] = endpoint
         self.endpoints = endpoints
 
@@ -517,7 +517,7 @@ class matter_bridge(generic.FhemModule):
             {
                 "cmd": "devices",
                 "devices": [
-                    {key: ep[key] for key in ("id", "type", "name", "state")}
+                    {key: ep[key] for key in ("id", "type", "name", "state", "parts")}
                     for ep in endpoints.values()
                 ],
             }
@@ -527,7 +527,10 @@ class matter_bridge(generic.FhemModule):
         await fhem.readingsBulkUpdateIfChanged(
             self.hash,
             "devices",
-            ",".join(f"{ep['device']}:{ep['type']}" for ep in endpoints.values())
+            ",".join(
+                f"{ep['device']}:{'+'.join([ep['type']] + ep['parts'])}"
+                for ep in endpoints.values()
+            )
             or "-",
         )
         await fhem.readingsBulkUpdateIfChanged(
@@ -567,7 +570,7 @@ class matter_bridge(generic.FhemModule):
         for endpoint_id, endpoint in self.endpoints.items():
             if endpoint["device"] != device:
                 continue
-            state = bridge_devices.state(endpoint["type"], info)
+            state = bridge_devices.endpoint_state(endpoint, info)
             changed = {
                 key: value
                 for key, value in state.items()

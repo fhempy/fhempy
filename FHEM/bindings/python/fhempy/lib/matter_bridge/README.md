@@ -46,8 +46,12 @@ seconds. The kind of device is detected automatically:
 | `lock`/`unlock` | door lock | `lock`, `state` | `lock`, `unlock` |
 | reading `contact` | door/window contact | `contact` (open/closed) | |
 | reading `motion` | motion sensor | `motion` | |
-| reading `temperature` | temperature sensor (+ humidity sensor if there is a reading `humidity`) | `temperature`, `humidity` | |
+| reading `temperature` | temperature sensor | `temperature` | |
 | reading `humidity` | humidity sensor | `humidity` | |
+
+One FHEM device is always one device in your apps. Additional readings `contact`, `motion`,
+`temperature` and `humidity` are shown in the same device, e.g. a temperature sensor with
+humidity or a plug which also measures the temperature.
 
 If you already use homebridge, alexa-fhem or gassistant-fhem, the attribute `genericDeviceType`
 of your devices is used as well.

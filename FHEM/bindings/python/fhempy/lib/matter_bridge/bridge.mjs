@@ -6,7 +6,9 @@
 // All logs go to stderr.
 //
 // fhempy -> bridge
-//   {"cmd": "devices", "devices": [{"id", "type", "name", "state"}]}
+//   {"cmd": "devices", "devices": [{"id", "type", "name", "state", "parts"}]}
+//     parts: additional sensors of the same FHEM device, e.g. ["humidity"],
+//     the apps show them in one device
 //   {"cmd": "state", "id", "state": {...}}
 //   {"cmd": "reachable", "id", "reachable": true|false}
 //   {"cmd": "pairing_mode"}  (allows pairing with one more app for 15 min)
@@ -39,6 +41,7 @@ import { TemperatureSensorDevice } from "@matter/main/devices/temperature-sensor
 import { ThermostatDevice } from "@matter/main/devices/thermostat";
 import { WindowCoveringDevice } from "@matter/main/devices/window-covering";
 import { AggregatorEndpoint } from "@matter/main/endpoints/aggregator";
+import { BridgedNodeEndpoint } from "@matter/main/endpoints/bridged-node";
 import { DoorLock, OccupancySensing, Thermostat, WindowCovering } from "@matter/main/clusters";
 import { DeviceCommissioner } from "@matter/main/protocol";
 import { createInterface } from "node:readline";
@@ -59,7 +62,10 @@ function send(message) {
     process.stdout.write(JSON.stringify(message) + "\n");
 }
 
-const devices = new Map(); // id -> {type, name, endpoint, state, pending, timer}
+const devices = new Map(); // id -> {type, name, parts, endpoint, state, pending, timer}
+// Matter endpoint -> id of the FHEM device (endpoints of parts have own ids)
+const deviceIds = new WeakMap();
+const deviceId = endpoint => deviceIds.get(endpoint) ?? endpoint.id;
 
 function emitCommand(id, command) {
     const device = devices.get(id);
@@ -96,12 +102,12 @@ class FhemWindowCoveringServer extends WindowCoveringServer.with(
     // the blind moves in FHEM, the position is updated by fhempy
     handleMovement(type, reversed, direction, targetPercent100ths) {
         if (targetPercent100ths !== undefined) {
-            emitCommand(this.endpoint.id, { position: matterToPosition(targetPercent100ths) });
+            emitCommand(deviceId(this.endpoint), { position: matterToPosition(targetPercent100ths) });
         }
     }
 
     handleStopMovement() {
-        emitCommand(this.endpoint.id, { stop: true });
+        emitCommand(deviceId(this.endpoint), { stop: true });
         return super.handleStopMovement();
     }
 }
@@ -262,29 +268,68 @@ function listen(id, type, endpoint) {
 let server;
 let aggregator;
 
-async function addDevice({ id, type, name, state }) {
-    const definition = TYPES[type];
-    if (definition === undefined) {
-        send({ event: "error", id, message: `unknown type ${type}` });
+function basicInformation(id, name) {
+    const label = name.slice(0, 32);
+    return {
+        nodeLabel: label,
+        productName: label,
+        productLabel: label,
+        vendorName: "FHEM",
+        serialNumber: id.slice(0, 32),
+        uniqueId: `fhem-${id}`.slice(0, 32),
+        reachable: true,
+    };
+}
+
+function deviceEndpoint(type, options) {
+    return new Endpoint(TYPES[type].device, options);
+}
+
+function typeOptions(type, state) {
+    return mergeState(initialState(type), matterState(type, state ?? {}));
+}
+
+async function addDevice({ id, type, name, state, parts }) {
+    if (TYPES[type] === undefined || (parts ?? []).some(part => TYPES[part] === undefined)) {
+        send({ event: "error", id, message: `unknown type ${[type, ...(parts ?? [])].join(", ")}` });
         return;
     }
-    const label = name.slice(0, 32);
-    const endpoint = new Endpoint(definition.device.with(BridgedDeviceBasicInformationServer), {
-        id,
-        bridgedDeviceBasicInformation: {
-            nodeLabel: label,
-            productName: label,
-            productLabel: label,
-            vendorName: "FHEM",
-            serialNumber: id.slice(0, 32),
-            uniqueId: `fhem-${id}`.slice(0, 32),
-            reachable: true,
-        },
-        ...mergeState(initialState(type), matterState(type, state ?? {})),
-    });
+    let endpoint;
+    let main;
+    const partEndpoints = new Map();
+    if (!parts?.length) {
+        endpoint = main = new Endpoint(TYPES[type].device.with(BridgedDeviceBasicInformationServer), {
+            id,
+            bridgedDeviceBasicInformation: basicInformation(id, name),
+            ...typeOptions(type, state),
+        });
+    } else {
+        // one bridged device with an endpoint per function, the apps show
+        // it as one device like in FHEM
+        for (const part of [type, ...parts]) {
+            const partEndpoint = deviceEndpoint(part, { id: part, ...typeOptions(part, state) });
+            deviceIds.set(partEndpoint, id);
+            partEndpoints.set(part, partEndpoint);
+        }
+        main = partEndpoints.get(type);
+        endpoint = new Endpoint(BridgedNodeEndpoint, {
+            id,
+            bridgedDeviceBasicInformation: basicInformation(id, name),
+            parts: [...partEndpoints.values()],
+        });
+    }
+    deviceIds.set(endpoint, id);
     await aggregator.add(endpoint);
-    devices.set(id, { type, name, endpoint, state: { ...state }, pending: {} });
-    listen(id, type, endpoint);
+    devices.set(id, {
+        type,
+        name,
+        parts: parts ?? [],
+        endpoint,
+        partEndpoints,
+        state: { ...state },
+        pending: {},
+    });
+    listen(id, type, main);
 }
 
 function mergeState(a, b) {
@@ -299,7 +344,12 @@ async function setDevices(list) {
     const wanted = new Map(list.map(device => [device.id, device]));
     for (const [id, device] of devices) {
         const update = wanted.get(id);
-        if (update === undefined || update.type !== device.type || update.name !== device.name) {
+        if (
+            update === undefined ||
+            update.type !== device.type ||
+            update.name !== device.name ||
+            (update.parts ?? []).join() !== device.parts.join()
+        ) {
             // removed, or changed in a way Matter controllers only see on a new endpoint
             devices.delete(id);
             clearTimeout(device.timer);
@@ -323,6 +373,13 @@ async function setState(id, state) {
     const device = devices.get(id);
     if (device === undefined) return;
     Object.assign(device.state, state);
+    if (device.partEndpoints.size) {
+        for (const [part, endpoint] of device.partEndpoints) {
+            const values = matterState(part, state);
+            if (Object.keys(values).length) await endpoint.set(values);
+        }
+        return;
+    }
     const values = matterState(device.type, state);
     if (Object.keys(values).length) await device.endpoint.set(values);
 }

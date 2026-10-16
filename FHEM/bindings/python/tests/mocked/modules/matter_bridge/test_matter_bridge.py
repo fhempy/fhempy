@@ -55,10 +55,26 @@ def test_endpoints():
         readings={"temperature": "21.5 °C", "humidity": "55"},
         alias="Bath",
     )
+    # one FHEM device is one device in the apps, also with several sensors
     assert devices.endpoints(sensor) == [
-        {"id": "clima_bath", "type": "temperature", "name": "Bath"},
-        {"id": "clima_bath-humidity", "type": "humidity", "name": "Bath humidity"},
+        {
+            "id": "clima_bath",
+            "type": "temperature",
+            "name": "Bath",
+            "parts": ["humidity"],
+        }
     ]
+    assert devices.endpoint_state(devices.endpoints(sensor)[0], sensor) == {
+        "temperature": 21.5,
+        "humidity": 55,
+    }
+    heating = info(
+        sets="desired-temp",
+        readings={"measured-temp": "20", "humidity": "40", "contact": "open"},
+    )
+    assert devices.endpoints(heating)[0]["parts"] == ["contact", "humidity"]
+    plug = info(sets="on off", readings={"state": "on", "temperature": "30"})
+    assert devices.endpoints(plug)[0]["parts"] == ["temperature"]
     named = info(sets="on off", attrs={"matterName": "Kitchen"}, alias="x")
     assert devices.endpoints(named)[0]["name"] == "Kitchen"
     assert devices.endpoints(info(readings={})) == []
@@ -235,6 +251,7 @@ async def test_bridge_module(mocker, tmp_path):
             "type": "dimmer",
             "name": "Living room",
             "state": {"on": False, "level": 0},
+            "parts": [],
         }
 
         # the Matter app switched the lamp on

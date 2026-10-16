@@ -174,16 +174,38 @@ def endpoints(info):
         return []
     attrs = info.get("attrs", {})
     label = attrs.get("matterName") or info.get("alias") or info["NAME"]
-    result = [{"id": endpoint_id(info["NAME"]), "type": device_type, "name": label}]
-    if device_type == "temperature" and "humidity" in info.get("readings", {}):
-        result.append(
-            {
-                "id": endpoint_id(info["NAME"]) + "-humidity",
-                "type": "humidity",
-                "name": f"{label} humidity",
-            }
-        )
-    return result
+    return [
+        {
+            "id": endpoint_id(info["NAME"]),
+            "type": device_type,
+            "name": label,
+            "parts": extra_sensors(device_type, info),
+        }
+    ]
+
+
+SENSOR_TYPES = ("contact", "motion", "temperature", "humidity")
+# a thermostat shows the measured temperature itself
+COVERED_SENSORS = {"thermostat": ("temperature",)}
+
+
+def _has_sensor(sensor, readings):
+    if sensor == "temperature":
+        return _first(CURRENT_READINGS, readings) is not None
+    return sensor in readings
+
+
+def extra_sensors(device_type, info):
+    """Sensors of a FHEM device in addition to its main function, e.g. the
+    humidity of a temperature sensor. They become parts of the same Matter
+    device, one FHEM device is one device in the apps."""
+    readings = info.get("readings", {})
+    covered = (device_type,) + COVERED_SENSORS.get(device_type, ())
+    return [
+        sensor
+        for sensor in SENSOR_TYPES
+        if sensor not in covered and _has_sensor(sensor, readings)
+    ]
 
 
 def _position_inverted(info):
@@ -292,6 +314,14 @@ def state(device_type, info):
     """Matter state (see bridge.mjs) from the readings of the FHEM device"""
     convert = STATES.get(device_type)
     return convert(info) if convert else {}
+
+
+def endpoint_state(endpoint, info):
+    """state of the main function and all parts (their keys don't overlap)"""
+    result = {}
+    for device_type in [endpoint["type"]] + endpoint.get("parts", []):
+        result.update(state(device_type, info))
+    return result
 
 
 def _format(value):
