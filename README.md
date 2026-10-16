@@ -6,11 +6,14 @@
 </p>
 
 <p align="center">
+  <a href="#-matter"><img src="https://img.shields.io/badge/Matter-supported-brightgreen?style=for-the-badge" alt="Matter supported" height="36"></a>
+</p>
+
+<p align="center">
   <b>63 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
-  <a href="#-matter"><img src="https://img.shields.io/badge/Matter-supported-brightgreen" alt="Matter supported"></a>
   <a href="https://pypistats.org/packages/fhempy"><img src="https://img.shields.io/pypi/dm/fhempy" alt="Downloads"></a>
   <a href="https://github.com/fhempy/fhempy"><img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+"></a>
   <a href="https://pypi.org/project/fhempy/"><img src="https://img.shields.io/pypi/v/fhempy" alt="Version"></a>
