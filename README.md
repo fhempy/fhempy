@@ -6,10 +6,11 @@
 </p>
 
 <p align="center">
-  <b>62 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python.</b>
+  <b>63 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
+  <a href="#-matter"><img src="https://img.shields.io/badge/Matter-supported-brightgreen" alt="Matter supported"></a>
   <a href="https://pypistats.org/packages/fhempy"><img src="https://img.shields.io/pypi/dm/fhempy" alt="Downloads"></a>
   <a href="https://github.com/fhempy/fhempy"><img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+"></a>
   <a href="https://pypi.org/project/fhempy/"><img src="https://img.shields.io/pypi/v/fhempy" alt="Version"></a>
@@ -19,6 +20,7 @@
 
 <p align="center">
   <a href="#-quick-start">Quick start</a> ·
+  <a href="#-matter">Matter</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -26,10 +28,19 @@
 </p>
 
 ## ✨ Why fhempy?
+- **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. See [Matter](#-matter).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
 - **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
 - **Extend your range**: run modules on a remote Raspberry Pi, e.g. close to your Bluetooth devices.
+
+## 🔗 Matter
+fhempy brings [Matter](https://csa-iot.org/all-solutions/matter/) to FHEM. It installs and runs the same Matter server Home Assistant uses, no extra hardware or Docker needed:
+```
+define matter fhempy matter
+set matter pair <code>
+```
+Use the pairing code printed on the device, or create one in Apple Home, Google Home or Alexa ("Connect to other apps"); the device keeps working there too. Every Matter device gets its own FHEM device with the matching commands (`on`, `off`, `pct`, `ct`, `position`, `desired-temp`, `lock`...) and readings. The [Matter README](FHEM/bindings/python/fhempy/lib/matter/README.md) explains every step, and the reading `next_step` always tells you what to do next.
 
 ## 🚀 Quick start
 
@@ -66,6 +77,7 @@ Now lean back: the first start sets up fhempy and **can take up to 15 minutes** 
 ### 3. Define your first device
 Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
 ```
+define matter fhempy matter
 define castdevice fhempy googlecast "Living Room"
 define eq3bt fhempy eq3bt 00:11:22:33:44:66:77
 define upnp fhempy discover_upnp
