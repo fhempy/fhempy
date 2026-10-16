@@ -397,3 +397,10 @@ async def test_client_rejects_pending_commands_on_close():
         assert not client.connected
     finally:
         await runner.cleanup()
+
+
+def test_server_shows_fhem_in_other_apps(mocker):
+    start = mocker.patch.object(server.child_process, "start")
+    server.start("/usr/bin/node", {}, 5580)
+    args = start.call_args[0][0]
+    assert args[args.index("--default-fabric-label") + 1] == "FHEM"

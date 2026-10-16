@@ -22,6 +22,7 @@ MATTER_SERVER_PACKAGE = "matter-server"
 MATTER_SERVER_VERSION = "1.4.0"
 NODE_WHEEL = "nodejs-wheel-binaries==24.19.0"
 NODE_MIN_VERSION = (22, 13)
+FABRIC_LABEL = "FHEM"
 NODE_WHEEL_MACHINES = ("x86_64", "amd64", "aarch64", "arm64")
 
 
@@ -206,6 +207,10 @@ def start(node, env, port, bluetooth_adapter=None, primary_interface=None):
         "127.0.0.1",
         "--log-file",
         log_file(),
+        # name shown in other apps (Apple Home, Google Home...) for this
+        # controller, the server's default is "HomeAssistant"
+        "--default-fabric-label",
+        FABRIC_LABEL,
     ]
     if bluetooth_adapter is not None:
         args += ["--bluetooth-adapter", str(bluetooth_adapter)]
