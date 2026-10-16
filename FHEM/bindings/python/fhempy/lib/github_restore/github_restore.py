@@ -108,27 +108,28 @@ class github_restore(generic.FhemModule):
             if entry["path"].startswith(self.directory):
                 backup_files.append(entry)
 
-        # drop zigbee2mqtt data of an earlier restore which wasn't applied yet
-        shutil.rmtree(pending_restore.Z2M_PENDING_DIR, ignore_errors=True)
+        # drop zigbee2mqtt/Matter data of an earlier restore which wasn't
+        # applied yet
+        for pending_dir in pending_restore.PENDING_DIRS.values():
+            shutil.rmtree(pending_dir, ignore_errors=True)
 
         # retrieve all backup files
-        z2m_pending = False
+        restored = []
         for backup_file in backup_files:
             if backup_file["type"] == "blob":
-                restored_path = await self.restore_backup_file(backup_file)
-                if restored_path is not None and restored_path.is_relative_to(
-                    pending_restore.Z2M_PENDING_DIR
-                ):
-                    z2m_pending = True
+                restored.append(await self.restore_backup_file(backup_file))
+        pending = pending_restore.pending_dirs(restored)
 
         state = (
             "Backup restored<br>YOU MUST RESTART FHEM NOW, DO NOT SAVE BEFORE RESTARTING"
         )
-        if z2m_pending:
+        if pending_restore.Z2M_PENDING_DIR in pending:
             state += (
                 "<br>zigbee2mqtt data will be applied "
                 + "after the zigbee2mqtt installation, before it starts"
             )
+        if pending_restore.MATTER_PENDING_DIR in pending:
+            state += "<br>Matter data will be applied before the Matter server starts"
         await fhem.readingsSingleUpdate(self.hash, "state", state, 1)
 
     async def restore_backup_file(self, backup_file):

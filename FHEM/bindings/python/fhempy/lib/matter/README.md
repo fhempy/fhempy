@@ -117,4 +117,5 @@ The devices are shared with Home Assistant then.
 - **state "Node.js 22.13 or newer needed"**: install Node.js (see requirements) and restart fhempy.
 - **Logs**: fhempy log and `.fhempy/matter_server/matter_server.log` in your FHEM directory.
 - **Backup**: `.fhempy/matter_server/data` contains the keys of your Matter network. If it is lost,
-  all devices have to be reset and paired again. Include it in your backup!
+  all devices have to be reset and paired again. Include it in your backup! github_backup backs it up
+  by default, github_restore applies it before the Matter server starts.

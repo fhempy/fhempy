@@ -5,7 +5,7 @@ import functools
 import signal
 
 from .. import fhem, utils
-from ..core import child_process
+from ..core import child_process, pending_restore
 from . import clusters, server
 from .client import MatterClient, MatterServerError
 
@@ -229,6 +229,7 @@ class matter_controller:
             return False
         if self.node is None:
             return await self.install_server() and await self.start_server()
+        await self.apply_restored_backup()
         settings = self.server_settings()
         port, adapter, interface = settings
         self._log_offset = await utils.run_blocking(functools.partial(server.log_size))
@@ -247,6 +248,27 @@ class matter_controller:
             return False
         await self.update_state("starting Matter server")
         return True
+
+    async def apply_restored_backup(self):
+        # storage restored by github_restore replaces the current one before
+        # the server starts, a running server would overwrite it
+        try:
+            applied = await utils.run_blocking(
+                functools.partial(
+                    pending_restore.apply_matter_restore, server.storage_directory()
+                )
+            )
+        except Exception:
+            self.logger.exception("Failed to apply restored Matter backup")
+            await fhem.readingsSingleUpdate(
+                self.hash, "restore", "failed to apply backup, check log", 1
+            )
+            return
+        if applied:
+            self.logger.info(f"Applied restored Matter backup ({len(applied)} files)")
+            await fhem.readingsSingleUpdate(
+                self.hash, "restore", f"backup applied ({len(applied)} files)", 1
+            )
 
     def server_settings(self):
         return (
