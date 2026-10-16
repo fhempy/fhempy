@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>63 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>64 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 </p>
 
 ## ✨ Why fhempy?
-- **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. See [Matter](#-matter).
+- **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
 - **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
@@ -44,6 +44,13 @@ define matter fhempy matter
 set matter pair <code>
 ```
 Use the pairing code printed on the device, or create one in Apple Home, Google Home or Alexa ("Connect to other apps"); the device keeps working there too. Every Matter device gets its own FHEM device with the matching commands (`on`, `off`, `pct`, `ct`, `position`, `desired-temp`, `lock`...) and readings. The [Matter README](FHEM/bindings/python/fhempy/lib/matter/README.md) explains every step, and the reading `next_step` always tells you what to do next.
+
+**Your FHEM devices in Apple Home, Google Home and Alexa**: the Matter bridge makes FHEM devices available as Matter devices, so you can switch them in these apps and with Siri, Google Assistant/Gemini or Alexa. Everything stays local, no cloud account or gassistant-fhem/alexa-fhem setup needed:
+```
+define matterbridge fhempy matter_bridge
+set matterbridge add Livingroom_Light
+```
+Then scan the QR code shown in FHEMWEB with your app. The [Matter bridge README](FHEM/bindings/python/fhempy/lib/matter_bridge/README.md) explains every step.
 
 ## 🚀 Quick start
 
@@ -122,6 +129,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control Gree HVAC devices|
 |[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control HomeKit devices|
 |[matter](FHEM/bindings/python/fhempy/lib/matter/README.md)|Control Matter devices (lights, plugs, sensors, thermostats, locks, blinds), also devices behind Hue/IKEA/Aqara bridges|
+|[matter_bridge](FHEM/bindings/python/fhempy/lib/matter_bridge/README.md)|Use FHEM devices in Apple Home, Google Home, Alexa and SmartThings, including voice control|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
 |[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
 |[mqtt_ha_discovery](FHEM/bindings/python/fhempy/lib/mqtt_ha_discovery/)|Support Home Assistant MQTT discovery|

@@ -131,7 +131,6 @@ class fhempy:
     def __init__(self, websocket):
         self.wsconnection = websocket
         self.shutdown_started = 0
-        self._event_listener = []
         # awaitId -> callback for replies to commands sent to FHEM
         self._msg_listeners = {}
         self._closed = False
@@ -341,43 +340,10 @@ class fhempy:
             elif hash["msgtype"] == "event":
                 await self.handle_event(hash, msg)
 
-    def register_event_listener(self, event_device, event_name, callback):
-        self._event_listener.append(
-            {
-                "event_device": event_device,
-                "event_name": event_name,
-                "callback": callback,
-            }
-        )
-
-    def unregister_event_listener(self, event_device, event_name, callback):
-        self._event_listener.remove(
-            {
-                "event_device": event_device,
-                "event_name": event_name,
-                "callback": callback,
-            }
-        )
-
     async def handle_event(self, hash, msg):
-        event = f"{hash['args'][0]}"
-        event_device = hash["NAME"]
-        event_arr = event.split(": ")
-        if len(event_arr) > 1:
-            event_name = event_arr[0]
-            event_value = event_arr[1]
-        else:
-            event_name = "state"
-            event_value = event_arr[0]
-
-        for listener in self._event_listener:
-            if (
-                event_device == listener["event_device"]
-                or listener["event_device"] is None
-            ) and (
-                event_name == listener["event_name"] or listener["event_name"] is None
-            ):
-                await listener["callback"](event_device, event_name, event_value)
+        # events don't get a reply
+        id_received_timestamp.pop(hash.get("id"), None)
+        await fhem.dispatch_event(hash["NAME"], f"{hash['args'][0]}")
 
     async def handle_function(self, hash, msg):
         ret = ""

@@ -12,6 +12,7 @@ FILES = {
     ".fhempy/zigbee2mqtt/data/configuration.yaml": b"restored: true\n",
     ".fhempy/zigbee2mqtt/data/database.db": b"restored database\n",
     ".fhempy/matter_server/data/fabric/node.1": b"restored node\n",
+    ".fhempy/matter_bridge/bridge/pairing.json": b"{}\n",
     "FHEM/FhemUtils/uniqueID": b"uniqueID:0123\n",
 }
 
@@ -77,6 +78,11 @@ async def test_zigbee2mqtt_data_is_restored_as_pending(mocker, tmp_path, monkeyp
         tmp_path / ".fhempy/matter_server_restore/fabric/node.1"
     ).read_bytes() == b"restored node\n"
     assert "Matter data will be applied" in state
+    assert not (tmp_path / ".fhempy/matter_bridge").exists()
+    assert (
+        tmp_path / ".fhempy/matter_bridge_restore/bridge/pairing.json"
+    ).read_bytes() == b"{}\n"
+    assert "Matter bridge pairings will be applied" in state
     assert (tmp_path / "FHEM/FhemUtils/uniqueID").read_bytes() == b"uniqueID:0123\n"
 
 
@@ -100,3 +106,30 @@ def test_matter_restore_replaces_storage(tmp_path):
     assert not pending.exists()
     # consumed, nothing to apply on the next start
     assert pending_restore.apply_matter_restore(storage) == []
+
+
+def test_bridge_restore_replaces_pairings(tmp_path):
+    from fhempy.lib.core import pending_restore
+
+    bridge = tmp_path / ".fhempy/matter_bridge/bridge"
+    other = tmp_path / ".fhempy/matter_bridge_restore/other"
+    other.mkdir(parents=True)
+    (other / "pairing.json").write_text("other bridge")
+    assert pending_restore.apply_bridge_restore(bridge) == []
+
+    pending = tmp_path / ".fhempy/matter_bridge_restore/bridge"
+    (pending / "data").mkdir(parents=True)
+    (pending / "data/keys").write_text("restored")
+    (bridge / "data").mkdir(parents=True)
+    (bridge / "data/old").write_text("current")
+
+    assert pending_restore.apply_bridge_restore(bridge) == ["data/keys"]
+    assert sorted(p.name for p in bridge.rglob("*") if p.is_file()) == ["keys"]
+    assert (bridge.with_name("bridge.before_restore") / "data/old").exists()
+    assert not pending.exists()
+    # the other bridge still gets its pairings
+    assert (other / "pairing.json").exists()
+    assert pending_restore.apply_bridge_restore(
+        other.parent.parent / "matter_bridge/other"
+    ) == ["pairing.json"]
+    assert not other.parent.exists()

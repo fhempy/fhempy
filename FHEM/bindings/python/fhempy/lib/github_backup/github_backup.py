@@ -51,6 +51,9 @@ DEFAULT_BACKUP_FILES = ",".join(
         "esphome_config/*.yaml",
         # Matter fabric (keys of all paired devices)
         ".fhempy/matter_server/data/**/*",
+        # pairings of Matter bridges (keys of all apps it is paired with)
+        ".fhempy/matter_bridge/*/pairing.json",
+        ".fhempy/matter_bridge/*/data/**/*",
     ]
 )
 

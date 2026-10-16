@@ -10,6 +10,7 @@ from tests.utils import mock_fhem
 
 from fhempy.lib.matter import clusters, server
 from fhempy.lib.matter.matter import matter
+from fhempy.lib.matter.controller import matter_controller
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,26 @@ def test_bridge_creates_device_per_bridged_endpoint():
     assert {"on", "off", "on_4", "off_4"} <= set(strip.sets)
     assert strip.convert("4/6/0", True) == ("onoff_4", "on")
     assert strip.command_args("on_4", None)["endpoint_id"] == 4
+
+
+def test_default_icon():
+    attrs = bridge_node()["attributes"]
+    assert clusters.default_icon(attrs, clusters.device_endpoints(attrs, 2)) == (
+        "fts_window_1w"
+    )
+    light = light_node()["attributes"]
+    assert clusters.default_icon(light, clusters.device_endpoints(light)) == (
+        "light_light"
+    )
+    assert clusters.default_icon(attrs, clusters.device_endpoints(attrs)) == (
+        "mqtt_bridge_1"
+    )
+    sensor = {"1/29/0": [{"0": 770, "1": 1}], "1/1026/0": 2150}
+    assert clusters.default_icon(sensor, [1]) == "temp_temperature"
+    assert clusters.default_icon({"1/1026/0": 2150, "1/258/14": 0}, [1]) == (
+        "fts_shutter"
+    )
+    assert clusters.default_icon({}, [0]) is None
 
 
 def test_conversions():
@@ -263,6 +284,9 @@ async def test_controller_and_device(mocker):
         assert mock_fhem.command_define[0] == "matter_5 fhempy matter testmatter 5"
         assert "matter_5 alias Living room" in mock_fhem.command_attr
         assert "matter_5 webCmd on:off:pct" in mock_fhem.command_attr
+        # all Matter devices are in room Matter, with an icon of their type
+        assert "matter_5 room Matter" in mock_fhem.command_attr
+        assert "matter_5 icon light_light" in mock_fhem.command_attr
 
         # the FHEM device created by the controller
         dev = matter(logger)
@@ -399,8 +423,25 @@ async def test_client_rejects_pending_commands_on_close():
         await runner.cleanup()
 
 
-def test_server_shows_fhem_in_other_apps(mocker):
+@pytest.mark.asyncio
+async def test_controller_shows_fhem_in_other_apps(mocker):
+    # matter-server 1.4.0 pins --default-fabric-label but still pairs with
+    # "HomeAssistant", set_default_fabric_label works and renames old pairings
     start = mocker.patch.object(server.child_process, "start")
     server.start("/usr/bin/node", {}, 5580)
-    args = start.call_args[0][0]
-    assert args[args.index("--default-fabric-label") + 1] == "FHEM"
+    assert "--default-fabric-label" not in start.call_args[0][0]
+
+    client = mocker.Mock()
+    client.send_command = mocker.AsyncMock(
+        side_effect=[{"fabric_label": "HomeAssistant"}, None]
+    )
+    await matter_controller.set_fabric_label(
+        mocker.Mock(logger=logger, external_url=None), client
+    )
+    client.send_command.assert_called_with("set_default_fabric_label", label="FHEM")
+
+    client.send_command = mocker.AsyncMock(return_value={"fabric_label": "FHEM"})
+    await matter_controller.set_fabric_label(
+        mocker.Mock(logger=logger, external_url=None), client
+    )
+    client.send_command.assert_called_once_with("get_fabric_label")

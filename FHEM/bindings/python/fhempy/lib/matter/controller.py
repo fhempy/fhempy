@@ -5,11 +5,15 @@ import functools
 import signal
 
 from .. import fhem, utils
-from ..core import child_process, pending_restore
+from ..core import child_process, fhemweb, pending_restore
 from . import clusters, server
 from .client import MatterClient, MatterServerError
 
 COMMISSION_TIMEOUT = 600
+# all paired Matter devices are put into this room
+MATTER_ROOM = "Matter"
+ROOM_ICON = "it_net"
+CONTROLLER_ICON = "control_building_control"
 RECONNECT_DELAY = 10
 
 PAIR_HELP = (
@@ -139,6 +143,7 @@ class matter_controller:
         }
         await self.fhemdev.set_attr_config(attr_config)
         await fhem.readingsSingleUpdate(self.hash, "state", "starting", 1)
+        await fhemweb.setup_room(self.hash, MATTER_ROOM, ROOM_ICON, CONTROLLER_ICON)
         self.fhemdev.create_async_task(self.run())
 
     async def Undefine(self, hash):
@@ -337,6 +342,7 @@ class matter_controller:
         listen_task = asyncio.create_task(client.listen())
         try:
             nodes = await client.send_command("start_listening", timeout=120)
+            await self.set_fabric_label(client)
             await self.handle_server_info(client.server_info)
             self.nodes = {node["node_id"]: node for node in nodes}
             await self.update_nodes_reading()
@@ -354,6 +360,22 @@ class matter_controller:
             for device in list(self.devices):
                 await device.server_disconnected()
             await self.update_state("disconnected, reconnecting")
+
+    async def set_fabric_label(self, client):
+        # name of this controller in other apps (Apple Home, Google Home...),
+        # the server's default is "HomeAssistant". The server also renames it
+        # on the devices which are already paired. An external server (e.g.
+        # Home Assistant) keeps its name.
+        if self.external_url is not None:
+            return
+        try:
+            current = await client.send_command("get_fabric_label")
+            if (current or {}).get("fabric_label") != server.FABRIC_LABEL:
+                await client.send_command(
+                    "set_default_fabric_label", label=server.FABRIC_LABEL
+                )
+        except (MatterServerError, asyncio.TimeoutError) as exc:
+            self.logger.warning(f"Can't set the name shown in other apps: {exc}")
 
     async def handle_server_info(self, info):
         await fhem.readingsBeginUpdate(self.hash)
@@ -486,6 +508,13 @@ class matter_controller:
         webcmd = default_webcmd(attributes, endpoint)
         if webcmd:
             await fhem.CommandAttr(self.hash, f"{name} webCmd {webcmd}")
+        # overview of all Matter devices, can be changed like any room
+        await fhem.CommandAttr(self.hash, f"{name} room {MATTER_ROOM}")
+        icon = clusters.default_icon(
+            attributes, clusters.device_endpoints(attributes, endpoint)
+        )
+        if icon:
+            await fhem.CommandAttr(self.hash, f"{name} icon {icon}")
 
     # --- set commands ---
 

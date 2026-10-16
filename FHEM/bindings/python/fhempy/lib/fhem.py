@@ -24,6 +24,8 @@ update_lock_owners = {}
 # they are sent to FHEM in one roundtrip on readingsEndUpdate
 bulk_updates = {}
 wsconnection = None
+# callbacks for events of other FHEM devices: {device name: [callback]}
+event_listeners = {}
 # ids to match FHEM replies to commands sent by fhempy
 await_ids = itertools.count(1)
 
@@ -401,6 +403,47 @@ async def CommandDeleteAttr(hash, deldef):
 async def CommandDeleteReading(hash, deldef):
     cmd = f"CommandDeleteReading(undef, {perlString(deldef)})"
     return await sendCommandHash(hash, cmd)
+
+
+async def setEventDevices(hash, devices):
+    """FHEM sends the events of these devices to fhempy, they are passed to
+    the callbacks registered with register_event_listener.
+    Returns False if the FHEM modules are too old (update all needed)."""
+    devspec = ",".join(devices)
+    cmd = (
+        "defined(&fhempy_setEventDevices) ? "
+        f"(fhempy_setEventDevices({perlString(hash['NAME'])}, {perlString(devspec)})"
+        " // 'ok') : 'old'"
+    )
+    return await sendCommandHash(hash, cmd) != "old"
+
+
+def register_event_listener(device, callback):
+    """callback(device, reading, value) is awaited for every event of device,
+    events without reading name (e.g. "on") are passed as reading state.
+    Keep it short, it runs in the loop which receives the messages from FHEM."""
+    event_listeners.setdefault(device, []).append(callback)
+
+
+def unregister_event_listener(device, callback):
+    callbacks = event_listeners.get(device, [])
+    if callback in callbacks:
+        callbacks.remove(callback)
+    if not callbacks:
+        event_listeners.pop(device, None)
+
+
+async def dispatch_event(device, event):
+    parts = event.split(": ", 1)
+    if len(parts) > 1:
+        reading, value = parts
+    else:
+        reading, value = "state", parts[0]
+    for callback in list(event_listeners.get(device, [])):
+        try:
+            await callback(device, reading, value)
+        except Exception:
+            logger.exception(f"Failed to handle event of {device}: {event}")
 
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
