@@ -265,7 +265,7 @@ async def test_bridge_module(mocker, tmp_path):
         await wait_for(lambda: readings.get("state", "").startswith("pairing mode"))
 
         html = bridge.pairing_html()
-        assert "<svg" in html and "3497-011-2332" in html
+        assert '<img src="data:image/png;base64,' in html and "3497-011-2332" in html
     finally:
         await bridge.Undefine(hash)
     assert "Lamp" not in fhem.event_listeners

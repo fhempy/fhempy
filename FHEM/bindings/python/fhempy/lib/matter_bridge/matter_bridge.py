@@ -112,11 +112,17 @@ def format_manual_code(code):
     return code
 
 
-def qr_svg(text):
+def qr_image(text):
+    """QR code as <img>, FHEMWEB styles inline SVGs like icons (small and
+    clipped), an image keeps its size"""
     import segno
 
-    return segno.make(text, micro=False, error="m").svg_inline(
-        scale=5, dark="#000", light="#fff"
+    uri = segno.make(text, micro=False, error="m").png_data_uri(
+        scale=5, border=4, dark="#000", light="#fff"
+    )
+    return (
+        f'<img src="{uri}" alt="Matter QR code" '
+        'style="width:200px;height:200px;max-width:none;image-rendering:pixelated">'
     )
 
 
@@ -202,10 +208,10 @@ class matter_bridge(generic.FhemModule):
         if not qr:
             return ""
         try:
-            svg = qr_svg(qr)
+            image = qr_image(qr)
         except Exception:
             self.logger.exception("Failed to create QR code")
-            svg = ""
+            image = ""
         code = format_manual_code(self.status.get("manual"))
         if self.status.get("commissioned"):
             text = (
@@ -223,8 +229,9 @@ class matter_bridge(generic.FhemModule):
             )
         return (
             '<div class="makeTable"><table class="block wide"><tr>'
-            f'<td style="width:1%">{svg}</td>'
-            f"<td>{text}<br><br>Pairing code: <b>{code}</b></td>"
+            f'<td style="width:210px;vertical-align:top">{image}</td>'
+            '<td style="vertical-align:top">'
+            f"{text}<br><br>Pairing code: <b>{code}</b></td>"
             "</tr></table></div>"
         )
 
