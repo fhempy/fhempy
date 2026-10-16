@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v2.0.0 (2026-10-16)
+
+### Bug Fixes
+
+- Pr-tester only uses validated names for paths and the sudo call
+  ([#668](https://github.com/fhempy/fhempy/pull/668),
+  [`b66002e`](https://github.com/fhempy/fhempy/commit/b66002ec321519772e75eaccd9dfddcdf80aa216))
+
+- Pr-tester runs uv from the fhempy directory ([#675](https://github.com/fhempy/fhempy/pull/675),
+  [`4995178`](https://github.com/fhempy/fhempy/commit/49951784fd07f2e15d1102d0660a2af3e696ec84))
+
+### Documentation
+
+- Show Matter support prominently in README ([#667](https://github.com/fhempy/fhempy/pull/667),
+  [`fc0bbae`](https://github.com/fhempy/fhempy/commit/fc0bbae74f8dd8a37b0a4e494b236ff10f1e96af))
+
+### Features
+
+- Add tools/pr-tester.py to test pull requests on a running system
+  ([#668](https://github.com/fhempy/fhempy/pull/668),
+  [`b66002e`](https://github.com/fhempy/fhempy/commit/b66002ec321519772e75eaccd9dfddcdf80aa216))
+
+- Github_backup clear readings, back up uniqueID and Matter data
+  ([#669](https://github.com/fhempy/fhempy/pull/669),
+  [`3026197`](https://github.com/fhempy/fhempy/commit/3026197ca27051d961a21a087ee945b01fc30f8e))
+
+- Matter module to control Matter devices from FHEM
+  ([#666](https://github.com/fhempy/fhempy/pull/666),
+  [`a52afab`](https://github.com/fhempy/fhempy/commit/a52afabacb54fa3cf672e997d673dfd2d3423835))
+
+- **matter**: Show FHEM as controller name in other apps, prominent Matter badge
+  ([#677](https://github.com/fhempy/fhempy/pull/677),
+  [`27b9c4c`](https://github.com/fhempy/fhempy/commit/27b9c4ccf786554e1c22674397a2a2f4a89b2e73))
+
+
 ## v1.0.3 (2026-10-15)
 
 ### Bug Fixes
