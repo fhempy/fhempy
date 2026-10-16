@@ -17,3 +17,7 @@ define my_solar fhempy fusionsolar USERNAME PASSWORD REGION
  - USERNAME: Fusionsolar username
  - PASSWORD: Fusionsolar password
  - REGION: Default eu5, copy it from the first part of the URL
+
+# Attributes
+
+ - interval: Update interval in seconds (default 300, minimum 60). FusionSolar refreshes its data every 5 minutes, so shorter intervals mostly fetch the same values again.
