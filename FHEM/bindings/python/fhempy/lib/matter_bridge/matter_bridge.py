@@ -31,6 +31,10 @@ RELOAD_ATTRS = (
 DEVICE_ATTR_LIST = (
     "matterName matterType:auto," + ",".join(bridge_devices.TYPES) + " matterInvert:0,1"
 )
+DEFAULT_ROOM = "MatterBridge"
+# icons of the room and the bridge in FHEMWEB
+ROOM_ICON = "it_network"
+BRIDGE_ICON = "mqtt_bridge_1"
 # TYPEs which never make sense in a Matter app
 EXCLUDED_TYPES = (
     "FHEMWEB",
@@ -65,7 +69,6 @@ EXCLUDED_TYPES = (
     "HUEBridge",
     "msgConfig",
     "readingsGroup",
-    "readingsProxy",
     "logProxy",
     "RSS",
     "speedtest",
@@ -80,13 +83,20 @@ VENDORS = {
 }
 
 DEVICES_HELP = (
-    "FHEM devices which are shown in Matter apps (Apple Home, Google Home, "
-    "Alexa...), separated by comma, e.g. Lamp1,Plug2. A device specification "
-    "like room=Matter works too.<br>Easier: use 'set add' and 'set remove'."
+    "Additional FHEM devices which are shown in Matter apps, separated by "
+    "comma, e.g. Lamp1,Plug2. A device specification like TYPE=HUEDevice "
+    "works too.<br>Easier: put the devices into the room of attribute "
+    "bridge_room or use 'set add'."
+)
+ROOM_HELP = (
+    "All FHEM devices in this room are shown in your Matter apps (Apple "
+    "Home, Google Home, Alexa...), default MatterBridge. Empty: only the "
+    "devices of attribute devices."
 )
 ADD_HELP = (
     "Make a FHEM device available in your Matter apps (Apple Home, Google "
-    "Home, Alexa...). It shows up there after a few seconds.<br>"
+    "Home, Alexa...). It is put into the room of attribute bridge_room and "
+    "shows up in the apps after a few seconds.<br>"
     "The type (light, plug, blind, thermostat, sensor...) is detected "
     "automatically. If it is wrong, set the attribute matterType of the "
     "device. The name in the app is the alias of the device, or attribute "
@@ -161,6 +171,10 @@ class matter_bridge(generic.FhemModule):
                 "help": "Network port of the Matter bridge. Change it only if "
                 "5550 is already used, all apps have to be paired again then.",
             },
+            "bridge_room": {
+                "default": DEFAULT_ROOM,
+                "help": ROOM_HELP,
+            },
             "bridge_name": {
                 "default": "FHEM",
                 "help": "Name of the bridge which is shown when you pair it. "
@@ -169,6 +183,7 @@ class matter_bridge(generic.FhemModule):
         }
         await self.set_attr_config(attr_config)
         await fhem.readingsSingleUpdate(self.hash, "state", "starting", 1)
+        await self.setup_room()
         self.create_async_task(self.run())
         self.create_async_task(self.update_candidates_loop())
 
@@ -450,14 +465,56 @@ class matter_bridge(generic.FhemModule):
 
     # --- FHEM devices ---
 
+    async def setup_room(self):
+        """Once for a new bridge: put it into its room and give the room and
+        the bridge an icon in FHEMWEB"""
+        name = self.hash["NAME"]
+        if await fhem.ReadingsVal(name, ".room_setup", "") == "done":
+            return
+        room = self._attr_bridge_room
+        if room:
+            cmd = (
+                f"my $n = {fhem.perlString(name)};"
+                f" my $room = {fhem.perlString(room)};"
+                " my $cur = AttrVal($n, 'room', '');"
+                # fhempy puts new devices into room fhempy
+                " my $rooms = ($cur eq '' || $cur eq 'fhempy')"
+                ' ? $room : "$cur,$room";'
+                ' CommandAttr(undef, "$n room $rooms")'
+                " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"
+                f' CommandAttr(undef, "$n icon {BRIDGE_ICON}")'
+                " if (AttrVal($n, 'icon', '') eq '');"
+                " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
+                " next if ($defs{$w}{TEMPORARY});"
+                " my $ri = AttrVal($w, 'roomIcons', '');"
+                " next if ($ri =~ /(^|\\s)\\Q$room\\E:/);"
+                " CommandAttr(undef, \"$w roomIcons \" . ($ri eq '' ? '' : \"$ri \")"
+                f' . "$room:{ROOM_ICON}") }}'
+                " 'ok'"
+            )
+            await fhem.sendCommandHash(self.hash, cmd)
+        await fhem.readingsSingleUpdate(self.hash, ".room_setup", "done", 0)
+
     async def resolve_devices(self):
-        spec = self._attr_devices or ""
-        if not spec.strip():
+        """devices of attribute devices and all devices in bridge_room"""
+        spec = (self._attr_devices or "").strip()
+        room = self._attr_bridge_room or ""
+        if not spec and not room:
             return []
+        excluded = "|".join(EXCLUDED_TYPES)
         cmd = (
-            f"join(',', grep {{ defined($defs{{$_}}) && $_ ne "
-            f"{fhem.perlString(self.hash['NAME'])} }} "
-            f"devspec2array({fhem.perlString(spec)}))"
+            f"my $self = {fhem.perlString(self.hash['NAME'])};"
+            f" my $spec = {fhem.perlString(spec)};"
+            f" my $room = {fhem.perlString(room)}; my %n;"
+            " if ($spec ne '') { $n{$_} = 1 foreach (devspec2array($spec)) }"
+            " if ($room ne '') { foreach my $d (keys %defs) {"
+            " my $h = $defs{$d};"
+            " next if ($h->{TEMPORARY} || defined($h->{SNIPPET}));"
+            f" next if ($h->{{TYPE}} =~ /^({excluded})$/);"
+            " $n{$d} = 1 if ((','.AttrVal($d, 'room', '').',') =~ /,\\Q$room\\E,/) } }"
+            " join(',', sort grep { defined($defs{$_}) && $_ ne $self"
+            " && !(defined($defs{$_}{FHEMPYTYPE})"
+            " && $defs{$_}{FHEMPYTYPE} eq 'matter_bridge') } keys %n)"
         )
         result = await fhem.sendCommandHash(self.hash, cmd)
         return [name for name in str(result or "").split(",") if name]
@@ -584,8 +641,11 @@ class matter_bridge(generic.FhemModule):
         words = value.split(" ")
         if len(words) < 2:
             return
-        if words[0] in ("ATTR", "DELETEATTR"):
-            if words[1] in self.infos and len(words) > 2 and words[2] in RELOAD_ATTRS:
+        if words[0] in ("ATTR", "DELETEATTR") and len(words) > 2:
+            if words[1] in self.infos and words[2] in RELOAD_ATTRS:
+                self.schedule_reload()
+            elif words[2] == "room" and self._attr_bridge_room:
+                # a device was put into or removed from bridge_room
                 self.schedule_reload()
         elif words[0] in ("DELETED", "RENAMED", "DEFINED"):
             self.schedule_reload()
@@ -649,35 +709,64 @@ class matter_bridge(generic.FhemModule):
                 f"Can't detect which kind of device {name} is. Set its attribute "
                 f"matterType ({types}) and try again."
             )
+        room = self._attr_bridge_room
+        if room:
+            rooms = await self.device_rooms(name)
+            if room not in rooms:
+                await fhem.CommandAttr(
+                    self.hash, f"{name} room {','.join(rooms + [room])}"
+                )
+            return None
         names = [n for n in self._device_list() if n != name] + [name]
         await fhem.CommandAttr(
             self.hash, f"{self.hash['NAME']} devices {','.join(names)}"
         )
         return None
 
+    async def device_rooms(self, name):
+        rooms = await fhem.AttrVal(name, "room", "")
+        return [r for r in str(rooms or "").split(",") if r]
+
     async def set_remove(self, hash, params):
         name = params["device"]
+        removed = False
+        room = self._attr_bridge_room
+        if room:
+            rooms = await self.device_rooms(name)
+            if room in rooms:
+                rooms.remove(room)
+                if rooms:
+                    await fhem.CommandAttr(self.hash, f"{name} room {','.join(rooms)}")
+                else:
+                    await fhem.CommandDeleteAttr(self.hash, f"{name} room")
+                removed = True
         names = self._device_list()
-        if name not in names:
-            if name in self.infos:
-                return (
-                    f"{name} is added by the device specification in attribute "
-                    "devices, change the attribute."
+        if name in names:
+            names.remove(name)
+            if names:
+                await fhem.CommandAttr(
+                    self.hash, f"{self.hash['NAME']} devices {','.join(names)}"
                 )
-            return f"{name} isn't used by the Matter bridge"
-        names.remove(name)
-        if names:
-            await fhem.CommandAttr(
-                self.hash, f"{self.hash['NAME']} devices {','.join(names)}"
+            else:
+                await fhem.CommandDeleteAttr(self.hash, f"{self.hash['NAME']} devices")
+            removed = True
+        if removed:
+            return None
+        if name in self.infos:
+            return (
+                f"{name} is added by the device specification in attribute "
+                "devices, change the attribute."
             )
-        else:
-            await fhem.CommandDeleteAttr(self.hash, f"{self.hash['NAME']} devices")
-        return None
+        return f"{name} isn't used by the Matter bridge"
 
     def _device_list(self):
         return [n for n in (self._attr_devices or "").split(",") if n]
 
     async def set_attr_devices(self, hash):
+        if self.transport is not None:
+            self.schedule_reload()
+
+    async def set_attr_bridge_room(self, hash):
         if self.transport is not None:
             self.schedule_reload()
 

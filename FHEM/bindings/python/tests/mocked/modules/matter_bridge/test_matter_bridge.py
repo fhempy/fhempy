@@ -151,10 +151,12 @@ def test_readme_exists():
 class FakeFhem:
     """Answers the Perl commands of the bridge like FHEM"""
 
-    def __init__(self, infos):
+    def __init__(self, infos, rooms):
         self.infos = infos
+        self.rooms = rooms
         self.commands = []
         self.event_devices = None
+        self.room_setup = None
 
     async def send(self, hash, cmd):
         if "fhempy_setEventDevices" in cmd:
@@ -163,9 +165,15 @@ class FakeFhem:
         if cmd.startswith("CommandSet"):
             self.commands.append(re.findall(r"'(.*)'", cmd)[0])
             return None
-        if "devspec2array" in cmd:
-            spec = re.findall(r"devspec2array\('([^']*)'\)", cmd)[0]
-            return ",".join(n for n in spec.split(",") if n in self.infos)
+        if "roomIcons" in cmd:
+            self.room_setup = re.findall(r"my \$room = '([^']*)'", cmd)[0]
+            return "ok"
+        if "my $spec" in cmd:
+            spec = re.findall(r"my \$spec = '([^']*)'", cmd)[0]
+            room = re.findall(r"my \$room = '([^']*)'", cmd)[0]
+            names = {n for n in spec.split(",") if n in self.infos}
+            names |= {n for n, r in self.rooms.items() if room in r.split(",")}
+            return ",".join(sorted(names))
         if "to_json" in cmd:
             names = re.findall(r"foreach my \$d \(([^)]*)\)", cmd)[0]
             names = [n.strip("'") for n in names.split(",")]
@@ -197,7 +205,10 @@ async def test_bridge_module(mocker, tmp_path):
     await check_and_install_dependencies("matter_bridge")
     mock_fhem.mock_module(mocker)
     mock_fhem.readings.pop("bridge", None)
-    mock_fhem.attributes["bridge"] = {"devices": "Lamp,Plug"}
+    # Lamp is in the room of the bridge, Plug in attribute devices
+    mock_fhem.attributes["bridge"] = {"devices": "Plug"}
+    mock_fhem.attributes["Lamp"] = {"room": "Livingroom,MatterBridge"}
+    mock_fhem.attributes["Fan"] = {"room": "Kitchen"}
     fake = FakeFhem(
         {
             "Lamp": info(
@@ -208,7 +219,9 @@ async def test_bridge_module(mocker, tmp_path):
             ),
             "Plug": info("Plug", sets="on off", readings={"state": "on"}),
             "Logfile": info("Logfile"),
-        }
+            "Fan": info("Fan", sets="on off", readings={"state": "off"}),
+        },
+        {"Lamp": "Livingroom,MatterBridge", "Fan": "Kitchen"},
     )
     mocker.patch.object(fhem, "sendCommandHash", fake.send)
     mocker.patch.object(fhem, "CommandAttr", mock_fhem.CommandAttr)
@@ -243,6 +256,9 @@ async def test_bridge_module(mocker, tmp_path):
         assert readings["pairing_code"] == "3497-011-2332"
         assert readings["devices"] == "Lamp:dimmer,Plug:switch"
         assert fake.event_devices == "Lamp,Plug,global"
+        # new bridge: put into its room, room and bridge get icons
+        assert fake.room_setup == "MatterBridge"
+        assert readings[".room_setup"] == "done"
 
         devices_msg = received(log)[0]
         assert devices_msg["cmd"] == "devices"
@@ -273,10 +289,15 @@ async def test_bridge_module(mocker, tmp_path):
         assert len(received(log)) == count
 
         # set add only offers devices which aren't used yet
-        assert bridge._conf_set["add"]["options"] == "Logfile"
+        assert bridge._conf_set["add"]["options"] == "Fan,Logfile"
         assert "Can't detect" in await bridge.set_add(hash, {"device": "Logfile"})
-        await bridge.set_remove(hash, {"device": "Plug"})
-        assert "bridge devices Lamp" in mock_fhem.command_attr
+        # set add puts the device into the room of the bridge
+        assert await bridge.set_add(hash, {"device": "Fan"}) is None
+        assert "Fan room Kitchen,MatterBridge" in mock_fhem.command_attr
+        # set remove takes it out of the room or attribute devices
+        assert await bridge.set_remove(hash, {"device": "Lamp"}) is None
+        assert "Lamp room Livingroom" in mock_fhem.command_attr
+        assert await bridge.set_remove(hash, {"device": "Plug"}) is None
 
         await bridge.set_pairing_mode(hash, {})
         await wait_for(lambda: readings.get("state", "").startswith("pairing mode"))

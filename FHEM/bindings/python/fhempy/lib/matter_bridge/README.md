@@ -29,13 +29,19 @@ On the first start fhempy installs matter.js, this takes a few minutes. Watch th
 
 ## 2. Choose your devices
 
+The bridge creates the room **MatterBridge** in FHEMWEB and puts itself into it. Every FHEM
+device in this room shows up in your apps, so you only have to add a device to the room, e.g.
+with `attr Livingroom_Light room Livingroom,MatterBridge` or in the room selection of the
+device. `set add` does the same for you:
+
 ```
 set matterbridge add Livingroom_Light
 set matterbridge add Plug_TV
 ```
 
-`set add` offers a list of your FHEM devices. The device shows up in your apps after a few
-seconds. The kind of device is detected automatically:
+`set add` offers a list of your FHEM devices, `set remove` takes a device out of the room again.
+The device shows up in your apps after a few seconds. The kind of device is detected
+automatically:
 
 | FHEM device | In the app | Readings used | Commands sent to FHEM |
 |-------------|------------|---------------|-----------------------|
@@ -92,8 +98,8 @@ voice assistant, e.g. *"Hey Google, turn on the living room light"*.
 
 | Command | Description |
 |---------|-------------|
-| `add <device>` | Make a FHEM device available in your apps |
-| `remove <device>` | Remove a FHEM device from your apps |
+| `add <device>` | Make a FHEM device available in your apps (puts it into the room MatterBridge) |
+| `remove <device>` | Remove a FHEM device from your apps (takes it out of the room) |
 | `pairing_mode` | Allow pairing with one more app for 15 minutes |
 | `refresh` | Read all devices from FHEM again (normally automatic) |
 | `restart` | Restart the bridge |
@@ -103,7 +109,8 @@ voice assistant, e.g. *"Hey Google, turn on the living room light"*.
 
 | Attribute | Description |
 |-----------|-------------|
-| `devices` | FHEM devices used by the bridge, separated by comma. `set add`/`set remove` change it. A device specification like `room=Matter` works too. |
+| `bridge_room` | All FHEM devices in this room are used by the bridge, default `MatterBridge`. Empty: only the devices of attribute `devices`. |
+| `devices` | Additional FHEM devices used by the bridge, separated by comma. A device specification like `TYPE=HUEDevice` works too. |
 | `port` | Network port of the bridge, default 5550. All apps have to be paired again after a change. |
 | `bridge_name` | Name of the bridge which is shown when you pair it, default FHEM |
 
