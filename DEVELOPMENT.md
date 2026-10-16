@@ -14,3 +14,31 @@ If you want to create your own module:
 3. Rename the class helloworld in mymodule.py to mymodule
 4. Run fhempy in VS Code
 5. Do define test_mymodule fhempy mymodule in FHEM to see if the new module was found
+
+## Test a pull request on your system
+
+`tools/pr-tester.py` runs fhempy from a pull request (or from master) instead of the
+installed fhempy, e.g. on a Raspberry Pi. It works for fhempy started by FHEM
+(fhempyServer, usually in /opt/fhem) and for fhempy running as systemd service on a peer.
+
+```
+curl -fsSLO https://raw.githubusercontent.com/fhempy/fhempy/master/tools/pr-tester.py
+python3 pr-tester.py              # choose a pull request from the list
+python3 pr-tester.py --pr 123     # or test pull request 123 directly
+```
+
+1. The pull request is installed into its own virtual environment
+   `.fhempy/pr_test/venv`, the normal fhempy installation stays untouched.
+2. The normal fhempy is stopped (`set fhempy_local stop` via telnet or FHEMWEB,
+   `systemctl stop fhempy` on peers).
+3. fhempy from the pull request runs in the foreground, its log is shown and saved in
+   `.fhempy/pr_test/`. Check FHEM now.
+4. Ctrl+C stops the test, starts the normal fhempy again and prints the number of
+   errors, tracebacks and event loop blocks.
+
+If the pull request changes FHEM modules (e.g. `10_BindingsIo.pm`), the script offers
+to copy and reload them and restores the original files afterwards.
+Run the script within tmux or screen when connected via SSH. If it was interrupted,
+`python3 pr-tester.py --restore` starts the normal fhempy again,
+`python3 pr-tester.py --clean` removes the test installation.
+See `python3 pr-tester.py --help` for all options.
