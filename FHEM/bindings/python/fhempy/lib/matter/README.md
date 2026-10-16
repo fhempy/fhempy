@@ -46,8 +46,11 @@ Pairing takes up to a few minutes, the result is shown in the reading `pairing`.
 ## 3. Use your devices
 
 New devices are created automatically with the name `matter_<node id>` (devices behind a bridge:
-`matter_<node id>_<endpoint>`) and the name of the device as alias. Which commands and readings
-a device has depends on what the device can do:
+`matter_<node id>_<endpoint>`) and the name of the device as alias. They are put into the room
+**Matter** together with the controller, so you see at a glance which devices came via Matter,
+and get an icon matching their type (light, plug, blind, thermostat, sensor...). Change the room
+and icon like for any FHEM device. Which commands and readings a device has depends on what the
+device can do:
 
 | Device | Commands | Readings |
 |--------|----------|----------|

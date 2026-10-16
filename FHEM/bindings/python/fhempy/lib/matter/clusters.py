@@ -38,7 +38,11 @@ EVE = 0x130AFC01
 FEATURE_MAP = 65532
 
 # device types
+DEVICE_TYPE_AGGREGATOR = 14
 DEVICE_TYPE_BRIDGED_NODE = 19
+DEVICE_TYPE_CONTACT_SENSOR = 21
+DEVICE_TYPE_LIGHTS = (256, 257, 268, 269)
+DEVICE_TYPE_PLUGS = (266, 267)
 DEVICE_TYPE_WATER_LEAK_DETECTOR = 67
 DEVICE_TYPE_RAIN_SENSOR = 68
 
@@ -326,6 +330,53 @@ def device_types(attributes, endpoint):
             if value is not None:
                 types.add(value)
     return types
+
+
+# FHEMWEB icon of a new FHEM device: first match of device type or cluster
+ICONS_BY_DEVICE_TYPE = (
+    (DEVICE_TYPE_LIGHTS, "light_light"),
+    # Matter bridges like Hue, IKEA, Aqara
+    ((DEVICE_TYPE_AGGREGATOR,), "mqtt_bridge_1"),
+    (DEVICE_TYPE_PLUGS, "message_socket"),
+    ((DEVICE_TYPE_CONTACT_SENSOR,), "fts_window_1w"),
+    ((DEVICE_TYPE_WATER_LEAK_DETECTOR, DEVICE_TYPE_RAIN_SENSOR), "secur_alarm"),
+)
+ICONS_BY_CLUSTER = (
+    (DOOR_LOCK, "secur_locked"),
+    (WINDOW_COVERING, "fts_shutter"),
+    (THERMOSTAT, "sani_heating"),
+    (FAN_CONTROL, "vent_ventilation"),
+    (SMOKE_CO_ALARM, "secur_smoke_detector"),
+    (COLOR_CONTROL, "light_light"),
+    (ON_OFF, "message_socket"),
+    (OCCUPANCY_SENSING, "motion_detector"),
+    (BOOLEAN_STATE, "fts_window_1w"),
+    (TEMPERATURE_MEASUREMENT, "temp_temperature"),
+    (RELATIVE_HUMIDITY_MEASUREMENT, "humidity"),
+    (AIR_QUALITY, "vent_ambient_air"),
+    (CO2_MEASUREMENT, "vent_ambient_air"),
+    (PM25_MEASUREMENT, "vent_ambient_air"),
+    (TVOC_MEASUREMENT, "vent_ambient_air"),
+    (ILLUMINANCE_MEASUREMENT, "message_light_intensity"),
+    (ELECTRICAL_POWER_MEASUREMENT, "measure_power"),
+    (PRESSURE_MEASUREMENT, "weather_barometric_pressure"),
+)
+
+
+def default_icon(attributes, endpoints):
+    """FHEMWEB icon for the FHEM device of these endpoints, None if unknown"""
+    types = set()
+    found = set()
+    for endpoint in endpoints:
+        types |= device_types(attributes, endpoint)
+        found.update(clusters_of(attributes, endpoint))
+    for device_types_, icon in ICONS_BY_DEVICE_TYPE:
+        if types & set(device_types_):
+            return icon
+    for cluster, icon in ICONS_BY_CLUSTER:
+        if cluster in found:
+            return icon
+    return None
 
 
 def parts_of(attributes, endpoint):

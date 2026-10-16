@@ -10,7 +10,7 @@ import json
 import signal
 
 from .. import fhem, generic, utils
-from ..core import child_process, pending_restore
+from ..core import child_process, fhemweb, pending_restore
 from ..matter import server
 from . import devices as bridge_devices
 from . import runtime
@@ -468,32 +468,9 @@ class matter_bridge(generic.FhemModule):
     async def setup_room(self):
         """Once for a new bridge: put it into its room and give the room and
         the bridge an icon in FHEMWEB"""
-        name = self.hash["NAME"]
-        if await fhem.ReadingsVal(name, ".room_setup", "") == "done":
-            return
         room = self._attr_bridge_room
         if room:
-            cmd = (
-                f"my $n = {fhem.perlString(name)};"
-                f" my $room = {fhem.perlString(room)};"
-                " my $cur = AttrVal($n, 'room', '');"
-                # fhempy puts new devices into room fhempy
-                " my $rooms = ($cur eq '' || $cur eq 'fhempy')"
-                ' ? $room : "$cur,$room";'
-                ' CommandAttr(undef, "$n room $rooms")'
-                " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"
-                f' CommandAttr(undef, "$n icon {BRIDGE_ICON}")'
-                " if (AttrVal($n, 'icon', '') eq '');"
-                " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
-                " next if ($defs{$w}{TEMPORARY});"
-                " my $ri = AttrVal($w, 'roomIcons', '');"
-                " next if ($ri =~ /(^|\\s)\\Q$room\\E:/);"
-                " CommandAttr(undef, \"$w roomIcons \" . ($ri eq '' ? '' : \"$ri \")"
-                f' . "$room:{ROOM_ICON}") }}'
-                " 'ok'"
-            )
-            await fhem.sendCommandHash(self.hash, cmd)
-        await fhem.readingsSingleUpdate(self.hash, ".room_setup", "done", 0)
+            await fhemweb.setup_room(self.hash, room, ROOM_ICON, BRIDGE_ICON)
 
     async def resolve_devices(self):
         """devices of attribute devices and all devices in bridge_room"""

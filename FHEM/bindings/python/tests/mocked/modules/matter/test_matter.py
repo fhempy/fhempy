@@ -108,6 +108,26 @@ def test_bridge_creates_device_per_bridged_endpoint():
     assert strip.command_args("on_4", None)["endpoint_id"] == 4
 
 
+def test_default_icon():
+    attrs = bridge_node()["attributes"]
+    assert clusters.default_icon(attrs, clusters.device_endpoints(attrs, 2)) == (
+        "fts_window_1w"
+    )
+    light = light_node()["attributes"]
+    assert clusters.default_icon(light, clusters.device_endpoints(light)) == (
+        "light_light"
+    )
+    assert clusters.default_icon(attrs, clusters.device_endpoints(attrs)) == (
+        "mqtt_bridge_1"
+    )
+    sensor = {"1/29/0": [{"0": 770, "1": 1}], "1/1026/0": 2150}
+    assert clusters.default_icon(sensor, [1]) == "temp_temperature"
+    assert clusters.default_icon({"1/1026/0": 2150, "1/258/14": 0}, [1]) == (
+        "fts_shutter"
+    )
+    assert clusters.default_icon({}, [0]) is None
+
+
 def test_conversions():
     attrs = {
         "1/29/0": [{"0": 67, "1": 1}],
@@ -264,6 +284,9 @@ async def test_controller_and_device(mocker):
         assert mock_fhem.command_define[0] == "matter_5 fhempy matter testmatter 5"
         assert "matter_5 alias Living room" in mock_fhem.command_attr
         assert "matter_5 webCmd on:off:pct" in mock_fhem.command_attr
+        # all Matter devices are in room Matter, with an icon of their type
+        assert "matter_5 room Matter" in mock_fhem.command_attr
+        assert "matter_5 icon light_light" in mock_fhem.command_attr
 
         # the FHEM device created by the controller
         dev = matter(logger)
