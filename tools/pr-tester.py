@@ -28,6 +28,7 @@ Only the Python standard library is used, any Python >= 3.9 works.
 
 import argparse
 import base64
+import getpass
 import configparser
 import json
 import os
@@ -50,10 +51,23 @@ REPO = "fhempy/fhempy"
 API_URL = "https://api.github.com/repos/" + REPO
 DEFAULT_PORT = 15733
 DEFAULT_FHEM_DIRS = ["/opt/fhem"]
+FHEMPY_DIR = ".fhempy"
+# environment variables kept when switching to the fhempy user
+FORWARDED_ENV = (
+    "GITHUB_TOKEN",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "NO_PROXY",
+    "https_proxy",
+    "http_proxy",
+    "no_proxy",
+    "SSL_CERT_FILE",
+)
 START_SCRIPT = "FHEM/bindings/python/bin/start_fhempy.py"
 SERVICE = "fhempy"
 # FHEM modules which belong to fhempy, they are not part of the Python package
-FHEM_MODULE_RE = re.compile(r"^FHEM/(\d\d_[A-Za-z0-9_]+)\.pm$")
+FHEM_MODULE_RE = re.compile(r"^FHEM/(\d\d_\w+)\.pm$")
+SHA_RE = re.compile(r"[0-9a-f]{40}")
 # starts fhempy with INFO logging like FHEM/bindings/python/bin/start_fhempy.py,
 # the fhempy console script only logs warnings
 RUN_FHEMPY = """
@@ -154,50 +168,65 @@ def github_get(path):
         raise TestError(f"GitHub not reachable: {err.reason}") from err
 
 
-def choose_target(pr_arg):
-    """Returns a dict describing what to test: name, sha, pr (number or None)."""
-    if pr_arg is None:
-        pulls = github_get("/pulls?state=open&per_page=50")
-        print()
-        if pulls:
-            print("Open pull requests:")
-            for pull in pulls:
-                draft = " [draft]" if pull.get("draft") else ""
-                print(
-                    f"  #{pull['number']:<5} {pull['title'][:70]}{draft}"
-                    f"  ({pull['user']['login']}, {pull['updated_at'][:10]})"
-                )
-        else:
-            print("There are no open pull requests.")
-        print("  master  latest code of the master branch (not released yet)")
-        print()
-        try:
-            pr_arg = input("Pull request number to test (or master, q to quit): ")
-        except EOFError:
-            pr_arg = "q"
-        pr_arg = pr_arg.strip().lstrip("#")
-        if pr_arg in ("", "q", "quit"):
-            sys.exit(0)
+def ask_for_target():
+    """Lists the open pull requests and returns the user's choice."""
+    pulls = github_get("/pulls?state=open&per_page=50")
+    print()
+    print("Open pull requests:" if pulls else "There are no open pull requests.")
+    for pull in pulls:
+        draft = " [draft]" if pull.get("draft") else ""
+        print(
+            f"  #{pull['number']:<5} {pull['title'][:70]}{draft}"
+            f"  ({pull['user']['login']}, {pull['updated_at'][:10]})"
+        )
+    print("  master  latest code of the master branch (not released yet)")
+    print()
+    try:
+        answer = input("Pull request number to test (or master, q to quit): ")
+    except EOFError:
+        answer = "q"
+    answer = answer.strip().lstrip("#")
+    if answer in ("", "q", "quit"):
+        sys.exit(0)
+    return answer
 
-    if pr_arg == "master":
+
+def parse_target(value):
+    """Returns "master" or the pull request number as int."""
+    if value == "master":
+        return value
+    try:
+        return int(value)
+    except ValueError:
+        raise TestError(f"{value} is neither a pull request number nor master")
+
+
+def checked_sha(sha):
+    if not SHA_RE.fullmatch(sha):
+        raise TestError(f"Unexpected commit id {sha!r} from GitHub")
+    return sha
+
+
+def choose_target(pr):
+    """Returns a dict describing what to test: name, sha, pr (number or None)."""
+    target = pr if pr is not None else parse_target(ask_for_target())
+    if target == "master":
         branch = github_get("/branches/master")
         return {
             "name": "master",
-            "sha": branch["commit"]["sha"],
+            "sha": checked_sha(branch["commit"]["sha"]),
             "pr": None,
         }
-    if not pr_arg.isdigit():
-        raise TestError(f"{pr_arg} is neither a pull request number nor master")
-    pull = github_get(f"/pulls/{pr_arg}")
+    pull = github_get(f"/pulls/{target:d}")
     if pull["state"] != "open":
         warn(
-            f"Pull request #{pr_arg} is "
+            f"Pull request #{target} is "
             + ("merged" if pull.get("merged_at") else "closed")
         )
     return {
-        "name": f"PR #{pull['number']}: {pull['title']}",
-        "sha": pull["head"]["sha"],
-        "pr": pull["number"],
+        "name": f"PR #{target}: {pull['title']}",
+        "sha": checked_sha(pull["head"]["sha"]),
+        "pr": target,
     }
 
 
@@ -206,7 +235,7 @@ def pr_fhem_modules(pr_number):
     modules = []
     page = 1
     while True:
-        files = github_get(f"/pulls/{pr_number}/files?per_page=100&page={page}")
+        files = github_get(f"/pulls/{pr_number:d}/files?per_page=100&page={page:d}")
         for entry in files:
             match = FHEM_MODULE_RE.match(entry["filename"])
             if match and entry["status"] != "removed":
@@ -218,7 +247,8 @@ def pr_fhem_modules(pr_number):
 
 def download_source(target, src_dir):
     # commits of pull requests from forks are available in the fhempy repo too
-    url = f"https://codeload.github.com/{REPO}/tar.gz/{target['sha']}"
+    sha = urllib.parse.quote(checked_sha(target["sha"]), safe="")
+    url = f"https://codeload.github.com/{REPO}/tar.gz/{sha}"
     info(f"Downloading {target['sha'][:10]}")
     shutil.rmtree(src_dir, ignore_errors=True)
     os.makedirs(src_dir)
@@ -255,16 +285,15 @@ def download_source(target, src_dir):
 class Fhem:
     """Sends commands to FHEM via telnet or FHEMWEB, asks the user as fallback."""
 
-    def __init__(self, fhem_dir, telnet_port=None, url=None):
+    def __init__(self, fhem_dir, telnet_port=None):
         self.telnet_port = telnet_port
-        self.url = url
         cfg = self._read_cfg(fhem_dir)
         if self.telnet_port is None:
             match = re.search(r"^define\s+\S+\s+telnet\s+(\d+)", cfg, re.M)
             self.telnet_port = int(match.group(1)) if match else 7072
-        if self.url is None:
-            match = re.search(r"^define\s+(\S+)\s+FHEMWEB\s+(\d+)", cfg, re.M)
-            self.url = f"http://127.0.0.1:{match.group(2) if match else 8083}/fhem"
+        match = re.search(r"^define\s+\S+\s+FHEMWEB\s+(\d+)", cfg, re.M)
+        self.web_port = int(match.group(1)) if match else 8083
+        self.auth = None
         self.method = None
 
     @staticmethod
@@ -290,18 +319,11 @@ class Fhem:
         return text
 
     def _http(self, cmd):
-        parsed = urllib.parse.urlsplit(self.url)
+        # FHEMWEB only listens on localhost in most installations
+        base = f"http://127.0.0.1:{self.web_port:d}/fhem"  # NOSONAR
         headers = {"User-Agent": "fhempy-pr-tester"}
-        if parsed.username:
-            creds = f"{urllib.parse.unquote(parsed.username)}:" + urllib.parse.unquote(
-                parsed.password or ""
-            )
-            headers["Authorization"] = "Basic " + base64.b64encode(
-                creds.encode("utf-8")
-            ).decode("ascii")
-            netloc = parsed.hostname + (f":{parsed.port}" if parsed.port else "")
-            parsed = parsed._replace(netloc=netloc)
-        base = urllib.parse.urlunsplit(parsed)
+        if self.auth:
+            headers["Authorization"] = self.auth
         req = urllib.request.Request(base + "?XHR=1", headers=headers)
         with urllib.request.urlopen(req, timeout=10) as resp:
             token = resp.headers.get("X-FHEM-csrfToken", "")
@@ -310,12 +332,30 @@ class Fhem:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.read().decode("utf-8", "replace")
 
+    def _ask_login(self):
+        """Asks for the FHEMWEB login (basicAuth), it is kept in memory only."""
+        print(f"FHEMWEB on port {self.web_port} requires a login.")
+        try:
+            user = input("FHEMWEB user (empty to skip): ").strip()
+        except EOFError:
+            return False
+        if not user:
+            return False
+        password = getpass.getpass("FHEMWEB password: ")
+        creds = base64.b64encode(f"{user}:{password}".encode("utf-8"))
+        self.auth = "Basic " + creds.decode("ascii")
+        return True
+
     def connect(self):
         """Finds a working connection, returns False if there is none."""
-        for method in (self._telnet, self._http):
+        for method in (self._telnet, self._http, self._http):
             try:
                 parse_json(method("jsonlist2 TYPE=fhempyServer"))
-            except (OSError, ValueError, TestError, urllib.error.URLError):
+            except urllib.error.HTTPError as err:
+                if err.code != 401 or self.auth or not self._ask_login():
+                    break
+                continue
+            except (OSError, ValueError, TestError):
                 continue
             self.method = method
             return True
@@ -334,7 +374,7 @@ class Fhem:
                 if out:
                     print(out)
                 return
-            except (OSError, TestError, urllib.error.URLError) as err:
+            except (OSError, TestError) as err:
                 warn(f"FHEM command failed: {err}")
         warn(f"Please run this command in FHEM: {cmd}")
         try:
@@ -345,7 +385,7 @@ class Fhem:
     def devices(self, devspec):
         try:
             return parse_json(self.cmd("jsonlist2 " + devspec)).get("Results", [])
-        except (OSError, ValueError, TestError, urllib.error.URLError):
+        except (OSError, ValueError, TestError):
             return None
 
 
@@ -394,69 +434,96 @@ def running_fhempy_dirs():
     return dirs
 
 
+def service_dir(service):
+    return (
+        service.get("WorkingDirectory")
+        or pwd.getpwnam(service.get("User") or "root").pw_dir
+    )
+
+
+def installation_dirs(service):
+    """Returns all directories with a fhempy installation, running ones first."""
+    dirs = running_fhempy_dirs()
+    if service:
+        dirs.append(service_dir(service))
+    dirs += DEFAULT_FHEM_DIRS + [user.pw_dir for user in pwd.getpwall()]
+    result = []
+    for path in dirs:
+        if path not in result and os.path.isdir(os.path.join(path, FHEMPY_DIR)):
+            result.append(path)
+    return result
+
+
+def choose_dir(dirs):
+    print("fhempy installations:")
+    for i, path in enumerate(dirs, 1):
+        print(f"  {i}  {path}")
+    try:
+        index = int(input("Which one should be used for the test? ")) - 1
+    except (EOFError, ValueError):
+        index = -1
+    if not 0 <= index < len(dirs):
+        sys.exit(0)
+    return dirs[index]
+
+
 def detect(args):
     """Returns a dict with mode (local or peer), dir, user and service details."""
     service = systemd_service()
-    if args.dir:
-        work_dir = os.path.abspath(args.dir)
-        mode = "local" if os.path.exists(os.path.join(work_dir, "fhem.pl")) else "peer"
-    elif service and service.get("ActiveState") == "active":
+    if service and service.get("ActiveState") == "active":
+        work_dir = service_dir(service)
         mode = "peer"
-        work_dir = service.get("WorkingDirectory") or None
-        if not work_dir:
-            user = service.get("User") or "root"
-            work_dir = pwd.getpwnam(user).pw_dir
     else:
-        mode = "local"
-        candidates = running_fhempy_dirs() + DEFAULT_FHEM_DIRS
-        if os.environ.get("HOME"):
-            candidates.append(os.environ["HOME"])
-        work_dir = next(
-            (d for d in candidates if os.path.exists(os.path.join(d, START_SCRIPT))),
-            None,
-        )
-        if work_dir is None:
-            if service:
-                mode = "peer"
-                work_dir = (
-                    service.get("WorkingDirectory")
-                    or pwd.getpwnam(service.get("User") or "root").pw_dir
-                )
-            else:
-                raise TestError(
-                    "No fhempy installation found, use --dir <FHEM or fhempy directory>"
-                )
+        dirs = installation_dirs(service)
+        if not dirs:
+            raise TestError("No fhempy installation found")
+        running = running_fhempy_dirs()
+        work_dir = dirs[0] if running or len(dirs) == 1 else choose_dir(dirs)
+        is_fhem = os.path.exists(os.path.join(work_dir, "fhem.pl"))
+        mode = "local" if is_fhem else "peer"
     if args.mode:
         mode = args.mode
-    if not os.path.isdir(os.path.join(work_dir, ".fhempy")):
-        raise TestError(f"{work_dir}/.fhempy not found, is fhempy installed there?")
+    fhempy_dir = os.path.join(work_dir, FHEMPY_DIR)
+    if not os.path.isdir(fhempy_dir):
+        raise TestError(f"{fhempy_dir} not found, is fhempy installed there?")
     return {
         "mode": mode,
         "dir": work_dir,
-        "user": pwd.getpwuid(os.stat(os.path.join(work_dir, ".fhempy")).st_uid).pw_name,
+        "user": pwd.getpwuid(os.stat(fhempy_dir).st_uid).pw_name,
         "service": service,
     }
 
 
-def switch_user(user):
+def forwarded_args(args, target):
+    """Command line for the re-executed script, built from validated values only."""
+    result = [] if target is None else ["--pr", str(target)]
+    for flag in ("debug", "fresh", "restore", "clean"):
+        if getattr(args, flag):
+            result.append("--" + flag)
+    if args.mode:
+        result += ["--mode", "local" if args.mode == "local" else "peer"]
+    result += ["--port", str(int(args.port))]
+    if args.telnet_port:
+        result += ["--telnet-port", str(int(args.telnet_port))]
+    return result
+
+
+def switch_user(user, args, target):
     """Re-executes the script as the fhempy user, it owns the .fhempy directory."""
     if pwd.getpwnam(user).pw_uid == os.geteuid():
         return
     info(f"Switching to user {user}")
-    # the user might not be allowed to read the script (e.g. in /home/pi)
-    fd, copy = tempfile.mkstemp(prefix="fhempy-pr-tester-", suffix=".py")
-    with os.fdopen(fd, "w") as f, open(os.path.abspath(__file__)) as src:
-        f.write(src.read())
-    os.chmod(copy, 0o644)
+    # the user might not be allowed to read the script file (e.g. in /home/pi)
+    with open(os.path.abspath(__file__), encoding="utf-8") as src:
+        source = src.read()
     cmd = ["sudo", "-u", user, "-H"]
-    for var in ("GITHUB_TOKEN", "TERM"):
+    for var in FORWARDED_ENV:
         if os.environ.get(var):
             cmd.append(f"{var}={os.environ[var]}")
-    cmd += [sys.executable, copy] + sys.argv[1:]
-    try:
-        sys.exit(subprocess.call(cmd))
-    finally:
-        os.unlink(copy)
+    cmd += [sys.executable, "-c", source] + forwarded_args(args, target)
+    # Ctrl+C reaches the re-executed script directly, it restores fhempy
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    sys.exit(subprocess.call(cmd))
 
 
 def sudo(cmd):
@@ -469,11 +536,11 @@ def sudo(cmd):
 class TestInstall:
     def __init__(self, work_dir):
         self.work_dir = work_dir
-        self.base = os.path.join(work_dir, ".fhempy", "pr_test")
+        self.base = os.path.join(work_dir, FHEMPY_DIR, "pr_test")
         self.venv = os.path.join(self.base, "venv")
         self.python = os.path.join(self.venv, "bin", "python")
         self.src = os.path.join(self.base, "src")
-        self.prod_venv = os.path.join(work_dir, ".fhempy", "fhempy_venv")
+        self.prod_venv = os.path.join(work_dir, FHEMPY_DIR, "fhempy_venv")
         self.state_file = os.path.join(self.base, "state.json")
         self.installed_file = os.path.join(self.base, "installed.json")
         self.backup_dir = os.path.join(self.base, "fhem_backup")
@@ -482,7 +549,7 @@ class TestInstall:
     def _find_uv(self):
         if os.environ.get("FHEMPY_NO_UV"):
             return None
-        uv = os.path.join(self.work_dir, ".fhempy", "bin", "uv")
+        uv = os.path.join(self.work_dir, FHEMPY_DIR, "bin", "uv")
         if os.access(uv, os.X_OK):
             return uv
         return shutil.which("uv")
@@ -631,11 +698,11 @@ class Runner:
         self.inst = TestInstall(ctx["dir"])
         self.fhem = None
         if ctx["mode"] == "local":
-            self.fhem = Fhem(ctx["dir"], args.telnet_port, args.fhem_url)
+            self.fhem = Fhem(ctx["dir"], args.telnet_port)
             if not self.fhem.connect():
                 warn(
                     "No connection to FHEM via telnet or FHEMWEB, you'll be asked to "
-                    "run FHEM commands yourself (see --telnet-port and --fhem-url)"
+                    "run FHEM commands yourself (see --telnet-port)"
                 )
 
     def server_device(self):
@@ -664,9 +731,7 @@ class Runner:
         if state.get("mode") == "local":
             device = state.get("device", "fhempy_local")
             info(f"Starting the normal fhempy again (set {device} start)")
-            fhem = self.fhem or Fhem(
-                self.ctx["dir"], self.args.telnet_port, self.args.fhem_url
-            )
+            fhem = self.fhem or Fhem(self.ctx["dir"], self.args.telnet_port)
             if fhem.method is None:
                 fhem.connect()
             fhem.cmd_or_ask(f"set {device} start")
@@ -686,22 +751,21 @@ class Runner:
 
     def select_fhem_modules(self, target):
         """Returns the changed FHEM modules the user wants to test as well."""
+        fhem_src = os.path.join(self.inst.src, "FHEM")
         if target["pr"] is None:
             # master: installed fhempy modules which differ from the master version
-            modules = []
-            for name in os.listdir(os.path.join(self.inst.src, "FHEM")):
-                match = FHEM_MODULE_RE.match("FHEM/" + name)
-                installed = os.path.join(self.ctx["dir"], "FHEM", name)
-                if (
-                    match
-                    and os.path.exists(installed)
-                    and not same_file(
-                        os.path.join(self.inst.src, "FHEM", name), installed
-                    )
-                ):
-                    modules.append(match.group(1))
+            modules = [
+                module
+                for module in fhem_modules(fhem_src)
+                if module in self.installed_fhem_modules()
+                and not same_file(
+                    os.path.join(fhem_src, module + ".pm"), self.fhem_file(module)
+                )
+            ]
         else:
-            modules = pr_fhem_modules(target["pr"])
+            changed = set(pr_fhem_modules(target["pr"]))
+            # names from the downloaded source, not from the GitHub response
+            modules = [m for m in fhem_modules(fhem_src) if m in changed]
         if not modules:
             return []
         print()
@@ -721,7 +785,7 @@ class Runner:
         os.makedirs(self.inst.backup_dir, exist_ok=True)
         state["fhem_modules"] = []
         for module in modules:
-            dst = os.path.join(self.ctx["dir"], "FHEM", module + ".pm")
+            dst = self.fhem_file(module)
             backup = os.path.join(self.inst.backup_dir, module + ".pm")
             if os.path.exists(dst) and not os.path.exists(backup):
                 shutil.copy2(dst, backup)
@@ -730,25 +794,31 @@ class Runner:
             shutil.copy(os.path.join(self.inst.src, "FHEM", module + ".pm"), dst)
             self.fhem.cmd_or_ask(f"reload {module}")
 
+    def installed_fhem_modules(self):
+        return fhem_modules(os.path.join(self.ctx["dir"], "FHEM"))
+
+    def fhem_file(self, module):
+        return os.path.join(self.ctx["dir"], "FHEM", module + ".pm")
+
     def restore_fhem_modules(self, state):
-        modules = state.get("fhem_modules") or []
+        copied = set(state.get("fhem_modules") or [])
+        # names from the FHEM directory, not from the state file
+        modules = [m for m in self.installed_fhem_modules() if m in copied]
         if not modules:
             return
         info("Restoring the FHEM modules: " + ", ".join(modules))
-        fhem = self.fhem or Fhem(
-            self.ctx["dir"], self.args.telnet_port, self.args.fhem_url
-        )
+        fhem = self.fhem or Fhem(self.ctx["dir"], self.args.telnet_port)
         if fhem.method is None:
             fhem.connect()
+        backups = fhem_modules(self.inst.backup_dir)
         for module in modules:
-            dst = os.path.join(self.ctx["dir"], "FHEM", module + ".pm")
             backup = os.path.join(self.inst.backup_dir, module + ".pm")
-            if os.path.exists(backup):
-                shutil.copy2(backup, dst)
+            if module in backups:
+                shutil.copy2(backup, self.fhem_file(module))
                 os.unlink(backup)
             else:
                 # new module of the pull request
-                remove(dst)
+                os.unlink(self.fhem_file(module))
                 warn(f"{module} is new, please run in FHEM: shutdown restart")
                 continue
             fhem.cmd_or_ask(f"reload {module}")
@@ -866,6 +936,19 @@ def stop_process(proc):
             pass
 
 
+def fhem_modules(directory):
+    """Returns the fhempy related FHEM modules (e.g. 10_BindingsIo) in directory."""
+    try:
+        names = os.listdir(directory)
+    except OSError:
+        return []
+    return sorted(
+        match.group(1)
+        for match in (FHEM_MODULE_RE.match("FHEM/" + name) for name in names)
+        if match
+    )
+
+
 def same_file(a, b):
     try:
         with open(a, "rb") as fa, open(b, "rb") as fb:
@@ -884,13 +967,9 @@ def parse_args():
         description="Test a fhempy pull request instead of the installed fhempy."
     )
     parser.add_argument("--pr", help="pull request number or master")
-    parser.add_argument("--dir", help="FHEM directory (local) or fhempy home (peer)")
     parser.add_argument("--mode", choices=["local", "peer"], help="override detection")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="fhempy port")
     parser.add_argument("--telnet-port", type=int, help="FHEM telnet port")
-    parser.add_argument(
-        "--fhem-url", help="FHEMWEB URL, e.g. http://user:pass@127.0.0.1:8083/fhem"
-    )
     parser.add_argument(
         "--debug", action="store_true", help="start fhempy with --debug"
     )
@@ -905,9 +984,12 @@ def parse_args():
 
 
 def main():
+    # SIGINT is ignored by the parent when the script was re-executed as fhempy user
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     args = parse_args()
+    pr = parse_target(args.pr) if args.pr else None
     ctx = detect(args)
-    switch_user(ctx["user"])
+    switch_user(ctx["user"], args, pr)
     info(f"fhempy installation: {ctx['dir']} ({ctx['mode']}, user {ctx['user']})")
     runner = Runner(ctx, args)
     inst = runner.inst
@@ -925,7 +1007,7 @@ def main():
         info(f"Removed {inst.base}")
         return
 
-    target = choose_target(args.pr)
+    target = choose_target(pr)
     inst.install(target, args.fresh)
     info(f"Installed: {inst.fhempy_version()} from {target['sha'][:10]}")
 
