@@ -10,6 +10,7 @@ from tests.utils import mock_fhem
 
 from fhempy.lib.matter import clusters, server
 from fhempy.lib.matter.matter import matter
+from fhempy.lib.matter.controller import matter_controller
 
 logger = logging.getLogger(__name__)
 
@@ -399,8 +400,21 @@ async def test_client_rejects_pending_commands_on_close():
         await runner.cleanup()
 
 
-def test_server_shows_fhem_in_other_apps(mocker):
+@pytest.mark.asyncio
+async def test_controller_shows_fhem_in_other_apps(mocker):
+    # matter-server 1.4.0 pins --default-fabric-label but still pairs with
+    # "HomeAssistant", set_default_fabric_label works and renames old pairings
     start = mocker.patch.object(server.child_process, "start")
     server.start("/usr/bin/node", {}, 5580)
-    args = start.call_args[0][0]
-    assert args[args.index("--default-fabric-label") + 1] == "FHEM"
+    assert "--default-fabric-label" not in start.call_args[0][0]
+
+    client = mocker.Mock()
+    client.send_command = mocker.AsyncMock(
+        side_effect=[{"fabric_label": "HomeAssistant"}, None]
+    )
+    await matter_controller.set_fabric_label(mocker.Mock(logger=logger), client)
+    client.send_command.assert_called_with("set_default_fabric_label", label="FHEM")
+
+    client.send_command = mocker.AsyncMock(return_value={"fabric_label": "FHEM"})
+    await matter_controller.set_fabric_label(mocker.Mock(logger=logger), client)
+    client.send_command.assert_called_once_with("get_fabric_label")

@@ -337,6 +337,8 @@ class matter_controller:
         listen_task = asyncio.create_task(client.listen())
         try:
             nodes = await client.send_command("start_listening", timeout=120)
+            if self.external_url is None:
+                await self.set_fabric_label(client)
             await self.handle_server_info(client.server_info)
             self.nodes = {node["node_id"]: node for node in nodes}
             await self.update_nodes_reading()
@@ -354,6 +356,19 @@ class matter_controller:
             for device in list(self.devices):
                 await device.server_disconnected()
             await self.update_state("disconnected, reconnecting")
+
+    async def set_fabric_label(self, client):
+        # name of this controller in other apps (Apple Home, Google Home...),
+        # the server's default is "HomeAssistant". The server also renames it
+        # on the devices which are already paired.
+        try:
+            current = await client.send_command("get_fabric_label")
+            if (current or {}).get("fabric_label") != server.FABRIC_LABEL:
+                await client.send_command(
+                    "set_default_fabric_label", label=server.FABRIC_LABEL
+                )
+        except (MatterServerError, asyncio.TimeoutError) as exc:
+            self.logger.warning(f"Can't set the name shown in other apps: {exc}")
 
     async def handle_server_info(self, info):
         await fhem.readingsBeginUpdate(self.hash)
