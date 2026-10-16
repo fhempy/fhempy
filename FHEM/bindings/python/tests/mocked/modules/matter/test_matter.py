@@ -412,9 +412,13 @@ async def test_controller_shows_fhem_in_other_apps(mocker):
     client.send_command = mocker.AsyncMock(
         side_effect=[{"fabric_label": "HomeAssistant"}, None]
     )
-    await matter_controller.set_fabric_label(mocker.Mock(logger=logger), client)
+    await matter_controller.set_fabric_label(
+        mocker.Mock(logger=logger, external_url=None), client
+    )
     client.send_command.assert_called_with("set_default_fabric_label", label="FHEM")
 
     client.send_command = mocker.AsyncMock(return_value={"fabric_label": "FHEM"})
-    await matter_controller.set_fabric_label(mocker.Mock(logger=logger), client)
+    await matter_controller.set_fabric_label(
+        mocker.Mock(logger=logger, external_url=None), client
+    )
     client.send_command.assert_called_once_with("get_fabric_label")

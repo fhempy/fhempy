@@ -27,6 +27,7 @@ fhempy_Initialize($)
   $hash->{SetFn}    = 'fhempy_Set';
   $hash->{AttrFn}   = 'fhempy_Attr';
   $hash->{RenameFn} = 'fhempy_Rename';
+  $hash->{NotifyFn} = 'fhempy_Notify';
   $hash->{AttrList} = 'IODev disable:0,1 '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempy_detailFn";
   $hash->{FW_deviceOverview} = 1;
@@ -46,6 +47,8 @@ fhempy_Define($$$)
   $hash->{PYTHONTYPE} = @$a[2];
 
   setDevAttrList($hash->{NAME}, ".*");
+  # only modules which call fhempy_setEventDevices get events
+  setDisableNotifyFn($hash, 1);
   
   # check if BindingsIo exists
   if ($init_done) {
@@ -109,6 +112,46 @@ fhempy_Rename($$$)
   my ($oldname, $newname) = @_;
 
   return IOWrite($defs{$oldname}, $defs{$oldname}, "Rename", [$oldname, $newname], {});
+}
+
+# Called by Python modules (e.g. matter_bridge) to receive the events of
+# other FHEM devices. $devspec is a comma separated list of device names,
+# an empty $devspec stops the events.
+sub
+fhempy_setEventDevices($$)
+{
+  my ($name, $devspec) = @_;
+  my $hash = $defs{$name};
+  return "Unknown device $name" if (!defined($hash));
+
+  if (!defined($devspec) || $devspec eq "") {
+    setDisableNotifyFn($hash, 1);
+    return undef;
+  }
+  setDisableNotifyFn($hash, 0);
+  setNotifyDev($hash, $devspec);
+  return undef;
+}
+
+sub
+fhempy_Notify($$)
+{
+  my ($hash, $dev) = @_;
+
+  return undef if (IsDisabled($hash->{NAME}));
+  my $iohash = $hash->{IODev};
+  return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
+
+  my $events = deviceEvents($dev, 1);
+  return undef if (!$events);
+
+  foreach my $event (@{$events}) {
+    next if (!defined($event));
+    # NAME of the message is the device which created the event
+    IOWrite($hash, $dev, "event", [$event], {});
+  }
+
+  return undef;
 }
 
 sub

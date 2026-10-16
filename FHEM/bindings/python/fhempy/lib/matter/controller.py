@@ -337,8 +337,7 @@ class matter_controller:
         listen_task = asyncio.create_task(client.listen())
         try:
             nodes = await client.send_command("start_listening", timeout=120)
-            if self.external_url is None:
-                await self.set_fabric_label(client)
+            await self.set_fabric_label(client)
             await self.handle_server_info(client.server_info)
             self.nodes = {node["node_id"]: node for node in nodes}
             await self.update_nodes_reading()
@@ -360,7 +359,10 @@ class matter_controller:
     async def set_fabric_label(self, client):
         # name of this controller in other apps (Apple Home, Google Home...),
         # the server's default is "HomeAssistant". The server also renames it
-        # on the devices which are already paired.
+        # on the devices which are already paired. An external server (e.g.
+        # Home Assistant) keeps its name.
+        if self.external_url is not None:
+            return
         try:
             current = await client.send_command("get_fabric_label")
             if (current or {}).get("fabric_label") != server.FABRIC_LABEL:

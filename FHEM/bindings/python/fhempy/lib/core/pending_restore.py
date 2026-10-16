@@ -10,6 +10,7 @@ installation, right before zigbee2mqtt starts.
 The same applies to the Matter server storage: a running Matter server
 writes its storage and would overwrite restored files, so the matter module
 replaces the storage with the restored one right before the server starts.
+The pairings of a Matter bridge are applied the same way, per bridge.
 """
 
 import pathlib
@@ -19,11 +20,14 @@ Z2M_DIR = pathlib.Path(".fhempy/zigbee2mqtt")
 Z2M_PENDING_DIR = pathlib.Path(".fhempy/zigbee2mqtt_restore")
 MATTER_DATA_DIR = pathlib.Path(".fhempy/matter_server/data")
 MATTER_PENDING_DIR = pathlib.Path(".fhempy/matter_server_restore")
+BRIDGE_DIR = pathlib.Path(".fhempy/matter_bridge")
+BRIDGE_PENDING_DIR = pathlib.Path(".fhempy/matter_bridge_restore")
 
 # directory -> pending directory restored files of it are staged in
 PENDING_DIRS = {
     Z2M_DIR: Z2M_PENDING_DIR,
     MATTER_DATA_DIR: MATTER_PENDING_DIR,
+    BRIDGE_DIR: BRIDGE_PENDING_DIR,
 }
 
 
@@ -88,18 +92,48 @@ def apply_matter_restore(storage_directory, pending_directory=None):
     if not pending_directory.is_dir():
         return []
 
+    return _replace_directory(storage_directory, pending_directory)
+
+
+def apply_bridge_restore(bridge_directory, pending_directory=None):
+    """Replace the pairings of a Matter bridge with pending restored ones.
+
+    Returns the list of applied files (relative paths), empty if no restore
+    is pending for this bridge.
+    """
+    bridge_directory = pathlib.Path(bridge_directory)
+    if pending_directory is None:
+        pending_directory = (
+            bridge_directory.parent.parent
+            / BRIDGE_PENDING_DIR.name
+            / bridge_directory.name
+        )
+    pending_directory = pathlib.Path(pending_directory)
+    if not pending_directory.is_dir():
+        return []
+    applied = _replace_directory(bridge_directory, pending_directory)
+    try:
+        # removed when the last bridge got its files
+        pending_directory.parent.rmdir()
+    except OSError:
+        pass
+    return applied
+
+
+def _replace_directory(directory, pending_directory):
+    """Replace directory completely by pending_directory (mixing the keys of
+    two fabrics breaks them). The previous directory is kept with the suffix
+    .before_restore."""
     applied = sorted(
         str(f.relative_to(pending_directory))
         for f in pending_directory.rglob("*")
         if f.is_file()
     )
-    if storage_directory.exists():
-        previous = storage_directory.with_name(
-            storage_directory.name + ".before_restore"
-        )
+    if directory.exists():
+        previous = directory.with_name(directory.name + ".before_restore")
         shutil.rmtree(previous, ignore_errors=True)
-        storage_directory.rename(previous)
-    shutil.copytree(pending_directory, storage_directory)
+        directory.rename(previous)
+    shutil.copytree(pending_directory, directory)
     # mark the restore as consumed, it must not be applied again
     shutil.rmtree(pending_directory)
     return applied

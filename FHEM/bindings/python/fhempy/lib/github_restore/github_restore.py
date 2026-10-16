@@ -130,6 +130,8 @@ class github_restore(generic.FhemModule):
             )
         if pending_restore.MATTER_PENDING_DIR in pending:
             state += "<br>Matter data will be applied before the Matter server starts"
+        if pending_restore.BRIDGE_PENDING_DIR in pending:
+            state += "<br>Matter bridge pairings will be applied before it starts"
         await fhem.readingsSingleUpdate(self.hash, "state", state, 1)
 
     async def restore_backup_file(self, backup_file):

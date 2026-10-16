@@ -8,6 +8,7 @@ By default (attribute `backup_files`) the following files are backed up, missing
  - zigbee2mqtt: .fhempy/zigbee2mqtt/data/*.yaml, *.json and database.db
  - ESPHome: esphome_config/*.yaml
  - Matter: .fhempy/matter_server/data (keys of your Matter network)
+ - Matter bridge: .fhempy/matter_bridge/*/pairing.json and data (pairings with Apple Home, Google Home, Alexa...)
 
 The backup contains secrets (passwords, zigbee network key, Matter keys, ESPHome secrets.yaml), **always use a private repository**.
 
