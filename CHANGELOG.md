@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v2.1.0 (2026-10-16)
+
+### Bug Fixes
+
+- **fusionsolar**: Fixed update interval, configurable via interval attribute
+  ([#678](https://github.com/fhempy/fhempy/pull/678),
+  [`c8ce64d`](https://github.com/fhempy/fhempy/commit/c8ce64db181b20cebc7a26e7dd4134cbc2b6f056))
+
+- **kia_hyundai**: Update hyundai_kia_connect_api to 4.36.1
+  ([#679](https://github.com/fhempy/fhempy/pull/679),
+  [`d654055`](https://github.com/fhempy/fhempy/commit/d654055d9141d7248f22df0f2f693cb43e8ac478))
+
+### Features
+
+- **matter_bridge**: Use FHEM devices in Apple Home, Google Home and Alexa
+  ([#680](https://github.com/fhempy/fhempy/pull/680),
+  [`15e7fcd`](https://github.com/fhempy/fhempy/commit/15e7fcda0d14526596d2d3d30d04f08868ff11a4))
+
+
 ## v2.0.0 (2026-10-16)
 
 ### Bug Fixes
