@@ -990,6 +990,9 @@ def main():
     pr = parse_target(args.pr) if args.pr else None
     ctx = detect(args)
     switch_user(ctx["user"], args, pr)
+    # uv reads uv.toml from the current directory, which the fhempy user might not
+    # be allowed to read (e.g. /home/pi)
+    os.chdir(ctx["dir"])
     info(f"fhempy installation: {ctx['dir']} ({ctx['mode']}, user {ctx['user']})")
     runner = Runner(ctx, args)
     inst = runner.inst
