@@ -5,7 +5,7 @@ import hashlib
 import io
 import json
 import pathlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 
@@ -35,6 +35,42 @@ def read_file_for_github(filename):
     return b64, sha
 
 
+DEFAULT_BACKUP_FILES = ",".join(
+    [
+        "fhem.cfg",
+        "configDB.db",
+        "configDB.conf",
+        "log/fhem.save",
+        # FHEM's uniqueID, also holds passwords stored by FHEM modules
+        # (setKeyValue), they can't be decrypted without it after a restore
+        "FHEM/FhemUtils/uniqueID",
+        "www/gplot/SVG*.gplot",
+        ".fhempy/zigbee2mqtt/data/*.yaml",
+        ".fhempy/zigbee2mqtt/data/*.json",
+        ".fhempy/zigbee2mqtt/data/database.db",
+        "esphome_config/*.yaml",
+        # Matter fabric (keys of all paired devices)
+        ".fhempy/matter_server/data/**/*",
+    ]
+)
+
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+HTTP_ERRORS = {
+    401: "github_token is invalid or expired",
+    403: "github_token has no write permission for the repository",
+    404: "repository not found or github_token has no access to it",
+}
+
+
+class GithubError(Exception):
+    def __init__(self, status, url):
+        self.status = status
+        reason = HTTP_ERRORS.get(status, "GitHub request failed")
+        super().__init__(f"{reason} (HTTP {status})")
+        self.url = url
+
+
 def json_body(data, content):
     """JSON body with base64 content, without serializing the big string."""
     prefix = json.dumps(data)[:-1]
@@ -53,6 +89,7 @@ class github_backup(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.gh_token_ready = asyncio.Event()
+        self.backup_lock = asyncio.Lock()
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -66,25 +103,12 @@ class github_backup(generic.FhemModule):
             },
             "github_token": {"default": "", "help": "Personal github token"},
             "backup_files": {
-                "default": (
-                    "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
-                    + "www/gplot/SVG*.gplot,"
-                    + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
-                    + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
-                    + ".fhempy/zigbee2mqtt/data/state.json,"
-                    + ".fhempy/zigbee2mqtt/data/database.db,"
-                    + "esphome_config/*.yaml"
-                ),
+                "default": DEFAULT_BACKUP_FILES,
                 "help": (
-                    "Comma separated list of files to backup.<br>"
+                    "Comma separated list of files to backup, wildcards "
+                    + "(*, ** for subdirectories) are allowed.<br>"
                     + "Default:<br>"
-                    + "fhem.cfg,configDB.db,configDB.conf,log/fhem.save,"
-                    + "www/gplot/SVG*.gplot,"
-                    + ".fhempy/zigbee2mqtt/data/configuration.yaml,"
-                    + ".fhempy/zigbee2mqtt/data/coordinator_backup.json,"
-                    + ".fhempy/zigbee2mqtt/data/state.json,"
-                    + ".fhempy/zigbee2mqtt/data/database.db,"
-                    + "esphome_config/*.yaml"
+                    + DEFAULT_BACKUP_FILES.replace(",", ", ")
                 ),
             },
         }
@@ -135,16 +159,14 @@ class github_backup(generic.FhemModule):
         github_backup.headers["Authorization"] = f"token {self._attr_github_token}"
 
     async def github_get(self, url):
-        ret = None
+        """JSON response, None if the file doesn't exist (yet)"""
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.get(url, headers=github_backup.headers) as resp:
-                if resp.status < 400:
-                    ret = await resp.json()
-                else:
-                    self.logger.error(
-                        f"Failed to get {url} with HTTP error {resp.status}"
-                    )
-        return ret
+                if resp.status == 404:
+                    return None
+                if resp.status >= 400:
+                    raise GithubError(resp.status, url)
+                return await resp.json()
 
     async def github_put(self, url, json_data, content):
         # encode in a thread and send the body from a BytesIO, aiohttp writes
@@ -157,86 +179,130 @@ class github_backup(generic.FhemModule):
         headers["Content-Type"] = "application/json"
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.put(url, data=io.BytesIO(body), headers=headers) as resp:
-                if resp.status < 400:
-                    return True
-                else:
-                    self.logger.error(
-                        f"Failed to put {url} with HTTP error {resp.status}"
-                    )
-        return False
+                if resp.status >= 400:
+                    raise GithubError(resp.status, url)
+        return True
 
     async def b64encode_file(self, filename):
         return await utils.run_blocking(
             functools.partial(read_file_for_github, filename)
         )
 
-    async def get_sha_from_file(self, filename):
-        resp = await self.github_get(
+    def contents_url(self, filename):
+        return (
             f"https://api.github.com/repos/{self.gh_user}/"
             + f"{self.gh_repo}/contents/{self.directory}/{filename}"
         )
+
+    async def get_sha_from_file(self, filename):
+        resp = await self.github_get(self.contents_url(filename))
         if resp is not None and "sha" in resp:
             return resp["sha"]
         return None
 
     async def upload_file(self, filename):
-        try:
-            # get current sha
-            f_sha = await self.get_sha_from_file(filename)
+        """Returns "uploaded" or "unchanged", raises on errors"""
+        # get current sha
+        f_sha = await self.get_sha_from_file(filename)
 
-            content, sha = await self.b64encode_file(filename)
+        content, sha = await self.b64encode_file(filename)
 
-            if f_sha == sha:
-                # no update required
-                return True
+        if f_sha == sha:
+            # no update required
+            return "unchanged"
 
-            # upload file
-            data_msg = {
-                "message": f"{self.directory} - {filename} backup",
-            }
-            if f_sha:
-                data_msg["sha"] = f_sha
+        # upload file
+        data_msg = {
+            "message": f"{self.directory} - {filename} backup",
+        }
+        if f_sha:
+            data_msg["sha"] = f_sha
 
-            upload_resp = await self.github_put(
-                f"https://api.github.com/repos/{self.gh_user}/"
-                + f"{self.gh_repo}/contents/{self.directory}/{filename}",
-                data_msg,
-                content,
-            )
-            if upload_resp is False:
-                raise Exception(f"Failed to upload file {filename}")
-
-            return True
-        except Exception:
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, f"{filename}_backup", "failed", 1
-            )
-            self.logger.exception(f"Failed to upload file {filename}")
-        return False
+        await self.github_put(self.contents_url(filename), data_msg, content)
+        return "uploaded"
 
     async def backup_loop(self):
         await self.gh_token_ready.wait()
+        # readings of older versions, one per failed file which never vanished
+        # (file names contain . or /, unlike last_backup)
+        await fhem.CommandDeleteReading(
+            self.hash, f"{self.hash['NAME']} .*[./].*_backup"
+        )
         while True:
             await self.do_backup()
             now = datetime.today()
             seconds_till_time = (self._attr_backup_time - now).seconds
+            await fhem.readingsSingleUpdate(
+                self.hash,
+                "next_backup",
+                (now + timedelta(seconds=seconds_till_time)).strftime(TIME_FORMAT),
+                1,
+            )
             await asyncio.sleep(seconds_till_time)
+
+    def files_to_backup(self):
+        files = []
+        for pattern in self._attr_backup_files.split(","):
+            pattern = pattern.strip()
+            if pattern == "":
+                continue
+            for filepath in sorted(pathlib.Path(".").glob(pattern)):
+                if filepath.is_file() and filepath not in files:
+                    files.append(filepath)
+        return files
 
     async def do_backup(self):
         if self._attr_github_token == "":
             return
+        if self.backup_lock.locked():
+            # backup_now while a backup is running
+            return
 
-        state_val = "ok"
-        for file in self._attr_backup_files.split(","):
-            filepaths = pathlib.Path(".").glob(file)
-            for filepath in filepaths:
-                if not filepath.is_file():
-                    continue
+        async with self.backup_lock:
+            result = await self.run_backup()
+        await self.update_backup_readings(result)
 
-                if not await self.upload_file(filepath):
-                    state_val = "failed"
+    async def run_backup(self):
+        result = {"uploaded": [], "unchanged": [], "failed": [], "error": None}
+        files = await utils.run_blocking(functools.partial(self.files_to_backup))
+        if not files:
+            result["error"] = "No file found, check attribute backup_files"
+            return result
 
-        await fhem.readingsSingleUpdate(self.hash, "state", state_val, 1)
+        for filepath in files:
+            try:
+                result[await self.upload_file(filepath)].append(str(filepath))
+            except Exception as exc:
+                result["failed"].append(str(filepath))
+                if result["error"] is None:
+                    result["error"] = f"{filepath}: {exc}"
+                if isinstance(exc, GithubError):
+                    self.logger.error(f"Failed to upload {filepath}: {exc}")
+                else:
+                    self.logger.exception(f"Failed to upload {filepath}")
+        return result
+
+    async def update_backup_readings(self, result):
+        now = datetime.now().strftime(TIME_FORMAT)
+        success = result["error"] is None
+        await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdate(self.hash, "state", "ok" if success else "failed")
+        await fhem.readingsBulkUpdate(self.hash, "last_backup", now)
+        if success:
+            await fhem.readingsBulkUpdate(self.hash, "last_successful_backup", now)
+        else:
+            await fhem.readingsBulkUpdate(self.hash, "error", result["error"])
+            await fhem.readingsBulkUpdate(
+                self.hash, "failed_files", ",".join(result["failed"]) or "-"
+            )
+        for key in ["uploaded", "unchanged", "failed"]:
+            await fhem.readingsBulkUpdate(self.hash, f"files_{key}", len(result[key]))
+        await fhem.readingsEndUpdate(self.hash, 1)
+        if success:
+            # the error of an earlier backup is history now
+            await fhem.CommandDeleteReading(
+                self.hash, f"{self.hash['NAME']} (error|failed_files)"
+            )
 
     async def update_static_readings(self):
         await fhem.readingsSingleUpdateIfChanged(

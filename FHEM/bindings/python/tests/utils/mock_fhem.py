@@ -1,4 +1,5 @@
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -154,7 +155,11 @@ async def CommandAttr(hash, attrdef):
 
 
 async def CommandDeleteReading(hash, deldef):
-    return
+    # like FHEM: deletereading <name> <regex>, the regex is anchored
+    name, regex = deldef.split(" ", 1)
+    for reading in list(readings.get(name, {})):
+        if re.fullmatch(regex, reading):
+            del readings[name][reading]
 
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):

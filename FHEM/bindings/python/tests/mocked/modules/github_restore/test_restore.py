@@ -11,6 +11,8 @@ FILES = {
     "fhem.cfg": b"define z2m fhempy zigbee2mqtt\n",
     ".fhempy/zigbee2mqtt/data/configuration.yaml": b"restored: true\n",
     ".fhempy/zigbee2mqtt/data/database.db": b"restored database\n",
+    ".fhempy/matter_server/data/fabric/node.1": b"restored node\n",
+    "FHEM/FhemUtils/uniqueID": b"uniqueID:0123\n",
 }
 
 
@@ -69,3 +71,32 @@ async def test_zigbee2mqtt_data_is_restored_as_pending(mocker, tmp_path, monkeyp
     state = mock_fhem.readings["testrestore"]["state"]
     assert state.startswith("Backup restored")
     assert "zigbee2mqtt data will be applied" in state
+    # a running Matter server would overwrite its storage, it's staged too
+    assert not (tmp_path / ".fhempy/matter_server").exists()
+    assert (
+        tmp_path / ".fhempy/matter_server_restore/fabric/node.1"
+    ).read_bytes() == b"restored node\n"
+    assert "Matter data will be applied" in state
+    assert (tmp_path / "FHEM/FhemUtils/uniqueID").read_bytes() == b"uniqueID:0123\n"
+
+
+def test_matter_restore_replaces_storage(tmp_path):
+    from fhempy.lib.core import pending_restore
+
+    storage = tmp_path / ".fhempy/matter_server/data"
+    (storage / "fabric").mkdir(parents=True)
+    (storage / "fabric/node.9").write_text("current fabric")
+    pending = tmp_path / ".fhempy/matter_server_restore"
+    (pending / "fabric").mkdir(parents=True)
+    (pending / "fabric/node.1").write_text("restored")
+
+    assert pending_restore.apply_matter_restore(storage) == ["fabric/node.1"]
+
+    # keys of two fabrics must not be mixed
+    assert sorted(p.name for p in storage.rglob("*") if p.is_file()) == ["node.1"]
+    assert (storage / "fabric/node.1").read_text() == "restored"
+    previous = tmp_path / ".fhempy/matter_server/data.before_restore"
+    assert (previous / "fabric/node.9").read_text() == "current fabric"
+    assert not pending.exists()
+    # consumed, nothing to apply on the next start
+    assert pending_restore.apply_matter_restore(storage) == []
