@@ -106,6 +106,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESPHome dashboard for easy ESPHome device management|
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control Gree HVAC devices|
 |[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control HomeKit devices|
+|[matter](FHEM/bindings/python/fhempy/lib/matter/README.md)|Control Matter devices (lights, plugs, sensors, thermostats, locks, blinds), also devices behind Hue/IKEA/Aqara bridges|
 |[meross](FHEM/bindings/python/fhempy/lib/meross/README.md)|Control Meross devices|
 |[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
 |[mqtt_ha_discovery](FHEM/bindings/python/fhempy/lib/mqtt_ha_discovery/)|Support Home Assistant MQTT discovery|
