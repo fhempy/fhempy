@@ -5,6 +5,10 @@ from fhempy.lib.fusionsolar.fusionsolar_api import FusionSolarRestApi
 
 from .. import fhem, generic, utils
 
+# FusionSolar refreshes its portal data every 5 minutes
+DEFAULT_INTERVAL = 300
+MIN_INTERVAL = 60
+
 
 class fusionsolar(generic.FhemModule):
     def __init__(self, logger):
@@ -12,10 +16,23 @@ class fusionsolar(generic.FhemModule):
         self._errors = utils.ErrorLogger(logger)
         self._stationname = None
         self._sessionid = None
+        self._attr_interval = DEFAULT_INTERVAL
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        await self.set_attr_config(
+            {
+                "interval": {
+                    "default": DEFAULT_INTERVAL,
+                    "format": "int",
+                    "help": (
+                        f"Update interval in seconds, default {DEFAULT_INTERVAL}, "
+                        f"minimum {MIN_INTERVAL}."
+                    ),
+                }
+            }
+        )
         if len(argsh) > 0 and argsh[list(argsh)[0]][:4] == "http":
             await fhem.readingsSingleUpdate(
                 hash, "state", "Please read HELP to change define", 1
@@ -59,6 +76,7 @@ class fusionsolar(generic.FhemModule):
 
     async def update_readings(self):
         while True:
+            cycle_start = time.monotonic()
             await fhem.readingsBeginUpdate(self.hash)
             try:
                 await self.restapi.update()
@@ -183,13 +201,10 @@ class fusionsolar(generic.FhemModule):
                 self.logger.debug(f"Received data:\n{self.restapi.data_string}")
             finally:
                 await fhem.readingsEndUpdate(self.hash, 1)
-            # calculate next full 5min+30s
-            next_sec = (
-                (4 - time.localtime().tm_min % 5) * 60
-                + 60
-                - time.localtime().tm_sec
-                + 30
-            )
-            if next_sec > 180:
-                next_sec = 180
-            await asyncio.sleep(next_sec)
+            await asyncio.sleep(self.next_update_delay(cycle_start))
+
+    def next_update_delay(self, cycle_start):
+        # fixed interval measured from the start of the cycle, so slow
+        # requests don't shift the update times
+        interval = max(int(self._attr_interval), MIN_INTERVAL)
+        return max(interval - (time.monotonic() - cycle_start), 0)
