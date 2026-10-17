@@ -92,6 +92,23 @@ class Host:
         """Consume a complete multipart dump; never use a partial result."""
         neighbours = {}
         interrupted = False
+        for kind, flags, payload in Host._dump_messages(sock, deadline):
+            interrupted |= bool(flags & NLM_F_DUMP_INTR)
+            if kind in (NLMSG_ERROR, NLMSG_DONE):
+                Host._check_dump_reply(kind, payload, interrupted)
+                if kind == NLMSG_DONE:
+                    return neighbours
+            elif kind == NLMSG_OVERRUN:
+                raise OSError(errno.ENOBUFS, "Neighbour table dump overrun")
+            elif kind == RTM_NEWNEIGH:
+                entry = Host._decode_neighbour(payload)
+                if entry is not None:
+                    key, value = entry
+                    neighbours[key] = value
+
+    @staticmethod
+    def _dump_messages(sock, deadline):
+        """Receive complete kernel datagrams within the dump's deadline."""
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -104,70 +121,68 @@ class Host:
                 continue
             if not data:
                 raise OSError(errno.EIO, "Empty neighbour table reply")
-            offset = 0
-            while offset < len(data):
-                if len(data) - offset < NLMSG_HEADER.size:
-                    raise OSError(errno.EPROTO, "Invalid Netlink header")
-                length, kind, msg_flags, seq, _ = NLMSG_HEADER.unpack_from(
-                    data, offset
-                )
-                if length < NLMSG_HEADER.size or offset + length > len(data):
-                    raise OSError(errno.EPROTO, "Invalid Netlink message length")
-                payload = data[offset + NLMSG_HEADER.size : offset + length]
-                offset += (length + 3) & ~3
-                if seq != 1:
-                    continue
-                interrupted |= bool(msg_flags & NLM_F_DUMP_INTR)
-                if kind in (NLMSG_ERROR, NLMSG_DONE):
-                    if len(payload) < 4 and (payload or kind == NLMSG_ERROR):
-                        raise OSError(errno.EPROTO, "Invalid Netlink error reply")
-                    error = struct.unpack_from("=i", payload)[0] if payload else 0
-                    if error:
-                        raise OSError(-error, os.strerror(-error))
-                    if kind == NLMSG_DONE:
-                        if interrupted:
-                            raise OSError(
-                                errno.EAGAIN, "Neighbour table dump interrupted"
-                            )
-                        return neighbours
-                elif kind == NLMSG_OVERRUN:
-                    raise OSError(errno.ENOBUFS, "Neighbour table dump overrun")
-                elif kind == RTM_NEWNEIGH:
-                    if len(payload) < NEIGH_HEADER.size:
-                        raise OSError(errno.EPROTO, "Invalid neighbour header")
-                    family, interface, state, _, _ = NEIGH_HEADER.unpack_from(payload)
-                    if family != socket.AF_INET:
-                        continue
-                    address = None
-                    mac = None
-                    attr_offset = NEIGH_HEADER.size
-                    while attr_offset < len(payload):
-                        if len(payload) - attr_offset < ATTR_HEADER.size:
-                            raise OSError(errno.EPROTO, "Invalid neighbour attribute")
-                        attr_len, attr_type = ATTR_HEADER.unpack_from(
-                            payload, attr_offset
-                        )
-                        if (
-                            attr_len < ATTR_HEADER.size
-                            or attr_offset + attr_len > len(payload)
-                        ):
-                            raise OSError(
-                                errno.EPROTO, "Invalid neighbour attribute length"
-                            )
-                        value = payload[
-                            attr_offset + ATTR_HEADER.size : attr_offset + attr_len
-                        ]
-                        if attr_type & 0x3FFF == NDA_DST:
-                            if len(value) != 4:
-                                raise OSError(
-                                    errno.EPROTO, "Invalid IPv4 neighbour address"
-                                )
-                            address = socket.inet_ntoa(value)
-                        elif attr_type & 0x3FFF == NDA_LLADDR and len(value) == 6:
-                            mac = value.hex(":")
-                        attr_offset += (attr_len + 3) & ~3
-                    if address is not None:
-                        neighbours[address, interface] = (mac, state)
+            yield from Host._netlink_messages(data)
+
+    @staticmethod
+    def _netlink_messages(data):
+        """Decode aligned message frames belonging to this dump request."""
+        offset = 0
+        while offset < len(data):
+            if len(data) - offset < NLMSG_HEADER.size:
+                raise OSError(errno.EPROTO, "Invalid Netlink header")
+            length, kind, flags, seq, _ = NLMSG_HEADER.unpack_from(data, offset)
+            if length < NLMSG_HEADER.size or offset + length > len(data):
+                raise OSError(errno.EPROTO, "Invalid Netlink message length")
+            payload = data[offset + NLMSG_HEADER.size : offset + length]
+            offset += (length + 3) & ~3
+            if seq == 1:
+                yield kind, flags, payload
+
+    @staticmethod
+    def _check_dump_reply(kind, payload, interrupted):
+        """Validate ACK/DONE status before accepting a completed dump."""
+        if len(payload) < 4 and (payload or kind == NLMSG_ERROR):
+            raise OSError(errno.EPROTO, "Invalid Netlink error reply")
+        error = struct.unpack_from("=i", payload)[0] if payload else 0
+        if error:
+            raise OSError(-error, os.strerror(-error))
+        if kind == NLMSG_DONE and interrupted:
+            raise OSError(errno.EAGAIN, "Neighbour table dump interrupted")
+
+    @staticmethod
+    def _decode_neighbour(payload):
+        """Decode one IPv4 entry as (address, interface), (MAC, state)."""
+        if len(payload) < NEIGH_HEADER.size:
+            raise OSError(errno.EPROTO, "Invalid neighbour header")
+        family, interface, state, _, _ = NEIGH_HEADER.unpack_from(payload)
+        if family != socket.AF_INET:
+            return None
+        address = None
+        mac = None
+        for kind, value in Host._neighbour_attributes(payload):
+            if kind == NDA_DST:
+                if len(value) != 4:
+                    raise OSError(errno.EPROTO, "Invalid IPv4 neighbour address")
+                address = socket.inet_ntoa(value)
+            elif kind == NDA_LLADDR and len(value) == 6:
+                mac = value.hex(":")
+        if address is None:
+            return None
+        return (address, interface), (mac, state)
+
+    @staticmethod
+    def _neighbour_attributes(payload):
+        """Decode aligned attributes, excluding the attribute type flags."""
+        offset = NEIGH_HEADER.size
+        while offset < len(payload):
+            if len(payload) - offset < ATTR_HEADER.size:
+                raise OSError(errno.EPROTO, "Invalid neighbour attribute")
+            length, kind = ATTR_HEADER.unpack_from(payload, offset)
+            if length < ATTR_HEADER.size or offset + length > len(payload):
+                raise OSError(errno.EPROTO, "Invalid neighbour attribute length")
+            value = payload[offset + ATTR_HEADER.size : offset + length]
+            offset += (length + 3) & ~3
+            yield kind & 0x3FFF, value
 
 
 class arp_presence(generic.FhemModule):
@@ -288,32 +303,47 @@ class arp_presence(generic.FhemModule):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return False
-            neighbours = Host.find_with_netlink(remaining)
-            matches = {
-                key: state for key, (mac, state) in neighbours.items()
-                if (mac if is_mac else key[0]) == target
-            }
+            matches = self._find_target_neighbours(target, is_mac, remaining)
             if is_mac:
+                matches = self._probe_mac_neighbours(target, matches, probed, deadline)
                 if not matches:
-                    self.logger.debug("No IPv4 neighbour mapping for MAC %s", target)
                     return False
-                unprobed = matches.keys() - probed
-                for address, interface in unprobed:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        return False
-                    self.logger.debug("MAC %s maps to %s", target, address)
-                    self.ping_device(address, interface, remaining)
-                    probed.add((address, interface))
-                if unprobed:
-                    # Do not accept a cached state/MAC from before the probe.
-                    continue
             if any(state & home for state in matches.values() for home in HOME_STATES):
                 return True
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return False
             time.sleep(min(SCAN_POLL_INTERVAL, remaining))
+
+    @staticmethod
+    def _find_target_neighbours(target, is_mac, timeout):
+        """Read a fresh table and select only entries for the IP or MAC."""
+        neighbours = Host.find_with_netlink(timeout)
+        return {
+            key: state for key, (mac, state) in neighbours.items()
+            if (mac if is_mac else key[0]) == target
+        }
+
+    def _probe_mac_neighbours(self, target, matches, probed, deadline):
+        """Probe each new MAC mapping, then read its state from a fresh dump."""
+        while matches:
+            unprobed = matches.keys() - probed
+            if not unprobed:
+                return matches
+            for address, interface in unprobed:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return {}
+                self.logger.debug("MAC %s maps to %s", target, address)
+                self.ping_device(address, interface, remaining)
+                probed.add((address, interface))
+            # Do not accept a cached state/MAC from before the probe.
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return {}
+            matches = self._find_target_neighbours(target, True, remaining)
+        self.logger.debug("No IPv4 neighbour mapping for MAC %s", target)
+        return {}
 
     async def update_loop(self):
         """Scan repeatedly using the currently configured interval."""
