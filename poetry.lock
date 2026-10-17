@@ -7390,15 +7390,14 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "xmodem"
-version = "0.4.7"
+version = "0.5.0"
 description = "XMODEM protocol implementation."
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 groups = ["all"]
 files = [
-    {file = "xmodem-0.4.7-py2.py3-none-any.whl", hash = "sha256:0842d2266175f01225053db721ea952b3f4b239cb3ace83c32b1daf90aa413af"},
-    {file = "xmodem-0.4.7-py3-none-any.whl", hash = "sha256:e6a2c7608f7b187da786c47780f8407dbc4ac2d3dfeb34fe683cc19778f01360"},
-    {file = "xmodem-0.4.7.tar.gz", hash = "sha256:2f1068aa8676f0d1d112498b5786c4f8ea4f89d8f25d07d3a0f293cd21db1c35"},
+    {file = "xmodem-0.5.0-py3-none-any.whl", hash = "sha256:e0bb644adfc7652c15a6fa3c3a4b04693b100520e3083cb952206006e3754e89"},
+    {file = "xmodem-0.5.0.tar.gz", hash = "sha256:a1a818f31c29412f1cab0cd69deccd7be77bc1feb516723af990d00161f6fb6a"},
 ]
 
 [[package]]
@@ -7694,4 +7693,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "782b778ee2e128de48fee4fd544d4ba2b0e2c4b06ce7ff45a5cd7397579968ef"
+content-hash = "5fbaf98d43b219d54c72aaa5c94e8d19139f7adf8dc3b60b228804e3d7eb1b85"
