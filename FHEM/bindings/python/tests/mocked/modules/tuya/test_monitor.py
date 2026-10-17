@@ -39,6 +39,9 @@ class FakeDevice:
     def set_value(self, index, value, nowait=False):
         self.sent.append(("set_value", index, value, nowait))
 
+    def updatedps(self, index=None, nowait=False):
+        self.sent.append(("updatedps", index, nowait))
+
     def heartbeat(self, nowait=True):
         pass
 
@@ -134,3 +137,37 @@ async def test_define_with_non_numeric_energy_reading(mocker):
     finally:
         await fhempy_device.Undefine(testhash)
         mock_fhem.readings.pop(DEVICE_NAME, None)
+
+
+@pytest.mark.asyncio
+async def test_measurements_are_requested(mocker):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop(DEVICE_NAME, None)
+    await check_and_install_dependencies("tuya")
+    from fhempy.lib.tuya.tuya import tuya
+
+    fhempy_device, testhash = await define_device(mocker, tuya)
+    try:
+        await wait_for(lambda: fhempy_device._monitor is not None)
+        dev = FakeDevice.instances[0]
+        # numeric dps and dps without a value, not the bool switch dp
+        assert fhempy_device._update_dps == [2, 8]
+        assert fhempy_device._update_dps_task is not None
+
+        fhempy_device._attr_update_interval = 0
+        await fhempy_device.set_attr_update_interval(testhash)
+        assert fhempy_device._update_dps_task is None
+
+        fhempy_device._attr_update_interval = 0.1
+        await fhempy_device.set_attr_update_interval(testhash)
+        await wait_for(lambda: ("updatedps", [2, 8], True) in dev.sent)
+
+        # no requests while the device is offline
+        fhempy_device._monitor_disconnect(dev, "lost")
+        await asyncio.sleep(0.3)
+        dev.sent.clear()
+        await asyncio.sleep(0.3)
+        assert not any(cmd[0] == "updatedps" for cmd in dev.sent)
+    finally:
+        await fhempy_device.Undefine(testhash)
+        assert fhempy_device._update_dps_task is None

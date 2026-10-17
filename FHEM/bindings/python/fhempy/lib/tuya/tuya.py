@@ -21,6 +21,9 @@ class tuya(generic.FhemModule):
         self._tt_device = None
         self._monitor = None
         self._loop = None
+        self._update_dps = []
+        self._update_dps_task = None
+        self._connected = False
         self.tuya_cloud = None
         self.tt_key = ""
         self.tt_secret = ""
@@ -106,6 +109,15 @@ class tuya(generic.FhemModule):
             "localkey": {
                 "default": self.tt_localkey,
                 "help": "Use the localkey from the tuya setup device readings",
+            },
+            "update_interval": {
+                "default": 10,
+                "format": "int",
+                "help": (
+                    "Seconds between requests for measurement values"
+                    " (power, current, voltage). Many devices don't send"
+                    " them on their own. 0 disables the requests."
+                ),
             },
         }
         await self.set_attr_config(self.attr_config)
@@ -616,6 +628,7 @@ class tuya(generic.FhemModule):
         )
         self._tt_device = device
         self._monitor = monitor
+        self._connected = True
         # socket is already open, add() doesn't block
         handle = monitor.add(device)
         if isinstance(handle, (str, dict)):
@@ -624,9 +637,46 @@ class tuya(generic.FhemModule):
             device.close()
             raise ConnectionError(f"Failed to monitor device: {handle}")
         monitor.start()
+        # numeric dps (power, current, voltage, ...) are often only sent on
+        # request, dps without a value yet might be such measurements too
+        self._update_dps = [
+            int(dp)
+            for dp, value in status.items()
+            if value is None
+            or (isinstance(value, (int, float)) and not isinstance(value, bool))
+        ]
+        self._start_update_dps_loop()
         return status
 
+    def _start_update_dps_loop(self):
+        if self._update_dps_task is not None and not self._update_dps_task.done():
+            self.cancel_async_task(self._update_dps_task)
+        self._update_dps_task = None
+        if self._monitor is None or not self._update_dps:
+            return
+        if self._attr_update_interval > 0:
+            self._update_dps_task = self.create_async_task(self._update_dps_loop())
+
+    async def _update_dps_loop(self):
+        while True:
+            await asyncio.sleep(self._attr_update_interval)
+            monitor = self._monitor
+            device = self._tt_device
+            if monitor is None or device is None:
+                return
+            if not self._connected:
+                # the monitor would drop the command and log a warning
+                continue
+            # changed values are pushed by the device and handled by the monitor
+            monitor.command(device, "updatedps", self._update_dps)
+
+    async def set_attr_update_interval(self, hash):
+        self._start_update_dps_loop()
+
     async def close_connection(self):
+        if self._update_dps_task is not None:
+            self.cancel_async_task(self._update_dps_task)
+            self._update_dps_task = None
         monitor = self._monitor
         self._monitor = None
         self._tt_device = None
@@ -650,11 +700,13 @@ class tuya(generic.FhemModule):
         monitor = self._monitor
         if monitor is None:
             return
+        self._connected = True
         # status changes while offline are not pushed, request the full status
         monitor.command(device, "status")
         self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "1", 1))
 
     def _monitor_disconnect(self, device, error):
+        self._connected = False
         self.logger.info(f"Connection to device lost: {error}")
         self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1))
 
