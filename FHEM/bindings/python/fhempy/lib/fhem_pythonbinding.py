@@ -55,6 +55,10 @@ class ModuleDisabledException(Exception):
     pass
 
 
+class ModuleDefineException(Exception):
+    pass
+
+
 def describe_hash(hash):
     # NAME and function only, args and defargs might contain credentials
     return f"{hash.get('NAME')} {hash.get('function', hash.get('msgtype'))}"
@@ -368,6 +372,17 @@ class fhempy:
             # if Define isn't called right now
 
             if hash["function"] == "Define" and hash["NAME"] in loadedModuleInstances:
+                instance = loadedModuleInstances[hash["NAME"]]
+                previous_hash = getattr(instance, "hash", None)
+                if (
+                    previous_hash is not None
+                    and previous_hash.get("FHEMPYTYPE") == hash["FHEMPYTYPE"]
+                ):
+                    error = self._validate_define(type(instance), hash)
+                    if error:
+                        # Reject before Undefine; the working device stays intact.
+                        await self.sendBackReturn(hash, error)
+                        return 0
                 # this code is called on defmod
                 # if module is loaded and Define is called, do Undefine first
                 # call undefine
@@ -398,6 +413,10 @@ class fhempy:
 
                     await self.define_module(hash, module_object)
                 except ModuleDisabledException:
+                    return 0
+                except ModuleDefineException as exc:
+                    logger.error("%s: %s", hash["NAME"], exc)
+                    await fhem.readingsSingleUpdate(hash, "state", str(exc), 1)
                     return 0
                 except asyncio.TimeoutError:
                     errorMsg = (
@@ -522,9 +541,23 @@ class fhempy:
         self._background_tasks.add(update)
         update.add_done_callback(self._background_tasks.discard)
 
+
+    @staticmethod
+    def _validate_define(module_class, hash):
+        validate = getattr(module_class, "validate_define", None)
+        if validate is None:
+            return None
+        if hash["function"] == "Define":
+            return validate(hash["args"], hash["argsh"])
+        return validate(hash["defargs"], hash["defargsh"])
+
     async def define_module(self, hash, module_object):
         # create instance of class with logger
         target_class = getattr(module_object, hash["FHEMPYTYPE"])
+        error = self._validate_define(target_class, hash)
+        if error:
+            # No instance/resources have been created, so no cleanup is needed.
+            raise ModuleDefineException(error)
         moduleLogger = logging.getLogger(hash["NAME"])
         info = await fhem.getDeviceInfo(hash["NAME"], {"verbose": "3", "disable": "0"})
         moduleLogger.setLevel(self.getLogLevel(info["attr"]["verbose"]))

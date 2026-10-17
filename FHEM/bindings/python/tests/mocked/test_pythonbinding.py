@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import websockets
@@ -549,3 +550,158 @@ async def test_undefine_cancels_running_set(monkeypatch):
 
     assert task.cancelled()
     assert instance._tasks == []
+
+
+DEFINE_USAGE = "Usage: define NAME fhempy counting VALUE"
+
+
+def validating_binding(monkeypatch):
+    pb = counting_binding(monkeypatch, {"value": "0"})
+    monkeypatch.setattr(fhem_pythonbinding, "moduleLoadingRunning", {})
+
+    def validate(args, argsh):
+        if len(args) != 4 or argsh:
+            return DEFINE_USAGE
+        return None
+
+    monkeypatch.setattr(
+        CountingModule, "validate_define", staticmethod(validate), raising=False
+    )
+    pb.wsconnection.send = AsyncMock()
+    return pb
+
+
+def finished_returns(pb):
+    messages = [json.loads(call.args[0]) for call in pb.wsconnection.send.call_args_list]
+    return [msg["returnval"] for msg in messages if msg.get("finished")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("function", ["Define", "Set"])
+async def test_first_load_validation_error_is_state_not_a_second_reply(
+    monkeypatch, function
+):
+    pb = validating_binding(monkeypatch)
+    readings = AsyncMock()
+    constructor = Mock(return_value=None)
+    monkeypatch.setattr(fhem, "readingsSingleUpdate", readings)
+    monkeypatch.setattr(CountingModule, "__init__", constructor)
+    request = function_hash(function, ["counting_dev", "update"])
+
+    await pb.handle_function(request, "")
+
+    assert finished_returns(pb) == [""]
+    readings.assert_awaited_once_with(request, "state", DEFINE_USAGE, 1)
+    constructor.assert_not_called()
+    assert CountingModule.calls == []
+    assert fhem_pythonbinding.loadedModuleInstances == {}
+    assert fhem_pythonbinding.moduleLoadingRunning == {}
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_rejected_redefine_keeps_the_running_instance(monkeypatch):
+    pb = validating_binding(monkeypatch)
+    old = CountingModule(None)
+    old.hash = function_hash("Define", ["counting_dev", "fhempy", "counting", "old"])
+    fhem_pythonbinding.loadedModuleInstances["counting_dev"] = old
+    pb.check_and_install_dependencies = AsyncMock()
+    pb.import_module = AsyncMock()
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting"])
+
+    await pb.handle_function(request, "")
+
+    assert finished_returns(pb) == [DEFINE_USAGE]
+    assert fhem_pythonbinding.loadedModuleInstances["counting_dev"] is old
+    assert old.hash["args"][-1] == "old"
+    assert CountingModule.calls == []  # neither Undefine nor Define was called
+    pb.check_and_install_dependencies.assert_not_awaited()
+    pb.import_module.assert_not_awaited()
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_valid_redefine_replies_before_slow_initialization(monkeypatch):
+    pb = validating_binding(monkeypatch)
+    old = CountingModule(None)
+    old.hash = function_hash("Define")
+    fhem_pythonbinding.loadedModuleInstances["counting_dev"] = old
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def slow_define(self, hash, args, argsh):
+        self.hash = hash
+        entered.set()
+        await finish.wait()
+        CountingModule.calls.append("Define")
+
+    monkeypatch.setattr(CountingModule, "Define", slow_define)
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting", "new"])
+    task = asyncio.create_task(pb.handle_function(request, ""))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        assert finished_returns(pb) == [""]
+        assert not task.done()
+        assert fhem.function_active == []
+    finally:
+        finish.set()
+        await task
+    assert CountingModule.calls == ["Undefine", "Define"]
+    assert finished_returns(pb) == [""]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "function,args",
+    [
+        ("Undefine", []),
+        ("Rename", ["counting_new", "counting_dev"]),
+        ("Attr", ["set", "counting_dev", "disable", "1"]),
+        ("Set", ["counting_dev", "update"]),
+        ("Get", ["counting_dev", "status"]),
+    ],
+)
+async def test_control_calls_are_not_refused_during_dependency_install(
+    monkeypatch, function, args
+):
+    pb = validating_binding(monkeypatch)
+    entered = asyncio.Event()
+
+    async def install(hash):
+        entered.set()
+        await asyncio.Event().wait()
+
+    monkeypatch.setattr(pb, "check_and_install_dependencies", install)
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting", "value"])
+    task = asyncio.create_task(pb.handle_function(request, ""))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        assert finished_returns(pb) == [""]
+        control = function_hash(function, args)
+        control["id"] = 2
+        await asyncio.wait_for(pb.handle_function(control, ""), 1)
+        assert finished_returns(pb) == ["", ""]
+        assert not task.done()
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    assert fhem_pythonbinding.moduleLoadingRunning == {}
+    assert fhem.function_active == []
+
+
+@pytest.mark.asyncio
+async def test_changing_module_type_does_not_call_the_old_validator(monkeypatch):
+    pb = counting_binding(monkeypatch, {"value": "0"})
+    pb.wsconnection.send = AsyncMock()
+
+    class OldModule(CountingModule):
+        validate_define = Mock(return_value="Only valid for the old module type")
+
+    old = OldModule(None)
+    old.hash = dict(function_hash("Define"), FHEMPYTYPE="old_module")
+    fhem_pythonbinding.loadedModuleInstances["counting_dev"] = old
+
+    await pb.handle_function(function_hash("Define"), "")
+
+    OldModule.validate_define.assert_not_called()
+    assert finished_returns(pb) == [""]
+    assert CountingModule.calls == ["Undefine", "Define"]

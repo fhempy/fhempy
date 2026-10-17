@@ -39,6 +39,12 @@ sub
 fhempy_Define($$$)
 {
   my ($hash, $a, $h) = @_;
+  # FHEM restores DEF after a rejected modify. Keep its matching metadata too.
+  my @definition_keys = qw(
+    args argsh FHEMPYTYPE PYTHONTYPE .AttrList IODev NOTIFYDEV disableNotifyFn
+  );
+  my %previous = map { exists($hash->{$_}) ? ($_ => $hash->{$_}) : () }
+    @definition_keys;
   $hash->{args} = $a;
   $hash->{argsh} = $h;
   $hash->{FHEMPYTYPE} = @$a[2];
@@ -65,7 +71,19 @@ fhempy_Define($$$)
 
   AssignIoPort($hash, "fhempy_local");
 
-  return IOWrite($hash, $hash, "Define", $a, $h);
+  my $ret = IOWrite($hash, $hash, "Define", $a, $h);
+  if (defined($ret) && $ret ne "") {
+    # Waiting for the reply may have rebuilt FHEM's notification cache.
+    setDisableNotifyFn($hash, $previous{disableNotifyFn} // 0);
+    for my $key (@definition_keys) {
+      if (exists($previous{$key})) {
+        $hash->{$key} = $previous{$key};
+      } else {
+        delete $hash->{$key};
+      }
+    }
+  }
+  return $ret;
 }
 
 sub
