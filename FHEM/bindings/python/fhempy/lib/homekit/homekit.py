@@ -290,18 +290,8 @@ class homekit(generic.FhemModule):
                 self.hash, self._reading_name(char), value, 1
             )
 
-    async def set_int(self, hash, params):
-        self.create_async_task(
-            self.put_characteristic(params["function_param"], params["new_value"])
-        )
-
-    async def set_bool(self, hash, params):
-        # new_value is already converted to True/False (format bool)
-        self.create_async_task(
-            self.put_characteristic(params["function_param"], params["new_value"])
-        )
-
-    async def set_str(self, hash, params):
+    async def set_value(self, hash, params):
+        # new_value is already converted by its format (int, float, bool, str)
         self.create_async_task(
             self.put_characteristic(params["function_param"], params["new_value"])
         )
@@ -319,7 +309,7 @@ class homekit(generic.FhemModule):
                         )
                     }
                 },
-                "function": "set_int",
+                "function": "set_value",
                 "function_param": char,
                 "options": f"slider,{char.minValue},{char.minStep},{char.maxValue},1",
             }
@@ -327,7 +317,7 @@ class homekit(generic.FhemModule):
             self.set_config[utils.gen_reading_name(char.description)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "bool"}},
-                "function": "set_bool",
+                "function": "set_value",
                 "function_param": char,
                 "options": "on,off",
             }
@@ -335,6 +325,6 @@ class homekit(generic.FhemModule):
             self.set_config[utils.gen_reading_name(char.description)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "string"}},
-                "function": "set_str",
+                "function": "set_value",
                 "function_param": char,
             }
