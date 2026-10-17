@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.1.4 (2026-10-17)
+
+### Bug Fixes
+
+- **tuya**: Request power/current/voltage values periodically again
+  ([#694](https://github.com/fhempy/fhempy/pull/694),
+  [`85319db`](https://github.com/fhempy/fhempy/commit/85319db164c6aa104610604db6f170717663c51e))
+
+
 ## v2.1.3 (2026-10-17)
 
 ### Bug Fixes
