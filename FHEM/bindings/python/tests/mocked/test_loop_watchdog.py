@@ -19,6 +19,7 @@ fake_block = _namespace["block"]
 
 
 @pytest.mark.asyncio
+@pytest.mark.allow_blocking
 async def test_blocked_loop_is_logged_with_module(caplog, monkeypatch):
     monkeypatch.setattr(loop_watchdog, "LOG_INTERVAL", 0)
     caplog.set_level(logging.WARNING, logger="fhempy.lib.core.loop_watchdog")
@@ -72,3 +73,35 @@ def test_check_logs_once_per_blockade(caplog, monkeypatch):
     watchdog._last_beat = 105.0
     watchdog.check(105.1)
     assert len(caplog.records) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.allow_blocking
+async def test_blocking_callback_is_detected_by_test_guard():
+    from . import conftest
+
+    conftest._blocked.clear()
+    fake_block(conftest.BLOCK_THRESHOLD + 0.1)
+    # the blocking step of this test ends with the next await
+    await asyncio.sleep(0)
+    assert len(conftest._blocked) == 1
+    assert "test_blocking_callback_is_detected_by_test_guard" in conftest._blocked[0][1]
+
+
+@pytest.mark.asyncio
+async def test_test_guard_does_not_count_imports(monkeypatch):
+    from . import conftest
+
+    real_import = conftest._original_import
+
+    def slow_import(*args, **kwargs):
+        time.sleep(conftest.BLOCK_THRESHOLD + 0.1)
+        return real_import(*args, **kwargs)
+
+    monkeypatch.setattr(conftest, "_original_import", slow_import)
+    conftest._blocked.clear()
+    import json  # noqa: F401
+
+    monkeypatch.setattr(conftest, "_original_import", real_import)
+    await asyncio.sleep(0)
+    assert conftest._blocked == []

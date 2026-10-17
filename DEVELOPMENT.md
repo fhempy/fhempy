@@ -15,6 +15,19 @@ If you want to create your own module:
 4. Run fhempy in VS Code
 5. Do define test_mymodule fhempy mymodule in FHEM to see if the new module was found
 
+## Keep the event loop responsive
+
+While fhempy runs synchronous code in the event loop, FHEM waits and is frozen.
+Two checks catch this before a change is merged:
+
+- `ruff check FHEM/bindings/python/fhempy` reports blocking calls (`time.sleep`,
+  `requests`, `open`, `os.path`, `subprocess`) in async functions. Use
+  `utils.run_blocking` for them. Mark an intended exception with `# noqa: ASYNC230`; older
+  exceptions are listed in `pyproject.toml`.
+- The mocked tests fail when a single loop step takes longer than 500 ms
+  (`tests/mocked/conftest.py`). Tests that block on purpose use
+  `@pytest.mark.allow_blocking`.
+
 ## Test a pull request on your system
 
 `tools/pr-tester.py` runs fhempy from a pull request (or from master) instead of the

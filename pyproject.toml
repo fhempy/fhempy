@@ -145,3 +145,17 @@ pytest-asyncio = ">=1.4.0,<2.0.0"
 requests-mock = "1.12.1"
 pyyaml = "==6.0.3"
 toml = "^0.10.2"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# only blocking calls in async functions, they freeze FHEM while running
+select = ["ASYNC2"]
+
+[tool.ruff.lint.per-file-ignores]
+# known small file operations from before this check, don't add new ones
+"FHEM/bindings/python/fhempy/lib/core/bluetoothle.py" = ["ASYNC240"]
+"FHEM/bindings/python/fhempy/lib/pkg_installer.py" = ["ASYNC230"]
+"FHEM/bindings/python/fhempy/lib/xiaomi_gateway3/core/gateway3.py" = ["ASYNC230", "ASYNC240"]
+"FHEM/bindings/python/fhempy/lib/zigbee2mqtt/zigbee2mqtt.py" = ["ASYNC230", "ASYNC240"]
