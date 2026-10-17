@@ -459,6 +459,10 @@ async def handle_set(set_list_conf, obj, hash, args, argsh):
             else:
                 fct_name = "set_" + cmd
             fct_call = getattr(obj, fct_name)
-            return await fct_call(hash, final_params)
+            ret = fct_call(hash, final_params)
+            # set functions which only start a task don't need to be async
+            if inspect.isawaitable(ret):
+                ret = await ret
+            return ret
         else:
             return "Command not available for this device."

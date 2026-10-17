@@ -290,7 +290,7 @@ class homekit(generic.FhemModule):
                 self.hash, self._reading_name(char), value, 1
             )
 
-    async def set_value(self, hash, params):  # NOSONAR: handle_set awaits it
+    def set_value(self, hash, params):
         # new_value is already converted by its format (int, float, bool, str),
         # put in background so FHEM gets the reply at once
         self.create_async_task(
