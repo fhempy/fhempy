@@ -35,6 +35,7 @@ CONST_MESSAGE = b"Marco"
 CONST_MESSAGE_PORT = 5353
 SCAN_TIMEOUT = 1.0
 SCAN_POLL_INTERVAL = 0.1
+NETLINK_TIMEOUT = 1.0
 
 # Linux UAPI: linux/netlink.h, linux/rtnetlink.h, linux/neighbour.h.
 NLMSG_ERROR = 2
@@ -57,7 +58,7 @@ class Host:
     """Host object with arp detection."""
 
     @staticmethod
-    def find_with_netlink(timeout=SCAN_TIMEOUT):
+    def find_with_netlink(timeout=NETLINK_TIMEOUT):
         """Read (IPv4, interface) -> (MAC, state), including stale entries.
 
         /proc/net/arp cannot distinguish REACHABLE/DELAY from stale entries.
@@ -228,11 +229,19 @@ class arp_presence(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         """Reset the device, validate one IP or MAC and start periodic scans."""
+        redefined = getattr(self, "_is_redefine", False) or (
+            self._target is not None
+            and (args != self._defargs or argsh != self._defargsh)
+        )
+        self._is_redefine = False
         # A direct redefinition can reuse this instance. Cancel old tasks before
         # resetting readings; an old worker must not publish into the new DEF.
         await self.Undefine(hash)
         await super().Define(hash, args, argsh)
-        await self._update_readings("initialized")
+        if redefined:
+            await self._update_readings("initialized")
+        else:
+            await fhem.readingsSingleUpdate(self.hash, "state", "initialized", 1)
         attr_config = {
             "interval": {
                 "default": SCAN_INTERVAL,
@@ -319,7 +328,7 @@ class arp_presence(generic.FhemModule):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return False
-            matches = self._find_target_neighbours(target, is_mac, remaining)
+            matches = self._find_target_neighbours(target, is_mac)
             if is_mac:
                 matches = self._probe_mac_neighbours(target, matches, probed, deadline)
                 if not matches:
@@ -332,9 +341,10 @@ class arp_presence(generic.FhemModule):
             time.sleep(min(SCAN_POLL_INTERVAL, remaining))
 
     @staticmethod
-    def _find_target_neighbours(target, is_mac, timeout):
+    def _find_target_neighbours(target, is_mac):
         """Read a fresh table and select only entries for the IP or MAC."""
-        neighbours = Host.find_with_netlink(timeout)
+        # A started dump needs its own budget, even near the scan deadline.
+        neighbours = Host.find_with_netlink()
         return {
             key: state for key, (mac, state) in neighbours.items()
             if (mac if is_mac else key[0]) == target
@@ -357,7 +367,7 @@ class arp_presence(generic.FhemModule):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return {}
-            matches = self._find_target_neighbours(target, True, remaining)
+            matches = self._find_target_neighbours(target, True)
         self.logger.debug("No IPv4 neighbour mapping for MAC %s", target)
         return {}
 
