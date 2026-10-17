@@ -243,3 +243,63 @@ async def test_accessory_uses_gateway_connection(mocker):
     mocker.patch("fhempy.lib.generic.FhemModule.Undefine")
     await dev.Undefine(dev.hash)
     gw.pairing.close.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_set_sends_value_and_updates_reading(mocker):
+    # issue 684: "set ... on" sent False to the device
+    import logging
+    from unittest.mock import AsyncMock
+
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+    from aiohomekit.model.characteristics.characteristic_formats import (
+        CharacteristicFormats,
+    )
+
+    from fhempy.lib.homekit.homekit import homekit
+
+    def char(iid, description, fmt, value):
+        c = MagicMock()
+        c.iid = iid
+        c.description = description
+        c.type = description
+        c.format = fmt
+        c.perms = ["pr", "pw", "ev"]
+        c.value = value
+        c.minValue, c.minStep, c.maxValue = 0, 1, 100
+        return c
+
+    dev = homekit(logging.getLogger(__name__))
+    dev.hash = {"NAME": "testhkset", "FHEMPYTYPE": "homekit", "HOMEKIT_AID": "2"}
+    mock_fhem.readings.pop("testhkset", None)
+    dev.pairing = MagicMock()
+    dev.pairing.put_characteristics = AsyncMock(return_value={})
+    dev.set_config = {}
+    on = char(9, "On", CharacteristicFormats.bool, False)
+    temp = char(11, "Target Temperature", CharacteristicFormats.float, 20.0)
+    await dev.char_to_set(on)
+    await dev.char_to_set(temp)
+    await dev.set_set_config(dev.set_config)
+
+    for args, expected in (
+        (["testhkset", "on", "on"], (2, 9, True)),
+        (["testhkset", "on", "off"], (2, 9, False)),
+        (["testhkset", "target_temperature", "21.5"], (2, 11, 21.5)),
+    ):
+        await dev.Set(dev.hash, args, {})
+        for _ in range(5):
+            await asyncio.sleep(0)
+        dev.pairing.put_characteristics.assert_awaited_with([expected])
+
+    assert mock_fhem.readings["testhkset"]["on"] is False
+    assert mock_fhem.readings["testhkset"]["target_temperature"] == 21.5
+
+    # rejected by the device: reading stays
+    dev.pairing.put_characteristics = AsyncMock(
+        return_value={(2, 9): {"status": -70402, "description": "busy"}}
+    )
+    await dev.Set(dev.hash, ["testhkset", "on", "on"], {})
+    for _ in range(5):
+        await asyncio.sleep(0)
+    assert mock_fhem.readings["testhkset"]["on"] is False
