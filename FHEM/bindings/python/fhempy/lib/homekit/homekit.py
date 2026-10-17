@@ -3,6 +3,7 @@ import json
 import logging
 
 import aiohomekit
+from aiohomekit.controller.ip.connection import SecureHomeKitConnection
 from aiohomekit.exceptions import AccessoryDisconnectedError, AccessoryNotFoundError
 from aiohomekit.model.characteristics.characteristic import NUMBER_TYPES
 from aiohomekit.model.characteristics.characteristic_formats import (
@@ -19,6 +20,23 @@ from ..core import zeroconf
 # aiohomekit doesn't browse by itself, it attaches to an existing
 # AsyncServiceBrowser for these types (find_brower_for_hap_type)
 HOMEKIT_SERVICES = ["_hap._tcp.local.", "_hap._udp.local."]
+
+
+_aiohomekit_connect_once = SecureHomeKitConnection._connect_once
+
+
+async def _connect_once_closing(self):
+    # aiohomekit keeps the TCP connection open if pair-verify fails (e.g. a
+    # hanging Homebridge answers with garbage) and opens a new one on each
+    # reconnect attempt, until fhempy runs out of file descriptors (#686)
+    try:
+        await _aiohomekit_connect_once(self)
+    except BaseException:
+        self._drop_transport()
+        raise
+
+
+SecureHomeKitConnection._connect_once = _connect_once_closing
 
 
 def _on_service_state_change(

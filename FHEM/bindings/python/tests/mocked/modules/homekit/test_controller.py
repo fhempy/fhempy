@@ -303,3 +303,52 @@ async def test_set_sends_value_and_updates_reading(mocker):
     for _ in range(5):
         await asyncio.sleep(0)
     assert mock_fhem.readings["testhkset"]["on"] is False
+
+
+@pytest.mark.asyncio
+async def test_failed_pair_verify_closes_connection(mocker):
+    # a broken Homebridge accepts the connection but answers pair-verify with
+    # garbage, every reconnect attempt must close its connection (#686)
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+
+    from aiohomekit.controller.ip.connection import SecureHomeKitConnection
+
+    import fhempy.lib.homekit.homekit  # noqa: F401 patches aiohomekit
+
+    open_connections = set()
+
+    async def handle(reader, writer):
+        open_connections.add(writer)
+        while await reader.read(4096):
+            writer.write(
+                b"HTTP/1.1 200 OK\r\nContent-Type: application/pairing+tlv8\r\n"
+                b"Content-Length: 0\r\n\r\n"
+            )
+            await writer.drain()
+        open_connections.discard(writer)
+        writer.close()
+
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    pairing_data = {
+        "AccessoryIP": "127.0.0.1",
+        "AccessoryPort": port,
+        "AccessoryPairingID": "AA:BB:CC:DD:EE:FF",
+        "AccessoryLTPK": "00" * 32,
+        "iOSPairingId": "fhempy",
+        "iOSDeviceLTSK": "11" * 32,
+        "iOSDeviceLTPK": "22" * 32,
+    }
+    connection = SecureHomeKitConnection(None, pairing_data)
+    try:
+        for _ in range(3):
+            with pytest.raises(Exception):
+                await connection._connect_once()
+            await asyncio.sleep(0.1)
+            assert connection.transport is None
+            assert len(open_connections) == 0
+    finally:
+        await connection.close()
+        server.close()
+        await server.wait_closed()
