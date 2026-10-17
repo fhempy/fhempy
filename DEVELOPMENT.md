@@ -22,7 +22,8 @@ Two checks catch this before a change is merged:
 
 - `ruff check FHEM/bindings/python/fhempy` reports blocking calls (`time.sleep`,
   `requests`, `open`, `os.path`, `subprocess`) in async functions. Use
-  `utils.run_blocking` for them. Mark an intended exception with `# noqa: ASYNC230`.
+  `utils.run_blocking` for them. Mark an intended exception with `# noqa: ASYNC230`; older
+  exceptions are listed in `pyproject.toml`.
 - The mocked tests fail when a single loop step takes longer than 500 ms
   (`tests/mocked/conftest.py`). Tests that block on purpose use
   `@pytest.mark.allow_blocking`.
