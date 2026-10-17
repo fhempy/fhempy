@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.1.1 (2026-10-17)
+
+### Bug Fixes
+
+- **homekit**: Set on sent off to the device, show new value at once
+  ([#685](https://github.com/fhempy/fhempy/pull/685),
+  [`5587e9a`](https://github.com/fhempy/fhempy/commit/5587e9a8f85155744ae35a6b9614293f08547310))
+
+
 ## v2.1.0 (2026-10-16)
 
 ### Bug Fixes
