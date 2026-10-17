@@ -86,3 +86,22 @@ async def test_blocking_callback_is_detected_by_test_guard():
     await asyncio.sleep(0)
     assert len(conftest._blocked) == 1
     assert "test_blocking_callback_is_detected_by_test_guard" in conftest._blocked[0][1]
+
+
+@pytest.mark.asyncio
+async def test_test_guard_does_not_count_imports(monkeypatch):
+    from . import conftest
+
+    real_import = conftest._original_import
+
+    def slow_import(*args, **kwargs):
+        time.sleep(conftest.BLOCK_THRESHOLD + 0.1)
+        return real_import(*args, **kwargs)
+
+    monkeypatch.setattr(conftest, "_original_import", slow_import)
+    conftest._blocked.clear()
+    import json  # noqa: F401
+
+    monkeypatch.setattr(conftest, "_original_import", real_import)
+    await asyncio.sleep(0)
+    assert conftest._blocked == []
