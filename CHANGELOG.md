@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.1.2 (2026-10-17)
+
+### Bug Fixes
+
+- **homekit**: Close the connection when pair-verify fails
+  ([#687](https://github.com/fhempy/fhempy/pull/687),
+  [`4b8209e`](https://github.com/fhempy/fhempy/commit/4b8209ea12001fbf0cae9574cb8785b2ff2eebd5))
+
+
 ## v2.1.1 (2026-10-17)
 
 ### Bug Fixes
