@@ -2,6 +2,45 @@
 
 <!-- version list -->
 
+## v2.1.3 (2026-10-17)
+
+### Bug Fixes
+
+- **arp_presence**: Preserve presence on restart and isolate query timeouts
+  ([`c72ecce`](https://github.com/fhempy/fhempy/commit/c72eccef3dfc90d3bb2856f166fd6e67e92fd640))
+
+- **arp_presence**: Split Netlink reader into focused helpers
+  ([#688](https://github.com/fhempy/fhempy/pull/688),
+  [`7f1504c`](https://github.com/fhempy/fhempy/commit/7f1504cbdc3262ffc40789794721e908fb2eb1e0))
+
+- **arp_presence**: Validate Define arguments before redefining
+  ([#690](https://github.com/fhempy/fhempy/pull/690),
+  [`e62ca21`](https://github.com/fhempy/fhempy/commit/e62ca21caae62b1e45547338bd7688e50fa399fd))
+
+### Features
+
+- **binding**: Add optional Define argument validation
+  ([#690](https://github.com/fhempy/fhempy/pull/690),
+  [`e62ca21`](https://github.com/fhempy/fhempy/commit/e62ca21caae62b1e45547338bd7688e50fa399fd))
+
+- **binding**: Add optional Define argument validation
+  ([#689](https://github.com/fhempy/fhempy/pull/689),
+  [`a524682`](https://github.com/fhempy/fhempy/commit/a524682a441982c73eb64133e7cb375d9c40bbbc))
+
+- **generic**: Add configurable get commands and FHEMWEB help
+  ([`e389c9e`](https://github.com/fhempy/fhempy/commit/e389c9e08c1ccdc5779b8dc2c5cd9d2bb7e0c768))
+
+### Refactoring
+
+- **arp_presence**: Fix SonarQube's "brain overload"
+  ([#690](https://github.com/fhempy/fhempy/pull/690),
+  [`e62ca21`](https://github.com/fhempy/fhempy/commit/e62ca21caae62b1e45547338bd7688e50fa399fd))
+
+- **arp_presence**: Share Define argument validation
+  ([#690](https://github.com/fhempy/fhempy/pull/690),
+  [`e62ca21`](https://github.com/fhempy/fhempy/commit/e62ca21caae62b1e45547338bd7688e50fa399fd))
+
+
 ## v2.1.2 (2026-10-17)
 
 ### Bug Fixes
