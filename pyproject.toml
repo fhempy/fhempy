@@ -145,3 +145,10 @@ pytest-asyncio = ">=1.4.0,<2.0.0"
 requests-mock = "1.12.1"
 pyyaml = "==6.0.3"
 toml = "^0.10.2"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# only blocking calls in async functions, they freeze FHEM while running
+select = ["ASYNC2"]

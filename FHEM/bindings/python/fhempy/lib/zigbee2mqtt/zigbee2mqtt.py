@@ -124,7 +124,7 @@ class zigbee2mqtt(FhemModule):
             destination_folder = z2m_directory + "/data"
             for file in os.listdir(source_folder):
                 file_path = os.path.join(source_folder, file)
-                if os.path.isfile(file_path):
+                if os.path.isfile(file_path):  # noqa: ASYNC240
                     await utils.run_blocking(
                         functools.partial(shutil.copy, file_path, destination_folder)
                     )
@@ -145,11 +145,11 @@ class zigbee2mqtt(FhemModule):
 
         current_directory = os.getcwd()
         install_directory = os.path.join(current_directory, r".fhempy")
-        if not os.path.exists(install_directory):
+        if not os.path.exists(install_directory):  # noqa: ASYNC240
             os.makedirs(install_directory)
         z2m_directory = os.path.join(current_directory, r".fhempy/zigbee2mqtt")
         clone_needed = True
-        if not os.path.exists(z2m_directory):
+        if not os.path.exists(z2m_directory):  # noqa: ASYNC240
             os.makedirs(z2m_directory)
         else:
             try:
@@ -200,7 +200,7 @@ class zigbee2mqtt(FhemModule):
                     "frontend:\n"
                     "  port: 8080\n"
                 )
-                with open(z2m_directory + "/data/configuration.yaml", "w") as file:
+                with open(z2m_directory + "/data/configuration.yaml", "w") as file:  # noqa: ASYNC230
                     file.writelines(z2m_conf)
 
                 await self.create_weblink()
@@ -287,7 +287,7 @@ class zigbee2mqtt(FhemModule):
         await self.apply_restored_backup(z2m_directory)
 
         # Load the package.json file
-        with open(z2m_directory + "/package.json", "r") as f:
+        with open(z2m_directory + "/package.json", "r") as f:  # noqa: ASYNC230
             package_data = json.load(f)
 
         # Extract the version number

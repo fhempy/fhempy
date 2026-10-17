@@ -1205,8 +1205,8 @@ class GatewayEntry(GatewayNetwork):
                 sh.run_ftp()
             elif command == "dump":
                 raw = await sh.tar_data()
-                filename = Path().absolute() / f"{self.host}.tar.gz"
-                with open(filename, "wb") as f:
+                filename = Path().absolute() / f"{self.host}.tar.gz"  # noqa: ASYNC240
+                with open(filename, "wb") as f:  # noqa: ASYNC230
                     f.write(raw)
             else:
                 await sh.exec(command)

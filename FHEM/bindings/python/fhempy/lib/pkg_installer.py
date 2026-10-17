@@ -303,7 +303,7 @@ async def check_and_install_dependencies(module):
                 manifest = _MANIFEST_CACHE[module]
             else:
                 fhempy_root = utils.get_fhempy_root()
-                with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
+                with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:  # noqa: ASYNC230
                     manifest = json.load(f)
                 _MANIFEST_CACHE[module] = manifest
 

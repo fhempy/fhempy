@@ -223,7 +223,7 @@ class BluetoothLE:
                 '<allow send_interface="org.freedesktop.DBus.Properties"/>',
                 "</policy>",
             ]
-            if os.path.exists(btconf):
+            if os.path.exists(btconf):  # noqa: ASYNC240
                 async with aiofiles.open(btconf, mode="r") as f:
                     content = await f.read()
                     if not all(line in content for line in policy_lines):
