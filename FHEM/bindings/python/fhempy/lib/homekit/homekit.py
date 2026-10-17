@@ -259,57 +259,58 @@ class homekit(generic.FhemModule):
                 self._errors.failed("Failed to update readings from HomeKit device")
             await asyncio.sleep(self._attr_interval)
 
+    @staticmethod
+    def _reading_name(char):
+        return utils.gen_reading_name(char.description or char.type)
+
     async def update_readings(self):
         for accessory in self.pairing.accessories:
             if accessory.aid == self.aid:
                 for service in accessory.services:
                     for char in service.characteristics:
                         if "pr" in char.perms:
-                            if char.description:
-                                reading = char.description
-                            else:
-                                reading = char.type
                             await fhem.readingsSingleUpdateIfChanged(
                                 self.hash,
-                                utils.gen_reading_name(reading),
+                                self._reading_name(char),
                                 char.value,
                                 1,
                             )
 
-    async def set_int(self, hash, params):
-        char = params["function_param"]
-        self.create_async_task(
-            self.pairing.put_characteristics(
-                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
+    async def put_characteristic(self, char, value):
+        aid = int(self.hash["HOMEKIT_AID"])
+        result = await self.pairing.put_characteristics([(aid, char.iid, value)])
+        # the response only lists characteristics on errors (status != 0)
+        errors = {k: v for k, v in (result or {}).items() if v.get("status")}
+        if errors:
+            self.logger.error(f"HomeKit device rejected {char.description}: {errors}")
+            return
+        if "pr" in char.perms:
+            # don't wait for the next poll (interval) to show the new value
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, self._reading_name(char), value, 1
             )
-        )
 
-    async def set_bool(self, hash, params):
-        char = params["function_param"]
-        if char == "on":
-            params["new_value"] = True
-        else:
-            params["new_value"] = False
+    def set_value(self, hash, params):
+        # new_value is already converted by its format (int, float, bool, str),
+        # put in background so FHEM gets the reply at once
         self.create_async_task(
-            self.pairing.put_characteristics(
-                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
-            )
-        )
-
-    async def set_str(self, hash, params):
-        char = params["function_param"]
-        self.create_async_task(
-            self.pairing.put_characteristics(
-                [(int(self.hash["HOMEKIT_AID"]), char.iid, params["new_value"])]
-            )
+            self.put_characteristic(params["function_param"], params["new_value"])
         )
 
     async def char_to_set(self, char):
         if char.format in NUMBER_TYPES:
             self.set_config[utils.gen_reading_name(char.description)] = {
                 "args": ["new_value"],
-                "params": {"new_value": {"format": "int"}},
-                "function": "set_int",
+                "params": {
+                    "new_value": {
+                        "format": (
+                            "float"
+                            if char.format == CharacteristicFormats.float
+                            else "int"
+                        )
+                    }
+                },
+                "function": "set_value",
                 "function_param": char,
                 "options": f"slider,{char.minValue},{char.minStep},{char.maxValue},1",
             }
@@ -317,7 +318,7 @@ class homekit(generic.FhemModule):
             self.set_config[utils.gen_reading_name(char.description)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "bool"}},
-                "function": "set_bool",
+                "function": "set_value",
                 "function_param": char,
                 "options": "on,off",
             }
@@ -325,6 +326,6 @@ class homekit(generic.FhemModule):
             self.set_config[utils.gen_reading_name(char.description)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "string"}},
-                "function": "set_str",
+                "function": "set_value",
                 "function_param": char,
             }
