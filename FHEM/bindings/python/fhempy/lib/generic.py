@@ -20,6 +20,7 @@ class FhemModule:
             self.loop = None
         self._tasks = []
         self._conf_set = {}
+        self._conf_get = {}
         self._conf_attr = {}
 
     async def set_attr_config(self, attr_config):
@@ -32,6 +33,15 @@ class FhemModule:
             self.hash,
             await utils.handle_set(self._conf_set, self, self.hash, ["?"], {}),
         )
+
+    async def set_get_config(self, get_config):
+        """Configure get commands and their FHEMWEB help.
+
+        Uses the same options and parameters as set_set_config. Commands call
+        get_<command>(hash, params), unless a custom "function" is configured.
+        An existing module-specific Get method continues to take precedence.
+        """
+        self._conf_get = get_config
 
     async def set_icon(self, icon_name):
         curr_icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
@@ -66,41 +76,28 @@ class FhemModule:
           $("#fhempyReadme").html(###README_HELP_STRING###);
           document.getElementById("fhempyReadme").style.display = "none";
 
-          var helpCmdStr = '###SET_CMD_CONFIG_STRING###';
-          var helpCmdJson = JSON.parse(helpCmdStr);
-          $("select.set").change(helpSetAction);
-          function
-          helpSetAction(){
-            var cmd = $("select.set").val()
-            if(helpCmdJson[cmd] && helpCmdJson[cmd].help) {
-              if (document.getElementById("idCmdHelp")===null) {
-                $('<div id="idCmdHelp" class="makeTable help"></div>')
-                      .insertBefore("div.makeTable.internals");
+          var helpConfig = ###COMMAND_HELP_CONFIG###;
+          function bindHelp(kind, helpId) {
+            var select = $("select." + kind);
+            function updateHelp() {
+              var cmd = select.val();
+              var help = helpConfig[kind][cmd];
+              if (!help) {
+                $("#" + helpId).remove();
+                return;
               }
-              $("div#idCmdHelp").html(helpCmdJson[cmd].help + "<br>");
-            } else {
-              $("div#idCmdHelp").remove();
-            }
-          }
-          helpSetAction();
-
-          var helpAttrStr = '###ATTR_CONFIG_STRING###';
-          var helpAttrJson = JSON.parse(helpAttrStr);
-          $("select.attr").change(helpAttrAction);
-          function
-          helpAttrAction(){
-            var cmd = $("select.attr").val()
-            if(helpAttrJson[cmd] && helpAttrJson[cmd].help) {
-              if (document.getElementById("idAttrHelp")===null) {
-                $('<div id="idAttrHelp" class="makeTable help"></div>')
-                      .insertBefore("div.makeTable.attributes");
+              if (document.getElementById(helpId) === null) {
+                $("<div>", {id: helpId, "class": "makeTable help"})
+                  .insertAfter(select.closest("div.makeSelect"));
               }
-              $("div#idAttrHelp").html(helpAttrJson[cmd].help + "<br>");
-            } else {
-              $("div#idAttrHelp").remove();
+              $("#" + helpId).html(help + "<br>");
             }
+            select.change(updateHelp);
+            updateHelp();
           }
-          helpAttrAction();
+          bindHelp("set", "idCmdHelp");
+          bindHelp("get", "idGetHelp");
+          bindHelp("attr", "idAttrHelp");
 
           var helpLink = document.getElementById("content")
             .getElementsByClassName("detLink");
@@ -113,33 +110,21 @@ class FhemModule:
           }
         });
         </script>"""
-        js_set_conf = {}
-        for key in self._conf_set:
-            if "help" in self._conf_set[key]:
-                js_set_conf[key] = {}
-                js_set_conf[key]["help"] = (
-                    self._conf_set[key]["help"]
-                    .replace("\n", "<br>")
-                    .replace("'", '"')
-                    .replace('"', '\\"')
-                )
+        help_config = {
+            kind: {
+                command: config["help"].replace("\n", "<br>")
+                for command, config in commands.items()
+                if "help" in config
+            }
+            for kind, commands in (
+                ("set", self._conf_set),
+                ("get", self._conf_get),
+                ("attr", self._conf_attr),
+            )
+        }
         ret = ret.replace(
-            "###SET_CMD_CONFIG_STRING###",
-            json.dumps(js_set_conf),
-        )
-        js_attr_conf = {}
-        for key in self._conf_attr:
-            if "help" in self._conf_attr[key]:
-                js_attr_conf[key] = {}
-                js_attr_conf[key]["help"] = (
-                    self._conf_attr[key]["help"]
-                    .replace("\n", "<br>")
-                    .replace("'", '"')
-                    .replace('"', '\\"')
-                )
-        ret = ret.replace(
-            "###ATTR_CONFIG_STRING###",
-            json.dumps(js_attr_conf),
+            "###COMMAND_HELP_CONFIG###",
+            json.dumps(help_config).replace("<", "\\u003c"),
         )
 
         ret = ret.replace(
@@ -232,6 +217,13 @@ class FhemModule:
     # FHEM FUNCTION
     async def Set(self, hash, args, argsh):
         return await utils.handle_set(self._conf_set, self, hash, args, argsh)
+
+    # FHEM FUNCTION
+    async def Get(self, hash, args, argsh):
+        # Preserve the previous empty reply for modules without get commands.
+        if not self._conf_get:
+            return ""
+        return await utils.handle_get(self._conf_get, self, hash, args, argsh)
 
     def create_async_task(self, coro):
         task = asyncio.create_task(

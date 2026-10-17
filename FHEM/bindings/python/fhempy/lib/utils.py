@@ -388,81 +388,66 @@ def convert2format(value, list_def):
 #    "off": {}
 # }
 async def handle_set(set_list_conf, obj, hash, args, argsh):
-    fhem_set_list = []
-    if len(args) < 2 or (len(argsh) == 0 and args[1] == "?"):
-        for cmd in set_list_conf:
-            if "options" in set_list_conf[cmd]:
-                fhem_options = ":" + set_list_conf[cmd]["options"]
-            elif "args" in set_list_conf[cmd] or "argsh" in set_list_conf[cmd]:
-                fhem_options = ""
-            else:
-                fhem_options = ":noArg"
-            fhem_set_list.append(cmd + fhem_options)
-        return "Unknown argument ?, choose one of " + " ".join(fhem_set_list)
-    else:
-        # get cmd
-        cmd = args[1]
-        if cmd in set_list_conf:
-            all_args = {}
-            if "argsh" in set_list_conf[cmd]:
-                all_args = argsh
-            cmd_def = set_list_conf[cmd]
-            # map arguments to params
-            # add args to all_args
-            if ("args" in cmd_def and (len(args) - 2) > len(cmd_def["args"])) or (
-                len(args) > 2 and args[2] == "?"
-            ):
-                return f"Usage: set {hash['NAME']} {cmd} " + " ".join(cmd_def["args"])
-            i = 0
-            for arg in args[2:]:
-                # arg ... mode
-                # all_args[mode] = mode argument
-                if "args" in cmd_def and i < len(cmd_def["args"]):
-                    all_args[cmd_def["args"][i]] = arg
-                else:
-                    return f"Too many parameters provided: {arg}"
-                i += 1
-            # get default values for other params
-            final_params = all_args
-            if "params" in cmd_def:
-                # add value to params
-                for arg in all_args:
-                    if arg in cmd_def["params"]:
-                        cmd_def["params"][arg]["value"] = all_args[arg]
-                for param in cmd_def["params"]:
-                    # check if value is available or default value
-                    # check if all required params are availble
-                    if "value" in cmd_def["params"][param]:
-                        final_params[param] = cmd_def["params"][param]["value"]
-                    elif "default" not in cmd_def["params"][param] and (
-                        "optional" not in cmd_def["params"][param]
-                        or cmd_def["params"][param]["optional"] is False
-                    ):
-                        # no value found, check if optional
-                        return f"Required argument {param} missing."
-                    elif (
-                        "default" in cmd_def["params"][param]
-                        and "value" not in cmd_def["params"][param]
-                    ):
-                        final_params[param] = cmd_def["params"][param]["default"]
-                    if "format" in cmd_def["params"][param] and param in final_params:
-                        final_params[param] = convert2format(
-                            final_params[param], cmd_def["params"][param]
-                        )
+    return await _handle_command("set", set_list_conf, obj, hash, args, argsh)
 
-            # call function with params
-            if "function_param" in set_list_conf[cmd]:
-                final_params["function_param"] = set_list_conf[cmd]["function_param"]
-            if "function" in set_list_conf[cmd]:
-                fct_name = set_list_conf[cmd]["function"]
-                final_params["cmd"] = cmd
-            else:
-                fct_name = "set_" + cmd
-            fct_call = getattr(obj, fct_name)
-            ret = fct_call(hash, final_params)
-            # set functions which only start a task don't need to be async
-            if inspect.isawaitable(ret):
-                ret = await ret
-            return ret
+
+async def handle_get(get_list_conf, obj, hash, args, argsh):
+    return await _handle_command("get", get_list_conf, obj, hash, args, argsh)
+
+
+def _command_options(command_config):
+    options = []
+    for command, config in command_config.items():
+        if "options" in config:
+            suffix = ":" + config["options"]
+        elif "args" in config or "argsh" in config:
+            suffix = ""
         else:
-            return "Command not available for this device."
+            suffix = ":noArg"
+        options.append(command + suffix)
+    return "Unknown argument ?, choose one of " + " ".join(options)
+
+
+def _command_params(cmd_def, args, argsh):
+    # Each invocation owns its parameters; do not store values in the config.
+    params = dict(argsh) if "argsh" in cmd_def else {}
+    params.update(zip(cmd_def.get("args", []), args[2:]))
+    for name, config in cmd_def.get("params", {}).items():
+        if name not in params:
+            if "value" in config or "default" in config:
+                params[name] = config.get("value", config.get("default"))
+            elif not config.get("optional", False):
+                return f"Required argument {name} missing."
+        if name in params:
+            params[name] = convert2format(params[name], config)
+    return params
+
+
+async def _handle_command(command_type, command_config, obj, hash, args, argsh):
+    if len(args) < 2 or (not argsh and args[1] == "?"):
+        return _command_options(command_config)
+
+    cmd = args[1]
+    if cmd not in command_config:
+        return "Command not available for this device."
+    cmd_def = command_config[cmd]
+    positional = cmd_def.get("args", [])
+    if len(args) > 2 and (
+        args[2] == "?" or ("args" in cmd_def and len(args) - 2 > len(positional))
+    ):
+        return f"Usage: {command_type} {hash['NAME']} {cmd} " + " ".join(positional)
+    if len(args) - 2 > len(positional):
+        return f"Too many parameters provided: {args[2 + len(positional)]}"
+
+    params = _command_params(cmd_def, args, argsh)
+    if isinstance(params, str):
+        return params
+    if "function_param" in cmd_def:
+        params["function_param"] = cmd_def["function_param"]
+    function = cmd_def.get("function", command_type + "_" + cmd)
+    if "function" in cmd_def:
+        params["cmd"] = cmd
+    ret = getattr(obj, function)(hash, params)
+    if inspect.isawaitable(ret):
+        ret = await ret
+    return ret
