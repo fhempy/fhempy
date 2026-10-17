@@ -290,10 +290,12 @@ class homekit(generic.FhemModule):
                 self.hash, self._reading_name(char), value, 1
             )
 
-    async def set_value(self, hash, params):
-        # new_value is already converted by its format (int, float, bool, str).
-        # fhempy answers FHEM after 50ms and finishes a slow Set in background
-        await self.put_characteristic(params["function_param"], params["new_value"])
+    async def set_value(self, hash, params):  # NOSONAR: handle_set awaits it
+        # new_value is already converted by its format (int, float, bool, str),
+        # put in background so FHEM gets the reply at once
+        self.create_async_task(
+            self.put_characteristic(params["function_param"], params["new_value"])
+        )
 
     async def char_to_set(self, char):
         if char.format in NUMBER_TYPES:
