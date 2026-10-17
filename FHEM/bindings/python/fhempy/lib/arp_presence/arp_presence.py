@@ -199,6 +199,32 @@ class arp_presence(generic.FhemModule):
         if DEBUG:
             self.logger.setLevel("DEBUG")
 
+    @staticmethod
+    def _parse_target(value):
+        """Normalize one IPv4 or MAC address, without accessing the network."""
+        try:
+            return str(ipaddress.IPv4Address(value))
+        except (ipaddress.AddressValueError, TypeError):
+            if not MAC_PATTERN.fullmatch(value):
+                raise ValueError("error: invalid IPv4 or MAC address") from None
+            return bytes.fromhex(re.sub(r"[:.\-]", "", value)).hex(":")
+
+    @staticmethod
+    def validate_define(args, argsh):
+        """Share argument validation with the binding's optional preflight hook."""
+        if (
+            len(args) != 4 or argsh
+            or not isinstance(args[3], str) or not args[3].strip()
+        ):
+            return USAGE
+        try:
+            arp_presence._parse_target(args[3])
+        except ValueError as exc:
+            return str(exc)
+        if not hasattr(socket, "AF_NETLINK") or not hasattr(socket, "NETLINK_ROUTE"):
+            return "error: Linux Netlink required"
+        return None
+
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         """Reset the device, validate one IP or MAC and start periodic scans."""
@@ -220,24 +246,14 @@ class arp_presence(generic.FhemModule):
         set_config = {"update": {}}
         await self.set_set_config(set_config)
 
-        if (
-            len(args) != 4 or argsh
-            or not isinstance(args[3], str) or not args[3].strip()
-        ):
-            self._definition_error = "error: expected one IPv4 or MAC address"
+        error = self.validate_define(args, argsh)
+        if error:
+            self._definition_error = (
+                "error: expected one IPv4 or MAC address" if error == USAGE else error
+            )
             await self._publish_error(self._definition_error)
-            return USAGE
-        try:
-            target = str(ipaddress.IPv4Address(args[3]))
-        except (ipaddress.AddressValueError, TypeError):
-            if not MAC_PATTERN.fullmatch(args[3]):
-                self._definition_error = "error: invalid IPv4 or MAC address"
-                return await self._publish_error(self._definition_error)
-            target = bytes.fromhex(re.sub(r"[:.\-]", "", args[3])).hex(":")
-        if not hasattr(socket, "AF_NETLINK") or not hasattr(socket, "NETLINK_ROUTE"):
-            self._definition_error = "error: Linux Netlink required"
-            return await self._publish_error(self._definition_error)
-        self._target = target
+            return error
+        self._target = self._parse_target(args[3])
         self._definition_error = None
         self.logger.debug("ARP presence initialized for %s", self._target)
         self.create_async_task(self.update_loop())
