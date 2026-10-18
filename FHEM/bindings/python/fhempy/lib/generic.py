@@ -61,6 +61,8 @@ class FhemModule:
 
         ret = r"""<style>
         #fhempyReadme { overflow-x: auto; }
+        #fhempyReadme li > p:first-child { margin-top: 0; }
+        #fhempyReadme li > p:last-child { margin-bottom: 0; }
         #fhempyReadme table { border-collapse: collapse; margin: 1em 0; }
         #fhempyReadme th, #fhempyReadme td {
           border: 1px solid; padding: 0.4em 0.6em;
