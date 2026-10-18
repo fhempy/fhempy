@@ -347,6 +347,7 @@ BindingsIo_doInit($) {
   $hash->{messages_count} = {};
   $write_deep_recursion = 0;
   delete $hash->{".aliveCheckSent"};
+  delete $hash->{".updateVersionSupported"};
   RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
   $hash->{".waitingIds"} = {};
 
@@ -429,7 +430,9 @@ BindingsIo_Ready($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback") if ( $hash->{STATE} eq "disconnected" );
+  # don't check STATE, BindingsIo_installing overwrites "disconnected" with
+  # "Installing fhempy..." and the connection would never be retried
+  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback") if (!DevIo_IsOpen($hash));
 }
 
 sub
@@ -500,6 +503,9 @@ BindingsIo_Write($$$$$) {
 
   if ($function eq "update") {
     $msg{"msgtype"} = "update";
+    $waitforresponse = 0;
+  } elsif ($function eq "checkUpdate") {
+    $msg{"msgtype"} = "checkUpdate";
     $waitforresponse = 0;
   } elsif ($function eq "restart") {
     $msg{"msgtype"} = "restart";
@@ -621,10 +627,21 @@ BindingsIo_Set($$$)
 {
   my ($hash, $a, $h) = @_;
   my $cmd = @$a[1];
-  my $list = "update:noArg restart:noArg";
+  my $supported = $hash->{".updateVersionSupported"};
+  my $versions = $supported ? ($hash->{helper}{version_options} // "") : "";
+  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg";
 
   if ($cmd eq 'update') {
-    return BindingsIo_Write($hash, $hash, "update", [], {});
+    return "Usage: set $hash->{NAME} update [latest|version]" if (@$a > 3 || keys %$h);
+    my @args = @$a > 2 && $a->[2] ne "latest" ? ($a->[2]) : ();
+    return "The connected fhempy version does not support version selection; update fhempy first."
+      if (@args && !$supported);
+    return BindingsIo_Write($hash, $hash, "update", \@args, {});
+  } elsif ($cmd eq 'checkUpdate') {
+    return "Usage: set $hash->{NAME} checkUpdate" if (@$a != 2 || keys %$h);
+    return "The connected fhempy version does not support checkUpdate; update fhempy first."
+      if (!$supported);
+    return BindingsIo_Write($hash, $hash, "checkUpdate", [], {});
   } elsif ($cmd eq 'restart') {
     return BindingsIo_Write($hash, $hash, "restart", [], {});
   }
@@ -794,8 +811,18 @@ sub BindingsIo_processCommand($$) {
       $devhash->{$key} = $json->{$key};
     }
   } elsif ($json->{msgtype} eq "version") {
+    if (exists $json->{version}) {
+      $hash->{".updateVersionSupported"} = $json->{update_version_supported} // 0;
+      if ($hash->{".updateVersionSupported"} && (!exists $hash->{helper}{version_options}
+          || ReadingsVal($hash->{NAME}, "version", "") ne $json->{version})) {
+        $hash->{helper}{version_options} = $json->{version};
+      }
+    }
+    if (exists $json->{version_options}) {
+      $hash->{helper}{version_options} = $json->{version_options};
+    }
     foreach my $key (keys %$json) {
-      if ($key eq "msgtype") {
+      if ($key eq "msgtype" || $key eq "update_version_supported" || $key eq "version_options") {
         next;
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
@@ -920,16 +947,59 @@ sub BindingsIo_readWebsocketMessage {
 =item summary_DE BindingsIo stellt eine sprachneutrale Modulschnittstelle zur Verfuegung
 =begin html
 
-<a name="BindingsIo"></a>
+<a id="BindingsIo"></a>
 <h3>BindingsIo</h3>
 <ul>
   BindingsIo is used to provide language neutral module interface.<br><br>
 
-  <a name="BindingsIo_Define"></a>
+  <a id="BindingsIo-define"></a>
   <b>Define</b>
   <ul>
   define pybinding BindingsIo fhempy
   </ul>
+
+  <br>
+
+  <a id="BindingsIo-set"></a>
+  <b>Set</b>
+  <ul>
+    <a id="BindingsIo-set-checkUpdate"></a>
+    <li><code>checkUpdate</code><br>
+      check PyPI (The Python Package Index) now without installing anything.<br>
+      Checks also run on connection to FHEM and every twelve hours.<br>
+      The reading <code>update_check</code> reports checking, ok or the error;
+      its timestamp shows when the last check finished.<br>
+      Failed checks preserve the last result.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-update"></a>
+    <li><code>update [latest|version]</code><br>
+      install the newest available package when no version or <code>latest</code>
+      is given. The installer resolves this afresh, independently of the last check.<br>
+      An explicit version (for example <code>2.1.4</code>) installs only that version,
+      with no fallback to a newer one. The installed version is also allowed.<br>
+      Older versions are never offered in the dropdown, but can be requested explicitly at
+      the command line.<br>
+      The reading <code>update_status</code> reports progress and installation errors.<br>
+      fhempy restarts after a successful installation.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-restart"></a>
+    <li><code>restart</code><br>
+      restart fhempy
+    </li>
+  </ul>
+
+  <br>
+
+  The update dropdown offers the installed version
+  and newer stable PyPI releases compatible with the running Python version.<br>
+  Withdrawn releases are excluded. Refresh the detail page after a check to see
+  the new choices. Custom pip/uv indexes still apply to installation.
 
 </ul><br>
 

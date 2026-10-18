@@ -14,7 +14,7 @@ import traceback
 import websockets
 import websockets.asyncio.server
 
-from . import celebration, fhem, generic, pkg_installer, utils, version
+from . import celebration, fhem, generic, pkg_installer, updates, utils, version
 from .core.loop_watchdog import LoopWatchdog
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
@@ -110,7 +110,7 @@ async def pybinding(websocket):
     fhem.updateConnection(pb)
     await activate_internal_modules()
     await fhem.send_version()
-    asyncio.create_task(fhem.send_latest_release())
+    release_task = asyncio.create_task(fhem.send_latest_release())
     if release_party is not None and release_party.pending:
         # keep a reference, the event loop only holds a weak one
         release_party.task = asyncio.create_task(release_party.show_in_fhem())
@@ -128,6 +128,7 @@ async def pybinding(websocket):
             exit_code = 1
             stop_event.set()
     finally:
+        release_task.cancel()
         pb.connection_closed()
 
 
@@ -140,6 +141,7 @@ class fhempy:
         self._closed = False
         # restart or shutdown started, modules are being undefined
         self._stopping = False
+        self._updating = False
         self.msg_received_time = {}
         self._last_msg_cleanup = 0
         # keep references, the event loop only holds weak ones
@@ -325,7 +327,11 @@ class fhempy:
             id_received_timestamp[hash["id"]] = time.time()
             logger.debug(f">>> {int(hash['id']):08d}: {hash}")
             if hash["msgtype"] == "update":
+                id_received_timestamp.pop(hash["id"], None)
                 await self.update_and_exit(hash)
+            elif hash["msgtype"] == "checkUpdate":
+                id_received_timestamp.pop(hash["id"], None)
+                await fhem.check_update()
             elif hash["msgtype"] == "restart":
                 await self.restart(hash)
             elif hash["msgtype"] == "version":
@@ -669,10 +675,31 @@ class fhempy:
             dev_hash["NAME"] = new_name
 
     async def update_and_exit(self, hash):
-        await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)
-        logger.info("Start update...")
-        await pkg_installer.force_update_package("fhempy")
-        await self.restart(hash)
+        if self._updating or self._stopping:
+            return
+        try:
+            package = updates.package_requirement(hash.get("args", []))
+        except ValueError as error:
+            await fhem.readingsSingleUpdate(hash, "update_status", str(error), 1)
+            return
+        self._updating = True
+        try:
+            await fhem.readingsSingleUpdate(hash, "update_status", f"installing {package}", 1)
+            logger.info("Start update: %s", package)
+            try:
+                installed = await pkg_installer.force_update_package(package)
+            except Exception:
+                logger.exception("Failed to install %s", package)
+                installed = False
+            if not installed:
+                await fhem.readingsSingleUpdate(
+                    hash, "update_status", "failed: installation failed; see fhempy log", 1
+                )
+                return
+            await fhem.readingsSingleUpdate(hash, "update_status", f"installed {package}", 1)
+            await self.restart(hash)
+        finally:
+            self._updating = False
 
     async def restart(self, hash):
         await fhem.readingsSingleUpdate(
