@@ -21,3 +21,7 @@ define my_solar fhempy fusionsolar USERNAME PASSWORD REGION
 # Attributes
 
  - interval: Update interval in seconds (default 300, minimum 60). FusionSolar refreshes its data every 5 minutes, so shorter intervals mostly fetch the same values again.
+
+# Connection problems
+
+If FusionSolar is not reachable (e.g. maintenance) or the session expired, the module logs in again automatically. The wait before the next login starts at 30 seconds and doubles after every failure up to 15 minutes, so the module never gives up but doesn't trigger the FusionSolar captcha with too many logins. The state shows e.g. `login failed, reconnect in 900s`.
