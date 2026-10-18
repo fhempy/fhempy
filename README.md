@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>64 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>65 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -24,6 +24,7 @@
 <p align="center">
   <a href="#-quick-start">Quick start</a> ·
   <a href="#-matter">Matter</a> ·
+  <a href="#-ai">AI</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -32,6 +33,7 @@
 
 ## ✨ Why fhempy?
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
+- **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
 - **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
@@ -51,6 +53,13 @@ define matterbridge fhempy matter_bridge
 set matterbridge add Livingroom_Light
 ```
 Then scan the QR code shown in FHEMWEB with your app. The [Matter bridge README](FHEM/bindings/python/fhempy/lib/matter_bridge/README.md) explains every step.
+
+## 🤖 AI
+Control FHEM in plain language with AI apps like Claude Desktop, Claude Code, LM Studio or Cursor:
+```
+define AI fhempy mcp_server
+```
+Copy the secret address shown in FHEMWEB into your AI app, then ask *"Which lights are on?"* or *"Switch off all lights when I leave the house."* Automations created by the AI wait for your approval, your passwords are never sent to the AI. The [MCP server README](FHEM/bindings/python/fhempy/lib/mcp_server/README.md) explains every step.
 
 ## 🚀 Quick start
 
@@ -183,6 +192,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
 |[github_restore](FHEM/bindings/python/fhempy/lib/github_restore/)|Restore FHEM config from GitHub|
 |[ikos](FHEM/bindings/python/fhempy/lib/ikos/README.md)|Check prices for Ikos resorts|
+|[mcp_server](FHEM/bindings/python/fhempy/lib/mcp_server/README.md)|Control FHEM with AI apps (Claude, LM Studio...), the AI can also create automations for you|
 |[object_detection](FHEM/bindings/python/fhempy/lib/object_detection/README.md)|TensorFlow Lite object detection|
 |[openmeteo_weather](FHEM/bindings/python/fhempy/lib/openmeteo_weather/README.md)|Weather and forecast from Open-Meteo (replaces google_weather)|
 |[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
