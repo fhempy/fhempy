@@ -41,7 +41,7 @@ def _temperature(value):
 
 def _endday(value):
     try:
-        if not re.fullmatch(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", value):
+        if not re.fullmatch(r"\d{2}\.\d{2}\.\d{4}", value, flags=re.ASCII):
             raise ValueError
         datetime.strptime(value, "%d.%m.%Y")
     except (ValueError, TypeError):
@@ -51,7 +51,7 @@ def _endday(value):
 
 def _endtime(value):
     try:
-        if not re.fullmatch(r"[0-9]{2}:[0-9]{2}", value):
+        if not re.fullmatch(r"\d{2}:\d{2}", value, flags=re.ASCII):
             raise ValueError
         datetime.strptime(value, "%H:%M")
     except (ValueError, TypeError):
