@@ -197,7 +197,7 @@ def install(node, env, version):
         raise RuntimeError(proc.stdout.decode(errors="replace")[-2000:])
 
 
-def start(node, env, port, bluetooth_adapter=None, primary_interface=None):
+def start(node, env, port, bluetooth_adapter=None, primary_interface=None, logger=None):
     args = [
         node,
         server_script(),
@@ -221,6 +221,7 @@ def start(node, env, port, bluetooth_adapter=None, primary_interface=None):
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        output_log=child_process.OutputLog(log_file(), logger, capture=False),
     )
 
 

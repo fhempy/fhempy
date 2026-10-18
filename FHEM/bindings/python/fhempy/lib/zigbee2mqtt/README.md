@@ -41,6 +41,8 @@ set z2m update
 
 ## Logging
 
-You can find the log file of Zigbee2MQTT in the following directory:
+Zigbee2MQTT writes its own log files to:
 
-FHEM-ROOT-DIRECTORY/.fhempy/zigbee/data/log/
+FHEM-ROOT-DIRECTORY/.fhempy/zigbee2mqtt/data/log/
+
+The console output of Zigbee2MQTT goes to `FHEM-ROOT-DIRECTORY/.fhempy/log/<NAME>.log` (rotated at 5 MB), not to the fhempy log. If Zigbee2MQTT crashes, the last lines are written to the fhempy log.

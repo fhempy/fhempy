@@ -235,7 +235,7 @@ async def test_bridge_module(mocker, tmp_path):
     log = str(tmp_path / "received.jsonl")
     script = os.path.join(os.path.dirname(__file__), "fake_bridge.py")
 
-    def start(node, env, name, port, bridge_name, log_level="notice"):
+    def start(node, env, name, port, bridge_name, log_level="notice", logger=None):
         assert port == 5550 and bridge_name == "FHEM"
         return subprocess.Popen(
             [sys.executable, script, log],

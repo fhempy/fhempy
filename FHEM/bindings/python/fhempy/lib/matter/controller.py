@@ -245,6 +245,7 @@ class matter_controller:
                 port,
                 bluetooth_adapter=int(adapter) if str(adapter).isdigit() else None,
                 primary_interface=interface or None,
+                logger=self.logger,
             )
             self._started_with = settings
         except Exception:

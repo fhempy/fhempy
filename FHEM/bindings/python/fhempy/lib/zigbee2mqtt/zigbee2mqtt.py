@@ -300,6 +300,9 @@ class zigbee2mqtt(FhemModule):
                 cwd=z2m_directory,
                 env=await self._get_shell_env(),
                 stdin=subprocess.DEVNULL,
+                output_log=child_process.OutputLog(
+                    child_process.log_path(self.hash["NAME"]), self.logger
+                ),
             )
             await fhem.readingsSingleUpdate(self.hash, "state", "running", 1)
             if self.check_process_task is None:
@@ -318,7 +321,13 @@ class zigbee2mqtt(FhemModule):
                         )
                     elif poll != 0:
                         await fhem.readingsSingleUpdate(
-                            self.hash, "state", "error, check log file", 1
+                            self.hash,
+                            "state",
+                            "error, check "
+                            + os.path.relpath(
+                                child_process.log_path(self.hash["NAME"])
+                            ),
+                            1,
                         )
                         await asyncio.sleep(10)
                         await self.start_process()

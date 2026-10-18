@@ -318,6 +318,7 @@ class matter_bridge(generic.FhemModule):
                     self.hash["NAME"],
                     self._attr_port,
                     self._attr_bridge_name or "FHEM",
+                    logger=self.logger,
                 )
             )
         except Exception:
