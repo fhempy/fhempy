@@ -9,6 +9,7 @@ from fhempy.lib import fhem
 from . import utils
 
 _README_CACHE = {}
+_JS_ESCAPED_LT = r"\u003c"
 
 
 class FhemModule:
@@ -59,7 +60,18 @@ class FhemModule:
                 "to 0 or delete it to enable the device<br>"
             )
 
-        ret = """<script type="text/javascript">
+        ret = r"""<style>
+        #fhempyReadme { overflow-x: auto; }
+        #fhempyReadme li > p:first-child { margin-top: 0; }
+        #fhempyReadme li > p:last-child { margin-bottom: 0; }
+        #fhempyReadme table { border-collapse: collapse; margin: 1em 0; }
+        #fhempyReadme th, #fhempyReadme td {
+          border: 1px solid; padding: 0.4em 0.6em;
+          vertical-align: top; white-space: normal;
+        }
+        #fhempyReadme th { text-align: left; }
+        </style>
+        <script type="text/javascript">
         function displayHelp() {
           var x = document.getElementById("fhempyReadme");
           if (x.style.display === "none") {
@@ -99,6 +111,40 @@ class FhemModule:
           bindHelp("get", "idGetHelp");
           bindHelp("attr", "idAttrHelp");
 
+          // FHEMWEB submits Set forms normally when no same-named reading
+          // exists. Use its XHR/dialog path so validation errors stay here.
+          var deviceName = ###DEVICE_NAME###;
+          $("div.makeSelect[cmd='set']").filter(function() {
+            return $(this).attr("dev") === deviceName;
+          }).find("form").off("submit.fhempy").on("submit.fhempy", function(event) {
+            event.preventDefault();
+            var form = $(this);
+            var command = form.find("select.set").val();
+            var value = form.find("[name^='val.']").map(function() {
+              return $(this).val();
+            }).get().join(",");
+            var text = "set " + deviceName + " " + command;
+            if (value) text += " " + value;
+            FW_cmd(FW_root + "?cmd=" + encodeURIComponent(text) + "&XHR=1", function(response) {
+              if (response) {
+                if (!/^<html>[\s\S]*<\/html>/.test(response)) {
+                  response = "<pre>" + FW_htmlQuote(response) + "</pre>";
+                }
+                FW_okDialog(response);
+                return;
+              }
+              // Preserve the normal refresh after successful commands which
+              // may create readings. Navigate without sending Set a second time.
+              var reading = $(".dval").filter(function() {
+                return $(this).attr("informid") === deviceName + "-" + command;
+              });
+              if (!reading.length || command === "attrTemplate") {
+                location.href = FW_root + "?detail=" + encodeURIComponent(deviceName) +
+                  "&fw_id=" + encodeURIComponent($("body").attr("fw_id") || "");
+              }
+            });
+          });
+
           var helpLink = document.getElementById("content")
             .getElementsByClassName("detLink");
           if (helpLink.length == 0) {
@@ -124,7 +170,12 @@ class FhemModule:
         }
         ret = ret.replace(
             "###COMMAND_HELP_CONFIG###",
-            json.dumps(help_config).replace("<", "\\u003c"),
+            json.dumps(help_config).replace("<", _JS_ESCAPED_LT),
+        )
+
+        ret = ret.replace(
+            "###DEVICE_NAME###",
+            json.dumps(self.hash["NAME"]).replace("<", _JS_ESCAPED_LT),
         )
 
         ret = ret.replace(
@@ -138,13 +189,13 @@ class FhemModule:
         )
         ret = ret.replace(
             "###README_HELP_STRING###",
-            json.dumps(readme_str).replace("<", "\\u003c"),
+            json.dumps(readme_str).replace("<", _JS_ESCAPED_LT),
         )
 
         return ret
 
     def _get_readme_content(self):
-        """Read and convert the module's Markdown, including fenced code blocks.
+        """Read and convert Markdown, including tables, lists and code blocks.
 
         Caches the rendered HTML keyed by file modification time (mtime) so
         that subsequent views avoid disk I/O and markdown parsing while edits
@@ -166,7 +217,9 @@ class FhemModule:
             with open(readme_path, "r", encoding="utf-8") as f:
                 readme_md = f.read()
 
-            readme_str = markdown2.markdown(readme_md, extras=["fenced-code-blocks"])
+            readme_str = markdown2.markdown(
+                readme_md, extras=["fenced-code-blocks", "tables", "cuddled-lists"]
+            )
             _README_CACHE[fhempy_type] = (mtime, readme_str)
             return readme_str
         except FileNotFoundError:
