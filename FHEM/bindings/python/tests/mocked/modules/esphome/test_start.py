@@ -22,7 +22,8 @@ async def test_starts_esphome_device_builder(mocker):
     await device.Define(testhash, ["testesphome", "fhempy", "esphome"], {})
 
     # ESPHome 2026.9 removed "esphome dashboard"
-    start.assert_called_once_with(
+    start.assert_called_once()
+    assert start.call_args[0] == (
         [
             sys.executable,
             os.path.join(
@@ -32,8 +33,12 @@ async def test_starts_esphome_device_builder(mocker):
             "esphome_config/",
             "--port",
             "6052",
-        ]
+        ],
     )
+    # the output goes to its own log file, not into the fhempy log
+    output_log = start.call_args[1]["output_log"]
+    assert output_log.path.endswith(os.path.join(".fhempy", "log", "testesphome.log"))
+    assert output_log.capture
     assert mock_fhem.readings["testesphome"]["state"] == "running"
 
 

@@ -52,7 +52,12 @@ class esphome(FhemModule):
         ]
 
         try:
-            self.proc = child_process.start(self._esphomeargs)
+            self.proc = child_process.start(
+                self._esphomeargs,
+                output_log=child_process.OutputLog(
+                    child_process.log_path(self.hash["NAME"]), self.logger
+                ),
+            )
         except Exception:
             self.logger.exception("Failed to start ESPHome Device Builder")
             await fhem.readingsSingleUpdate(self.hash, "state", "failed to start", 1)

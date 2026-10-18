@@ -137,7 +137,7 @@ def _rotate_log(name, max_size=5 * 1024 * 1024):
         pass
 
 
-def start(node, env, name, port, bridge_name, log_level="notice"):
+def start(node, env, name, port, bridge_name, log_level="notice", logger=None):
     directory = bridge_directory(name)
     os.makedirs(directory, exist_ok=True)
     _rotate_log(name)
@@ -166,6 +166,7 @@ def start(node, env, name, port, bridge_name, log_level="notice"):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=log,
+            output_log=child_process.OutputLog(log_file(name), logger, capture=False),
         )
     finally:
         log.close()
