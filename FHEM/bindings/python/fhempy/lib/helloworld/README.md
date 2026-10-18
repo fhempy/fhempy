@@ -37,35 +37,35 @@ class supplies `Get`; a module does not need to implement its own dispatcher.
 - `desiredTemp`: demonstrates a slider and writes the `desiredTemp` reading;
   a whole number from 10 to 30 is required, including for direct commands.
 - `holidayMode`: demonstrates multiple positional arguments and defaults.
+
+    ```
+    set hello_fhempy holidayMode 24.12.2030 18:30 19
+    ```
+
+    In FHEMWEB, select `holidayMode` and enter **`24.12.2030 18:30 19`** in the single
+    input field. The arguments are separated by spaces: end date, end time and
+    temperature. The `args` configuration maps these values to parameter names;
+    it does not create a separate widget for each argument.
+
+    The command validates a calendar date (`DD.MM.YYYY`, including leap years),
+    a time (`HH:MM`, 00:00 to 23:59) and a whole-number temperature from 10 to 30.
+    Day, month, hour and minute require exactly two digits; the year requires four.
+    Only after all arguments are valid does it write the `endday`, `endtime` and
+    `temperature` readings. Invalid input returns an explanation without changing
+    readings. This example does not schedule heating or require a future end date.
+    Omitted trailing arguments use the defaults configured in `set_config`:
+
+    ```
+    set hello_fhempy holidayMode 24.12.2030
+    set hello_fhempy holidayMode
+    ```
+
+    Previous calls do not change those defaults.
+
 - `on [seconds]`: writes `on`, or `on <seconds>`, to `state`. This demonstrates
   an optional non-negative integer parameter; it does not start an automatic off timer.
 - `off`: writes `off` to `state` and starts a background task which later changes
   it to `long running off` without blocking the event loop.
-
-### holidayMode
-
-```
-set hello_fhempy holidayMode 24.12.2030 18:30 19
-```
-
-In FHEMWEB, select `holidayMode` and enter **`24.12.2030 18:30 19`** in the single
-input field. The arguments are separated by spaces: end date, end time and
-temperature. The `args` configuration maps these values to parameter names;
-it does not create a separate widget for each argument.
-
-The command validates a calendar date (`DD.MM.YYYY`, including leap years),
-a time (`HH:MM`, 00:00 to 23:59) and a whole-number temperature from 10 to 30.
-Only after all arguments are valid does it write the `endday`, `endtime` and
-`temperature` readings. Invalid input returns an explanation without changing
-readings. This example does not schedule heating or require a future end date.
-Omitted trailing arguments use the defaults configured in `set_config`:
-
-```
-set hello_fhempy holidayMode 24.12.2030
-set hello_fhempy holidayMode
-```
-
-Previous calls do not change those defaults.
 
 ## Attributes
 

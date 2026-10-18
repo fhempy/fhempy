@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime
 
 from .. import fhem, generic
@@ -40,6 +41,8 @@ def _temperature(value):
 
 def _endday(value):
     try:
+        if not re.fullmatch(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", value):
+            raise ValueError
         datetime.strptime(value, "%d.%m.%Y")
     except (ValueError, TypeError):
         raise ValueError("expected a valid date (DD.MM.YYYY)") from None
@@ -48,6 +51,8 @@ def _endday(value):
 
 def _endtime(value):
     try:
+        if not re.fullmatch(r"[0-9]{2}:[0-9]{2}", value):
+            raise ValueError
         datetime.strptime(value, "%H:%M")
     except (ValueError, TypeError):
         raise ValueError("expected a valid time (HH:MM, 00:00 to 23:59)") from None
