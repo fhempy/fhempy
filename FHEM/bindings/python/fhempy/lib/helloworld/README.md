@@ -53,11 +53,6 @@ direct calls; the usage message is defined once in the module.
 
 ## Get commands
 
-```
-get hello_fhempy info
-get hello_fhempy help
-```
-
 - `info` reads the current state from FHEM and returns it with the device name
   and the configured interval.
 - `help` builds a command and attribute overview from the module configuration.
