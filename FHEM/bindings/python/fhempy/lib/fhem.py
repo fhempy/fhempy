@@ -9,6 +9,7 @@ from datetime import datetime
 
 import websockets
 
+from . import updates
 from .json_utils import json_dumps, json_loads
 from .version import __version__
 
@@ -24,6 +25,7 @@ update_lock_owners = {}
 # they are sent to FHEM in one roundtrip on readingsEndUpdate
 bulk_updates = {}
 wsconnection = None
+release_check_lock = asyncio.Lock()
 # callbacks for events of other FHEM devices: {device name: [callback]}
 event_listeners = {}
 # ids to match FHEM replies to commands sent by fhempy
@@ -492,62 +494,57 @@ def convertValue(value):
     return str(value)
 
 
-async def get_github_data():
-    # imported here as aiohttp takes ~45% of fhempy's import time
-    import aiohttp
+async def _send_version_message(**fields):
+    msg = json_dumps({"msgtype": "version", **fields})
+    logger.debug("<<< WS: " + msg)
+    await wsconnection.send(msg)
 
-    res_json = {}
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://api.github.com/repos/fhempy/fhempy/releases/latest"
-            ) as resp:
-                res_json = await resp.json()
-    except Exception:
-        logger.exception("Failed to get github fhempy data")
-    return res_json
+
+async def check_update():
+    """Refresh release readings once, without installing or blocking FHEM."""
+    if release_check_lock.locked():
+        return
+    async with release_check_lock:
+        await _send_version_message(update_check="checking")
+        try:
+            versions = await updates.get_versions(__version__)
+        except Exception as error:
+            logger.error("Failed to check fhempy updates: %s", error)
+            # Preserve the last successful version information on network errors.
+            reason = str(error) or type(error).__name__
+            await _send_version_message(update_check=f"failed: {reason}")
+            return
+        await _send_version_message(
+            version_available=versions[0],
+            version_options=",".join(versions),
+            update_check="ok",
+            version_release_notes=(
+                '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
+                "Release Notes</a></html>"
+            ),
+        )
 
 
 async def send_latest_release():
     while True:
         try:
-            github_data = await get_github_data()
-            try:
-                latest_version = github_data["name"][1:]
-            except Exception:
-                latest_version = "unknown"
-
-            msg = {
-                "msgtype": "version",
-                "version_available": latest_version,
-                "version_release_notes": (
-                    '<html><a href="https://github.com/fhempy/fhempy/releases" target="_blank">'
-                    "Release Notes</a></html>"
-                ),
-            }
-            msg = json_dumps(msg)
-            logger.debug("<<< WS: " + msg)
-            global wsconnection
-            await wsconnection.send(msg)
+            await check_update()
         except Exception:
             logger.exception("Failed to update latest release infos")
-        await asyncio.sleep(3600 * 12)
+        await asyncio.sleep(updates.CHECK_INTERVAL)
 
 
 async def send_version():
     msg = {
-        "msgtype": "version",
         "version": __version__,
+        "update_version_supported": 1,
         "python": platform.python_version(),
         "os": os.name,
         "system": platform.system(),
         "release": platform.release(),
         "hostname": socket.gethostname(),
     }
-    msg = json_dumps(msg)
-    logger.debug("<<< WS: " + msg)
-    global wsconnection
-    await wsconnection.send(msg)
+    await _send_version_message(**msg)
 
 
 async def send_default_response(hash, set_default_response):
