@@ -1,6 +1,5 @@
 """API client for FusionSolar Kiosk."""
 
-import asyncio
 import codecs
 import json
 import os
@@ -14,6 +13,13 @@ from Cryptodome.Hash import SHA384
 from Cryptodome.PublicKey import RSA
 
 from .. import utils
+
+# without timeout a request to an unreachable server can hang for minutes
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=60)
+
+
+class FusionSolarError(Exception):
+    pass
 
 
 @dataclass
@@ -88,6 +94,8 @@ class FusionSolarRestApi:
         self._battery_discharge_capacity = 0
         self._string_output_power = 0
         self._available_signals = None
+        self._cookies = None
+        self.captcha_required = False
 
     async def get_pubkey(self, session):
         # pubkey to get pubkey
@@ -189,7 +197,10 @@ class FusionSolarRestApi:
 
     async def login(self):
         try:
-            async with aiohttp.ClientSession(trust_env=True) as session:
+            async with aiohttp.ClientSession(
+                trust_env=True, timeout=REQUEST_TIMEOUT
+            ) as session:
+                self._cookies = session.cookie_jar
                 resp = await self.get_jsessionid(session)
 
                 fusion_pubkey_json = await self.get_pubkey(session)
@@ -209,6 +220,13 @@ class FusionSolarRestApi:
 
                 # validateUser.action to get bspsessionid
                 json_resp = await self.validate_user(session)
+                error = json_resp.get("errorMsg")
+                if error and json_resp.get("errorCode") != "470":
+                    # too many logins: FusionSolar asks for a verification
+                    # code (captcha) and blocks logins for a while
+                    self.captcha_required = "verification code" in error.lower()
+                    self.logger.warning(f"Login failed: {error}")
+                    return False
                 if json_resp["errorCode"] == "470":
                     redurl = json_resp["respMultiRegionName"][1]
                 else:
@@ -216,7 +234,6 @@ class FusionSolarRestApi:
 
                 if redurl:
                     resp = await self.login_redirect(session, redurl)
-                    self._cookies = session.cookie_jar
 
                 headers = {
                     "accept": "application/json",
@@ -283,8 +300,12 @@ class FusionSolarRestApi:
 
             return True
 
-        except Exception:
-            self.logger.exception("Login failed")
+        except Exception as ex:
+            if utils.is_connection_error(ex):
+                # e.g. maintenance, don't flood the log with tracebacks
+                self.logger.warning(f"Login failed: {utils.describe_exception(ex)}")
+            else:
+                self.logger.exception("Login failed")
             return False
 
     async def _get_rest_data(self, path, params={}):
@@ -347,55 +368,33 @@ class FusionSolarRestApi:
         }
         await self._get(url, headers)
 
-    async def _get(self, url, headers, max_retries=5, params={}):
+    async def _get(self, url, headers, params={}):
+        # raises on errors, the module logs in again with a new session
+        async with aiohttp.ClientSession(
+            trust_env=True,
+            headers=headers,
+            cookie_jar=self._cookies,
+            timeout=REQUEST_TIMEOUT,
+        ) as session:
+            async with session.get(url, params=params) as resp:
+                status = resp.status
+                body = await resp.read()
+
+        if status != 200:
+            raise FusionSolarError(f"Response from {url} was {status}")
         try:
-            response = {}
-            async with aiohttp.ClientSession(
-                trust_env=True, headers=headers, cookie_jar=self._cookies
-            ) as session:
-                retry = 1
-                while retry < max_retries:
-                    retry += 1
-                    async with session.get(url, params=params) as resp:
-                        if resp.status != 200:
-                            # wait a few seconds before login
-                            self.logger.warning(
-                                f"Response from {url} was {resp.status}, try to relogin"
-                            )
-                            await asyncio.sleep(30)
-                            await self.login()
-                            continue
-                        else:
-                            if resp.content._buffer[0][0] != 123:
-                                await self.login()
-                                continue
-                            else:
-                                all_data = b""
-                                while True:
-                                    data = await resp.content.read(
-                                        4096
-                                    )  # Read in chunks of 4096 bytes
-                                    if not data:
-                                        break
-                                    all_data += data
-                                json_string = all_data.decode("utf-8")
-                                response = json.loads(json_string)
-                                break
-
-            if "success" in response and response["success"] is True:
-                if "data" in response:
-                    return response["data"]
-                return response
-
-            return response
-        except Exception as ex:
-            if utils.is_connection_error(ex):
-                self.logger.warning(
-                    f"Failed to get data from {url}: {utils.describe_exception(ex)}"
-                )
-            else:
-                self.logger.exception(f"Failed to get data from {url}")
-            return {}
+            response = json.loads(body)
+        except ValueError:
+            # FusionSolar answers with the login page if the session expired
+            raise FusionSolarError(
+                f"Response from {url} was no JSON, session expired?"
+            ) from None
+        if isinstance(response, dict):
+            if response.get("success") is False:
+                raise FusionSolarError(f"Request to {url} failed: {response}")
+            if response.get("success") is True and "data" in response:
+                return response["data"]
+        return response
 
     async def update(self):
         await self.update_station_detail()

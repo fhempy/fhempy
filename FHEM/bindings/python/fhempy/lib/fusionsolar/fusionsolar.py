@@ -8,6 +8,13 @@ from .. import fhem, generic, utils
 # FusionSolar refreshes its portal data every 5 minutes
 DEFAULT_INTERVAL = 300
 MIN_INTERVAL = 60
+# wait between reconnects, doubled after every failure: FusionSolar can be
+# down for hours (maintenance) and too many logins trigger a captcha
+RETRY_DELAY_MIN = 30
+RETRY_DELAY_MAX = 900
+# FusionSolar blocks logins with a captcha for a longer time
+CAPTCHA_DELAY_MIN = 3600
+CAPTCHA_DELAY_MAX = 7200
 
 
 class fusionsolar(generic.FhemModule):
@@ -53,9 +60,10 @@ class fusionsolar(generic.FhemModule):
         self.create_async_task(self.update())
 
     async def update(self):
-        max_retries = 10
-        retry = 0
-        while retry < max_retries:
+        # never give up, the server or the session comes back eventually
+        failures = 0
+        captchas = 0
+        while True:
             self.restapi = FusionSolarRestApi(
                 self.logger,
                 self._username,
@@ -63,18 +71,34 @@ class fusionsolar(generic.FhemModule):
                 self._region,
             )
             if await self.restapi.login():
-                # we never come back from update_readings
-                await self.update_readings()
-                retry = 0
+                # returns as soon as an update fails, e.g. expired session
+                captchas = 0
+                if await self.update_readings():
+                    failures = 0
+                failures += 1
+                state, delay = "failed", self.retry_delay(failures)
+            elif self.restapi.captcha_required:
+                captchas += 1
+                state, delay = "captcha required", self.captcha_delay(captchas)
             else:
-                retry += 1
-                await fhem.readingsSingleUpdate(self.hash, "state", "login failed", 1)
-                await asyncio.sleep(10)
-        await fhem.readingsSingleUpdate(
-            self.hash, "state", "login failed, no more retry", 1
-        )
+                failures += 1
+                state, delay = "login failed", self.retry_delay(failures)
+            await fhem.readingsSingleUpdate(
+                self.hash, "state", f"{state}, reconnect in {delay}s", 1
+            )
+            await asyncio.sleep(delay)
+
+    @staticmethod
+    def retry_delay(failures):
+        return min(RETRY_DELAY_MIN * 2 ** min(failures - 1, 10), RETRY_DELAY_MAX)
+
+    @staticmethod
+    def captcha_delay(captchas):
+        return min(CAPTCHA_DELAY_MIN * 2 ** min(captchas - 1, 10), CAPTCHA_DELAY_MAX)
 
     async def update_readings(self):
+        """Update until a request fails, returns True if any update worked."""
+        updated = False
         while True:
             cycle_start = time.monotonic()
             await fhem.readingsBeginUpdate(self.hash)
@@ -195,10 +219,11 @@ class fusionsolar(generic.FhemModule):
 
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
                 self._errors.success()
+                updated = True
             except Exception:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "failed")
                 self._errors.failed("Failed to update readings")
                 self.logger.debug(f"Received data:\n{self.restapi.data_string}")
+                return updated
             finally:
                 await fhem.readingsEndUpdate(self.hash, 1)
             await asyncio.sleep(self.next_update_delay(cycle_start))
