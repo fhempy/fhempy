@@ -97,3 +97,4 @@ require $module unless defined &BindingsIo_Set;
 }
 
 done_testing();
+exit(0);
