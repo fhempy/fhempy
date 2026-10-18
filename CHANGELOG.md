@@ -2,6 +2,58 @@
 
 <!-- version list -->
 
+## v2.2.0 (2026-10-18)
+
+### Bug Fixes
+
+- Render Markdown help and show Set replies in FHEMWEB dialogs
+  ([#698](https://github.com/fhempy/fhempy/pull/698),
+  [`ff0cdc5`](https://github.com/fhempy/fhempy/commit/ff0cdc5c28bbbe0d8f2eaff65d00d506ca7ae0f1))
+
+- **binding**: Add command help anchors and keep version choices in helper
+  ([`abe1e1b`](https://github.com/fhempy/fhempy/commit/abe1e1b443a63a84e0da2797a738c31d04dfef02))
+
+- **BindingsIo**: Retry the connection while the state shows "Installing fhempy"
+  ([#701](https://github.com/fhempy/fhempy/pull/701),
+  [`f8a4f39`](https://github.com/fhempy/fhempy/commit/f8a4f39bfc6d4ccba9ca20d82403683b874212a0))
+
+- **fusionsolar**: Reconnect after server outage or expired session
+  ([#705](https://github.com/fhempy/fhempy/pull/705),
+  [`be30f3a`](https://github.com/fhempy/fhempy/commit/be30f3a942d262eb2ec8b80647ce37e2054c5d1d))
+
+- **fusionsolar**: Wait longer when FusionSolar requires a captcha
+  ([#705](https://github.com/fhempy/fhempy/pull/705),
+  [`be30f3a`](https://github.com/fhempy/fhempy/commit/be30f3a942d262eb2ec8b80647ce37e2054c5d1d))
+
+- **test**: End 01_update.t with exit(0)
+  ([`fd2730f`](https://github.com/fhempy/fhempy/commit/fd2730f076161869f805ba5901356c9b9594882c))
+
+### Documentation
+
+- Complete module links in README ([#699](https://github.com/fhempy/fhempy/pull/699),
+  [`b8d3043`](https://github.com/fhempy/fhempy/commit/b8d30436c5e9dc450dc9937baf6e6fefe1acc6be))
+
+### Features
+
+- Catch event loop blockades in tests and lint ([#695](https://github.com/fhempy/fhempy/pull/695),
+  [`5f0ad27`](https://github.com/fhempy/fhempy/commit/5f0ad27dd67ad306243c5fe9cd3a5def168d07d2))
+
+- Write esphome and zigbee2mqtt output to own log files
+  ([#696](https://github.com/fhempy/fhempy/pull/696),
+  [`aca8d22`](https://github.com/fhempy/fhempy/commit/aca8d22f5cc23295669879de2e9efe7f05043a23))
+
+- **binding**: Add manual update checks and version selection
+  ([`c01c877`](https://github.com/fhempy/fhempy/commit/c01c8777c50d85b467e4ac644a6845f2a8c79ecf))
+
+- **helloworld**: Demonstrate Define validation and Get commands
+  ([#697](https://github.com/fhempy/fhempy/pull/697),
+  [`3b99423`](https://github.com/fhempy/fhempy/commit/3b9942305b9370e50964408bf8efcbf0960de760))
+
+- **mcp_server**: Control FHEM with AI apps via MCP
+  ([#704](https://github.com/fhempy/fhempy/pull/704),
+  [`adea501`](https://github.com/fhempy/fhempy/commit/adea5012280a9082e8e5ad68d23adcdb4485d7fe))
+
+
 ## v2.1.4 (2026-10-17)
 
 ### Bug Fixes
