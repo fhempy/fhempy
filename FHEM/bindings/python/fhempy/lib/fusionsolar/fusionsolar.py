@@ -12,6 +12,9 @@ MIN_INTERVAL = 60
 # down for hours (maintenance) and too many logins trigger a captcha
 RETRY_DELAY_MIN = 30
 RETRY_DELAY_MAX = 900
+# FusionSolar blocks logins with a captcha for a longer time
+CAPTCHA_DELAY_MIN = 3600
+CAPTCHA_DELAY_MAX = 7200
 
 
 class fusionsolar(generic.FhemModule):
@@ -59,6 +62,7 @@ class fusionsolar(generic.FhemModule):
     async def update(self):
         # never give up, the server or the session comes back eventually
         failures = 0
+        captchas = 0
         while True:
             self.restapi = FusionSolarRestApi(
                 self.logger,
@@ -68,13 +72,17 @@ class fusionsolar(generic.FhemModule):
             )
             if await self.restapi.login():
                 # returns as soon as an update fails, e.g. expired session
+                captchas = 0
                 if await self.update_readings():
                     failures = 0
-                state = "failed"
+                failures += 1
+                state, delay = "failed", self.retry_delay(failures)
+            elif self.restapi.captcha_required:
+                captchas += 1
+                state, delay = "captcha required", self.captcha_delay(captchas)
             else:
-                state = "login failed"
-            failures += 1
-            delay = self.retry_delay(failures)
+                failures += 1
+                state, delay = "login failed", self.retry_delay(failures)
             await fhem.readingsSingleUpdate(
                 self.hash, "state", f"{state}, reconnect in {delay}s", 1
             )
@@ -83,6 +91,10 @@ class fusionsolar(generic.FhemModule):
     @staticmethod
     def retry_delay(failures):
         return min(RETRY_DELAY_MIN * 2 ** min(failures - 1, 10), RETRY_DELAY_MAX)
+
+    @staticmethod
+    def captcha_delay(captchas):
+        return min(CAPTCHA_DELAY_MIN * 2 ** min(captchas - 1, 10), CAPTCHA_DELAY_MAX)
 
     async def update_readings(self):
         """Update until a request fails, returns True if any update worked."""

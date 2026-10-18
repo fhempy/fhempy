@@ -1,5 +1,6 @@
 import logging
 
+import aiohttp
 import pytest
 import pytest_asyncio
 from aiohttp import web
@@ -20,6 +21,8 @@ class StopLoop(Exception):
 class FakeApi:
     """Plays a script of login/update results, True = works."""
 
+    captcha_required = False
+
     logins = []
     updates = []
 
@@ -32,7 +35,9 @@ class FakeApi:
         return 1
 
     async def login(self):
-        return FakeApi.logins.pop(0)
+        result = FakeApi.logins.pop(0)
+        self.captcha_required = result == "captcha"
+        return result is True
 
     async def update(self):
         if not FakeApi.updates.pop(0):
@@ -108,6 +113,42 @@ async def test_backoff_resets_after_successful_update(mocker):
     assert delays == [30, 60, 300, 30, 60]
 
 
+@pytest.mark.asyncio
+async def test_waits_longer_on_captcha(mocker):
+    logins = ["captcha", "captcha", "captcha", False, True]
+    updates = [True]
+    states, delays = await run_update_loop(mocker, logins, updates, sleeps=5)
+
+    assert states[1] == "captcha required, reconnect in 3600s"
+    assert delays == [3600, 7200, 7200, 30, 300]
+
+
+@pytest.mark.asyncio
+async def test_login_detects_captcha(mocker):
+    api = FusionSolarRestApi(logging.getLogger(__name__), "user", "pass")
+    mocker.patch.object(api, "get_jsessionid", mocker.AsyncMock())
+    mocker.patch.object(
+        api, "get_pubkey", mocker.AsyncMock(return_value={"enableEncrypt": False})
+    )
+    validate = mocker.patch.object(
+        api,
+        "validate_user",
+        mocker.AsyncMock(
+            return_value={
+                "errorCode": "411",
+                "errorMsg": "Incorrect verification code.",
+            }
+        ),
+    )
+
+    assert await api.login() is False
+    assert api.captcha_required is True
+
+    validate.return_value = {"errorCode": "406", "errorMsg": "Incorrect password."}
+    assert await api.login() is False
+    assert api.captcha_required is False
+
+
 @pytest_asyncio.fixture
 async def server(monkeypatch):
     for var in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
@@ -153,5 +194,5 @@ async def test_get_raises_if_server_unreachable(server):
     url = str(server.make_url("/data"))
     await server.close()
 
-    with pytest.raises(Exception):
+    with pytest.raises(aiohttp.ClientError):
         await api._get(url, {})

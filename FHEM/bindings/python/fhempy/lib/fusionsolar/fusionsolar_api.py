@@ -95,6 +95,7 @@ class FusionSolarRestApi:
         self._string_output_power = 0
         self._available_signals = None
         self._cookies = None
+        self.captcha_required = False
 
     async def get_pubkey(self, session):
         # pubkey to get pubkey
@@ -219,6 +220,13 @@ class FusionSolarRestApi:
 
                 # validateUser.action to get bspsessionid
                 json_resp = await self.validate_user(session)
+                error = json_resp.get("errorMsg")
+                if error and json_resp.get("errorCode") != "470":
+                    # too many logins: FusionSolar asks for a verification
+                    # code (captcha) and blocks logins for a while
+                    self.captcha_required = "verification code" in error.lower()
+                    self.logger.warning(f"Login failed: {error}")
+                    return False
                 if json_resp["errorCode"] == "470":
                     redurl = json_resp["respMultiRegionName"][1]
                 else:

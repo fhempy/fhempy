@@ -25,3 +25,5 @@ define my_solar fhempy fusionsolar USERNAME PASSWORD REGION
 # Connection problems
 
 If FusionSolar is not reachable (e.g. maintenance) or the session expired, the module logs in again automatically. The wait before the next login starts at 30 seconds and doubles after every failure up to 15 minutes, so the module never gives up but doesn't trigger the FusionSolar captcha with too many logins. The state shows e.g. `login failed, reconnect in 900s`.
+
+If FusionSolar asks for a captcha (verification code) at login, it blocks logins from your IP for a longer time. The module then waits 1 hour, if the captcha is still required 2 hours, and shows `captcha required, reconnect in 3600s`.
