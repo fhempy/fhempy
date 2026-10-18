@@ -334,7 +334,8 @@ class mcp_server(generic.FhemModule):
     # --- HTTP server ---
 
     def url(self, with_token=True):
-        url = f"http://{self.ip}:{self._attr_port}/mcp"
+        # plain http: the server runs in the home network without certificate
+        url = f"http://{self.ip}:{self._attr_port}/mcp"  # NOSONAR
         return f"{url}/{self.token}" if with_token else url
 
     async def start_server(self):

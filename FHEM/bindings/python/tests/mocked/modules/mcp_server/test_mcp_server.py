@@ -206,7 +206,8 @@ def test_mask():
     assert tools.mask_value("spinning", "yes") == "yes"
     assert tools.mask_value("temperature", "21") == "21"
     assert (
-        tools.mask_text("set x http://user:pw@host/a") == "set x http://***:***@host/a"
+        tools.mask_text("set x https://user:pw@host/a")
+        == "set x https://***:***@host/a"
     )
     assert tools.mask_text("{curl('token=abc123')}") == "{curl('token=***')}"
     assert tools.mask_text("password: 'abc'") == "password: '***'"
@@ -284,9 +285,9 @@ async def test_http_auth(module):
     assert (await post(base + "/wrong", ping))[0] == 401
     header = {"Authorization": f"Bearer {module.token}"}
     assert (await post(base, ping, header))[0] == 200
-    evil = {"Origin": "http://evil.example.com"}
+    evil = {"Origin": "http://evil.example.com"}  # NOSONAR
     assert (await post(url, ping, evil))[0] == 403
-    local = {"Origin": "http://localhost:3000"}
+    local = {"Origin": "http://localhost:3000"}  # NOSONAR
     assert (await post(url, ping, local))[0] == 200
     notification = {"jsonrpc": "2.0", "method": "notifications/initialized"}
     assert (await post(url, notification)) == (202, None)
