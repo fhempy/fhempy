@@ -59,7 +59,16 @@ class FhemModule:
                 "to 0 or delete it to enable the device<br>"
             )
 
-        ret = """<script type="text/javascript">
+        ret = """<style>
+        #fhempyReadme { overflow-x: auto; }
+        #fhempyReadme table { border-collapse: collapse; margin: 1em 0; }
+        #fhempyReadme th, #fhempyReadme td {
+          border: 1px solid; padding: 0.4em 0.6em;
+          vertical-align: top; white-space: normal;
+        }
+        #fhempyReadme th { text-align: left; }
+        </style>
+        <script type="text/javascript">
         function displayHelp() {
           var x = document.getElementById("fhempyReadme");
           if (x.style.display === "none") {
@@ -144,7 +153,7 @@ class FhemModule:
         return ret
 
     def _get_readme_content(self):
-        """Read and convert the module's Markdown, including fenced code blocks.
+        """Read and convert Markdown, including tables, lists and code blocks.
 
         Caches the rendered HTML keyed by file modification time (mtime) so
         that subsequent views avoid disk I/O and markdown parsing while edits
@@ -166,7 +175,9 @@ class FhemModule:
             with open(readme_path, "r", encoding="utf-8") as f:
                 readme_md = f.read()
 
-            readme_str = markdown2.markdown(readme_md, extras=["fenced-code-blocks"])
+            readme_str = markdown2.markdown(
+                readme_md, extras=["fenced-code-blocks", "tables", "cuddled-lists"]
+            )
             _README_CACHE[fhempy_type] = (mtime, readme_str)
             return readme_str
         except FileNotFoundError:
