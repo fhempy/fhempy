@@ -153,7 +153,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
-|gfprobt|Control GF Pro Bluetooth irrigation control|
+|[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
@@ -162,7 +162,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 ### 🎵 Media
 |Module | Description|
 |-------|------------|
-|dlna_dmr|Control DLNA MediaRenderer devices|
+|[dlna_dmr](FHEM/bindings/python/fhempy/lib/dlna_dmr/)|Control DLNA MediaRenderer devices|
 |[googlecast](FHEM/bindings/python/fhempy/lib/googlecast/README.md)|Control Cast devices and stream Spotify|
 |[spotify](FHEM/bindings/python/fhempy/lib/spotify/README.md)|Control Spotify Connect and use FHEM as Spotify Connect player|
 
@@ -170,9 +170,9 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |Module | Description|
 |-------|------------|
 |[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
-|discover_ble|Discover Bluetooth LE devices|
-|discover_mdns|Discover mDNS (e.g. Google Cast) devices|
-|discover_upnp|Discover UPnP devices|
+|[discover_ble](FHEM/bindings/python/fhempy/lib/discover_ble/)|Discover Bluetooth LE devices|
+|[discover_mdns](FHEM/bindings/python/fhempy/lib/discover_mdns/)|Discover mDNS (e.g. Google Cast) devices|
+|[discover_upnp](FHEM/bindings/python/fhempy/lib/discover_upnp/)|Discover UPnP devices|
 
 ### 🧰 Information & tools
 |Module | Description|
@@ -189,7 +189,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
-|helloworld|Hello World example for developers to start writing their own module|
+|[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|
 
 ## 🩺 Troubleshooting
 - **`fhempy_local` stays red**: open the device `fhempyserver_15733` in FHEM. Its reading `python` shows the Python version fhempy found, or why it can't start.
@@ -256,13 +256,13 @@ Just do `set remote_pybinding update` and the remote peer will install the new p
 
 ## Functionality
 
-### 10_BindingsIo
+### [10_BindingsIo](FHEM/10_BindingsIo.pm)
 This module is a DevIo device which builds a language neutral communicaton bridge in JSON via websockets.
-### 10_fhempyServer
+### [10_fhempyServer](FHEM/10_fhempyServer.pm)
 This module just starts the fhempy server instance
-### 10_fhempy
+### [10_fhempy](FHEM/10_fhempy.pm)
 This module is used as the bridge to BindingsIo. It calls BindingsIo with IOWrite.
-### fhempy
+### [fhempy](FHEM/bindings/python/fhempy/)
 This is the Python server instance which handles JSON websocket messages from BindingsIo. Based on the message it executes the proper function and replies to BindingsIo via websocket.
 
 ### Call flow
@@ -279,7 +279,7 @@ At any time within the functions FHEM functons like readingsSingleUpdate(...) ca
 ![Flow Chart](https://raw.githubusercontent.com/fhempy/fhempy/master/flowchart.png)
 
 ## Write your own module
-Check helloworld example for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.
+Check the [helloworld example](FHEM/bindings/python/fhempy/lib/helloworld/) for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.
 
 ## 🤝 Contributing
 Due to limited time I'm unable to fully support fhempy on my own and I'm looking for developers to help maintain and enhance the project. Bug fixes, new modules and documentation improvements are all welcome, just open an issue or a pull request. See [DEVELOPMENT.md](DEVELOPMENT.md) to get started.
