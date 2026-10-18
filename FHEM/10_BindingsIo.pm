@@ -429,7 +429,9 @@ BindingsIo_Ready($)
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback") if ( $hash->{STATE} eq "disconnected" );
+  # don't check STATE, BindingsIo_installing overwrites "disconnected" with
+  # "Installing fhempy..." and the connection would never be retried
+  return DevIo_OpenDev($hash, 1, "BindingsIo_doInit", "BindingsIo_Callback") if (!DevIo_IsOpen($hash));
 }
 
 sub
