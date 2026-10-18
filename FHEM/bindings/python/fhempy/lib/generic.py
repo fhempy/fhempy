@@ -9,6 +9,7 @@ from fhempy.lib import fhem
 from . import utils
 
 _README_CACHE = {}
+_JS_ESCAPED_LT = r"\u003c"
 
 
 class FhemModule:
@@ -169,12 +170,12 @@ class FhemModule:
         }
         ret = ret.replace(
             "###COMMAND_HELP_CONFIG###",
-            json.dumps(help_config).replace("<", "\\u003c"),
+            json.dumps(help_config).replace("<", _JS_ESCAPED_LT),
         )
 
         ret = ret.replace(
             "###DEVICE_NAME###",
-            json.dumps(self.hash["NAME"]).replace("<", "\\u003c"),
+            json.dumps(self.hash["NAME"]).replace("<", _JS_ESCAPED_LT),
         )
 
         ret = ret.replace(
@@ -188,7 +189,7 @@ class FhemModule:
         )
         ret = ret.replace(
             "###README_HELP_STRING###",
-            json.dumps(readme_str).replace("<", "\\u003c"),
+            json.dumps(readme_str).replace("<", _JS_ESCAPED_LT),
         )
 
         return ret
