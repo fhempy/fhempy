@@ -215,19 +215,20 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
     cmd = args[0]
     name = args[1]
     attr_name = args[2]
-    attr_val = args[3]
     if attr_name in attr_list:
+        config = attr_list[attr_name]
         if cmd == "set":
-            setattr(
-                obj,
-                "_attr_" + attr_name,
-                convert2format(attr_val, attr_list[attr_name]),
-            )
+            attr_val = args[3]
         else:
-            if "default" in attr_list[attr_name]:
-                setattr(obj, "_attr_" + attr_name, attr_list[attr_name]["default"])
-            else:
-                setattr(obj, "_attr_" + attr_name, "")
+            attr_val = config.get("default", "")
+        try:
+            value = (
+                "" if cmd != "set" and "default" not in config
+                else convert2format(attr_val, config)
+            )
+        except (ValueError, TypeError, OverflowError) as exc:
+            return _format_error(attr_name, attr_val, config, exc)
+        setattr(obj, "_attr_" + attr_name, value)
 
     # call set_attr_....
     fct_name = "set_attr_" + attr_name
@@ -283,7 +284,18 @@ async def handle_define_attr(attr_list, obj, hash, extra_attrs=None):
         curr_val = info["attr"][attr]
         if curr_val == "" and "default" in attr_list[attr]:
             curr_val = attr_list[attr]["default"]
-        setattr(obj, "_attr_" + attr, convert2format(curr_val, attr_list[attr]))
+        config = attr_list[attr]
+        try:
+            value = convert2format(curr_val, config)
+        except (ValueError, TypeError, OverflowError) as exc:
+            # An invalid stored value must not prevent a module from loading.
+            # A missing/invalid default is a module configuration error.
+            value = convert2format(config["default"], config)
+            obj.logger.error(
+                "%s Using default %r.",
+                _format_error(attr, curr_val, config, exc), value,
+            )
+        setattr(obj, "_attr_" + attr, value)
 
     return info
 
@@ -349,11 +361,18 @@ def remove_special_charachters(string):
 
 
 def convert2format(value, list_def):
+    """Convert a value; a synchronous callable may also validate it.
+
+    Callable formats return the converted value or raise ValueError with a
+    user-facing explanation. Keep them free of I/O and side effects.
+    """
     target_format = "none"
     if "format" in list_def:
         target_format = list_def["format"]
 
-    if target_format == "int":
+    if callable(target_format):
+        return target_format(value)
+    elif target_format == "int":
         return int(value)
     elif target_format == "float":
         return float(value)
@@ -379,14 +398,13 @@ def convert2format(value, list_def):
     return value
 
 
-# example config
-# set_list_conf = {
-#    "mode": { "args": ["mode"], "argsh": ["mode"], "params": { "mode": { "default": "eco", "optional": False }}, "options": "eco,comfort" },
-#    "desiredTemp": { "args": ["temperature"], "options": "slider,10,1,30"},
-#    "holidayMode": { "args": ["start", "end", "temperature"], "params": { "start": {"default": "Monday"}, "end": {"default": "23:59"}}},
-#    "on": { "args": ["seconds"], "params": { "seconds": {"optional": True}}},
-#    "off": {}
-# }
+def _format_error(name, value, config, exc):
+    target_format = config.get("format")
+    reason = str(exc) if callable(target_format) else f"expected {target_format}"
+    return f"Invalid value for {name}: {value!r} ({reason})."
+
+
+# See helloworld for examples of command configuration and validation.
 async def handle_set(set_list_conf, obj, hash, args, argsh):
     return await _handle_command("set", set_list_conf, obj, hash, args, argsh)
 
@@ -410,16 +428,29 @@ def _command_options(command_config):
 
 def _command_params(cmd_def, args, argsh):
     # Each invocation owns its parameters; do not store values in the config.
-    params = dict(argsh) if "argsh" in cmd_def else {}
-    params.update(zip(cmd_def.get("args", []), args[2:]))
-    for name, config in cmd_def.get("params", {}).items():
-        if name not in params:
-            if "value" in config or "default" in config:
-                params[name] = config.get("value", config.get("default"))
-            elif not config.get("optional", False):
-                return f"Required argument {name} missing."
-        if name in params:
-            params[name] = convert2format(params[name], config)
+    unknown = argsh.keys() - cmd_def.get("argsh", [])
+    if unknown:
+        return "Unknown named argument: " + ", ".join(sorted(unknown))
+    params = dict(zip(cmd_def.get("args", []), args[2:]))
+    duplicates = params.keys() & argsh.keys()
+    if duplicates:
+        return "Argument provided twice: " + ", ".join(sorted(duplicates))
+    params.update(argsh)
+    return _convert_command_params(cmd_def.get("params", {}), params)
+
+
+def _convert_command_params(configs, params):
+    missing = object()
+    for name, config in configs.items():
+        value = params.get(name, config.get("value", config.get("default", missing)))
+        if value is missing:
+            if config.get("optional", False):
+                continue
+            return f"Required argument {name} missing."
+        try:
+            params[name] = convert2format(value, config)
+        except (ValueError, TypeError, OverflowError) as exc:
+            return _format_error(name, value, config, exc)
     return params
 
 
