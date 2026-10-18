@@ -59,7 +59,7 @@ class FhemModule:
                 "to 0 or delete it to enable the device<br>"
             )
 
-        ret = """<style>
+        ret = r"""<style>
         #fhempyReadme { overflow-x: auto; }
         #fhempyReadme table { border-collapse: collapse; margin: 1em 0; }
         #fhempyReadme th, #fhempyReadme td {
@@ -108,6 +108,40 @@ class FhemModule:
           bindHelp("get", "idGetHelp");
           bindHelp("attr", "idAttrHelp");
 
+          // FHEMWEB submits Set forms normally when no same-named reading
+          // exists. Use its XHR/dialog path so validation errors stay here.
+          var deviceName = ###DEVICE_NAME###;
+          $("div.makeSelect[cmd='set']").filter(function() {
+            return $(this).attr("dev") === deviceName;
+          }).find("form").off("submit.fhempy").on("submit.fhempy", function(event) {
+            event.preventDefault();
+            var form = $(this);
+            var command = form.find("select.set").val();
+            var value = form.find("[name^='val.']").map(function() {
+              return $(this).val();
+            }).get().join(",");
+            var text = "set " + deviceName + " " + command;
+            if (value) text += " " + value;
+            FW_cmd(FW_root + "?cmd=" + encodeURIComponent(text) + "&XHR=1", function(response) {
+              if (response) {
+                if (!/^<html>[\s\S]*<\/html>/.test(response)) {
+                  response = "<pre>" + FW_htmlQuote(response) + "</pre>";
+                }
+                FW_okDialog(response);
+                return;
+              }
+              // Preserve the normal refresh after successful commands which
+              // may create readings. Navigate without sending Set a second time.
+              var reading = $(".dval").filter(function() {
+                return $(this).attr("informid") === deviceName + "-" + command;
+              });
+              if (!reading.length || command === "attrTemplate") {
+                location.href = FW_root + "?detail=" + encodeURIComponent(deviceName) +
+                  "&fw_id=" + encodeURIComponent($("body").attr("fw_id") || "");
+              }
+            });
+          });
+
           var helpLink = document.getElementById("content")
             .getElementsByClassName("detLink");
           if (helpLink.length == 0) {
@@ -134,6 +168,11 @@ class FhemModule:
         ret = ret.replace(
             "###COMMAND_HELP_CONFIG###",
             json.dumps(help_config).replace("<", "\\u003c"),
+        )
+
+        ret = ret.replace(
+            "###DEVICE_NAME###",
+            json.dumps(self.hash["NAME"]).replace("<", "\\u003c"),
         )
 
         ret = ret.replace(
