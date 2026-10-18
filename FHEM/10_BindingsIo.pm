@@ -628,7 +628,7 @@ BindingsIo_Set($$$)
   my ($hash, $a, $h) = @_;
   my $cmd = @$a[1];
   my $supported = $hash->{".updateVersionSupported"};
-  my $versions = $supported ? ReadingsVal($hash->{NAME}, "version_options", "") : "";
+  my $versions = $supported ? ($hash->{helper}{version_options} // "") : "";
   my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg";
 
   if ($cmd eq 'update') {
@@ -813,12 +813,16 @@ sub BindingsIo_processCommand($$) {
   } elsif ($json->{msgtype} eq "version") {
     if (exists $json->{version}) {
       $hash->{".updateVersionSupported"} = $json->{update_version_supported} // 0;
-      if ($hash->{".updateVersionSupported"} && ReadingsVal($hash->{NAME}, "version", "") ne $json->{version}) {
-        readingsSingleUpdate($hash, "version_options", $json->{version}, 1);
+      if ($hash->{".updateVersionSupported"} && (!exists $hash->{helper}{version_options}
+          || ReadingsVal($hash->{NAME}, "version", "") ne $json->{version})) {
+        $hash->{helper}{version_options} = $json->{version};
       }
     }
+    if (exists $json->{version_options}) {
+      $hash->{helper}{version_options} = $json->{version_options};
+    }
     foreach my $key (keys %$json) {
-      if ($key eq "msgtype" || $key eq "update_version_supported") {
+      if ($key eq "msgtype" || $key eq "update_version_supported" || $key eq "version_options") {
         next;
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
@@ -943,36 +947,57 @@ sub BindingsIo_readWebsocketMessage {
 =item summary_DE BindingsIo stellt eine sprachneutrale Modulschnittstelle zur Verfuegung
 =begin html
 
-<a name="BindingsIo"></a>
+<a id="BindingsIo"></a>
 <h3>BindingsIo</h3>
 <ul>
   BindingsIo is used to provide language neutral module interface.<br><br>
 
-  <a name="BindingsIo_Define"></a>
+  <a id="BindingsIo-define"></a>
   <b>Define</b>
   <ul>
   define pybinding BindingsIo fhempy
   </ul>
 
-  <a name="BindingsIo_Set"></a>
+  <br>
+
+  <a id="BindingsIo-set"></a>
   <b>Set</b>
   <ul>
-    <li><code>checkUpdate</code>: check PyPI now without installing anything.
-      Checks also run on connection to FHEM and every twelve hours.
-      <code>update_check</code> reports checking, ok or the error; its timestamp
-      shows when the last check finished. Failed checks preserve the last result.</li>
-    <li><code>update [latest|version]</code>: install the newest available package
-      when no version or <code>latest</code> is given. The installer resolves this
-      afresh, independently of the last check. An explicit version (for example
-      <code>2.1.4</code>) installs only that version, with no fallback to a newer one.
-      The installed version is also allowed. Older versions are never offered in
-      the dropdown, but can be requested explicitly at the command line.
-      <code>update_status</code> reports progress and installation errors.
-      fhempy restarts after a successful installation.</li>
-    <li><code>restart</code>: restart fhempy.</li>
+    <a id="BindingsIo-set-checkUpdate"></a>
+    <li><code>checkUpdate</code><br>
+      check PyPI (The Python Package Index) now without installing anything.<br>
+      Checks also run on connection to FHEM and every twelve hours.<br>
+      The reading <code>update_check</code> reports checking, ok or the error;
+      its timestamp shows when the last check finished.<br>
+      Failed checks preserve the last result.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-update"></a>
+    <li><code>update [latest|version]</code><br>
+      install the newest available package when no version or <code>latest</code>
+      is given. The installer resolves this afresh, independently of the last check.<br>
+      An explicit version (for example <code>2.1.4</code>) installs only that version,
+      with no fallback to a newer one. The installed version is also allowed.<br>
+      Older versions are never offered in the dropdown, but can be requested explicitly at
+      the command line.<br>
+      The reading <code>update_status</code> reports progress and installation errors.<br>
+      fhempy restarts after a successful installation.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-restart"></a>
+    <li><code>restart</code><br>
+      restart fhempy
+    </li>
   </ul>
-  <code>version_options</code> supplies the update dropdown: the installed version
-  and newer stable PyPI releases compatible with the running Python version.
+
+  <br>
+
+  The update dropdown offers the installed version
+  and newer stable PyPI releases compatible with the running Python version.<br>
   Withdrawn releases are excluded. Refresh the detail page after a check to see
   the new choices. Custom pip/uv indexes still apply to installation.
 
