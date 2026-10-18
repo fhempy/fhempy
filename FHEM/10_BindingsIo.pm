@@ -347,6 +347,7 @@ BindingsIo_doInit($) {
   $hash->{messages_count} = {};
   $write_deep_recursion = 0;
   delete $hash->{".aliveCheckSent"};
+  delete $hash->{".updateVersionSupported"};
   RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
   $hash->{".waitingIds"} = {};
 
@@ -501,6 +502,9 @@ BindingsIo_Write($$$$$) {
   if ($function eq "update") {
     $msg{"msgtype"} = "update";
     $waitforresponse = 0;
+  } elsif ($function eq "checkUpdate") {
+    $msg{"msgtype"} = "checkUpdate";
+    $waitforresponse = 0;
   } elsif ($function eq "restart") {
     $msg{"msgtype"} = "restart";
     $waitforresponse = 0;
@@ -621,10 +625,21 @@ BindingsIo_Set($$$)
 {
   my ($hash, $a, $h) = @_;
   my $cmd = @$a[1];
-  my $list = "update:noArg restart:noArg";
+  my $supported = $hash->{".updateVersionSupported"};
+  my $versions = $supported ? ReadingsVal($hash->{NAME}, "version_options", "") : "";
+  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg";
 
   if ($cmd eq 'update') {
-    return BindingsIo_Write($hash, $hash, "update", [], {});
+    return "Usage: set $hash->{NAME} update [latest|version]" if (@$a > 3 || keys %$h);
+    my @args = @$a > 2 && $a->[2] ne "latest" ? ($a->[2]) : ();
+    return "The connected fhempy version does not support version selection; update fhempy first."
+      if (@args && !$supported);
+    return BindingsIo_Write($hash, $hash, "update", \@args, {});
+  } elsif ($cmd eq 'checkUpdate') {
+    return "Usage: set $hash->{NAME} checkUpdate" if (@$a != 2 || keys %$h);
+    return "The connected fhempy version does not support checkUpdate; update fhempy first."
+      if (!$supported);
+    return BindingsIo_Write($hash, $hash, "checkUpdate", [], {});
   } elsif ($cmd eq 'restart') {
     return BindingsIo_Write($hash, $hash, "restart", [], {});
   }
@@ -794,8 +809,14 @@ sub BindingsIo_processCommand($$) {
       $devhash->{$key} = $json->{$key};
     }
   } elsif ($json->{msgtype} eq "version") {
+    if (exists $json->{version}) {
+      $hash->{".updateVersionSupported"} = $json->{update_version_supported} // 0;
+      if ($hash->{".updateVersionSupported"} && ReadingsVal($hash->{NAME}, "version", "") ne $json->{version}) {
+        readingsSingleUpdate($hash, "version_options", $json->{version}, 1);
+      }
+    }
     foreach my $key (keys %$json) {
-      if ($key eq "msgtype") {
+      if ($key eq "msgtype" || $key eq "update_version_supported") {
         next;
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
@@ -930,6 +951,28 @@ sub BindingsIo_readWebsocketMessage {
   <ul>
   define pybinding BindingsIo fhempy
   </ul>
+
+  <a name="BindingsIo_Set"></a>
+  <b>Set</b>
+  <ul>
+    <li><code>checkUpdate</code>: check PyPI now without installing anything.
+      Checks also run on connection to FHEM and every twelve hours.
+      <code>update_check</code> reports checking, ok or the error; its timestamp
+      shows when the last check finished. Failed checks preserve the last result.</li>
+    <li><code>update [latest|version]</code>: install the newest available package
+      when no version or <code>latest</code> is given. The installer resolves this
+      afresh, independently of the last check. An explicit version (for example
+      <code>2.1.4</code>) installs only that version, with no fallback to a newer one.
+      The installed version is also allowed. Older versions are never offered in
+      the dropdown, but can be requested explicitly at the command line.
+      <code>update_status</code> reports progress and installation errors.
+      fhempy restarts after a successful installation.</li>
+    <li><code>restart</code>: restart fhempy.</li>
+  </ul>
+  <code>version_options</code> supplies the update dropdown: the installed version
+  and newer stable PyPI releases compatible with the running Python version.
+  Withdrawn releases are excluded. Refresh the detail page after a check to see
+  the new choices. Custom pip/uv indexes still apply to installation.
 
 </ul><br>
 
