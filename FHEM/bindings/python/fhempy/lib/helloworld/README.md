@@ -13,22 +13,6 @@ other side effects. The binding can use it to reject an invalid redefinition
 before stopping the existing device. `Define` reuses the same validation for
 direct calls; the usage message is defined once in the module.
 
-## Get commands
-
-```
-get hello_fhempy info
-get hello_fhempy help
-```
-
-- `info` reads the current state from FHEM and returns it with the device name
-  and the configured interval.
-- `help` builds a command and attribute overview from the module configuration.
-
-`await self.set_get_config(get_config)` registers commands and their FHEMWEB
-`help` texts. Commands call `get_<command>(hash, params)`. The examples show both
-an asynchronous handler (`info`) and a synchronous handler (`help`). The base
-class supplies `Get`; a module does not need to implement its own dispatcher.
-
 ## Set commands
 
 - `mode`: choose `eco` or `comfort`; writes the `mode` reading. Both positional
@@ -66,6 +50,22 @@ class supplies `Get`; a module does not need to implement its own dispatcher.
   an optional non-negative integer parameter; it does not start an automatic off timer.
 - `off`: writes `off` to `state` and starts a background task which later changes
   it to `long running off` without blocking the event loop.
+
+## Get commands
+
+```
+get hello_fhempy info
+get hello_fhempy help
+```
+
+- `info` reads the current state from FHEM and returns it with the device name
+  and the configured interval.
+- `help` builds a command and attribute overview from the module configuration.
+
+`await self.set_get_config(get_config)` registers commands and their FHEMWEB
+`help` texts. Commands call `get_<command>(hash, params)`. The examples show both
+an asynchronous handler (`info`) and a synchronous handler (`help`). The base
+class supplies `Get`; a module does not need to implement its own dispatcher.
 
 ## Attributes
 
