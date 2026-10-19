@@ -116,6 +116,9 @@ async def test_default_files(mocker, tmp_path, monkeypatch):
     write(tmp_path / ".fhempy/zigbee2mqtt/data/log/2026-10-16/log.log")
     write(tmp_path / "esphome_config/.esphome/build/garden/main.cpp")
     write(tmp_path / ".fhempy/matter_server/matter_server.log")
+    # temporary files of matter.js, renamed right after writing
+    write(tmp_path / ".fhempy/matter_server/data/fabric/node.1.tmp")
+    write(tmp_path / ".fhempy/matter_bridge/fhem/data/fhem-bridge/root.counter.tmp")
 
     files = {str(f) for f in module.files_to_backup()}
 
@@ -166,6 +169,27 @@ async def test_readings_after_failed_and_successful_backup(
     assert readings["files_unchanged"] == 1
     assert readings["last_successful_backup"] == readings["last_backup"]
     put.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_vanished_file_is_skipped(mocker, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    module = await define_backup(mocker)
+    write(tmp_path / "fhem.cfg")
+    # deleted after the file list was built
+    mocker.patch.object(
+        module,
+        "files_to_backup",
+        return_value=[gb.pathlib.Path("fhem.cfg"), gb.pathlib.Path("log/gone")],
+    )
+    mocker.patch.object(module, "github_get", mocker.AsyncMock(return_value=None))
+    mocker.patch.object(module, "github_put", mocker.AsyncMock(return_value=True))
+    await module.do_backup()
+
+    readings = mock_fhem.readings["testbackup"]
+    assert readings["state"] == "ok"
+    assert readings["files_uploaded"] == 1
+    assert readings["files_failed"] == 0
 
 
 @pytest.mark.asyncio
