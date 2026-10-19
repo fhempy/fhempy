@@ -20,6 +20,8 @@ DEFAULT_PORT = 8099
 MAX_REQUEST_SIZE = 1024 * 1024
 ROOM_ICON = "it_server"
 DEVICE_ICON = "it_server"
+# set by the module itself, not shown in the approval list
+HIDDEN_PENDING_ATTRS = ("disable", "room", "comment")
 LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1", "[::1]")
 
 DEVICES_HELP = (
@@ -144,7 +146,8 @@ class mcp_server(generic.FhemModule):
             self.hash,
             "to_json([map { {name => $_, type => $defs{$_}{TYPE},"
             " definition => $defs{$_}{DEF} // '',"
-            " comment => AttrVal($_, 'comment', '')} }"
+            " comment => AttrVal($_, 'comment', ''),"
+            " attributes => {%{$attr{$_} // {}}}} }"
             f" grep {{ defined($defs{{$_}}) }} ({names_perl})])",
         )
         try:
@@ -511,6 +514,22 @@ class mcp_server(generic.FhemModule):
             parts.append(self.pending_html(name, pending))
         return "".join(parts)
 
+    @staticmethod
+    def attributes_html(attributes):
+        """attributes of a pending automation, without the ones of the module"""
+        lines = [
+            f"attr {html.escape(k)} {html.escape(str(v))}"
+            for k, v in sorted((attributes or {}).items())
+            if k not in HIDDEN_PENDING_ATTRS
+        ]
+        if not lines:
+            return ""
+        return (
+            '<pre style="white-space:pre-wrap;margin:4px 0">'
+            + "\n".join(lines)
+            + "</pre>"
+        )
+
     def pending_html(self, name, pending):
         rows = []
         for i, info in enumerate(pending):
@@ -536,6 +555,7 @@ class mcp_server(generic.FhemModule):
                 f"{html.escape(comment)}"
                 '<pre style="white-space:pre-wrap;margin:4px 0">'
                 f'{html.escape(str(info.get("definition") or ""))}</pre>'
+                f"{self.attributes_html(info.get('attributes'))}"
                 f'{button("approve", "Approve")} &nbsp; '
                 f'{button("reject", "Reject")}</td></tr>'
             )

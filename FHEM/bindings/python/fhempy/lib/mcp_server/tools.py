@@ -46,6 +46,21 @@ VISIBLE_ATTRS = (
     "setList",
     "disable",
 )
+# attributes the AI may not set on its automations: they would bypass the
+# approval or run Perl code even while the automation is disabled
+PROTECTED_ATTRS = (
+    "disable",
+    "disabledForIntervals",
+    "disabledAfterTrigger",
+    "userattr",
+    "userReadings",
+    "stateFormat",
+    "devStateIcon",
+    "devStateStyle",
+    "uiTable",
+    "uiState",
+)
+ATTR_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 SECRET_NAME = re.compile(
     r"pass|pwd|token|secret|api_?key|credential|auth|cookie|session|private"
     r"|(^|[_-])pin($|[_-]|code)",
@@ -228,7 +243,9 @@ class FhemTools:
             " foreach my $k (keys %{$x->{READINGS} // {}}) { next if ($k =~ /^\\./);"
             " $rd{$k} = {value => $x->{READINGS}{$k}{VAL},"
             " time => $x->{READINGS}{$k}{TIME}} }"
-            " my %a; foreach my $k (" + attrs + ") {"
+            f" my @ak = $x->{{TYPE}} =~ /^(?:{auto})$/"
+            " ? keys %{$attr{$d} // {}} : (" + attrs + ");"
+            " my %a; foreach my $k (@ak) {"
             " my $v = AttrVal($d, $k, undef); $a{$k} = $v if (defined($v)) }"
             " to_json({name => $d, type => $x->{TYPE}, state => ($x->{STATE} // ''),"
             f" definition => ($x->{{TYPE}} =~ /^(?:{auto})$/ ? $x->{{DEF}} : undef),"
@@ -433,6 +450,59 @@ class FhemTools:
         await self.module.log_action(f"deleted {name}")
         return {"result": "ok", "note": f"'{name}' was deleted."}
 
+    async def set_automation_attribute(self, name, attribute, value=""):
+        name = check_name(name, "automation")
+        self._check_own(name)
+        attribute = str(attribute or "").strip()
+        if not ATTR_NAME_RE.match(attribute) or len(attribute) > 100:
+            raise ToolError(f"Invalid attribute name '{attribute}'")
+        if attribute in PROTECTED_ATTRS:
+            raise ToolError(
+                f"The attribute '{attribute}' can only be set by the user in FHEM."
+            )
+        value = str(value if value is not None else "").strip()
+        if len(value) > MAX_DEFINITION:
+            raise ToolError("value is too long")
+        approval = bool(self.module._attr_require_approval)
+        if value:
+            command = (
+                f"CommandAttr(undef, {fhem.perlString(f'{name} {attribute} {value}')})"
+            )
+        else:
+            command = (
+                f"CommandDeleteAttr(undef, {fhem.perlString(f'{name} {attribute}')})"
+            )
+        code = (
+            f"my $n = {fhem.perlString(name)};"
+            " return to_json({error => 'not found'}) if (!defined($defs{$n})"
+            f" || $defs{{$n}}{{TYPE}} !~ /^(?:{_types_regex(AUTOMATION_TYPES)})$/);"
+            # disable first, the attribute must not act before the approval
+            + (
+                f" CommandAttr(undef, {fhem.perlString(name + ' disable 1')});"
+                if approval
+                else ""
+            )
+            + f" my $e = {command};"
+            " to_json({error => (defined($e) && $e ne '' ? $e : undef),"
+            f" value => AttrVal($n, {fhem.perlString(attribute)}, undef)}})"
+        )
+        result = await self.perl_json(code)
+        if not isinstance(result, dict):
+            raise ToolError("FHEM did not answer")
+        if result.get("error") == "not found":
+            await self.module.forget(name)
+            raise ToolError(f"'{name}' doesn't exist anymore")
+        await self.module.add_created(name, approval)
+        if result.get("error"):
+            raise ToolError(f"FHEM: {mask_text(result['error'])}")
+        action = "set" if value else "deleted"
+        await self.module.log_action(f"{action} attribute {attribute} of {name}")
+        return {
+            "result": "ok",
+            "value_now": mask_value(attribute, result.get("value")),
+            "note": self._approval_note(name, approval),
+        }
+
     async def fhem_command(self, command):
         command = str(command or "").strip()
         if not command:
@@ -575,6 +645,28 @@ class FhemTools:
                     destructive=True,
                 ),
                 Tool(
+                    "set_automation_attribute",
+                    "Set or delete an attribute of an automation you created, "
+                    "e.g. for DOIF 'do' = 'always', 'wait' = '300', 'cmdState', "
+                    "'repeatsame', 'checkReadingEvent'. get_device shows the "
+                    "current attributes. Not allowed: "
+                    + ", ".join(PROTECTED_ATTRS)
+                    + ".",
+                    self.set_automation_attribute,
+                    {
+                        "name": {"type": "string"},
+                        "attribute": {"type": "string", "description": "e.g. do"},
+                        "value": {
+                            "type": "string",
+                            "description": "e.g. always; empty deletes the "
+                            "attribute",
+                        },
+                    },
+                    ["name", "attribute"],
+                    title="Set automation attribute",
+                    destructive=True,
+                ),
+                Tool(
                     "delete_automation",
                     "Delete an automation you created.",
                     self.delete_automation,
@@ -621,7 +713,9 @@ How to work:
    Ask the user before you switch many devices at once.
 4. For rules ("when X happens, do Y") use create_automation, preferably DOIF.
    Check list_automations first to avoid duplicates. {approval_text}
-   You may only change or delete automations you created yourself.
+   You may only change or delete automations you created yourself, and set
+   their attributes with set_automation_attribute (e.g. DOIF: do always,
+   wait 300).
 
 Presence: look for devices of type PRESENCE, ROOMMATE, GUEST, RESIDENTS,
 GEOFANCY or a dummy named like home/presence/Anwesenheit; their state is e.g.

@@ -79,17 +79,24 @@ set AI approve all
 ```
 
 The AI can only change and delete automations it created itself. Your own automations are
-safe. When the AI changes one of its automations, it has to be approved again.
+safe. When the AI changes one of its automations or one of its attributes (e.g. `do always`), it
+is disabled again and has to be approved again. The approval list shows the attributes too.
+
+Some attributes can only be set by you, as they would skip the approval or run Perl code even
+while the automation is disabled: `disable`, `disabledForIntervals`, `disabledAfterTrigger`,
+`userattr`, `userReadings`, `stateFormat`, `devStateIcon`, `devStateStyle`, `uiTable`,
+`uiState`.
 
 ## What the AI can see and do
 
 | Tool | What it does | Attribute |
 |------|--------------|-----------|
 | list_rooms, list_devices | Rooms and devices with alias, type, room, state | `devices`, `hidden_devices` |
-| get_device | Readings, a few attributes (alias, room, group, comment, genericDeviceType, webCmd, eventMap, setList, disable) and the `set` commands of a device | |
+| get_device | Readings, a few attributes (alias, room, group, comment, genericDeviceType, webCmd, eventMap, setList, disable; all attributes for automations) and the `set` commands of a device | |
 | list_automations | All DOIF, notify, at and watchdog with their definition | |
 | set_device | `set <device> <command>`, e.g. `on`, `pct 50` | `allow_set` |
 | create_automation, change_automation, delete_automation | Automations, see above | `allow_automations`, `require_approval` |
+| set_automation_attribute | Set or delete attributes of its own automations, e.g. `do always` or `wait 300` for a DOIF | `allow_automations`, `require_approval` |
 | fhem_command | Any FHEM command, off by default | `allow_fhem_command` |
 
 ### Your passwords stay secret
@@ -98,7 +105,8 @@ safe. When the AI changes one of its automations, it has to be approved again.
 - Readings and attributes with names like password, token, secret, apikey, pin, auth are
   replaced by `***`. Passwords in addresses (`https://user:password@...`) and texts like
   `password=...` are replaced too.
-- Of all attributes only the harmless ones listed above are sent.
+- Of all attributes only the harmless ones listed above are sent (for automations all
+  attributes, names like password are masked there too).
 - Device definitions (DEF) are only sent for automations, never for other devices, as some
   modules have passwords in their definition.
 - FHEM itself (FHEMWEB, telnet, logs, fhempy) is never visible.

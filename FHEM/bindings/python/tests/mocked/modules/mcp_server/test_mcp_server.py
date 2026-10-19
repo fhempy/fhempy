@@ -120,6 +120,25 @@ class FakeFhem:
                 "comment": "",
             }
             return json.dumps({"error": None})
+        if "value => AttrVal($n," in code:
+            name = self.arg(code, "n")
+            if name not in self.defs:
+                return json.dumps({"error": "not found"})
+            d = self.defs[name]
+            if f"'{name} disable 1'" in code:
+                d["disable"] = "1"
+            attrs = d.setdefault("attrs", {})
+            match = re.search(
+                r"my \$e = CommandAttr\(undef, '(\S+) (\S+) ((?:[^'\\]|\\.)*)'\)", code
+            )
+            if match:
+                attrs[match.group(2)] = match.group(3)
+                value = match.group(3)
+            else:
+                attr = re.search(r"CommandDeleteAttr\(undef, '\S+ (\S+)'\)", code)
+                attrs.pop(attr.group(1), None)
+                value = None
+            return json.dumps({"error": None, "value": value})
         if "CommandModify(" in code:
             name = self.arg(code, "n")
             if name not in self.defs:
@@ -134,7 +153,12 @@ class FakeFhem:
             names = re.findall(r"'([A-Za-z0-9._]+)'", code.split("grep", 1)[1])
             return json.dumps(
                 [
-                    {"name": n, "type": d["type"], "definition": d["definition"]}
+                    {
+                        "name": n,
+                        "type": d["type"],
+                        "definition": d["definition"],
+                        "attributes": dict(d.get("attrs", {}), disable="1"),
+                    }
                     for n, d in self.defs.items()
                     if n in names
                 ]
@@ -448,3 +472,68 @@ async def test_tool_attributes(module):
     names = [tool.name for tool in module.tools.tools()]
     assert "set_device" not in names and "create_automation" not in names
     assert "fhem_command" in names
+
+
+def attr_command(module):
+    return [c for c in module.fake.commands if "value => AttrVal($n," in c][-1]
+
+
+@pytest.mark.asyncio
+async def test_automation_attributes(module):
+    await call(
+        module,
+        "create_automation",
+        name="ai_doif",
+        type="DOIF",
+        definition='([Residents] eq "absent") (set Lamp_kitchen off)',
+    )
+    await module.Set(module.hash, [NAME, "approve", "ai_doif"], {})
+    assert module.pending == []
+
+    error, result = await call(
+        module,
+        "set_automation_attribute",
+        name="ai_doif",
+        attribute="do",
+        value="always",
+    )
+    assert not error and result["value_now"] == "always"
+    # disabled before the attribute is set, waits for approval again
+    code = attr_command(module)
+    assert code.index("'ai_doif disable 1'") < code.index("'ai_doif do always'")
+    assert module.fake.defs["ai_doif"]["disable"] == "1"
+    assert module.pending == ["ai_doif"]
+    html = module.setup_html([module.pending_info["ai_doif"]])
+    assert "attr do always" in html and "attr disable" not in html
+
+    error, result = await call(
+        module, "set_automation_attribute", name="ai_doif", attribute="do"
+    )
+    assert not error and "do" not in module.fake.defs["ai_doif"]["attrs"]
+
+    for attribute in ("disable", "userReadings", "stateFormat", "devStateIcon"):
+        error, text = await call(
+            module,
+            "set_automation_attribute",
+            name="ai_doif",
+            attribute=attribute,
+            value="x",
+        )
+        assert error and "only be set by the user" in text
+    error, text = await call(
+        module, "set_automation_attribute", name="ai_doif", attribute="a b", value="x"
+    )
+    assert error and "Invalid attribute" in text
+    error, text = await call(
+        module, "set_automation_attribute", name="Residents", attribute="do", value="x"
+    )
+    assert error and "not created by you" in text
+    # the value only reaches FHEM as quoted Perl string
+    await call(
+        module,
+        "set_automation_attribute",
+        name="ai_doif",
+        attribute="wait",
+        value="1'); system('x",
+    )
+    assert "'ai_doif wait 1\\'); system(\\'x'" in attr_command(module)
