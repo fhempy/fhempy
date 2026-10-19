@@ -246,6 +246,7 @@ def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv
 PYGOBJECT_GIREPOSITORY2_REQUIREMENT = "PyGObject>=3.54.5,<3.55"
 
 
+@functools.cache
 def has_girepository2():
     return ctypes.util.find_library("girepository-2.0") is not None
 
