@@ -25,6 +25,7 @@ from pychromecast.controllers.bubbleupnp import BubbleUPNPController
 # YouTube
 from pychromecast.controllers.youtube import YouTubeController
 from requests import Session
+from yarl import URL
 from spotipy.oauth2 import CacheFileHandler
 
 from .. import fhem, generic, utils
@@ -167,6 +168,7 @@ class googlecast(generic.FhemModule):
                 utils.run_blocking_task(functools.partial(self.cast.disconnect))
             if self.tts_server:
                 await self.tts_server.stop()
+                await utils.run_blocking(self.tts_server.remove_files)
         except Exception:
             self.logger.exception("Failed to undefine googlecast")
 
@@ -314,10 +316,10 @@ class googlecast(generic.FhemModule):
         vol = params["vol"]
         await utils.run_blocking(functools.partial(self.cast.set_volume, vol / 100))
 
-    async def set_speak(self, hash, params):
+    def set_speak(self, hash, params):
         self.create_async_task(self.do_set_speak(params["text"]))
 
-    async def set_speakDisplay(self, hash, params):
+    def set_speakDisplay(self, hash, params):
         self.create_async_task(self.do_set_speak(params["text"], params["display"]))
 
     async def do_set_speak(self, text, display=None):
@@ -336,7 +338,9 @@ class googlecast(generic.FhemModule):
             )
             await self.speak_direct(text, display, lang)
             return
-        url = base_url + self.tts_server.add(mp3)
+        url = base_url + await utils.run_blocking(
+            functools.partial(self.tts_server.add, mp3)
+        )
         await utils.run_blocking(
             functools.partial(
                 self.cast.play_media,
@@ -358,7 +362,8 @@ class googlecast(generic.FhemModule):
         ip = await utils.run_blocking(
             functools.partial(tts.local_ip_for, self.cast.cast_info.host)
         )
-        return f"http://{ip}:{self.tts_server.port}"
+        # cast devices only accept trusted certificates, plain HTTP in the LAN
+        return str(URL.build(scheme="http", host=ip, port=self.tts_server.port))
 
     def speak_metadata(self, display, base_url=None):
         metadata = {
@@ -367,8 +372,11 @@ class googlecast(generic.FhemModule):
             "subtitle": "fhempy",
         }
         if base_url:
-            metadata["images"] = [{"url": base_url + "/fhempy_icon.png"}]
+            metadata["images"] = [{"url": base_url + tts.ICON_PATH}]
         return metadata
+
+    def set_from_thread(self, event, *_):
+        self.loop.call_soon_threadsafe(event.set)
 
     async def speak_direct(self, text, display, lang):
         """Fallback: the cast device downloads the parts itself, one after another."""
@@ -384,9 +392,7 @@ class googlecast(generic.FhemModule):
                     stream_type="BUFFERED",
                     metadata=self.speak_metadata(display),
                     enqueue=idx > 0,
-                    callback_function=lambda *_: self.loop.call_soon_threadsafe(
-                        loaded.set
-                    ),
+                    callback_function=functools.partial(self.set_from_thread, loaded),
                 )
             )
             try:

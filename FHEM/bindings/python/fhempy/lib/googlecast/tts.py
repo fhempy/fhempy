@@ -10,15 +10,17 @@ announcement plays as one media item and the display stays the same.
 import collections
 import re
 import secrets
+import shutil
 import socket
+import tempfile
 from pathlib import Path
 from urllib.parse import quote
 
-TTS_URL = "https://translate.google.com/translate_tts"
 MAX_CHUNK_LEN = 200
 MAX_STORED_FILES = 5
 DISPLAY_LEN = 80
-ICON_PATH = Path(__file__).parent / "fhempy_icon.png"
+STATIC_DIR = Path(__file__).parent / "static"
+ICON_PATH = "/static/fhempy_icon.png"
 
 
 def split_text(text, max_len=MAX_CHUNK_LEN):
@@ -111,8 +113,8 @@ class TTSServer:
         self.runner = None
         self.port = None
         self.requested_port = None
-        self.files = collections.OrderedDict()
-        self.icon = ICON_PATH.read_bytes()
+        self.files = collections.deque()
+        self.directory = Path(tempfile.mkdtemp(prefix="fhempy_tts_"))
 
     @property
     def running(self):
@@ -123,8 +125,9 @@ class TTSServer:
 
         await self.stop()
         app = web.Application()
-        app.router.add_get("/tts/{name}", self.handle_tts)
-        app.router.add_get("/fhempy_icon.png", self.handle_icon)
+        # static routes handle Range requests and never list the directory
+        app.router.add_static("/tts", self.directory)
+        app.router.add_static("/static", STATIC_DIR)
         runner = web.AppRunner(app, access_log=None)
         await runner.setup()
         site = web.TCPSite(runner, port=port)
@@ -143,44 +146,15 @@ class TTSServer:
             await runner.cleanup()
 
     def add(self, mp3):
-        """Store mp3 and return its path on the server."""
+        """Store mp3 and return its path on the server. Blocking file I/O."""
         name = secrets.token_urlsafe(16) + ".mp3"
-        self.files[name] = mp3
+        (self.directory / name).write_bytes(mp3)
+        self.files.append(name)
         while len(self.files) > MAX_STORED_FILES:
-            self.files.popitem(last=False)
+            (self.directory / self.files.popleft()).unlink(missing_ok=True)
         return "/tts/" + name
 
-    async def handle_tts(self, request):
-        from aiohttp import web
-
-        data = self.files.get(request.match_info["name"])
-        if data is None:
-            raise web.HTTPNotFound()
-        headers = {"Accept-Ranges": "bytes"}
-        try:
-            rng = request.http_range
-        except ValueError:
-            raise web.HTTPRequestRangeNotSatisfiable()
-        if rng.start is None and rng.stop is None:
-            return web.Response(body=data, content_type="audio/mpeg", headers=headers)
-        start, stop, _ = rng.indices(len(data))
-        if start >= stop:
-            raise web.HTTPRequestRangeNotSatisfiable(
-                headers={"Content-Range": f"bytes */{len(data)}"}
-            )
-        headers["Content-Range"] = f"bytes {start}-{stop - 1}/{len(data)}"
-        return web.Response(
-            status=206,
-            body=data[start:stop],
-            content_type="audio/mpeg",
-            headers=headers,
-        )
-
-    async def handle_icon(self, request):
-        from aiohttp import web
-
-        return web.Response(
-            body=self.icon,
-            content_type="image/png",
-            headers={"Cache-Control": "max-age=86400"},
-        )
+    def remove_files(self):
+        """Delete all stored files. Blocking file I/O."""
+        self.files.clear()
+        shutil.rmtree(self.directory, ignore_errors=True)

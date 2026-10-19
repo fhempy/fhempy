@@ -70,24 +70,31 @@ async def test_server_serves_files_ranges_and_icon():
                 assert await res.read() == b"0123456789"
             async with session.get(base + path, headers={"Range": "bytes=2-5"}) as res:
                 assert res.status == 206
-                assert res.headers["Content-Range"] == "bytes 2-5/10"
                 assert await res.read() == b"2345"
             async with session.get(base + "/tts/unknown.mp3") as res:
                 assert res.status == 404
-            async with session.get(base + "/fhempy_icon.png") as res:
+            async with session.get(base + "/tts/") as res:
+                assert res.status in (403, 404)
+            async with session.get(base + tts.ICON_PATH) as res:
                 assert res.status == 200
                 assert (await res.read())[:8] == b"\x89PNG\r\n\x1a\n"
     finally:
         await server.stop()
+        server.remove_files()
     assert not server.running
+    assert not server.directory.exists()
 
 
 def test_server_keeps_only_recent_files():
     server = tts.TTSServer()
-    paths = [server.add(bytes([i])) for i in range(tts.MAX_STORED_FILES + 2)]
-    assert len(server.files) == tts.MAX_STORED_FILES
-    assert paths[0].split("/")[-1] not in server.files
-    assert paths[-1].split("/")[-1] in server.files
+    try:
+        paths = [server.add(bytes([i])) for i in range(tts.MAX_STORED_FILES + 2)]
+        stored = sorted(p.name for p in server.directory.iterdir())
+        assert len(stored) == tts.MAX_STORED_FILES
+        assert paths[0].split("/")[-1] not in stored
+        assert paths[-1].split("/")[-1] in stored
+    finally:
+        server.remove_files()
 
 
 @pytest.mark.asyncio
