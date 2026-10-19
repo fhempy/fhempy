@@ -27,7 +27,8 @@ set cast play url=https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
  - rewind
  - seek
  - skip
- - speak: E.g. set dev speak "Good morning"
+ - speak: E.g. set dev speak "Good morning". Long texts are split into parts and joined to one announcement. Devices with a screen (e.g. Nest Hub) show the text (shortened) and the fhempy icon.
+ - speakDisplay: Speaks the first text and shows the second one on the screen, e.g. set dev speakDisplay "Today it will be sunny with up to 25 degrees..." "Weather today"
  - startApp
  - stop
  - subtitles
@@ -36,6 +37,8 @@ set cast play url=https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
  - volume
 
  ## Attributes
+  - speak_lang: Language of speak and speakDisplay (default de).
+  - speak_port: fhempy serves announcements and the icon to the cast device via HTTP on this port. 0 (default) picks a free port, set a fixed port if a firewall is in between.
   - spotify_sp_dn: Set this attributes to the cookie content of sp_dn found here chrome://settings/cookies/detail?site=spotify.com. You need to login to Spotify webclient first https://open.spotify.com/.
   - spotify_sp_key: Set this attributes to the cookie content of sp_key found here chrome://settings/cookies/detail?site=spotify.com. You need to login to Spotify webclient first https://open.spotify.com/.
 
