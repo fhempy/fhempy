@@ -57,6 +57,10 @@ DEFAULT_BACKUP_FILES = ",".join(
     ]
 )
 
+# files programs write and rename right away (matter.js storage writes
+# key.tmp, then renames it to key), they're gone when we read them
+TEMP_SUFFIXES = (".tmp", ".temp", ".swp", "~")
+
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 HTTP_ERRORS = {
@@ -250,6 +254,8 @@ class github_backup(generic.FhemModule):
             if pattern == "":
                 continue
             for filepath in sorted(pathlib.Path(".").glob(pattern)):
+                if filepath.name.endswith(TEMP_SUFFIXES):
+                    continue
                 if filepath.is_file() and filepath not in files:
                     files.append(filepath)
         return files
@@ -275,6 +281,9 @@ class github_backup(generic.FhemModule):
         for filepath in files:
             try:
                 result[await self.upload_file(filepath)].append(str(filepath))
+            except FileNotFoundError:
+                # deleted or renamed since the file list was built
+                self.logger.debug(f"{filepath} vanished, not backed up")
             except Exception as exc:
                 result["failed"].append(str(filepath))
                 if result["error"] is None:
