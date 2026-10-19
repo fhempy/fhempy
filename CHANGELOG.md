@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.2.2 (2026-10-19)
+
+### Bug Fixes
+
+- Install PyGObject 3.54 on Debian Trixie (girepository-2.0)
+  ([#710](https://github.com/fhempy/fhempy/pull/710),
+  [`f3d1c69`](https://github.com/fhempy/fhempy/commit/f3d1c69c692aa9068b260a3232597a86be60f7e2))
+
+
 ## v2.2.1 (2026-10-19)
 
 ### Bug Fixes
