@@ -3,6 +3,7 @@
 import asyncio
 import concurrent
 import configparser
+import ctypes.util
 import functools
 import inspect
 import json
@@ -238,6 +239,29 @@ def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv
     return args + uv_index_args()
 
 
+# PyGObject >= 3.51 links against girepository-2.0 (GLib >= 2.80, e.g. Debian
+# Trixie), older versions need girepository-1.0 (e.g. Debian Bookworm), which
+# is not installed by default on newer systems. The manifest pin is for the old
+# library, it is replaced when girepository-2.0 is available.
+PYGOBJECT_GIREPOSITORY2_REQUIREMENT = "PyGObject>=3.54.5,<3.55"
+
+
+@functools.cache
+def has_girepository2():
+    return ctypes.util.find_library("girepository-2.0") is not None
+
+
+def platform_requirement(req):
+    """Adapt a manifest requirement to the system libraries."""
+    try:
+        name = Requirement(req).name
+    except InvalidRequirement:
+        return req
+    if name.lower() == "pygobject" and has_girepository2():
+        return PYGOBJECT_GIREPOSITORY2_REQUIREMENT
+    return req
+
+
 _VERIFIED_PACKAGES = set()
 _VERIFIED_MODULES = set()
 _MANIFEST_CACHE = {}
@@ -268,6 +292,7 @@ def check_dependencies(module):
 
         if "requirements" in manifest:
             for req in manifest["requirements"]:
+                req = platform_requirement(req)
                 logger.debug("Check requirement: " + req)
                 if is_installed(req) is False:
                     logger.debug("  NOK")
@@ -309,6 +334,7 @@ async def check_and_install_dependencies(module):
 
             if "requirements" in manifest:
                 for req in manifest["requirements"]:
+                    req = platform_requirement(req)
                     if is_installed(req) is False:
                         inst_tries = 0
                         while inst_tries < 3:

@@ -54,6 +54,9 @@ Install following system dependencies:
 sudo apt install python3-dev libdbus-1-dev libglib2.0-dev libgirepository1.0-dev libcairo2-dev
 ```
 
+On Debian Trixie (or newer) install `libgirepository-2.0-dev` instead of `libgirepository1.0-dev`.
+fhempy then installs PyGObject 3.54 instead of 3.50 automatically.
+
 Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 ```
   <policy user="fhem">
