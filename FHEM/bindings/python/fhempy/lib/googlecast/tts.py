@@ -130,7 +130,9 @@ class TTSServer:
         app.router.add_static("/static", STATIC_DIR)
         runner = web.AppRunner(app, access_log=None)
         await runner.setup()
-        site = web.TCPSite(runner, port=port)
+        # IPv4 only: with port 0 an IPv6 socket would get a different port,
+        # and the URL for the cast device uses the IPv4 address anyway
+        site = web.TCPSite(runner, host="0.0.0.0", port=port)
         try:
             await site.start()
         except OSError:
