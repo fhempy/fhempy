@@ -1,0 +1,7 @@
+{
+  "requirements": [
+    "bleak==3.0.2",
+    "cryptography==50.0.1",
+    "miauth==0.9.7"
+  ]
+}

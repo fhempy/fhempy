@@ -167,6 +167,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
 |[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
+|[scooter](FHEM/bindings/python/fhempy/lib/scooter/README.md)|Xiaomi and Ninebot e-scooters (also with Scooter Hacking Utility firmware): battery, range, mileage, connects automatically when nearby|
 
 ### 🎵 Media
 |Module | Description|
