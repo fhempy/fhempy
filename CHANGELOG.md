@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v2.2.1 (2026-10-19)
+
+### Bug Fixes
+
+- **github_backup**: Skip temporary files and files that vanished before upload
+  ([#708](https://github.com/fhempy/fhempy/pull/708),
+  [`249635c`](https://github.com/fhempy/fhempy/commit/249635c5b605a124b3313359c4e518c517fe841f))
+
+### Features
+
+- **googlecast**: Long announcements, speakDisplay and fhempy icon
+  ([#706](https://github.com/fhempy/fhempy/pull/706),
+  [`127d171`](https://github.com/fhempy/fhempy/commit/127d17165b0a2a18e0b72222813b24daf3162505))
+
+- **mcp_server**: Set attributes of the AI's own automations
+  ([#707](https://github.com/fhempy/fhempy/pull/707),
+  [`a1515ab`](https://github.com/fhempy/fhempy/commit/a1515abde27de948e3cccb327fa438a0f31eec9c))
+
+
 ## v2.2.0 (2026-10-18)
 
 ### Bug Fixes
