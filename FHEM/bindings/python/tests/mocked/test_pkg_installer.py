@@ -258,3 +258,39 @@ async def test_install_runs_after_check_cached_manifest(tmp_path, monkeypatch):
 
     assert installed == ["missing-pkg==1.0"]
     pkg_installer.invalidate_dependency_cache()
+
+
+def test_pygobject_kept_without_girepository2(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: False)
+
+    assert pkg_installer.platform_requirement("PyGObject<=3.50.0") == "PyGObject<=3.50.0"
+
+
+def test_pygobject_replaced_with_girepository2(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
+
+    assert (
+        pkg_installer.platform_requirement("PyGObject<=3.50.0")
+        == pkg_installer.PYGOBJECT_GIREPOSITORY2_REQUIREMENT
+    )
+    assert pkg_installer.platform_requirement("bleak==3.0.2") == "bleak==3.0.2"
+
+
+def test_check_dependencies_uses_platform_requirement(tmp_path, monkeypatch):
+    pkg_installer.invalidate_dependency_cache()
+    mod_dir = tmp_path / "test_mod"
+    mod_dir.mkdir()
+    (mod_dir / "manifest.json").write_text('{"requirements": ["PyGObject<=3.50.0"]}')
+    monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(tmp_path))
+    monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
+    checked = []
+
+    def fake_is_installed(req):
+        checked.append(req)
+        return True
+
+    monkeypatch.setattr(pkg_installer, "is_installed", fake_is_installed)
+
+    assert pkg_installer.check_dependencies("test_mod") is True
+    assert checked == [pkg_installer.PYGOBJECT_GIREPOSITORY2_REQUIREMENT]
+    pkg_installer.invalidate_dependency_cache()
