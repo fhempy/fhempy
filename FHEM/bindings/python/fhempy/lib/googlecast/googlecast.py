@@ -5,7 +5,7 @@ import json
 import logging
 import threading
 import time
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, urlparse
 
 import aiohttp
 
@@ -32,6 +32,7 @@ from ..core.zeroconf import zeroconf
 
 # Spotify
 from .spotcast.spotify_controller import SpotifyController
+from . import tts
 
 connection_update_lock = threading.Lock()
 
@@ -49,6 +50,7 @@ class googlecast(generic.FhemModule):
         self.browser = None
         self.spotipy = None
         self.spotify_access_token = None
+        self.tts_server = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -61,6 +63,12 @@ class googlecast(generic.FhemModule):
             "favorite_4": {"default": ""},
             "favorite_5": {"default": ""},
             "speak_lang": {"default": "de", "options": "de,en,nl,fr,it,es"},
+            "speak_port": {
+                "default": 0,
+                "format": "int",
+                "help": "Port of the HTTP server which serves announcements to the"
+                + " cast device. 0 (default) chooses a free port.",
+            },
             "spotify_sp_dc": {
                 "default": "",
                 "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
@@ -118,6 +126,11 @@ class googlecast(generic.FhemModule):
                 "args": ["text"],
                 "help": "Please provide text with quotes.",
             },
+            "speakDisplay": {
+                "args": ["text", "display"],
+                "help": "Speaks text and shows display on the screen,"
+                + ' e.g. set dev speakDisplay "long text" "short text"',
+            },
             "startApp": {"args": ["appid"]},
             "startSpotify": {},
             "volUp": {},
@@ -152,6 +165,8 @@ class googlecast(generic.FhemModule):
                 utils.run_blocking_task(functools.partial(self.browser.stop_discovery))
             if self.cast:
                 utils.run_blocking_task(functools.partial(self.cast.disconnect))
+            if self.tts_server:
+                await self.tts_server.stop()
         except Exception:
             self.logger.exception("Failed to undefine googlecast")
 
@@ -300,18 +315,85 @@ class googlecast(generic.FhemModule):
         await utils.run_blocking(functools.partial(self.cast.set_volume, vol / 100))
 
     async def set_speak(self, hash, params):
-        self.create_async_task(self.do_set_speak(hash, params))
+        self.create_async_task(self.do_set_speak(params["text"]))
 
-    async def do_set_speak(self, hash, params):
-        txt = params["text"]
+    async def set_speakDisplay(self, hash, params):
+        self.create_async_task(self.do_set_speak(params["text"], params["display"]))
+
+    async def do_set_speak(self, text, display=None):
+        if display is None:
+            display = tts.shorten(text)
         lang = await fhem.AttrVal(self.hash["NAME"], "speak_lang", "de")
-        ttsUrl = (
-            "http://translate.google.com/translate_tts?tl="
-            + lang
-            + "&client=tw-ob&q="
-            + quote(txt)
+        try:
+            base_url = await self.start_tts_server()
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as session:
+                mp3 = await tts.fetch_tts(session, text, lang)
+        except Exception as err:
+            self.logger.warning(
+                f"Failed to prepare announcement ({err}), play it directly"
+            )
+            await self.speak_direct(text, display, lang)
+            return
+        url = base_url + self.tts_server.add(mp3)
+        await utils.run_blocking(
+            functools.partial(
+                self.cast.play_media,
+                url,
+                "audio/mpeg",
+                stream_type="BUFFERED",
+                metadata=self.speak_metadata(display, base_url),
+            )
         )
-        self.cast.play_media(ttsUrl, "audio/mpeg")
+
+    async def start_tts_server(self):
+        """Start the HTTP server if needed and return its URL for the cast device."""
+        port = self._attr_speak_port
+        if self.tts_server is None:
+            self.tts_server = tts.TTSServer()
+        if not self.tts_server.running or self.tts_server.requested_port != port:
+            await self.tts_server.start(port)
+            self.logger.info(f"Announcements are served on port {self.tts_server.port}")
+        ip = await utils.run_blocking(
+            functools.partial(tts.local_ip_for, self.cast.cast_info.host)
+        )
+        return f"http://{ip}:{self.tts_server.port}"
+
+    def speak_metadata(self, display, base_url=None):
+        metadata = {
+            "metadataType": 0,
+            "title": display,
+            "subtitle": "fhempy",
+        }
+        if base_url:
+            metadata["images"] = [{"url": base_url + "/fhempy_icon.png"}]
+        return metadata
+
+    async def speak_direct(self, text, display, lang):
+        """Fallback: the cast device downloads the parts itself, one after another."""
+        chunks = tts.split_text(text)
+        for idx, chunk in enumerate(chunks):
+            # wait for the LOAD answer, the next part needs the media session
+            loaded = asyncio.Event()
+            await utils.run_blocking(
+                functools.partial(
+                    self.cast.play_media,
+                    tts.tts_url(chunk, lang, idx, len(chunks), scheme="http"),
+                    "audio/mpeg",
+                    stream_type="BUFFERED",
+                    metadata=self.speak_metadata(display),
+                    enqueue=idx > 0,
+                    callback_function=lambda *_: self.loop.call_soon_threadsafe(
+                        loaded.set
+                    ),
+                )
+            )
+            try:
+                await asyncio.wait_for(loaded.wait(), 10)
+            except asyncio.TimeoutError:
+                self.logger.error("Cast device didn't answer to the announcement")
+                return
 
     async def set_displayWebsite(self, hash, params):
         dashUrl = params["url"]
