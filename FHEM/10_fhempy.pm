@@ -69,7 +69,7 @@ fhempy_Define($$$)
 
   Log3 $hash, 3, "fhempy v1.0.0 (".$hash->{FHEMPYTYPE}.": ".$hash->{NAME}.")";
 
-  AssignIoPort($hash, "fhempy_local");
+  AssignIoPort($hash, fhempy_defaultIODev($hash));
 
   my $ret = IOWrite($hash, $hash, "Define", $a, $h);
   if (defined($ret) && $ret ne "") {
@@ -84,6 +84,60 @@ fhempy_Define($$$)
     }
   }
   return $ret;
+}
+
+# IODev for a new device: the attribute, the IODev a modified device already
+# uses or the BindingsIo of the fhempy server running on this FHEM host.
+# Without any of them AssignIoPort picks the last defined BindingsIo.
+sub
+fhempy_defaultIODev($)
+{
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+
+  my $attrIo = AttrVal($name, "IODev", "");
+  return $attrIo if ($attrIo ne "");
+
+  my $currentIo = ref($hash->{IODev}) eq "HASH" ? $hash->{IODev}{NAME} : undef;
+  return $currentIo if (defined($currentIo) && defined($defs{$currentIo}));
+
+  my @local = grep { $defs{$_}{TYPE} eq "BindingsIo" && $defs{$_}{localBinding} }
+    sort keys %defs;
+  return "fhempy_local" if (grep { $_ eq "fhempy_local" } @local);
+  return $local[0] if (@local);
+  return "fhempy_local" if (defined($defs{fhempy_local}));
+  return undef;
+}
+
+sub
+fhempy_IODevList()
+{
+  return join(",", sort grep { $defs{$_}{TYPE} eq "BindingsIo" } keys %defs);
+}
+
+# Attributes offered as long as fhempy didn't send the module's attributes,
+# e.g. the server is offline or the module failed to load
+sub
+fhempy_setBaseAttrList($)
+{
+  my ($hash) = @_;
+  setDevAttrList($hash->{NAME}, "IODev:".fhempy_IODevList()." disable:0,1 ".$readingFnAttributes);
+}
+
+# after attr IODev: start the device on the new fhempy server
+sub
+fhempy_changedIODev($)
+{
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+  return if (!defined($defs{$name}) || $defs{$name} != $hash);
+
+  if (AttrVal($name, "IODev", "") eq "") {
+    delete $hash->{IODev};
+    AssignIoPort($hash, fhempy_defaultIODev($hash));
+  }
+  return if (!defined($hash->{IODev}) || IsDisabled($name));
+  IOWrite($hash, $hash, "Define", $hash->{args}, $hash->{argsh});
 }
 
 sub
@@ -118,7 +172,16 @@ fhempy_Attr($$$)
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
   if ($attrName eq "IODev") {
-    return IOWrite($defs{$name}, $defs{$name}, "Undefine", [], {});
+    my $hash = $defs{$name};
+    # devices are defined on their fhempy server after it connected
+    return undef if (!$init_done);
+    if ($cmd eq "set" && (!defined($defs{$attrVal}) || $defs{$attrVal}{TYPE} ne "BindingsIo")) {
+      return "$attrVal is not a BindingsIo device, use one of: ".fhempy_IODevList();
+    }
+    my $ret = IOWrite($hash, $hash, "Undefine", [], {});
+    return $ret if (defined($ret) && $ret ne "");
+    InternalTimer(gettimeofday(), "fhempy_changedIODev", $hash, 0);
+    return undef;
   }
 
   return IOWrite($defs{$name}, $defs{$name}, "Attr", [$cmd, $name, $attrName, $attrVal], {});
@@ -193,6 +256,8 @@ fhempy_detailFn($$$)
 {
   my ($FW_wname, $d, $room, $pageHash) = @_; # pageHash is set for summaryFn.
   my $hash = $defs{$d};
+  # without this the attribute list only shows .*
+  fhempy_setBaseAttrList($hash) if ($init_done && ($hash->{".AttrList"} // ".*") eq ".*");
   return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
 }
 
