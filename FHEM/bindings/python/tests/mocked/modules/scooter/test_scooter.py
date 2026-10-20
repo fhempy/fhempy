@@ -483,19 +483,26 @@ async def test_module_keeps_connection(mocker):
 
 
 @pytest.mark.asyncio
-async def test_module_ignores_unconfirmed_scooter(mocker):
-    """A scooter which isn't confirmed by its power button (e.g. the one of
-    a neighbour) is dropped and not used again"""
+async def test_module_stays_bound_to_first_scooter(mocker):
+    """After the first scooter was found, no other scooter is used, even if
+    the pairing wasn't confirmed or the scooter is away"""
     env, hash, module = await define(mocker, FakeNinebot(button_pressed=False))
     await module.Define(hash, [NAME, "fhempy", "scooter"], {})
     try:
-        await wait_for(lambda r: r.get("address") == ADDRESS)
-        await wait_for(lambda r: r.get("address") == "")
-        assert ADDRESS in module._rejected
+        await wait_for(lambda r: r.get("state", "").startswith("pairing failed"))
+        assert mock_fhem.readings[NAME]["address"] == ADDRESS
+
+        # own scooter away, only another scooter nearby
+        env.nearby[:] = [
+            (
+                FakeDevice("22:22:22:22:22:22", "NBScooter9999"),
+                FakeAdv("NBScooter9999", -20, {16974: b"\x00"}),
+            )
+        ]
         await module.set_update(hash, {})
-        await wait_for(lambda r: r["state"].startswith("searching"))
-        assert mock_fhem.readings[NAME]["address"] == ""
-        assert env.fake_scooter.known_keys == []
+        await wait_for(lambda r: r.get("state") == "absent")
+        assert mock_fhem.readings[NAME]["address"] == ADDRESS
+        assert mock_fhem.readings[NAME]["name"] == "NBScooter1234"
     finally:
         await module.Undefine(hash)
 

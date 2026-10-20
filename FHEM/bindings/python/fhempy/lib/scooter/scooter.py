@@ -26,10 +26,6 @@ class scooter(generic.FhemModule):
         self._pair_now = False
         self._client = None
         self._transport = None
-        # found by the search, but not confirmed by the power button yet
-        self._candidate = False
-        # scooters which weren't confirmed, ignored until set search
-        self._rejected = set()
 
     @staticmethod
     def validate_define(args, argsh):
@@ -49,7 +45,8 @@ class scooter(generic.FhemModule):
                 "default": 60,
                 "format": "int",
                 "help": "Seconds between two updates while the scooter is nearby "
-                "and between two searches while it is away, default 60.",
+                "and between two checks whether it is back while it is away, "
+                "default 60.",
             },
             "keep_connected": {
                 "default": 0,
@@ -75,11 +72,6 @@ class scooter(generic.FhemModule):
                 "pair": {
                     "help": "Pair again, e.g. after the scooter was paired with "
                     "another app. Press the power button when the scooter beeps."
-                },
-                "search": {
-                    "help": "Forget the current scooter and search for a new one. "
-                    "Switch on the scooter, keep it close to FHEM and press its "
-                    "power button when it beeps. Until then no scooter is used."
                 },
             }
         )
@@ -113,14 +105,6 @@ class scooter(generic.FhemModule):
     async def set_pair(self, hash, params):
         await self._disconnect()
         self._pair_now = True
-        await self._save_pairing_key(b"")
-        self._wakeup.set()
-
-    async def set_search(self, hash, params):
-        await self._disconnect()
-        self._static_read = False
-        self._rejected.clear()
-        await self._save_address("")
         await self._save_pairing_key(b"")
         self._wakeup.set()
 
@@ -210,14 +194,17 @@ class scooter(generic.FhemModule):
         )
         candidates = []
         for address, (device, adv) in found.items():
-            if address in self._rejected or await self._address_in_use(address):
+            if await self._address_in_use(address):
                 continue
             candidates.append((adv.rssi, address, adv.local_name or device.name))
         if not candidates:
             return
         candidates.sort(reverse=True)
         rssi, address, name = candidates[0]
-        self.logger.info(f"Found scooter {name} ({address}), rssi {rssi}")
+        self.logger.info(
+            f"Found scooter {name} ({address}), rssi {rssi}. This device uses "
+            "only this scooter from now on, other scooters are ignored."
+        )
         if len(candidates) > 1:
             self.logger.info(
                 "Other scooters nearby: "
@@ -227,34 +214,15 @@ class scooter(generic.FhemModule):
         await fhem.readingsSingleUpdate(self.hash, "name", name or "", 1)
         await self._save_pairing_key(b"")
         self._pair_now = True
-        self._candidate = True
         self._wakeup.set()
 
     async def _pairing_failed(self):
-        """Pairing wasn't confirmed by the power button. A scooter found by
-        the search is dropped then, it might be the one of a neighbour."""
         self._pair_now = False
-        if not self._candidate:
-            await self._state("pairing failed, use set pair to try again")
-            raise protocol.ScooterError("Pairing failed, power button not pressed")
-        name = await fhem.ReadingsVal(self.hash["NAME"], "name", "")
-        self.logger.warning(
-            f"Scooter {name} ({self._address}) wasn't confirmed by its power "
-            "button, it is ignored until set search"
-        )
-        self._candidate = False
-        self._rejected.add(self._address)
-        await self._save_address("")
-        await fhem.readingsSingleUpdate(self.hash, "name", "", 1)
-        await self._state(f"{name} not confirmed, searching again")
-        self._wakeup.set()
-        raise protocol.ScooterError(
-            f"Scooter {name} wasn't confirmed by its power button, searching again"
-        )
+        await self._state("pairing failed, use set pair to try again")
+        raise protocol.ScooterError("Pairing failed, power button not pressed")
 
     async def _paired(self):
         self._pair_now = False
-        self._candidate = False
 
     async def _update(self):
         if self._transport:

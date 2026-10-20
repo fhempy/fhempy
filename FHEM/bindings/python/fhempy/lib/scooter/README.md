@@ -20,26 +20,22 @@ That's all, you don't need the Bluetooth address. FHEM searches for the scooter 
 one with the best signal. Scooters already used by another FHEM device are skipped, so for a
 second scooter just define a second device.
 
-## 2. Confirm with the power button
+## 2. Pair
 
-As soon as a scooter is found, the state shows **pairing NBScooter1234, press its power button
-when it beeps**. Press the power button of your scooter briefly when it beeps. The state shows
-the battery level afterwards, e.g. `78%`.
+As soon as the scooter is found, the state shows **pairing NBScooter1234, press its power button
+when it beeps**. Press the power button of the scooter briefly when it beeps. The state shows
+the battery level afterwards, e.g. `78%`. If the scooter isn't paired in time, use
+`set my_scooter pair` and try again.
 
 ## Only your scooter is used
 
-- A scooter found by the search is only used after you pressed **its** power button. If nobody
-  presses it within a minute or two (e.g. it's the scooter of your neighbour), FHEM drops it,
-  ignores it until the next `set search` and searches again. Exception: Xiaomi scooters with
-  old Bluetooth firmware (`protocol xiaomi_plain`) have no pairing, switch off other scooters
-  nearby while searching.
-- After the confirmation the device is bound to this one scooter. The readings `address`
-  (Bluetooth address) and `name` show which one. FHEM never searches again on its own, other
-  scooters nearby are ignored, even if yours is away.
-- To use a different scooter, run `set my_scooter search` and confirm the new one with its
-  power button.
+The first scooter found is stored with its Bluetooth address in the reading `address` (and its
+name in `name`). From then on the device uses only this one scooter: FHEM never searches
+again, also not while your scooter is away, and other scooters nearby are ignored. Make sure
+only your scooter is switched on near FHEM when you define the device.
 
-If the pairing gets lost later, use `set my_scooter pair` and press the power button again.
+To use a different scooter, delete the device and define it again. You can also give the
+address directly: `define my_scooter fhempy scooter AA:BB:CC:DD:EE:FF`.
 
 **Pairing with an app:** Xiaomi and Ninebot scooters remember only one paired app. After you
 paired FHEM, the Scooter Hacking Utility or the Mi Home/Segway app might ask you to pair again
@@ -56,13 +52,12 @@ keep_connected 1` FHEM stays connected while the scooter is nearby, apps can't c
 |---|---|
 | `set my_scooter update` | Read the values now |
 | `set my_scooter pair` | Pair again, press the power button when the scooter beeps |
-| `set my_scooter search` | Forget the scooter and search for a new one, confirm it with its power button |
 
 ## Attributes
 
 | Attribute | Description |
 |---|---|
-| `interval` | Seconds between two updates while the scooter is nearby, and between two searches while it is away. Default 60. |
+| `interval` | Seconds between two updates while the scooter is nearby, and between two checks whether it is back while it is away. Default 60. |
 | `keep_connected` | `1`: stay connected while the scooter is nearby and update every `interval` seconds, apps like the Scooter Hacking Utility can't connect meanwhile. `0` (default): connect only for a few seconds per update. |
 | `protocol` | `auto` (default) detects the scooter type. `xiaomi`: Xiaomi with new Bluetooth firmware, `xiaomi_plain`: Xiaomi with old Bluetooth firmware, `ninebot`: Ninebot/Segway and Xiaomi 4. |
 
