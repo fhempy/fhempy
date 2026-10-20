@@ -7,6 +7,7 @@ import aiohttp
 from volvocarsapi.api import VolvoCarsApi
 from volvocarsapi.auth import AccessTokenManager
 from volvocarsapi.models import VolvoApiException, VolvoAuthException
+from yarl import URL
 
 from .. import fhem, generic, utils
 
@@ -131,8 +132,9 @@ class VolvoIdAuth(AccessTokenManager):
 
     async def _flow_request(self, url, *, json_data=None, form_data=None):
         # Volvo ID returns http links which redirect and lose the POST data
-        if url.startswith("http://volvoid."):
-            url = "https://" + url[len("http://") :]
+        url = URL(url)
+        if url.host and url.host.endswith(".volvocars.com"):
+            url = url.with_scheme("https")
         headers = {"x-xsrf-header": "PingFederate"}
         async with self._flow_session.post(
             url,
@@ -348,7 +350,7 @@ class volvo(generic.FhemModule):
             self.hash, "state", "one-time password sent by e-mail, use set otp", 1
         )
 
-    async def set_otp(self, hash, params):
+    def set_otp(self, hash, params):
         self.create_async_task(self._handle_otp(str(params["code"]).strip()))
 
     async def _handle_otp(self, otp):
@@ -361,15 +363,18 @@ class volvo(generic.FhemModule):
         except Exception as ex:
             self.logger.error(f"Volvo one-time password failed: {ex}")
             await fhem.readingsSingleUpdate(
-                self.hash, "state", "one-time password wrong, try again or use set login", 1
+                self.hash,
+                "state",
+                "one-time password wrong, try again or use set login",
+                1,
             )
             return
         await self.start_updates()
 
-    async def set_login(self, hash, params):
+    def set_login(self, hash, params):
         self.create_async_task(self.start_login())
 
-    async def set_update(self, hash, params):
+    def set_update(self, hash, params):
         self.create_async_task(self.refresh_readings())
 
     async def refresh_readings(self):
@@ -380,11 +385,13 @@ class volvo(generic.FhemModule):
 
     async def set_attr_car(self, hash):
         if self.auth and self.auth.token:
-            self.create_async_task(self.start_updates())
+            await self.start_updates()
 
     async def start_updates(self):
-        if self._update_task:
+        if self._update_task and self._update_task is not asyncio.current_task():
             self._update_task.cancel()
+            # wait until the old update loop has stopped
+            await asyncio.gather(self._update_task, return_exceptions=True)
         self._update_task = self.create_async_task(self.update_loop())
 
     async def update_loop(self):
@@ -492,7 +499,7 @@ class volvo(generic.FhemModule):
             }
         await self.set_set_config(set_conf)
 
-    async def set_command(self, hash, params):
+    def set_command(self, hash, params):
         self.create_async_task(
             self.execute_command(params["cmd"], params["function_param"])
         )
