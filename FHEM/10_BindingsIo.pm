@@ -316,7 +316,9 @@ BindingsIo_setIODevAttr($) {
     my $devhash = $main::defs{$fhem_dev};
     if(defined($devhash->{"FHEMPYTYPE"})) {
       my $attr_list = $devhash->{".AttrList"};
-      $attr_list =~ s/IODev/IODev:$fhempydev_str/;
+      next if (!defined($attr_list));
+      # replace an IODev list set before, too
+      $attr_list =~ s/(^| )IODev(:\S*)?( |$)/$1IODev:$fhempydev_str$3/;
       setDevAttrList($devhash->{NAME}, $attr_list);
     }
   }
@@ -454,11 +456,8 @@ BindingsIo_Write($$$$$) {
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
 
-      my $attr_list = $devhash->{".AttrList"};
-      if ($attr_list eq ".*") {
-        my $fhempydev_str = BindingsIo_getIODevList($hash);
-        $attr_list = "IODev:$fhempydev_str";
-        setDevAttrList($devhash->{NAME}, $attr_list);
+      if (($devhash->{".AttrList"} // ".*") eq ".*" && defined(&fhempy_setBaseAttrList)) {
+        fhempy_setBaseAttrList($devhash);
       }
     }
     return undef;
