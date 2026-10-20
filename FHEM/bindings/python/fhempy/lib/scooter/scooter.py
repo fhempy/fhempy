@@ -25,6 +25,7 @@ class scooter(generic.FhemModule):
         self._static_read = False
         self._pair_now = False
         self._client = None
+        self._transport = None
 
     @staticmethod
     def validate_define(args, argsh):
@@ -44,7 +45,17 @@ class scooter(generic.FhemModule):
                 "default": 60,
                 "format": "int",
                 "help": "Seconds between two updates while the scooter is nearby "
-                "and between two searches while it is away, default 60.",
+                "and between two checks whether it is back while it is away, "
+                "default 60.",
+            },
+            "keep_connected": {
+                "default": 0,
+                "format": "int",
+                "options": "0,1",
+                "help": "1: stay connected while the scooter is nearby, the values "
+                "are updated every interval seconds. Apps like the Scooter Hacking "
+                "Utility can't connect meanwhile. 0 (default): connect only for "
+                "a few seconds per update.",
             },
             "protocol": {
                 "default": "auto",
@@ -62,10 +73,6 @@ class scooter(generic.FhemModule):
                     "help": "Pair again, e.g. after the scooter was paired with "
                     "another app. Press the power button when the scooter beeps."
                 },
-                "search": {
-                    "help": "Forget the current scooter and search for a new one. "
-                    "Switch on the scooter and keep it close to FHEM."
-                },
             }
         )
 
@@ -73,13 +80,15 @@ class scooter(generic.FhemModule):
         self._address = (
             args[3].upper()
             if len(args) > 3
-            else await fhem.ReadingsVal(name, ".address", "")
+            else await fhem.ReadingsVal(name, "address", "")
+            # v2.3.0 stored the address in a hidden reading
+            or await fhem.ReadingsVal(name, ".address", "")
         )
         self._pairing_key = bytes.fromhex(
             await fhem.ReadingsVal(name, ".pairing_key", "")
         )
         if self._address:
-            self.hash["MAC"] = self._address
+            await self._save_address(self._address)
 
         if self._loop_task:
             self.cancel_async_task(self._loop_task)
@@ -88,29 +97,23 @@ class scooter(generic.FhemModule):
     # FHEM FUNCTION
     async def Undefine(self, hash):
         await super().Undefine(hash)
-        if self._client:
-            try:
-                await self._client.disconnect()
-            except Exception:
-                self.logger.debug("Disconnect failed", exc_info=True)
+        await self._disconnect()
 
     async def set_update(self, hash, params):
         self._wakeup.set()
 
     async def set_pair(self, hash, params):
+        await self._disconnect()
         self._pair_now = True
-        await self._save_pairing_key(b"")
-        self._wakeup.set()
-
-    async def set_search(self, hash, params):
-        self._address = ""
-        self._static_read = False
-        await self._save_address("")
         await self._save_pairing_key(b"")
         self._wakeup.set()
 
     async def set_attr_interval(self, hash):
         self._wakeup.set()
+
+    async def set_attr_keep_connected(self, hash):
+        if not self._attr_keep_connected and self._transport:
+            self.create_async_task(self._disconnect())
 
     async def _state(self, state):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", state, 1)
@@ -118,7 +121,11 @@ class scooter(generic.FhemModule):
     async def _save_address(self, address):
         self._address = address
         self.hash["MAC"] = address
-        await fhem.readingsSingleUpdate(self.hash, ".address", address, 0)
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "address", address, 1)
+        if await fhem.ReadingsVal(self.hash["NAME"], ".address", ""):
+            await fhem.CommandDeleteReading(
+                self.hash, f"{self.hash['NAME']} \\.address"
+            )
 
     async def _save_pairing_key(self, key):
         self._pairing_key = key
@@ -170,7 +177,8 @@ class scooter(generic.FhemModule):
             "foreach my $d (keys %main::defs) {"
             f"  next if $d eq {fhem.perlString(self.hash['NAME'])};;"
             "  return 1 if (($main::defs{$d}{FHEMPYTYPE} // '') eq 'scooter'"
-            f" && ReadingsVal($d, '.address', '') eq {fhem.perlString(address)});;"
+            " && (ReadingsVal($d, 'address', '') || ReadingsVal($d, '.address', ''))"
+            f" eq {fhem.perlString(address)});;"
             "}"
             "return 0;;"
         )
@@ -193,7 +201,10 @@ class scooter(generic.FhemModule):
             return
         candidates.sort(reverse=True)
         rssi, address, name = candidates[0]
-        self.logger.info(f"Found scooter {name} ({address}), rssi {rssi}")
+        self.logger.info(
+            f"Found scooter {name} ({address}), rssi {rssi}. This device uses "
+            "only this scooter from now on, other scooters are ignored."
+        )
         if len(candidates) > 1:
             self.logger.info(
                 "Other scooters nearby: "
@@ -205,7 +216,24 @@ class scooter(generic.FhemModule):
         self._pair_now = True
         self._wakeup.set()
 
+    async def _pairing_failed(self):
+        self._pair_now = False
+        await self._state("pairing failed, use set pair to try again")
+        raise protocol.ScooterError("Pairing failed, power button not pressed")
+
+    async def _paired(self):
+        self._pair_now = False
+
     async def _update(self):
+        if self._transport:
+            try:
+                readings = await protocol.read_values(self._transport, static=False)
+            except Exception:
+                await self._disconnect()
+                raise
+            await self._store(readings)
+            return
+
         found = await self._scan(
             SCAN_TIME, lambda d, adv: d.address.upper() == self._address
         )
@@ -221,6 +249,9 @@ class scooter(generic.FhemModule):
 
         async with self._lock:
             readings = await self._read(device, adv)
+        await self._store(readings)
+
+    async def _store(self, readings):
         await fhem.readingsBeginUpdate(self.hash)
         for reading, value in readings.items():
             await fhem.readingsBulkUpdate(self.hash, reading, value)
@@ -232,9 +263,30 @@ class scooter(generic.FhemModule):
     async def _connect(self, device):
         from bleak import BleakClient
 
-        client = BleakClient(device, timeout=CONNECT_TIMEOUT)
+        client = BleakClient(
+            device,
+            timeout=CONNECT_TIMEOUT,
+            disconnected_callback=self._on_disconnect,
+        )
         await client.connect()
         return client
+
+    def _on_disconnect(self, client):
+        if self._transport and self._client is client:
+            self._transport = None
+            self._wakeup.set()
+
+    async def _disconnect(self):
+        client, self._client, self._transport = self._client, None, None
+        if client is None:
+            return
+        try:
+            await client.disconnect()
+        except Exception:
+            self.logger.debug("Disconnect failed", exc_info=True)
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "connection", "disconnected", 1
+        )
 
     def _protocol(self, client, device, adv):
         if self._attr_protocol != "auto":
@@ -252,6 +304,7 @@ class scooter(generic.FhemModule):
         if not self._pairing_key:
             self._pair_now = True
         self._client = await self._connect(device)
+        transport = None
         try:
             proto = self._protocol(self._client, device, adv)
             await fhem.readingsSingleUpdateIfChanged(self.hash, "protocol", proto, 1)
@@ -264,9 +317,17 @@ class scooter(generic.FhemModule):
                 await transport.start()
             values = await protocol.read_values(transport, static=not self._static_read)
             self._static_read = True
-            return values
-        finally:
-            await self._client.disconnect()
+        except Exception:
+            await self._disconnect()
+            raise
+        if self._attr_keep_connected:
+            self._transport = transport
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "connection", "connected", 1
+            )
+        else:
+            await self._disconnect()
+        return values
 
     async def _xiaomi_login(self, device):
         transport = protocol.XiaomiTransport(
@@ -288,7 +349,7 @@ class scooter(generic.FhemModule):
         # registration: the scooter beeps, the power button has to be pressed
         # and the registration has to start again within a few seconds
         for _ in range(MI_PAIRING_ATTEMPTS):
-            await self._state("pairing, press the power button when it beeps")
+            await self._state(await self._pairing_hint())
             try:
                 token = await transport.register()
                 break
@@ -299,14 +360,16 @@ class scooter(generic.FhemModule):
                 transport = protocol.XiaomiTransport(self._client, self.logger)
                 await transport.start()
         else:
-            await self._state("pairing failed, use set pair to try again")
-            self._pair_now = False
-            raise protocol.ScooterError("Pairing failed, power button not pressed")
+            await self._pairing_failed()
         await self._save_pairing_key(token)
-        self._pair_now = False
+        await self._paired()
         await self._state("paired")
         await transport.login()
         return transport
+
+    async def _pairing_hint(self):
+        name = await fhem.ReadingsVal(self.hash["NAME"], "name", "") or "scooter"
+        return f"pairing {name}, press its power button when it beeps"
 
     async def _ninebot_login(self, device, adv):
         transport = protocol.NinebotTransport(
@@ -317,14 +380,12 @@ class scooter(generic.FhemModule):
         )
         await transport.start()
         if self._pair_now:
-            await self._state("pairing, press the power button")
+            await self._state(await self._pairing_hint())
         try:
             await transport.login(NB_PAIRING_TIMEOUT if self._pair_now else 0)
         except protocol.PairingRequired:
             if self._pair_now:
-                await self._state("pairing failed, use set pair to try again")
-                self._pair_now = False
-                raise protocol.ScooterError("Pairing failed, power button not pressed")
+                await self._pairing_failed()
             await self._state("pairing lost, use set pair")
             raise protocol.ScooterError(
                 "Pairing lost, scooter was probably paired with another app. "
@@ -332,5 +393,5 @@ class scooter(generic.FhemModule):
             )
         if transport.app_key != self._pairing_key:
             await self._save_pairing_key(transport.app_key)
-        self._pair_now = False
+        await self._paired()
         return transport

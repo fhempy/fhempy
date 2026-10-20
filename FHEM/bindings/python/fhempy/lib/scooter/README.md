@@ -22,20 +22,29 @@ second scooter just define a second device.
 
 ## 2. Pair
 
-As soon as the scooter is found, the state shows **pairing, press the power button when it
-beeps**. Press the power button of the scooter briefly when it beeps. The state shows the
-battery level afterwards, e.g. `78%`.
+As soon as the scooter is found, the state shows **pairing NBScooter1234, press its power button
+when it beeps**. Press the power button of the scooter briefly when it beeps. The state shows
+the battery level afterwards, e.g. `78%`. If the scooter isn't paired in time, use
+`set my_scooter pair` and try again.
 
-Pairing is only needed once. If the scooter isn't paired within a minute, use `set my_scooter
-pair` and try again.
+## Only your scooter is used
+
+The first scooter found is stored with its Bluetooth address in the reading `address` (and its
+name in `name`). From then on the device uses only this one scooter: FHEM never searches
+again, also not while your scooter is away, and other scooters nearby are ignored. Make sure
+only your scooter is switched on near FHEM when you define the device.
+
+To use a different scooter, delete the device and define it again. You can also give the
+address directly: `define my_scooter fhempy scooter AA:BB:CC:DD:EE:FF`.
 
 **Pairing with an app:** Xiaomi and Ninebot scooters remember only one paired app. After you
 paired FHEM, the Scooter Hacking Utility or the Mi Home/Segway app might ask you to pair again
 (power button). After that, FHEM shows `pairing lost, use set pair`. Use `set my_scooter pair`
 to pair FHEM again once you are done with the app.
 
-The scooter accepts only one Bluetooth connection at a time. FHEM connects only for a few
-seconds per update, so apps can still connect in between.
+The scooter accepts only one Bluetooth connection at a time. By default FHEM connects only for
+a few seconds per update, so apps can still connect in between. With `attr my_scooter
+keep_connected 1` FHEM stays connected while the scooter is nearby, apps can't connect then.
 
 ## Commands
 
@@ -43,13 +52,13 @@ seconds per update, so apps can still connect in between.
 |---|---|
 | `set my_scooter update` | Read the values now |
 | `set my_scooter pair` | Pair again, press the power button when the scooter beeps |
-| `set my_scooter search` | Forget the scooter and search for a new one |
 
 ## Attributes
 
 | Attribute | Description |
 |---|---|
-| `interval` | Seconds between two updates while the scooter is nearby, and between two searches while it is away. Default 60. |
+| `interval` | Seconds between two updates while the scooter is nearby, and between two checks whether it is back while it is away. Default 60. |
+| `keep_connected` | `1`: stay connected while the scooter is nearby and update every `interval` seconds, apps like the Scooter Hacking Utility can't connect meanwhile. `0` (default): connect only for a few seconds per update. |
 | `protocol` | `auto` (default) detects the scooter type. `xiaomi`: Xiaomi with new Bluetooth firmware, `xiaomi_plain`: Xiaomi with old Bluetooth firmware, `ninebot`: Ninebot/Segway and Xiaomi 4. |
 
 ## Readings
@@ -58,6 +67,8 @@ seconds per update, so apps can still connect in between.
 |---|---|
 | `state` | Battery level, `absent` while the scooter is away or switched off |
 | `presence` | `present` or `absent` |
+| `address`, `name` | Bluetooth address and name of the scooter this device is bound to |
+| `connection` | `connected` while FHEM stays connected (`keep_connected 1`), `disconnected` otherwise |
 | `battery` | Battery level in % |
 | `battery_voltage`, `battery_current` | Battery voltage (V) and current (A) |
 | `battery_remaining_capacity`, `battery_capacity` | Remaining and factory capacity (mAh) |
@@ -68,7 +79,7 @@ seconds per update, so apps can still connect in between.
 | `temperature` | Scooter temperature (°C) |
 | `error_code` | Error code of the scooter, 0 means no error |
 | `serial_number`, `firmware_esc`, `firmware_ble`, `firmware_bms` | Serial number and firmware versions |
-| `name`, `protocol`, `rssi` | Bluetooth name, detected protocol and signal strength |
+| `protocol`, `rssi` | Detected protocol and signal strength |
 
 The values keep their last value while the scooter is away. The scooter switches off its
 Bluetooth when it is switched off, so FHEM only gets new values while it is switched on.
