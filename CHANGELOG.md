@@ -2,6 +2,67 @@
 
 <!-- version list -->
 
+## v2.4.0 (2026-10-20)
+
+### Bug Fixes
+
+- Bump pycparser 3.11 and pycares 5.2.1 in lock ([#714](https://github.com/fhempy/fhempy/pull/714),
+  [`00c489a`](https://github.com/fhempy/fhempy/commit/00c489a25e766615535cda94d7e393cbec3c378b))
+
+- Remove release party, keep the log banner ([#713](https://github.com/fhempy/fhempy/pull/713),
+  [`2b7ecec`](https://github.com/fhempy/fhempy/commit/2b7ecec2eb9d6420815166f9e660ea1b5afe82e0))
+
+- Scooter stays bound to the first scooter found, remove set search
+  ([#712](https://github.com/fhempy/fhempy/pull/712),
+  [`f4ff3d2`](https://github.com/fhempy/fhempy/commit/f4ff3d262562c57dfab8490ff26323ffd3189dce))
+
+- **kia_hyundai**: Define returns None in Pleos mode
+  ([#716](https://github.com/fhempy/fhempy/pull/716),
+  [`168c6f0`](https://github.com/fhempy/fhempy/commit/168c6f06e06f1243f6a62e3a36ff12f13c19415e))
+
+- **kia_hyundai**: No generic exceptions in Pleos mode
+  ([#716](https://github.com/fhempy/fhempy/pull/716),
+  [`168c6f0`](https://github.com/fhempy/fhempy/commit/168c6f06e06f1243f6a62e3a36ff12f13c19415e))
+
+- **volvo**: SonarCloud findings (https upgrade via yarl, sync set handlers)
+  ([#714](https://github.com/fhempy/fhempy/pull/714),
+  [`00c489a`](https://github.com/fhempy/fhempy/commit/00c489a25e766615535cda94d7e393cbec3c378b))
+
+### Features
+
+- Bmw module for BMW and MINI cars via official BMW CarData
+  ([#715](https://github.com/fhempy/fhempy/pull/715),
+  [`3558457`](https://github.com/fhempy/fhempy/commit/35584574c73205b1c156f1912e6c125007e8ea3d))
+
+- Scooter keep_connected attribute, address reading and confirmed scooter binding
+  ([#712](https://github.com/fhempy/fhempy/pull/712),
+  [`f4ff3d2`](https://github.com/fhempy/fhempy/commit/f4ff3d262562c57dfab8490ff26323ffd3189dce))
+
+- Scooter keep_connected attribute, address reading, bound to first scooter
+  ([#712](https://github.com/fhempy/fhempy/pull/712),
+  [`f4ff3d2`](https://github.com/fhempy/fhempy/commit/f4ff3d262562c57dfab8490ff26323ffd3189dce))
+
+- **kia_hyundai**: Official Pleos Vehicle Data API (EU Data Act)
+  ([#716](https://github.com/fhempy/fhempy/pull/716),
+  [`168c6f0`](https://github.com/fhempy/fhempy/commit/168c6f06e06f1243f6a62e3a36ff12f13c19415e))
+
+- **volvo**: Use volvocarsapi and the new Volvo ID login with one-time password
+  ([#714](https://github.com/fhempy/fhempy/pull/714),
+  [`00c489a`](https://github.com/fhempy/fhempy/commit/00c489a25e766615535cda94d7e393cbec3c378b))
+
+- **volvo**: Volvocarsapi and Volvo ID login with one-time password
+  ([#714](https://github.com/fhempy/fhempy/pull/714),
+  [`00c489a`](https://github.com/fhempy/fhempy/commit/00c489a25e766615535cda94d7e393cbec3c378b))
+
+### Testing
+
+- Expect devStateIcon 1.3.0 ([#713](https://github.com/fhempy/fhempy/pull/713),
+  [`2b7ecec`](https://github.com/fhempy/fhempy/commit/2b7ecec2eb9d6420815166f9e660ea1b5afe82e0))
+
+- **volvo**: Wrong one-time password state ([#714](https://github.com/fhempy/fhempy/pull/714),
+  [`00c489a`](https://github.com/fhempy/fhempy/commit/00c489a25e766615535cda94d7e393cbec3c378b))
+
+
 ## v2.3.0 (2026-10-20)
 
 ### Features
