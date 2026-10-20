@@ -2,6 +2,39 @@
 
 <!-- version list -->
 
+## v2.5.0 (2026-10-20)
+
+### Bug Fixes
+
+- Drop stale BlueZ connections so Bluetooth devices are found again
+  ([#722](https://github.com/fhempy/fhempy/pull/722),
+  [`68c3faf`](https://github.com/fhempy/fhempy/commit/68c3fafd359c07428d8745e137da0992ef0a2b10))
+
+- **deps**: Update libraries (greeclimate 3.5.3, pyTibber 0.39, httpx 0.28.1, kia 4.38.1, ...)
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+- **deps**: Update libraries (greeclimate, pyTibber, httpx, kia, websockets, ...)
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+- **scooter**: Reconnect after switching the scooter off and on with keep_connected
+  ([#719](https://github.com/fhempy/fhempy/pull/719),
+  [`02fd5ab`](https://github.com/fhempy/fhempy/commit/02fd5ab3e8013d5b4a6d7cbde9206a05bfb95a1b))
+
+### Features
+
+- Add mantra_ble module to control mAntra ceiling fan lamps
+  ([#721](https://github.com/fhempy/fhempy/pull/721),
+  [`037d8c6`](https://github.com/fhempy/fhempy/commit/037d8c602459665a86263107182f6b026d96c37c))
+
+### Testing
+
+- **gree_climate**: Simulate bound session for greeclimate 3.5
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+
 ## v2.4.1 (2026-10-20)
 
 ### Bug Fixes
