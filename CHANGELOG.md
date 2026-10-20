@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.4.1 (2026-10-20)
+
+### Bug Fixes
+
+- Keep a working PyGObject and explain missing build packages
+  ([#717](https://github.com/fhempy/fhempy/pull/717),
+  [`ce779cd`](https://github.com/fhempy/fhempy/commit/ce779cd5ad4325cee77582fa90526f15fcfd5342))
+
+- New fhempy devices use the local BindingsIo, IODev selectable
+  ([#718](https://github.com/fhempy/fhempy/pull/718),
+  [`eb28396`](https://github.com/fhempy/fhempy/commit/eb283967158d252f28b5f5b7457ad47efccc9822))
+
+
 ## v2.4.0 (2026-10-20)
 
 ### Bug Fixes
