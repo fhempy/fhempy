@@ -10,6 +10,13 @@ SEARCH_TIME = 20
 MI_PAIRING_ATTEMPTS = 12
 NB_PAIRING_TIMEOUT = 60
 CONNECT_TIMEOUT = 20
+DISCONNECT_TIMEOUT = 10
+# reading all values over a kept connection, includes the GATT writes
+READ_TIMEOUT = 60
+# keep_connected: after a lost connection (scooter switched off), look for
+# the scooter every RECONNECT_INTERVAL seconds for RECONNECT_FAST_PERIOD
+RECONNECT_INTERVAL = 10
+RECONNECT_FAST_PERIOD = 600
 
 
 class scooter(generic.FhemModule):
@@ -26,6 +33,7 @@ class scooter(generic.FhemModule):
         self._pair_now = False
         self._client = None
         self._transport = None
+        self._lost_at = None
 
     @staticmethod
     def validate_define(args, argsh):
@@ -148,7 +156,20 @@ class scooter(generic.FhemModule):
                 self._errors.success()
             except Exception:
                 self._errors.failed("Scooter update failed")
-            await self._sleep(self._attr_interval)
+            await self._sleep(self._next_update())
+
+    def _next_update(self):
+        """Look for the scooter more often for a while after the kept
+        connection was lost, e.g. it was switched off and on again."""
+        if (
+            self._attr_keep_connected
+            and self._transport is None
+            and self._lost_at is not None
+            and asyncio.get_running_loop().time() - self._lost_at
+            < RECONNECT_FAST_PERIOD
+        ):
+            return min(self._attr_interval, RECONNECT_INTERVAL)
+        return self._attr_interval
 
     async def _scan(self, timeout, match):
         """Returns {address: (device, advertisement)} of matching devices,
@@ -225,11 +246,14 @@ class scooter(generic.FhemModule):
         self._pair_now = False
 
     async def _update(self):
+        if self._transport and not self._client.is_connected:
+            await self._connection_lost()
         if self._transport:
             try:
-                readings = await protocol.read_values(self._transport, static=False)
+                async with asyncio.timeout(READ_TIMEOUT):
+                    readings = await protocol.read_values(self._transport, static=False)
             except Exception:
-                await self._disconnect()
+                await self._connection_lost()
                 raise
             await self._store(readings)
             return
@@ -273,15 +297,26 @@ class scooter(generic.FhemModule):
 
     def _on_disconnect(self, client):
         if self._transport and self._client is client:
-            self._transport = None
-            self._wakeup.set()
+            self.create_async_task(self._connection_lost())
+
+    async def _connection_lost(self):
+        """The kept connection is gone, e.g. the scooter was switched off"""
+        if self._transport is None:
+            return
+        self.logger.info("Connection to scooter lost, reconnecting when it's back")
+        self._lost_at = asyncio.get_running_loop().time()
+        await self._disconnect()
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "absent", 1)
+        await self._state("absent")
+        self._wakeup.set()
 
     async def _disconnect(self):
         client, self._client, self._transport = self._client, None, None
         if client is None:
             return
         try:
-            await client.disconnect()
+            # BlueZ waits for the scooter, which might be switched off already
+            await asyncio.wait_for(client.disconnect(), DISCONNECT_TIMEOUT)
         except Exception:
             self.logger.debug("Disconnect failed", exc_info=True)
         await fhem.readingsSingleUpdateIfChanged(
@@ -321,6 +356,9 @@ class scooter(generic.FhemModule):
             await self._disconnect()
             raise
         if self._attr_keep_connected:
+            if self._lost_at is not None:
+                self.logger.info("Scooter connected again")
+                self._lost_at = None
             self._transport = transport
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "connection", "connected", 1

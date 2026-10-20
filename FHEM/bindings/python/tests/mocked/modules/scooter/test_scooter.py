@@ -70,20 +70,29 @@ class FakeClient:
 
 class FakeNinebot(FakeClient):
     def __init__(self, name="NBScooter1234", known_keys=None, button_pressed=True):
-        from miauth.nb.nbcrypto import NbCrypto
-
         super().__init__()
-        self.crypto = NbCrypto()
-        self.crypto.set_name(name.encode())
+        self.name = name
+        self.new_session()
         self.ble_key = secrets.token_bytes(16)
         self.serial = b"N2GSC1234C5678"
         self.known_keys = known_keys if known_keys is not None else []
         self.button_pressed = button_pressed
         self.app_key = None
         self.buffer = b""
+        self.powered = True
+
+    def new_session(self):
+        """the scooter starts a new crypto session for every connection"""
+        from miauth.nb.nbcrypto import NbCrypto
+
+        self.crypto = NbCrypto()
+        self.crypto.set_name(self.name.encode())
+        self.buffer = b""
 
     def on_write(self, uuid, data):
         assert uuid == UART_TX
+        if not self.powered:
+            return
         if data[:2] == b"\x5a\xa5":
             self.buffer = data
         else:
@@ -389,6 +398,8 @@ class FakeEnv:
 
             async def connect(self):
                 env.connects += 1
+                if hasattr(env.fake_scooter, "new_session"):
+                    env.fake_scooter.new_session()
 
             def __getattr__(self, attr):
                 return getattr(env.fake_scooter, attr)
@@ -406,6 +417,8 @@ class FakeEnv:
         mocker.patch.object(scooter_module, "SEARCH_TIME", 0.1)
         mocker.patch.object(scooter_module, "SCAN_TIME", 0.1)
         mocker.patch.object(scooter_module, "NB_PAIRING_TIMEOUT", 0.5)
+        mocker.patch.object(scooter_module, "READ_TIMEOUT", 1)
+        mocker.patch.object(scooter_module, "RECONNECT_INTERVAL", 0.2)
 
 
 async def wait_for(check):
@@ -473,6 +486,21 @@ async def test_module_keeps_connection(mocker):
         env.fake_scooter.is_connected = False
         env.client.disconnected_callback(env.client)
         await wait_for(lambda r: env.connects == 2)
+        await wait_for(lambda r: r.get("connection") == "connected")
+
+        # switched off without a disconnect from BlueZ: no answers anymore
+        env.fake_scooter.powered = False
+        saved = list(env.nearby)
+        env.nearby.clear()
+        await module.set_update(hash, {})
+        await wait_for(lambda r: r.get("state") == "absent")
+        assert mock_fhem.readings[NAME]["connection"] == "disconnected"
+
+        # switched on again: reconnects within the fast reconnect interval
+        env.fake_scooter.powered = True
+        env.nearby[:] = saved
+        await wait_for(lambda r: env.connects == 3)
+        await wait_for(lambda r: r.get("connection") == "connected")
 
         # attribute switched off
         await module.Attr(hash, ["set", NAME, "keep_connected", "0"], {})
