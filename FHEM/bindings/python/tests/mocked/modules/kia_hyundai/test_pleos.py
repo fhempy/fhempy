@@ -148,7 +148,7 @@ async def env(mocker):
         testhash = {"NAME": NAME, "FHEMPYTYPE": "kia_hyundai"}
         device = kia_hyundai(logging.getLogger(__name__))
         modules.append(device)
-        assert await device.Define(testhash, [NAME, "fhempy", "kia_hyundai"], {}) == ""
+        assert await device.Define(testhash, [NAME, "fhempy", "kia_hyundai"], {}) is None
         return device, testhash
 
     yield server, define

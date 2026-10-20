@@ -289,7 +289,7 @@ class kia_hyundai(generic.FhemModule):
         if self._pleos_task:
             self.cancel_async_task(self._pleos_task)
         self._pleos_task = self.create_async_task(self._pleos_run())
-        return ""
+        return None
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
