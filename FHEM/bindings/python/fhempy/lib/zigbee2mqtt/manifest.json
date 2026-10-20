@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "GitPython==3.2.0",
+    "GitPython==3.2.1",
     "ifaddr==0.2.0"
   ]
 }

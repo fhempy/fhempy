@@ -2,7 +2,7 @@
   "requirements": [
     "pychromecast==14.0.10",
     "yt-dlp==2026.8.19",
-    "spotipy==2.25.2",
+    "spotipy==2.26.0",
     "six==1.17.0"
   ]
 }

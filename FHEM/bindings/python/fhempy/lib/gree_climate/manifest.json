@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "greeclimate==3.2.0"
+    "greeclimate==3.5.3"
   ]
 }

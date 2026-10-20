@@ -1,7 +1,7 @@
 {
   "requirements": [
     "python-miio==0.5.12",
-    "xmodem==0.4.7",
+    "xmodem==0.5.0",
     "cryptography==50.0.1"
   ]
 }

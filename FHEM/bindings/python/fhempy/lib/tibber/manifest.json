@@ -1,5 +1,5 @@
 {
   "requirements": [
-    "pyTibber==0.38.0"
+    "pyTibber==0.39.0"
   ]
 }
