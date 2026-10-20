@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 
@@ -261,12 +262,14 @@ async def test_install_runs_after_check_cached_manifest(tmp_path, monkeypatch):
 
 
 def test_pygobject_kept_without_girepository2(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: False)
     monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: False)
 
     assert pkg_installer.platform_requirement("PyGObject<=3.50.0") == "PyGObject<=3.50.0"
 
 
 def test_pygobject_replaced_with_girepository2(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: False)
     monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
 
     assert (
@@ -282,6 +285,7 @@ def test_check_dependencies_uses_platform_requirement(tmp_path, monkeypatch):
     mod_dir.mkdir()
     (mod_dir / "manifest.json").write_text('{"requirements": ["PyGObject<=3.50.0"]}')
     monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(tmp_path))
+    monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: False)
     monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
     checked = []
 
@@ -293,4 +297,45 @@ def test_check_dependencies_uses_platform_requirement(tmp_path, monkeypatch):
 
     assert pkg_installer.check_dependencies("test_mod") is True
     assert checked == [pkg_installer.PYGOBJECT_GIREPOSITORY2_REQUIREMENT]
+    pkg_installer.invalidate_dependency_cache()
+
+
+def test_working_pygobject_is_kept(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: True)
+    monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
+
+    assert pkg_installer.platform_requirement("PyGObject<=3.50.0") == "PyGObject"
+
+
+def test_pygobject_build_failure_logs_hint_and_is_not_retried(
+    tmp_path, monkeypatch, caplog
+):
+    pkg_installer.invalidate_dependency_cache()
+    pkg_installer._FAILED_REQUIREMENTS.clear()
+    mod_dir = tmp_path / "test_mod"
+    mod_dir.mkdir()
+    (mod_dir / "manifest.json").write_text('{"requirements": ["PyGObject<=3.50.0"]}')
+    monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(tmp_path))
+    monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: False)
+    monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: True)
+    monkeypatch.setattr(pkg_installer, "is_installed", lambda req: False)
+    monkeypatch.setattr(pkg_installer, "is_virtual_env", lambda: False)
+    calls = []
+
+    class FakeFailingPopen:
+        def __init__(self, args, *a, **kwargs):
+            calls.append(args)
+            self.returncode = 1
+
+        def communicate(self):
+            return b"", b"Dependency 'girepository-2.0' is required but not found."
+
+    monkeypatch.setattr(pkg_installer, "Popen", FakeFailingPopen)
+
+    asyncio.run(pkg_installer.check_and_install_dependencies("test_mod"))
+    asyncio.run(pkg_installer.check_and_install_dependencies("test_mod"))
+
+    assert len(calls) == 1
+    assert pkg_installer.PYGOBJECT_GIREPOSITORY2_APT in caplog.text
+    pkg_installer._FAILED_REQUIREMENTS.clear()
     pkg_installer.invalidate_dependency_cache()

@@ -244,6 +244,9 @@ def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv
 # is not installed by default on newer systems. The manifest pin is for the old
 # library, it is replaced when girepository-2.0 is available.
 PYGOBJECT_GIREPOSITORY2_REQUIREMENT = "PyGObject>=3.54.5,<3.55"
+# PyGObject has no wheels, building it needs these headers
+PYGOBJECT_GIREPOSITORY1_APT = "libgirepository1.0-dev libcairo2-dev"
+PYGOBJECT_GIREPOSITORY2_APT = "libgirepository-2.0-dev libcairo2-dev"
 
 
 @functools.cache
@@ -251,20 +254,63 @@ def has_girepository2():
     return ctypes.util.find_library("girepository-2.0") is not None
 
 
+def pygobject_works():
+    """True when an installed PyGObject finds its system library."""
+    return _pygobject_import_ok()
+
+
+@functools.cache
+def _pygobject_import_ok():
+    try:
+        distribution("PyGObject")
+    except PackageNotFoundError:
+        return False
+    try:
+        # separate process, an import here would keep the old version loaded
+        proc = run(
+            [sys.executable, "-c", "import gi"],
+            capture_output=True,
+            check=False,
+            timeout=60,
+        )
+    except (OSError, SubprocessError):
+        return False
+    return proc.returncode == 0
+
+
+def requirement_name(req):
+    try:
+        return Requirement(req).name.lower()
+    except InvalidRequirement:
+        return None
+
+
 def platform_requirement(req):
     """Adapt a manifest requirement to the system libraries."""
-    try:
-        name = Requirement(req).name
-    except InvalidRequirement:
+    if requirement_name(req) != "pygobject":
         return req
-    if name.lower() == "pygobject" and has_girepository2():
+    if pygobject_works():
+        # keep a working installation, whatever version it is
+        return "PyGObject"
+    if has_girepository2():
         return PYGOBJECT_GIREPOSITORY2_REQUIREMENT
     return req
+
+
+def system_packages_hint(req):
+    """apt packages needed to build a requirement, None if not known."""
+    if requirement_name(req) != "pygobject":
+        return None
+    if has_girepository2():
+        return PYGOBJECT_GIREPOSITORY2_APT
+    return PYGOBJECT_GIREPOSITORY1_APT
 
 
 _VERIFIED_PACKAGES = set()
 _VERIFIED_MODULES = set()
 _MANIFEST_CACHE = {}
+# requirements which failed to install, not retried until fhempy restarts
+_FAILED_REQUIREMENTS = set()
 
 
 def invalidate_dependency_cache():
@@ -272,6 +318,7 @@ def invalidate_dependency_cache():
     _VERIFIED_PACKAGES.clear()
     _VERIFIED_MODULES.clear()
     _MANIFEST_CACHE.clear()
+    _pygobject_import_ok.cache_clear()
 
 
 def check_dependencies(module):
@@ -335,9 +382,13 @@ async def check_and_install_dependencies(module):
             if "requirements" in manifest:
                 for req in manifest["requirements"]:
                     req = platform_requirement(req)
+                    if req in _FAILED_REQUIREMENTS:
+                        continue
                     if is_installed(req) is False:
+                        # a failed build doesn't succeed on a retry
+                        max_tries = 1 if system_packages_hint(req) else 3
                         inst_tries = 0
-                        while inst_tries < 3:
+                        while inst_tries < max_tries:
                             with concurrent.futures.ThreadPoolExecutor() as pool:
                                 ret = (
                                     await asyncio.get_event_loop().run_in_executor(
@@ -350,6 +401,8 @@ async def check_and_install_dependencies(module):
                             if ret:
                                 break
                             inst_tries += 1
+                        if not ret:
+                            _FAILED_REQUIREMENTS.add(req)
     except FileNotFoundError:
         pass
 
@@ -442,6 +495,14 @@ def install_package(
             package,
             stderr.decode("utf-8").lstrip().strip(),
         )
+        hint = system_packages_hint(package)
+        if hint:
+            logger.error(
+                "%s is built from source and needs system packages, "
+                "install them with 'sudo apt install %s' and restart fhempy",
+                package,
+                hint,
+            )
         return False
 
     invalidate_dependency_cache()
