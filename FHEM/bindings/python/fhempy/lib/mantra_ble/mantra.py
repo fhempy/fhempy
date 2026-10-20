@@ -1,0 +1,237 @@
+# ---------------------------------------------------------------------------
+# This file is part of the ha-ble-adv project by @NicoIIT
+# Published under the MIT License
+# Source: https://github.com/NicoIIT/ha-ble-adv
+# Modified for FHEM / fhempy integration by @fabianswebworld
+# ---------------------------------------------------------------------------
+
+"""Mantra Lighting Application."""
+
+from .const import (
+    ATTR_BR,
+    ATTR_CMD,
+    ATTR_CMD_BR_DOWN,
+    ATTR_CMD_BR_UP,
+    ATTR_CMD_CT_DOWN,
+    ATTR_CMD_CT_UP,
+    ATTR_CMD_TIMER,
+    ATTR_CMD_TOGGLE,
+    ATTR_COLD,
+    ATTR_CT_REV,
+    ATTR_DIR,
+    ATTR_ON,
+    ATTR_PRESET,
+    ATTR_PRESET_BREEZE,
+    ATTR_PRESET_SLEEP,
+    ATTR_SPEED,
+    ATTR_STEP,
+    ATTR_TIME,
+    ATTR_WARM,
+)
+from .models import (
+    BleAdvCodec,
+    BleAdvConfig,
+    BleAdvEncCmd,
+    BleAdvEntAttr,
+    CTLightCmd,
+    DeviceCmd,
+    Fan6SpeedCmd,
+    Fan8SpeedCmd,
+    FanCmd,
+    FanNSpeedCmd,
+    LightCmd,
+    Trans,
+    TranslatorSet,
+)
+from .models import EncoderMatcher as EncCmd
+from .utils import whiten16
+
+
+class MantraEncoder(BleAdvCodec):
+    """Mantra encoder."""
+
+    duration: int = 400
+    interval: int = 100
+    repeat: int = 6
+    _len: int = 18
+    _tx_max: int = 0xFFFF
+    _family = bytes([0x12, 0x34, 0x56, 0x78])
+
+    def decrypt(self, buffer: bytearray) -> bytearray | None:
+        """Decrypt / unwhiten an incoming raw buffer into a readable buffer."""
+        obuf = bytearray(buffer[:5])
+        obuf += whiten16(buffer[5:], int.from_bytes(buffer[2:4]))
+        return obuf
+
+    def encrypt(self, buffer: bytearray) -> bytearray:
+        """Encrypt / whiten a readable buffer."""
+        obuf = bytearray(buffer[:5])
+        obuf += whiten16(buffer[5:], int.from_bytes(buffer[2:4]))
+        return obuf
+
+    def convert_to_enc(self, decoded: bytearray) -> tuple[BleAdvEncCmd | None, BleAdvConfig | None]:
+        """Convert a readable buffer into an encoder command and a config."""
+        if not self.is_eq(0x06, decoded[2], "2 as 0x06") or not self.is_eq_buf(self._family, decoded[4:8], "Family"):
+            return None, None
+
+        conf = BleAdvConfig()
+        conf.tx_count = int.from_bytes(decoded[0:2])
+        conf.index = 0
+        conf.id = int.from_bytes(decoded[8:10])
+        return BleAdvEncCmd(decoded[3], *decoded[10:16]), conf
+
+    def convert_from_enc(self, enc_cmd: BleAdvEncCmd, conf: BleAdvConfig) -> bytearray:
+        """Convert an encoder command and a config into a readable buffer."""
+        count = conf.tx_count.to_bytes(2)
+        uid = conf.id.to_bytes(2)
+        args = [enc_cmd.param, enc_cmd.arg0, enc_cmd.arg1, enc_cmd.arg2, enc_cmd.arg3, enc_cmd.arg4]
+        return bytearray([*count, 0x06, enc_cmd.cmd, *self._family, *uid, *args])
+
+
+class TransRemote(Trans):
+    """Specific translator for Remote fixed composed arg0 and arg1."""
+
+    direct = False
+
+    def enc_to_ent(self, enc_cmd: BleAdvEncCmd) -> BleAdvEntAttr:
+        """Overload for complex attribute handling."""
+        ent_attr = super().enc_to_ent(enc_cmd)
+        if ATTR_BR in ent_attr.chg_attrs:
+            ent_attr.attrs[ATTR_BR] = max(((enc_cmd.arg0 & 0x0F) - 1) / 10.0, 0.01)
+        if ATTR_CT_REV in ent_attr.chg_attrs:
+            ent_attr.attrs[ATTR_CT_REV] = ((enc_cmd.arg0 & 0x70) >> 4) / 7.0
+        if ATTR_DIR in ent_attr.chg_attrs:
+            ent_attr.attrs[ATTR_DIR] = not ((enc_cmd.arg1 >> 6) & 1)
+        if ATTR_SPEED in ent_attr.chg_attrs:
+            ent_attr.attrs[ATTR_SPEED] = enc_cmd.arg1 & 0x0F
+        if ATTR_PRESET in ent_attr.chg_attrs:
+            ent_attr.attrs[ATTR_PRESET] = ATTR_PRESET_BREEZE if (enc_cmd.arg1 >> 5) & 1 else ATTR_PRESET_SLEEP if (enc_cmd.arg1 >> 4) & 1 else None
+        return ent_attr
+
+
+TRANS_APP_V0 = [
+    Trans(DeviceCmd().act(ATTR_ON, False), EncCmd(0x01).eq("param", 0x02)).no_direct(),
+    Trans(DeviceCmd().act(ATTR_CMD, ATTR_CMD_TIMER).eq(ATTR_TIME, 3600), EncCmd(0x01).eq("param", 0x09)).no_direct(),
+    Trans(DeviceCmd().act(ATTR_CMD, ATTR_CMD_TIMER).eq(ATTR_TIME, 7200), EncCmd(0x01).eq("param", 0x0A)).no_direct(),
+    Trans(DeviceCmd().act(ATTR_CMD, ATTR_CMD_TIMER).eq(ATTR_TIME, 14400), EncCmd(0x01).eq("param", 0x0B)).no_direct(),
+    Trans(DeviceCmd().act(ATTR_CMD, ATTR_CMD_TIMER).eq(ATTR_TIME, 28800), EncCmd(0x01).eq("param", 0x0C)).no_direct(),
+    Trans(LightCmd().act(ATTR_ON, True), EncCmd(0x01).eq("param", 0x05)),
+    Trans(LightCmd().act(ATTR_ON, False), EncCmd(0x01).eq("param", 0x06)),
+    Trans(CTLightCmd().act(ATTR_COLD).act(ATTR_WARM), EncCmd(0x02))
+    .copy(ATTR_WARM, "param", 255)
+    .copy(ATTR_COLD, "arg0", 255)
+    .copy(ATTR_BR, "arg1", 7)
+    .copy(ATTR_CT_REV, "arg2", 6)
+    .copy(ATTR_BR, "arg3", 255)
+    .copy(ATTR_CT_REV, "arg4", 255),
+    Trans(FanCmd().act(ATTR_ON, True), EncCmd(0x01).eq("param", 0x07)),
+    Trans(FanCmd().act(ATTR_ON, False), EncCmd(0x01).eq("param", 0x08)),
+    Trans(FanCmd().act(ATTR_PRESET, ATTR_PRESET_BREEZE), EncCmd(0x01).eq("param", 0x0D)),
+    Trans(FanCmd().act(ATTR_PRESET, ATTR_PRESET_SLEEP), EncCmd(0x01).eq("param", 0x0E)),
+    Trans(FanCmd().act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x12)),  # Forward
+    Trans(FanCmd().act(ATTR_DIR, False), EncCmd(0x01).eq("param", 0x14)),  # Reverse
+    Trans(FanNSpeedCmd(0, 31).act(ATTR_SPEED).eq(ATTR_ON, True), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0").no_direct(),
+    Trans(Fan8SpeedCmd().act(ATTR_SPEED).eq(ATTR_ON, True), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0", 31.0 / 8.0).no_reverse(),
+    Trans(Fan6SpeedCmd().act(ATTR_SPEED).eq(ATTR_ON, True), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0", 31.0 / 6.0).no_reverse(),
+    Trans(Fan6SpeedCmd().act(ATTR_SPEED, 2).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x0F)).no_direct(),
+    Trans(Fan6SpeedCmd().act(ATTR_SPEED, 4).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x10)).no_direct(),
+    Trans(Fan6SpeedCmd().act(ATTR_SPEED, 6).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x11)).no_direct(),
+]
+
+TRANS_REMOTE_V0 = [
+    TransRemote(LightCmd().act(ATTR_ON, False), EncCmd(0x10).eq("param", 0x10)),
+    TransRemote(LightCmd().act(ATTR_ON, True), EncCmd(0x10).eq("param", 0x11)),
+    TransRemote(LightCmd().act(ATTR_BR), EncCmd(0x10).eq("param", 0x12)),
+    TransRemote(LightCmd().act(ATTR_BR), EncCmd(0x10).eq("param", 0x13)),
+    TransRemote(LightCmd().act(ATTR_CT_REV), EncCmd(0x10).eq("param", 0x14)),
+    TransRemote(LightCmd().act(ATTR_CT_REV), EncCmd(0x10).eq("param", 0x15)),
+    TransRemote(FanCmd().act(ATTR_ON, False), EncCmd(0x10).eq("param", 0x20)),
+    TransRemote(FanCmd().act(ATTR_ON, True), EncCmd(0x10).eq("param", 0x21)),
+    TransRemote(FanCmd().act(ATTR_DIR), EncCmd(0x10).eq("param", 0x24)),
+    TransRemote(Fan8SpeedCmd().act(ATTR_SPEED), EncCmd(0x10).eq("param", 0x22)),
+    TransRemote(Fan8SpeedCmd().act(ATTR_SPEED), EncCmd(0x10).eq("param", 0x23)),
+    TransRemote(Fan8SpeedCmd().act(ATTR_PRESET).act(ATTR_SPEED), EncCmd(0x10).eq("param", 0x25)),
+    TransRemote(Fan8SpeedCmd().act(ATTR_PRESET).act(ATTR_SPEED), EncCmd(0x10).eq("param", 0x26)),
+]
+
+TRANS_V0 = [*TRANS_APP_V0, *TRANS_REMOTE_V0]
+
+# R00134 physical remote (fixes upstream issue #279): decode only translators, in the app command space (cmd 0x01 / 0x03).
+# Live verified on the physical device: every button but the main OFF one also powers the device ON, hence the ON carrying entities.
+# Those translators are only available by selecting the "R00134 remote" translator set in the technical options of the device.
+TRANS_REMOTE_R00134_V0 = [
+    Trans(FanCmd().act(ATTR_ON, ATTR_CMD_TOGGLE).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x04)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_ON, True).act(ATTR_CMD, ATTR_CMD_CT_DOWN).eq(ATTR_STEP, 1.0 / 6.0), EncCmd(0x01).eq("param", 0x15)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_ON, True).act(ATTR_CMD, ATTR_CMD_CT_UP).eq(ATTR_STEP, 1.0 / 6.0), EncCmd(0x01).eq("param", 0x16)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_ON, True).act(ATTR_CMD, ATTR_CMD_BR_UP).eq(ATTR_STEP, 1.0 / 7.0), EncCmd(0x01).eq("param", 0x17)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_ON, True).act(ATTR_CMD, ATTR_CMD_BR_DOWN).eq(ATTR_STEP, 1.0 / 7.0), EncCmd(0x01).eq("param", 0x18)).no_direct(),
+    # light/sync button: BR 100%, also cycles CT over 3 presets - deliberately untracked, cannot be resynced after a lost frame
+    Trans(LightCmd().act(ATTR_ON, True).act(ATTR_BR, 1.0), EncCmd(0x01).eq("param", 0x19)).no_direct(),
+    Trans(LightCmd().act(ATTR_ON, True).act(ATTR_BR, 0.3), EncCmd(0x01).eq("param", 0x1D)).no_direct(),
+    Trans(LightCmd().act(ATTR_ON, True).act(ATTR_BR, 0.5), EncCmd(0x01).eq("param", 0x1E)).no_direct(),
+    Trans(LightCmd().act(ATTR_ON, True).act(ATTR_BR, 0.7), EncCmd(0x01).eq("param", 0x1F)).no_direct(),
+    Trans(LightCmd().act(ATTR_ON, True).act(ATTR_BR, 1.0), EncCmd(0x01).eq("param", 0x20)).no_direct(),  # BR 100% button
+    # 30/50/70/100% fan preset ladder (0x21/0x0F/0x10/0x11) mapped monotonically to speeds 2/3/4/6:
+    # those presets are device internal levels, the tracking is label faithful
+    Trans(Fan6SpeedCmd().act(ATTR_ON, True).act(ATTR_SPEED, 2).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x21)).no_direct(),
+    Trans(Fan6SpeedCmd().act(ATTR_ON, True).act(ATTR_SPEED, 3).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x0F)).no_direct(),
+    Trans(Fan6SpeedCmd().act(ATTR_ON, True).act(ATTR_SPEED, 4).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x10)).no_direct(),
+    Trans(Fan6SpeedCmd().act(ATTR_ON, True).act(ATTR_SPEED, 6).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x11)).no_direct(),
+    Trans(FanCmd().act(ATTR_ON, True).act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x12)).no_direct(),  # Summer: powers the fan on, forward
+    Trans(FanCmd().act(ATTR_ON, True).act(ATTR_DIR, False), EncCmd(0x01).eq("param", 0x14)).no_direct(),  # Winter: powers the fan on, reverse
+    Trans(FanCmd().act(ATTR_ON, True).act(ATTR_PRESET, ATTR_PRESET_SLEEP), EncCmd(0x01).eq("param", 0x0E)).no_direct(),  # Sleep: powers the fan on
+    # speed restored by the device on power on: also powers the fan on
+    Trans(FanNSpeedCmd(0, 31).act(ATTR_ON, True).act(ATTR_SPEED), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0").no_direct(),
+]
+
+# Encoder commands for which the reverse (device -> HA) translation is taken over by the R00134 entries above
+_ENC_R00134_REV_TAKEN_OVER = [
+    *[EncCmd(0x01).eq("param", param).create() for param in (0x0E, 0x0F, 0x10, 0x11, 0x12, 0x14)],
+    EncCmd(0x03).eq("param", 0x01).create(),
+]
+
+# 'R00134 remote' translator set: the default V0 translators with the reverse side of the commands listed above replaced
+# by the R00134 ones. The direct (HA -> device) behavior is strictly identical to the one of the default translator set.
+TRANS_R00134_V0 = TranslatorSet([tr for tr in TRANS_V0 if not any(tr.enc.matches(enc) for enc in _ENC_R00134_REV_TAKEN_OVER)])
+TRANS_R00134_V0.add_translators(
+    [
+        # decode of 0x0E / 0x12 / 0x14 is owned by the ON carrying R00134 entries, the encode from HA is unchanged
+        Trans(FanCmd().act(ATTR_PRESET, ATTR_PRESET_SLEEP), EncCmd(0x01).eq("param", 0x0E)).no_reverse(),
+        Trans(FanCmd().act(ATTR_DIR, True), EncCmd(0x01).eq("param", 0x12)).no_reverse(),  # Forward
+        Trans(FanCmd().act(ATTR_DIR, False), EncCmd(0x01).eq("param", 0x14)).no_reverse(),  # Reverse
+        # direct only speed translators, re defined as removed by the cmd 0x03 filter
+        Trans(Fan8SpeedCmd().act(ATTR_SPEED).eq(ATTR_ON, True), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0", 31.0 / 8.0).no_reverse(),
+        Trans(Fan6SpeedCmd().act(ATTR_SPEED).eq(ATTR_ON, True), EncCmd(0x03).eq("param", 0x01)).copy(ATTR_SPEED, "arg0", 31.0 / 6.0).no_reverse(),
+        *TRANS_REMOTE_R00134_V0,
+    ]
+)
+
+TRANS_V1 = [
+    Trans(LightCmd().act(ATTR_ON, True), EncCmd(0x01).eq("param", 0x01)),
+    Trans(LightCmd().act(ATTR_ON, False), EncCmd(0x01).eq("param", 0x02)),
+    Trans(CTLightCmd().act(ATTR_COLD).act(ATTR_WARM), EncCmd(0x02))
+    .copy(ATTR_WARM, "param", 255)
+    .copy(ATTR_COLD, "arg0", 255)
+    .copy(ATTR_BR, "arg1", 7)
+    .copy(ATTR_CT_REV, "arg2", 6)
+    .copy(ATTR_BR, "arg3", 255)
+    .copy(ATTR_CT_REV, "arg4", 255),
+    # Remote
+    Trans(CTLightCmd().act(ATTR_CMD, ATTR_CMD_CT_DOWN).eq(ATTR_STEP, 1.0 / 6.0), EncCmd(0x01).eq("param", 0x03)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_CMD, ATTR_CMD_CT_UP).eq(ATTR_STEP, 1.0 / 6.0), EncCmd(0x01).eq("param", 0x04)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_CMD, ATTR_CMD_BR_UP).eq(ATTR_STEP, 1.0 / 7.0), EncCmd(0x01).eq("param", 0x05)).no_direct(),
+    Trans(CTLightCmd().act(ATTR_CMD, ATTR_CMD_BR_DOWN).eq(ATTR_STEP, 1.0 / 7.0), EncCmd(0x01).eq("param", 0x06)).no_direct(),
+    Trans(LightCmd().act(ATTR_BR, 0.3), EncCmd(0x01).eq("param", 0x0C)).no_direct(),
+    Trans(LightCmd().act(ATTR_BR, 0.5), EncCmd(0x01).eq("param", 0x07)).no_direct(),
+    Trans(LightCmd().act(ATTR_BR, 0.7), EncCmd(0x01).eq("param", 0x08)).no_direct(),
+    Trans(LightCmd().act(ATTR_BR, 1.0), EncCmd(0x01).eq("param", 0x09)).no_direct(),
+]
+
+R00134 = "R00134 remote"
+
+CODECS = [
+    MantraEncoder().id("mantra_v0").header([0x4E, 0x6F]).prefix([0x72, 0x0E]).ble(0x1A, 0xFF).add_translators(TRANS_V0).add_translator_set(R00134, TRANS_R00134_V0),
+    MantraEncoder().id("mantra_v0", "ios").header([0x4E, 0x6F]).prefix([0x72, 0x0E]).footer([0x04, 0x03, 0x02, 0x01]).ble(0x1A, 0x05).add_translators(TRANS_V0).add_translator_set(R00134, TRANS_R00134_V0),
+    MantraEncoder().id("mantra_v1").header([0x4E, 0x6F]).prefix([0x72, 0x0F]).ble(0x1A, 0xFF).add_translators(TRANS_V1),
+    MantraEncoder().id("mantra_v1", "ios").header([0x4E, 0x6F]).prefix([0x72, 0x0F]).footer([0x04, 0x03, 0x02, 0x01]).ble(0x1A, 0x05).add_translators(TRANS_V1),
+]  # fmt: skip
