@@ -281,7 +281,7 @@ async def test_otp_login_and_readings(fake_volvo):
         await wait_for(lambda: readings().get("state", "").startswith("one-time"))
 
         await device.Set(testhash, [NAME, "otp", "000000"], {})
-        await wait_for(lambda: "failed" in readings().get("state", ""))
+        await wait_for(lambda: "wrong" in readings().get("state", ""))
 
         await device.Set(testhash, [NAME, "login"], {})
         await wait_for(lambda: fake.logins == 2)
