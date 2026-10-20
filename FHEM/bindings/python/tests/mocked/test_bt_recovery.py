@@ -128,3 +128,51 @@ async def test_restart_bluetoothd_without_sudoers(mocker):
 def test_hci_index():
     assert bt_recovery.hci_index("hci0") == 0
     assert bt_recovery.hci_index("hci12") == 12
+
+
+def dbus_replies(mocker, connected, disconnect_error=None):
+    calls = []
+
+    async def dbus_call(member, path, interface, signature="", body=None):
+        calls.append((member, path))
+        if member == "Get":
+            if connected is None:
+                raise RuntimeError("org.freedesktop.DBus.Error.UnknownObject: []")
+            return [mocker.MagicMock(value=connected)]
+        if disconnect_error:
+            raise disconnect_error
+        return []
+
+    mocker.patch.object(bt_recovery, "_dbus_call", side_effect=dbus_call)
+    return calls
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_is_dropped(mocker):
+    calls = dbus_replies(mocker, True)
+    assert (
+        await bt_recovery.drop_stale_connection("hci0", "aa:bb:cc:dd:ee:ff")
+        == "stale connection dropped: ok"
+    )
+    assert calls == [
+        ("Get", "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"),
+        ("Disconnect", "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_no_stale_connection(mocker):
+    calls = dbus_replies(mocker, False)
+    assert await bt_recovery.drop_stale_connection("hci0", MAC) is None
+    assert [c[0] for c in calls] == ["Get"]
+    dbus_replies(mocker, None)
+    assert await bt_recovery.drop_stale_connection("hci0", MAC) is None
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_disconnect_fails(mocker):
+    dbus_replies(mocker, True, TimeoutError())
+    assert (
+        await bt_recovery.drop_stale_connection("hci0", MAC)
+        == "stale connection dropped: failed"
+    )

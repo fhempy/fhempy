@@ -9,6 +9,9 @@ each recovery escalating one stage further:
  3. restart bluetoothd via `sudo -n systemctl restart bluetooth` (sudoers)
 A stage which isn't permitted or fails falls through to the next one.
 If bluetoothd doesn't answer on D-Bus at all, it gets restarted right away.
+
+Independent of the stages, drop_stale_connection() disconnects a device
+which BlueZ still holds connected although fhempy has no connection to it.
 """
 
 import asyncio
@@ -143,6 +146,44 @@ async def _dbus_call(member, path, interface, signature="", body=None):
     if reply.message_type == MessageType.ERROR:
         raise RuntimeError(f"{reply.error_name}: {reply.body}")
     return reply.body
+
+
+def device_path(adapter, address):
+    return f"/org/bluez/{adapter}/dev_{address.upper().replace(':', '_')}"
+
+
+async def drop_stale_connection(adapter, address):
+    """
+    BlueZ keeps a connection open when the process which opened it is gone
+    (e.g. fhempy restart) or missed the disconnect. A connected device doesn't
+    advertise, so a scan never finds it until bluetoothd is restarted.
+    Returns a description if a stale connection was found, else None.
+    """
+    path = device_path(adapter, address)
+    try:
+        connected = await _dbus_call(
+            "Get",
+            path,
+            "org.freedesktop.DBus.Properties",
+            "ss",
+            ["org.bluez.Device1", "Connected"],
+        )
+    except Exception:
+        # device unknown to BlueZ or bluetoothd not reachable
+        return None
+    if not connected or not connected[0].value:
+        return None
+
+    logger.warning(
+        f"{address} is still connected in BlueZ via {adapter} without fhempy "
+        "using it, disconnecting"
+    )
+    try:
+        await _dbus_call("Disconnect", path, "org.bluez.Device1")
+        return "stale connection dropped: ok"
+    except Exception as ex:
+        logger.warning(f"Disconnect of {address} failed: {ex}")
+        return "stale connection dropped: failed"
 
 
 async def bluetoothd_alive():

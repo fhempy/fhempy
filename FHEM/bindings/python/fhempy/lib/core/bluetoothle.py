@@ -319,8 +319,11 @@ class BluetoothLE:
                 if not self._device:
                     # device not found, only a problem of the adapter if it
                     # didn't see any other device either
-                    if not adapter_working and await self._adapter_failed(adapter):
-                        # adapters might have changed, start over
+                    if not adapter_working:
+                        if await self._adapter_failed(adapter):
+                            # adapters might have changed, start over
+                            return
+                    elif await self._stale_connection_failed(adapter):
                         return
                     await asyncio.sleep(20)
                     continue
@@ -405,6 +408,23 @@ class BluetoothLE:
             )
             return True
         return False
+
+    async def _stale_connection_failed(self, adapter):
+        """
+        Drops a connection BlueZ still holds to the device, it doesn't
+        advertise while connected. Returns True if the adapter was recovered
+        because the stale connection couldn't be dropped.
+        """
+        result = await bt_recovery.drop_stale_connection(adapter, self.addr)
+        if result is None:
+            return False
+        await fhem.readingsSingleUpdate(
+            self._dev_hash, "connection_recovery", f"{adapter} {result}", 1
+        )
+        if result.endswith(": ok"):
+            return False
+        # bluetoothd doesn't release the device, recover the adapter
+        return await self._adapter_failed(adapter)
 
     async def _subscribe_notifies(self):
         if not self.notification_listener:
