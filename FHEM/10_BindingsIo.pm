@@ -194,9 +194,9 @@ sub BindingsIo_Define {
 
   # set devStateIcon
   my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.2.0") == -1) {
+  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.3.0") == -1) {
     my $devstate_cmd = '{
-      my $attr_ver = "1.2.0";;
+      my $attr_ver = "1.3.0";;
       my $status_img = "10px-kreis-gruen";;
       my $status_txt = "connected";;
       my $ver = ReadingsVal($name, "version", "-");;
@@ -214,11 +214,7 @@ sub BindingsIo_Define {
       }
       $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
       my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-      my $balloon = "";;
-      if (ReadingsVal($name, "release_party", "") =~ /thank you/ && ReadingsAge($name, "release_party", 86400) < 86400) {
-        $balloon = "<style>\@keyframes fpyBalloon{0%,100%{transform:translateY(1px) rotate(-6deg)}50%{transform:translateY(-4px) rotate(6deg)}}</style><span title=\"Welcome to fhempy ".$ver."!\" style=\"display:inline-block;font-size:18px;animation:fpyBalloon 2.4s ease-in-out infinite\">&#x1F388;</span> ";;
-      }
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$balloon.$update_icon.$restart_icon."</div>"
+      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon."</div>"
     }';
     $devstate_cmd =~ tr/\n//d;
     CommandAttr(undef, "$name devStateIcon $devstate_cmd");
@@ -656,7 +652,7 @@ BindingsIo_Attr($$$)
 
   # keep the devStateIcon from Define, fhem.cfg must not restore an older one
   if ($cmd eq "set" && $attrName eq "devStateIcon") {
-    if (index($attrVal, "1.2.0") == -1) {
+    if (index($attrVal, "1.3.0") == -1) {
       return "devStateIcon updated"
     }
   }
@@ -821,6 +817,8 @@ sub BindingsIo_processCommand($$) {
     if (exists $json->{version_options}) {
       $hash->{helper}{version_options} = $json->{version_options};
     }
+    # leftover of the release party in fhempy 1.0.x - 2.3.0
+    readingsDelete($hash, "release_party") if (exists $hash->{READINGS}{release_party});
     foreach my $key (keys %$json) {
       if ($key eq "msgtype" || $key eq "update_version_supported" || $key eq "version_options") {
         next;

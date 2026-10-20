@@ -17,14 +17,14 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'define sets the current devStateIcon' => sub {
 		plan(1);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.2\.0"/, q[devStateIcon is current]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.3\.0"/, q[devStateIcon is current]);
 	};
 
 	subtest 'an older devStateIcon from fhem.cfg is rejected' => sub {
 		plan(2);
-		my $ret = CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.1.0";; "old"}]);
+		my $ret = CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.2.0";; "old"}]);
 		is ($ret, q[devStateIcon updated], q[old devStateIcon rejected]);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.2\.0"/, q[current devStateIcon kept]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.3\.0"/, q[current devStateIcon kept]);
 	};
 
 	RemoveInternalTimer($hash);

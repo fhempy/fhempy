@@ -33,7 +33,6 @@ fct_timeout = 100
 
 stop_event = asyncio.Event()
 exit_code = 0
-release_party = None
 
 # internal modules
 active_internal_modules = []
@@ -111,9 +110,6 @@ async def pybinding(websocket):
     await activate_internal_modules()
     await fhem.send_version()
     release_task = asyncio.create_task(fhem.send_latest_release())
-    if release_party is not None and release_party.pending:
-        # keep a reference, the event loop only holds a weak one
-        release_party.task = asyncio.create_task(release_party.show_in_fhem())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -858,9 +854,7 @@ async def async_main():
     watchdog = LoopWatchdog(asyncio.get_running_loop())
     watchdog.start()
 
-    global release_party
-    release_party = celebration.ReleaseParty()
-    release_party.show_in_log()
+    celebration.ReleaseBanner().show_in_log()
 
     await pkg_installer.check_and_install_dependencies("core")
 
