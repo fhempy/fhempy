@@ -105,8 +105,13 @@ class TransRemote(Trans):
         if ATTR_SPEED in ent_attr.chg_attrs:
             ent_attr.attrs[ATTR_SPEED] = enc_cmd.arg1 & 0x0F
         if ATTR_PRESET in ent_attr.chg_attrs:
-            ent_attr.attrs[ATTR_PRESET] = ATTR_PRESET_BREEZE if (enc_cmd.arg1 >> 5) & 1 else ATTR_PRESET_SLEEP if (enc_cmd.arg1 >> 4) & 1 else None
-        return ent_attr
+            if (enc_cmd.arg1 >> 5) & 1:
+                preset_val = ATTR_PRESET_BREEZE
+            elif (enc_cmd.arg1 >> 4) & 1:
+                preset_val = ATTR_PRESET_SLEEP
+            else:
+                preset_val = None
+            ent_attr.attrs[ATTR_PRESET] = preset_val
 
 
 TRANS_APP_V0 = [

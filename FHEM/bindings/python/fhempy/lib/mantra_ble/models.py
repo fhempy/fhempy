@@ -12,7 +12,7 @@ import logging
 from abc import ABC, abstractmethod
 from binascii import hexlify
 from dataclasses import dataclass
-from random import randint
+from secrets import SystemRandom
 from typing import Any, Self
 
 from .const import (
@@ -28,6 +28,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+randint = SystemRandom().randint
 
 def as_hex(buffer: bytes | bytearray) -> str:
     """Represent hex buffer as 00.01.02 format."""
@@ -38,7 +39,7 @@ class BleAdvAdvertisement:
     """Model and Advertisement."""
 
     @classmethod
-    def FromRaw(cls, raw_adv: bytes) -> Self:  # noqa: N802
+    def from_raw(cls, raw_adv: bytes) -> Self:  # noqa: N802
         """Build an Advertisement from raw."""
         ble_type = 0x00
         ad_flag = None
@@ -560,7 +561,7 @@ class BleAdvCodec(ABC):
             if bt == base_type:
                 missing = ind - len(capa) + 1
                 if missing > 0:
-                    capa = capa + [{} for i in range(missing)]
+                    capa = capa + [{} for _ in range(missing)]
                 for feat, val in feats.items():
                     if val is not None:
                         capa[ind].setdefault(feat, set()).add(val)

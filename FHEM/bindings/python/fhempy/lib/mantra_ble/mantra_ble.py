@@ -11,6 +11,7 @@ FAN_STATES = ("on", "off")
 FAN_PRESETS = ("summer", "winter", "breeze", "sleep")
 MIN_FAN_SPEED = 0
 MAX_FAN_SPEED = 31
+CHOOSE_PREFIX = "choose "
 
 # Input validator functions (executed by fhempy before handlers run)
 def _hex_id(value):
@@ -22,20 +23,17 @@ def _hex_id(value):
     except (ValueError, TypeError):
         raise ValueError("expected a 4-digit hexadecimal ID (e.g. 1F42)") from None
 
-
 def _light_state(value):
     val = str(value).lower()
     if val not in LIGHT_STATES:
-        raise ValueError("choose " + " or ".join(LIGHT_STATES))
+        raise ValueError(CHOOSE_PREFIX + " or ".join(LIGHT_STATES))
     return val
-
 
 def _fan_state(value):
     val = str(value).lower()
     if val not in FAN_STATES:
-        raise ValueError("choose " + " or ".join(FAN_STATES))
+        raise ValueError(CHOOSE_PREFIX + " or ".join(FAN_STATES))
     return val
-
 
 def _fan_speed(value):
     try:
@@ -50,7 +48,7 @@ def _fan_speed(value):
 def _fan_preset(value):
     val = str(value).lower()
     if val not in FAN_PRESETS:
-        raise ValueError("choose " + " or ".join(FAN_PRESETS))
+        raise ValueError(CHOOSE_PREFIX + " or ".join(FAN_PRESETS))
     return val
 
 
@@ -252,7 +250,7 @@ class mantra_ble(generic.FhemModule):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
-        stdout, stderr = await proc.communicate()
+        _, stderr = await proc.communicate()
         if proc.returncode != 0:
             self.logger.error(
                 f"Command failed (exit code {proc.returncode}): {cmd} | "
