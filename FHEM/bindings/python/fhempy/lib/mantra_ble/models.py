@@ -1,0 +1,636 @@
+# ---------------------------------------------------------------------------
+# This file is part of the ha-ble-adv project by @NicoIIT
+# Published under the MIT License
+# Source: https://github.com/NicoIIT/ha-ble-adv
+# Modified for FHEM / fhempy integration by @fabianswebworld
+# ---------------------------------------------------------------------------
+
+"""Models."""
+
+import copy
+import logging
+from abc import ABC, abstractmethod
+from binascii import hexlify
+from dataclasses import dataclass
+from secrets import SystemRandom
+from typing import Any, Self
+
+from .const import (
+    ATTR_SPEED_COUNT,
+    ATTR_SUB_TYPE,
+    DEVICE_TYPE,
+    FAN_TYPE,
+    LIGHT_TYPE,
+    LIGHT_TYPE_CWW,
+    LIGHT_TYPE_ONOFF,
+    LIGHT_TYPE_RGB,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+randint = SystemRandom().randint
+
+def as_hex(buffer: bytes | bytearray) -> str:
+    """Represent hex buffer as 00.01.02 format."""
+    return str(hexlify(buffer, "."), "ascii").upper()
+
+
+class BleAdvAdvertisement:
+    """Model and Advertisement."""
+
+    @classmethod
+    def from_raw(cls, raw_adv: bytes) -> Self:  # noqa: N802
+        """Build an Advertisement from raw."""
+        ble_type = 0x00
+        ad_flag = None
+        sec_type = 0x00
+        sec_raw = None
+        rem_data = raw_adv
+        while len(rem_data) > 2:
+            part_len = rem_data[0]
+            if part_len > len(rem_data):
+                break
+            part_type = rem_data[1]
+            if part_type == 0x01 and part_len == 2:
+                ad_flag = rem_data[2]
+            elif part_type in [0x03, 0x05, 0x07, 0x16, 0xFF]:
+                if ble_type == 0x00:
+                    ble_type = part_type
+                    raw_data = rem_data[2 : part_len + 1]
+                else:
+                    sec_type = part_type
+                    sec_raw = rem_data[2 : part_len + 1]
+            rem_data = rem_data[part_len + 1 :]
+        if ble_type == 0:
+            raw_data = raw_adv
+        return cls(ble_type, raw_data, ad_flag, sec_type, sec_raw)
+
+    def __init__(self, ble_type: int, raw: bytes, ad_flag: int | None = None, sec_type: int = 0, sec_raw: bytes | None = None) -> None:
+        self.ble_type: int = ble_type
+        self.raw: bytes = raw
+        self.ad_flag: int | None = ad_flag
+        self.second_type: int = sec_type
+        self.second_raw: bytes | None = sec_raw
+
+    def __repr__(self) -> str:
+        """Repr."""
+        sec_part = f", Sec Type: 0x{self.second_type}" if self.second_raw is not None else ""
+        return f"Type: 0x{self.ble_type:02X}, raw: {'.'.join(f'{x:02X}' for x in self.raw)}{sec_part}"
+
+    def __hash__(self) -> int:
+        return hash((self.ble_type, self.raw))
+
+    def __eq__(self, comp: Self) -> bool:
+        return (self.ble_type == comp.ble_type) and (self.raw == comp.raw) and (self.second_type == comp.second_type)
+
+    def to_raw(self) -> bytes:
+        """Get the raw buffer."""
+        full_raw = bytearray([len(self.raw) + 1, self.ble_type]) + self.raw if self.ble_type != 0 else self.raw
+        second_raw = bytearray([len(self.second_raw) + 1, self.second_type]) + self.second_raw if self.second_raw is not None else bytes([])
+        return bytes(full_raw if self.ad_flag is None else bytearray([0x02, 0x01, self.ad_flag]) + full_raw + second_raw)
+
+
+@dataclass
+class BleAdvEncCmd:
+    """Ble ADV Encoder command."""
+
+    cmd: int
+    param: int = 0
+    arg0: int = 0
+    arg1: int = 0
+    arg2: int = 0
+    arg3: int = 0
+    arg4: int = 0
+
+    def __repr__(self) -> str:
+        args = f"{self.arg0},{self.arg1},{self.arg2}"
+        if self.arg3 != 0 or self.arg4 != 0:
+            args += f",{self.arg3},{self.arg4}"
+        return f"cmd: 0x{self.cmd:02X}, param: 0x{self.param:02X}, args: [{args}]"
+
+
+AttrType = str | bool | int | float | None
+
+
+class BleAdvEntAttr:
+    """Ble Adv Entity Attributes."""
+
+    def __init__(self, changed_attrs: list[str], attrs: dict[str, Any], base_type: str, index: int) -> None:
+        self.chg_attrs: list[str] = changed_attrs
+        self.attrs: dict[str, Any] = attrs
+        self.base_type: str = base_type
+        self.index: int = index
+
+    @property
+    def id(self) -> tuple[str, int]:
+        """Entity ID."""
+        return (self.base_type, self.index)
+
+    def __repr__(self) -> str:
+        return f"{self.base_type}_{self.index}: {self.chg_attrs} / {self.attrs}"
+
+    def __hash__(self) -> int:
+        """Hash."""
+        return hash((*set(self.chg_attrs), *self.attrs, self.base_type, self.index))
+
+    def __eq__(self, comp: Self) -> bool:
+        return (
+            (set(self.chg_attrs) == set(comp.chg_attrs))
+            and (self.attrs == comp.attrs)
+            and (self.base_type == comp.base_type)
+            and (self.index == comp.index)
+        )
+
+    def get_attr_as_float(self, attr: str) -> float:
+        """Get attr as float."""
+        return float(self.attrs[attr])
+
+
+@dataclass
+class BleAdvConfig:
+    """Ble Adv Encoder Config."""
+
+    tx_count: int = 0
+    app_restart_count: int = 1
+    seed: int = 0
+
+    def __init__(self, config_id: int = 0, index: int = 0, codec_params: list[Any] | None = None, translator_set: str | None = None) -> None:
+        self.id: int = config_id
+        self.index: int = index
+        self.codec_params: list[Any] = codec_params if codec_params is not None else []
+        self.translator_set: str | None = translator_set
+
+    def __repr__(self) -> str:
+        return f"id: 0x{self.id:08X}, index: {self.index}, tx: {self.tx_count}, seed: 0x{self.seed:04X}"
+
+
+class CommonMatcher:
+    """Matcher Base."""
+
+    def __init__(self) -> None:
+        self.eqs: dict[str, Any] = {}
+        self.mins: dict[str, float] = {}
+        self.maxs: dict[str, float] = {}
+
+    def eq(self, attr: str, attr_val: AttrType) -> Self:
+        """Force Entity to have attribute equal to this value."""
+        self.eqs[attr] = attr_val
+        return self
+
+    def min(self, attr: str, attr_val: float) -> Self:
+        """Force Entity to have attribute of maximum this value."""
+        self.mins[attr] = attr_val
+        return self
+
+    def max(self, attr: str, attr_val: float) -> Self:
+        """Force Entity to have attribute of minimum this value."""
+        self.maxs[attr] = attr_val
+        return self
+
+
+class EntityMatcher(CommonMatcher):
+    """Matcher for Entity."""
+
+    def __init__(self, base_type: str, index: int) -> None:
+        super().__init__()
+        self._base_type: str = base_type
+        self._index: int = index
+        self._actions: list[str] = []
+
+    def __repr__(self) -> str:
+        return f"{self._base_type}_{self._index} / {self._actions}"
+
+    def act(self, action: str, action_value: AttrType = None) -> Self:
+        """Match Activity on given attribute, with value."""
+        self._actions.append(action)
+        return self.eq(action, action_value) if action_value is not None else self
+
+    def matches(self, ent_attr: BleAdvEntAttr) -> bool:
+        """Effective match for the incoming Entity Attributes."""
+        return (
+            (self._base_type == ent_attr.base_type)
+            and (self._index == ent_attr.index)
+            and any(attr in ent_attr.chg_attrs for attr in self._actions)
+            and all(ent_attr.attrs.get(attr) == val for attr, val in self.eqs.items())
+            and all(ent_attr.attrs.get(attr) >= val for attr, val in self.mins.items())  # type: ignore[none]
+            and all(ent_attr.attrs.get(attr) <= val for attr, val in self.maxs.items())  # type: ignore[none]
+        )
+
+    def create(self) -> BleAdvEntAttr:
+        """Create Ble Adv Entity Features from self."""
+        ent_attr: BleAdvEntAttr = BleAdvEntAttr(self._actions.copy(), self.eqs.copy(), self._base_type, self._index)
+        return ent_attr
+
+    def get_supported_features(self) -> tuple[str, int, dict[str, Any]]:
+        """Get Features."""
+        return (self._base_type, self._index, {**self.eqs})
+
+
+class FanCmd(EntityMatcher):
+    """Specific Fan Base Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(FAN_TYPE, index)
+
+
+class FanNSpeedCmd(EntityMatcher):
+    """Specific N level speed Fan Matcher."""
+
+    def __init__(self, index: int, nb_speed: int) -> None:
+        super().__init__(FAN_TYPE, index)
+        self.eqs[ATTR_SPEED_COUNT] = nb_speed
+
+
+class Fan3SpeedCmd(FanNSpeedCmd):
+    """Specific 3 level speed Fan Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(index, 3)
+
+
+class Fan4SpeedCmd(FanNSpeedCmd):
+    """Specific 4 level speed Fan Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(index, 4)
+
+
+class Fan6SpeedCmd(FanNSpeedCmd):
+    """Specific 6 level speed Fan Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(index, 6)
+
+
+class Fan8SpeedCmd(FanNSpeedCmd):
+    """Specific 8 level speed Fan Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(index, 8)
+
+
+class Fan100SpeedCmd(FanNSpeedCmd):
+    """Specific 100 level speed Fan Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(index, 100)
+
+
+class LightCmd(EntityMatcher):
+    """Specific Light Base Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(LIGHT_TYPE, index)
+
+    def get_supported_features(self) -> tuple[str, int, dict[str, Any]]:
+        """Get Features."""
+        base_type, index, feats = super().get_supported_features()
+        return (base_type, index, {**feats, ATTR_SUB_TYPE: LIGHT_TYPE_ONOFF})
+
+
+class RGBLightCmd(EntityMatcher):
+    """Specific RGB Light Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(LIGHT_TYPE, index)
+        self.eqs[ATTR_SUB_TYPE] = LIGHT_TYPE_RGB
+
+
+class CTLightCmd(EntityMatcher):
+    """Specific RGB Light Matcher."""
+
+    def __init__(self, index: int = 0) -> None:
+        super().__init__(LIGHT_TYPE, index)
+        self.eqs[ATTR_SUB_TYPE] = LIGHT_TYPE_CWW
+
+
+class DeviceCmd(EntityMatcher):
+    """Specific Device Matcher."""
+
+    def __init__(self) -> None:
+        super().__init__(DEVICE_TYPE, 0)
+
+
+class EncoderMatcher(CommonMatcher):
+    """Specific Encoder Matcher."""
+
+    def __init__(self, cmd: int) -> None:
+        super().__init__()
+        self._cmd: int = cmd
+
+    def __repr__(self) -> str:
+        return f"cmd: 0x{self._cmd:02X}"
+
+    def matches(self, enc_cmd: BleAdvEncCmd) -> bool:
+        """Match with Encoder Attributes."""
+        return (
+            (enc_cmd.cmd == self._cmd)
+            and all(getattr(enc_cmd, attr) == val for attr, val in self.eqs.items())
+            and all(getattr(enc_cmd, attr) >= val for attr, val in self.mins.items())
+            and all(getattr(enc_cmd, attr) <= val for attr, val in self.maxs.items())
+        )
+
+    def create(self) -> BleAdvEncCmd:
+        """Create a Ble Adv Encoder Cmd from self."""
+        enc_cmd: BleAdvEncCmd = BleAdvEncCmd(self._cmd)
+        for eq_attr, eq_val in self.eqs.items():
+            setattr(enc_cmd, eq_attr, eq_val)
+        return enc_cmd
+
+
+class Trans:
+    """Base translator."""
+
+    direct: bool = True
+    reverse: bool = True
+
+    def __init__(self, ent: EntityMatcher, enc: EncoderMatcher) -> None:
+        self.ent = ent
+        self.enc = enc
+        self._copies = []
+        self._scopy = None
+
+    def __repr__(self) -> str:
+        return f"{self.ent} / {self.enc} / {self._copies}"
+
+    def copy(self, attr_ent: str, attr_enc: str, factor: float = 1.0) -> Self:
+        """Apply copy from attr_ent to attr_enc, with factor."""
+        self._copies.append((attr_ent, attr_enc, factor))
+        return self
+
+    def split_copy(self, attr_ent: str, dests: list[str], factor: float = 1.0, modulo: int = 256) -> Self:
+        """Split the value in src iteratively to dests with each time applying a modulo."""
+        self._scopy = (attr_ent, dests, factor, modulo)
+        return self
+
+    def no_direct(self) -> Self:
+        """Do not consider this translator for direct translation."""
+        self.direct = False
+        return self
+
+    def no_reverse(self) -> Self:
+        """Do not consider this translator for reverse translation."""
+        self.reverse = False
+        return self
+
+    def matches_ent(self, ent_attr: BleAdvEntAttr) -> bool:
+        """Check if the translator matches the entity attributes."""
+        return self.direct and self.ent.matches(ent_attr)
+
+    def matches_enc(self, enc_cmd: BleAdvEncCmd) -> bool:
+        """Check if the translator matches the encoder command."""
+        return self.reverse and self.enc.matches(enc_cmd)
+
+    def ent_to_enc(self, ent_attr: BleAdvEntAttr) -> BleAdvEncCmd:
+        """Apply transformations to Encoder Attributes: direct."""
+        enc_cmd = self.enc.create()
+        for attr_ent, attr_enc, factor in self._copies:
+            setattr(enc_cmd, attr_enc, int(factor * ent_attr.attrs.get(attr_ent, 0)))
+        if self._scopy is not None:
+            attr_ent, dests, factor, modulo = self._scopy
+            val = int(factor * ent_attr.attrs[attr_ent])
+            for dest in dests:
+                setattr(enc_cmd, dest, val % modulo)
+                val = int(val / modulo)
+        return enc_cmd
+
+    def enc_to_ent(self, enc_cmd: BleAdvEncCmd) -> BleAdvEntAttr:
+        """Apply transformations to Entity Attributes: reverse."""
+        ent_attr = self.ent.create()
+        if self._scopy is not None:
+            attr_ent, dests, factor, modulo = self._scopy
+            val = 0
+            for dest in reversed(dests):
+                val = modulo * val + getattr(enc_cmd, dest)
+            ent_attr.attrs[attr_ent] = (1.0 / factor) * val
+        for attr_ent, attr_enc, factor in self._copies:
+            ent_attr.attrs[attr_ent] = (1.0 / factor) * getattr(enc_cmd, attr_enc)
+        return ent_attr
+
+
+class TranslatorSet(list[Trans]):
+    """Set of translator."""
+
+    def __init__(self, translators: list[Trans] | None = None) -> None:
+        if translators is not None:
+            self.add_translators(translators)
+
+    def add_translators(self, translators: list[Trans]) -> Self:
+        """Add Translators."""
+        self.extend(translators)
+        return self
+
+    def add_rev_only_trans(self, translators: list[Trans]) -> Self:
+        """Add Reverse Only Translators."""
+        self.extend([copy.copy(trans).no_direct() for trans in translators if trans.reverse])
+        return self
+
+    def replace(self, trans: Trans) -> Self:
+        """Replace any translator with a matching enc command by the given one."""
+        self.delete(trans.enc.create())
+        self.append(trans)
+        return self
+
+    def delete(self, enc_cmd: BleAdvEncCmd) -> Self:
+        """Delete any translator with a matching enc command."""
+        self[:] = [tr for tr in self if not tr.enc.matches(enc_cmd)]
+        return self
+
+
+class BleAdvCodec(ABC):
+    """Class representing a base encoder / decoder."""
+
+    _len: int = 0
+    _tx_step: int = 1
+    _tx_max: int = 125
+    _seed_max = 0
+    debug_mode: bool = False
+    duration: int = 750
+    interval: int = 30
+    repeat: int = 9
+    ign_duration: int = 12000
+    second_type: int = 0
+    second_raw: bytes | None = None
+
+    DEF_TRANS_NAME: str = "default"
+
+    def __init__(self) -> None:
+        self.codec_id: str = ""
+        self.match_id: str = ""
+        self.match_params: list[Any] = []
+        self._header: bytes = b""  # header is excluded from the data sent to the child encoder
+        self._header_start_pos: int = 0
+        self._prefix: bytes = b""  # prefix is included in the data sent to the child encoder
+        self._footer: bytes = b""  # footer is excluded from the data sent to the child encoder
+        self._ble_type: int = 0
+        self._ad_flag: int | None = None
+        self._translator_maps: dict[str, TranslatorSet] = {self.DEF_TRANS_NAME: TranslatorSet()}
+
+    @abstractmethod
+    def decrypt(self, buffer: bytearray) -> bytearray | None:
+        """Decrypt / unwhiten an incoming raw buffer into a readable buffer."""
+
+    @abstractmethod
+    def encrypt(self, decoded: bytearray) -> bytearray:
+        """Encrypt / whiten a readable buffer."""
+
+    @abstractmethod
+    def convert_to_enc(self, decoded: bytearray) -> tuple[BleAdvEncCmd | None, BleAdvConfig | None]:
+        """Convert a readable buffer into an encoder command and a config."""
+
+    @abstractmethod
+    def convert_from_enc(self, enc_cmd: BleAdvEncCmd, conf: BleAdvConfig) -> bytearray:
+        """Convert an encoder command and a config into a readable buffer."""
+
+    def convert_multi_from_enc(self, enc_cmd: BleAdvEncCmd, conf: BleAdvConfig) -> list[bytearray]:
+        """Convert an encoder command and a config into a list of readable buffers."""
+        # Call the single buffer encoder by default for standard encoders
+        return [self.convert_from_enc(enc_cmd, conf)]
+
+    def fid(self, codec_id: str, match_id: str, match_params: list[Any] | None = None) -> Self:
+        """Set codec id / match id."""
+        self.match_id = match_id
+        self.codec_id = codec_id
+        if match_params is not None:
+            self.match_params = match_params
+        return self
+
+    def id(self, match_id: str, sub_id: str | None = None, match_params: list[Any] | None = None) -> Self:
+        """Set match_id and codec_id from id and sub_id if any."""
+        return self.fid(f"{match_id}/{sub_id}" if sub_id is not None else match_id, match_id, match_params)
+
+    def header(self, header: list[int], start_pos: int = 0) -> Self:
+        """Set header."""
+        self._header = bytes(header)
+        self._header_start_pos = start_pos
+        return self
+
+    def prefix(self, prefix: list[int]) -> Self:
+        """Set prefix."""
+        self._prefix = bytes(prefix)
+        return self
+
+    def footer(self, footer: list[int]) -> Self:
+        """Set footer."""
+        self._footer = bytes(footer)
+        return self
+
+    def ble(self, ad_flag: int | None, ble_type: int) -> Self:
+        """Set BLE param."""
+        self._ad_flag = ad_flag
+        self._ble_type = ble_type
+        return self
+
+    def add_translators(self, translators: list[Trans]) -> Self:
+        """Add Translators. Legacy helper function."""
+        self._translator_maps[self.DEF_TRANS_NAME].add_translators(translators)
+        return self
+
+    def add_rev_only_trans(self, translators: list[Trans]) -> Self:
+        """Add Reverse Only Translators. Legacy helper function."""
+        self._translator_maps[self.DEF_TRANS_NAME].add_rev_only_trans(translators)
+        return self
+
+    def add_translator_set(self, name: str, translator_set: TranslatorSet) -> Self:
+        """Add a set of translators."""
+        self._translator_maps[name] = translator_set
+        return self
+
+    def get_translator_sets(self) -> dict[str, TranslatorSet]:
+        """Get the map of translators."""
+        return self._translator_maps
+
+    def get_translators(self, translator_set_name: str) -> TranslatorSet:
+        """Get the translators from the set name, defaulting on the default set."""
+        return self._translator_maps.get(translator_set_name, self._translator_maps[self.DEF_TRANS_NAME])
+
+    def get_supported_features(self, base_type: str, translator_set_name: str) -> list[dict[str, set[Any]]]:
+        """Get the features supported by the translators in DIRECT mode only.
+
+        Builds a list of all potential attribute values if fixed (not floats / int / None):
+           [
+                {attr_name1: set(value011 value012, ...), attr_name2: set(value021 value022, ...),}, # For entity 0 of type base_type
+                {attr_name1: set(value111 value112, ...), attr_name2: set(value121 value122, ...),}, # For entity 1 of type base_type
+           ]
+        """
+        capa: list[dict[str, set[Any]]] = []
+        for trans in self.get_translators(translator_set_name):
+            if not trans.direct:
+                continue
+            (bt, ind, feats) = trans.ent.get_supported_features()
+            if bt == base_type:
+                missing = ind - len(capa) + 1
+                if missing > 0:
+                    capa = capa + [{} for _ in range(missing)]
+                for feat, val in feats.items():
+                    if val is not None:
+                        capa[ind].setdefault(feat, set()).add(val)
+        return capa
+
+    def ent_to_enc(self, ent_attr: BleAdvEntAttr, translator_set_name: str) -> list[BleAdvEncCmd]:
+        """Convert Entity Attributes to list of Encoder Attributes."""
+        return [trans.ent_to_enc(ent_attr) for trans in self.get_translators(translator_set_name) if trans.matches_ent(ent_attr)]
+
+    def consolidate(self, enc_cmd: BleAdvEncCmd, __: BleAdvEncCmd | None) -> BleAdvEncCmd | None:  # enc_cmd is first param, prev_cmd is second
+        """Check if the enc_cmd should be kept, discarded or updated based on prev_cmd. Returns None if to be discarded."""
+        return enc_cmd
+
+    def enc_to_ent(self, enc_cmd: BleAdvEncCmd, translator_set_name: str) -> list[BleAdvEntAttr]:
+        """Convert Encoder Attributes to list of Entity Attributes."""
+        return [trans.enc_to_ent(enc_cmd) for trans in self.get_translators(translator_set_name) if trans.matches_enc(enc_cmd)]
+
+    def decode_adv(self, adv: BleAdvAdvertisement) -> tuple[BleAdvEncCmd | None, BleAdvConfig | None]:
+        """Decode Adv into Encoder Attributes / Config."""
+        last_pos = len(adv.raw) - len(self._footer)
+        if (
+            not self.is_eq(self._ble_type, adv.ble_type, "BLE Type")
+            or not self.is_eq(self._len, last_pos - len(self._header) - self._header_start_pos, "Length")
+            or not self.is_eq_buf(self._header, adv.raw[self._header_start_pos :], "Header")
+            or not self.is_eq_buf(self._footer, adv.raw[last_pos:], "footer")
+        ):
+            return None, None
+        self.log_buffer(adv.raw, "Decode/Full")
+        read_buffer = self.decrypt(bytearray(adv.raw[: self._header_start_pos] + adv.raw[self._header_start_pos + len(self._header) : last_pos]))
+        if read_buffer is None or not self.is_eq_buf(self._prefix, read_buffer, "Prefix"):
+            return None, None
+        read_buffer = read_buffer[len(self._prefix) :]
+        self.log_buffer(read_buffer, "Decode/Decrypted")
+        return self.convert_to_enc(read_buffer)
+
+    def encode_advs(self, enc_cmd: BleAdvEncCmd, conf: BleAdvConfig) -> list[BleAdvAdvertisement]:
+        """Encode an Encoder Command with Config into a list of Adv."""
+        conf.tx_count = (conf.tx_count + self._tx_step) % self._tx_max
+        if conf.tx_count == 0:
+            conf.app_restart_count = (conf.app_restart_count + 1) % 255
+        if conf.seed == 0 and self._seed_max > 0:
+            conf.seed = randint(1, self._seed_max)
+        advs: list[BleAdvAdvertisement] = []
+        for read_buffer in self.convert_multi_from_enc(enc_cmd, conf):
+            self.log_buffer(read_buffer, "Encode/Decrypted")
+            encrypted = self.encrypt(bytearray(self._prefix) + read_buffer)
+            encrypted = encrypted[: self._header_start_pos] + self._header + encrypted[self._header_start_pos :] + self._footer
+            self.log_buffer(encrypted, "Encode/Full")
+            advs.append(BleAdvAdvertisement(self._ble_type, bytes(encrypted), self._ad_flag, self.second_type, self.second_raw))
+        return advs
+
+    def is_eq(self, ref: int, comp: int, msg: str) -> bool:
+        """Check equal and log if not."""
+        if ref != comp:
+            if self.debug_mode:
+                _LOGGER.debug(f"[{self.codec_id}] '{msg}' differs - expected: '0x{ref:X}', received: '0x{comp:X}'")
+            return False
+        return True
+
+    def is_eq_buf(self, ref_buf: bytes | bytearray, comp_buf: bytes | bytearray, msg: str) -> bool:
+        """Check buffer equal and log if not."""
+        trunc_comp_buf = comp_buf[: len(ref_buf)]
+        if trunc_comp_buf != ref_buf:
+            if self.debug_mode:
+                _LOGGER.debug(f"[{self.codec_id}] '{msg}' differs - expected: {as_hex(ref_buf)}, received: {as_hex(trunc_comp_buf)}")
+            return False
+        return True
+
+    def log_buffer(self, buf: bytes | bytearray, msg: str) -> None:
+        """Log buffer."""
+        if self.debug_mode:
+            _LOGGER.debug(f"[{self.codec_id}] {msg} - {as_hex(buf)}")
