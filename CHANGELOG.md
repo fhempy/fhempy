@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.3.0 (2026-10-20)
+
+### Features
+
+- Scooter module for Xiaomi and Ninebot e-scooters via Bluetooth
+  ([#711](https://github.com/fhempy/fhempy/pull/711),
+  [`ba06741`](https://github.com/fhempy/fhempy/commit/ba06741650ff47b00a04f6679cf98adeb5ca63b2))
+
+
 ## v2.2.2 (2026-10-19)
 
 ### Bug Fixes
