@@ -45,6 +45,9 @@ to pair FHEM again once you are done with the app.
 The scooter accepts only one Bluetooth connection at a time. By default FHEM connects only for
 a few seconds per update, so apps can still connect in between. With `attr my_scooter
 keep_connected 1` FHEM stays connected while the scooter is nearby, apps can't connect then.
+When you switch the scooter off, `state` and `presence` change to `absent` and `connection` to
+`disconnected`. For the next 10 minutes FHEM looks for the scooter every 10 seconds, so it
+connects again right after you switch it back on; after that it checks every `interval` seconds.
 
 ## Commands
 
