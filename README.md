@@ -125,7 +125,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |Module | Description|
 |-------|------------|
 |[bmw](FHEM/bindings/python/fhempy/lib/bmw/README.md)|BMW and MINI (e.g. iX3) via official BMW CarData: battery, range, charging, doors, position, live values|
-|[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Control your Kia/Hyundai car|
+|[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Kia/Hyundai/Genesis car, official Pleos API (EU) or app interface|
 |[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
 |[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your Skoda car|
 |[volvo](FHEM/bindings/python/fhempy/lib/volvo/)|Retrieve infos from your Volvo car (only new API)|

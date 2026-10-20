@@ -1,19 +1,53 @@
 import asyncio
 import functools
+import html
+import json
 
 import hyundai_kia_connect_api as api
 
 from .. import fhem, generic, utils
+from . import pleos
+
+PLEOS_INTERVAL = 15
+PLEOS_RETRY = (60, 1800)
+PLEOS_RATE_LIMIT_WAIT = 3600
+PLAYGROUND_URL = "https://pleos.ai/playground"
+GUIDE_URL = (
+    "https://document.pleos.ai/en/api-reference/vehicle-data-api/getting-started/"
+    "for-private-users/request-my-vehicle-api-key"
+)
+USAGE = (
+    "Usage: define my_car fhempy kia_hyundai (official Pleos API, Europe) or "
+    "define my_car fhempy kia_hyundai USERNAME PASSWORD PIN CAR_BRAND REGION_CODE"
+)
 
 
 class kia_hyundai(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._errors = utils.ErrorLogger(logger)
+        self.pleos = None
+        self._pleos_task = None
+        self._pleos_status = ""
+        self._wakeup = asyncio.Event()
+        self._unique_id = None
+
+    @staticmethod
+    def validate_define(args, argsh):
+        if len(args) not in (3, 8):
+            return USAGE
+        return None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        error = self.validate_define(args, argsh)
+        if error:
+            return error
+        self.hash = hash
+        await self.set_icon("car")
+        if len(args) == 3:
+            return await self.define_pleos()
 
         attr_config = {
             "update_interval": {
@@ -57,11 +91,6 @@ class kia_hyundai(generic.FhemModule):
         }
         await self.set_set_config(set_config)
 
-        if len(args) != 8:
-            return (
-                "Usage: define my_car fhempy kia_hyundai "
-                + "USERNAME PASSWORD PIN CAR_BRAND REGION_CODE"
-            )
         self.username = args[3]
         self.password = args[4]
         self.pin = args[5]
@@ -104,7 +133,12 @@ class kia_hyundai(generic.FhemModule):
                 self._errors.success(key="login")
                 break
             except Exception:
-                self._errors.failed("Failed to login to server, retry in 120s", key="login")
+                self._errors.failed(
+                    "Failed to login to server, retry in 120s. In Europe use the "
+                    "official Pleos API instead: define my_car fhempy kia_hyundai "
+                    "(without parameters)",
+                    key="login",
+                )
                 await asyncio.sleep(120)
 
     async def update_loop(self):
@@ -152,6 +186,9 @@ class kia_hyundai(generic.FhemModule):
 
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
     async def set_update_data(self, hash, params):
+        if self.pleos:
+            self._wakeup.set()
+            return
         self.create_async_task(self.update_once())
 
     async def set_force_update(self, hash, params):
@@ -209,3 +246,280 @@ class kia_hyundai(generic.FhemModule):
 
         # execute function
         await utils.run_blocking(functools.partial(command, *kwargs))
+
+    # --- Pleos Vehicle Data API (EU Data Act) ---
+
+    async def define_pleos(self):
+        attr_config = {
+            "update_interval": {
+                "default": PLEOS_INTERVAL,
+                "format": "int",
+                "help": "Minutes between two requests to the Pleos server, "
+                f"default {PLEOS_INTERVAL}. The car sends its values to the "
+                "server on its own (e.g. after driving or while charging), "
+                "the request never wakes up the car.",
+            },
+            "vin": {
+                "default": "",
+                "help": "Only needed if there are several cars in your account: "
+                "the vehicle identification number of the car to show. Empty: "
+                "the first car.",
+            },
+        }
+        await self.set_attr_config(attr_config)
+        await self.set_set_config(
+            {
+                "credentials": {
+                    "args": ["client_id", "client_secret"],
+                    "help": "Client ID and client secret of your personal Pleos "
+                    "API key, see the instructions on the detail page.",
+                },
+                "update_data": {
+                    "help": "Get the latest values from the Pleos server now."
+                },
+            }
+        )
+        name = self.hash["NAME"]
+        self._unique_id = await fhem.getUniqueId(self.hash)
+        self.pleos = pleos.PleosApi(
+            await fhem.ReadingsVal(name, ".client_id", ""),
+            await self._read_secret(".client_secret"),
+            await fhem.ReadingsVal(name, "brand", ""),
+        )
+        if self._pleos_task:
+            self.cancel_async_task(self._pleos_task)
+        self._pleos_task = self.create_async_task(self._pleos_run())
+        return None
+
+    # FHEM FUNCTION
+    async def FW_detailFn(self, hash, args, argsh):
+        detail = await super().FW_detailFn(hash, args, argsh)
+        return self.setup_html() + str(detail)
+
+    async def _read_secret(self, reading):
+        value = await fhem.ReadingsVal(self.hash["NAME"], reading, "")
+        if not value:
+            return ""
+        try:
+            return utils.decrypt_string(value, self._unique_id)
+        except Exception:
+            self.logger.warning(f"Failed to decrypt {reading}, please set it again")
+            return ""
+
+    async def set_credentials(self, hash, params):
+        client_id = params["client_id"].strip()
+        client_secret = params["client_secret"].strip()
+        if not client_id or not client_secret:
+            return "Please enter client ID and client secret"
+        self.pleos.client_id = client_id
+        self.pleos.client_secret = client_secret
+        self.pleos.brand = ""
+        self.pleos.logout()
+        await fhem.readingsBeginUpdate(self.hash)
+        await fhem.readingsBulkUpdate(self.hash, ".client_id", client_id)
+        await fhem.readingsBulkUpdate(
+            self.hash,
+            ".client_secret",
+            utils.encrypt_string(client_secret, self._unique_id),
+        )
+        await fhem.readingsEndUpdate(self.hash, 0)
+        await self._pleos_state("connecting")
+        self._wakeup.set()
+        return None
+
+    async def set_attr_vin(self, hash):
+        if self.pleos:
+            self._wakeup.set()
+
+    async def set_attr_update_interval(self, hash):
+        if self.pleos:
+            self._wakeup.set()
+
+    async def _pleos_state(self, state):
+        self._pleos_status = state
+        await fhem.readingsSingleUpdateIfChanged(self.hash, "state", state, 1)
+
+    async def _sleep(self, seconds):
+        try:
+            await asyncio.wait_for(self._wakeup.wait(), max(seconds, 0))
+        except TimeoutError:
+            pass
+
+    async def _pleos_run(self):
+        retry = PLEOS_RETRY[0]
+        while True:
+            self._wakeup.clear()
+            wait = max(self._attr_update_interval, 1) * 60
+            if not self.pleos.client_id or not self.pleos.client_secret:
+                await self._pleos_state("credentials missing")
+                wait = None
+            else:
+                try:
+                    await self._pleos_update()
+                    self._errors.success()
+                    retry = PLEOS_RETRY[0]
+                except pleos.LoginFailed as exc:
+                    self.logger.warning(f"Pleos login failed: {exc}")
+                    await self._pleos_state(f"login failed: {exc}"[:200])
+                    wait = None
+                except pleos.RateLimited:
+                    self.logger.warning("Pleos rate limit reached, waiting 1 hour")
+                    await self._pleos_state("rate limit reached")
+                    wait = PLEOS_RATE_LIMIT_WAIT
+                except Exception as exc:
+                    self._errors.failed("Pleos request failed")
+                    await self._pleos_state(f"error: {exc}"[:200])
+                    wait = retry
+                    retry = min(retry * 2, PLEOS_RETRY[1])
+            # without valid credentials wait until they are set
+            await self._sleep(365 * 24 * 3600 if wait is None else wait)
+
+    async def _pleos_update(self):
+        vehicles = await self.pleos.vehicles()
+        if not vehicles:
+            raise pleos.NoData(
+                "no car in the API key, create a new key after adding the car "
+                "to your app account"
+            )
+        wanted = self._attr_vin.strip().upper()
+        vehicle = vehicles[0]
+        if wanted:
+            matching = [v for v in vehicles if v["vin"].upper() == wanted]
+            if not matching:
+                raise pleos.NoData(
+                    f"VIN {wanted} not found, known: "
+                    + ", ".join(v["vin"] for v in vehicles)
+                )
+            vehicle = matching[0]
+        vin = vehicle["vin"]
+        self.hash["VIN"] = vin
+        data = await self.pleos.vehicle_data(vin)
+        await self._pleos_readings(vehicle, vehicles, data)
+
+    async def _pleos_readings(self, vehicle, vehicles, data):
+        readings = {
+            "brand": self.pleos.brand,
+            "vin": vehicle["vin"],
+            "model": vehicle.get("sellname") or vehicle.get("name") or "",
+            "nickname": vehicle.get("nickname") or "",
+            "vehicles": ",".join(v["vin"] for v in vehicles),
+        }
+        for endpoint, values in data.items():
+            prefix = pleos.ENDPOINTS[endpoint]
+            for key, value in utils.flatten_json(values or {}).items():
+                readings[f"{prefix}_{key}"] = value
+        readings.update(pleos_summary(data))
+        await fhem.readingsBeginUpdate(self.hash)
+        try:
+            for name, value in readings.items():
+                if value is None:
+                    value = ""
+                elif isinstance(value, bool):
+                    value = "on" if value else "off"
+                await fhem.readingsBulkUpdateIfChanged(self.hash, name, value)
+            state = " ".join(
+                f"{readings[key]}{unit}"
+                for key, unit in (("soc", "%"), ("range", " km"))
+                if key in readings
+            )
+            self._pleos_status = state or "online"
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "state", self._pleos_status
+            )
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
+
+    def setup_html(self):
+        if not self.pleos or not hasattr(self, "hash"):
+            return ""
+        if self.pleos.client_id and not self._pleos_status.startswith("login failed"):
+            return ""
+        name = self.hash["NAME"]
+        cmd = json.dumps(f"set {name} credentials ")
+        error = ""
+        if self.pleos.client_id:
+            error = (
+                f"<b style='color:#c00'>{html.escape(self._pleos_status)}</b>"
+                "<br><br>"
+            )
+        body = (
+            error + "<b>Connect your Kia, Hyundai or Genesis (Europe)</b><br><br>"
+            f'1. Open the <a href="{PLAYGROUND_URL}" target="_blank">Pleos '
+            "Playground</a> and create a free account (sign up).<br>"
+            "2. Click on your account icon and open <b>My Vehicle Data API</b>"
+            ".<br>"
+            "3. Choose the tab of your brand (Kia, Hyundai or Genesis), accept "
+            "the terms, click <b>Get API Key</b> and log in with your Kia "
+            "Connect / Bluelink / Genesis Connected account (the account of the "
+            "main user of the car).<br>"
+            "4. Copy the client ID and the client secret and paste them here:"
+            "<br><br>"
+            '<input type="text" id="pleosClientId" size="40" '
+            'placeholder="Client ID"><br>'
+            '<input type="password" id="pleosClientSecret" size="40" '
+            'placeholder="Client Secret"> '
+            "<button onclick=\"var i=document.getElementById('pleosClientId')"
+            ".value.trim(),s=document.getElementById('pleosClientSecret')"
+            ".value.trim();if(i&&s)FW_cmd(FW_root+'?cmd='+encodeURIComponent("
+            f"{html.escape(cmd)}+i+' '+s)+'&amp;XHR=1',function(){{"
+            'setTimeout(function(){location.reload()},3000)})">Save</button>'
+            "<br><br>The key contains only the cars which are in your account "
+            "when you create it. For a new car delete the key and create a new "
+            f'one. <a href="{GUIDE_URL}" target="_blank">Pleos instructions</a>'
+        )
+        return (
+            '<div class="makeTable wide"><span class="mkTitle">Pleos Vehicle '
+            'Data API</span><table class="block wide"><tr class="odd"><td>'
+            f"{body}</td></tr></table></div>"
+        )
+
+
+def _km(value, unit):
+    factor = {
+        "": 1,
+        "km": 1,
+        "mile": 1.609344,
+        "miles": 1.609344,
+        "mi": 1.609344,
+        "meter": 0.001,
+        "m": 0.001,
+        "feet": 0.0003048,
+    }.get(str(unit or "").lower())
+    try:
+        return round(float(value) * factor)
+    except (TypeError, ValueError):
+        return None
+
+
+def pleos_summary(data):
+    """Short readings for the most important values."""
+    out = {}
+    charge = (data.get("batteries") or {}).get("charge") or {}
+    if charge:
+        out["soc"] = charge.get("stateOfCharge")
+        out["charging"] = charge.get("charging")
+        out["charging_status"] = charge.get("status")
+        out["plugged"] = charge.get("plugin")
+        out["charging_time_remaining"] = charge.get("remainTime")
+        target = charge.get("targetStateOfCharge") or {}
+        out["charge_limit_ac"] = target.get("standard")
+        out["charge_limit_dc"] = target.get("quick")
+    if (data.get("batteries") or {}).get("timestamp"):
+        out["last_update"] = data["batteries"]["timestamp"]
+    for entry in (data.get("powertrains") or {}).get("distanceToEmpties") or []:
+        km = _km(entry.get("value"), entry.get("unit"))
+        if km is None:
+            continue
+        kind = str(entry.get("type", "")).lower()
+        out["range" if kind == "ev" else f"range_{kind}"] = km
+    odometer = (data.get("driving") or {}).get("odometer") or {}
+    if odometer:
+        out["odometer"] = _km(odometer.get("value"), odometer.get("unit"))
+    location = (data.get("locations") or {}).get("location") or {}
+    if location:
+        out["latitude"] = location.get("latitude")
+        out["longitude"] = location.get("longitude")
+    climate = (data.get("status") or {}).get("climateControl") or {}
+    if climate:
+        out["climate"] = climate.get("status")
+    return {k: v for k, v in out.items() if v is not None}

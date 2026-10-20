@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from tests.utils import mock_fhem
@@ -16,8 +16,12 @@ async def setup_device(mocker):
 
     testhash = {"NAME": "testcar", "FHEMPYTYPE": "kia_hyundai"}
     device = kia_hyundai(logging.getLogger(__name__))
-    # define without parameters only sets up the config
-    await device.Define(testhash, ["testcar", "fhempy", "kia_hyundai"], {})
+    mocker.patch.object(device, "connect_to_car", AsyncMock())
+    await device.Define(
+        testhash,
+        ["testcar", "fhempy", "kia_hyundai", "user", "pw", "1234", "Kia", "EU"],
+        {},
+    )
 
     calls = []
     vehicle = MagicMock()
