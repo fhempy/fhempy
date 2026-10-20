@@ -377,7 +377,7 @@ class kia_hyundai(generic.FhemModule):
     async def _pleos_update(self):
         vehicles = await self.pleos.vehicles()
         if not vehicles:
-            raise Exception(
+            raise pleos.NoData(
                 "no car in the API key, create a new key after adding the car "
                 "to your app account"
             )
@@ -386,7 +386,7 @@ class kia_hyundai(generic.FhemModule):
         if wanted:
             matching = [v for v in vehicles if v["vin"].upper() == wanted]
             if not matching:
-                raise Exception(
+                raise pleos.NoData(
                     f"VIN {wanted} not found, known: "
                     + ", ".join(v["vin"] for v in vehicles)
                 )
