@@ -4864,14 +4864,14 @@ zeroconf = ">=0.25.1"
 
 [[package]]
 name = "pycparser"
-version = "3.0"
+version = "3.11"
 description = "C parser in Python"
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "all"]
 files = [
-    {file = "pycparser-3.0-py3-none-any.whl", hash = "sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"},
-    {file = "pycparser-3.0.tar.gz", hash = "sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29"},
+    {file = "pycparser-3.11-py3-none-any.whl", hash = "sha256:51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80"},
+    {file = "pycparser-3.11.tar.gz", hash = "sha256:d875f09c3507d00e1aba0eecc6dcadc1352f30fff09dc6bff2f1c2935e97c2bc"},
 ]
 markers = {main = "(sys_platform != \"android\" and sys_platform != \"ios\" or platform_python_implementation != \"CPython\") and implementation_name != \"PyPy\"", all = "implementation_name != \"PyPy\""}
 
@@ -6865,6 +6865,22 @@ files = [
 ]
 
 [[package]]
+name = "volvocarsapi"
+version = "0.4.4"
+description = "Python client for the Volvo Cars API."
+optional = false
+python-versions = ">=3.12"
+groups = ["all"]
+files = [
+    {file = "volvocarsapi-0.4.4-py3-none-any.whl", hash = "sha256:f1eb97ee3728d4d811dc592e4625d588768622c68c8629706239a12c141044b9"},
+    {file = "volvocarsapi-0.4.4.tar.gz", hash = "sha256:bcd6341cf68d2f82fe669e2106d81129c329a222ce9b84663414cc7130cc08de"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.11.16"
+yarl = ">=1.18.3"
+
+[[package]]
 name = "warema-wms-controller"
 version = "0.2.4"
 description = "A library to control a Warema WMS WebControl web server."
@@ -7711,4 +7727,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "bc5954ab5aff87ab00ef6fdc5d29be317468f3125f03ce7ef1f6af983d72c425"
+content-hash = "6ed1c88366ab9a93cf4255f69febf870dee29bbf0f703e3b9a3ef11afa9b731a"
