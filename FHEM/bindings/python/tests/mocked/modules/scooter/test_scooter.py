@@ -348,86 +348,169 @@ class FakeAdv:
         self.manufacturer_data = manufacturer_data or {}
 
 
-@pytest.mark.asyncio
-async def test_module_search_pair_read(mocker):
+class FakeEnv:
+    """Scooters nearby, Bluetooth scanner and client"""
+
+    def __init__(self, mocker, scooter_module, fake_scooter):
+        self.fake_scooter = fake_scooter
+        self.connects = 0
+        self.nearby = [
+            # stronger, but used by another FHEM device already
+            (
+                FakeDevice("11:22:33:44:55:66", "MIScooter9"),
+                FakeAdv("MIScooter9", -30),
+            ),
+            (
+                FakeDevice(ADDRESS, "NBScooter1234"),
+                FakeAdv("NBScooter1234", -50, {16974: b"\x00"}),
+            ),
+            (FakeDevice("00:00:00:00:00:01", "Phone"), FakeAdv("Phone", -40)),
+        ]
+        env = self
+
+        class FakeScanner:
+            def __init__(self, detection_callback):
+                self.callback = detection_callback
+
+            async def __aenter__(self):
+                for device, adv in env.nearby:
+                    self.callback(device, adv)
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+        class FakeBleakClient:
+            def __init__(self, device, timeout, disconnected_callback):
+                assert device.address == ADDRESS
+                env.fake_scooter.is_connected = True
+                env.client = self
+                self.disconnected_callback = disconnected_callback
+
+            async def connect(self):
+                env.connects += 1
+
+            def __getattr__(self, attr):
+                return getattr(env.fake_scooter, attr)
+
+            @property
+            def services(self):
+                return []
+
+        async def send_command(hash, cmd):
+            return "1" if "'11:22:33:44:55:66'" in cmd else "0"
+
+        mocker.patch("fhempy.lib.fhem.sendCommandHash", send_command)
+        mocker.patch("bleak.BleakScanner", FakeScanner)
+        mocker.patch("bleak.BleakClient", FakeBleakClient)
+        mocker.patch.object(scooter_module, "SEARCH_TIME", 0.1)
+        mocker.patch.object(scooter_module, "SCAN_TIME", 0.1)
+        mocker.patch.object(scooter_module, "NB_PAIRING_TIMEOUT", 0.5)
+
+
+async def wait_for(check):
+    for _ in range(100):
+        await asyncio.sleep(0.05)
+        if check(mock_fhem.readings.get(NAME, {})):
+            return
+    raise AssertionError(f"Timeout, readings: {mock_fhem.readings.get(NAME)}")
+
+
+async def define(mocker, fake_scooter, attrs=None):
     await check_and_install_dependencies("scooter")
     from fhempy.lib.scooter import scooter as scooter_module
 
     mock_fhem.mock_module(mocker)
     mock_fhem.readings.pop(NAME, None)
-
-    nearby = [
-        # stronger, but used by another FHEM device already
-        (FakeDevice("11:22:33:44:55:66", "MIScooter9"), FakeAdv("MIScooter9", -30)),
-        (
-            FakeDevice(ADDRESS, "NBScooter1234"),
-            FakeAdv("NBScooter1234", -50, {16974: b"\x00"}),
-        ),
-        (FakeDevice("00:00:00:00:00:01", "Phone"), FakeAdv("Phone", -40)),
-    ]
-
-    class FakeScanner:
-        def __init__(self, detection_callback):
-            self.callback = detection_callback
-
-        async def __aenter__(self):
-            for device, adv in nearby:
-                self.callback(device, adv)
-            return self
-
-        async def __aexit__(self, *args):
-            return False
-
-    fake_scooter = FakeNinebot()
-
-    class FakeBleakClient:
-        def __init__(self, device, timeout):
-            assert device.address == ADDRESS
-
-        async def connect(self):
-            pass
-
-        def __getattr__(self, attr):
-            return getattr(fake_scooter, attr)
-
-        @property
-        def services(self):
-            return []
-
-    async def send_command(hash, cmd):
-        return "1" if "'11:22:33:44:55:66'" in cmd else "0"
-
-    mocker.patch("fhempy.lib.fhem.sendCommandHash", send_command)
-    mocker.patch("bleak.BleakScanner", FakeScanner)
-    mocker.patch("bleak.BleakClient", FakeBleakClient)
-    mocker.patch.object(scooter_module, "SEARCH_TIME", 0.1)
-    mocker.patch.object(scooter_module, "SCAN_TIME", 0.1)
-
+    mock_fhem.attributes[NAME] = attrs or {}
+    env = FakeEnv(mocker, scooter_module, fake_scooter)
     hash = {"NAME": NAME, "FHEMPYTYPE": "scooter"}
     module = scooter_module.scooter(logger)
+    return env, hash, module
+
+
+@pytest.mark.asyncio
+async def test_module_search_pair_read(mocker):
+    env, hash, module = await define(mocker, FakeNinebot())
     await module.Define(hash, [NAME, "fhempy", "scooter"], {})
     try:
-        for _ in range(100):
-            await asyncio.sleep(0.05)
-            if mock_fhem.readings.get(NAME, {}).get("battery") is not None:
-                break
+        await wait_for(lambda r: r.get("battery") is not None)
         readings = mock_fhem.readings[NAME]
-        assert readings[".address"] == ADDRESS
+        assert readings["address"] == ADDRESS
+        assert readings["name"] == "NBScooter1234"
         assert hash["MAC"] == ADDRESS
         assert readings["presence"] == "present"
         assert readings["protocol"] == "ninebot"
         assert readings["battery"] == 78
         assert readings["mileage"] == 1234.57
         assert readings["state"] == "78%"
-        assert bytes.fromhex(readings[".pairing_key"]) in fake_scooter.known_keys
+        assert readings["connection"] == "disconnected"
+        assert bytes.fromhex(readings[".pairing_key"]) in env.fake_scooter.known_keys
 
         # scooter is gone
-        nearby.clear()
+        env.nearby.clear()
         await module.set_update(hash, {})
-        for _ in range(100):
-            await asyncio.sleep(0.05)
-            if mock_fhem.readings[NAME]["presence"] == "absent":
-                break
+        await wait_for(lambda r: r["presence"] == "absent")
         assert mock_fhem.readings[NAME]["state"] == "absent"
+    finally:
+        await module.Undefine(hash)
+
+
+@pytest.mark.asyncio
+async def test_module_keeps_connection(mocker):
+    env, hash, module = await define(
+        mocker, FakeNinebot(), {"keep_connected": "1", "interval": "1"}
+    )
+    await module.Define(hash, [NAME, "fhempy", "scooter"], {})
+    try:
+        await wait_for(lambda r: r.get("connection") == "connected")
+        mock_fhem.readings[NAME]["battery"] = None
+        await module.set_update(hash, {})
+        await wait_for(lambda r: r.get("battery") == 78)
+        assert env.connects == 1
+
+        # connection lost: connects again
+        env.fake_scooter.is_connected = False
+        env.client.disconnected_callback(env.client)
+        await wait_for(lambda r: env.connects == 2)
+
+        # attribute switched off
+        await module.Attr(hash, ["set", NAME, "keep_connected", "0"], {})
+        await wait_for(lambda r: r.get("connection") == "disconnected")
+        assert not env.fake_scooter.is_connected
+    finally:
+        await module.Undefine(hash)
+
+
+@pytest.mark.asyncio
+async def test_module_ignores_unconfirmed_scooter(mocker):
+    """A scooter which isn't confirmed by its power button (e.g. the one of
+    a neighbour) is dropped and not used again"""
+    env, hash, module = await define(mocker, FakeNinebot(button_pressed=False))
+    await module.Define(hash, [NAME, "fhempy", "scooter"], {})
+    try:
+        await wait_for(lambda r: r.get("address") == ADDRESS)
+        await wait_for(lambda r: r.get("address") == "")
+        assert ADDRESS in module._rejected
+        await module.set_update(hash, {})
+        await wait_for(lambda r: r["state"].startswith("searching"))
+        assert mock_fhem.readings[NAME]["address"] == ""
+        assert env.fake_scooter.known_keys == []
+    finally:
+        await module.Undefine(hash)
+
+
+@pytest.mark.asyncio
+async def test_module_migrates_hidden_address(mocker):
+    env, hash, module = await define(
+        mocker, FakeNinebot(known_keys=[b"k" * 16], button_pressed=False)
+    )
+    mock_fhem.readings[NAME] = {".address": ADDRESS, ".pairing_key": "6b" * 16}
+    await module.Define(hash, [NAME, "fhempy", "scooter"], {})
+    try:
+        await wait_for(lambda r: r.get("battery") == 78)
+        readings = mock_fhem.readings[NAME]
+        assert readings["address"] == ADDRESS
+        assert ".address" not in readings
     finally:
         await module.Undefine(hash)
