@@ -5,6 +5,7 @@ use Test::More;
 use File::Basename qw(dirname);
 use File::Spec;
 use JSON::PP ();
+use POSIX ();
 
 our (%defs, %attr, $init_done);
 BEGIN {
@@ -35,27 +36,39 @@ require $module unless defined &BindingsIo_Set;
     local *DevIo_IsOpen = sub { 1 };
     local *DevIo_SimpleWrite = sub { push @sent, JSON::PP::decode_json($_[1]) };
     local *BindingsIo_readWebsocketMessage = sub { die 'Update commands must not wait for a reply' };
-    local *AttrVal = sub { $_[1] eq 'autoUpdate' ? ($autoattr{$_[0]} // $_[2]) : $_[2] };
+    local *AttrVal = sub { $autoattr{$_[0]}{$_[1]} // $_[2] };
     local *ReadingsVal = sub { $defs{$_[0]}{READINGS}{$_[1]}{VAL} // $_[2] };
     local *readingsSingleUpdate = sub { $_[0]{READINGS}{$_[1]}{VAL} = $_[2] };
-    local *InternalTimer = sub { push @timers, [$_[1], $_[2]] };
+    local *InternalTimer = sub { push @timers, [$_[0], $_[1], $_[2]] };
+    local *RemoveInternalTimer = sub { @timers = grep { $_->[1] ne $_[1] } @timers };
     my $hash = { NAME => 'binding', STATE => 'connected', BindingType => 'fhempy',
                  TYPE => 'BindingsIo', READINGS => {version => {VAL => '2.5.1'}},
                  '.updateVersionSupported' => 1 };
     $defs{binding} = $hash;
 
+    my $noon = POSIX::mktime(0, 0, 12, 21, 9, 126);
+    is(BindingsIo_nextAutoUpdateTime($hash, $noon), POSIX::mktime(0, 0, 3, 22, 9, 126),
+       'default window is the next night at 03:00');
+    $autoattr{binding}{autoUpdateTime} = '23:30';
+    is(BindingsIo_nextAutoUpdateTime($hash, $noon), POSIX::mktime(0, 30, 23, 21, 9, 126),
+       'autoUpdateTime later today');
+    delete $autoattr{binding}{autoUpdateTime};
+
     BindingsIo_processCommand($hash, {msgtype => 'version', version_available => '2.6.0'});
+    BindingsIo_scheduleAutoUpdate($hash);
     is(scalar @timers, 0, 'autoUpdate is off by default');
     BindingsIo_autoUpdate($hash);
     is(scalar @sent, 0, 'no update without autoUpdate');
 
-    $autoattr{binding} = 1;
-    BindingsIo_processCommand($hash, {msgtype => 'version', version_available => '2.6.0'});
-    is_deeply($timers[-1], ['BindingsIo_autoUpdate', $hash], 'check result schedules autoUpdate');
+    $autoattr{binding}{autoUpdate} = 1;
+    BindingsIo_scheduleAutoUpdate($hash);
+    is($timers[-1][1], 'BindingsIo_autoUpdate', 'autoUpdate is scheduled');
+    ok($timers[-1][0] > time(), 'autoUpdate runs in the update window');
     BindingsIo_autoUpdate($hash);
     is($sent[-1]{msgtype}, 'update', 'autoUpdate starts the update');
     is_deeply($sent[-1]{args}, ['2.6.0'], 'autoUpdate installs the available version');
     is(ReadingsVal('binding', 'update_status', ''), 'starting', 'autoUpdate shows the update');
+    is(scalar(grep { $_->[1] eq 'BindingsIo_autoUpdate' } @timers), 1, 'next window is scheduled');
 
     my $count = scalar @sent;
     $hash->{READINGS}{update_status}{VAL} = 'failed: installation failed; see fhempy log';
@@ -76,9 +89,10 @@ require $module unless defined &BindingsIo_Set;
     BindingsIo_autoUpdate($hash);
     is(scalar @sent, $count, 'no autoUpdate when the newest version is installed');
 
+    like(BindingsIo_Attr('set', 'binding', 'autoUpdateTime', '3 Uhr'), qr/HH:MM/, 'invalid time rejected');
     @timers = ();
-    BindingsIo_Attr('set', 'binding', 'autoUpdate', '1');
-    is_deeply($timers[-1], ['BindingsIo_autoUpdate', $hash], 'enabling autoUpdate checks at once');
+    ok(!BindingsIo_Attr('set', 'binding', 'autoUpdateTime', '04:15'), 'valid time accepted');
+    is($timers[-1][1], 'BindingsIo_scheduleAutoUpdate', 'changed time reschedules');
 }
 
 done_testing();

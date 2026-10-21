@@ -85,7 +85,7 @@ sub BindingsIo_Initialize {
   $hash->{GetFn}    = \&BindingsIo_Get;
   $hash->{SetFn}    = \&BindingsIo_Set;
   $hash->{AttrFn}   = \&BindingsIo_Attr;
-  $hash->{AttrList} = "autoUpdate:0,1 ".$readingFnAttributes;
+  $hash->{AttrList} = "autoUpdate:0,1 autoUpdateTime ".$readingFnAttributes;
   $hash->{NotifyFn}   = \&BindingsIo_Notify;
 
   $hash->{ReadFn}   = \&BindingsIo_Read;
@@ -432,9 +432,11 @@ BindingsIo_Notify($)
 
     if ($dev->{NAME} eq "global" && $event eq "INITIALIZED") {
       BindingsIo_upgradeDevStateIcon($hash);
+      BindingsIo_scheduleAutoUpdate($hash);
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
     } elsif ($dev->{NAME} eq "global" && $event eq "REREADCFG") {
       BindingsIo_upgradeDevStateIcon($hash);
+      BindingsIo_scheduleAutoUpdate($hash);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
@@ -704,12 +706,34 @@ BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
-  if ($cmd eq "set" && $attrName eq "autoUpdate" && $attrVal && $init_done) {
-    # the attribute is set after this function, don't wait for the next check
-    InternalTimer(gettimeofday() + 1, "BindingsIo_autoUpdate", $defs{$name}, 0);
+  if ($attrName eq "autoUpdateTime" && $cmd eq "set") {
+    return "autoUpdateTime must be HH:MM, e.g. 03:00"
+      if ($attrVal !~ /^([01]?\d|2[0-3]):[0-5]\d$/);
+  }
+  if ($attrName eq "autoUpdate" || $attrName eq "autoUpdateTime") {
+    # the attribute is set after this function
+    InternalTimer(gettimeofday(), "BindingsIo_scheduleAutoUpdate", $defs{$name}, 0) if ($init_done);
   }
 
   return undef;
+}
+
+# next time of the autoUpdate window (attribute autoUpdateTime, default 03:00)
+sub BindingsIo_nextAutoUpdateTime {
+  my ($hash, $now) = @_;
+  my ($hour, $min) = split(/:/, AttrVal($hash->{NAME}, "autoUpdateTime", "03:00"));
+  my @lt = localtime($now);
+  # on days with a daylight saving change the window might be one hour off
+  my $target = $now - ($lt[2] * 3600 + $lt[1] * 60 + $lt[0]) + $hour * 3600 + $min * 60;
+  $target += 86400 if ($target <= $now);
+  return $target;
+}
+
+sub BindingsIo_scheduleAutoUpdate {
+  my ($hash) = @_;
+  RemoveInternalTimer($hash, "BindingsIo_autoUpdate");
+  return if (!AttrVal($hash->{NAME}, "autoUpdate", 0));
+  InternalTimer(BindingsIo_nextAutoUpdateTime($hash, time()), "BindingsIo_autoUpdate", $hash, 0);
 }
 
 # install a newer fhempy release automatically (attribute autoUpdate)
@@ -717,7 +741,10 @@ sub BindingsIo_autoUpdate {
   my ($hash) = @_;
   my $name = $hash->{NAME};
 
-  return if (!AttrVal($name, "autoUpdate", 0) || !$hash->{".updateVersionSupported"});
+  return if (!AttrVal($name, "autoUpdate", 0));
+  # run again tomorrow, fhempy checks for new versions every twelve hours
+  BindingsIo_scheduleAutoUpdate($hash);
+  return if (!$hash->{".updateVersionSupported"});
   my $available = ReadingsVal($name, "version_available", "");
   return if ($available eq "" || $available eq ReadingsVal($name, "version", ""));
   return if (ReadingsVal($name, "update_status", "") =~ /^(starting|installing)/);
@@ -898,10 +925,6 @@ sub BindingsIo_processCommand($$) {
         next;
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
-    }
-    if (exists $json->{version_available} && AttrVal($hash->{NAME}, "autoUpdate", 0)) {
-      # not within the processing of a websocket message
-      InternalTimer(gettimeofday() + 1, "BindingsIo_autoUpdate", $hash, 0);
     }
   } elsif ($json->{msgtype} eq "set_update") {
     my $devname = $json->{NAME};
@@ -1091,9 +1114,15 @@ sub BindingsIo_readWebsocketMessage {
   <ul>
     <a id="BindingsIo-attr-autoUpdate"></a>
     <li><code>autoUpdate 0|1</code><br>
-      1 installs a newer fhempy release automatically, including the FHEM modules.
-      fhempy checks for updates on connection to FHEM and every twelve hours and restarts
-      after the installation. Every version is tried only once. Default: 0
+      1 installs a newer fhempy release automatically, including the FHEM modules,
+      once a day at <code>autoUpdateTime</code>. fhempy checks for updates on connection
+      to FHEM and every twelve hours and restarts after the installation.
+      Every version is tried only once. Default: 0
+    </li>
+    <a id="BindingsIo-attr-autoUpdateTime"></a>
+    <li><code>autoUpdateTime HH:MM</code><br>
+      time of day for <code>autoUpdate</code>, choose a time when a short fhempy restart
+      doesn't matter. Default: 03:00
     </li>
   </ul>
 
