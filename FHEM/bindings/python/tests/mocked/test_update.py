@@ -78,9 +78,7 @@ async def test_update_dispatch_never_uses_cached_latest(binding, args, package):
     pb.restart.assert_awaited_once()
     assert not fhem_pythonbinding.id_received_timestamp
     assert not pb._updating
-    readings = [call.args[1:3] for call in fhem.readingsSingleUpdate.call_args_list]
-    assert readings[0] == ("version", "update started...")
-    assert ("update_status", f"installing {package}") in readings
+    assert all(call.args[1] == "update_status" for call in fhem.readingsSingleUpdate.call_args_list)
 
 
 @pytest.mark.asyncio
@@ -105,10 +103,7 @@ async def test_failed_exact_install_never_falls_back_or_restarts(binding, failur
     await command(pb, "update", ["2.1.5"])
     installer.assert_awaited_once_with("fhempy==2.1.5")
     pb.restart.assert_not_awaited()
-    readings = [call.args[1:3] for call in fhem.readingsSingleUpdate.call_args_list]
-    assert readings[0] == ("version", "update started...")
-    assert readings[-2][0] == "update_status" and readings[-2][1].startswith("failed:")
-    assert readings[-1] == ("version", "2.1.4")
+    assert fhem.readingsSingleUpdate.call_args.args[2].startswith("failed:")
     assert not pb._updating
 
 

@@ -680,8 +680,6 @@ class fhempy:
             return
         self._updating = True
         try:
-            # the devStateIcon shows the version reading, signal the update there
-            await fhem.readingsSingleUpdate(hash, "version", "update started...", 1)
             await fhem.readingsSingleUpdate(hash, "update_status", f"installing {package}", 1)
             logger.info("Start update: %s", package)
             try:
@@ -693,7 +691,6 @@ class fhempy:
                 await fhem.readingsSingleUpdate(
                     hash, "update_status", "failed: installation failed; see fhempy log", 1
                 )
-                await fhem.readingsSingleUpdate(hash, "version", version.__version__, 1)
                 return
             await fhem.readingsSingleUpdate(hash, "update_status", f"installed {package}", 1)
             await self.restart(hash)
@@ -701,12 +698,8 @@ class fhempy:
             self._updating = False
 
     async def restart(self, hash):
-        await fhem.readingsSingleUpdate(
-            hash,
-            "version",
-            "restart...please wait",
-            1,
-        )
+        # the version reading always shows the installed version
+        await fhem.readingsSingleUpdate(hash, "state", "restart...please wait", 1)
         global exit_code
         exit_code = 1
         logger.info("Restart initiated...")

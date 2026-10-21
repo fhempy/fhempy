@@ -70,6 +70,8 @@ my $alive_check_timeout = 5;
 # function timeout while an alive check is running
 my $suspect_timeout = 500;
 
+my $BindingsIo_devStateIconVersion = "1.4.0";
+
 sub BindingsIo_Initialize {
   my ($hash) = @_;
 
@@ -192,35 +194,62 @@ sub BindingsIo_Define {
     }
   }
 
-  # set devStateIcon
-  my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.3.0") == -1) {
-    my $devstate_cmd = '{
-      my $attr_ver = "1.3.0";;
-      my $status_img = "10px-kreis-gruen";;
-      my $status_txt = "connected";;
-      my $ver = ReadingsVal($name, "version", "-");;
-      my $ver_available = ReadingsVal($name, "version_available", $ver);;
-      my $update_icon = "";;
-      my $refresh_img = "refresh";;
-      my $refresh_txt = "Update fhempy";;
-      if ($ver_available ne $ver) {
-        $refresh_img = "refresh\@orange";;
-        $refresh_txt = "Version ".$ver_available." available for update";;
-      }
-      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-        $status_img = "10px-kreis-rot";;
-        $status_txt = "disconnected";;
-      }
-      $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
-      my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon."</div>"
-    }';
-    $devstate_cmd =~ tr/\n//d;
-    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+  # the devStateIcon is set once for new devices, users may change or delete it later
+  if ($init_done && !defined($hash->{OLDDEF}) && AttrVal($name, q[devStateIcon], q[]) eq q[]) {
+    BindingsIo_setDefaultDevStateIcon($hash);
   }
-  
+
   return undef;
+}
+
+sub
+BindingsIo_defaultDevStateIcon() {
+  my $devstate_cmd = '{
+    my $attr_ver = "'.$BindingsIo_devStateIconVersion.'";;
+    my $status_img = "10px-kreis-gruen";;
+    my $status_txt = "connected";;
+    my $ver = ReadingsVal($name, "version", "-");;
+    my $ver_available = ReadingsVal($name, "version_available", $ver);;
+    my $update_status = ReadingsVal($name, "update_status", "");;
+    my $refresh_img = "refresh";;
+    my $refresh_txt = "Update fhempy";;
+    my $status_line = "";;
+    if ($ver_available ne $ver) {
+      $refresh_img = "refresh\@orange";;
+      $refresh_txt = "Version ".$ver_available." available for update";;
+    }
+    if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+      $status_img = "10px-kreis-rot";;
+      $status_txt = "disconnected";;
+    }
+    my $refresh_icon = FW_makeImage($refresh_img, $refresh_txt);;
+    if ($update_status =~ /^(starting|installing)/) {
+      $refresh_icon = "<style>\@keyframes fhempy_spin{to{transform:rotate(360deg)}}</style><span style=\"display:inline-block;;animation:fhempy_spin 1.5s linear infinite\">".FW_makeImage("refresh\@orange", $update_status)."</span>";;
+      $status_line = "<a> ".$update_status." </a>";;
+    }
+    my $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".$refresh_icon."</a>";;
+    my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
+    "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon.$status_line."</div>"
+  }';
+  $devstate_cmd =~ tr/\n//d;
+  return $devstate_cmd;
+}
+
+sub
+BindingsIo_setDefaultDevStateIcon($) {
+  my ($hash) = @_;
+  CommandAttr(undef, "$hash->{NAME} devStateIcon ".BindingsIo_defaultDevStateIcon());
+}
+
+# devStateIcons set by fhempy carry $attr_ver, keep them up to date,
+# never touch a devStateIcon the user changed or deleted
+sub
+BindingsIo_upgradeDevStateIcon($) {
+  my ($hash) = @_;
+  my $val = AttrVal($hash->{NAME}, q[devStateIcon], q[]);
+  return if (index($val, q[my $attr_ver = "]) == -1);
+  return if (index($val, qq[my \$attr_ver = "$BindingsIo_devStateIconVersion";]) != -1);
+  BindingsIo_setDefaultDevStateIcon($hash);
 }
 
 sub
@@ -384,7 +413,10 @@ BindingsIo_Notify($)
     $event = "" if(!defined($event));
 
     if ($dev->{NAME} eq "global" && $event eq "INITIALIZED") {
+      BindingsIo_upgradeDevStateIcon($hash);
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
+    } elsif ($dev->{NAME} eq "global" && $event eq "REREADCFG") {
+      BindingsIo_upgradeDevStateIcon($hash);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
@@ -624,13 +656,15 @@ BindingsIo_Set($$$)
   my $cmd = @$a[1];
   my $supported = $hash->{".updateVersionSupported"};
   my $versions = $supported ? ($hash->{helper}{version_options} // "") : "";
-  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg";
+  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg defaultDevStateIcon:noArg";
 
   if ($cmd eq 'update') {
     return "Usage: set $hash->{NAME} update [latest|version]" if (@$a > 3 || keys %$h);
     my @args = @$a > 2 && $a->[2] ne "latest" ? ($a->[2]) : ();
     return "The connected fhempy version does not support version selection; update fhempy first."
       if (@args && !$supported);
+    # immediate feedback in FHEMWEB, fhempy reports the progress afterwards
+    readingsSingleUpdate($hash, "update_status", "starting", 1);
     return BindingsIo_Write($hash, $hash, "update", \@args, {});
   } elsif ($cmd eq 'checkUpdate') {
     return "Usage: set $hash->{NAME} checkUpdate" if (@$a != 2 || keys %$h);
@@ -639,6 +673,9 @@ BindingsIo_Set($$$)
     return BindingsIo_Write($hash, $hash, "checkUpdate", [], {});
   } elsif ($cmd eq 'restart') {
     return BindingsIo_Write($hash, $hash, "restart", [], {});
+  } elsif ($cmd eq 'defaultDevStateIcon') {
+    BindingsIo_setDefaultDevStateIcon($hash);
+    return undef;
   }
 
   return "Unknown argument $cmd, choose one of $list";
@@ -648,13 +685,6 @@ sub
 BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
-
-  # keep the devStateIcon from Define, fhem.cfg must not restore an older one
-  if ($cmd eq "set" && $attrName eq "devStateIcon") {
-    if (index($attrVal, "1.3.0") == -1) {
-      return "devStateIcon updated"
-    }
-  }
 
   return undef;
 }
@@ -815,6 +845,10 @@ sub BindingsIo_processCommand($$) {
     }
     if (exists $json->{version_options}) {
       $hash->{helper}{version_options} = $json->{version_options};
+    }
+    # a new connection means no update is running (anymore)
+    if (exists $json->{version} && ReadingsVal($hash->{NAME}, "update_status", "") =~ /^(starting|installing)/) {
+      readingsSingleUpdate($hash, "update_status", "finished, fhempy ".$json->{version}." running", 1);
     }
     # leftover of the release party in fhempy 1.0.x - 2.3.0
     readingsDelete($hash, "release_party") if (exists $hash->{READINGS}{release_party});
@@ -979,8 +1013,18 @@ sub BindingsIo_readWebsocketMessage {
       with no fallback to a newer one. The installed version is also allowed.<br>
       Older versions are never offered in the dropdown, but can be requested explicitly at
       the command line.<br>
-      The reading <code>update_status</code> reports progress and installation errors.<br>
+      The reading <code>update_status</code> reports progress and installation errors.
+      While the update runs, the update icon of the default devStateIcon spins.<br>
       fhempy restarts after a successful installation.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-defaultDevStateIcon"></a>
+    <li><code>defaultDevStateIcon</code><br>
+      reset the devStateIcon attribute to the fhempy default.<br>
+      The default is set once when the device is created and updated together with fhempy
+      as long as it is in use. A changed or deleted devStateIcon stays as it is.
     </li>
 
     <br>
