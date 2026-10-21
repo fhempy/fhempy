@@ -186,6 +186,29 @@ async def drop_stale_connection(adapter, address):
         return "stale connection dropped: failed"
 
 
+async def drop_stale_connections(address):
+    """
+    drop_stale_connection() on every adapter which knows the device, for
+    callers which don't choose the adapter themselves (bleak default).
+    Returns the descriptions of the stale connections found.
+    """
+    suffix = device_path("", address).rsplit("/", 1)[1]
+    try:
+        objects = await _dbus_call(
+            "GetManagedObjects", "/", "org.freedesktop.DBus.ObjectManager"
+        )
+    except Exception:
+        return []
+    results = []
+    for path in objects[0] if objects else {}:
+        parts = path.split("/")
+        if len(parts) == 5 and parts[4] == suffix:
+            result = await drop_stale_connection(parts[3], address)
+            if result:
+                results.append(f"{parts[3]} {result}")
+    return results
+
+
 async def bluetoothd_alive():
     try:
         await _dbus_call("GetManagedObjects", "/", "org.freedesktop.DBus.ObjectManager")

@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from .. import fhem, generic, utils
+from ..core import bt_recovery
 from . import protocol
 
 SCAN_TIME = 10
@@ -261,7 +262,12 @@ class scooter(generic.FhemModule):
         found = await self._scan(
             SCAN_TIME, lambda d, adv: d.address.upper() == self._address
         )
+        if self._address not in found and await self._drop_stale_connection():
+            found = await self._scan(
+                SCAN_TIME, lambda d, adv: d.address.upper() == self._address
+            )
         if self._address not in found:
+            self.logger.debug(f"Scooter {self._address} not found")
             await fhem.readingsSingleUpdateIfChanged(self.hash, "presence", "absent", 1)
             await self._state("absent")
             return
@@ -274,6 +280,15 @@ class scooter(generic.FhemModule):
         async with self._lock:
             readings = await self._read(device, adv)
         await self._store(readings)
+
+    async def _drop_stale_connection(self):
+        """BlueZ might still hold the connection to the scooter, e.g. when
+        the disconnect after switching it off was missed. A connected scooter
+        doesn't advertise, so it would never be found again."""
+        results = await bt_recovery.drop_stale_connections(self._address)
+        for result in results:
+            self.logger.info(f"Scooter still connected in BlueZ: {result}")
+        return any(result.endswith(": ok") for result in results)
 
     async def _store(self, readings):
         await fhem.readingsBeginUpdate(self.hash)
