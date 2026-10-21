@@ -176,3 +176,38 @@ async def test_stale_connection_disconnect_fails(mocker):
         await bt_recovery.drop_stale_connection("hci0", MAC)
         == "stale connection dropped: failed"
     )
+
+
+@pytest.mark.asyncio
+async def test_stale_connections_on_all_adapters(mocker):
+    calls = []
+    objects = {
+        "/org/bluez/hci0": {},
+        "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF": {},
+        "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service000a": {},
+        "/org/bluez/hci0/dev_11_22_33_44_55_66": {},
+        "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF": {},
+    }
+
+    async def dbus_call(member, path, interface, signature="", body=None):
+        calls.append((member, path))
+        if member == "GetManagedObjects":
+            return [objects]
+        if member == "Get":
+            return [mocker.MagicMock(value=path.startswith("/org/bluez/hci1"))]
+        return []
+
+    mocker.patch.object(bt_recovery, "_dbus_call", side_effect=dbus_call)
+    assert await bt_recovery.drop_stale_connections("aa:bb:cc:dd:ee:ff") == [
+        "hci1 stale connection dropped: ok"
+    ]
+    assert ("Disconnect", "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF") in calls
+    assert ("Get", "/org/bluez/hci0/dev_11_22_33_44_55_66") not in calls
+
+
+@pytest.mark.asyncio
+async def test_stale_connections_without_bluetoothd(mocker):
+    mocker.patch.object(
+        bt_recovery, "_dbus_call", side_effect=RuntimeError("ServiceUnknown")
+    )
+    assert await bt_recovery.drop_stale_connections(MAC) == []

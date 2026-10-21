@@ -363,6 +363,8 @@ class FakeEnv:
     def __init__(self, mocker, scooter_module, fake_scooter):
         self.fake_scooter = fake_scooter
         self.connects = 0
+        # BlueZ still holds a connection fhempy lost track of
+        self.bluez_connected = False
         self.nearby = [
             # stronger, but used by another FHEM device already
             (
@@ -383,7 +385,9 @@ class FakeEnv:
 
             async def __aenter__(self):
                 for device, adv in env.nearby:
-                    self.callback(device, adv)
+                    # a connected device doesn't advertise
+                    if not (env.bluez_connected and device.address == ADDRESS):
+                        self.callback(device, adv)
                 return self
 
             async def __aexit__(self, *args):
@@ -407,6 +411,18 @@ class FakeEnv:
             @property
             def services(self):
                 return []
+
+        async def drop_stale_connections(address):
+            assert address == ADDRESS
+            if not env.bluez_connected:
+                return []
+            env.bluez_connected = False
+            return ["hci0 stale connection dropped: ok"]
+
+        mocker.patch(
+            "fhempy.lib.core.bt_recovery.drop_stale_connections",
+            drop_stale_connections,
+        )
 
         async def send_command(hash, cmd):
             return "1" if "'11:22:33:44:55:66'" in cmd else "0"
@@ -501,6 +517,14 @@ async def test_module_keeps_connection(mocker):
         env.nearby[:] = saved
         await wait_for(lambda r: env.connects == 3)
         await wait_for(lambda r: r.get("connection") == "connected")
+
+        # lost again, but BlueZ still holds the connection: dropped and found
+        env.fake_scooter.is_connected = False
+        env.bluez_connected = True
+        env.client.disconnected_callback(env.client)
+        await wait_for(lambda r: env.connects == 4)
+        await wait_for(lambda r: r.get("connection") == "connected")
+        assert not env.bluez_connected
 
         # attribute switched off
         await module.Attr(hash, ["set", NAME, "keep_connected", "0"], {})
