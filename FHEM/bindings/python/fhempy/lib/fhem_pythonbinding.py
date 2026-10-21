@@ -698,12 +698,8 @@ class fhempy:
             self._updating = False
 
     async def restart(self, hash):
-        await fhem.readingsSingleUpdate(
-            hash,
-            "version",
-            "restart...please wait",
-            1,
-        )
+        # the version reading always shows the installed version
+        await fhem.readingsSingleUpdate(hash, "state", "restart...please wait", 1)
         global exit_code
         exit_code = 1
         logger.info("Restart initiated...")

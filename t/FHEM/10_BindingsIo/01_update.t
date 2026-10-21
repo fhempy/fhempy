@@ -94,6 +94,23 @@ require $module unless defined &BindingsIo_Set;
     BindingsIo_processCommand($hash, {msgtype => 'version', version => '2.1.4'});
     like(BindingsIo_Set($hash, ['binding', '?'], {}), qr/update:latest checkUpdate:noArg/,
          'old backend never offers stale version choices');
+
+    BindingsIo_Set($hash, ['binding', 'update'], {});
+    is(ReadingsVal('binding', 'update_status', ''), 'starting', 'update shows its start at once');
+    is(ReadingsVal('binding', 'version', ''), '2.1.4', 'version reading keeps the version');
+    my $icon = BindingsIo_defaultDevStateIcon();
+    $icon =~ s/;;/;/g;
+    my $render = sub {
+        local *FW_makeImage = sub { "<img $_[0]>" };
+        my $name = 'binding';
+        return eval $icon;
+    };
+    like($render->(), qr/fhempy_spin.*refresh\@orange.*starting/, 'devStateIcon spins while updating');
+    BindingsIo_processCommand($hash, {msgtype => 'version', version => '2.1.5'});
+    like(ReadingsVal('binding', 'update_status', ''), qr/^finished/, 'reconnect ends the update status');
+    my $idle = $render->();
+    like($idle, qr/<a> 2\.1\.5 <\/a>/, 'devStateIcon shows the version');
+    unlike($idle, qr/fhempy_spin/, 'devStateIcon stops spinning');
 }
 
 done_testing();
