@@ -85,7 +85,7 @@ sub BindingsIo_Initialize {
   $hash->{GetFn}    = \&BindingsIo_Get;
   $hash->{SetFn}    = \&BindingsIo_Set;
   $hash->{AttrFn}   = \&BindingsIo_Attr;
-  $hash->{AttrList} = $readingFnAttributes;
+  $hash->{AttrList} = "autoUpdate:0,1 ".$readingFnAttributes;
   $hash->{NotifyFn}   = \&BindingsIo_Notify;
 
   $hash->{ReadFn}   = \&BindingsIo_Read;
@@ -704,7 +704,30 @@ BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
+  if ($cmd eq "set" && $attrName eq "autoUpdate" && $attrVal && $init_done) {
+    # the attribute is set after this function, don't wait for the next check
+    InternalTimer(gettimeofday() + 1, "BindingsIo_autoUpdate", $defs{$name}, 0);
+  }
+
   return undef;
+}
+
+# install a newer fhempy release automatically (attribute autoUpdate)
+sub BindingsIo_autoUpdate {
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+
+  return if (!AttrVal($name, "autoUpdate", 0) || !$hash->{".updateVersionSupported"});
+  my $available = ReadingsVal($name, "version_available", "");
+  return if ($available eq "" || $available eq ReadingsVal($name, "version", ""));
+  return if (ReadingsVal($name, "update_status", "") =~ /^(starting|installing)/);
+  # every version is tried only once, a failing update must not restart fhempy again and again
+  return if (ReadingsVal($name, ".autoUpdateVersion", "") eq $available);
+  readingsSingleUpdate($hash, ".autoUpdateVersion", $available, 0);
+
+  Log3 $hash, 3, "BindingsIo ($name): autoUpdate installs fhempy $available";
+  readingsSingleUpdate($hash, "update_status", "starting", 1);
+  return BindingsIo_Write($hash, $hash, "update", [$available], {});
 }
 
 sub
@@ -876,6 +899,10 @@ sub BindingsIo_processCommand($$) {
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
     }
+    if (exists $json->{version_available} && AttrVal($hash->{NAME}, "autoUpdate", 0)) {
+      # not within the processing of a websocket message
+      InternalTimer(gettimeofday() + 1, "BindingsIo_autoUpdate", $hash, 0);
+    }
   } elsif ($json->{msgtype} eq "set_update") {
     my $devname = $json->{NAME};
     my $devhash = $defs{$devname};
@@ -1033,7 +1060,11 @@ sub BindingsIo_readWebsocketMessage {
       the command line.<br>
       The reading <code>update_status</code> reports progress and installation errors.
       While the update runs, the update icon of the default devStateIcon spins.<br>
-      fhempy restarts after a successful installation.
+      fhempy restarts after a successful installation.<br>
+      fhempy installs the FHEM modules (10_BindingsIo.pm, 10_fhempy.pm, ...) of the new version
+      and reloads them in FHEM, FHEM update and shutdown restart are not needed.
+      The files are taken from the GitHub release of the version, also when fhempy runs on
+      another host. A failure is reported in <code>update_status</code>.
     </li>
 
     <br>
@@ -1050,6 +1081,19 @@ sub BindingsIo_readWebsocketMessage {
     <a id="BindingsIo-set-restart"></a>
     <li><code>restart</code><br>
       restart fhempy
+    </li>
+  </ul>
+
+  <br>
+
+  <a id="BindingsIo-attr"></a>
+  <b>Attributes</b>
+  <ul>
+    <a id="BindingsIo-attr-autoUpdate"></a>
+    <li><code>autoUpdate 0|1</code><br>
+      1 installs a newer fhempy release automatically, including the FHEM modules.
+      fhempy checks for updates on connection to FHEM and every twelve hours and restarts
+      after the installation. Every version is tried only once. Default: 0
     </li>
   </ul>
 
