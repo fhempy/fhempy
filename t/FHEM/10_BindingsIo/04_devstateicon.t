@@ -22,14 +22,14 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'an older default devStateIcon is upgraded' => sub {
 		plan(2);
-		is (CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.3.0";; "old"}]), undef, q[attribute accepted]);
+		ok (!CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.3.0";; "old"}]), q[attribute accepted]);
 		BindingsIo_upgradeDevStateIcon($hash);
 		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[default upgraded]);
 	};
 
 	subtest 'a custom devStateIcon is kept' => sub {
 		plan(2);
-		is (CommandAttr(undef, qq[$deviceName devStateIcon connected:on]), undef, q[attribute accepted]);
+		ok (!CommandAttr(undef, qq[$deviceName devStateIcon connected:on]), q[attribute accepted]);
 		BindingsIo_upgradeDevStateIcon($hash);
 		is (AttrVal($deviceName, q[devStateIcon], q[]), q[connected:on], q[custom devStateIcon kept]);
 	};
@@ -44,7 +44,7 @@ InternalTimer(time()+0.5, sub {
 	subtest 'set defaultDevStateIcon restores the default' => sub {
 		plan(2);
 		CommandAttr(undef, qq[$deviceName devStateIcon connected:on]);
-		is (CommandSet(undef, qq[$deviceName defaultDevStateIcon]), undef, q[set accepted]);
+		ok (!CommandSet(undef, qq[$deviceName defaultDevStateIcon]), q[set accepted]);
 		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[default restored]);
 	};
 
