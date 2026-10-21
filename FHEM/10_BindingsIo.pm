@@ -13,6 +13,7 @@ use DevIo;
 use CoProcess;
 
 use JSON;
+use Digest::MD5 qw(md5_hex);
 
 # JSON codec in non-utf8 mode, same semantics as JSON::to_json/from_json:
 # FHEM works with UTF-8 byte strings, they are passed through unchanged.
@@ -71,6 +72,8 @@ my $alive_check_timeout = 5;
 my $suspect_timeout = 500;
 
 my $BindingsIo_devStateIconVersion = "1.4.0";
+# default devStateIcon 1.3.0 of fhempy 2.x, set before the default was remembered
+my $BindingsIo_legacyDevStateIconChecksum = "574c39f1d7ab6776eeab79bb53d6e853";
 
 sub BindingsIo_Initialize {
   my ($hash) = @_;
@@ -235,20 +238,35 @@ BindingsIo_defaultDevStateIcon() {
   return $devstate_cmd;
 }
 
+# checksum of a devStateIcon, ignores whitespace and ;; from fhem.cfg
+sub
+BindingsIo_devStateIconChecksum($) {
+  my ($val) = @_;
+  $val =~ s/\s+//g;
+  $val =~ s/;+/;/g;
+  return md5_hex(encode_utf8($val));
+}
+
 sub
 BindingsIo_setDefaultDevStateIcon($) {
   my ($hash) = @_;
-  CommandAttr(undef, "$hash->{NAME} devStateIcon ".BindingsIo_defaultDevStateIcon());
+  my $default = BindingsIo_defaultDevStateIcon();
+  CommandAttr(undef, "$hash->{NAME} devStateIcon $default");
+  # remember the default, so that only an unchanged default gets upgraded
+  readingsSingleUpdate($hash, ".devStateIconDefault", BindingsIo_devStateIconChecksum($default), 0);
 }
 
-# devStateIcons set by fhempy carry $attr_ver, keep them up to date,
+# upgrade the devStateIcon only if it is still the default set by fhempy,
 # never touch a devStateIcon the user changed or deleted
 sub
 BindingsIo_upgradeDevStateIcon($) {
   my ($hash) = @_;
   my $val = AttrVal($hash->{NAME}, q[devStateIcon], q[]);
-  return if (index($val, q[my $attr_ver = "]) == -1);
-  return if (index($val, qq[my \$attr_ver = "$BindingsIo_devStateIconVersion";]) != -1);
+  return if ($val eq q[]);
+  my $checksum = BindingsIo_devStateIconChecksum($val);
+  return if ($checksum eq BindingsIo_devStateIconChecksum(BindingsIo_defaultDevStateIcon()));
+  return if ($checksum ne ReadingsVal($hash->{NAME}, ".devStateIconDefault", "")
+    && $checksum ne $BindingsIo_legacyDevStateIconChecksum);
   BindingsIo_setDefaultDevStateIcon($hash);
 }
 
@@ -1024,7 +1042,7 @@ sub BindingsIo_readWebsocketMessage {
     <li><code>defaultDevStateIcon</code><br>
       reset the devStateIcon attribute to the fhempy default.<br>
       The default is set once when the device is created and updated together with fhempy
-      as long as it is in use. A changed or deleted devStateIcon stays as it is.
+      as long as it is unchanged. A changed or deleted devStateIcon stays as it is.
     </li>
 
     <br>

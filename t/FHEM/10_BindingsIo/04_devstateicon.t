@@ -6,7 +6,7 @@ use Test2::Tools::Compare qw{is like unlike};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(5);
+	plan(6);
 
 	# devStateIcon is a FHEMWEB attribute
 	LoadModule(q[FHEMWEB]);
@@ -22,9 +22,21 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'an older default devStateIcon is upgraded' => sub {
 		plan(2);
-		ok (!CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.3.0";; "old"}]), q[attribute accepted]);
+		my $old = BindingsIo_defaultDevStateIcon();
+		$old =~ s/1\.4\.0/1.3.0/;
+		CommandAttr(undef, qq[$deviceName devStateIcon $old]);
+		readingsSingleUpdate($hash, q[.devStateIconDefault], BindingsIo_devStateIconChecksum($old), 0);
 		BindingsIo_upgradeDevStateIcon($hash);
 		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[default upgraded]);
+		ok (BindingsIo_devStateIconChecksum(qq[{ my \$a = 1;;\n 2 }]) eq BindingsIo_devStateIconChecksum(q[{my $a = 1; 2}]), q[checksum ignores fhem.cfg escaping]);
+	};
+
+	subtest 'an edited devStateIcon with attr_ver is kept' => sub {
+		plan(1);
+		my $custom = q[{ my $attr_ver = "1.3.0";; "custom" }];
+		CommandAttr(undef, qq[$deviceName devStateIcon $custom]);
+		BindingsIo_upgradeDevStateIcon($hash);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/custom/, q[edited devStateIcon kept]);
 	};
 
 	subtest 'a custom devStateIcon is kept' => sub {
