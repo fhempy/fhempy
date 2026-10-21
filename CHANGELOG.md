@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.5.1 (2026-10-21)
+
+### Bug Fixes
+
+- Show a running fhempy update in FHEMWEB, devStateIcon only set once
+  ([#723](https://github.com/fhempy/fhempy/pull/723),
+  [`8c98f8e`](https://github.com/fhempy/fhempy/commit/8c98f8e81dd557fd3532eb0d7c0cc4ce980bc63e))
+
+- **scooter**: Drop a stale BlueZ connection so the scooter is found again
+  ([#726](https://github.com/fhempy/fhempy/pull/726),
+  [`1ead7ad`](https://github.com/fhempy/fhempy/commit/1ead7ad4932c51c2b3bbf0a01c77f0403fd91942))
+
+
 ## v2.5.0 (2026-10-20)
 
 ### Bug Fixes
