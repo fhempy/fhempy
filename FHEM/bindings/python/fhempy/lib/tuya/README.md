@@ -25,9 +25,9 @@ Note: If you know your local keys already, just move over to individual device s
 ### Automatic Setup
 ```
 define tuya_system fhempy tuya setup API_KEY API_SECRET DEVICE_ID
-set tuya_system start_scan
+set tuya_system scan_devices
 ```
-The scan might take some minutes to finish, please wait and take a coffee.
+Or click **Search devices** on the detail page of `tuya_system`. The scan might take a minute. Afterwards a dialog shows the devices found in your network, click a device to create it in FHEM (or **Create all**). **Show found devices** opens the dialog again.
  - API_KEY: From tuya developer portal
  - API_SECRET: From tuya developer portal
  - DEVICE_ID: From SmartLife app, doesn't matter which device, we just need one to retrieve the proper uid from it

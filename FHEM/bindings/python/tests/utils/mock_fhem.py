@@ -13,6 +13,7 @@ attributes = {}
 internals = {}
 command_define = []
 command_attr = []
+javascript = []
 
 
 def mock_module(mocker):
@@ -37,6 +38,7 @@ def mock_module(mocker):
     )
     mocker.patch("fhempy.lib.fhem.CommandDefine", CommandDefine)
     mocker.patch("fhempy.lib.fhem.CommandAttr", CommandAttr)
+    mocker.patch("fhempy.lib.fhem.FW_runJavascript", FW_runJavascript)
     mocker.patch("fhempy.lib.fhem.CommandDeleteReading", CommandDeleteReading)
     mocker.patch("fhempy.lib.fhem.checkIfDeviceExists", checkIfDeviceExists)
     mocker.patch("fhempy.lib.fhem.convertValue", convertValue)
@@ -152,6 +154,10 @@ async def CommandDefine(hash, definition):
 
 async def CommandAttr(hash, attrdef):
     command_attr.append(attrdef)
+
+
+async def FW_runJavascript(hash, js, detail=None):
+    javascript.append((detail, js))
 
 
 async def CommandDeleteReading(hash, deldef):
