@@ -66,7 +66,7 @@ Copy the secret address shown in FHEMWEB into your AI app, then ask *"Which ligh
 ### 1. Install fhempy
 Copy & paste this line into the FHEM command field and press enter:
 ```
-update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt; {local $attr{global}{updateInBackground}=0;; fhem("update all pythonbinding");; ""}; reload 10_BindingsIo; define fhempy_local BindingsIo fhempy
+{eval GetFileFromURL("https://raw.githubusercontent.com/fhempy/fhempy/master/install_fhempy.pl")}
 ```
 
 That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which sets up everything else on its own. No restart, no `sudo` and no system packages needed. Watch the progress in the room *fhempy*:
@@ -81,7 +81,7 @@ That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which set
 > [!NOTE]
 > fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
-Running the line again is harmless, e.g. after a failed try (it then says `fhempy_local already defined`).
+The line runs [install_fhempy.pl](install_fhempy.pl): it adds the fhempy update source, downloads the fhempy FHEM modules (`update all pythonbinding`), loads them and defines `fhempy_local`. Running it again is harmless, e.g. after a failed try. If nothing happens at all, FHEM couldn't download the script from GitHub.
 
 Optional: `sudo apt install libcpanel-json-xs-perl` makes FHEM decode fhempy messages much faster. Check it with `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
 
