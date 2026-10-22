@@ -113,7 +113,12 @@ my $html = <<'HTML';
         'background:#4B8BBE;color:#fff;font-size:13px">Set up</span></div></div>';
     }
     $("#fhempyInstallSteps").html(html + '</div>');
-    $("#fhempyInstallInfo").html('More modules: <a href="https://github.com/fhempy/fhempy#-modules" target="_blank">module list</a>');
+    $("#fhempyInstallInfo").html('<a href="#" id="fhempyInstallMore" style="font-weight:600">&#43; Show all '+
+      'fhempy modules</a>');
+    $("#fhempyInstallMore").click(function(e) {
+      e.preventDefault();
+      $.getScript(FW_root+"/fhempy/modules.js", function() { $("#fhempyInstall").dialog("close"); fhempyModules(); });
+    });
     $(".fhempySetupTile").hover(
       function(){ $(this).css({transform:"translateY(-2px)", "box-shadow":"0 4px 12px rgba(0,0,0,0.15)"}); },
       function(){ $(this).css({transform:"", "box-shadow":""}); });

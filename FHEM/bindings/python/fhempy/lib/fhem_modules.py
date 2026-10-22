@@ -1,5 +1,7 @@
 """Install the FHEM modules (.pm files) of the running fhempy version in FHEM.
 
+The module installer of FHEMWEB (www/fhempy) is installed the same way.
+
 The files are taken from the GitHub tag of the running version and sent through
 the websocket, therefore it also works when fhempy runs on another host.
 FHEM writes them, updates its controls file for FHEM update and reloads the
@@ -27,7 +29,8 @@ STORED_VERSION_CMD = (
 
 
 def controls_files(controls):
-    """Files listed in the controls file, limited to the FHEM directory."""
+    """Files listed in the controls file, limited to the FHEM directory and the
+    module installer of FHEMWEB (www/fhempy)."""
     files = []
     for line in controls.splitlines():
         parts = line.split()
@@ -35,7 +38,7 @@ def controls_files(controls):
             continue
         path = parts[3]
         if (
-            not path.startswith("FHEM/")
+            not path.startswith(("FHEM/", "www/fhempy/"))
             or ".." in path.split("/")
             or "\\" in path
             or "'" in path
