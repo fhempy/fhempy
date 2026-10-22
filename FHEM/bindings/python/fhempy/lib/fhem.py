@@ -407,6 +407,19 @@ async def CommandDeleteReading(hash, deldef):
     return await sendCommandHash(hash, cmd)
 
 
+async def FW_runJavascript(hash, javascript, detail=None):
+    """Runs javascript in the open FHEMWEB pages, only on the detail page of
+    the device `detail` if given."""
+    pagefilter = f"'FILTER=' . {perlString(detail)}, " if detail else ""
+    cmd = (
+        "if(defined(&FW_directNotify)) { "
+        'foreach my $fw (devspec2array("TYPE=FHEMWEB:FILTER=TEMPORARY!=1")) { '
+        f'FW_directNotify({pagefilter}"#FHEMWEB:$fw", '
+        f'{perlString(javascript)}, ""); }} }} ""'
+    )
+    return await sendCommandHash(hash, cmd)
+
+
 async def setEventDevices(hash, devices):
     """FHEM sends the events of these devices to fhempy, they are passed to
     the callbacks registered with register_event_listener.

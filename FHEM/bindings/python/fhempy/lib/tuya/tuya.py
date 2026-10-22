@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import functools
+import html
 import json
 import re
 import time
@@ -303,25 +304,29 @@ class tuya(generic.FhemModule):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "energy", 0, 1)
 
     async def set_create_device(self, hash, params):
+        # name_deviceid from the set options, or only the device id (dialog)
         nameid = params["name"]
         for dev in self.create_device_list:
-            if nameid == dev["name_esc"] + "_" + dev["device_id"]:
-                await fhem.CommandDefine(
+            if nameid in (dev["device_id"], dev["name_esc"] + "_" + dev["device_id"]):
+                devname = f"tuya_local_{dev['device_id']}"
+                ret = await fhem.CommandDefine(
                     self.hash,
                     (
-                        f"tuya_local_{dev['device_id']} fhempy tuya "
+                        f"{devname} fhempy tuya "
                         f"{dev['productid']} {dev['device_id']} {dev['ip']} "
                         f"{dev['version']} "
                         f"{self.tt_key} {self.tt_secret}"
                     ),
                 )
-                await fhem.CommandAttr(
-                    self.hash, f"tuya_local_{dev['device_id']} alias {dev['name']}"
-                )
+                if ret:
+                    return ret
+                await fhem.CommandAttr(self.hash, f"{devname} alias {dev['name']}")
                 await fhem.CommandAttr(
                     self.hash,
-                    f"tuya_local_{dev['device_id']} localkey {dev['local_key']}",
+                    f"{devname} localkey {dev['local_key']}",
                 )
+                return None
+        return f"Device {nameid} not found, please run scan_devices first"
 
     async def set_boolean(self, hash, params):
         switch_id = params["function_param"]["id"]
@@ -897,12 +902,23 @@ class tuya(generic.FhemModule):
         self.create_async_task(self._scan_devices())
 
     async def _scan_devices(self):
+        try:
+            await self._scan_devices_and_show()
+        except Exception as e:
+            self.logger.exception("Device scan failed")
+            await fhem.readingsSingleUpdate(self.hash, "state", f"scan failed: {e}", 1)
+            await self._show_devices_dialog(f"Scan failed: {e}")
+
+    async def _scan_devices_and_show(self):
         json_data = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, verbose=True)
         )
         if "Error" in json_data:
             self.logger.error(f"getdevices: {json_data}")
             await fhem.readingsSingleUpdate(self.hash, "state", f"{json_data}", 1)
+            await self._show_devices_dialog(
+                f"Tuya cloud: {json_data.get('Error')} {json_data.get('Payload', '')}"
+            )
             return
 
         # Filter to only Name, ID and Key, product_id, icon
@@ -916,6 +932,7 @@ class tuya(generic.FhemModule):
             item["key"] = i["local_key"]
             item["product_id"] = i["product_id"]
             item["icon"] = i["icon"]
+            item["category"] = i.get("category", "")
             await fhem.readingsBeginUpdate(self.hash)
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, item["id"] + "_name", item["name"]
@@ -998,6 +1015,8 @@ class tuya(generic.FhemModule):
                     "ip": ip,
                     "local_key": local_key,
                     "version": ver,
+                    "icon": i["icon"],
+                    "category": i.get("category", ""),
                 }
             )
 
@@ -1013,9 +1032,77 @@ class tuya(generic.FhemModule):
         await fhem.readingsSingleUpdate(
             self.hash,
             "state",
-            f"{count_found} devices found localy",
+            f"{count_found} devices found locally",
             1,
         )
+        await self._show_devices_dialog()
+
+    def _dialog_devices(self):
+        # no local keys, the dialog creates devices via set create_device
+        return [
+            {
+                "id": dev["device_id"],
+                "name": dev["name"],
+                "ip": dev["ip"],
+                "version": str(dev["version"]),
+                "icon": (
+                    "https://images.tuyaeu.com/" + dev["icon"]
+                    if dev.get("icon")
+                    else ""
+                ),
+                "category": dev.get("category", ""),
+                "online": dev["ip"] != "offline",
+            }
+            for dev in self.create_device_list
+        ]
+
+    def _dialog_javascript(self, function, *args):
+        # also used in a <script> tag of the detail page
+        params = ",".join(
+            json.dumps(arg).replace("<", generic._JS_ESCAPED_LT)
+            for arg in (self.hash["NAME"], *args)
+        )
+        return (
+            'jQuery.getScript(FW_root+"/fhempy/tuya.js",'
+            f"function(){{{function}({params})}})"
+        )
+
+    async def _show_devices_dialog(self, error=None):
+        # opens the dialog in the browsers showing the detail page of this device
+        javascript = self._dialog_javascript(
+            "fhempyTuyaDevices", self._dialog_devices(), error
+        )
+        await fhem.FW_runJavascript(self.hash, javascript, self.hash["NAME"])
+
+    # FHEM FUNCTION
+    async def FW_detailFn(self, hash, args, argsh):
+        detail = await super().FW_detailFn(hash, args, argsh)
+        if getattr(self, "tt_type", "") != "setup":
+            return detail
+        return self._setup_html() + str(detail)
+
+    def _setup_html(self):
+        button = (
+            '<a href="#" onclick="{js};return false;" style="display:inline-block;'
+            "margin:0 10px 10px 0;padding:4px 14px;border-radius:14px;"
+            'background:#4B8BBE;text-decoration:none;white-space:nowrap">'
+            '<span style="color:#fff;font-weight:600">{text}</span></a>'
+        )
+        ret = '<div id="fhempyTuyaButtons">' + button.format(
+            js=html.escape(self._dialog_javascript("fhempyTuyaScan")),
+            text="&#128269; Search devices",
+        )
+        if self.create_device_list:
+            count = len(self.create_device_list)
+            ret += button.format(
+                js=html.escape(
+                    self._dialog_javascript(
+                        "fhempyTuyaDevices", self._dialog_devices(), None
+                    )
+                ),
+                text=f"Show found devices ({count})",
+            )
+        return ret + "</div>"
 
     async def update_readings_colour(self, code, hexcolour):
         if code == "colour_data":
