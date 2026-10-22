@@ -63,35 +63,37 @@ Copy the secret address shown in FHEMWEB into your AI app, then ask *"Which ligh
 
 ## 🚀 Quick start
 
-### 1. Install the system packages
-Copy & paste this command on the machine running FHEM:
+### 1. Install fhempy
+Copy & paste this line into the FHEM command field and press enter:
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libcpanel-json-xs-perl libjson-xs-perl
+{eval GetFileFromURL("https://raw.githubusercontent.com/fhempy/fhempy/master/install_fhempy.pl")}
 ```
+
+That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which sets up everything else on its own. No restart, no `sudo` and no system packages needed. A window shows the progress until fhempy is ready, the state of `fhempy_local` in the room *fhempy* shows it too:
+
+1. `Installing fhempy: 1/4 installing uv`
+2. `Installing fhempy: 2/4 installing Python 3.13` (only if your system Python is older)
+3. `Installing fhempy: 3/4 installing fhempy`
+4. `Installing fhempy: 4/4 starting fhempy`
+
+`fhempy_local` turns green with the fhempy version as soon as it's ready. If something goes wrong, the state shows the reason in red.
+
+<p align="center"><img src="docs/images/install-dialog.png" alt="fhempy installation window: progress and setup tiles for Matter, Matter Bridge, Zigbee2MQTT and AI (MCP server)" width="800"></p>
+
+When fhempy is ready, the window offers Matter, Matter Bridge, Zigbee2MQTT and the AI MCP server: one click creates the device.
 
 > [!NOTE]
 > fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
-On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
+The line runs [install_fhempy.pl](install_fhempy.pl): it adds the fhempy update source, downloads the fhempy FHEM modules (`update all pythonbinding`), loads them and defines `fhempy_local`. Running it again is harmless, e.g. after a failed try. If nothing happens at all, FHEM couldn't download the script from GitHub.
 
-`libcpanel-json-xs-perl` (Cpanel::JSON::XS) or `libjson-xs-perl` (JSON::XS) isn't strictly required, but without an XS backend FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` or `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
+Optional: `sudo apt install libcpanel-json-xs-perl` makes FHEM decode fhempy messages much faster. Check it with `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
 
-### 2. Add fhempy to FHEM
-Enter these commands one after another in the FHEM command field:
+### 2. Bluetooth modules and piclock only: system packages
+Most modules need nothing else. The Bluetooth modules ble_presence, bt_presence, eq3bt, miflora, mitemp and the piclock module still build some of their libraries, which needs these packages:
 ```
-update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt
+sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
 ```
-```
-update
-```
-```
-shutdown restart
-```
-```
-define fhempy_local BindingsIo fhempy
-```
-
-Now lean back: the first start sets up fhempy and **can take up to 15 minutes** on a Raspberry Pi. `fhempy_local` shows a green circle as soon as it's ready.
 
 ### 3. Define your first device
 Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
@@ -209,7 +211,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 ## 🩺 Troubleshooting
 - **`fhempy_local` stays red**: open the device `fhempyserver_15733` in FHEM. Its reading `python` shows the Python version fhempy found, or why it can't start.
 - **Where is the log?** fhempy writes its own log file next to the FHEM log: `log/fhempy-YYYY-MM-DD.log`. Set `attr fhempyserver_15733 verbose 5` for debug output.
-- **`Please make sure that python3-venv package is installed`**: run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
+- **`Installing fhempy failed: ...`**: the state of `fhempy_local` names the reason, the fhempy log has the details. If uv can't be downloaded from github.com and the system Python has no venv support, run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
 - **A module doesn't work**: check its README first. Questions are welcome in the [FHEM forum](https://forum.fhem.de/), bugs in the [GitHub issues](https://github.com/fhempy/fhempy/issues).
 
 ## Bluetooth auto recovery
@@ -235,39 +237,27 @@ fhem    ALL=NOPASSWD: /usr/bin/systemctl restart bluetooth
 ```
 
 ## fhempy peers (e.g. extend Bluetooth range)
-fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
+fhempy can run modules on other computers (peers), e.g. a Raspberry Pi close to your Bluetooth devices or a more powerful machine for video object detection. FHEM finds peers on its own and creates a `fhempy_peer_<IP>` device; set a device's `IODev` to it to run that device there.
 
-
-### Peer setup (short version)
-Only on remote peers, do not run this commands on the FHEM instance. Run this commands with user "pi".
-
+### Install a peer from FHEM (no terminal needed)
+1. Prepare the Raspberry Pi with the [Raspberry Pi Imager](https://www.raspberrypi.com/software/): in the settings set a host name (e.g. `fhempy-bt`), user and password and **enable SSH**.
+2. Start the Pi and enter in FHEM:
 ```
-### WARNING: DO THIS COMMAND ONLY ON REMOTE PEER, NOT ON YOUR FHEM INSTANCE ###
-# systemd service installation
-curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
+set fhempy_local installPeer fhempy-bt.local pi <password>
 ```
+Use the host name from step 1 with `.local` or the IP address of the Pi, and the user and password you set. The reading `peer_install` of `fhempy_local` shows the progress (system packages, Python, fhempy, service). When it's done, `fhempy_peer_<IP>` is ready. The password is only used for this installation, fhempy doesn't store it.
 
-### Peer setup (long version)
-Only needed if you didn't run Peer setup (short version). The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
+The peer gets everything at once: the system packages for the Bluetooth modules, Bluetooth permissions for the [auto recovery](#bluetooth-auto-recovery) and a systemd service which starts fhempy on boot. Running `installPeer` again repairs an installation.
 
-- Setup virtual environment for fhempy: `python3 -m venv .fhempy/fhempy_venv`
-- Activate venv: `source .fhempy/fhempy_venv/bin/activate`
-- Install fhempy with user pi: `pip3 install --upgrade fhempy`
-- Make sure your main fhempy instance (within FHEM) is running
-- Test fhempy by just running it with user pi, type `fhempy` and enter. Wait a few seconds until it gets discovered and you see the incoming FHEM connection.
-- Systemd configuration for autostart
-  - `curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
-  - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
-- FHEM configuration
-  - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_peer_192_168_1_50
-  - You can move any device to the remote peer by changing the IODev of the device.
-  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_peer_IP BindingsIo IP:15733 fhempy`
+### Install a peer from its terminal
+Log in to the peer (not your FHEM machine) and run:
+```
+curl -fsSL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo bash
+```
+fhempy runs as the user who called `sudo`. If autodiscovery doesn't work (it's based on zeroconf), define the peer yourself: `define fhempy_peer_IP BindingsIo IP:15733 fhempy`.
 
-### Log file
-`journalctl -u fhempy.service -f`
-
-### Update
-Just do `set remote_pybinding update` and the remote peer will install the new package via pip and restart afterwads.
+### Log file and update
+The peer's log: `journalctl -u fhempy -f`. Update a peer like the local fhempy with `set fhempy_peer_<IP> update`.
 
 ## 🏗️ How it works
 

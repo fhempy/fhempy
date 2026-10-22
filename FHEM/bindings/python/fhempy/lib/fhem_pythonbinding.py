@@ -25,6 +25,7 @@ from . import (
     version,
 )
 from .core.loop_watchdog import LoopWatchdog
+from .core.peer_installer import peer_installer
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
 
@@ -331,6 +332,12 @@ class fhempy:
                 listener(hash)
             else:
                 logger.debug(f"No listener waiting for reply: {msg}")
+        elif hash["msgtype"] == "installPeer":
+            # don't log the message, it contains the peer's password
+            logger.debug(f">>> {int(hash['id']):08d}: installPeer")
+            error = peer_installer.start(hash, hash.get("args", []))
+            if error:
+                await fhem.readingsSingleUpdate(hash, "peer_install", error, 1)
         else:
             id_received_timestamp[hash["id"]] = time.time()
             logger.debug(f">>> {int(hash['id']):08d}: {hash}")

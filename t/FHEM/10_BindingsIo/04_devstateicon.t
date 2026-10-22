@@ -17,17 +17,17 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'define sets the current devStateIcon' => sub {
 		plan(1);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[devStateIcon is current]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.5\.0"/, q[devStateIcon is current]);
 	};
 
 	subtest 'an older default devStateIcon is upgraded' => sub {
 		plan(2);
 		my $old = BindingsIo_defaultDevStateIcon();
-		$old =~ s/1\.4\.0/1.3.0/;
+		$old =~ s/1\.5\.0/1.4.0/;
 		CommandAttr(undef, qq[$deviceName devStateIcon $old]);
 		readingsSingleUpdate($hash, q[.devStateIconDefault], BindingsIo_devStateIconChecksum($old), 0);
 		BindingsIo_upgradeDevStateIcon($hash);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[default upgraded]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.5\.0"/, q[default upgraded]);
 		ok (BindingsIo_devStateIconChecksum(qq[{ my \$a = 1;;\n 2 }]) eq BindingsIo_devStateIconChecksum(q[{my $a = 1; 2}]), q[checksum ignores fhem.cfg escaping]);
 	};
 
@@ -57,7 +57,7 @@ InternalTimer(time()+0.5, sub {
 		plan(2);
 		CommandAttr(undef, qq[$deviceName devStateIcon connected:on]);
 		ok (!CommandSet(undef, qq[$deviceName defaultDevStateIcon]), q[set accepted]);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.4\.0"/, q[default restored]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.5\.0"/, q[default restored]);
 	};
 
 	RemoveInternalTimer($hash);
