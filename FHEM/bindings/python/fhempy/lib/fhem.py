@@ -538,6 +538,7 @@ async def send_version():
     msg = {
         "version": __version__,
         "update_version_supported": 1,
+        "install_peer_supported": 1,
         "python": platform.python_version(),
         "os": os.name,
         "system": platform.system(),

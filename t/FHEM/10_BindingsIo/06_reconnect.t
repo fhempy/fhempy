@@ -24,10 +24,9 @@ InternalTimer(time()+0.5, sub {
 
 		# FHEM started with a BindingsIo without version reading: the first
 		# connect failed and BindingsIo_installing replaced "disconnected"
-		$hash->{installing} = 0;
 		BindingsIo_installing($hash);
 		RemoveInternalTimer($hash, 'BindingsIo_installing');
-		is ($hash->{STATE}, q[Installing fhempy (15min).], q[state shows the installation]);
+		is ($hash->{STATE}, q[Installing fhempy...], q[state shows the installation]);
 
 		BindingsIo_Ready($hash);
 		is ($opened, 1, q[connection is retried]);

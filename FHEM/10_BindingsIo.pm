@@ -158,7 +158,13 @@ sub BindingsIo_Define {
 
   if ($init_done && $localServer == 1) {
     my $foundServer = 0;
-    
+
+    # FHEM only knows modules which existed when it started, load the ones
+    # a fresh installation (update without restart) just downloaded
+    foreach my $module ($bindingType."Server", $bindingType) {
+      CommandReload(undef, "10_$module") if (!$modules{$module} && -r "$attr{global}{modpath}/FHEM/10_$module.pm");
+    }
+
     # use devspec2array to find existing fhempy server device
     my @fhempyDevices;
     @fhempyDevices = ::devspec2array(qq[i:TYPE=$bindingType(Binding|Server)]);
@@ -486,6 +492,7 @@ BindingsIo_doInit($) {
   $write_deep_recursion = 0;
   delete $hash->{".aliveCheckSent"};
   delete $hash->{".updateVersionSupported"};
+  delete $hash->{".installPeerSupported"};
   RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
   $hash->{".waitingIds"} = {};
 
@@ -656,10 +663,14 @@ BindingsIo_Write($$$$$) {
   } elsif ($function eq "version") {
     $msg{"msgtype"} = "version";
     $waitforresponse = 0;
+  } elsif ($function eq "installPeer") {
+    $msg{"msgtype"} = "installPeer";
+    $waitforresponse = 0;
   }
 
   my $utf8msg = BindingsIo_encodeJson(\%msg);
-  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
+  # installPeer contains the password of the peer
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".($function eq "installPeer" ? "installPeer" : $utf8msg);
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
     if ($waitforresponse == 0) {
@@ -770,6 +781,9 @@ BindingsIo_Set($$$)
   my $supported = $hash->{".updateVersionSupported"};
   my $versions = $supported ? ($hash->{helper}{version_options} // "") : "";
   my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg defaultDevStateIcon:noArg";
+  # peers are installed from the fhempy running next to FHEM
+  my $installPeer = $hash->{localBinding} && $hash->{".installPeerSupported"};
+  $list .= " installPeer" if ($installPeer);
 
   if ($cmd eq 'update') {
     return "Usage: set $hash->{NAME} update [latest|version]" if (@$a > 3 || keys %$h);
@@ -789,6 +803,12 @@ BindingsIo_Set($$$)
   } elsif ($cmd eq 'defaultDevStateIcon') {
     BindingsIo_setDefaultDevStateIcon($hash);
     return undef;
+  } elsif ($cmd eq 'installPeer' && $installPeer) {
+    my @args = @$a[2..$#$a];
+    return "Usage: set $hash->{NAME} installPeer <host> <user> <password>"
+      if (keys %$h || !(@args == 3 || (@args == 2 && $args[0] =~ m/@/)));
+    readingsSingleUpdate($hash, "peer_install", "$args[0]: starting", 1);
+    return BindingsIo_Write($hash, $hash, "installPeer", \@args, {});
   }
 
   return "Unknown argument $cmd, choose one of $list";
@@ -999,6 +1019,7 @@ sub BindingsIo_processCommand($$) {
   } elsif ($json->{msgtype} eq "version") {
     if (exists $json->{version}) {
       $hash->{".updateVersionSupported"} = $json->{update_version_supported} // 0;
+      $hash->{".installPeerSupported"} = $json->{install_peer_supported} // 0;
       if ($hash->{".updateVersionSupported"} && (!exists $hash->{helper}{version_options}
           || ReadingsVal($hash->{NAME}, "version", "") ne $json->{version})) {
         $hash->{helper}{version_options} = $json->{version};
@@ -1186,6 +1207,21 @@ sub BindingsIo_readWebsocketMessage {
       and reloads them in FHEM, FHEM update and shutdown restart are not needed.
       The files are taken from the GitHub release of the version, also when fhempy runs on
       another host. A failure is reported in <code>update_status</code>.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-installPeer"></a>
+    <li><code>installPeer &lt;host&gt; &lt;user&gt; &lt;password&gt;</code><br>
+      install fhempy on another computer (peer) via SSH, e.g. a Raspberry Pi close to your
+      Bluetooth devices. Only available on the local fhempy (fhempy_local).<br>
+      The peer needs SSH enabled (Raspberry Pi Imager settings) and a user with sudo rights.
+      host is the host name (e.g. <code>raspberrypi.local</code>) or the IP address.<br>
+      fhempy installs the system packages for the Bluetooth modules, Python, fhempy and a
+      systemd service on the peer and creates <code>fhempy_peer_&lt;IP&gt;</code> afterwards.
+      The reading <code>peer_install</code> shows the progress.<br>
+      The password is used for this installation only, it's neither stored nor logged by
+      fhempy (FHEM itself logs every command with global verbose 5).
     </li>
 
     <br>

@@ -1,0 +1,5 @@
+{
+  "requirements": [
+    "asyncssh==2.24.1"
+  ]
+}
