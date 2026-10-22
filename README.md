@@ -269,29 +269,44 @@ Only needed if you didn't run Peer setup (short version). The following steps ar
 ### Update
 Just do `set remote_pybinding update` and the remote peer will install the new package via pip and restart afterwads.
 
-## Functionality
+## 🏗️ How it works
 
-### [10_BindingsIo](FHEM/10_BindingsIo.pm)
-This module is a DevIo device which builds a language neutral communicaton bridge in JSON via websockets.
-### [10_fhempyServer](FHEM/10_fhempyServer.pm)
-This module just starts the fhempy server instance
-### [10_fhempy](FHEM/10_fhempy.pm)
-This module is used as the bridge to BindingsIo. It calls BindingsIo with IOWrite.
-### [fhempy](FHEM/bindings/python/fhempy/)
-This is the Python server instance which handles JSON websocket messages from BindingsIo. Based on the message it executes the proper function and replies to BindingsIo via websocket.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/architecture-dark.svg">
+    <img alt="fhempy architecture: FHEM devices talk via BindingsIo to the fhempy Python process, which talks to your devices and cloud services. Optional fhempy peers run on other computers." src="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/architecture-light.svg" width="860">
+  </picture>
+</p>
 
-### Call flow
-This example shows how Define function is called from the Python module.
- 1. define castdevice fhempy googlecast "Living Room"
- 2. fhempy sends IOWrite to BindingsIo
- 3. BindingsIo sends a JSON websocket message to fhempy
- 4. fhempy loads the corresponding module (e.g. googlecast), creates an instance of the object (e.g. googlecast) and calls the Define function on that instance
- 5. Define function is executed within the Python context, as long as the function is executed, FHEM waits for the answer the same way as it does for Perl modules
- 6. Python Define returns the result via JSON via websocket to BindingsIo
+In short:
 
-At any time within the functions FHEM functons like readingsSingleUpdate(...) can be called by using the fhem.py module (fhem.readingsSingleUpdate(...)). There are just a few functions supported at the moment.
+1. **FHEM** – you define a device as usual, e.g. `define livingroom fhempy googlecast`.
+2. **BindingsIo** – forwards everything for that device (define, set, attr, ...) to fhempy. `fhempy_local` is created during installation and connects to the fhempy on the same computer.
+3. **fhempy** – a Python process that FHEM starts automatically. It loads the matching Python module (here `googlecast`), which talks to your device or cloud service.
+4. **Back to FHEM** – readings and state changes travel the same way back and show up in FHEM like for any other device.
 
-![Flow Chart](https://raw.githubusercontent.com/fhempy/fhempy/master/flowchart.png)
+Optionally fhempy can also run on **another computer** (a [fhempy peer](#fhempy-peers-eg-extend-bluetooth-range)), e.g. a Raspberry Pi next to a Bluetooth thermostat. FHEM finds it automatically and creates a `fhempy_peer_...` BindingsIo; set a device's `IODev` to it to run that device there.
+
+<details>
+<summary>Details for developers</summary>
+
+| Part | What it does |
+| --- | --- |
+| [10_fhempy.pm](FHEM/10_fhempy.pm) | The FHEM module behind every `define ... fhempy ...` device. Hands all calls to its BindingsIo with `IOWrite`. |
+| [10_BindingsIo.pm](FHEM/10_BindingsIo.pm) | DevIo device that connects to fhempy via websocket and exchanges JSON messages. |
+| [10_fhempyServer.pm](FHEM/10_fhempyServer.pm) | Starts the local fhempy process. |
+| [fhempy](FHEM/bindings/python/fhempy/) | The Python (asyncio) server: receives the messages, runs the module function and replies. |
+
+Example: `define castdevice fhempy googlecast "Living Room"`
+
+1. The fhempy device sends `IOWrite` to BindingsIo.
+2. BindingsIo sends a JSON websocket message to fhempy.
+3. fhempy loads the module (`googlecast`), creates an instance and calls its `Define` function.
+4. FHEM waits for the answer, the same way as for Perl modules, and fhempy returns the result as JSON via websocket.
+
+At any time a module can call FHEM functions like `readingsSingleUpdate(...)` via the fhem.py module (`fhem.readingsSingleUpdate(...)`).
+
+</details>
 
 ## Write your own module
 Check the [helloworld example](FHEM/bindings/python/fhempy/lib/helloworld/) for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.
