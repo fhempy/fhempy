@@ -14,6 +14,13 @@ my $ret = fhem("update add $controls", 1);
   $ret = fhem("update all pythonbinding", 1);
 }
 
+# the local fhempy might have another name than fhempy_local
+my ($local) = grep { $defs{$_}{TYPE} eq "BindingsIo" &&
+                     ($defs{$_}{localBinding} || ($defs{$_}{DeviceName} // "") eq "ws:127.0.0.1:15733") }
+              sort keys %defs;
+my $existing = defined($local);
+$local //= "fhempy_local";
+
 my $error;
 my $msg = "fhempy is being installed, watch the progress of fhempy_local in the room fhempy";
 if (!-r "$attr{global}{modpath}/FHEM/10_BindingsIo.pm") {
@@ -22,8 +29,8 @@ if (!-r "$attr{global}{modpath}/FHEM/10_BindingsIo.pm") {
 } elsif (my $err = CommandReload(undef, "10_BindingsIo")) {
   $error = "Loading 10_BindingsIo.pm failed: $err";
   $msg = "fhempy installation failed: $err";
-} elsif (defined($defs{fhempy_local})) {
-  $msg = "fhempy files updated, fhempy_local exists already (room fhempy)";
+} elsif ($existing) {
+  $msg = "fhempy files updated, $local exists already";
 } elsif (my $def = CommandDefine(undef, "fhempy_local BindingsIo fhempy")) {
   $error = "define fhempy_local failed: $def";
   $msg = $error;
@@ -137,7 +144,7 @@ my $html = <<'HTML';
   }
   function poll() {
     if (!document.getElementById("fhempyInstall")) return;
-    var cmd = '{ReadingsVal("fhempy_local","state","")."|".ReadingsVal("fhempy_local","version","")}';
+    var cmd = '{ReadingsVal("__LOCAL__","state","")."|".ReadingsVal("__LOCAL__","version","")}';
     FW_cmd(FW_root+"?cmd="+encodeURIComponent(cmd)+"&XHR=1", function(r) {
       var p = (r || "").replace(/[\r\n]+$/, "").split("|");
       var state = p[0] || "", version = p[1] || "";
@@ -147,7 +154,7 @@ my $html = <<'HTML';
         $("#fhempyInstallTitle").text("fhempy "+version+" is ready");
         setupTiles();
         $("#fhempyInstall").dialog && $("#fhempyInstall").dialog("option", "buttons", [
-          {text:"Open the room fhempy", click:function(){ location.href = FW_root+"?room=fhempy"; }},
+          {text:"Open __LOCALTEXT__", click:function(){ location.href = FW_root+"__LOCALLINK__"; }},
           {text:"Close", click:function(){ $(this).dialog("close"); }}]);
         return;
       }
@@ -187,5 +194,9 @@ if (defined($error)) {
   $js_error = "\"$js_error\"";
 }
 $html =~ s/__ERROR__/$js_error/;
+# device names only contain [A-Za-z0-9._]
+$html =~ s/__LOCAL__/$local/g;
+$html =~ s/__LOCALTEXT__/$existing ? $local : "the room fhempy"/e;
+$html =~ s/__LOCALLINK__/$existing ? "?detail=$local" : "?room=fhempy"/e;
 $html =~ s/\n//g;
 $html;
