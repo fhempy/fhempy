@@ -9,6 +9,8 @@ from fhempy.lib import fhem, fhem_modules
 CONTROLS = """DIR FHEM/bindings
 UPD 2026-10-21_23:17:46 35359 FHEM/10_BindingsIo.pm
 UPD 2026-10-06_19:02:38 7088 FHEM/bindings/python/bin/fhempy
+UPD 2026-10-22_21:17:43 5017 www/fhempy/modules.js
+UPD 2026-10-22_21:17:43 5017 www/pgm2/fhemweb.js
 UPD 2026-10-06_19:02:38 7088 FHEM/../../etc/passwd
 UPD 2026-10-06_19:02:38 7088 /etc/passwd
 UPD 2026-10-06_19:02:38 7088 FHEM/it's.pm
@@ -20,6 +22,7 @@ def test_controls_files_stay_in_fhem_directory():
     assert fhem_modules.controls_files(CONTROLS) == [
         "FHEM/10_BindingsIo.pm",
         "FHEM/bindings/python/bin/fhempy",
+        "www/fhempy/modules.js",
     ]
 
 

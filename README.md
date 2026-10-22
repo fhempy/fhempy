@@ -96,7 +96,11 @@ sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib
 ```
 
 ### 3. Define your first device
-Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
+The easiest way: click **+ Install modules** next to `fhempy_local` in the room *fhempy*. Search or browse all modules, click one and press *Set up*. If a module needs more information (e.g. a login or an IP address), the window asks for it and creates the device for you.
+
+<p align="center"><img src="docs/images/module-installer.png" alt="fhempy module installer: search, categories and a tile with logo for every module" width="700"></p>
+
+Of course you can also define devices like any other FHEM device, pick a module from the [list below](#-modules), for example:
 ```
 define matter fhempy matter
 define castdevice fhempy googlecast "Living Room"

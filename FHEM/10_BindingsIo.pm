@@ -69,7 +69,7 @@ my $alive_check_timeout = 5;
 # function timeout while an alive check is running
 my $suspect_timeout = 500;
 
-my $BindingsIo_devStateIconVersion = "1.5.0";
+my $BindingsIo_devStateIconVersion = "1.6.0";
 # default devStateIcon 1.3.0 of fhempy 2.x, set before the default was remembered
 my $BindingsIo_legacyDevStateIconChecksum = "574c39f1d7ab6776eeab79bb53d6e853";
 
@@ -241,7 +241,11 @@ BindingsIo_defaultDevStateIcon() {
     }
     my $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".$refresh_icon."</a>";;
     my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-    "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon.$status_line."</div>"
+    my $modules_button = "";;
+    if (InternalVal($name, "localBinding", 0)) {
+      $modules_button = "<a href=\"#\" onclick=\"jQuery.getScript(FW_root+&quot;/fhempy/modules.js&quot;,function(){fhempyModules()});;return false;;\" title=\"Install fhempy modules: Matter, Zigbee2MQTT, Tuya, weather, cars...\" style=\"display:inline-block;;margin-left:10px;;padding:2px 12px;;border-radius:12px;;background:#4B8BBE;;text-decoration:none;;white-space:nowrap\"><span style=\"color:#fff;;font-weight:600\">&#43; Install modules</span></a>";;
+    }
+    "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon.$modules_button.$status_line."</div>"
   }';
   $devstate_cmd =~ tr/\n//d;
   return $devstate_cmd;
@@ -1231,6 +1235,9 @@ sub BindingsIo_readWebsocketMessage {
     <a id="BindingsIo-set-defaultDevStateIcon"></a>
     <li><code>defaultDevStateIcon</code><br>
       reset the devStateIcon attribute to the fhempy default.<br>
+      On the local fhempy the default shows the button <b>+ Install modules</b>, it opens a
+      window with all fhempy modules. <i>Set up</i> asks for the parameters a module needs
+      and defines the device.<br>
       The default is set once when the device is created and updated together with fhempy
       as long as it is unchanged. A changed or deleted devStateIcon stays as it is.
     </li>
