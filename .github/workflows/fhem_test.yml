@@ -47,7 +47,7 @@ jobs:
         extension: ''
 
     - name: update controls file for the module installer of FHEMWEB
-      uses: fhem/fhem-controls-actions@v2.3.0
+      uses: fhem/fhem-controls-actions@4fad1d6c17038fb18ca424a521eb9a05d1d960f4 # v2.3.0
       with:
         filename: controls_pythonbinding.txt 
         directory: www/fhempy
