@@ -14,7 +14,16 @@ import traceback
 import websockets
 import websockets.asyncio.server
 
-from . import celebration, fhem, generic, pkg_installer, updates, utils, version
+from . import (
+    celebration,
+    fhem,
+    fhem_modules,
+    generic,
+    pkg_installer,
+    updates,
+    utils,
+    version,
+)
 from .core.loop_watchdog import LoopWatchdog
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
@@ -110,6 +119,8 @@ async def pybinding(websocket):
     await activate_internal_modules()
     await fhem.send_version()
     release_task = asyncio.create_task(fhem.send_latest_release())
+    # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
+    modules_task = asyncio.create_task(fhem_modules.install())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -125,6 +136,7 @@ async def pybinding(websocket):
             stop_event.set()
     finally:
         release_task.cancel()
+        modules_task.cancel()
         pb.connection_closed()
 
 
