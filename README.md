@@ -78,6 +78,10 @@ That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which set
 
 `fhempy_local` turns green with the fhempy version as soon as it's ready. If something goes wrong, the state shows the reason in red.
 
+<p align="center"><img src="docs/images/install-dialog.png" alt="fhempy installation window: progress and setup tiles for Matter, Matter Bridge, Zigbee2MQTT and AI (MCP server)" width="800"></p>
+
+When fhempy is ready, the window offers Matter, Matter Bridge, Zigbee2MQTT and the AI MCP server: one click creates the device.
+
 > [!NOTE]
 > fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
