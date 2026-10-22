@@ -70,16 +70,16 @@ async def ssh_peer(tmp_path, monkeypatch):
     script = tmp_path / "install_peer.sh"
     script.write_text(FAKE_INSTALLER)
     monkeypatch.setattr(peer_installer, "SCRIPT", str(script))
-    monkeypatch.setattr(
-        peer_installer, "REMOTE_SCRIPT", str(tmp_path / "uploaded_installer.sh")
-    )
+    monkeypatch.setattr(peer_installer, "KNOWN_HOSTS", str(tmp_path / "known_hosts"))
 
     env = dict(
         os.environ,
         PATH=f"{bindir}:{os.environ['PATH']}",
         FHEMPY_TEST_PASSWORD=PASSWORD,
         USER="pi",
+        TMPDIR=str(tmp_path / "remote_tmp"),
     )
+    (tmp_path / "remote_tmp").mkdir()
 
     async def handle_process(process):
         proc = await asyncio.create_subprocess_exec(
@@ -104,11 +104,12 @@ async def ssh_peer(tmp_path, monkeypatch):
         def validate_password(self, username, password):
             return username == "pi" and password == PASSWORD
 
+    host_key = asyncssh.generate_private_key("ssh-ed25519")
     server = await asyncssh.create_server(
         Server,
         "127.0.0.1",
         0,
-        server_host_keys=[asyncssh.generate_private_key("ssh-ed25519")],
+        server_host_keys=[host_key],
         process_factory=handle_process,
         encoding=None,
     )
@@ -118,7 +119,13 @@ async def ssh_peer(tmp_path, monkeypatch):
     def connect(host, **kwargs):
         return real_connect(host, port=port, **kwargs)
 
+    real_get_key = asyncssh.get_server_host_key
+
+    def get_server_host_key(host, **kwargs):
+        return real_get_key(host, port=port, **kwargs)
+
     monkeypatch.setattr(asyncssh, "connect", connect)
+    monkeypatch.setattr(asyncssh, "get_server_host_key", get_server_host_key)
     yield tmp_path
     server.close()
     await server.wait_closed()
@@ -154,7 +161,7 @@ async def test_install_peer(ssh_peer, fhem_mock):
         "fhempy_peer_127_0_0_1 BindingsIo 127.0.0.1:15733 fhempy",
     )
     # the uploaded installer is removed again, the password is forgotten
-    assert not (ssh_peer / "uploaded_installer.sh").exists()
+    assert list((ssh_peer / "remote_tmp").iterdir()) == []
     assert installer.password is None
     assert not any(PASSWORD in r for r in readings)
 
@@ -193,3 +200,29 @@ async def test_existing_peer_device_is_kept(ssh_peer, fhem_mock, monkeypatch):
     ).run()
     assert readings[-1].endswith("is ready")
     define.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_changed_host_key_is_rejected(ssh_peer, fhem_mock):
+    readings, define = fhem_mock
+    (ssh_peer / "known_hosts").write_text(
+        "127.0.0.1 ssh-ed25519 "
+        "AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\n"
+    )
+    await peer_installer.PeerInstaller(
+        {"NAME": "fhempy_local"}, "127.0.0.1", "pi", PASSWORD
+    ).run()
+    assert "host key of 127.0.0.1 changed" in readings[-1]
+    define.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_host_key_is_remembered(ssh_peer, fhem_mock):
+    for _ in range(2):
+        await peer_installer.PeerInstaller(
+            {"NAME": "fhempy_local"}, "127.0.0.1", "pi", PASSWORD
+        ).run()
+    readings, _ = fhem_mock
+    assert readings[-1].endswith("is ready")
+    lines = (ssh_peer / "known_hosts").read_text().splitlines()
+    assert len(lines) == 1 and lines[0].startswith("127.0.0.1 ssh-ed25519 ")

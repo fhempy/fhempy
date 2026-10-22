@@ -1220,6 +1220,8 @@ sub BindingsIo_readWebsocketMessage {
       fhempy installs the system packages for the Bluetooth modules, Python, fhempy and a
       systemd service on the peer and creates <code>fhempy_peer_&lt;IP&gt;</code> afterwards.
       The reading <code>peer_install</code> shows the progress.<br>
+      The SSH host key of the peer is trusted on first use and checked on later
+      installations (.fhempy/peer_installer/known_hosts).<br>
       The password is used for this installation only, it's neither stored nor logged by
       fhempy (FHEM itself logs every command with global verbose 5).
     </li>

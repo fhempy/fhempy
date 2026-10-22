@@ -12,6 +12,7 @@ neither stored nor logged.
 import asyncio
 import logging
 import os
+import shlex
 import socket
 from pathlib import Path
 
@@ -22,7 +23,8 @@ logger = logging.getLogger(__name__)
 PORT = 15733
 STEP_PREFIX = "fhempy-install: "
 SCRIPT = os.path.join(os.path.dirname(__file__), "install_peer.sh")
-REMOTE_SCRIPT = "/tmp/fhempy_install_peer.sh"
+# SSH host keys of the peers, trusted on first use
+KNOWN_HOSTS = os.path.join(".fhempy", "peer_installer", "known_hosts")
 CONNECT_TIMEOUT = 30
 # installing the system packages and Python on a Raspberry Pi takes a while
 INSTALL_TIMEOUT = 3600
@@ -52,6 +54,21 @@ def parse_args(args):
 
 class PeerInstallError(Exception):
     pass
+
+
+def _known_host_lines():
+    try:
+        with open(KNOWN_HOSTS, "r") as f:
+            return f.read().splitlines()
+    except FileNotFoundError:
+        return []
+
+
+def _remember_host_key(host, key_line):
+    os.makedirs(os.path.dirname(KNOWN_HOSTS), mode=0o700, exist_ok=True)
+    fd = os.open(KNOWN_HOSTS, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "a") as f:
+        f.write(f"{host} {key_line}\n")
 
 
 class PeerInstaller:
@@ -85,17 +102,34 @@ class PeerInstaller:
         finally:
             self.password = None
 
+    async def trust_host_key(self, asyncssh):
+        """Trust the host key on first use, later connections fail if the
+        peer's host key changed."""
+        known = await asyncio.to_thread(_known_host_lines)
+        if any(line.split(" ", 1)[0] == self.host for line in known):
+            return
+        key = await asyncio.wait_for(
+            asyncssh.get_server_host_key(self.host, family=socket.AF_INET),
+            CONNECT_TIMEOUT,
+        )
+        if key is None:
+            raise PeerInstallError("the peer didn't send an SSH host key")
+        key_line = key.export_public_key("openssh").decode().strip()
+        await asyncio.to_thread(_remember_host_key, self.host, key_line)
+        logger.info("Trusting SSH host key of %s: %s", self.host, key_line)
+
     async def install(self):
         import asyncssh
 
         try:
+            await self.trust_host_key(asyncssh)
             # BindingsIo only connects to IPv4 addresses
             conn = await asyncio.wait_for(
                 asyncssh.connect(
                     self.host,
                     username=self.user,
                     password=self.password,
-                    known_hosts=None,
+                    known_hosts=KNOWN_HOSTS,
                     client_keys=None,
                     family=socket.AF_INET,
                 ),
@@ -103,6 +137,11 @@ class PeerInstaller:
             )
         except asyncssh.PermissionDenied:
             raise PeerInstallError("wrong user or password")
+        except asyncssh.HostKeyNotVerifiable:
+            raise PeerInstallError(
+                f"SSH host key of {self.host} changed, remove it from "
+                f"{KNOWN_HOSTS} if the peer was reinstalled"
+            )
         except (OSError, asyncio.TimeoutError, asyncssh.Error) as err:
             raise PeerInstallError(
                 f"SSH connection failed ({err or type(err).__name__}), "
@@ -113,14 +152,16 @@ class PeerInstaller:
             ip = conn.get_extra_info("peername")[0]
             await self.report(f"connected ({ip}), uploading installer")
             script = await asyncio.to_thread(Path(SCRIPT).read_bytes)
+            result = await conn.run("mktemp", check=True)
+            remote_script = shlex.quote(result.stdout.strip())
             await conn.run(
-                f"cat > {REMOTE_SCRIPT}", input=script, encoding=None, check=True
+                f"cat > {remote_script}", input=script, encoding=None, check=True
             )
             # sudo reads the password from stdin, -p '' hides its prompt;
             # the script runs fhempy as the SSH user (SUDO_USER)
             cmd = (
-                f"sudo -S -p '' bash {REMOTE_SCRIPT}; ret=$?; "
-                f"rm -f {REMOTE_SCRIPT}; exit $ret"
+                f"sudo -S -p '' bash {remote_script}; ret=$?; "
+                f"rm -f {remote_script}; exit $ret"
             )
             await self.report("installing (this can take 15 minutes)")
             try:
