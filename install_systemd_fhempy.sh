@@ -11,9 +11,9 @@ INSTALLER_URL=https://raw.githubusercontent.com/fhempy/fhempy/master/FHEM/bindin
 installer=$(mktemp) || exit 1
 trap 'rm -f "$installer"' EXIT
 if command -v curl >/dev/null 2>&1; then
-  curl -fsSL "$INSTALLER_URL" -o "$installer"
+  curl --proto "=https" --tlsv1.2 -fsS "$INSTALLER_URL" -o "$installer"
 else
-  wget -qO "$installer" "$INSTALLER_URL"
+  wget --https-only --max-redirect=0 -qO "$installer" "$INSTALLER_URL"
 fi || { echo "Downloading $INSTALLER_URL failed"; exit 1; }
 
 bash "$installer" "$@" </dev/null

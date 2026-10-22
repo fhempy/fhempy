@@ -92,9 +92,9 @@ mkdir -p "$FHEMPY_DIR"
 if [ ! -x "$UV" ]; then
   echo -n "Installing uv..."
   if command -v curl >/dev/null 2>&1; then
-    curl -LsSf "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
+    curl --proto "=https" --tlsv1.2 -LsSf "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
   else
-    wget -qO- "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
+    wget --https-only -qO- "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
   fi
   if [ -x "$UV" ]; then echo "OK"; else echo "FAILED, using pip instead"; fi
 fi
