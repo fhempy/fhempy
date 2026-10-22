@@ -69,7 +69,7 @@ Copy & paste this line into the FHEM command field and press enter:
 {eval GetFileFromURL("https://raw.githubusercontent.com/fhempy/fhempy/master/install_fhempy.pl")}
 ```
 
-That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which sets up everything else on its own. No restart, no `sudo` and no system packages needed. Watch the progress in the room *fhempy*:
+That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which sets up everything else on its own. No restart, no `sudo` and no system packages needed. A window shows the progress until fhempy is ready, the state of `fhempy_local` in the room *fhempy* shows it too:
 
 1. `Installing fhempy: 1/4 installing uv`
 2. `Installing fhempy: 2/4 installing Python 3.13` (only if your system Python is older)
