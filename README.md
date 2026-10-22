@@ -173,6 +173,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
+|[mantra_ble](FHEM/bindings/python/fhempy/lib/mantra-ble/README.md)|mAntra ceiling fan lamps|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
