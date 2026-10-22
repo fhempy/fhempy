@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v2.6.0 (2026-10-22)
+
+### Documentation
+
+- Simpler architecture diagram in README ([#728](https://github.com/fhempy/fhempy/pull/728),
+  [`379927d`](https://github.com/fhempy/fhempy/commit/379927d9ecc57a071e45e91459ca9728deb6f4a9))
+
+### Features
+
+- Module installer in FHEMWEB, button + Install modules at the local fhempy
+  ([#730](https://github.com/fhempy/fhempy/pull/730),
+  [`4be4891`](https://github.com/fhempy/fhempy/commit/4be48914e88e85ba23c94fa7c63a089190f659f9))
+
+- Super simple installation of fhempy in FHEM and on peers
+  ([#729](https://github.com/fhempy/fhempy/pull/729),
+  [`9aff854`](https://github.com/fhempy/fhempy/commit/9aff8542c42cfe2f9f762803366dcd0fa15b2cec))
+
+- Update installs and reloads the FHEM modules, autoUpdate attribute
+  ([#727](https://github.com/fhempy/fhempy/pull/727),
+  [`be73031`](https://github.com/fhempy/fhempy/commit/be7303182271c690d4f5e628bc2b10e487c0c635))
+
+
 ## v2.5.1 (2026-10-21)
 
 ### Bug Fixes
