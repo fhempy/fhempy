@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.6.1 (2026-10-22)
+
+### Features
+
+- Tuya dialog with the found devices after the scan, click creates them
+  ([#731](https://github.com/fhempy/fhempy/pull/731),
+  [`3c50c82`](https://github.com/fhempy/fhempy/commit/3c50c8228987ee13f5b5b044fa30053b5720a642))
+
+
 ## v2.6.0 (2026-10-22)
 
 ### Documentation
