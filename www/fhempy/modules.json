@@ -1,5 +1,14 @@
 [
  {
+  "id": "remote_access",
+  "title": "Remote access",
+  "description": "Open FHEM on your phone from anywhere, without VPN app and router setup (free Tailscale account)",
+  "category": "tools",
+  "name": "remote",
+  "single": true,
+  "icon": "📱"
+ },
+ {
   "id": "mcp_server",
   "title": "AI (MCP server)",
   "description": "Control FHEM in plain language with AI apps (Claude, LM Studio...), the AI can also create automations",

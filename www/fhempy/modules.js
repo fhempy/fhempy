@@ -25,7 +25,7 @@
   ];
   var byCat = {};
   categories.forEach(function (c) { byCat[c.id] = c; });
-  var popular = ["matter", "matter_bridge", "zigbee2mqtt", "mcp_server",
+  var popular = ["matter", "matter_bridge", "zigbee2mqtt", "mcp_server", "remote_access",
                  "tuya_smartlife", "googlecast", "esphome", "openmeteo_weather"];
 
   /*
