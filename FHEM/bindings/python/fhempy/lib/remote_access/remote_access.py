@@ -15,7 +15,7 @@ import re
 import secrets
 
 from .. import fhem, generic
-from . import tailscale
+from . import sites, tailscale
 
 DEFAULT_HOSTNAME = "fhem"
 DEFAULT_USERNAME = "fhem"
@@ -92,6 +92,7 @@ class remote_access(generic.FhemModule):
         self._unique_id = None
         self._wakeup = asyncio.Event()
         self._run_task = None
+        self.sites = sites.Sites(self)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -137,6 +138,7 @@ class remote_access(generic.FhemModule):
     # FHEM FUNCTION
     async def Undefine(self, hash):
         await super().Undefine(hash)
+        await self.sites.stop()
         await self.ts.stop()
 
     # FHEM FUNCTION
@@ -206,6 +208,7 @@ class remote_access(generic.FhemModule):
 
     async def apply_password(self):
         await self.set_basic_auth()
+        self.sites.login.forget()
         await self.page_changed()
 
     # --- FHEMWEB with password ---
@@ -408,12 +411,18 @@ class remote_access(generic.FhemModule):
             self.url = f"https://{dns}"
             await fhem.readingsSingleUpdateIfChanged(self.hash, "url", self.url, 1)
             await self.update_status("online")
+            try:
+                await self.sites.update(dns)
+            except Exception:
+                self.logger.exception("Web pages of the home network failed")
             return True
         output = self.ts.funnel_output.strip()
         if output and self.ts.funnel_proc is not None:
             self.logger.info(f"tailscale funnel: {output}")
         # check the password again, it might have been removed meanwhile
         await self.check_password_protection()
+        # start_funnel removes the Funnel ports of the web pages too
+        await self.sites.stop()
         await self.ts.start_funnel(self.fhemweb_url())
         await self.update_status("enabling funnel")
         return False
@@ -448,11 +457,13 @@ class remote_access(generic.FhemModule):
         password and look of FHEMWEB are checked again"""
         if self._run_task is not None:
             self.cancel_async_task(self._run_task)
+        await self.sites.stop()
         await self.ts.stop()
         self.url = ""
         self._run_task = self.create_async_task(self.run())
 
     async def logout(self):
+        await self.sites.stop()
         await self.ts.stop_funnel()
         await self.ts.logout()
         self.url = ""
@@ -526,6 +537,15 @@ class remote_access(generic.FhemModule):
             )
         return f"{html.escape(status[:1].upper() + status[1:])}..."
 
+    def web_pages_html(self):
+        if not self.sites.shared:
+            return ""
+        pages = "<br>".join(html.escape(p) for p in self.sites.shared)
+        return (
+            "<br><br><small>These pages of your home network work from "
+            f"anywhere too, with the same password:<br>{pages}</small>"
+        )
+
     def online_html(self):
         url = html.escape(self.url)
         user = html.escape(self._attr_username)
@@ -546,6 +566,7 @@ class remote_access(generic.FhemModule):
             "<small>Only this address needs the password, FHEMWEB in your home "
             "network stays as it is. Change the password with "
             "<i>set password</i>.</small>"
+            f"{self.web_pages_html()}"
             f'</td><td style="vertical-align:top">{qr_image(self.url)}</td>'
             "</tr></table>"
         )

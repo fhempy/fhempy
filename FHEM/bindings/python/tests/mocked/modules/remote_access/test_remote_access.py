@@ -8,13 +8,14 @@ import re
 import sys
 import tarfile
 
+import aiohttp
 import pytest
 import pytest_asyncio
 from aiohttp import web
 from tests.utils import mock_fhem
 
 from fhempy.lib.remote_access import remote_access as ra
-from fhempy.lib.remote_access import tailscale
+from fhempy.lib.remote_access import sites, tailscale
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,17 @@ elif args[:1] == ["up"]:
         time.sleep(0.05)
 elif args[:2] == ["funnel", "status"]:
     allow = {"%s:443" % state["dns"]: True} if state.get("target") else {}
+    for port in state.get("ports", {}):
+        allow["%s:%s" % (state["dns"], port)] = True
     print(json.dumps({"AllowFunnel": allow}))
+elif args[:1] == ["funnel"] and any(a.startswith("--https=") for a in args):
+    port = [a for a in args if a.startswith("--https=")][0].split("=")[1]
+    ports = state.setdefault("ports", {})
+    if args[-1] == "off":
+        ports.pop(port, None)
+    else:
+        ports[port] = args[-1]
+    save(state)
 elif args[:1] == ["funnel"]:
     if not state.get("funnel_enabled"):
         print("Funnel is not enabled on your tailnet.\nTo enable, visit:\n")
@@ -68,6 +79,7 @@ elif args[:1] == ["funnel"]:
     save(state)
 elif args[:2] == ["serve", "reset"]:
     state["target"] = None
+    state["ports"] = {}
     save(state)
 elif args[:1] == ["logout"]:
     state["backend"] = "NeedsLogin"
@@ -131,18 +143,25 @@ class FakeFhemweb:
         self.runner = None
         self.port = None
 
+    def token(self):
+        return base64.b64encode(self.credentials.encode()).decode()
+
     async def handle(self, request):
         if not self.protected:
             return web.Response(text="FHEM")
         header = request.headers.get("Authorization", "")
         if header.startswith("Basic ") and self.credentials:
-            if base64.b64decode(header[6:]).decode() == self.credentials:
+            if header[6:] == self.token():
                 return web.Response(text="FHEM")
+        if self.credentials and f"AuthToken={self.token()}" in request.headers.get(
+            "Cookie", ""
+        ):
+            return web.Response(status=404)
         return web.Response(status=401, headers={"WWW-Authenticate": "Basic"})
 
     async def start(self):
         app = web.Application()
-        app.router.add_get("/fhem", self.handle)
+        app.router.add_get("/{path:.*}", self.handle)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
@@ -157,9 +176,16 @@ class FakeFhem:
     def __init__(self, fhemweb):
         self.fhemweb = fhemweb
         self.commands = []
+        self.weblinks = {}
+        self.rewrites = []
 
     async def send(self, hash, code):
         self.commands.append(code)
+        if "TYPE=weblink" in code:
+            return json.dumps(self.weblinks)
+        if "fhempy_remote_access" in code:
+            self.rewrites.append(code)
+            return ""
         if "FHEMWEB $p" in code:
             return f"port {self.fhemweb.port}"
         if "'basicAuth', '')" in code:
@@ -190,6 +216,7 @@ async def module(mocker, tmp_path, monkeypatch):
     mock_fhem.readings.pop(NAME, None)
     mock_fhem.attributes.pop(NAME, None)
     mocker.patch.object(ra, "WAIT_INTERVAL", 0.05)
+    mocker.patch.object(ra, "ONLINE_INTERVAL", 0.1)
     fake_ts = FakeTailscale()
 
     async def install(logger):
@@ -295,6 +322,96 @@ async def test_password_and_logout(module):
     assert module.fake_ts.load()["target"] is None
 
 
+class FakeEsphome:
+    """web page in the home network with a websocket"""
+
+    async def page(self, request):
+        return web.Response(
+            text=f"ESPHome {request.headers.get('Origin', '-')} "
+            f"{request.headers.get('Cookie', '-')}"
+        )
+
+    async def events(self, request):
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        async for msg in ws:
+            await ws.send_str("echo " + msg.data)
+        return ws
+
+    async def start(self):
+        app = web.Application()
+        app.router.add_get("/events", self.events)
+        app.router.add_get("/{path:.*}", self.page)
+        self.runner = web.AppRunner(app)
+        await self.runner.setup()
+        site = web.TCPSite(self.runner, "127.0.0.1", 0)
+        await site.start()
+        return site._server.sockets[0].getsockname()[1]
+
+
+@pytest.mark.asyncio
+async def test_web_pages(module):
+    esphome = FakeEsphome()
+    port = await esphome.start()
+    module.fake.weblinks = {
+        "other": "http://10.0.0.3:1234/",
+        "z2m_frontend": "http://192.168.1.20:8080/",
+        "esphome_dashboard": f"http://127.0.0.1:{port}/",
+        "google": "https://www.google.com/",
+    }
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    await define(module)
+    await wait_for(
+        lambda: module.fake_ts.load().get("ports", {}).keys() == {"8443", "10000"}
+    )
+    await wait_for(lambda: "web_pages" in mock_fhem.readings.get(NAME, {}))
+    assert mock_fhem.readings[NAME]["web_pages"] == (
+        f"esphome_dashboard: https://{DNS}:8443/, z2m_frontend: https://{DNS}:10000/"
+    )
+    rewrite = module.fake.rewrites[-1]
+    assert f"'http://127.0.0.1:{port}' => 'https://{DNS}:8443'" in rewrite
+    assert (
+        "'http://192.168.1.20:8080' => 'https://{DNS}:10000'".format(DNS=DNS) in rewrite
+    )
+    assert "esphome_dashboard" in module.setup_html()
+
+    proxy_url = module.fake_ts.load()["ports"]["8443"]
+    async with aiohttp.ClientSession() as session:
+        # no password: no access
+        async with session.get(proxy_url + "/devices") as resp:
+            assert resp.status == 401
+        async with session.get(
+            proxy_url + "/", headers={"Cookie": "AuthToken=wrong"}
+        ) as resp:
+            assert resp.status == 401
+        # the login cookie of FHEMWEB
+        cookie = {"Cookie": f"AuthToken={module.fhemweb.token()}; theme=dark"}
+        async with session.get(
+            proxy_url + "/x?a=1", headers=dict(cookie, Origin=f"https://{DNS}:8443")
+        ) as resp:
+            assert resp.status == 200
+            text = await resp.text()
+        assert text == f"ESPHome http://127.0.0.1:{port} theme=dark"
+        async with session.ws_connect(proxy_url + "/events", headers=cookie) as ws:
+            await ws.send_str("hi")
+            msg = await ws.receive(timeout=5)
+            assert msg.data == "echo hi"
+
+    # FHEMWEB without password: the pages are closed too
+    module.fhemweb.protected = False
+    module.sites.login._protected_until = 0
+    async with aiohttp.ClientSession() as session:
+        async with session.get(proxy_url + "/", headers=cookie) as resp:
+            assert resp.status == 401
+    module.fhemweb.protected = True
+
+    # weblink deleted: its port is closed
+    del module.fake.weblinks["z2m_frontend"]
+    await wait_for(lambda: module.sites.shared[-1].startswith("other:"))
+    assert module.fake_ts.load()["ports"].keys() == {"8443", "10000"}
+    await esphome.runner.cleanup()
+
+
 def make_tarball(names):
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
@@ -330,3 +447,20 @@ def test_helpers():
     assert ra.valid_hostname("My FHEM!") == "my-fhem"
     assert ra.valid_hostname("") == "fhem"
     assert ra.fhem_address() is None
+    assert sites.home_origin("http://192.168.1.5:6052/x") == "http://192.168.1.5:6052"
+    assert sites.home_origin("http://raspberrypi:8080") == "http://raspberrypi:8080"
+    assert sites.home_origin("http://8.8.8.8:80/") is None
+    assert sites.home_origin("https://192.168.1.5/") is None
+    assert sites.home_origin("http://example.com/") is None
+    assert sites.home_origin("http://u:p@192.168.1.5/") is None
+    ports = sites.assign_ports(
+        {
+            "a": "http://10.0.0.1:1/",
+            "z2m_frontend": "http://10.0.0.2:8080/",
+            "b": "http://10.0.0.2:8080/x",
+        }
+    )
+    assert ports == {
+        8443: ("http://10.0.0.2:8080", ["z2m_frontend", "b"]),
+        10000: ("http://10.0.0.1:1", ["a"]),
+    }
