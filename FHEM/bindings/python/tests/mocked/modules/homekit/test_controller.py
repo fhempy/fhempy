@@ -280,6 +280,11 @@ async def test_set_sends_value_and_updates_reading(mocker):
     temp = char(11, "Target Temperature", CharacteristicFormats.float, 20.0)
     await dev.char_to_set(on)
     await dev.char_to_set(temp)
+    # some devices send characteristics without description: use the type
+    unnamed = char(12, None, CharacteristicFormats.int, 5)
+    unnamed.type = "Custom-Level"
+    await dev.char_to_set(unnamed)
+    assert "custom_level" in dev.set_config
     await dev.set_set_config(dev.set_config)
 
     for args, expected in (

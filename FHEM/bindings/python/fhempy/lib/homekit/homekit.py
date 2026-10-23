@@ -300,7 +300,9 @@ class homekit(generic.FhemModule):
         # the response only lists characteristics on errors (status != 0)
         errors = {k: v for k, v in (result or {}).items() if v.get("status")}
         if errors:
-            self.logger.error(f"HomeKit device rejected {char.description}: {errors}")
+            self.logger.error(
+                f"HomeKit device rejected {self._reading_name(char)}: {errors}"
+            )
             return
         if "pr" in char.perms:
             # don't wait for the next poll (interval) to show the new value
@@ -317,7 +319,7 @@ class homekit(generic.FhemModule):
 
     async def char_to_set(self, char):
         if char.format in NUMBER_TYPES:
-            self.set_config[utils.gen_reading_name(char.description)] = {
+            self.set_config[self._reading_name(char)] = {
                 "args": ["new_value"],
                 "params": {
                     "new_value": {
@@ -333,7 +335,7 @@ class homekit(generic.FhemModule):
                 "options": f"slider,{char.minValue},{char.minStep},{char.maxValue},1",
             }
         elif char.format == CharacteristicFormats.bool:
-            self.set_config[utils.gen_reading_name(char.description)] = {
+            self.set_config[self._reading_name(char)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "bool"}},
                 "function": "set_value",
@@ -341,7 +343,7 @@ class homekit(generic.FhemModule):
                 "options": "on,off",
             }
         elif char.format == CharacteristicFormats.string:
-            self.set_config[utils.gen_reading_name(char.description)] = {
+            self.set_config[self._reading_name(char)] = {
                 "args": ["new_value"],
                 "params": {"new_value": {"format": "string"}},
                 "function": "set_value",
