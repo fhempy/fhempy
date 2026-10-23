@@ -207,7 +207,6 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 ### 🧰 Information & tools
 |Module | Description|
 |-------|------------|
-|[aktionsfinder](FHEM/bindings/python/fhempy/lib/aktionsfinder/)|Keep informed about product promotions|
 |[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for the free ddnss.de service|
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
