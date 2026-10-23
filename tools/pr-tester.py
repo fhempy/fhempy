@@ -20,6 +20,8 @@ Usage (as a user with sudo rights, the script switches to the fhempy user):
   python3 pr-tester.py --restore    # start the normal fhempy again (e.g. after a crash)
   python3 pr-tester.py --clean      # remove the test installation
 
+The script updates itself from master on every start (skip with --no-update).
+
 Run it within tmux or screen if you are connected via SSH. If the SSH connection
 drops, the script still tries to start the normal fhempy again.
 
@@ -49,6 +51,8 @@ import urllib.request
 
 REPO = "fhempy/fhempy"
 API_URL = "https://api.github.com/repos/" + REPO
+SCRIPT_URL = f"https://raw.githubusercontent.com/{REPO}/master/tools/pr-tester.py"
+UPDATED_ENV = "FHEMPY_PR_TESTER_UPDATED"
 DEFAULT_PORT = 15733
 DEFAULT_FHEM_DIRS = ["/opt/fhem"]
 FHEMPY_DIR = ".fhempy"
@@ -67,6 +71,8 @@ START_SCRIPT = "FHEM/bindings/python/bin/start_fhempy.py"
 SERVICE = "fhempy"
 # FHEM modules which belong to fhempy, they are not part of the Python package
 FHEM_MODULE_RE = re.compile(r"^FHEM/(\d\d_\w+)\.pm$")
+# FHEMWEB files of fhempy (module installer catalog, javascript, logos)
+WWW_FILE_RE = re.compile(r"^www/fhempy/[\w-][\w.-]*(/[\w-][\w.-]*)*$")
 SHA_RE = re.compile(r"[0-9a-f]{40}")
 # starts fhempy with INFO logging like FHEM/bindings/python/bin/start_fhempy.py,
 # the fhempy console script only logs warnings
@@ -230,18 +236,15 @@ def choose_target(pr):
     }
 
 
-def pr_fhem_modules(pr_number):
-    """Returns the FHEM Perl modules (e.g. 10_BindingsIo) changed by the PR."""
-    modules = []
+def pr_changed_files(pr_number):
+    """Returns the files added or changed by the PR (removed files are left out)."""
+    changed = []
     page = 1
     while True:
         files = github_get(f"/pulls/{pr_number:d}/files?per_page=100&page={page:d}")
-        for entry in files:
-            match = FHEM_MODULE_RE.match(entry["filename"])
-            if match and entry["status"] != "removed":
-                modules.append(match.group(1))
+        changed.extend(e["filename"] for e in files if e["status"] != "removed")
         if len(files) < 100:
-            return modules
+            return changed
         page += 1
 
 
@@ -508,6 +511,34 @@ def forwarded_args(args, target):
     return result
 
 
+def self_update(args, target):
+    """Replaces this script with the master version and restarts it if changed."""
+    # the re-executed script (fhempy user) runs from a string and has no file
+    path = os.path.abspath(globals().get("__file__") or "")
+    if args.no_update or os.environ.get(UPDATED_ENV) or not os.path.isfile(path):
+        return
+    req = urllib.request.Request(SCRIPT_URL, headers={"User-Agent": "fhempy-pr-tester"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            new = resp.read()
+        with open(path, "rb") as f:
+            if f.read() == new:
+                return
+        # never replace the script with a broken download
+        compile(new, path, "exec")
+        tmp = path + ".new"
+        with open(tmp, "wb") as f:
+            f.write(new)
+        shutil.copymode(path, tmp)
+        os.replace(tmp, path)
+    except (OSError, SyntaxError, ValueError) as err:
+        warn(f"Self update failed, using this version: {err}")
+        return
+    info("pr-tester.py updated to the latest version, restarting")
+    os.environ[UPDATED_ENV] = "1"
+    os.execv(sys.executable, [sys.executable, path] + forwarded_args(args, target))
+
+
 def switch_user(user, args, target):
     """Re-executes the script as the fhempy user, it owns the .fhempy directory."""
     if pwd.getpwnam(user).pw_uid == os.geteuid():
@@ -728,6 +759,7 @@ class Runner:
 
     def start_normal(self, state):
         self.restore_fhem_modules(state)
+        self.restore_www_files(state)
         if state.get("mode") == "local":
             device = state.get("device", "fhempy_local")
             info(f"Starting the normal fhempy again (set {device} start)")
@@ -749,9 +781,10 @@ class Runner:
 
     # FHEM Perl modules of the pull request (only if FHEM runs on this machine)
 
-    def select_fhem_modules(self, target):
-        """Returns the changed FHEM modules the user wants to test as well."""
+    def select_fhem_files(self, target):
+        """Returns the changed FHEM modules and www files the user wants to test."""
         fhem_src = os.path.join(self.inst.src, "FHEM")
+        changed = set(pr_changed_files(target["pr"])) if target["pr"] else set()
         if target["pr"] is None:
             # master: installed fhempy modules which differ from the master version
             modules = [
@@ -763,21 +796,34 @@ class Runner:
                 )
             ]
         else:
-            changed = set(pr_fhem_modules(target["pr"]))
             # names from the downloaded source, not from the GitHub response
-            modules = [m for m in fhem_modules(fhem_src) if m in changed]
-        if not modules:
-            return []
+            modules = [m for m in fhem_modules(fhem_src) if f"FHEM/{m}.pm" in changed]
+        www = self.changed_www_files(target, changed)
+        if not modules and not www:
+            return [], []
         print()
-        warn("These FHEM modules are changed too: " + ", ".join(modules))
+        if modules:
+            warn("These FHEM modules are changed too: " + ", ".join(modules))
+        if www:
+            warn("These FHEMWEB files are changed too: " + ", ".join(www))
         if self.ctx["mode"] != "local":
             warn("FHEM doesn't run on this machine, test them on the FHEM machine")
-            return []
-        if ask(
-            "Copy them into FHEM and reload them? They are restored after the test."
-        ):
-            return modules
-        return []
+            return [], []
+        if ask("Copy them into FHEM? They are restored after the test."):
+            return modules, www
+        return [], []
+
+    def changed_www_files(self, target, changed):
+        if target["pr"] is not None:
+            return [p for p in www_files(self.inst.src) if p in changed]
+        # master: installed or missing files which differ from master
+        return [
+            p
+            for p in www_files(self.inst.src)
+            if not same_file(
+                os.path.join(self.inst.src, p), os.path.join(self.ctx["dir"], p)
+            )
+        ]
 
     def install_fhem_modules(self, modules, state):
         if not modules:
@@ -793,6 +839,40 @@ class Runner:
             write_json(self.inst.state_file, state)
             shutil.copy(os.path.join(self.inst.src, "FHEM", module + ".pm"), dst)
             self.fhem.cmd_or_ask(f"reload {module}")
+
+    def install_www_files(self, paths, state):
+        if not paths:
+            return
+        state["www_files"] = []
+        for path in paths:
+            dst = os.path.join(self.ctx["dir"], path)
+            backup = os.path.join(self.inst.backup_dir, path)
+            if os.path.exists(dst) and not os.path.exists(backup):
+                os.makedirs(os.path.dirname(backup), exist_ok=True)
+                shutil.copy2(dst, backup)
+            state["www_files"].append(path)
+            write_json(self.inst.state_file, state)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy(os.path.join(self.inst.src, path), dst)
+        info("FHEMWEB files copied, reload the browser page (Ctrl+F5) to see them")
+
+    def restore_www_files(self, state):
+        copied = set(state.get("www_files") or [])
+        # paths from the FHEM directory, not from the state file
+        paths = [p for p in www_files(self.ctx["dir"]) if p in copied]
+        if not paths:
+            return
+        info("Restoring the FHEMWEB files: " + ", ".join(paths))
+        backups = set(www_files(self.inst.backup_dir))
+        for path in paths:
+            dst = os.path.join(self.ctx["dir"], path)
+            backup = os.path.join(self.inst.backup_dir, path)
+            if path in backups:
+                shutil.copy2(backup, dst)
+                os.unlink(backup)
+            else:
+                # new file of the pull request
+                remove(dst)
 
     def installed_fhem_modules(self):
         return fhem_modules(os.path.join(self.ctx["dir"], "FHEM"))
@@ -949,6 +1029,19 @@ def fhem_modules(directory):
     )
 
 
+def www_files(directory):
+    """Returns the files below directory/www/fhempy, e.g. www/fhempy/modules.json."""
+    files = []
+    for root, dirs, names in os.walk(os.path.join(directory, "www", "fhempy")):
+        dirs.sort()
+        for name in sorted(names):
+            path = os.path.relpath(os.path.join(root, name), directory)
+            path = path.replace(os.sep, "/")
+            if WWW_FILE_RE.match(path) and not os.path.islink(os.path.join(root, name)):
+                files.append(path)
+    return files
+
+
 def same_file(a, b):
     try:
         with open(a, "rb") as fa, open(b, "rb") as fb:
@@ -980,6 +1073,9 @@ def parse_args():
     parser.add_argument(
         "--clean", action="store_true", help="remove the test installation"
     )
+    parser.add_argument(
+        "--no-update", action="store_true", help="don't update this script"
+    )
     return parser.parse_args()
 
 
@@ -988,6 +1084,7 @@ def main():
     signal.signal(signal.SIGINT, signal.default_int_handler)
     args = parse_args()
     pr = parse_target(args.pr) if args.pr else None
+    self_update(args, pr)
     ctx = detect(args)
     switch_user(ctx["user"], args, pr)
     # uv reads uv.toml from the current directory, which the fhempy user might not
@@ -1014,13 +1111,14 @@ def main():
     inst.install(target, args.fresh)
     info(f"Installed: {inst.fhempy_version()} from {target['sha'][:10]}")
 
-    modules = runner.select_fhem_modules(target)
+    modules, www = runner.select_fhem_files(target)
     state = {"mode": ctx["mode"], "target": target["name"]}
     signal.signal(signal.SIGHUP, on_hangup)
     signal.signal(signal.SIGTERM, on_hangup)
     try:
         runner.stop_normal(state)
         runner.install_fhem_modules(modules, state)
+        runner.install_www_files(www, state)
         log_path, counts = runner.run_test_fhempy(target)
     except KeyboardInterrupt:
         log_path, counts = None, None
