@@ -46,6 +46,9 @@ class _AdapterState:
 
 _states = {}
 _lock = None
+_net_admin_warned = False
+
+CAP_NET_ADMIN = 12
 
 
 def _state(adapter):
@@ -251,7 +254,30 @@ async def power_cycle(adapter):
         return False
 
 
+def has_net_admin(status_file="/proc/self/status"):
+    """True if the process has CAP_NET_ADMIN, also if it can't be checked."""
+    try:
+        with open(status_file, encoding="ascii") as status:
+            for line in status:
+                if line.startswith("CapEff:"):
+                    return bool(int(line.split()[1], 16) & (1 << CAP_NET_ADMIN))
+    except (OSError, ValueError):
+        pass
+    return True
+
+
 async def adapter_reset(adapter, mac):
+    global _net_admin_warned
+    if not has_net_admin():
+        if not _net_admin_warned:
+            _net_admin_warned = True
+            logger.warning(
+                f"Reset of {adapter} skipped, fhempy needs CAP_NET_ADMIN for this. "
+                "Run the fhempy peer installer again (set fhempy_local installPeer "
+                "or install_systemd_fhempy.sh) or add AmbientCapabilities=CAP_NET_ADMIN "
+                "with sudo systemctl edit fhempy, see Bluetooth auto recovery in README"
+            )
+        return False
     try:
         from bluetooth_auto_recovery import recover_adapter
 
