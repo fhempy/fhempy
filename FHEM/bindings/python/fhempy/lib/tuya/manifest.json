@@ -1,5 +1,82 @@
 {
   "requirements": [
     "tinytuya==1.20.0"
-  ]
+  ],
+  "installer": {
+    "title": "Tuya local",
+    "description": "Control Tuya WiFi devices locally incl. real-time updates",
+    "category": "home",
+    "order": 60,
+    "name": "tuya_local",
+    "logo": "tuya.png",
+    "modes": [
+      {
+        "label": "Find all devices (Tuya IoT account)",
+        "args": [
+          "setup"
+        ],
+        "params": [
+          {
+            "label": "API key",
+            "help": "Access ID of your project on iot.tuya.com"
+          },
+          {
+            "label": "API secret",
+            "help": "Access Secret of your project on iot.tuya.com",
+            "secret": true
+          },
+          {
+            "label": "Device ID",
+            "help": "ID of any of your devices, see iot.tuya.com"
+          },
+          {
+            "label": "Region",
+            "placeholder": "eu",
+            "optional": true,
+            "options": [
+              "eu",
+              "us",
+              "cn",
+              "in"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Single device with local key",
+        "args": [],
+        "params": [
+          {
+            "label": "Product ID"
+          },
+          {
+            "label": "Device ID"
+          },
+          {
+            "type": "ip"
+          },
+          {
+            "label": "Protocol version",
+            "placeholder": "3.3",
+            "optional": true,
+            "options": [
+              "3.1",
+              "3.3",
+              "3.4",
+              "3.5"
+            ]
+          },
+          {
+            "label": "API key",
+            "optional": true
+          },
+          {
+            "label": "API secret",
+            "optional": true,
+            "secret": true
+          }
+        ]
+      }
+    ]
+  }
 }

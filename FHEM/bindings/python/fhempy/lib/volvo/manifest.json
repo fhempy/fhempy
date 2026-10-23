@@ -1,5 +1,25 @@
 {
   "requirements": [
     "volvocarsapi==0.4.4"
-  ]
+  ],
+  "installer": {
+    "title": "Volvo",
+    "description": "Infos from your Volvo car (new API)",
+    "category": "cars",
+    "order": 30,
+    "name": "my_volvo",
+    "logo": "volvo.png",
+    "params": [
+      {
+        "label": "VCC API key",
+        "help": "developer.volvocars.com"
+      },
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

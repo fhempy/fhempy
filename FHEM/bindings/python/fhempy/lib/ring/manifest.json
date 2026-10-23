@@ -1,5 +1,27 @@
 {
   "requirements": [
     "ring_doorbell==0.8.5"
-  ]
+  ],
+  "installer": {
+    "title": "Ring",
+    "description": "Ring doorbells, chimes and cameras",
+    "category": "home",
+    "order": 180,
+    "name": "ring",
+    "logo": "ring.png",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "label": "Ring device name",
+        "placeholder": "Front Door",
+        "help": "Name of the device in the Ring app"
+      },
+      {
+        "label": "Identifier",
+        "optional": true
+      }
+    ]
+  }
 }

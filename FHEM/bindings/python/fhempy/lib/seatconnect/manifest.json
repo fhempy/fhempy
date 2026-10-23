@@ -1,5 +1,25 @@
 {
   "requirements": [
     "seatconnect==1.1.9"
-  ]
+  ],
+  "installer": {
+    "title": "Seat / Cupra",
+    "description": "Control your Seat or Cupra car",
+    "category": "cars",
+    "order": 50,
+    "name": "my_seat",
+    "logo": "seatconnect.png",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      },
+      {
+        "label": "S-PIN",
+        "secret": true
+      }
+    ]
+  }
 }

@@ -4,5 +4,22 @@
     "tuya-device-sharing-sdk==0.2.15",
     "cryptography==50.0.1",
     "paho-mqtt==1.6.1"
-  ]
+  ],
+  "installer": {
+    "title": "Tuya Smart Life",
+    "description": "Recommended for Tuya: all devices of the Smart Life app incl. real-time updates (WiFi & ZigBee)",
+    "category": "home",
+    "order": 50,
+    "name": "tuya_smartlife",
+    "logo": "tuya.png",
+    "args": [
+      "setup"
+    ],
+    "params": [
+      {
+        "label": "User code",
+        "help": "Smart Life app: Me > Settings (gear) > Account and Security > User Code"
+      }
+    ]
+  }
 }

@@ -1,5 +1,15 @@
 {
   "requirements": [
     "segno==1.6.6"
-  ]
+  ],
+  "installer": {
+    "title": "Matter Bridge",
+    "description": "Use your FHEM devices in Apple Home, Google Home, Alexa and SmartThings, including voice control",
+    "category": "home",
+    "order": 20,
+    "name": "matterbridge",
+    "single": true,
+    "logo": "matter.png",
+    "badge": "⇄"
+  }
 }

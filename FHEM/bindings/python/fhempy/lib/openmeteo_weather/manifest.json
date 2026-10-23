@@ -1,3 +1,18 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "Weather",
+    "description": "Weather and forecast from Open-Meteo, no account needed",
+    "category": "tools",
+    "order": 20,
+    "name": "weather",
+    "logo": "openmeteo_weather.png",
+    "params": [
+      {
+        "label": "Location",
+        "placeholder": "Berlin",
+        "help": "City name"
+      }
+    ]
+  }
 }

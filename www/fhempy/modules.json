@@ -1,0 +1,1301 @@
+[
+ {
+  "id": "mcp_server",
+  "title": "AI (MCP server)",
+  "description": "Control FHEM in plain language with AI apps (Claude, LM Studio...), the AI can also create automations",
+  "category": "tools",
+  "name": "AI",
+  "single": true,
+  "logo": "mcp_server.png"
+ },
+ {
+  "id": "arp_presence",
+  "title": "ARP presence",
+  "description": "Presence detection in your network, works also for iOS",
+  "category": "presence",
+  "name": "presence_phone",
+  "icon": "📱",
+  "params": [
+   {
+    "label": "IP or MAC address",
+    "placeholder": "192.168.1.23"
+   }
+  ]
+ },
+ {
+  "id": "bmw",
+  "title": "BMW & MINI",
+  "description": "BMW and MINI via official BMW CarData: battery, range, charging, doors, position",
+  "category": "cars",
+  "name": "my_bmw",
+  "logo": "bmw.png",
+  "params": [
+   {
+    "label": "Client ID",
+    "help": "Created in the BMW portal, the device asks for it otherwise",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "googlecast",
+  "title": "Google Cast",
+  "description": "Control Chromecast and Google/Nest speakers, text to speech and Spotify",
+  "category": "media",
+  "name": "cast",
+  "logo": "googlecast.png",
+  "params": [
+   {
+    "label": "Cast device name",
+    "placeholder": "Living Room",
+    "help": "Name of the speaker or TV as shown in the Google Home app",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "matter",
+  "title": "Matter",
+  "description": "Control Matter devices: lights, plugs, sensors, thermostats, locks and blinds, also behind Hue, IKEA or Aqara bridges",
+  "category": "home",
+  "name": "matter",
+  "single": true,
+  "logo": "matter.png"
+ },
+ {
+  "id": "tibber",
+  "title": "Tibber",
+  "description": "Prices and consumption data from Tibber",
+  "category": "energy",
+  "name": "tibber",
+  "logo": "tibber.png",
+  "params": [
+   {
+    "label": "Access token",
+    "help": "developer.tibber.com > Access Token",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "scooter",
+  "title": "Xiaomi / Ninebot scooter",
+  "description": "E-scooters: battery, range, mileage. Finds the nearest scooter on its own",
+  "category": "bt",
+  "name": "my_scooter",
+  "logo": "xiaomi.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Empty: the nearest scooter is used",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "discover_ble",
+  "title": "Discover Bluetooth",
+  "description": "Lists the Bluetooth LE devices nearby",
+  "category": "presence",
+  "name": "discover_ble",
+  "single": true,
+  "logo": "bluetooth.svg"
+ },
+ {
+  "id": "eq3bt",
+  "title": "eQ-3 thermostat",
+  "description": "Control EQ3 Bluetooth radiator thermostats",
+  "category": "bt",
+  "name": "thermostat",
+  "logo": "eq3bt.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   },
+   {
+    "label": "PIN",
+    "help": "Only for eqiva thermostats with pairing PIN",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "fusionsolar",
+  "title": "Huawei FusionSolar",
+  "description": "Data of your Huawei solar system from FusionSolar",
+  "category": "energy",
+  "name": "solar",
+  "logo": "fusionsolar.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   },
+   {
+    "label": "Region",
+    "placeholder": "eu5",
+    "help": "Subdomain of your FusionSolar login, e.g. eu5 for eu5.fusionsolar.huawei.com",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "kia_hyundai",
+  "title": "Kia / Hyundai / Genesis",
+  "description": "Kia, Hyundai and Genesis cars",
+  "category": "cars",
+  "name": "my_car",
+  "logo": "kia_hyundai.png",
+  "modes": [
+   {
+    "label": "Official Pleos API (Europe)",
+    "args": [],
+    "params": []
+   },
+   {
+    "label": "App login",
+    "args": [],
+    "params": [
+     {
+      "label": "Username / e-mail",
+      "placeholder": "me@example.com"
+     },
+     {
+      "label": "Password",
+      "secret": true
+     },
+     {
+      "label": "PIN",
+      "secret": true
+     },
+     {
+      "label": "Brand",
+      "options": [
+       "Kia",
+       "Hyundai",
+       "Genesis"
+      ]
+     },
+     {
+      "label": "Region",
+      "options": [
+       "Europe",
+       "USA",
+       "Canada",
+       "Australia",
+       "India",
+       "China",
+       "Brazil"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "matter_bridge",
+  "title": "Matter Bridge",
+  "description": "Use your FHEM devices in Apple Home, Google Home, Alexa and SmartThings, including voice control",
+  "category": "home",
+  "name": "matterbridge",
+  "single": true,
+  "logo": "matter.png",
+  "badge": "⇄"
+ },
+ {
+  "id": "spotify",
+  "title": "Spotify",
+  "description": "Control Spotify Connect and use FHEM as Spotify Connect player",
+  "category": "media",
+  "name": "spotify",
+  "logo": "spotify.png"
+ },
+ {
+  "id": "openmeteo_weather",
+  "title": "Weather",
+  "description": "Weather and forecast from Open-Meteo, no account needed",
+  "category": "tools",
+  "name": "weather",
+  "logo": "openmeteo_weather.png",
+  "params": [
+   {
+    "label": "Location",
+    "placeholder": "Berlin",
+    "help": "City name"
+   }
+  ]
+ },
+ {
+  "id": "ble_monitor",
+  "title": "BLE monitor",
+  "description": "Supports a lot of Bluetooth sensors (Xiaomi, Govee, Inkbird...)",
+  "category": "bt",
+  "name": "ble_sensor",
+  "logo": "ble_monitor.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "discover_mdns",
+  "title": "Discover mDNS",
+  "description": "Finds mDNS devices (e.g. Google Cast) in your network",
+  "category": "presence",
+  "name": "discover_mdns",
+  "single": true,
+  "icon": "🔎"
+ },
+ {
+  "id": "dlna_dmr",
+  "title": "DLNA renderer",
+  "description": "Control DLNA MediaRenderer devices, discover_upnp creates them on its own",
+  "category": "media",
+  "name": "dlna",
+  "logo": "dlna_dmr.svg",
+  "params": [
+   {
+    "label": "UDN",
+    "placeholder": "uuid:...",
+    "help": "Unique device name, shown by discover_upnp"
+   }
+  ]
+ },
+ {
+  "id": "github_backup",
+  "title": "GitHub backup",
+  "description": "Backup of the FHEM configuration to a private GitHub repository",
+  "category": "tools",
+  "name": "backup",
+  "single": true,
+  "logo": "github.png",
+  "params": [
+   {
+    "label": "Repository URL",
+    "placeholder": "https://github.com/USER/fhem_backup",
+    "help": "Use a private repository"
+   },
+   {
+    "label": "Backup directory",
+    "placeholder": "fhem_raspi",
+    "help": "Directory in the repository, one per FHEM installation"
+   }
+  ]
+ },
+ {
+  "id": "huawei_modbus",
+  "title": "Huawei inverter (Modbus)",
+  "description": "Read Huawei inverters locally via Modbus TCP",
+  "category": "energy",
+  "name": "inverter",
+  "logo": "huawei_modbus.png",
+  "params": [
+   {
+    "label": "IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "Port",
+    "placeholder": "502",
+    "optional": true
+   },
+   {
+    "label": "Slave ID",
+    "placeholder": "0",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "volvo",
+  "title": "Volvo",
+  "description": "Infos from your Volvo car (new API)",
+  "category": "cars",
+  "name": "my_volvo",
+  "logo": "volvo.png",
+  "params": [
+   {
+    "label": "VCC API key",
+    "help": "developer.volvocars.com"
+   },
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "zigbee2mqtt",
+  "title": "Zigbee2MQTT",
+  "description": "Installs and runs a Zigbee2MQTT server: Zigbee devices without a vendor hub",
+  "category": "home",
+  "name": "z2m",
+  "single": true,
+  "logo": "zigbee2mqtt.png"
+ },
+ {
+  "id": "discover_upnp",
+  "title": "Discover UPnP",
+  "description": "Finds UPnP devices in your network",
+  "category": "presence",
+  "name": "discover_upnp",
+  "single": true,
+  "logo": "discover_upnp.png"
+ },
+ {
+  "id": "esphome",
+  "title": "ESPHome",
+  "description": "Installs and starts the ESPHome dashboard for easy ESPHome device management",
+  "category": "home",
+  "name": "esphome",
+  "single": true,
+  "logo": "esphome.png"
+ },
+ {
+  "id": "github_restore",
+  "title": "GitHub restore",
+  "description": "Restore the FHEM configuration from GitHub",
+  "category": "tools",
+  "name": "restore",
+  "single": true,
+  "logo": "github.png",
+  "params": [
+   {
+    "label": "Repository URL",
+    "placeholder": "https://github.com/USER/fhem_backup"
+   },
+   {
+    "label": "Backup directory",
+    "placeholder": "fhem_raspi"
+   }
+  ]
+ },
+ {
+  "id": "goodwe",
+  "title": "GoodWe",
+  "description": "Get data from GoodWe inverters",
+  "category": "energy",
+  "name": "goodwe",
+  "logo": "goodwe.png",
+  "params": [
+   {
+    "label": "IP address",
+    "placeholder": "192.168.1.50"
+   }
+  ]
+ },
+ {
+  "id": "volvo_software_update",
+  "title": "Volvo software update",
+  "description": "Get notified about Volvo software updates",
+  "category": "cars",
+  "name": "volvo_update",
+  "logo": "volvo.png",
+  "params": [
+   {
+    "label": "URL",
+    "placeholder": "https://"
+   }
+  ]
+ },
+ {
+  "id": "mitemp",
+  "title": "Xiaomi temperature sensor",
+  "description": "Xiaomi BLE temperature/humidity sensor",
+  "category": "bt",
+  "name": "mi_temp",
+  "logo": "xiaomi.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "prusalink",
+  "title": "Prusa 3D printer",
+  "description": "Prusa 3D printer via PrusaLink",
+  "category": "tools",
+  "name": "prusa",
+  "logo": "prusalink.png",
+  "params": [
+   {
+    "label": "Printer URL",
+    "placeholder": "http://192.168.1.50"
+   },
+   {
+    "label": "Username",
+    "placeholder": "maker"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "rct_power",
+  "title": "RCT Power",
+  "description": "RCT Power inverter",
+  "category": "energy",
+  "name": "rct",
+  "logo": "rct_power.png",
+  "params": [
+   {
+    "label": "IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "Port",
+    "placeholder": "8899",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "seatconnect",
+  "title": "Seat / Cupra",
+  "description": "Control your Seat or Cupra car",
+  "category": "cars",
+  "name": "my_seat",
+  "logo": "seatconnect.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   },
+   {
+    "label": "S-PIN",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "tuya_smartlife",
+  "title": "Tuya Smart Life",
+  "description": "Recommended for Tuya: all devices of the Smart Life app incl. real-time updates (WiFi & ZigBee)",
+  "category": "home",
+  "name": "tuya_smartlife",
+  "logo": "tuya.png",
+  "args": [
+   "setup"
+  ],
+  "params": [
+   {
+    "label": "User code",
+    "help": "Smart Life app: Me > Settings (gear) > Account and Security > User Code"
+   }
+  ]
+ },
+ {
+  "id": "miflora",
+  "title": "Xiaomi plant sensor",
+  "description": "Xiaomi Mi Flora plant sensor",
+  "category": "bt",
+  "name": "mi_plant",
+  "logo": "xiaomi.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "alphaesscloud",
+  "title": "Alpha ESS",
+  "description": "Alpha ESS inverter via the Alpha ESS cloud",
+  "category": "energy",
+  "name": "alphaess",
+  "logo": "alphaesscloud.png",
+  "params": [
+   {
+    "label": "App ID",
+    "help": "open.alphaess.com > Developer"
+   },
+   {
+    "label": "App secret",
+    "secret": true
+   },
+   {
+    "label": "Serial number of the system"
+   }
+  ]
+ },
+ {
+  "id": "object_detection",
+  "title": "Object detection",
+  "description": "TensorFlow Lite object detection in camera streams or images",
+  "category": "tools",
+  "name": "object_detection",
+  "logo": "object_detection.svg",
+  "modes": [
+   {
+    "label": "Video stream",
+    "args": [
+     "stream"
+    ],
+    "params": [
+     {
+      "label": "Stream URL",
+      "placeholder": "rtsp://..."
+     }
+    ]
+   },
+   {
+    "label": "Image",
+    "args": [
+     "image"
+    ],
+    "params": [
+     {
+      "label": "Image file",
+      "placeholder": "www/snapshot.jpg"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "skodaconnect",
+  "title": "Skoda",
+  "description": "Control your Skoda car",
+  "category": "cars",
+  "name": "my_skoda",
+  "logo": "skodaconnect.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   },
+   {
+    "label": "S-PIN",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "tuya",
+  "title": "Tuya local",
+  "description": "Control Tuya WiFi devices locally incl. real-time updates",
+  "category": "home",
+  "name": "tuya_local",
+  "logo": "tuya.png",
+  "modes": [
+   {
+    "label": "Find all devices (Tuya IoT account)",
+    "args": [
+     "setup"
+    ],
+    "params": [
+     {
+      "label": "API key",
+      "help": "Access ID of your project on iot.tuya.com"
+     },
+     {
+      "label": "API secret",
+      "help": "Access Secret of your project on iot.tuya.com",
+      "secret": true
+     },
+     {
+      "label": "Device ID",
+      "help": "ID of any of your devices, see iot.tuya.com"
+     },
+     {
+      "label": "Region",
+      "placeholder": "eu",
+      "optional": true,
+      "options": [
+       "eu",
+       "us",
+       "cn",
+       "in"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Single device with local key",
+    "args": [],
+    "params": [
+     {
+      "label": "Product ID"
+     },
+     {
+      "label": "Device ID"
+     },
+     {
+      "label": "IP address",
+      "placeholder": "192.168.1.50"
+     },
+     {
+      "label": "Protocol version",
+      "placeholder": "3.3",
+      "optional": true,
+      "options": [
+       "3.1",
+       "3.3",
+       "3.4",
+       "3.5"
+      ]
+     },
+     {
+      "label": "API key",
+      "optional": true
+     },
+     {
+      "label": "API secret",
+      "optional": true,
+      "secret": true
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "miscale",
+  "title": "Xiaomi scale",
+  "description": "Xiaomi Mi Scale V1/V2",
+  "category": "bt",
+  "name": "mi_scale",
+  "logo": "xiaomi.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "ble_presence",
+  "title": "BLE presence",
+  "description": "Presence detection incl. RSSI for Bluetooth Low Energy tags",
+  "category": "bt",
+  "name": "ble_tag",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "piclock",
+  "title": "LED clock",
+  "description": "LED clock with MAX7219 on a Raspberry Pi",
+  "category": "tools",
+  "name": "piclock",
+  "single": true,
+  "logo": "piclock.png",
+  "params": [
+   {
+    "label": "Temperature",
+    "placeholder": "device:reading",
+    "optional": true
+   },
+   {
+    "label": "Weather",
+    "placeholder": "device:reading",
+    "optional": true
+   },
+   {
+    "label": "Button GPIOs",
+    "placeholder": "4,17,27,22,18",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "zappi",
+  "title": "myenergi zappi",
+  "description": "Zappi wallbox and harvi sensors",
+  "category": "energy",
+  "name": "zappi",
+  "logo": "zappi.png",
+  "params": [
+   {
+    "label": "Hub serial number"
+   },
+   {
+    "label": "API key",
+    "secret": true
+   },
+   {
+    "label": "harvi serial numbers",
+    "help": "Separate several with spaces",
+    "optional": true,
+    "multi": true
+   }
+  ]
+ },
+ {
+  "id": "tuya_cloud",
+  "title": "Tuya cloud",
+  "description": "Control Tuya devices via the Tuya IoT cloud incl. real-time updates (WiFi & ZigBee)",
+  "category": "home",
+  "name": "tuya_cloud",
+  "logo": "tuya.png",
+  "args": [
+   "setup"
+  ],
+  "params": [
+   {
+    "label": "API key",
+    "help": "Access ID of your project on iot.tuya.com"
+   },
+   {
+    "label": "API secret",
+    "secret": true
+   },
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   },
+   {
+    "label": "App",
+    "placeholder": "smartlife",
+    "optional": true,
+    "options": [
+     "smartlife",
+     "tuyaSmart"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "bt_presence",
+  "title": "Bluetooth presence",
+  "description": "Presence detection incl. RSSI for classic Bluetooth (e.g. smartphones)",
+  "category": "bt",
+  "name": "bt_phone",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "homekit",
+  "title": "HomeKit devices",
+  "description": "Control HomeKit accessories and bridges (e.g. Velux) directly",
+  "category": "home",
+  "name": "homekit",
+  "logo": "homekit.png",
+  "params": [
+   {
+    "label": "HomeKit ID",
+    "help": "Device ID shown by the module discover_mdns"
+   },
+   {
+    "label": "Setup code",
+    "placeholder": "123-45-678",
+    "help": "Pairing code printed on the device"
+   }
+  ]
+ },
+ {
+  "id": "wienerlinien",
+  "title": "Wiener Linien",
+  "description": "Wiener Linien departure times",
+  "category": "tools",
+  "name": "departures",
+  "logo": "wienerlinien.png",
+  "params": [
+   {
+    "label": "Stop ID",
+    "placeholder": "4118",
+    "help": "RBL number of the stop"
+   }
+  ]
+ },
+ {
+  "id": "wienernetze_smartmeter",
+  "title": "Wiener Netze Smart Meter",
+  "description": "Consumption of your Wiener Netze smart meter",
+  "category": "energy",
+  "name": "smartmeter",
+  "logo": "wienernetze_smartmeter.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "blue_connect",
+  "title": "Blue Connect",
+  "description": "Blue Connect pool sensor",
+  "category": "bt",
+  "name": "pool",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "energie_gv_at",
+  "title": "Energy Austria",
+  "description": "Current status of the Austrian power grid",
+  "category": "energy",
+  "name": "energy_austria",
+  "single": true,
+  "icon": "⚡"
+ },
+ {
+  "id": "geizhals",
+  "title": "Geizhals",
+  "description": "Watch prices on geizhals",
+  "category": "tools",
+  "name": "price",
+  "icon": "💶",
+  "params": [
+   {
+    "label": "Product URL",
+    "placeholder": "https://geizhals.at/..."
+   }
+  ]
+ },
+ {
+  "id": "miio",
+  "title": "Xiaomi WiFi",
+  "description": "Control Xiaomi WiFi devices: vacuums, air purifiers, fans, lamps...",
+  "category": "home",
+  "name": "xiaomi",
+  "logo": "miio.png",
+  "params": [
+   {
+    "label": "Device type",
+    "options": [
+     "vacuum",
+     "viomivacuum",
+     "airpurifier",
+     "airpurifiermiot",
+     "airhumidifier",
+     "airhumidifiermiot",
+     "airdehumidifier",
+     "airfresh",
+     "airqualitymonitor",
+     "fan",
+     "fanp5",
+     "fansa1",
+     "fanv2",
+     "fanza1",
+     "fanza3",
+     "fanza4",
+     "heater",
+     "ceil",
+     "philipsbulb",
+     "philipseyecare",
+     "philipsmoonlight",
+     "philipswhitebulb",
+     "yeelight",
+     "plug",
+     "plugv1",
+     "plugv3",
+     "chuangmiplug",
+     "powerstrip",
+     "pwznrelay",
+     "waterpurifier",
+     "cooker",
+     "toiletlid",
+     "wifirepeater",
+     "wifispeaker",
+     "chuangmiir",
+     "chuangmicamera",
+     "aqaracamera",
+     "alarmclock",
+     "airconditioningcompanion",
+     "airconditioningcompanionv3",
+     "airfresht2017",
+     "airhumidifierca1",
+     "airhumidifiercb1",
+     "airhumidifierjsq",
+     "airhumidifiermjjsq",
+     "gateway",
+     "miotdevice",
+     "device"
+    ]
+   },
+   {
+    "label": "IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "Token",
+    "help": "32 characters, the module Xiaomi tokens gets all tokens from the cloud"
+   }
+  ]
+ },
+ {
+  "id": "aktionsfinder",
+  "title": "Aktionsfinder",
+  "description": "Keep informed about product promotions",
+  "category": "tools",
+  "name": "offers",
+  "icon": "🏷️",
+  "params": [
+   {
+    "label": "Product",
+    "placeholder": "Mineralwasser"
+   }
+  ]
+ },
+ {
+  "id": "gfprobt",
+  "title": "GF Pro irrigation",
+  "description": "Control GF Pro Bluetooth irrigation control",
+  "category": "bt",
+  "name": "irrigation",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   }
+  ]
+ },
+ {
+  "id": "xiaomi_tokens",
+  "title": "Xiaomi tokens",
+  "description": "Retrieve the tokens of all your Xiaomi devices from the cloud",
+  "category": "home",
+  "name": "xiaomi_tokens",
+  "single": true,
+  "logo": "miio.png"
+ },
+ {
+  "id": "ikos",
+  "title": "Ikos resorts",
+  "description": "Check prices for Ikos resorts",
+  "category": "tools",
+  "name": "holiday",
+  "icon": "🏖️",
+  "params": [
+   {
+    "label": "From",
+    "placeholder": "2026-07-01",
+    "help": "YYYY-MM-DD"
+   },
+   {
+    "label": "To",
+    "placeholder": "2026-07-14",
+    "help": "YYYY-MM-DD"
+   }
+  ]
+ },
+ {
+  "id": "nespresso_ble",
+  "title": "Nespresso",
+  "description": "Nespresso Bluetooth coffee machine",
+  "category": "bt",
+  "name": "nespresso",
+  "logo": "nespresso_ble.png",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+   },
+   {
+    "label": "Auth code",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "xiaomi_gateway3",
+  "title": "Xiaomi Gateway 3",
+  "description": "Xiaomi Gateway V3 (only V3!) with its Zigbee and BLE devices",
+  "category": "home",
+  "name": "xiaomi_gw3",
+  "logo": "xiaomi_gateway3.png",
+  "params": [
+   {
+    "label": "IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "Token",
+    "help": "32 characters, the module Xiaomi tokens gets all tokens from the cloud"
+   }
+  ]
+ },
+ {
+  "id": "ddnssde",
+  "title": "ddnss.de",
+  "description": "Dynamic DNS updater for the free ddnss.de service",
+  "category": "tools",
+  "name": "ddnss",
+  "single": true,
+  "icon": "🌐",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "mantra_ble",
+  "title": "mAntra ceiling fan",
+  "description": "mAntra ceiling fan lamps",
+  "category": "bt",
+  "name": "fan",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Lamp ID",
+    "placeholder": "1F42",
+    "help": "4 hex digits"
+   }
+  ]
+ },
+ {
+  "id": "meross",
+  "title": "Meross",
+  "description": "Control Meross plugs, lights and garage doors",
+  "category": "home",
+  "name": "meross",
+  "logo": "meross.png",
+  "args": [
+   "setup"
+  ],
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "ble_reset",
+  "title": "Bluetooth reset",
+  "description": "Resets all Bluetooth interfaces every few hours",
+  "category": "bt",
+  "name": "ble_reset",
+  "single": true,
+  "logo": "bluetooth.svg"
+ },
+ {
+  "id": "gree_climate",
+  "title": "Gree air conditioner",
+  "description": "Control Gree HVAC devices",
+  "category": "home",
+  "name": "gree",
+  "logo": "gree_climate.png",
+  "modes": [
+   {
+    "label": "Search all air conditioners",
+    "args": [
+     "scan"
+    ],
+    "params": []
+   },
+   {
+    "label": "Single device",
+    "args": [],
+    "params": [
+     {
+      "label": "Device name",
+      "help": "Name of the air conditioner in the app"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "websitetests",
+  "title": "Website tests",
+  "description": "Basic checks of a website",
+  "category": "tools",
+  "name": "webtest",
+  "icon": "🧪",
+  "params": [
+   {
+    "label": "URL",
+    "placeholder": "https://"
+   }
+  ]
+ },
+ {
+  "id": "helloworld",
+  "title": "Hello World",
+  "description": "Example for developers to start writing their own module",
+  "category": "tools",
+  "name": "hello",
+  "icon": "👋"
+ },
+ {
+  "id": "mqtt_ha_discovery",
+  "title": "MQTT discovery",
+  "description": "Creates FHEM devices for MQTT devices using Home Assistant MQTT discovery",
+  "category": "home",
+  "name": "mqtt_ha",
+  "single": true,
+  "logo": "mqtt_ha_discovery.png",
+  "params": [
+   {
+    "label": "MQTT server",
+    "placeholder": "127.0.0.1",
+    "optional": true
+   },
+   {
+    "label": "Port",
+    "placeholder": "1883",
+    "optional": true
+   },
+   {
+    "label": "Username",
+    "optional": true
+   },
+   {
+    "label": "Password",
+    "optional": true,
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "nefit",
+  "title": "Nefit / Bosch",
+  "description": "Control Nefit Easy thermostats",
+  "category": "home",
+  "name": "nefit",
+  "logo": "nefit.png",
+  "params": [
+   {
+    "label": "Serial number"
+   }
+  ]
+ },
+ {
+  "id": "pyit600",
+  "title": "Salus iT600",
+  "description": "Control Salus iT600 thermostats",
+  "category": "home",
+  "name": "salus",
+  "logo": "pyit600.png",
+  "params": [
+   {
+    "label": "Gateway IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "EUID",
+    "help": "First 16 characters printed on the bottom of the gateway"
+   }
+  ]
+ },
+ {
+  "id": "erelax_vaillant",
+  "title": "Vaillant eRelax",
+  "description": "Control Vaillant eRelax thermostats",
+  "category": "home",
+  "name": "vaillant",
+  "logo": "erelax_vaillant.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   }
+  ]
+ },
+ {
+  "id": "ring",
+  "title": "Ring",
+  "description": "Ring doorbells, chimes and cameras",
+  "category": "home",
+  "name": "ring",
+  "logo": "ring.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Ring device name",
+    "placeholder": "Front Door",
+    "help": "Name of the device in the Ring app"
+   },
+   {
+    "label": "Identifier",
+    "optional": true
+   }
+  ]
+ },
+ {
+  "id": "warema",
+  "title": "Warema",
+  "description": "Control Warema blinds via the WMS WebControl gateway",
+  "category": "home",
+  "name": "warema",
+  "icon": "🪟",
+  "params": [
+   {
+    "label": "Gateway IP address",
+    "placeholder": "192.168.1.50"
+   },
+   {
+    "label": "Channel",
+    "placeholder": "1"
+   }
+  ]
+ }
+]

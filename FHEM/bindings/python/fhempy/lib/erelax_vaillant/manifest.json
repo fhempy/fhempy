@@ -1,5 +1,21 @@
 {
   "requirements": [
     "vaillant-netatmo-api==0.13.1"
-  ]
+  ],
+  "installer": {
+    "title": "Vaillant eRelax",
+    "description": "Control Vaillant eRelax thermostats",
+    "category": "home",
+    "order": 170,
+    "name": "vaillant",
+    "logo": "erelax_vaillant.png",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

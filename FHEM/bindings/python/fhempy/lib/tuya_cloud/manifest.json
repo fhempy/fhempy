@@ -3,5 +3,41 @@
     "tuya-iot-py-sdk==0.6.6",
     "tuya-connector-python==0.1.2",
     "paho-mqtt==1.6.1"
-  ]
+  ],
+  "installer": {
+    "title": "Tuya cloud",
+    "description": "Control Tuya devices via the Tuya IoT cloud incl. real-time updates (WiFi & ZigBee)",
+    "category": "home",
+    "order": 70,
+    "name": "tuya_cloud",
+    "logo": "tuya.png",
+    "args": [
+      "setup"
+    ],
+    "params": [
+      {
+        "label": "API key",
+        "help": "Access ID of your project on iot.tuya.com"
+      },
+      {
+        "label": "API secret",
+        "secret": true
+      },
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      },
+      {
+        "label": "App",
+        "placeholder": "smartlife",
+        "optional": true,
+        "options": [
+          "smartlife",
+          "tuyaSmart"
+        ]
+      }
+    ]
+  }
 }

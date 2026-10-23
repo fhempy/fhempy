@@ -3,5 +3,21 @@
     "bleak==3.0.2",
     "cryptography==50.0.1",
     "miauth==0.9.7"
-  ]
+  ],
+  "installer": {
+    "title": "Xiaomi / Ninebot scooter",
+    "description": "E-scooters: battery, range, mileage. Finds the nearest scooter on its own",
+    "category": "bt",
+    "order": 10,
+    "name": "my_scooter",
+    "logo": "xiaomi.png",
+    "params": [
+      {
+        "label": "Bluetooth address (MAC)",
+        "placeholder": "AA:BB:CC:DD:EE:FF",
+        "help": "Empty: the nearest scooter is used",
+        "optional": true
+      }
+    ]
+  }
 }

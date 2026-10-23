@@ -1,3 +1,12 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "Energy Austria",
+    "description": "Current status of the Austrian power grid",
+    "category": "energy",
+    "order": 90,
+    "name": "energy_austria",
+    "single": true,
+    "icon": "⚡"
+  }
 }

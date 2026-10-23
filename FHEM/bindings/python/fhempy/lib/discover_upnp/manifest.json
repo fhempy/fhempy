@@ -1,5 +1,14 @@
 {
   "requirements": [
     "async-upnp-client==0.49.0"
-  ]
+  ],
+  "installer": {
+    "title": "Discover UPnP",
+    "description": "Finds UPnP devices in your network",
+    "category": "presence",
+    "order": 40,
+    "name": "discover_upnp",
+    "single": true,
+    "logo": "discover_upnp.png"
+  }
 }

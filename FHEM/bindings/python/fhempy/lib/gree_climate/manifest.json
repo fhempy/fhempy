@@ -1,5 +1,32 @@
 {
   "requirements": [
     "greeclimate==3.5.3"
-  ]
+  ],
+  "installer": {
+    "title": "Gree air conditioner",
+    "description": "Control Gree HVAC devices",
+    "category": "home",
+    "order": 130,
+    "name": "gree",
+    "logo": "gree_climate.png",
+    "modes": [
+      {
+        "label": "Search all air conditioners",
+        "args": [
+          "scan"
+        ],
+        "params": []
+      },
+      {
+        "label": "Single device",
+        "args": [],
+        "params": [
+          {
+            "label": "Device name",
+            "help": "Name of the air conditioner in the app"
+          }
+        ]
+      }
+    ]
+  }
 }

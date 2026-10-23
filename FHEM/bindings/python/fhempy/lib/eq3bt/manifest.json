@@ -5,5 +5,23 @@
     "bluetooth-adapters==2.4.0",
     "dbus-python==1.5.0",
     "PyGObject<=3.50.0"
-  ]
+  ],
+  "installer": {
+    "title": "eQ-3 thermostat",
+    "description": "Control EQ3 Bluetooth radiator thermostats",
+    "category": "bt",
+    "order": 20,
+    "name": "thermostat",
+    "logo": "eq3bt.png",
+    "params": [
+      {
+        "type": "mac"
+      },
+      {
+        "label": "PIN",
+        "help": "Only for eqiva thermostats with pairing PIN",
+        "optional": true
+      }
+    ]
+  }
 }

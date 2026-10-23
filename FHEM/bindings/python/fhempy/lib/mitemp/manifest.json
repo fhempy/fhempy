@@ -2,5 +2,18 @@
   "requirements": [
     "bluepy==1.3.0",
     "mitemp-bt==0.0.5"
-  ]
+  ],
+  "installer": {
+    "title": "Xiaomi temperature sensor",
+    "description": "Xiaomi BLE temperature/humidity sensor",
+    "category": "bt",
+    "order": 40,
+    "name": "mi_temp",
+    "logo": "xiaomi.png",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

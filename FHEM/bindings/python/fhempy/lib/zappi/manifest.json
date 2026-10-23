@@ -1,5 +1,28 @@
 {
   "requirements": [
     "pymyenergi==0.1.1"
-  ]
+  ],
+  "installer": {
+    "title": "myenergi zappi",
+    "description": "Zappi wallbox and harvi sensors",
+    "category": "energy",
+    "order": 70,
+    "name": "zappi",
+    "logo": "zappi.png",
+    "params": [
+      {
+        "label": "Hub serial number"
+      },
+      {
+        "label": "API key",
+        "secret": true
+      },
+      {
+        "label": "harvi serial numbers",
+        "help": "Separate several with spaces",
+        "optional": true,
+        "multi": true
+      }
+    ]
+  }
 }

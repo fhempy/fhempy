@@ -2,5 +2,18 @@
   "requirements": [
     "bt_proximity==0.2.1",
     "git+https://github.com/pybluez/pybluez.git#pybluez==0.30"
-  ]
+  ],
+  "installer": {
+    "title": "Bluetooth presence",
+    "description": "Presence detection incl. RSSI for classic Bluetooth (e.g. smartphones)",
+    "category": "bt",
+    "order": 80,
+    "name": "bt_phone",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

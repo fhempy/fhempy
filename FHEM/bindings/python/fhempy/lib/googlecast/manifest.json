@@ -4,5 +4,21 @@
     "yt-dlp==2026.8.19",
     "spotipy==2.26.0",
     "six==1.17.0"
-  ]
+  ],
+  "installer": {
+    "title": "Google Cast",
+    "description": "Control Chromecast and Google/Nest speakers, text to speech and Spotify",
+    "category": "media",
+    "order": 10,
+    "name": "cast",
+    "logo": "googlecast.png",
+    "params": [
+      {
+        "label": "Cast device name",
+        "placeholder": "Living Room",
+        "help": "Name of the speaker or TV as shown in the Google Home app",
+        "optional": true
+      }
+    ]
+  }
 }
