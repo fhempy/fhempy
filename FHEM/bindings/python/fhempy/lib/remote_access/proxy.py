@@ -219,10 +219,17 @@ class AuthProxy:
             for p in request.headers.get("Sec-WebSocket-Protocol", "").split(",")
             if p.strip()
         ]
+        # the handshake (key, compression...) is negotiated separately on
+        # both sides, the browser's offer must not reach the page
+        headers = {
+            k: v
+            for k, v in self.forward_headers(request).items()
+            if not k.lower().startswith("sec-websocket-")
+        }
         try:
             upstream = await self.session.ws_connect(
                 "ws" + url[4:],
-                headers=self.forward_headers(request),
+                headers=headers,
                 protocols=protocols,
             )
         except (aiohttp.ClientError, aiohttp.WSServerHandshakeError) as err:
