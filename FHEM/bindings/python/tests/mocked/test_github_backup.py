@@ -255,3 +255,94 @@ async def test_github_get_404_is_new_file_and_401_raises():
     finally:
         await runner.cleanup()
     assert "HTTP 401" in str(err.value)
+
+
+@pytest.mark.asyncio
+async def test_conflict_is_retried_with_current_sha(mocker, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    module = await define_backup(mocker)
+    write(tmp_path / "configDB.db", b"new")
+    mocker.patch.object(
+        module, "files_to_backup", return_value=[gb.pathlib.Path("configDB.db")]
+    )
+    # the file got a new commit between our GET and PUT
+    get = mocker.AsyncMock(side_effect=[{"sha": "old"}, {"sha": "current"}])
+    sent = []
+
+    async def put(url, data, content):
+        sent.append(data["sha"])
+        if data["sha"] == "old":
+            raise gb.GithubError(409, url, "configDB.db does not match old")
+        return True
+
+    sleep = mocker.AsyncMock()
+    mocker.patch.object(gb.asyncio, "sleep", sleep)
+    mocker.patch.object(module, "github_get", get)
+    mocker.patch.object(module, "github_put", side_effect=put)
+    await module.do_backup()
+
+    readings = mock_fhem.readings["testbackup"]
+    assert readings["state"] == "ok"
+    assert readings["files_uploaded"] == 1
+    assert sent == ["old", "current"]
+    sleep.assert_awaited_once_with(gb.CONFLICT_RETRY_DELAYS[0])
+
+
+@pytest.mark.asyncio
+async def test_permanent_conflict_fails_with_github_message(
+    mocker, tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    module = await define_backup(mocker)
+    write(tmp_path / "configDB.db", b"new")
+    mocker.patch.object(
+        module, "files_to_backup", return_value=[gb.pathlib.Path("configDB.db")]
+    )
+
+    async def put(url, data, content):
+        raise gb.GithubError(409, url, "is at abc but expected def")
+
+    mocker.patch.object(gb.asyncio, "sleep", mocker.AsyncMock())
+    mocker.patch.object(
+        module, "github_get", mocker.AsyncMock(return_value={"sha": "x"})
+    )
+    put_mock = mocker.patch.object(module, "github_put", side_effect=put)
+    await module.do_backup()
+
+    readings = mock_fhem.readings["testbackup"]
+    assert readings["state"] == "failed"
+    assert "is at abc but expected def (HTTP 409)" in readings["error"]
+    assert put_mock.await_count == len(gb.CONFLICT_RETRY_DELAYS) + 1
+
+
+@pytest.mark.asyncio
+async def test_github_requests_bypass_cache_and_report_message():
+    seen = {}
+
+    async def contents(request):
+        seen["cache"] = request.headers.get("Cache-Control")
+        return web.json_response({"sha": "abc"})
+
+    async def conflict(request):
+        return web.json_response({"message": "sha does not match"}, status=409)
+
+    app = web.Application()
+    app.router.add_get("/contents", contents)
+    app.router.add_put("/conflict", conflict)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    module = gb.github_backup(logging.getLogger("github_backup_test"))
+    # local test server without TLS
+    base = f"http://127.0.0.1:{port}"  # NOSONAR
+    try:
+        assert (await module.github_get(f"{base}/contents"))["sha"] == "abc"
+        with pytest.raises(gb.GithubError) as err:
+            await module.github_put(f"{base}/conflict", {"sha": "x"}, b"Zm9v")
+    finally:
+        await runner.cleanup()
+    assert seen["cache"] == "no-cache"
+    assert err.value.status == 409
+    assert "sha does not match (HTTP 409)" in str(err.value)

@@ -67,15 +67,33 @@ HTTP_ERRORS = {
     401: "github_token is invalid or expired",
     403: "github_token has no write permission for the repository",
     404: "repository not found or github_token has no access to it",
+    409: "file changed on GitHub meanwhile (sha conflict)",
 }
+
+# a 409 means the sha we sent isn't the current one of the file (anymore),
+# get it again and retry after these delays (seconds)
+CONFLICT_RETRY_DELAYS = (2, 5, 10)
 
 
 class GithubError(Exception):
-    def __init__(self, status, url):
+    def __init__(self, status, url, message=""):
         self.status = status
         reason = HTTP_ERRORS.get(status, "GitHub request failed")
+        if message:
+            reason += f": {message}"
         super().__init__(f"{reason} (HTTP {status})")
         self.url = url
+
+
+async def github_message(resp):
+    """GitHub's error message, explains e.g. a 409 or 422"""
+    try:
+        data = await resp.json(content_type=None)
+    except Exception:
+        return ""
+    if isinstance(data, dict):
+        return str(data.get("message", ""))
+    return ""
 
 
 def json_body(data, content):
@@ -167,12 +185,16 @@ class github_backup(generic.FhemModule):
 
     async def github_get(self, url):
         """JSON response, None if the file doesn't exist (yet)"""
+        headers = dict(github_backup.headers)
+        # GitHub answers with max-age=60, a cached answer from a proxy holds
+        # an old sha and the upload fails with 409
+        headers["Cache-Control"] = "no-cache"
         async with aiohttp.ClientSession(trust_env=True) as session:
-            async with session.get(url, headers=github_backup.headers) as resp:
+            async with session.get(url, headers=headers) as resp:
                 if resp.status == 404:
                     return None
                 if resp.status >= 400:
-                    raise GithubError(resp.status, url)
+                    raise GithubError(resp.status, url, await github_message(resp))
                 return await resp.json()
 
     async def github_put(self, url, json_data, content):
@@ -187,7 +209,7 @@ class github_backup(generic.FhemModule):
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.put(url, data=io.BytesIO(body), headers=headers) as resp:
                 if resp.status >= 400:
-                    raise GithubError(resp.status, url)
+                    raise GithubError(resp.status, url, await github_message(resp))
         return True
 
     async def b64encode_file(self, filename):
@@ -209,6 +231,19 @@ class github_backup(generic.FhemModule):
 
     async def upload_file(self, filename):
         """Returns "uploaded" or "unchanged", raises on errors"""
+        for delay in CONFLICT_RETRY_DELAYS:
+            try:
+                return await self.upload_file_once(filename)
+            except GithubError as exc:
+                if exc.status != 409:
+                    raise
+                self.logger.warning(
+                    f"{filename}: {exc}, retrying in {delay}s with current sha"
+                )
+            await asyncio.sleep(delay)
+        return await self.upload_file_once(filename)
+
+    async def upload_file_once(self, filename):
         # get current sha
         f_sha = await self.get_sha_from_file(filename)
 
