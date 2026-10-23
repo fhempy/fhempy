@@ -200,8 +200,17 @@ class zigbee2mqtt(FhemModule):
                     "frontend:\n"
                     "  port: 8080\n"
                 )
-                with open(z2m_directory + "/data/configuration.yaml", "w") as file:
-                    file.writelines(z2m_conf)
+                # never replace an existing configuration, it holds the
+                # network key and PAN ID of the paired zigbee network
+                z2m_conf_file = z2m_directory + "/data/configuration.yaml"
+                if not os.path.exists(z2m_conf_file):
+                    os.makedirs(os.path.dirname(z2m_conf_file), exist_ok=True)
+                    with open(z2m_conf_file, "w") as file:
+                        file.writelines(z2m_conf)
+                else:
+                    self.logger.info(
+                        "Keep existing zigbee2mqtt configuration " + z2m_conf_file
+                    )
 
                 await self.create_weblink()
                 await fhem.readingsSingleUpdate(
