@@ -2,6 +2,63 @@
 
 <!-- version list -->
 
+## v2.7.0 (2026-10-23)
+
+### Bug Fixes
+
+- Eq3bt empty readings, Bluetooth recovery permission hint, README module list
+  ([#735](https://github.com/fhempy/fhempy/pull/735),
+  [`95e2bc1`](https://github.com/fhempy/fhempy/commit/95e2bc16aabe3164afa1bb404a725bee3b5120eb))
+
+- LoadCatalog doesn't use the result of the callback
+  ([#736](https://github.com/fhempy/fhempy/pull/736),
+  [`199f556`](https://github.com/fhempy/fhempy/commit/199f5564e8b28b84bea87ee0fca8e0f5142c3b6e))
+
+- Pr-tester copies changed www/fhempy files and updates itself
+  ([#739](https://github.com/fhempy/fhempy/pull/739),
+  [`cfe7fa8`](https://github.com/fhempy/fhempy/commit/cfe7fa824b4610115a192afa21f6d68483bf7b4c))
+
+- Pr-tester splits www file selection to keep complexity low
+  ([#739](https://github.com/fhempy/fhempy/pull/739),
+  [`cfe7fa8`](https://github.com/fhempy/fhempy/commit/cfe7fa824b4610115a192afa21f6d68483bf7b4c))
+
+- Pr-tester takes restored paths from disk, restarts with validated args
+  ([#739](https://github.com/fhempy/fhempy/pull/739),
+  [`cfe7fa8`](https://github.com/fhempy/fhempy/commit/cfe7fa824b4610115a192afa21f6d68483bf7b4c))
+
+- Sonar findings (pkg_installer unchanged, smaller build function)
+  ([#736](https://github.com/fhempy/fhempy/pull/736),
+  [`199f556`](https://github.com/fhempy/fhempy/commit/199f5564e8b28b84bea87ee0fca8e0f5142c3b6e))
+
+- **github_backup**: Retry uploads with current sha on HTTP 409
+  ([#737](https://github.com/fhempy/fhempy/pull/737),
+  [`9ac74c6`](https://github.com/fhempy/fhempy/commit/9ac74c609670fec498abe680aa514db3bde6562b))
+
+### Documentation
+
+- Add mantra_ble to Bluetooth section of README ([#732](https://github.com/fhempy/fhempy/pull/732),
+  [`e27354d`](https://github.com/fhempy/fhempy/commit/e27354d359da074dc53e30cc60af28b3e706db26))
+
+### Features
+
+- Module installer tiles come from the manifest.json of each module
+  ([#736](https://github.com/fhempy/fhempy/pull/736),
+  [`199f556`](https://github.com/fhempy/fhempy/commit/199f5564e8b28b84bea87ee0fca8e0f5142c3b6e))
+
+- Module installer tiles from the manifest.json of each module
+  ([#736](https://github.com/fhempy/fhempy/pull/736),
+  [`199f556`](https://github.com/fhempy/fhempy/commit/199f5564e8b28b84bea87ee0fca8e0f5142c3b6e))
+
+- **remote_access**: FHEM on the phone from anywhere via Tailscale Funnel
+  ([#738](https://github.com/fhempy/fhempy/pull/738),
+  [`427a8ef`](https://github.com/fhempy/fhempy/commit/427a8ef600b382000eb9699415f7b4a6952a6140))
+
+### Testing
+
+- Stub eq3bt bluetooth imports in reading test ([#735](https://github.com/fhempy/fhempy/pull/735),
+  [`95e2bc1`](https://github.com/fhempy/fhempy/commit/95e2bc16aabe3164afa1bb404a725bee3b5120eb))
+
+
 ## v2.6.1 (2026-10-22)
 
 ### Features
