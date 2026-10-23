@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.7.1 (2026-10-23)
+
+### Features
+
+- **remote_access**: ESPHome, Zigbee2MQTT and other weblinks via the remote access
+  ([#740](https://github.com/fhempy/fhempy/pull/740),
+  [`19bce6a`](https://github.com/fhempy/fhempy/commit/19bce6aa2b26832319f83bf668054fc1b65d9192))
+
+
 ## v2.7.0 (2026-10-23)
 
 ### Bug Fixes
