@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 from importlib.metadata import PackageNotFoundError, distribution, version
 from pathlib import Path
 from subprocess import PIPE, Popen, SubprocessError, run
@@ -218,6 +219,35 @@ def uv_index_args():
     return args
 
 
+# Dependencies which are not needed by fhempy but break installations, uv drops
+# them with these overrides (the marker never matches).
+# netifaces: required by python-miio, used only by its firmware updater. It has
+# no wheels for Python >= 3.10 and needs a compiler and Python headers.
+UV_OVERRIDES = [
+    'netifaces; python_version < "0"',
+]
+
+
+_uv_overrides_path = None
+
+
+def uv_overrides_file():
+    """Return the path of the uv overrides file, None if it can't be written."""
+    global _uv_overrides_path
+    # tmp cleaners might remove the file while fhempy runs
+    if _uv_overrides_path is not None and os.path.isfile(_uv_overrides_path):
+        return _uv_overrides_path
+    try:
+        fd, path = tempfile.mkstemp(prefix="fhempy_uv_overrides_", suffix=".txt")
+        with os.fdopen(fd, "w") as f:
+            f.write("\n".join(UV_OVERRIDES) + "\n")
+    except OSError:
+        logger.exception("Failed to write uv overrides")
+        return None
+    _uv_overrides_path = path
+    return path
+
+
 def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv=True):
     """Return the command to install package, with uv if available, else pip."""
     uv = find_uv() if use_uv else None
@@ -236,6 +266,9 @@ def install_args(package, upgrade, constraints, find_links, no_cache_dir, use_uv
         args += ["--constraint", constraints]
     if find_links is not None:
         args += ["--find-links", find_links]
+    overrides = uv_overrides_file()
+    if overrides is not None:
+        args += ["--override", overrides]
     return args + uv_index_args()
 
 
@@ -319,6 +352,16 @@ def invalidate_dependency_cache():
     _VERIFIED_MODULES.clear()
     _MANIFEST_CACHE.clear()
     _pygobject_import_ok.cache_clear()
+
+
+def failed_requirements(module):
+    """Return the requirements of module which failed to install."""
+    manifest = _MANIFEST_CACHE.get(module, {})
+    return [
+        req
+        for req in map(platform_requirement, manifest.get("requirements", []))
+        if req in _FAILED_REQUIREMENTS
+    ]
 
 
 def check_dependencies(module):
