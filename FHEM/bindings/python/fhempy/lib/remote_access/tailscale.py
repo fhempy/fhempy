@@ -33,6 +33,7 @@ ARCHITECTURES = {
     "i686": "386",
 }
 BINARIES = ("tailscale", "tailscaled")
+VERSION = re.compile(r"\d+\.\d+\.\d+")
 LOGIN_URL = re.compile(r"https://login\.tailscale\.com/\S+")
 
 
@@ -87,31 +88,29 @@ def extract(data, version):
     The files are written to fixed paths, names in the tarball are only
     compared, never used as path."""
     os.makedirs(bin_directory(), exist_ok=True)
-    found = set()
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
-        for member in tar.getmembers():
-            name = member.name.rsplit("/", 1)[-1]
-            if name not in BINARIES or not member.isfile():
-                continue
-            src = tar.extractfile(member)
-            tmp = binary(name) + ".new"
-            with open(tmp, "wb") as dst:
-                dst.write(src.read())
-            os.chmod(tmp, 0o755)  # NOSONAR executable for the fhem user
-            os.replace(tmp, binary(name))
-            found.add(name)
-    if found != set(BINARIES):
-        raise RuntimeError("Tailscale download is incomplete")
+        members = {m.name.rsplit("/", 1)[-1]: m for m in tar.getmembers() if m.isfile()}
+        if any(b not in members for b in BINARIES):
+            raise RuntimeError("Tailscale download is incomplete")
+        for b in BINARIES:
+            path = binary(b)
+            with open(path + ".new", "wb") as dst:
+                dst.write(tar.extractfile(members[b]).read())
+            os.chmod(path + ".new", 0o700)
+            os.replace(path + ".new", path)
     with open(os.path.join(bin_directory(), "VERSION"), "w", encoding="utf-8") as f:
         f.write(version)
 
 
-async def latest_tarball(session, arch):
+async def latest_version(session, arch):
+    """Version of the newest stable Tailscale for arch"""
     async with session.get(PKGS_URL, params={"mode": "json"}) as resp:
         resp.raise_for_status()
         data = json.loads(await resp.text())
-    tarball = data["Tarballs"][arch]
-    return tarball, data.get("TarballsVersion") or version_of(tarball)
+    match = VERSION.fullmatch(version_of(data["Tarballs"][arch]))
+    if match is None:
+        raise ValueError("unexpected Tailscale version")
+    return match.group(0)
 
 
 async def install(logger):
@@ -124,10 +123,11 @@ async def install(logger):
     timeout = aiohttp.ClientTimeout(total=600, sock_read=60)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            tarball, version = await latest_tarball(session, arch)
+            version = await latest_version(session, arch)
             if version == installed:
                 return installed
             logger.info(f"Downloading Tailscale {version} ({arch})")
+            tarball = f"tailscale_{version}_{arch}.tgz"
             async with session.get(PKGS_URL + tarball) as resp:
                 resp.raise_for_status()
                 data = await resp.read()
