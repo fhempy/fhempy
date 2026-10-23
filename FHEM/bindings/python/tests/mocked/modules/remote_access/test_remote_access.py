@@ -392,7 +392,10 @@ async def test_web_pages(module):
         assert text == "ESPHome"
         assert esphome.headers["Origin"] == f"http://127.0.0.1:{port}"
         assert esphome.headers["Cookie"] == "theme=dark"
-        async with session.ws_connect(proxy_url + "/events", headers=cookie) as ws:
+        # browsers offer compression, which is negotiated per connection
+        async with session.ws_connect(
+            proxy_url + "/events", headers=cookie, compress=15
+        ) as ws:
             await ws.send_str("hi")
             msg = await ws.receive(timeout=5)
             assert msg.data == "echo hi"
