@@ -49,31 +49,38 @@ def expand_params(module, params):
     return result
 
 
+def read_installer(lib_dir, module):
+    path = os.path.join(lib_dir, module, "manifest.json")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as manifest_file:
+        return json.load(manifest_file).get("installer")
+
+
+def catalog_entry(module, installer, www_dir):
+    for key in ("title", "description", "category", "name"):
+        if key not in installer:
+            raise ValueError(f"{module}: installer needs {key}")
+    logo = installer.get("logo")
+    if logo and not os.path.isfile(os.path.join(www_dir, logo)):
+        raise ValueError(f"{module}: logo {www_dir}/{logo} not found")
+    entry = {"id": module, **installer}
+    if "params" in entry:
+        entry["params"] = expand_params(module, entry["params"])
+    if "modes" in entry:
+        entry["modes"] = [
+            {**mode, "params": expand_params(module, mode.get("params", []))}
+            for mode in entry["modes"]
+        ]
+    return entry
+
+
 def build(lib_dir=LIB_DIR, www_dir=WWW_DIR):
     modules = []
     for module in sorted(os.listdir(lib_dir)):
-        path = os.path.join(lib_dir, module, "manifest.json")
-        if not os.path.isfile(path):
-            continue
-        with open(path, encoding="utf-8") as manifest_file:
-            installer = json.load(manifest_file).get("installer")
-        if installer is None:
-            continue
-        for key in ("title", "description", "category", "name"):
-            if key not in installer:
-                raise ValueError(f"{module}: installer needs {key}")
-        logo = installer.get("logo")
-        if logo and not os.path.isfile(os.path.join(www_dir, logo)):
-            raise ValueError(f"{module}: logo {www_dir}/{logo} not found")
-        entry = {"id": module, **installer}
-        if "params" in entry:
-            entry["params"] = expand_params(module, entry["params"])
-        if "modes" in entry:
-            entry["modes"] = [
-                {**mode, "params": expand_params(module, mode.get("params", []))}
-                for mode in entry["modes"]
-            ]
-        modules.append(entry)
+        installer = read_installer(lib_dir, module)
+        if installer is not None:
+            modules.append(catalog_entry(module, installer, www_dir))
     modules.sort(key=lambda m: (m.get("order", 1000), m["title"].lower()))
     for entry in modules:
         entry.pop("order", None)
