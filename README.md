@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>68 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>69 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -25,6 +25,7 @@
   <a href="#-quick-start">Quick start</a> ·
   <a href="#-matter">Matter</a> ·
   <a href="#-ai">AI</a> ·
+  <a href="#-remote-access">Remote access</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -34,6 +35,7 @@
 ## ✨ Why fhempy?
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
+- **FHEM on your phone, from anywhere**: one `define` gives you a fixed https address with password, no VPN app and no port forwarding. See [Remote access](#-remote-access).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
 - **Feels like any other FHEM device**: `define`, `set`, `get`, `attr` and readings work as usual.
@@ -60,6 +62,13 @@ Control FHEM in plain language with AI apps like Claude Desktop, Claude Code, LM
 define AI fhempy mcp_server
 ```
 Copy the secret address shown in FHEMWEB into your AI app, then ask *"Which lights are on?"* or *"Switch off all lights when I leave the house."* Automations created by the AI wait for your approval, your passwords are never sent to the AI. The [MCP server README](FHEM/bindings/python/fhempy/lib/mcp_server/README.md) explains every step.
+
+## 📱 Remote access
+Open FHEM on your phone while you're away, in the normal browser:
+```
+define remote fhempy remote_access
+```
+Open the device in FHEMWEB, log in to Tailscale (free, with your Google, Microsoft, Apple or GitHub account) and allow access once. Then scan the QR code with your phone: FHEM is at `https://fhem.<your-name>.ts.net`, protected by a password. No VPN app, no port forwarding in the router, and FHEMWEB in your home network stays as it is. The [remote access README](FHEM/bindings/python/fhempy/lib/remote_access/README.md) explains every step.
 
 ## 🚀 Quick start
 
@@ -209,6 +218,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[openmeteo_weather](FHEM/bindings/python/fhempy/lib/openmeteo_weather/README.md)|Weather and forecast from Open-Meteo (replaces google_weather)|
 |[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
+|[remote_access](FHEM/bindings/python/fhempy/lib/remote_access/README.md)|FHEM on your phone from anywhere: https address with password via Tailscale Funnel, no VPN app or port forwarding|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|

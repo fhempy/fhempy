@@ -1,0 +1,14 @@
+{
+  "requirements": [
+    "segno==1.6.6"
+  ],
+  "installer": {
+    "title": "Remote access",
+    "description": "Open FHEM on your phone from anywhere, without VPN app and router setup (free Tailscale account)",
+    "category": "tools",
+    "order": 5,
+    "name": "remote",
+    "single": true,
+    "icon": "📱"
+  }
+}
