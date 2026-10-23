@@ -1,6 +1,6 @@
 """Password protected proxy for web pages in the home network.
 
-Web pages of ESPHome, Zigbee2MQTT... (FHEM weblinks to http://<home ip>:port)
+Web pages of ESPHome, Zigbee2MQTT... (FHEM weblinks to <home ip>:port)
 are reachable via https://<name>.ts.net:<funnel port>. Every request needs
 the password of the remote access: the proxy asks the FHEMWEB of the remote
 access if the login (basic auth header or the AuthToken cookie FHEMWEB sets
@@ -49,7 +49,7 @@ class FhemwebLogin:
     """Checks logins with the FHEMWEB of the remote access"""
 
     def __init__(self, url_func):
-        # url of FHEMWEB, e.g. http://127.0.0.1:8089
+        # url of FHEMWEB, e.g. 127.0.0.1:8089 without https
         self.url_func = url_func
         self._cache = {}
         self._protected_until = 0
@@ -64,15 +64,15 @@ class FhemwebLogin:
         connector = aiohttp.TCPConnector(force_close=True)
         timeout = aiohttp.ClientTimeout(total=10)
         try:
-            async with aiohttp.ClientSession(
-                connector=connector, timeout=timeout
-            ) as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession(connector=connector, timeout=timeout) as session,
+                session.get(
                     self.url_func() + "/fhem/remote_access_login",
                     headers=headers,
                     allow_redirects=False,
-                ) as resp:
-                    return resp.status
+                ) as resp,
+            ):
+                return resp.status
         except (aiohttp.ClientError, asyncio.TimeoutError):
             return None
 
@@ -117,7 +117,7 @@ class AuthProxy:
     """Forwards http and websocket requests to target after the login"""
 
     def __init__(self, target, login, logger):
-        # e.g. http://192.168.1.10:6052
+        # e.g. 192.168.1.10:6052 without https
         self.target = target.rstrip("/")
         self.login = login
         self.logger = logger

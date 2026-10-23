@@ -1,6 +1,6 @@
 """Web pages of the home network (ESPHome, Zigbee2MQTT...) via the remote access.
 
-FHEM shows them with weblinks to http://<home ip>:<port>, which don't work
+FHEM shows them with weblinks to <home ip>:<port> without https, which don't work
 from outside and are insecure in the https page. Each of them gets an own
 Funnel port (https://<name>.ts.net:8443, :10000) with a password protected
 proxy (proxy.py), and the FHEMWEB of the remote access shows these addresses
@@ -9,7 +9,7 @@ instead of the home network ones.
 
 import ipaddress
 import json
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from .. import fhem
 from . import proxy
@@ -22,8 +22,8 @@ HOME_DOMAINS = (".local", ".lan", ".home", ".fritz.box")
 
 
 def home_origin(link):
-    """http://<home ip>:<port> of a weblink as written in the link, None
-    for other addresses"""
+    """scheme and <home ip>:<port> of a weblink without https as written in
+    the link, None for other addresses"""
     try:
         url = urlsplit(str(link or "").strip())
         url.port
@@ -40,7 +40,7 @@ def home_origin(link):
         # hostnames in the home network, e.g. raspberrypi or pi.local
         if "." in host and not host.endswith(HOME_DOMAINS):
             return None
-    return f"http://{url.netloc}"
+    return urlunsplit((url.scheme, url.netloc, "", "", ""))
 
 
 def assign_ports(weblinks):
@@ -113,14 +113,12 @@ class Sites:
         """Funnel ports and proxies for the current weblinks"""
         wanted = assign_ports(await self.weblinks())
         ts = self.module.ts
-        for port in list(self.exposed):
-            if port not in wanted:
-                await ts.funnel_port_off(port)
-                del self.exposed[port]
+        for port in [p for p in self.exposed if p not in wanted]:
+            await ts.funnel_port_off(port)
+            del self.exposed[port]
         origins = {origin for origin, _ in wanted.values()}
-        for origin in list(self.proxies):
-            if origin not in origins:
-                await self.proxies.pop(origin).stop()
+        for origin in [o for o in self.proxies if o not in origins]:
+            await self.proxies.pop(origin).stop()
         mapping = {}
         shared = []
         for port, (origin, names) in wanted.items():
@@ -149,7 +147,10 @@ class Sites:
             site = proxy.AuthProxy(origin, self.login, self.logger)
             await site.start()
             self.proxies[origin] = site
-        return f"http://127.0.0.1:{self.proxies[origin].port}"
+        # the proxy runs on this computer, Tailscale adds https
+        return urlunsplit(
+            ("http", f"127.0.0.1:{self.proxies[origin].port}", "", "", "")
+        )
 
     async def stop(self):
         """Funnel ports are removed by `serve reset` of the next start"""
