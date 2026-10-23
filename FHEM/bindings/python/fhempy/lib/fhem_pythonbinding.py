@@ -456,11 +456,19 @@ class fhempy:
                         await self.sendBackError(hash, errorMsg)
                     return 0
                 except ModuleNotFoundError:
-                    errorMsg = (
-                        f"Module failed to load: {hash['FHEMPYTYPE']}\n"
-                        f"Maybe you need to update fhempy "
-                        f"on this or remote peer."
-                    )
+                    failed = pkg_installer.failed_requirements(hash["FHEMPYTYPE"])
+                    if failed:
+                        errorMsg = (
+                            f"Module failed to load: {hash['FHEMPYTYPE']}\n"
+                            f"Installation of {', '.join(failed)} failed, "
+                            f"see fhempy log for details."
+                        )
+                    else:
+                        errorMsg = (
+                            f"Module failed to load: {hash['FHEMPYTYPE']}\n"
+                            f"Maybe you need to update fhempy "
+                            f"on this or remote peer."
+                        )
                     errorMsg += "\n\nStacktrace:\n" + traceback.format_exc()
                     if fhem_reply_done:
                         await fhem.readingsSingleUpdate(hash, "state", errorMsg, 1)

@@ -339,3 +339,55 @@ def test_pygobject_build_failure_logs_hint_and_is_not_retried(
     assert pkg_installer.PYGOBJECT_GIREPOSITORY2_APT in caplog.text
     pkg_installer._FAILED_REQUIREMENTS.clear()
     pkg_installer.invalidate_dependency_cache()
+
+
+def test_uv_drops_netifaces_with_override(tmp_path, monkeypatch):
+    # python-miio requires netifaces, which has no wheels for Python >= 3.10
+    no_pip_config(monkeypatch)
+    monkeypatch.setenv("FHEMPY_UV", fake_uv(tmp_path))
+    monkeypatch.setattr(pkg_installer, "is_virtual_env", lambda: True)
+
+    args = pkg_installer.install_args("python-miio==0.5.12", True, None, None, False)
+
+    overrides = args[args.index("--override") + 1]
+    with open(overrides) as f:
+        assert 'netifaces; python_version < "0"' in f.read().splitlines()
+
+    # the file is written again if a tmp cleaner removed it
+    os.remove(overrides)
+    args = pkg_installer.install_args("python-miio==0.5.12", True, None, None, False)
+    assert os.path.isfile(args[args.index("--override") + 1])
+
+
+def test_pip_gets_no_override(tmp_path, monkeypatch):
+    no_pip_config(monkeypatch)
+    monkeypatch.setenv("FHEMPY_NO_UV", "1")
+    monkeypatch.setattr(pkg_installer, "is_virtual_env", lambda: True)
+
+    args = pkg_installer.install_args("python-miio==0.5.12", True, None, None, False)
+
+    assert "--override" not in args
+
+
+def test_failed_requirements(tmp_path, monkeypatch):
+    pkg_installer.invalidate_dependency_cache()
+    mod_dir = tmp_path / "test_mod"
+    mod_dir.mkdir()
+    (mod_dir / "manifest.json").write_text(
+        '{"requirements": ["broken-pkg==1.0", "ok-pkg==1.0"]}'
+    )
+    monkeypatch.setattr(pkg_installer.utils, "get_fhempy_root", lambda: str(tmp_path))
+    monkeypatch.setattr(pkg_installer, "is_installed", lambda req: False)
+    monkeypatch.setattr(pkg_installer, "pip_kwargs", lambda x: {})
+    monkeypatch.setattr(pkg_installer, "_FAILED_REQUIREMENTS", set())
+    monkeypatch.setattr(
+        pkg_installer,
+        "install_package",
+        lambda req, **kwargs: req == "ok-pkg==1.0",
+    )
+
+    assert pkg_installer.failed_requirements("test_mod") == []
+    asyncio.run(pkg_installer.check_and_install_dependencies("test_mod"))
+
+    assert pkg_installer.failed_requirements("test_mod") == ["broken-pkg==1.0"]
+    pkg_installer.invalidate_dependency_cache()
