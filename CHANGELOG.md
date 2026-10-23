@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.7.2 (2026-10-23)
+
+### Bug Fixes
+
+- Remote_access websocket of ESPHome Device Builder
+  ([#741](https://github.com/fhempy/fhempy/pull/741),
+  [`f6a3bb5`](https://github.com/fhempy/fhempy/commit/f6a3bb51fe230033ee2c379ff0f032a64d3e0f9d))
+
+
 ## v2.7.1 (2026-10-23)
 
 ### Features
