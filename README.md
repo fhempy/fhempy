@@ -70,6 +70,13 @@ define remote fhempy remote_access
 ```
 Open the device in FHEMWEB, log in to Tailscale (free, with your Google, Microsoft, Apple or GitHub account) and allow access once. Then scan the QR code with your phone: FHEM is at `https://fhem.<your-name>.ts.net`, protected by a password. No VPN app, no port forwarding in the router, and FHEMWEB in your home network stays as it is. The [remote access README](FHEM/bindings/python/fhempy/lib/remote_access/README.md) explains every step.
 
+## 🔔 Push notifications
+Notifications on your phone and tablet, without app and without account (replaces Pushbullet):
+```
+define push fhempy push
+```
+Open the device on the phone and tap *Enable notifications*. Then send from notify or DOIF with `set push message Washing machine is done`, on Android also with picture and buttons which run FHEM commands. The [push README](FHEM/bindings/python/fhempy/lib/push/README.md) explains every step.
+
 ## 🚀 Quick start
 
 ### 1. Install fhempy
@@ -218,6 +225,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[openmeteo_weather](FHEM/bindings/python/fhempy/lib/openmeteo_weather/README.md)|Weather and forecast from Open-Meteo (replaces google_weather)|
 |[piclock](FHEM/bindings/python/fhempy/lib/piclock/README.md)|Create a LED clock with MAX7219|
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
+|[push](FHEM/bindings/python/fhempy/lib/push/README.md)|Push notifications to phones and tablets (Android, iPhone), no app and no account, replaces Pushbullet|
 |[remote_access](FHEM/bindings/python/fhempy/lib/remote_access/README.md)|FHEM on your phone from anywhere: https address with password via Tailscale Funnel, no VPN app or port forwarding|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|

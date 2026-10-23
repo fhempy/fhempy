@@ -261,6 +261,32 @@ fhempy_detailFn($$$)
   return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
 }
 
+# Notification to the phones of the fhempy module push, for notify/DOIF:
+# {fhempy_push("Washing machine is done")}, optional title and phone names
+sub
+fhempy_push($;$$)
+{
+  my ($text, $title, $to) = @_;
+  my ($dev) = grep { ($defs{$_}{TYPE} // '') eq 'fhempy' &&
+                     ($defs{$_}{FHEMPYTYPE} // '') eq 'push' } sort keys %defs;
+  if (!$dev) {
+    my $msg = "fhempy_push: create the device first: define push fhempy push";
+    Log3 undef, 2, $msg;
+    return $msg;
+  }
+  my $options = '';
+  foreach my $opt (['title', $title], ['to', $to]) {
+    my ($key, $value) = @$opt;
+    next if (!defined($value) || $value eq '');
+    $value =~ s/"/'/g;
+    $value =~ s/[\r\n]+/ /g;
+    $options .= " $key=\"$value\"";
+  }
+  $text //= '';
+  $text =~ s/[\r\n]+/ /g;
+  return CommandSet(undef, "$dev message$options $text");
+}
+
 1;
 
 =pod

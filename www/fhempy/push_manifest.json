@@ -1,0 +1,13 @@
+{
+  "name": "FHEM",
+  "short_name": "FHEM",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "../images/default/fhemicon_ios.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}
