@@ -1,3 +1,24 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "GitHub backup",
+    "description": "Backup of the FHEM configuration to a private GitHub repository",
+    "category": "tools",
+    "order": 30,
+    "name": "backup",
+    "single": true,
+    "logo": "github.png",
+    "params": [
+      {
+        "label": "Repository URL",
+        "placeholder": "https://github.com/USER/fhem_backup",
+        "help": "Use a private repository"
+      },
+      {
+        "label": "Backup directory",
+        "placeholder": "fhem_raspi",
+        "help": "Directory in the repository, one per FHEM installation"
+      }
+    ]
+  }
 }

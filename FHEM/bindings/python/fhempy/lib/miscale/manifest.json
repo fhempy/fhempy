@@ -5,5 +5,18 @@
     "btsocket==0.3.0",
     "pyric==0.1.6.3",
     "bleparser==3.7.3"
-  ]
+  ],
+  "installer": {
+    "title": "Xiaomi scale",
+    "description": "Xiaomi Mi Scale V1/V2",
+    "category": "bt",
+    "order": 60,
+    "name": "mi_scale",
+    "logo": "xiaomi.png",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

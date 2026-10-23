@@ -2,5 +2,39 @@
   "requirements": [
     "opencv-python-headless==5.0.0.93",
     "ai-edge-litert==2.3.0"
-  ]
+  ],
+  "installer": {
+    "title": "Object detection",
+    "description": "TensorFlow Lite object detection in camera streams or images",
+    "category": "tools",
+    "order": 60,
+    "name": "object_detection",
+    "logo": "object_detection.svg",
+    "modes": [
+      {
+        "label": "Video stream",
+        "args": [
+          "stream"
+        ],
+        "params": [
+          {
+            "label": "Stream URL",
+            "placeholder": "rtsp://..."
+          }
+        ]
+      },
+      {
+        "label": "Image",
+        "args": [
+          "image"
+        ],
+        "params": [
+          {
+            "label": "Image file",
+            "placeholder": "www/snapshot.jpg"
+          }
+        ]
+      }
+    ]
+  }
 }

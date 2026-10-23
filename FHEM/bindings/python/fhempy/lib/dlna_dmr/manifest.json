@@ -1,5 +1,20 @@
 {
   "requirements": [
     "async-upnp-client==0.49.0"
-  ]
+  ],
+  "installer": {
+    "title": "DLNA renderer",
+    "description": "Control DLNA MediaRenderer devices, discover_upnp creates them on its own",
+    "category": "media",
+    "order": 30,
+    "name": "dlna",
+    "logo": "dlna_dmr.svg",
+    "params": [
+      {
+        "label": "UDN",
+        "placeholder": "uuid:...",
+        "help": "Unique device name, shown by discover_upnp"
+      }
+    ]
+  }
 }

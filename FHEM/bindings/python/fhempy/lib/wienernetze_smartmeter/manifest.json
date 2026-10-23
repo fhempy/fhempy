@@ -1,5 +1,21 @@
 {
   "requirements": [
     "lxml==6.1.3"
-  ]
+  ],
+  "installer": {
+    "title": "Wiener Netze Smart Meter",
+    "description": "Consumption of your Wiener Netze smart meter",
+    "category": "energy",
+    "order": 80,
+    "name": "smartmeter",
+    "logo": "wienernetze_smartmeter.png",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

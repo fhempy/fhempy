@@ -1,5 +1,28 @@
 {
   "requirements": [
     "huawei-solar==3.0.7"
-  ]
+  ],
+  "installer": {
+    "title": "Huawei inverter (Modbus)",
+    "description": "Read Huawei inverters locally via Modbus TCP",
+    "category": "energy",
+    "order": 30,
+    "name": "inverter",
+    "logo": "huawei_modbus.png",
+    "params": [
+      {
+        "type": "ip"
+      },
+      {
+        "label": "Port",
+        "placeholder": "502",
+        "optional": true
+      },
+      {
+        "label": "Slave ID",
+        "placeholder": "0",
+        "optional": true
+      }
+    ]
+  }
 }

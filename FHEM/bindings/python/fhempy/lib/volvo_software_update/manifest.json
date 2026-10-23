@@ -1,5 +1,19 @@
 {
   "requirements": [
     "beautifulsoup4==4.15.0"
-  ]
+  ],
+  "installer": {
+    "title": "Volvo software update",
+    "description": "Get notified about Volvo software updates",
+    "category": "cars",
+    "order": 40,
+    "name": "volvo_update",
+    "logo": "volvo.png",
+    "params": [
+      {
+        "label": "URL",
+        "placeholder": "https://"
+      }
+    ]
+  }
 }

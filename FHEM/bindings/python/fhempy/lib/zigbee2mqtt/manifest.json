@@ -2,5 +2,14 @@
   "requirements": [
     "GitPython==3.2.1",
     "ifaddr==0.2.0"
-  ]
+  ],
+  "installer": {
+    "title": "Zigbee2MQTT",
+    "description": "Installs and runs a Zigbee2MQTT server: Zigbee devices without a vendor hub",
+    "category": "home",
+    "order": 30,
+    "name": "z2m",
+    "single": true,
+    "logo": "zigbee2mqtt.png"
+  }
 }

@@ -11,7 +11,7 @@ def extract_requirements_from_manifests(directory):
         for file in files:
             if file == "manifest.json":
                 manifest_path = os.path.join(root, file)
-                with open(manifest_path, "r") as manifest_file:
+                with open(manifest_path, "r", encoding="utf-8") as manifest_file:
                     manifest_data = json.load(manifest_file)
                     if "requirements" in manifest_data:
                         requirements.extend(manifest_data["requirements"])

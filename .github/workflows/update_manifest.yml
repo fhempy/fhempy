@@ -39,6 +39,10 @@ jobs:
       run: |
         python3 pyproject2manifest.py
 
+    - name: Update catalog of the module installer (www/fhempy/modules.json)
+      run: |
+        python3 manifest2modules.py
+
     - name: Commit changes
       # GITHUB_TOKEN is read-only for fork and dependabot PRs, pushing would fail
       if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')

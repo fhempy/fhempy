@@ -2,5 +2,26 @@
   "requirements": [
     "pyprusalink==3.1.0",
     "httpx==0.28.1"
-  ]
+  ],
+  "installer": {
+    "title": "Prusa 3D printer",
+    "description": "Prusa 3D printer via PrusaLink",
+    "category": "tools",
+    "order": 50,
+    "name": "prusa",
+    "logo": "prusalink.png",
+    "params": [
+      {
+        "label": "Printer URL",
+        "placeholder": "http://192.168.1.50"
+      },
+      {
+        "label": "Username",
+        "placeholder": "maker"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

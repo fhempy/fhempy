@@ -1,5 +1,23 @@
 {
   "requirements": [
     "rctclient==0.0.6"
-  ]
+  ],
+  "installer": {
+    "title": "RCT Power",
+    "description": "RCT Power inverter",
+    "category": "energy",
+    "order": 50,
+    "name": "rct",
+    "logo": "rct_power.png",
+    "params": [
+      {
+        "type": "ip"
+      },
+      {
+        "label": "Port",
+        "placeholder": "8899",
+        "optional": true
+      }
+    ]
+  }
 }

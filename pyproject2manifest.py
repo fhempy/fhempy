@@ -35,7 +35,7 @@ def update_manifest_requirements(directory, latest_versions):
         for file in files:
             if file == "manifest.json":
                 manifest_path = os.path.join(root, file)
-                with open(manifest_path, "r+") as manifest_file:
+                with open(manifest_path, "r+", encoding="utf-8") as manifest_file:
                     manifest_data = json.load(manifest_file)
                     if "requirements" in manifest_data:
                         requirements = manifest_data["requirements"]
@@ -59,7 +59,9 @@ def update_manifest_requirements(directory, latest_versions):
                                 updated_requirements.append(req)
                         manifest_data["requirements"] = updated_requirements
                         manifest_file.seek(0)
-                        json.dump(manifest_data, manifest_file, indent=2)
+                        json.dump(
+                            manifest_data, manifest_file, indent=2, ensure_ascii=False
+                        )
                         manifest_file.truncate()
 
 

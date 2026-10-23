@@ -1,5 +1,24 @@
 {
   "requirements": [
     "aiohomekit==4.0.1"
-  ]
+  ],
+  "installer": {
+    "title": "HomeKit devices",
+    "description": "Control HomeKit accessories and bridges (e.g. Velux) directly",
+    "category": "home",
+    "order": 80,
+    "name": "homekit",
+    "logo": "homekit.png",
+    "params": [
+      {
+        "label": "HomeKit ID",
+        "help": "Device ID shown by the module discover_mdns"
+      },
+      {
+        "label": "Setup code",
+        "placeholder": "123-45-678",
+        "help": "Pairing code printed on the device"
+      }
+    ]
+  }
 }

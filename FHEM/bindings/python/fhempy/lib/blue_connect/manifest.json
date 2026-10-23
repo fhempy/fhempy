@@ -2,5 +2,18 @@
   "requirements": [
     "bleak==3.0.2",
     "bluetooth-adapters==2.4.0"
-  ]
+  ],
+  "installer": {
+    "title": "Blue Connect",
+    "description": "Blue Connect pool sensor",
+    "category": "bt",
+    "order": 90,
+    "name": "pool",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

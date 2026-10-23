@@ -2,5 +2,18 @@
   "requirements": [
     "bleak==3.0.2",
     "bluetooth-adapters==2.4.0"
-  ]
+  ],
+  "installer": {
+    "title": "GF Pro irrigation",
+    "description": "Control GF Pro Bluetooth irrigation control",
+    "category": "bt",
+    "order": 100,
+    "name": "irrigation",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

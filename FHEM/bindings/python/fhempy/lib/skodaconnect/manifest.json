@@ -4,5 +4,25 @@
     "beautifulsoup4==4.15.0",
     "lxml==6.1.3",
     "skodaconnect==1.3.11"
-  ]
+  ],
+  "installer": {
+    "title": "Skoda",
+    "description": "Control your Skoda car",
+    "category": "cars",
+    "order": 60,
+    "name": "my_skoda",
+    "logo": "skodaconnect.png",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      },
+      {
+        "label": "S-PIN",
+        "secret": true
+      }
+    ]
+  }
 }

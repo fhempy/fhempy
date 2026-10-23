@@ -1,5 +1,18 @@
 {
   "requirements": [
     "goodwe==0.4.10"
-  ]
+  ],
+  "installer": {
+    "title": "GoodWe",
+    "description": "Get data from GoodWe inverters",
+    "category": "energy",
+    "order": 40,
+    "name": "goodwe",
+    "logo": "goodwe.png",
+    "params": [
+      {
+        "type": "ip"
+      }
+    ]
+  }
 }
