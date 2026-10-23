@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.7.3 (2026-10-23)
+
+### Bug Fixes
+
+- Miio install on Python 3.13 without compiler ([#742](https://github.com/fhempy/fhempy/pull/742),
+  [`700dd77`](https://github.com/fhempy/fhempy/commit/700dd775954a4904b979f9dcc51aea1879cc38e5))
+
+
 ## v2.7.2 (2026-10-23)
 
 ### Bug Fixes
