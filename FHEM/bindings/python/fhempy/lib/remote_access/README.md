@@ -42,6 +42,15 @@ password. If it doesn't, the remote access stays off.
 - `set remote new_password`: new random password
 - `attr remote username <name>`: other user name
 
+## ESPHome, Zigbee2MQTT and other web pages
+
+Web pages of your home network which FHEM shows with a weblink (e.g. the ESPHome dashboard
+or the Zigbee2MQTT frontend, `http://192.168.x.x:port`) work from anywhere too. Two of them
+get an own https address of the remote access, `https://fhem.<tailnet>.ts.net:8443` and
+`:10000` (Tailscale Funnel only allows these ports), ESPHome and Zigbee2MQTT first. They need
+the same password, the phone is logged in already. The remote FHEMWEB shows these addresses
+in the weblinks, the reading `web_pages` lists them.
+
 ## Commands and attributes
 
 - `set remote restart`: start again (checks FHEMWEB and the password, copies the look of
@@ -49,7 +58,7 @@ password. If it doesn't, the remote access stays off.
 - `set remote logout`: log out of Tailscale, e.g. to use another account
 - `attr remote hostname <name>`: first part of the address, default `fhem`
 
-Readings: `state`, `url` (your address), `tailscale_version`.
+Readings: `state`, `url` (your address), `web_pages`, `tailscale_version`.
 
 ## How it works
 

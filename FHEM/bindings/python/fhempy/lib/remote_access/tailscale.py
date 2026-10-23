@@ -145,10 +145,15 @@ def find_login_url(text):
     return match.group(0) if match else None
 
 
+def funnel_ports(serve_config):
+    """Ports of this computer which Funnel forwards to the internet"""
+    allow = (serve_config or {}).get("AllowFunnel") or {}
+    return {int(k.rsplit(":", 1)[1]) for k, v in allow.items() if v and ":" in k}
+
+
 def funnel_active(serve_config):
     """True if Funnel forwards port 443 of this computer to the internet"""
-    allow = (serve_config or {}).get("AllowFunnel") or {}
-    return any(v for k, v in allow.items() if k.endswith(":443"))
+    return 443 in funnel_ports(serve_config)
 
 
 class Tailscale:
@@ -277,6 +282,14 @@ class Tailscale:
             if proc is self.funnel_proc:
                 self.funnel_output += line.decode(errors="replace")
         await proc.wait()
+
+    async def funnel_port(self, port, target):
+        """Forward https://<name>.ts.net:<port> to target, port 8443 or
+        10000. Funnel is enabled already (start_funnel)."""
+        return await self.run("funnel", "--bg", "--yes", f"--https={port}", target)
+
+    async def funnel_port_off(self, port):
+        return await self.run("funnel", f"--https={port}", "off")
 
     def funnel_enable_url(self):
         return find_login_url(self.funnel_output)
