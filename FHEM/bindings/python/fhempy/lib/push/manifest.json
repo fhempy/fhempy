@@ -1,0 +1,15 @@
+{
+  "requirements": [
+    "pywebpush==2.5.0",
+    "segno==1.6.6"
+  ],
+  "installer": {
+    "title": "Push notifications",
+    "description": "Notifications on your phone and tablet, no app and no account needed (replaces Pushbullet)",
+    "category": "tools",
+    "order": 6,
+    "name": "push",
+    "single": true,
+    "icon": "🔔"
+  }
+}

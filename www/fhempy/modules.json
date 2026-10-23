@@ -9,6 +9,15 @@
   "icon": "📱"
  },
  {
+  "id": "push",
+  "title": "Push notifications",
+  "description": "Notifications on your phone and tablet, no app and no account needed (replaces Pushbullet)",
+  "category": "tools",
+  "name": "push",
+  "single": true,
+  "icon": "🔔"
+ },
+ {
   "id": "mcp_server",
   "title": "AI (MCP server)",
   "description": "Control FHEM in plain language with AI apps (Claude, LM Studio...), the AI can also create automations",

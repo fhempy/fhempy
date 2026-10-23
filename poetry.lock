@@ -2637,6 +2637,20 @@ sqlite = ["anysqlite (>=0.0.5)"]
 yaml = ["pyyaml (==6.0.1)"]
 
 [[package]]
+name = "http-ece"
+version = "1.2.1"
+description = "Encrypted Content Encoding for HTTP"
+optional = false
+python-versions = "*"
+groups = ["all"]
+files = [
+    {file = "http_ece-1.2.1.tar.gz", hash = "sha256:8c6ab23116bbf6affda894acfd5f2ca0fb8facbcbb72121c11c75c33e7ce8cff"},
+]
+
+[package.dependencies]
+cryptography = ">=2.5"
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 description = "A minimal low-level HTTP client."
@@ -4513,6 +4527,23 @@ files = [
 ]
 
 [[package]]
+name = "py-vapid"
+version = "1.9.6"
+description = "Simple VAPID header generation library"
+optional = false
+python-versions = "*"
+groups = ["all"]
+files = [
+    {file = "py_vapid-1.9.6-py2.py3-none-any.whl", hash = "sha256:06d775951016f63f0d0d6dd8babd333fc2f831f0769fd5db2e1ec8cfbbccc70f"},
+]
+
+[package.dependencies]
+cryptography = ">=46"
+
+[package.extras]
+test = ["coverage", "flake8", "mock (>=1.0)", "pytest"]
+
+[[package]]
 name = "py7zr"
 version = "1.1.3"
 description = "Pure python 7-zip library"
@@ -5675,6 +5706,28 @@ files = [
     {file = "pytz-2026.5-py2.py3-none-any.whl", hash = "sha256:e658af3757f9e26a9d25dd2aff38335acd92bc9104f890a894b2c1ba28311b03"},
     {file = "pytz-2026.5.tar.gz", hash = "sha256:fa23724b9c486543b9ff54a327ee7569ac83ade54bb9afd0fc18676620401c86"},
 ]
+
+[[package]]
+name = "pywebpush"
+version = "2.5.0"
+description = "WebPush publication library"
+optional = false
+python-versions = ">=3.10"
+groups = ["all"]
+files = [
+    {file = "pywebpush-2.5.0-py3-none-any.whl", hash = "sha256:b5f5d45024223a04e73fe17f7a8e62540f35bbcc62b49e64d0a1080ff2dc26f2"},
+    {file = "pywebpush-2.5.0.tar.gz", hash = "sha256:8260f8e42d70ed95a3bd00527ffcb43b5b3df8983a4a48b059fe29b06dc3d92c"},
+]
+
+[package.dependencies]
+aiohttp = "*"
+cryptography = ">=47.0.0"
+http-ece = ">=1.1.0"
+py-vapid = ">=1.7.0"
+requests = ">=2.21.0"
+
+[package.extras]
+dev = ["bandit", "black", "isort", "mock", "pytest"]
 
 [[package]]
 name = "pywin32"
@@ -7688,4 +7741,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "16a2d48eb11d123c52cb42335933c7a55a079ccaad196ccae6740ef0a41f52e2"
+content-hash = "8e11a2754752d2979c953ac12d2dd32d2d7a61a104ece94ad7e350ab5b9ec7bb"
