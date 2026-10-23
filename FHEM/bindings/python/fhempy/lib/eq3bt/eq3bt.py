@@ -97,11 +97,9 @@ class eq3bt(generic.FhemModule):
             },
             "weekprofile": {
                 "args": ["weekprofile"],
-                "params": {
-                    "weekprofile": {"format": "str"}
-                },
-                "help": 'Set a weekprofile in JSON format like: {"Mon":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]},"Tue":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]}}<br>JSON must not contain spaces'
-            }
+                "params": {"weekprofile": {"format": "str"}},
+                "help": 'Set a weekprofile in JSON format like: {"Mon":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]},"Tue":{"time":["07:00","17:00","24:00"],"temp":["17.0","21.0","18.0"]}}<br>JSON must not contain spaces',
+            },
         }
         await self.set_set_config(set_list_conf)
 
@@ -150,9 +148,7 @@ class eq3bt(generic.FhemModule):
         """Rotate consumption readings at midnight."""
         while True:
             await asyncio.sleep(self.seconds_till_midnight())
-            consumption = float(
-                await fhem.ReadingsVal(self.hash["NAME"], "consumptionToday", "0")
-            )
+            consumption = await self.reading_float("consumptionToday")
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "consumptionYesterday", consumption, 1
             )
@@ -214,6 +210,14 @@ class eq3bt(generic.FhemModule):
         self.logger.debug("start update_all")
         await self.thermostat.update_all()
 
+    async def reading_float(self, reading):
+        """Numeric reading value, 0 if the reading is empty or not a number."""
+        value = await fhem.ReadingsVal(self.hash["NAME"], reading, "0")
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
     async def update_all_readings(self):
         """Update all readings."""
         await self.update_readings()
@@ -222,15 +226,9 @@ class eq3bt(generic.FhemModule):
 
     async def update_readings(self):
         """Update readings."""
-        old_valve_pos = float(
-            await fhem.ReadingsVal(self.hash["NAME"], "valvePosition", "0")
-        )
-        old_consumption = float(
-            await fhem.ReadingsVal(self.hash["NAME"], "consumption", "0")
-        )
-        old_consumption_today = float(
-            await fhem.ReadingsVal(self.hash["NAME"], "consumptionToday", "0")
-        )
+        old_valve_pos = await self.reading_float("valvePosition")
+        old_consumption = await self.reading_float("consumption")
+        old_consumption_today = await self.reading_float("consumptionToday")
         await fhem.readingsBeginUpdate(self.hash)
         try:
             await fhem.readingsBulkUpdateIfChanged(
@@ -280,9 +278,10 @@ class eq3bt(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "windowOpenTime", self.thermostat.window_open_time
             )
-            if (time.time() - self._last_update) < 400:
+            valve_pos = self.thermostat.valve_state
+            if valve_pos is not None and (time.time() - self._last_update) < 400:
                 consumption_diff = (
-                    (old_valve_pos + self.thermostat.valve_state)
+                    (old_valve_pos + valve_pos)
                     / 2
                     / 100
                     * (time.time() - self._last_update)
@@ -359,12 +358,19 @@ class eq3bt(generic.FhemModule):
                         )
                     last_schedule = True
                 else:
-                    if self.thermostat.schedule[day].hours[h].next_change_at == END_OF_DAY:
+                    if (
+                        self.thermostat.schedule[day].hours[h].next_change_at
+                        == END_OF_DAY
+                    ):
                         next_change = "24:00"
                         last_schedule = True
                     else:
-                        next_change = self.thermostat.schedule[day].hours[h].next_change_at.strftime('%H:%M')
-                    
+                        next_change = (
+                            self.thermostat.schedule[day]
+                            .hours[h]
+                            .next_change_at.strftime("%H:%M")
+                        )
+
                     value = f"{last_change} - {next_change}: {self.thermostat.schedule[day].hours[h].target_temp}"
                     last_change = next_change
                     await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
@@ -499,7 +505,9 @@ class eq3bt(generic.FhemModule):
             return "Weekprofile must be a JSON object with days as keys"
         for day_name, data in profile_dict.items():
             if day_name.lower() not in DAY_MAP:
-                return f"Invalid day: '{day_name}'. Choose one of {list(DAY_MAP.keys())}"
+                return (
+                    f"Invalid day: '{day_name}'. Choose one of {list(DAY_MAP.keys())}"
+                )
             if not isinstance(data, dict):
                 return f"Invalid data for day '{day_name}'"
             times = data.get("time", [])
@@ -516,7 +524,12 @@ class eq3bt(generic.FhemModule):
                 except (TypeError, ValueError):
                     return f"Invalid time '{time_str}' or temp '{temp}' for day '{day_name}'"
                 minutes = h * 60 + m
-                if m % 10 or not 0 <= m < 60 or minutes <= last_minutes or minutes > 1440:
+                if (
+                    m % 10
+                    or not 0 <= m < 60
+                    or minutes <= last_minutes
+                    or minutes > 1440
+                ):
                     return (
                         f"Invalid time '{time_str}' for day '{day_name}': times must "
                         "be ascending, in 10 minute steps and not later than 24:00"
@@ -539,9 +552,7 @@ class eq3bt(generic.FhemModule):
             return err
 
         self.create_async_task(
-            self.set_and_update(
-                self.thermostat.set_weekprofile(profile_dict)
-            )
+            self.set_and_update(self.thermostat.set_weekprofile(profile_dict))
         )
 
     # SET Functions END
@@ -592,7 +603,7 @@ class FhemThermostat(eq3.Thermostat):
 
     async def set_fhem_mode(self, mode):
         await super().set_mode(mode)
-    
+
     async def set_weekprofile(self, profile: dict) -> None:
         schedule_list = []
         for day_name, data in profile.items():
@@ -602,22 +613,28 @@ class FhemThermostat(eq3.Thermostat):
             hours_list = []
             for time_str, temp in zip(times, temps):
                 h, m = map(int, time_str.split(":"))
-                
+
                 hours_list.append(
                     {
                         "target_temp": float(temp),
-                        "next_change_at": END_OF_DAY if h == 24 and m == 0 else datetime.time(hour=h, minute=m),
+                        "next_change_at": (
+                            END_OF_DAY
+                            if h == 24 and m == 0
+                            else datetime.time(hour=h, minute=m)
+                        ),
                     }
                 )
 
             if len(hours_list) > 0:
-                schedule_list.append({
-                    "cmd": "write",
-                    "day": day_name.lower(),
-                    "base_temp": hours_list[0]["target_temp"],
-                    "next_change_at": hours_list[0]["next_change_at"],
-                    "hours": hours_list[1:]
-                })
+                schedule_list.append(
+                    {
+                        "cmd": "write",
+                        "day": day_name.lower(),
+                        "base_temp": hours_list[0]["target_temp"],
+                        "next_change_at": hours_list[0]["next_change_at"],
+                        "hours": hours_list[1:],
+                    }
+                )
 
         for day_schedule in schedule_list:
             await super().set_schedule(day_schedule)

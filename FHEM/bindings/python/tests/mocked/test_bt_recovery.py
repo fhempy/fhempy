@@ -4,6 +4,7 @@ from fhempy.lib.core import bt_recovery
 MAC = "AA:BB:CC:DD:EE:FF"
 # keep the real implementation, the fixture replaces it
 restart_bluetoothd = bt_recovery.restart_bluetoothd
+adapter_reset = bt_recovery.adapter_reset
 
 
 @pytest.fixture(autouse=True)
@@ -211,3 +212,21 @@ async def test_stale_connections_without_bluetoothd(mocker):
         bt_recovery, "_dbus_call", side_effect=RuntimeError("ServiceUnknown")
     )
     assert await bt_recovery.drop_stale_connections(MAC) == []
+
+
+@pytest.mark.asyncio
+async def test_adapter_reset_skipped_without_net_admin(mocker, caplog):
+    mocker.patch.object(bt_recovery, "has_net_admin", return_value=False)
+    mocker.patch.object(bt_recovery, "_net_admin_warned", False)
+    assert await adapter_reset("hci0", MAC) is False
+    assert await adapter_reset("hci0", MAC) is False
+    assert caplog.text.count("needs CAP_NET_ADMIN") == 1
+
+
+def test_has_net_admin(tmp_path):
+    status = tmp_path / "status"
+    status.write_text("Name:\tpython\nCapEff:\t0000000000000000\n")
+    assert bt_recovery.has_net_admin(status) is False
+    status.write_text("Name:\tpython\nCapEff:\t0000000000001000\n")
+    assert bt_recovery.has_net_admin(status) is True
+    assert bt_recovery.has_net_admin(tmp_path / "missing") is True
