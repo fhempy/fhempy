@@ -511,7 +511,7 @@ def forwarded_args(args, target):
     return result
 
 
-def self_update(args):
+def self_update(args, target):
     """Replaces this script with the master version and restarts it if changed."""
     # the re-executed script (fhempy user) runs from a string and has no file
     path = os.path.abspath(globals().get("__file__") or "")
@@ -536,7 +536,7 @@ def self_update(args):
         return
     info("pr-tester.py updated to the latest version, restarting")
     os.environ[UPDATED_ENV] = "1"
-    os.execv(sys.executable, [sys.executable, path] + sys.argv[1:])
+    os.execv(sys.executable, [sys.executable, path] + forwarded_args(args, target))
 
 
 def switch_user(user, args, target):
@@ -856,15 +856,17 @@ class Runner:
         info("FHEMWEB files copied, reload the browser page (Ctrl+F5) to see them")
 
     def restore_www_files(self, state):
-        # only paths below www/fhempy, the state file could be edited
-        paths = [p for p in state.get("www_files") or [] if WWW_FILE_RE.match(p)]
+        copied = set(state.get("www_files") or [])
+        # paths from the FHEM directory, not from the state file
+        paths = [p for p in www_files(self.ctx["dir"]) if p in copied]
         if not paths:
             return
         info("Restoring the FHEMWEB files: " + ", ".join(paths))
+        backups = set(www_files(self.inst.backup_dir))
         for path in paths:
             dst = os.path.join(self.ctx["dir"], path)
             backup = os.path.join(self.inst.backup_dir, path)
-            if os.path.isfile(backup):
+            if path in backups:
                 shutil.copy2(backup, dst)
                 os.unlink(backup)
             else:
@@ -1080,8 +1082,8 @@ def main():
     # SIGINT is ignored by the parent when the script was re-executed as fhempy user
     signal.signal(signal.SIGINT, signal.default_int_handler)
     args = parse_args()
-    self_update(args)
     pr = parse_target(args.pr) if args.pr else None
+    self_update(args, pr)
     ctx = detect(args)
     switch_user(ctx["user"], args, pr)
     # uv reads uv.toml from the current directory, which the fhempy user might not
