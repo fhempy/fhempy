@@ -14,8 +14,18 @@ import traceback
 import websockets
 import websockets.asyncio.server
 
-from . import celebration, fhem, generic, pkg_installer, updates, utils, version
+from . import (
+    celebration,
+    fhem,
+    fhem_modules,
+    generic,
+    pkg_installer,
+    updates,
+    utils,
+    version,
+)
 from .core.loop_watchdog import LoopWatchdog
+from .core.peer_installer import peer_installer
 from .core.zeroconf import zeroconf
 from .json_utils import json_dumps, json_loads
 
@@ -110,6 +120,8 @@ async def pybinding(websocket):
     await activate_internal_modules()
     await fhem.send_version()
     release_task = asyncio.create_task(fhem.send_latest_release())
+    # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
+    modules_task = asyncio.create_task(fhem_modules.install())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -125,6 +137,7 @@ async def pybinding(websocket):
             stop_event.set()
     finally:
         release_task.cancel()
+        modules_task.cancel()
         pb.connection_closed()
 
 
@@ -319,6 +332,12 @@ class fhempy:
                 listener(hash)
             else:
                 logger.debug(f"No listener waiting for reply: {msg}")
+        elif hash["msgtype"] == "installPeer":
+            # don't log the message, it contains the peer's password
+            logger.debug(f">>> {int(hash['id']):08d}: installPeer")
+            error = peer_installer.start(hash, hash.get("args", []))
+            if error:
+                await fhem.readingsSingleUpdate(hash, "peer_install", error, 1)
         else:
             id_received_timestamp[hash["id"]] = time.time()
             logger.debug(f">>> {int(hash['id']):08d}: {hash}")
@@ -698,12 +717,8 @@ class fhempy:
             self._updating = False
 
     async def restart(self, hash):
-        await fhem.readingsSingleUpdate(
-            hash,
-            "version",
-            "restart...please wait",
-            1,
-        )
+        # the version reading always shows the installed version
+        await fhem.readingsSingleUpdate(hash, "state", "restart...please wait", 1)
         global exit_code
         exit_code = 1
         logger.info("Restart initiated...")

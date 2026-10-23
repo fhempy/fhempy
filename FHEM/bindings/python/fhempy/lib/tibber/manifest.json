@@ -1,5 +1,20 @@
 {
   "requirements": [
-    "pyTibber==0.38.0"
-  ]
+    "pyTibber==0.39.0"
+  ],
+  "installer": {
+    "title": "Tibber",
+    "description": "Prices and consumption data from Tibber",
+    "category": "energy",
+    "order": 10,
+    "name": "tibber",
+    "logo": "tibber.png",
+    "params": [
+      {
+        "label": "Access token",
+        "help": "developer.tibber.com > Access Token",
+        "secret": true
+      }
+    ]
+  }
 }

@@ -1,7 +1,33 @@
 {
   "requirements": [
-    "luma_led-matrix==1.7.1",
+    "luma_led-matrix==1.9.0",
     "pillow==12.3.0",
     "rpi_gpio==0.7.1"
-  ]
+  ],
+  "installer": {
+    "title": "LED clock",
+    "description": "LED clock with MAX7219 on a Raspberry Pi",
+    "category": "tools",
+    "order": 70,
+    "name": "piclock",
+    "single": true,
+    "logo": "piclock.png",
+    "params": [
+      {
+        "label": "Temperature",
+        "placeholder": "device:reading",
+        "optional": true
+      },
+      {
+        "label": "Weather",
+        "placeholder": "device:reading",
+        "optional": true
+      },
+      {
+        "label": "Button GPIOs",
+        "placeholder": "4,17,27,22,18",
+        "optional": true
+      }
+    ]
+  }
 }

@@ -5,5 +5,18 @@
     "btsocket==0.3.0",
     "pyric==0.1.6.3",
     "bleparser==3.7.3"
-  ]
+  ],
+  "installer": {
+    "title": "BLE monitor",
+    "description": "Supports a lot of Bluetooth sensors (Xiaomi, Govee, Inkbird...)",
+    "category": "bt",
+    "order": 30,
+    "name": "ble_sensor",
+    "logo": "ble_monitor.png",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

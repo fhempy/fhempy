@@ -14,6 +14,41 @@ If you want to create your own module:
 3. Rename the class helloworld in mymodule.py to mymodule
 4. Run fhempy in VS Code
 5. Do define test_mymodule fhempy mymodule in FHEM to see if the new module was found
+6. Add an `installer` section to mymodule/manifest.json, it gives the module a tile in
+   the module installer of FHEMWEB (see below)
+
+## Module installer tile
+
+The "Install modules" dialog shows every module with an `installer` section in its
+`manifest.json`:
+
+```json
+"installer": {
+  "title": "eQ-3 thermostat",
+  "description": "Control EQ3 Bluetooth radiator thermostats",
+  "category": "bt",
+  "name": "thermostat",
+  "logo": "eq3bt.png",
+  "params": [
+    { "type": "mac" },
+    { "label": "PIN", "help": "Only for eqiva thermostats with pairing PIN", "optional": true }
+  ]
+}
+```
+
+- `category`: home, energy, cars, bt, media, presence or tools
+- `name`: suggested device name, `single: true` if one device is enough
+- `logo`: file in `www/fhempy` (modules can share one, e.g. `bluetooth.svg`), or `icon`
+  with an emoji
+- `order`: position within the category (lower first), modules without come last
+- `params`: define arguments with `label`, `placeholder`, `help`, `optional`, `secret`,
+  `options` (select list) or `multi` (space separated values). Presets: `{"type": "mac"}`,
+  `username`, `password` and `ip`, other keys override the preset.
+- `args`: fixed arguments in front of the params, `modes`: alternative sets of `label`,
+  `args` and `params` the user chooses from
+
+`python3 manifest2modules.py` builds `www/fhempy/modules.json` from it, the GitHub action
+of a pull request does this as well.
 
 ## Keep the event loop responsive
 

@@ -9,6 +9,9 @@ each recovery escalating one stage further:
  3. restart bluetoothd via `sudo -n systemctl restart bluetooth` (sudoers)
 A stage which isn't permitted or fails falls through to the next one.
 If bluetoothd doesn't answer on D-Bus at all, it gets restarted right away.
+
+Independent of the stages, drop_stale_connection() disconnects a device
+which BlueZ still holds connected although fhempy has no connection to it.
 """
 
 import asyncio
@@ -43,6 +46,9 @@ class _AdapterState:
 
 _states = {}
 _lock = None
+_net_admin_warned = False
+
+CAP_NET_ADMIN = 12
 
 
 def _state(adapter):
@@ -145,6 +151,67 @@ async def _dbus_call(member, path, interface, signature="", body=None):
     return reply.body
 
 
+def device_path(adapter, address):
+    return f"/org/bluez/{adapter}/dev_{address.upper().replace(':', '_')}"
+
+
+async def drop_stale_connection(adapter, address):
+    """
+    BlueZ keeps a connection open when the process which opened it is gone
+    (e.g. fhempy restart) or missed the disconnect. A connected device doesn't
+    advertise, so a scan never finds it until bluetoothd is restarted.
+    Returns a description if a stale connection was found, else None.
+    """
+    path = device_path(adapter, address)
+    try:
+        connected = await _dbus_call(
+            "Get",
+            path,
+            "org.freedesktop.DBus.Properties",
+            "ss",
+            ["org.bluez.Device1", "Connected"],
+        )
+    except Exception:
+        # device unknown to BlueZ or bluetoothd not reachable
+        return None
+    if not connected or not connected[0].value:
+        return None
+
+    logger.warning(
+        f"{address} is still connected in BlueZ via {adapter} without fhempy "
+        "using it, disconnecting"
+    )
+    try:
+        await _dbus_call("Disconnect", path, "org.bluez.Device1")
+        return "stale connection dropped: ok"
+    except Exception as ex:
+        logger.warning(f"Disconnect of {address} failed: {ex}")
+        return "stale connection dropped: failed"
+
+
+async def drop_stale_connections(address):
+    """
+    drop_stale_connection() on every adapter which knows the device, for
+    callers which don't choose the adapter themselves (bleak default).
+    Returns the descriptions of the stale connections found.
+    """
+    suffix = device_path("", address).rsplit("/", 1)[1]
+    try:
+        objects = await _dbus_call(
+            "GetManagedObjects", "/", "org.freedesktop.DBus.ObjectManager"
+        )
+    except Exception:
+        return []
+    results = []
+    for path in objects[0] if objects else {}:
+        parts = path.split("/")
+        if len(parts) == 5 and parts[4] == suffix:
+            result = await drop_stale_connection(parts[3], address)
+            if result:
+                results.append(f"{parts[3]} {result}")
+    return results
+
+
 async def bluetoothd_alive():
     try:
         await _dbus_call("GetManagedObjects", "/", "org.freedesktop.DBus.ObjectManager")
@@ -187,7 +254,30 @@ async def power_cycle(adapter):
         return False
 
 
+def has_net_admin(status_file="/proc/self/status"):
+    """True if the process has CAP_NET_ADMIN, also if it can't be checked."""
+    try:
+        with open(status_file, encoding="ascii") as status:
+            for line in status:
+                if line.startswith("CapEff:"):
+                    return bool(int(line.split()[1], 16) & (1 << CAP_NET_ADMIN))
+    except (OSError, ValueError):
+        pass
+    return True
+
+
 async def adapter_reset(adapter, mac):
+    global _net_admin_warned
+    if not has_net_admin():
+        if not _net_admin_warned:
+            _net_admin_warned = True
+            logger.warning(
+                f"Reset of {adapter} skipped, fhempy needs CAP_NET_ADMIN for this. "
+                "Run the fhempy peer installer again (set fhempy_local installPeer "
+                "or install_systemd_fhempy.sh) or add AmbientCapabilities=CAP_NET_ADMIN "
+                "with sudo systemctl edit fhempy, see Bluetooth auto recovery in README"
+            )
+        return False
     try:
         from bluetooth_auto_recovery import recover_adapter
 

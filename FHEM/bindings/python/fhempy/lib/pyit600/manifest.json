@@ -1,6 +1,24 @@
 {
   "requirements": [
     "pyit600==0.5.1",
-    "async-timeout==4.0.3"
-  ]
+    "async-timeout==5.0.1"
+  ],
+  "installer": {
+    "title": "Salus iT600",
+    "description": "Control Salus iT600 thermostats",
+    "category": "home",
+    "order": 160,
+    "name": "salus",
+    "logo": "pyit600.png",
+    "params": [
+      {
+        "label": "Gateway IP address",
+        "placeholder": "192.168.1.50"
+      },
+      {
+        "label": "EUID",
+        "help": "First 16 characters printed on the bottom of the gateway"
+      }
+    ]
+  }
 }

@@ -1,3 +1,12 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "AI (MCP server)",
+    "description": "Control FHEM in plain language with AI apps (Claude, LM Studio...), the AI can also create automations",
+    "category": "tools",
+    "order": 10,
+    "name": "AI",
+    "single": true,
+    "logo": "mcp_server.png"
+  }
 }

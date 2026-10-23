@@ -2,5 +2,75 @@
   "requirements": [
     "python-miio==0.5.12",
     "six==1.17.0"
-  ]
+  ],
+  "installer": {
+    "title": "Xiaomi WiFi",
+    "description": "Control Xiaomi WiFi devices: vacuums, air purifiers, fans, lamps...",
+    "category": "home",
+    "order": 90,
+    "name": "xiaomi",
+    "logo": "miio.png",
+    "params": [
+      {
+        "label": "Device type",
+        "options": [
+          "vacuum",
+          "viomivacuum",
+          "airpurifier",
+          "airpurifiermiot",
+          "airhumidifier",
+          "airhumidifiermiot",
+          "airdehumidifier",
+          "airfresh",
+          "airqualitymonitor",
+          "fan",
+          "fanp5",
+          "fansa1",
+          "fanv2",
+          "fanza1",
+          "fanza3",
+          "fanza4",
+          "heater",
+          "ceil",
+          "philipsbulb",
+          "philipseyecare",
+          "philipsmoonlight",
+          "philipswhitebulb",
+          "yeelight",
+          "plug",
+          "plugv1",
+          "plugv3",
+          "chuangmiplug",
+          "powerstrip",
+          "pwznrelay",
+          "waterpurifier",
+          "cooker",
+          "toiletlid",
+          "wifirepeater",
+          "wifispeaker",
+          "chuangmiir",
+          "chuangmicamera",
+          "aqaracamera",
+          "alarmclock",
+          "airconditioningcompanion",
+          "airconditioningcompanionv3",
+          "airfresht2017",
+          "airhumidifierca1",
+          "airhumidifiercb1",
+          "airhumidifierjsq",
+          "airhumidifiermjjsq",
+          "gateway",
+          "miotdevice",
+          "device"
+        ]
+      },
+      {
+        "type": "ip"
+      },
+      {
+        "label": "Token",
+        "help": "32 characters, the module Xiaomi tokens gets all tokens from the cloud"
+      }
+    ]
+  }
 }

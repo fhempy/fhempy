@@ -1,0 +1,19 @@
+{
+  "name": "mantra_ble",
+  "requirements": [],
+  "installer": {
+    "title": "mAntra ceiling fan",
+    "description": "mAntra ceiling fan lamps",
+    "category": "bt",
+    "order": 120,
+    "name": "fan",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "label": "Lamp ID",
+        "placeholder": "1F42",
+        "help": "4 hex digits"
+      }
+    ]
+  }
+}

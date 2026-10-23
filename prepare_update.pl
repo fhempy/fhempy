@@ -17,7 +17,7 @@ print "DIR FHEM/bindings/python/bin\n";
 
 sub find_files {
   my $F = $File::Find::name;
-  if ($F =~ /pm$|bin\/fhempy$/ ) {
+  if ($F =~ /pm$|bin\/fhempy$|^www\/fhempy\/[^\/]+$/ ) {
     my $filename = $F;
     if (index($filename, "__pycache__") != -1) {
       next;
@@ -35,4 +35,6 @@ sub find_files {
 }
 
 find({ wanted => \&find_files, no_chdir=>1}, $location);
+# module installer dialog of FHEMWEB with the module logos
+find({ wanted => \&find_files, no_chdir=>1}, "www/fhempy");
 

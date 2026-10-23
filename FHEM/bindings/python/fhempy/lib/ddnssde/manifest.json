@@ -1,5 +1,22 @@
 {
   "requirements": [
     "beautifulsoup4==4.15.0"
-  ]
+  ],
+  "installer": {
+    "title": "ddnss.de",
+    "description": "Dynamic DNS updater for the free ddnss.de service",
+    "category": "tools",
+    "order": 120,
+    "name": "ddnss",
+    "single": true,
+    "icon": "🌐",
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

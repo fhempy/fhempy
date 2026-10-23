@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" width="960" height="630" font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6B7B8A"/></marker>
+</defs>
+<rect x="20" y="20" width="920" height="210" rx="18" fill="#EEF4FB" stroke="#2B5B84" stroke-width="2"/>
+<text x="40" y="52" font-size="22" font-weight="800" fill="#1F2D3A" text-anchor="start">FHEM</text>
+<text x="112" y="52" font-size="14" font-weight="400" fill="#5B6B7A" text-anchor="start">your home automation server</text>
+<rect x="60" y="70" width="250" height="52" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="60" y="70" width="8" height="52" rx="4" fill="#2F7FD8"/>
+<rect x="64" y="70" width="4" height="52" fill="#2F7FD8"/>
+<text x="82" y="90" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">livingroom</text>
+<text x="82" y="108" font-size="12" font-weight="400" fill="#5B6B7A" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">fhempy googlecast</text>
+<rect x="330" y="70" width="250" height="52" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="330" y="70" width="8" height="52" rx="4" fill="#E07B1F"/>
+<rect x="334" y="70" width="4" height="52" fill="#E07B1F"/>
+<text x="352" y="90" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">car</text>
+<text x="352" y="108" font-size="12" font-weight="400" fill="#5B6B7A" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">fhempy kia_hyundai</text>
+<rect x="690" y="70" width="210" height="52" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="690" y="70" width="8" height="52" rx="4" fill="#2E9E5B"/>
+<rect x="694" y="70" width="4" height="52" fill="#2E9E5B"/>
+<text x="712" y="90" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">heating</text>
+<text x="712" y="108" font-size="12" font-weight="400" fill="#5B6B7A" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">fhempy eq3bt</text>
+<rect x="60" y="162" width="520" height="50" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<text x="76" y="182" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">fhempy_local</text>
+<text x="76" y="200" font-size="12" font-weight="400" fill="#5B6B7A" text-anchor="start">BindingsIo · connection to local fhempy</text>
+<rect x="690" y="162" width="210" height="50" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<text x="706" y="182" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">fhempy_peer_…</text>
+<text x="706" y="200" font-size="12" font-weight="400" fill="#5B6B7A" text-anchor="start">BindingsIo · to the peer</text>
+<line x1="185.0" y1="124" x2="185.0" y2="158" stroke="#6B7B8A" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="455.0" y1="124" x2="455.0" y2="158" stroke="#6B7B8A" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="795.0" y1="124" x2="795.0" y2="158" stroke="#6B7B8A" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="20" y="290" width="600" height="190" rx="18" fill="none" stroke="#9AA8B5" stroke-width="1.5" stroke-dasharray="6 6"/>
+<text x="40" y="314" font-size="12" font-weight="700" fill="#5B6B7A" text-anchor="start" letter-spacing="1">ON THE FHEM COMPUTER</text>
+<rect x="650" y="290" width="290" height="190" rx="18" fill="none" stroke="#9AA8B5" stroke-width="1.5" stroke-dasharray="6 6"/>
+<text x="670" y="314" font-size="12" font-weight="700" fill="#5B6B7A" text-anchor="start" letter-spacing="1">OPTIONAL: ANOTHER COMPUTER</text>
+<rect x="40" y="328" width="560" height="132" rx="14" fill="#FFF8DC" stroke="#D4A300" stroke-width="2"/>
+<text x="60" y="358" font-size="18" font-weight="800" fill="#1F2D3A" text-anchor="start">fhempy</text>
+<text x="136" y="358" font-size="13" font-weight="400" fill="#5B6B7A" text-anchor="start">Python, started by FHEM</text>
+<rect x="670" y="328" width="250" height="132" rx="14" fill="#FFF8DC" stroke="#D4A300" stroke-width="2"/>
+<text x="690" y="358" font-size="18" font-weight="800" fill="#1F2D3A" text-anchor="start">fhempy</text>
+<text x="766" y="358" font-size="13" font-weight="400" fill="#5B6B7A" text-anchor="start">e.g. near the heating</text>
+<text x="60" y="384" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">Python modules</text>
+<text x="690" y="384" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">Python module</text>
+<rect x="60" y="396" width="250" height="44" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="60" y="396" width="8" height="44" rx="4" fill="#2F7FD8"/>
+<rect x="64" y="396" width="4" height="44" fill="#2F7FD8"/>
+<text x="82" y="423.0" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">googlecast</text>
+<rect x="330" y="396" width="250" height="44" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="330" y="396" width="8" height="44" rx="4" fill="#E07B1F"/>
+<rect x="334" y="396" width="4" height="44" fill="#E07B1F"/>
+<text x="352" y="423.0" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">kia_hyundai</text>
+<rect x="690" y="396" width="210" height="44" rx="10" fill="#FFFFFF" stroke="#C9D3DD" stroke-width="1.5"/>
+<rect x="690" y="396" width="8" height="44" rx="4" fill="#2E9E5B"/>
+<rect x="694" y="396" width="4" height="44" fill="#2E9E5B"/>
+<text x="712" y="423.0" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="start">eq3bt</text>
+<line x1="320" y1="216" x2="320" y2="324" stroke="#6B7B8A" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="332" y="274.0" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">WebSocket</text>
+<line x1="795" y1="216" x2="795" y2="324" stroke="#6B7B8A" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="783" y="274" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="end">network, port 15733</text>
+<rect x="60" y="544" width="250" height="64" rx="12" fill="none" stroke="#2F7FD8" stroke-width="2"/>
+<text x="185.0" y="582" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="middle">Chromecast</text>
+<line x1="185.0" y1="444" x2="185.0" y2="540" stroke="#6B7B8A" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="195.0" y="500" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">Wi-Fi</text>
+<rect x="330" y="544" width="250" height="64" rx="12" fill="none" stroke="#E07B1F" stroke-width="2"/>
+<text x="455.0" y="582" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="middle">Kia / Hyundai cloud</text>
+<line x1="455.0" y1="444" x2="455.0" y2="540" stroke="#6B7B8A" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="465.0" y="500" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">Internet</text>
+<rect x="690" y="544" width="210" height="64" rx="12" fill="none" stroke="#2E9E5B" stroke-width="2"/>
+<text x="795.0" y="582" font-size="15" font-weight="700" fill="#1F2D3A" text-anchor="middle">Thermostat</text>
+<line x1="795.0" y1="444" x2="795.0" y2="540" stroke="#6B7B8A" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text x="805.0" y="500" font-size="12" font-weight="600" fill="#5B6B7A" text-anchor="start">Bluetooth</text>
+</svg>

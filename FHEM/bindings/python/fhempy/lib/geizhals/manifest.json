@@ -1,5 +1,19 @@
 {
   "requirements": [
     "beautifulsoup4==4.15.0"
-  ]
+  ],
+  "installer": {
+    "title": "Geizhals",
+    "description": "Watch prices on geizhals",
+    "category": "tools",
+    "order": 90,
+    "name": "price",
+    "icon": "💶",
+    "params": [
+      {
+        "label": "Product URL",
+        "placeholder": "https://geizhals.at/..."
+      }
+    ]
+  }
 }

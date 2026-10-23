@@ -1,6 +1,57 @@
 {
   "requirements": [
-    "hyundai_kia_connect_api==4.36.1",
+    "hyundai_kia_connect_api==4.38.1",
     "python-dateutil==2.9.0.post0"
-  ]
+  ],
+  "installer": {
+    "title": "Kia / Hyundai / Genesis",
+    "description": "Kia, Hyundai and Genesis cars",
+    "category": "cars",
+    "order": 20,
+    "name": "my_car",
+    "logo": "kia_hyundai.png",
+    "modes": [
+      {
+        "label": "Official Pleos API (Europe)",
+        "args": [],
+        "params": []
+      },
+      {
+        "label": "App login",
+        "args": [],
+        "params": [
+          {
+            "type": "username"
+          },
+          {
+            "type": "password"
+          },
+          {
+            "label": "PIN",
+            "secret": true
+          },
+          {
+            "label": "Brand",
+            "options": [
+              "Kia",
+              "Hyundai",
+              "Genesis"
+            ]
+          },
+          {
+            "label": "Region",
+            "options": [
+              "Europe",
+              "USA",
+              "Canada",
+              "Australia",
+              "India",
+              "China",
+              "Brazil"
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# This file is part of the ha-ble-adv project by @NicoIIT
+# Published under the MIT License
+# Source: https://github.com/NicoIIT/ha-ble-adv
+# Modified for FHEM / fhempy integration by @fabianswebworld
+# ---------------------------------------------------------------------------
+
+"""Const def."""
+
+DEVICE_TYPE = "device"
+
+FAN_TYPE = "fan"
+
+LIGHT_TYPE = "light"
+LIGHT_TYPE_ONOFF = "onoff"
+LIGHT_TYPE_RGB = "rgb"
+LIGHT_TYPE_CWW = "cww"
+
+ATTR_ON = "on"
+ATTR_CMD = "cmd"
+ATTR_CMD_BR_UP = "B+"
+ATTR_CMD_BR_DOWN = "B-"
+ATTR_CMD_CT_UP = "K-"  # Warmer
+ATTR_CMD_CT_DOWN = "K+"  # Colder
+ATTR_CMD_PAIR = "pair"
+ATTR_CMD_TIMER = "timer"
+ATTR_CMD_TOGGLE = "toggle"
+ATTR_CMD_UNPAIR = "unpair"
+ATTR_TIME = "s"
+ATTR_STEP = "step"
+ATTR_SUB_TYPE = "sub_type"
+
+ATTR_BR = "br"
+ATTR_CT = "ct"  # CT 0.0 => COLD, CT 1.0 => WARM
+ATTR_CT_REV = "ctr"  # CTR 0.0 => WARM, CTR 1.0 => COLD
+ATTR_COLD = "cold"
+ATTR_WARM = "warm"
+ATTR_RED = "r"
+ATTR_GREEN = "g"
+ATTR_BLUE = "b"
+ATTR_RED_F = "rf"
+ATTR_GREEN_F = "gf"
+ATTR_BLUE_F = "bf"
+ATTR_EFFECT = "effect"
+ATTR_EFFECT_NM = "nm"
+ATTR_EFFECT_RGB = "rgb"
+ATTR_EFFECT_RGBK = "rgbk"
+
+ATTR_SPEED = "speed"
+ATTR_SPEED_COUNT = "speed_count"
+ATTR_DIR = "dir"
+ATTR_OSC = "osc"
+ATTR_PRESET = "preset"
+ATTR_PRESET_BREEZE = "breeze"
+ATTR_PRESET_SLEEP = "sleep"

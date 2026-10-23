@@ -1,5 +1,35 @@
 {
   "requirements": [
     "aiomqtt==1.2.1"
-  ]
+  ],
+  "installer": {
+    "title": "MQTT discovery",
+    "description": "Creates FHEM devices for MQTT devices using Home Assistant MQTT discovery",
+    "category": "home",
+    "order": 140,
+    "name": "mqtt_ha",
+    "single": true,
+    "logo": "mqtt_ha_discovery.png",
+    "params": [
+      {
+        "label": "MQTT server",
+        "placeholder": "127.0.0.1",
+        "optional": true
+      },
+      {
+        "label": "Port",
+        "placeholder": "1883",
+        "optional": true
+      },
+      {
+        "label": "Username",
+        "optional": true
+      },
+      {
+        "label": "Password",
+        "optional": true,
+        "secret": true
+      }
+    ]
+  }
 }

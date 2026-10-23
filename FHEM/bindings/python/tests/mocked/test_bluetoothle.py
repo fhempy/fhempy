@@ -118,3 +118,53 @@ def test_pair_scans_once_if_not_found(ble, mocker):
     assert ble._pair("0000") == PairingState.NOT_FOUND
     assert bt_mgr.discover_device_path.call_count == 1
     bt_mgr.unregister_agent.assert_called_once()
+
+
+async def not_found_with_working_adapter(ble, mocker, stale_result):
+    from fhempy.lib.core import bluetoothle
+
+    ble.paired = True
+    mocker.patch.object(ble, "update_adapters", mocker.AsyncMock())
+    ble.adapters = ["hci0"]
+    ble.adapter_details = {"hci0": {"address": "00:11:22:33:44:55"}}
+    # other devices seen, but not ours
+    mocker.patch.object(ble, "find_device", mocker.AsyncMock(return_value=True))
+    mocker.patch.object(bluetoothle.asyncio, "sleep", mocker.AsyncMock())
+    drop = mocker.patch.object(
+        bluetoothle.bt_recovery,
+        "drop_stale_connection",
+        mocker.AsyncMock(return_value=stale_result),
+    )
+    report_failure = mocker.patch.object(
+        bluetoothle.bt_recovery, "report_failure", mocker.AsyncMock(return_value=None)
+    )
+    await ble.connect_once(1, 1)
+    return drop, report_failure
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_dropped_when_not_found(ble, mocker):
+    drop, report_failure = await not_found_with_working_adapter(
+        ble, mocker, "stale connection dropped: ok"
+    )
+    drop.assert_awaited_once_with("hci0", "AA:BB:CC:DD:EE:FF")
+    report_failure.assert_not_called()
+    assert (
+        mock_fhem.readings["testble"]["connection_recovery"]
+        == "hci0 stale connection dropped: ok"
+    )
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_not_dropped_counts_as_failure(ble, mocker):
+    _, report_failure = await not_found_with_working_adapter(
+        ble, mocker, "stale connection dropped: failed"
+    )
+    report_failure.assert_awaited_once_with("hci0", "00:11:22:33:44:55")
+
+
+@pytest.mark.asyncio
+async def test_not_found_without_stale_connection(ble, mocker):
+    drop, report_failure = await not_found_with_working_adapter(ble, mocker, None)
+    drop.assert_awaited_once()
+    report_failure.assert_not_called()

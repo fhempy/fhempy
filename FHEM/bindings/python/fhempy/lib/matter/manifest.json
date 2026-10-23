@@ -1,3 +1,12 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "Matter",
+    "description": "Control Matter devices: lights, plugs, sensors, thermostats, locks and blinds, also behind Hue, IKEA or Aqara bridges",
+    "category": "home",
+    "order": 10,
+    "name": "matter",
+    "single": true,
+    "logo": "matter.png"
+  }
 }

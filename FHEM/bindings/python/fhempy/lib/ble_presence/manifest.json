@@ -1,5 +1,18 @@
 {
   "requirements": [
     "bluepy==1.3.0"
-  ]
+  ],
+  "installer": {
+    "title": "BLE presence",
+    "description": "Presence detection incl. RSSI for Bluetooth Low Energy tags",
+    "category": "bt",
+    "order": 70,
+    "name": "ble_tag",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  }
 }

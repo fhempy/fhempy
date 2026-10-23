@@ -2,11 +2,11 @@
 use strict;
 use warnings;
 use Test2::V0;
-use Test2::Tools::Compare qw{is like};
+use Test2::Tools::Compare qw{is like unlike};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(2);
+	plan(6);
 
 	# devStateIcon is a FHEMWEB attribute
 	LoadModule(q[FHEMWEB]);
@@ -17,14 +17,47 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'define sets the current devStateIcon' => sub {
 		plan(1);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.3\.0"/, q[devStateIcon is current]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[devStateIcon is current]);
 	};
 
-	subtest 'an older devStateIcon from fhem.cfg is rejected' => sub {
+	subtest 'an older default devStateIcon is upgraded' => sub {
 		plan(2);
-		my $ret = CommandAttr(undef, qq[$deviceName devStateIcon {my \$attr_ver = "1.2.0";; "old"}]);
-		is ($ret, q[devStateIcon updated], q[old devStateIcon rejected]);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.3\.0"/, q[current devStateIcon kept]);
+		my $old = BindingsIo_defaultDevStateIcon();
+		$old =~ s/1\.6\.0/1.5.0/;
+		CommandAttr(undef, qq[$deviceName devStateIcon $old]);
+		readingsSingleUpdate($hash, q[.devStateIconDefault], BindingsIo_devStateIconChecksum($old), 0);
+		BindingsIo_upgradeDevStateIcon($hash);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[default upgraded]);
+		ok (BindingsIo_devStateIconChecksum(qq[{ my \$a = 1;;\n 2 }]) eq BindingsIo_devStateIconChecksum(q[{my $a = 1; 2}]), q[checksum ignores fhem.cfg escaping]);
+	};
+
+	subtest 'an edited devStateIcon with attr_ver is kept' => sub {
+		plan(1);
+		my $custom = q[{ my $attr_ver = "1.3.0";; "custom" }];
+		CommandAttr(undef, qq[$deviceName devStateIcon $custom]);
+		BindingsIo_upgradeDevStateIcon($hash);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/custom/, q[edited devStateIcon kept]);
+	};
+
+	subtest 'a custom devStateIcon is kept' => sub {
+		plan(2);
+		ok (!CommandAttr(undef, qq[$deviceName devStateIcon connected:on]), q[attribute accepted]);
+		BindingsIo_upgradeDevStateIcon($hash);
+		is (AttrVal($deviceName, q[devStateIcon], q[]), q[connected:on], q[custom devStateIcon kept]);
+	};
+
+	subtest 'a deleted devStateIcon stays deleted' => sub {
+		plan(1);
+		CommandDeleteAttr(undef, qq[$deviceName devStateIcon]);
+		BindingsIo_upgradeDevStateIcon($hash);
+		is (AttrVal($deviceName, q[devStateIcon], q[]), q[], q[no devStateIcon]);
+	};
+
+	subtest 'set defaultDevStateIcon restores the default' => sub {
+		plan(2);
+		CommandAttr(undef, qq[$deviceName devStateIcon connected:on]);
+		ok (!CommandSet(undef, qq[$deviceName defaultDevStateIcon]), q[set accepted]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[default restored]);
 	};
 
 	RemoveInternalTimer($hash);

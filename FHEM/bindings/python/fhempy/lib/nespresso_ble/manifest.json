@@ -2,5 +2,22 @@
   "requirements": [
     "pygatt==5.0.0",
     "pexpect==4.9.0"
-  ]
+  ],
+  "installer": {
+    "title": "Nespresso",
+    "description": "Nespresso Bluetooth coffee machine",
+    "category": "bt",
+    "order": 110,
+    "name": "nespresso",
+    "logo": "nespresso_ble.png",
+    "params": [
+      {
+        "type": "mac"
+      },
+      {
+        "label": "Auth code",
+        "optional": true
+      }
+    ]
+  }
 }

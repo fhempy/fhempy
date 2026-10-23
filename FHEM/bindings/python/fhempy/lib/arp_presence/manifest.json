@@ -1,3 +1,17 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "ARP presence",
+    "description": "Presence detection in your network, works also for iOS",
+    "category": "presence",
+    "order": 10,
+    "name": "presence_phone",
+    "icon": "📱",
+    "params": [
+      {
+        "label": "IP or MAC address",
+        "placeholder": "192.168.1.23"
+      }
+    ]
+  }
 }

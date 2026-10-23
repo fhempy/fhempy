@@ -1,5 +1,20 @@
 {
   "requirements": [
     "aiomqtt==1.2.1"
-  ]
+  ],
+  "installer": {
+    "title": "BMW & MINI",
+    "description": "BMW and MINI via official BMW CarData: battery, range, charging, doors, position",
+    "category": "cars",
+    "order": 10,
+    "name": "my_bmw",
+    "logo": "bmw.png",
+    "params": [
+      {
+        "label": "Client ID",
+        "help": "Created in the BMW portal, the device asks for it otherwise",
+        "optional": true
+      }
+    ]
+  }
 }

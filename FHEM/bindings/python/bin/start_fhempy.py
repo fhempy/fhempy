@@ -163,7 +163,13 @@ def install_package(
     return False
 
 
+def report_install_step(step):
+    """Report an installation step to FHEM (parsed by 10_fhempyServer.pm)."""
+    print(f"fhempy-install: {step}", flush=True)
+
+
 kwargs = pip_kwargs(None)
+installed = False
 
 try:
     import fhempy.lib.fhem_pythonbinding as fpb
@@ -172,9 +178,14 @@ try:
         raise ImportError(
             f"fhempy version {fpb.version.__version__} too old, installing new one"
         )
-except ImportError:
-    logging.getLogger(__name__).exception("Failed to load fhempy")
+except ImportError as err:
+    if isinstance(err, ModuleNotFoundError) and err.name == "fhempy":
+        logging.getLogger(__name__).info("fhempy is not installed yet")
+    else:
+        logging.getLogger(__name__).exception("Failed to load fhempy")
+    report_install_step("3/4 installing fhempy")
     if install_package("fhempy>=0.1.462", **kwargs) is False:
+        report_install_step("failed: installing fhempy failed, see fhempy log")
         logging.getLogger(__name__).error("Failed to install fhempy, exit now...")
         time.sleep(60)
         sys.exit(1)
@@ -182,11 +193,15 @@ except ImportError:
         try:
             import fhempy.lib.fhem_pythonbinding as fpb
         except Exception:
+            report_install_step("failed: loading fhempy failed, see fhempy log")
             logging.getLogger(__name__).error("Failed to import fhempy, exit now...")
             time.sleep(60)
             sys.exit(1)
+    installed = True
 except Exception:
     logging.getLogger(__name__).exception("Failed to load fhempy")
     sys.exit(1)
 
+if installed:
+    report_install_step("4/4 starting fhempy")
 fpb.run()

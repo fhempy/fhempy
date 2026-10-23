@@ -1,5 +1,26 @@
 {
   "requirements": [
     "alphaessopenapi==0.0.21"
-  ]
+  ],
+  "installer": {
+    "title": "Alpha ESS",
+    "description": "Alpha ESS inverter via the Alpha ESS cloud",
+    "category": "energy",
+    "order": 60,
+    "name": "alphaess",
+    "logo": "alphaesscloud.png",
+    "params": [
+      {
+        "label": "App ID",
+        "help": "open.alphaess.com > Developer"
+      },
+      {
+        "label": "App secret",
+        "secret": true
+      },
+      {
+        "label": "Serial number of the system"
+      }
+    ]
+  }
 }

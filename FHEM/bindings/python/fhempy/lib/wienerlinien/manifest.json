@@ -1,3 +1,18 @@
 {
-  "requirements": []
+  "requirements": [],
+  "installer": {
+    "title": "Wiener Linien",
+    "description": "Wiener Linien departure times",
+    "category": "tools",
+    "order": 80,
+    "name": "departures",
+    "logo": "wienerlinien.png",
+    "params": [
+      {
+        "label": "Stop ID",
+        "placeholder": "4118",
+        "help": "RBL number of the stop"
+      }
+    ]
+  }
 }

@@ -1,5 +1,25 @@
 {
   "requirements": [
     "beautifulsoup4==4.15.0"
-  ]
+  ],
+  "installer": {
+    "title": "Ikos resorts",
+    "description": "Check prices for Ikos resorts",
+    "category": "tools",
+    "order": 110,
+    "name": "holiday",
+    "icon": "🏖️",
+    "params": [
+      {
+        "label": "From",
+        "placeholder": "2026-07-01",
+        "help": "YYYY-MM-DD"
+      },
+      {
+        "label": "To",
+        "placeholder": "2026-07-14",
+        "help": "YYYY-MM-DD"
+      }
+    ]
+  }
 }

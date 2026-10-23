@@ -1,5 +1,18 @@
 {
   "requirements": [
     "aionefit==0.14"
-  ]
+  ],
+  "installer": {
+    "title": "Nefit / Bosch",
+    "description": "Control Nefit Easy thermostats",
+    "category": "home",
+    "order": 150,
+    "name": "nefit",
+    "logo": "nefit.png",
+    "params": [
+      {
+        "label": "Serial number"
+      }
+    ]
+  }
 }

@@ -2,5 +2,14 @@
   "requirements": [
     "bluetooth-auto-recovery==1.6.4",
     "bluetooth-adapters==2.4.0"
-  ]
+  ],
+  "installer": {
+    "title": "Bluetooth reset",
+    "description": "Resets all Bluetooth interfaces every few hours",
+    "category": "bt",
+    "order": 130,
+    "name": "ble_reset",
+    "single": true,
+    "logo": "bluetooth.svg"
+  }
 }

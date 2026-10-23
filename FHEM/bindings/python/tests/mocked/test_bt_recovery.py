@@ -4,6 +4,7 @@ from fhempy.lib.core import bt_recovery
 MAC = "AA:BB:CC:DD:EE:FF"
 # keep the real implementation, the fixture replaces it
 restart_bluetoothd = bt_recovery.restart_bluetoothd
+adapter_reset = bt_recovery.adapter_reset
 
 
 @pytest.fixture(autouse=True)
@@ -128,3 +129,104 @@ async def test_restart_bluetoothd_without_sudoers(mocker):
 def test_hci_index():
     assert bt_recovery.hci_index("hci0") == 0
     assert bt_recovery.hci_index("hci12") == 12
+
+
+def dbus_replies(mocker, connected, disconnect_error=None):
+    calls = []
+
+    async def dbus_call(member, path, interface, signature="", body=None):
+        calls.append((member, path))
+        if member == "Get":
+            if connected is None:
+                raise RuntimeError("org.freedesktop.DBus.Error.UnknownObject: []")
+            return [mocker.MagicMock(value=connected)]
+        if disconnect_error:
+            raise disconnect_error
+        return []
+
+    mocker.patch.object(bt_recovery, "_dbus_call", side_effect=dbus_call)
+    return calls
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_is_dropped(mocker):
+    calls = dbus_replies(mocker, True)
+    assert (
+        await bt_recovery.drop_stale_connection("hci0", "aa:bb:cc:dd:ee:ff")
+        == "stale connection dropped: ok"
+    )
+    assert calls == [
+        ("Get", "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"),
+        ("Disconnect", "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_no_stale_connection(mocker):
+    calls = dbus_replies(mocker, False)
+    assert await bt_recovery.drop_stale_connection("hci0", MAC) is None
+    assert [c[0] for c in calls] == ["Get"]
+    dbus_replies(mocker, None)
+    assert await bt_recovery.drop_stale_connection("hci0", MAC) is None
+
+
+@pytest.mark.asyncio
+async def test_stale_connection_disconnect_fails(mocker):
+    dbus_replies(mocker, True, TimeoutError())
+    assert (
+        await bt_recovery.drop_stale_connection("hci0", MAC)
+        == "stale connection dropped: failed"
+    )
+
+
+@pytest.mark.asyncio
+async def test_stale_connections_on_all_adapters(mocker):
+    calls = []
+    objects = {
+        "/org/bluez/hci0": {},
+        "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF": {},
+        "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF/service000a": {},
+        "/org/bluez/hci0/dev_11_22_33_44_55_66": {},
+        "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF": {},
+    }
+
+    async def dbus_call(member, path, interface, signature="", body=None):
+        calls.append((member, path))
+        if member == "GetManagedObjects":
+            return [objects]
+        if member == "Get":
+            return [mocker.MagicMock(value=path.startswith("/org/bluez/hci1"))]
+        return []
+
+    mocker.patch.object(bt_recovery, "_dbus_call", side_effect=dbus_call)
+    assert await bt_recovery.drop_stale_connections("aa:bb:cc:dd:ee:ff") == [
+        "hci1 stale connection dropped: ok"
+    ]
+    assert ("Disconnect", "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF") in calls
+    assert ("Get", "/org/bluez/hci0/dev_11_22_33_44_55_66") not in calls
+
+
+@pytest.mark.asyncio
+async def test_stale_connections_without_bluetoothd(mocker):
+    mocker.patch.object(
+        bt_recovery, "_dbus_call", side_effect=RuntimeError("ServiceUnknown")
+    )
+    assert await bt_recovery.drop_stale_connections(MAC) == []
+
+
+@pytest.mark.asyncio
+async def test_adapter_reset_skipped_without_net_admin(mocker, caplog):
+    mocker.patch.object(bt_recovery, "has_net_admin", return_value=False)
+    mocker.patch.object(bt_recovery, "_net_admin_warned", False)
+    assert await adapter_reset("hci0", MAC) is False
+    assert await adapter_reset("hci0", MAC) is False
+    assert caplog.text.count("needs CAP_NET_ADMIN") == 1
+
+
+def test_has_net_admin(tmp_path):
+    status = tmp_path / "status"
+    status.write_text("Name:\tpython\nCapEff:\t0000000000000000\n")
+    assert bt_recovery.has_net_admin(status) is False
+    status.write_text("Name:\tpython\nCapEff:\t0000000000001000\n")
+    assert bt_recovery.has_net_admin(status) is True
+    assert bt_recovery.has_net_admin(tmp_path / "missing") is True

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>65 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>68 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -63,38 +63,44 @@ Copy the secret address shown in FHEMWEB into your AI app, then ask *"Which ligh
 
 ## 🚀 Quick start
 
-### 1. Install the system packages
-Copy & paste this command on the machine running FHEM:
+### 1. Install fhempy
+Copy & paste this line into the FHEM command field and press enter:
 ```
-sudo apt install python3 python3-pip python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git libprotocol-websocket-perl libcpanel-json-xs-perl libjson-xs-perl
+{eval GetFileFromURL("https://raw.githubusercontent.com/fhempy/fhempy/master/install_fhempy.pl")}
 ```
+
+That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which sets up everything else on its own. No restart, no `sudo` and no system packages needed. A window shows the progress until fhempy is ready, the state of `fhempy_local` in the room *fhempy* shows it too:
+
+1. `Installing fhempy: 1/4 installing uv`
+2. `Installing fhempy: 2/4 installing Python 3.13` (only if your system Python is older)
+3. `Installing fhempy: 3/4 installing fhempy`
+4. `Installing fhempy: 4/4 starting fhempy`
+
+`fhempy_local` turns green with the fhempy version as soon as it's ready. If something goes wrong, the state shows the reason in red.
+
+<p align="center"><img src="docs/images/install-dialog.png" alt="fhempy installation window: progress and setup tiles for Matter, Matter Bridge, Zigbee2MQTT and AI (MCP server)" width="800"></p>
+
+When fhempy is ready, the window offers Matter, Matter Bridge, Zigbee2MQTT and the AI MCP server: one click creates the device.
 
 > [!NOTE]
 > fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
 
-On other distributions install the same packages with your package manager. If there is no package for the Perl module Protocol::WebSocket, install it with `sudo cpan Protocol::WebSocket`.
+The line runs [install_fhempy.pl](install_fhempy.pl): it adds the fhempy update source, downloads the fhempy FHEM modules (`update all pythonbinding`), loads them and defines `fhempy_local`. Running it again is harmless, e.g. after a failed try. If nothing happens at all, FHEM couldn't download the script from GitHub.
 
-`libcpanel-json-xs-perl` (Cpanel::JSON::XS) or `libjson-xs-perl` (JSON::XS) isn't strictly required, but without an XS backend FHEM decodes every fhempy message with the much slower pure Perl JSON::PP. Check it with `{JSON->backend}` or `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
+Optional: `sudo apt install libcpanel-json-xs-perl` makes FHEM decode fhempy messages much faster. Check it with `{InternalVal("fhempy_local", "JSON_BACKEND", "")}` in FHEM.
 
-### 2. Add fhempy to FHEM
-Enter these commands one after another in the FHEM command field:
+### 2. Bluetooth modules and piclock only: system packages
+Most modules need nothing else. The Bluetooth modules ble_presence, bt_presence, eq3bt, miflora, mitemp and the piclock module still build some of their libraries, which needs these packages:
 ```
-update add https://raw.githubusercontent.com/fhempy/fhempy/master/controls_pythonbinding.txt
+sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib1g-dev autoconf build-essential libglib2.0-dev libdbus-1-dev bluez libbluetooth-dev git
 ```
-```
-update
-```
-```
-shutdown restart
-```
-```
-define fhempy_local BindingsIo fhempy
-```
-
-Now lean back: the first start sets up fhempy and **can take up to 15 minutes** on a Raspberry Pi. `fhempy_local` shows a green circle as soon as it's ready.
 
 ### 3. Define your first device
-Pick a module from the [list below](#-modules) and define it like any other FHEM device, for example:
+The easiest way: click **+ Install modules** next to `fhempy_local` in the room *fhempy*. Search or browse all modules, click one and press *Set up*. If a module needs more information (e.g. a login or an IP address), the window asks for it and creates the device for you.
+
+<p align="center"><img src="docs/images/module-installer.png" alt="fhempy module installer: search, categories and a tile with logo for every module" width="700"></p>
+
+Of course you can also define devices like any other FHEM device, pick a module from the [list below](#-modules), for example:
 ```
 define matter fhempy matter
 define castdevice fhempy googlecast "Living Room"
@@ -102,6 +108,9 @@ define eq3bt fhempy eq3bt 00:11:22:33:44:66:77
 define upnp fhempy discover_upnp
 ```
 The module's README (linked in the list) explains its options. Its Python libraries are installed automatically on first use.
+
+### 🔄 Updates
+Click the update icon of `fhempy_local` or run `set fhempy_local update`. fhempy installs the new version, restarts and also updates its FHEM modules (`10_BindingsIo.pm`, `10_fhempy.pm`, ...) and reloads them in FHEM. FHEM `update` and `shutdown restart` aren't needed for fhempy anymore. With `attr fhempy_local autoUpdate 1` fhempy installs new releases automatically at night (`autoUpdateTime`, default 03:00).
 
 ### 🐳 Docker
 Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a ready-made image per module, e.g. `ghcr.io/fhem/fhempy-docker-<modulename>:latest`. Start the container in the same network as FHEM and connect it with `define fhempy_peer_<modulename> BindingsIo fhempy-<modulename>:15733 fhempy`.
@@ -164,6 +173,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
+|[mantra_ble](FHEM/bindings/python/fhempy/lib/mantra_ble/README.md)|mAntra ceiling fan lamps|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
@@ -206,7 +216,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 ## 🩺 Troubleshooting
 - **`fhempy_local` stays red**: open the device `fhempyserver_15733` in FHEM. Its reading `python` shows the Python version fhempy found, or why it can't start.
 - **Where is the log?** fhempy writes its own log file next to the FHEM log: `log/fhempy-YYYY-MM-DD.log`. Set `attr fhempyserver_15733 verbose 5` for debug output.
-- **`Please make sure that python3-venv package is installed`**: run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
+- **`Installing fhempy failed: ...`**: the state of `fhempy_local` names the reason, the fhempy log has the details. If uv can't be downloaded from github.com and the system Python has no venv support, run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
 - **A module doesn't work**: check its README first. Questions are welcome in the [FHEM forum](https://forum.fhem.de/), bugs in the [GitHub issues](https://github.com/fhempy/fhempy/issues).
 
 ## Bluetooth auto recovery
@@ -232,63 +242,66 @@ fhem    ALL=NOPASSWD: /usr/bin/systemctl restart bluetooth
 ```
 
 ## fhempy peers (e.g. extend Bluetooth range)
-fhempy allows to run modules locally (same device as FHEM runs on) or on remote peers. Those remote peers only make sense if you want to extend the range of bluetooth or want to distribute the load of some modules to other more powerfull devices (e.g. video object detection).
+fhempy can run modules on other computers (peers), e.g. a Raspberry Pi close to your Bluetooth devices or a more powerful machine for video object detection. FHEM finds peers on its own and creates a `fhempy_peer_<IP>` device; set a device's `IODev` to it to run that device there.
 
-
-### Peer setup (short version)
-Only on remote peers, do not run this commands on the FHEM instance. Run this commands with user "pi".
-
+### Install a peer from FHEM (no terminal needed)
+1. Prepare the Raspberry Pi with the [Raspberry Pi Imager](https://www.raspberrypi.com/software/): in the settings set a host name (e.g. `fhempy-bt`), user and password and **enable SSH**.
+2. Start the Pi and enter in FHEM:
 ```
-### WARNING: DO THIS COMMAND ONLY ON REMOTE PEER, NOT ON YOUR FHEM INSTANCE ###
-# systemd service installation
-curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -
+set fhempy_local installPeer fhempy-bt.local pi <password>
 ```
+Use the host name from step 1 with `.local` or the IP address of the Pi, and the user and password you set. The reading `peer_install` of `fhempy_local` shows the progress (system packages, Python, fhempy, service). When it's done, `fhempy_peer_<IP>` is ready. The password is only used for this installation, fhempy doesn't store it.
 
-### Peer setup (long version)
-Only needed if you didn't run Peer setup (short version). The following steps are only needed if you want to install fhempy on a remote peer, you should not run them on your FHEM installation.
+The peer gets everything at once: the system packages for the Bluetooth modules, Bluetooth permissions for the [auto recovery](#bluetooth-auto-recovery) and a systemd service which starts fhempy on boot. Running `installPeer` again repairs an installation.
 
-- Setup virtual environment for fhempy: `python3 -m venv .fhempy/fhempy_venv`
-- Activate venv: `source .fhempy/fhempy_venv/bin/activate`
-- Install fhempy with user pi: `pip3 install --upgrade fhempy`
-- Make sure your main fhempy instance (within FHEM) is running
-- Test fhempy by just running it with user pi, type `fhempy` and enter. Wait a few seconds until it gets discovered and you see the incoming FHEM connection.
-- Systemd configuration for autostart
-  - `curl -sL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo -E bash -`
-  - fhempy is run with user pi, you can change that in the fhempy.service file in /etc/systemd/system/
-- FHEM configuration
-  - The remote peer is autodiscovered and will show up in FHEM as device e.g. fhempy_peer_192_168_1_50
-  - You can move any device to the remote peer by changing the IODev of the device.
-  - If autodiscovery doesn't work (it's based on zeroconf), you can define it with `define fhempy_peer_IP BindingsIo IP:15733 fhempy`
+### Install a peer from its terminal
+Log in to the peer (not your FHEM machine) and run:
+```
+curl -fsSL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo bash
+```
+fhempy runs as the user who called `sudo`. If autodiscovery doesn't work (it's based on zeroconf), define the peer yourself: `define fhempy_peer_IP BindingsIo IP:15733 fhempy`.
 
-### Log file
-`journalctl -u fhempy.service -f`
+### Log file and update
+The peer's log: `journalctl -u fhempy -f`. Update a peer like the local fhempy with `set fhempy_peer_<IP> update`.
 
-### Update
-Just do `set remote_pybinding update` and the remote peer will install the new package via pip and restart afterwads.
+## 🏗️ How it works
 
-## Functionality
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/architecture-dark.svg">
+    <img alt="fhempy architecture: FHEM devices talk via BindingsIo to the fhempy Python process, which talks to your devices and cloud services. Optional fhempy peers run on other computers." src="https://raw.githubusercontent.com/fhempy/fhempy/master/docs/images/architecture-light.svg" width="860">
+  </picture>
+</p>
 
-### [10_BindingsIo](FHEM/10_BindingsIo.pm)
-This module is a DevIo device which builds a language neutral communicaton bridge in JSON via websockets.
-### [10_fhempyServer](FHEM/10_fhempyServer.pm)
-This module just starts the fhempy server instance
-### [10_fhempy](FHEM/10_fhempy.pm)
-This module is used as the bridge to BindingsIo. It calls BindingsIo with IOWrite.
-### [fhempy](FHEM/bindings/python/fhempy/)
-This is the Python server instance which handles JSON websocket messages from BindingsIo. Based on the message it executes the proper function and replies to BindingsIo via websocket.
+In short:
 
-### Call flow
-This example shows how Define function is called from the Python module.
- 1. define castdevice fhempy googlecast "Living Room"
- 2. fhempy sends IOWrite to BindingsIo
- 3. BindingsIo sends a JSON websocket message to fhempy
- 4. fhempy loads the corresponding module (e.g. googlecast), creates an instance of the object (e.g. googlecast) and calls the Define function on that instance
- 5. Define function is executed within the Python context, as long as the function is executed, FHEM waits for the answer the same way as it does for Perl modules
- 6. Python Define returns the result via JSON via websocket to BindingsIo
+1. **FHEM** – you define a device as usual, e.g. `define livingroom fhempy googlecast`.
+2. **BindingsIo** – forwards everything for that device (define, set, attr, ...) to fhempy. `fhempy_local` is created during installation and connects to the fhempy on the same computer.
+3. **fhempy** – a Python process that FHEM starts automatically. It loads the matching Python module (here `googlecast`), which talks to your device or cloud service.
+4. **Back to FHEM** – readings and state changes travel the same way back and show up in FHEM like for any other device.
 
-At any time within the functions FHEM functons like readingsSingleUpdate(...) can be called by using the fhem.py module (fhem.readingsSingleUpdate(...)). There are just a few functions supported at the moment.
+Optionally fhempy can also run on **another computer** (a [fhempy peer](#fhempy-peers-eg-extend-bluetooth-range)), e.g. a Raspberry Pi next to a Bluetooth thermostat. FHEM finds it automatically and creates a `fhempy_peer_...` BindingsIo; set a device's `IODev` to it to run that device there.
 
-![Flow Chart](https://raw.githubusercontent.com/fhempy/fhempy/master/flowchart.png)
+<details>
+<summary>Details for developers</summary>
+
+| Part | What it does |
+| --- | --- |
+| [10_fhempy.pm](FHEM/10_fhempy.pm) | The FHEM module behind every `define ... fhempy ...` device. Hands all calls to its BindingsIo with `IOWrite`. |
+| [10_BindingsIo.pm](FHEM/10_BindingsIo.pm) | DevIo device that connects to fhempy via websocket and exchanges JSON messages. |
+| [10_fhempyServer.pm](FHEM/10_fhempyServer.pm) | Starts the local fhempy process. |
+| [fhempy](FHEM/bindings/python/fhempy/) | The Python (asyncio) server: receives the messages, runs the module function and replies. |
+
+Example: `define castdevice fhempy googlecast "Living Room"`
+
+1. The fhempy device sends `IOWrite` to BindingsIo.
+2. BindingsIo sends a JSON websocket message to fhempy.
+3. fhempy loads the module (`googlecast`), creates an instance and calls its `Define` function.
+4. FHEM waits for the answer, the same way as for Perl modules, and fhempy returns the result as JSON via websocket.
+
+At any time a module can call FHEM functions like `readingsSingleUpdate(...)` via the fhem.py module (`fhem.readingsSingleUpdate(...)`).
+
+</details>
 
 ## Write your own module
 Check the [helloworld example](FHEM/bindings/python/fhempy/lib/helloworld/) for writing an own module. Be aware that no function which is called from FHEM is allowed to run longer than 1s. In general no blocking code should be used with asyncio. If you want to call blocking code, use utils.run_blocking.

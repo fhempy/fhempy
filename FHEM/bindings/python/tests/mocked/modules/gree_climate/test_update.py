@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from tests.utils import mock_fhem
@@ -21,6 +21,10 @@ async def setup_device(mocker):
     gree = Device(DeviceInfo("192.0.2.10", 7000, "aabbccddeeff", "testac"))
     gree.device_cipher = CipherV1(b"0123456789abcdef")
     gree.send = AsyncMock()
+    # simulate a bound session, greeclimate >= 3.5 ignores packets otherwise
+    gree._transport = MagicMock()
+    gree._transport.get_extra_info.return_value = ("192.0.2.10", 7000)
+    gree.ready.set()
 
     testhash = {"NAME": "testac", "FHEMPYTYPE": "gree_climate"}
     mock_fhem.readings.pop("testac", None)

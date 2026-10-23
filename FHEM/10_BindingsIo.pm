@@ -7,12 +7,11 @@ use warnings;
 
 use Encode;
 
-use Protocol::WebSocket::Frame;
-
 use DevIo;
 use CoProcess;
 
 use JSON;
+use Digest::MD5 qw(md5_hex);
 
 # JSON codec in non-utf8 mode, same semantics as JSON::to_json/from_json:
 # FHEM works with UTF-8 byte strings, they are passed through unchanged.
@@ -44,7 +43,7 @@ sub BindingsIo_encodeJson($) {
 
 sub BindingsIo_decodeJson($) {
   my ($str) = @_;
-  # Protocol::WebSocket::Frame returns decoded text, FHEM expects UTF-8 bytes
+  # FHEM expects UTF-8 bytes
   $str = Encode::encode("UTF-8", $str) if utf8::is_utf8($str);
   return $json_codec->decode($str);
 }
@@ -70,6 +69,10 @@ my $alive_check_timeout = 5;
 # function timeout while an alive check is running
 my $suspect_timeout = 500;
 
+my $BindingsIo_devStateIconVersion = "1.6.0";
+# default devStateIcon 1.3.0 of fhempy 2.x, set before the default was remembered
+my $BindingsIo_legacyDevStateIconChecksum = "574c39f1d7ab6776eeab79bb53d6e853";
+
 sub BindingsIo_Initialize {
   my ($hash) = @_;
 
@@ -80,7 +83,7 @@ sub BindingsIo_Initialize {
   $hash->{GetFn}    = \&BindingsIo_Get;
   $hash->{SetFn}    = \&BindingsIo_Set;
   $hash->{AttrFn}   = \&BindingsIo_Attr;
-  $hash->{AttrList} = $readingFnAttributes;
+  $hash->{AttrList} = "autoUpdate:0,1 autoUpdateTime ".$readingFnAttributes;
   $hash->{NotifyFn}   = \&BindingsIo_Notify;
 
   $hash->{ReadFn}   = \&BindingsIo_Read;
@@ -155,7 +158,13 @@ sub BindingsIo_Define {
 
   if ($init_done && $localServer == 1) {
     my $foundServer = 0;
-    
+
+    # FHEM only knows modules which existed when it started, load the ones
+    # a fresh installation (update without restart) just downloaded
+    foreach my $module ($bindingType."Server", $bindingType) {
+      CommandReload(undef, "10_$module") if (!$modules{$module} && -r "$attr{global}{modpath}/FHEM/10_$module.pm");
+    }
+
     # use devspec2array to find existing fhempy server device
     my @fhempyDevices;
     @fhempyDevices = ::devspec2array(qq[i:TYPE=$bindingType(Binding|Server)]);
@@ -170,9 +179,9 @@ sub BindingsIo_Define {
     InternalTimer(gettimeofday()+3, 'BindingsIo_connectDev', $hash, 0);
   }
 
-  if ($init_done == 0 && $localServer == 1) {
-    readingsSingleUpdate($hash, 'state', 'Installing fhempy (15min)...', 1);
-    $hash->{installing} = 0;
+  # show the installation progress until fhempy answers the first time
+  if ($localServer == 1 && ReadingsVal($name, "version", "") eq "") {
+    readingsSingleUpdate($hash, 'state', 'Installing fhempy...', 1);
     InternalTimer(gettimeofday()+2, 'BindingsIo_installing', $hash, 0);
   }
 
@@ -192,60 +201,201 @@ sub BindingsIo_Define {
     }
   }
 
-  # set devStateIcon
-  my $devstateicon_val = AttrVal($name, q[devStateIcon], q[]);
-  if ($devstateicon_val eq q[] or index($devstateicon_val, "1.3.0") == -1) {
-    my $devstate_cmd = '{
-      my $attr_ver = "1.3.0";;
-      my $status_img = "10px-kreis-gruen";;
-      my $status_txt = "connected";;
-      my $ver = ReadingsVal($name, "version", "-");;
-      my $ver_available = ReadingsVal($name, "version_available", $ver);;
-      my $update_icon = "";;
-      my $refresh_img = "refresh";;
-      my $refresh_txt = "Update fhempy";;
-      if ($ver_available ne $ver) {
-        $refresh_img = "refresh\@orange";;
-        $refresh_txt = "Version ".$ver_available." available for update";;
-      }
-      if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-        $status_img = "10px-kreis-rot";;
-        $status_txt = "disconnected";;
-      }
-      $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".FW_makeImage($refresh_img, $refresh_txt)."</a>";;
-      my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon."</div>"
-    }';
-    $devstate_cmd =~ tr/\n//d;
-    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
+  # the devStateIcon is set once for new devices, users may change or delete it later
+  if ($init_done && !defined($hash->{OLDDEF}) && AttrVal($name, q[devStateIcon], q[]) eq q[]) {
+    BindingsIo_setDefaultDevStateIcon($hash);
   }
-  
+
   return undef;
 }
 
 sub
-BindingsIo_initFrame($) {
-  my ($hash) = @_;
-  $hash->{frame} = Protocol::WebSocket::Frame->new;
-  $hash->{frame}->{max_fragments_amount} = 1000;
-  $hash->{frame}->{max_payload_size} = 0;
+BindingsIo_defaultDevStateIcon() {
+  my $devstate_cmd = '{
+    my $attr_ver = "'.$BindingsIo_devStateIconVersion.'";;
+    my $state = ReadingsVal($name, "state", "");;
+    if ($state =~ m/^Installing/) {
+      my $img = ($state =~ m/failed/) ? "10px-kreis-rot" : "10px-kreis-gelb";;
+      return "<div><a>".FW_makeImage($img, "installing")."</a><a> ".$state." </a></div>";;
+    }
+    my $status_img = "10px-kreis-gruen";;
+    my $status_txt = "connected";;
+    my $ver = ReadingsVal($name, "version", "-");;
+    my $ver_available = ReadingsVal($name, "version_available", $ver);;
+    my $update_status = ReadingsVal($name, "update_status", "");;
+    my $refresh_img = "refresh";;
+    my $refresh_txt = "Update fhempy";;
+    my $status_line = "";;
+    if ($ver_available ne $ver) {
+      $refresh_img = "refresh\@orange";;
+      $refresh_txt = "Version ".$ver_available." available for update";;
+    }
+    if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
+      $status_img = "10px-kreis-rot";;
+      $status_txt = "disconnected";;
+    }
+    my $refresh_icon = FW_makeImage($refresh_img, $refresh_txt);;
+    if ($update_status =~ /^(starting|installing)/) {
+      $refresh_icon = "<style>\@keyframes fhempy_spin{to{transform:rotate(360deg)}}</style><span style=\"display:inline-block;;animation:fhempy_spin 1.5s linear infinite\">".FW_makeImage("refresh\@orange", $update_status)."</span>";;
+      $status_line = "<a> ".$update_status." </a>";;
+    }
+    my $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".$refresh_icon."</a>";;
+    my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
+    my $modules_button = "";;
+    if (InternalVal($name, "localBinding", 0)) {
+      $modules_button = "<a href=\"#\" onclick=\"jQuery.getScript(FW_root+&quot;/fhempy/modules.js&quot;,function(){fhempyModules()});;return false;;\" title=\"Install fhempy modules: Matter, Zigbee2MQTT, Tuya, weather, cars...\" style=\"display:inline-block;;margin-left:10px;;padding:2px 12px;;border-radius:12px;;background:#4B8BBE;;text-decoration:none;;white-space:nowrap\"><span style=\"color:#fff;;font-weight:600\">&#43; Install modules</span></a>";;
+    }
+    "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon.$modules_button.$status_line."</div>"
+  }';
+  $devstate_cmd =~ tr/\n//d;
+  return $devstate_cmd;
+}
+
+# checksum of a devStateIcon, ignores whitespace and ;; from fhem.cfg
+sub
+BindingsIo_devStateIconChecksum($) {
+  my ($val) = @_;
+  $val =~ s/\s+//g;
+  $val =~ s/;+/;/g;
+  return md5_hex(encode_utf8($val));
 }
 
 sub
+BindingsIo_setDefaultDevStateIcon($) {
+  my ($hash) = @_;
+  my $default = BindingsIo_defaultDevStateIcon();
+  CommandAttr(undef, "$hash->{NAME} devStateIcon $default");
+  # remember the default, so that only an unchanged default gets upgraded
+  readingsSingleUpdate($hash, ".devStateIconDefault", BindingsIo_devStateIconChecksum($default), 0);
+}
+
+# upgrade the devStateIcon only if it is still the default set by fhempy,
+# never touch a devStateIcon the user changed or deleted
+sub
+BindingsIo_upgradeDevStateIcon($) {
+  my ($hash) = @_;
+  my $val = AttrVal($hash->{NAME}, q[devStateIcon], q[]);
+  return if ($val eq q[]);
+  my $checksum = BindingsIo_devStateIconChecksum($val);
+  return if ($checksum eq BindingsIo_devStateIconChecksum(BindingsIo_defaultDevStateIcon()));
+  return if ($checksum ne ReadingsVal($hash->{NAME}, ".devStateIconDefault", "")
+    && $checksum ne $BindingsIo_legacyDevStateIconChecksum);
+  BindingsIo_setDefaultDevStateIcon($hash);
+}
+
+# Websocket frames (RFC 6455) are handled here instead of with Protocol::WebSocket,
+# so fhempy doesn't need an extra Perl package from the system.
+sub
+BindingsIo_initFrame($) {
+  my ($hash) = @_;
+  $hash->{".wsBuffer"} = "";
+  $hash->{".wsFragments"} = "";
+  delete $hash->{".wsFragmentsOpcode"};
+}
+
+# returns a masked websocket frame (FHEM is the client) with the given opcode
+sub
+BindingsIo_wsFrame($$) {
+  my ($opcode, $payload) = @_;
+  my $len = length($payload);
+  my $header = pack("C", 0x80 | $opcode);
+  if ($len < 126) {
+    $header .= pack("C", 0x80 | $len);
+  } elsif ($len < 65536) {
+    $header .= pack("Cn", 0x80 | 126, $len);
+  } else {
+    # 64 bit length as two 32 bit values, works with 32 bit Perl too
+    $header .= pack("CNN", 0x80 | 127, int($len / 4294967296), $len % 4294967296);
+  }
+  my @mask = map { int(rand(256)) } 1..4;
+  my $i = 0;
+  my $masked = pack("C*", map { $_ ^ $mask[$i++ % 4] } unpack("C*", $payload));
+  return $header.pack("C4", @mask).$masked;
+}
+
+# returns the next complete frame from the receive buffer as (opcode, payload)
+# data frames are returned once all fragments arrived (opcode of the first fragment)
+# returns an empty list if more data is needed
+sub
+BindingsIo_wsNextFrame($) {
+  my ($hash) = @_;
+  while (1) {
+    my $buf = $hash->{".wsBuffer"};
+    return () if (length($buf) < 2);
+    my ($b0, $b1) = unpack("C2", $buf);
+    my $fin = $b0 & 0x80;
+    my $opcode = $b0 & 0x0F;
+    my $masked = $b1 & 0x80;
+    my $len = $b1 & 0x7F;
+    my $pos = 2;
+    if ($len == 126) {
+      return () if (length($buf) < 4);
+      $len = unpack("n", substr($buf, 2, 2));
+      $pos = 4;
+    } elsif ($len == 127) {
+      return () if (length($buf) < 10);
+      my ($hi, $lo) = unpack("NN", substr($buf, 2, 8));
+      $len = $hi * 4294967296 + $lo;
+      $pos = 10;
+    }
+    my @mask;
+    if ($masked) {
+      return () if (length($buf) < $pos + 4);
+      @mask = unpack("C4", substr($buf, $pos, 4));
+      $pos += 4;
+    }
+    return () if (length($buf) < $pos + $len);
+
+    my $payload = substr($buf, $pos, $len);
+    $hash->{".wsBuffer"} = substr($buf, $pos + $len);
+    if ($masked) {
+      my $i = 0;
+      $payload = pack("C*", map { $_ ^ $mask[$i++ % 4] } unpack("C*", $payload));
+    }
+
+    # control frames (close, ping, pong) can come between fragments
+    return ($opcode, $payload) if ($opcode >= 8);
+
+    if ($opcode != 0) {
+      $hash->{".wsFragmentsOpcode"} = $opcode;
+      $hash->{".wsFragments"} = "";
+    }
+    $hash->{".wsFragments"} .= $payload;
+    next if (!$fin);
+
+    $opcode = delete $hash->{".wsFragmentsOpcode"} // 1;
+    $payload = $hash->{".wsFragments"};
+    $hash->{".wsFragments"} = "";
+    return ($opcode, $payload);
+  }
+}
+
+# shows the installation step reported by the fhempy server (reading install) as state
+sub
 BindingsIo_installing($) {
   my ($hash) = @_;
-  my $state_reading = ReadingsVal($hash->{NAME}, "version", "");
-  if ($state_reading ne "") {
+  my $name = $hash->{NAME};
+
+  my @servers = devspec2array("TYPE=".$hash->{BindingType}."Server");
+  my $server = IsDevice($servers[0]) ? $servers[0] : undef;
+
+  if (ReadingsVal($name, "version", "") ne "") {
+    # fhempy is running, the installation is done
+    CommandDeleteReading(undef, "$server install") if (defined($server) && ReadingsVal($server, "install", "") ne "");
+    if (ReadingsVal($name, "state", "") =~ m/^Installing/) {
+      readingsSingleUpdate($hash, "state", DevIo_IsOpen($hash) ? "opened" : "disconnected", 1);
+    }
     return undef;
   }
-  if ($hash->{installing} == 0) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min).", 1);
-  } elsif ($hash->{installing} == 1) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)..", 1);
-  } elsif ($hash->{installing} == 2) {
-    readingsSingleUpdate($hash, "state", "Installing fhempy (15min)...", 1);
+
+  my $step = defined($server) ? ReadingsVal($server, "install", "") : "";
+  my $state = "Installing fhempy...";
+  if ($step =~ m/^failed/) {
+    $state = "Installing fhempy $step";
+  } elsif ($step ne "") {
+    $state = "Installing fhempy: $step";
   }
-  $hash->{installing} = ($hash->{installing} + 1) % 3;
+  readingsSingleUpdate($hash, "state", $state, 1) if (ReadingsVal($name, "state", "") ne $state);
   InternalTimer(gettimeofday()+2, "BindingsIo_installing", $hash, 0);
 }
 
@@ -278,7 +428,7 @@ BindingsIo_keepAlive($) {
   }
 
   # fhempy (websockets) answers with a pong, which updates .lastReceived
-  syswrite($hash->{TCPDev}, Protocol::WebSocket::Frame->new(buffer => "fhem", type => 'ping', masked => 1)->to_bytes);
+  syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0x9, "fhem"));
   BindingsIo_scheduleKeepAlive($hash);
 }
 
@@ -290,7 +440,7 @@ BindingsIo_checkAlive($) {
   $hash->{".aliveCheckSent"} = time;
   RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
   # fhempy (websockets) answers with a pong, which updates .lastReceived
-  syswrite($hash->{TCPDev}, Protocol::WebSocket::Frame->new(buffer => "alive", type => 'ping', masked => 1)->to_bytes);
+  syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0x9, "alive"));
   InternalTimer(gettimeofday()+$alive_check_timeout, 'BindingsIo_aliveCheckTimeout', $hash, 0);
 }
 
@@ -346,6 +496,7 @@ BindingsIo_doInit($) {
   $write_deep_recursion = 0;
   delete $hash->{".aliveCheckSent"};
   delete $hash->{".updateVersionSupported"};
+  delete $hash->{".installPeerSupported"};
   RemoveInternalTimer($hash, 'BindingsIo_aliveCheckTimeout');
   $hash->{".waitingIds"} = {};
 
@@ -384,7 +535,12 @@ BindingsIo_Notify($)
     $event = "" if(!defined($event));
 
     if ($dev->{NAME} eq "global" && $event eq "INITIALIZED") {
+      BindingsIo_upgradeDevStateIcon($hash);
+      BindingsIo_scheduleAutoUpdate($hash);
       InternalTimer(gettimeofday()+5, "BindingsIo_connectDev", $hash, 0);
+    } elsif ($dev->{NAME} eq "global" && $event eq "REREADCFG") {
+      BindingsIo_upgradeDevStateIcon($hash);
+      BindingsIo_scheduleAutoUpdate($hash);
     } elsif ($dev->{NAME} eq "global" && $event eq "UPDATE") {
       BindingsIo_Write($hash, $hash, "update", [], {});
       Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ==> FHEMPY UPDATE STARTED...CHECK FHEMPY STATE FOR STATUS <==";
@@ -511,10 +667,14 @@ BindingsIo_Write($$$$$) {
   } elsif ($function eq "version") {
     $msg{"msgtype"} = "version";
     $waitforresponse = 0;
+  } elsif ($function eq "installPeer") {
+    $msg{"msgtype"} = "installPeer";
+    $waitforresponse = 0;
   }
 
   my $utf8msg = BindingsIo_encodeJson(\%msg);
-  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".$utf8msg;
+  # installPeer contains the password of the peer
+  Log3 $hash, 4, "BindingsIo ($hash->{NAME}): <<< WS: ".($function eq "installPeer" ? "installPeer" : $utf8msg);
   if (length $utf8msg > 0) {
     DevIo_SimpleWrite($hash, $utf8msg, 0);
     if ($waitforresponse == 0) {
@@ -624,13 +784,18 @@ BindingsIo_Set($$$)
   my $cmd = @$a[1];
   my $supported = $hash->{".updateVersionSupported"};
   my $versions = $supported ? ($hash->{helper}{version_options} // "") : "";
-  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg";
+  my $list = "update:latest".($versions ne "" ? ",$versions" : "")." checkUpdate:noArg restart:noArg defaultDevStateIcon:noArg";
+  # peers are installed from the fhempy running next to FHEM
+  my $installPeer = $hash->{localBinding} && $hash->{".installPeerSupported"};
+  $list .= " installPeer" if ($installPeer);
 
   if ($cmd eq 'update') {
     return "Usage: set $hash->{NAME} update [latest|version]" if (@$a > 3 || keys %$h);
     my @args = @$a > 2 && $a->[2] ne "latest" ? ($a->[2]) : ();
     return "The connected fhempy version does not support version selection; update fhempy first."
       if (@args && !$supported);
+    # immediate feedback in FHEMWEB, fhempy reports the progress afterwards
+    readingsSingleUpdate($hash, "update_status", "starting", 1);
     return BindingsIo_Write($hash, $hash, "update", \@args, {});
   } elsif ($cmd eq 'checkUpdate') {
     return "Usage: set $hash->{NAME} checkUpdate" if (@$a != 2 || keys %$h);
@@ -639,6 +804,15 @@ BindingsIo_Set($$$)
     return BindingsIo_Write($hash, $hash, "checkUpdate", [], {});
   } elsif ($cmd eq 'restart') {
     return BindingsIo_Write($hash, $hash, "restart", [], {});
+  } elsif ($cmd eq 'defaultDevStateIcon') {
+    BindingsIo_setDefaultDevStateIcon($hash);
+    return undef;
+  } elsif ($cmd eq 'installPeer' && $installPeer) {
+    my @args = @$a[2..$#$a];
+    return "Usage: set $hash->{NAME} installPeer <host> <user> <password>"
+      if (keys %$h || !(@args == 3 || (@args == 2 && $args[0] =~ m/@/)));
+    readingsSingleUpdate($hash, "peer_install", "$args[0]: starting", 1);
+    return BindingsIo_Write($hash, $hash, "installPeer", \@args, {});
   }
 
   return "Unknown argument $cmd, choose one of $list";
@@ -649,14 +823,55 @@ BindingsIo_Attr($$$)
 {
   my ($cmd, $name, $attrName, $attrVal) = @_;
 
-  # keep the devStateIcon from Define, fhem.cfg must not restore an older one
-  if ($cmd eq "set" && $attrName eq "devStateIcon") {
-    if (index($attrVal, "1.3.0") == -1) {
-      return "devStateIcon updated"
-    }
+  if ($attrName eq "autoUpdateTime" && $cmd eq "set") {
+    return "autoUpdateTime must be HH:MM, e.g. 03:00"
+      if ($attrVal !~ /^([01]?\d|2[0-3]):[0-5]\d$/);
+  }
+  if ($attrName eq "autoUpdate" || $attrName eq "autoUpdateTime") {
+    # the attribute is set after this function
+    InternalTimer(gettimeofday(), "BindingsIo_scheduleAutoUpdate", $defs{$name}, 0) if ($init_done);
   }
 
   return undef;
+}
+
+# next time of the autoUpdate window (attribute autoUpdateTime, default 03:00)
+sub BindingsIo_nextAutoUpdateTime {
+  my ($hash, $now) = @_;
+  my ($hour, $min) = split(/:/, AttrVal($hash->{NAME}, "autoUpdateTime", "03:00"));
+  my @lt = localtime($now);
+  # on days with a daylight saving change the window might be one hour off
+  my $target = $now - ($lt[2] * 3600 + $lt[1] * 60 + $lt[0]) + $hour * 3600 + $min * 60;
+  $target += 86400 if ($target <= $now);
+  return $target;
+}
+
+sub BindingsIo_scheduleAutoUpdate {
+  my ($hash) = @_;
+  RemoveInternalTimer($hash, "BindingsIo_autoUpdate");
+  return if (!AttrVal($hash->{NAME}, "autoUpdate", 0));
+  InternalTimer(BindingsIo_nextAutoUpdateTime($hash, time()), "BindingsIo_autoUpdate", $hash, 0);
+}
+
+# install a newer fhempy release automatically (attribute autoUpdate)
+sub BindingsIo_autoUpdate {
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+
+  return if (!AttrVal($name, "autoUpdate", 0));
+  # run again tomorrow, fhempy checks for new versions every twelve hours
+  BindingsIo_scheduleAutoUpdate($hash);
+  return if (!$hash->{".updateVersionSupported"});
+  my $available = ReadingsVal($name, "version_available", "");
+  return if ($available eq "" || $available eq ReadingsVal($name, "version", ""));
+  return if (ReadingsVal($name, "update_status", "") =~ /^(starting|installing)/);
+  # every version is tried only once, a failing update must not restart fhempy again and again
+  return if (ReadingsVal($name, ".autoUpdateVersion", "") eq $available);
+  readingsSingleUpdate($hash, ".autoUpdateVersion", $available, 0);
+
+  Log3 $hash, 3, "BindingsIo ($name): autoUpdate installs fhempy $available";
+  readingsSingleUpdate($hash, "update_status", "starting", 1);
+  return BindingsIo_Write($hash, $hash, "update", [$available], {});
 }
 
 sub
@@ -808,6 +1023,7 @@ sub BindingsIo_processCommand($$) {
   } elsif ($json->{msgtype} eq "version") {
     if (exists $json->{version}) {
       $hash->{".updateVersionSupported"} = $json->{update_version_supported} // 0;
+      $hash->{".installPeerSupported"} = $json->{install_peer_supported} // 0;
       if ($hash->{".updateVersionSupported"} && (!exists $hash->{helper}{version_options}
           || ReadingsVal($hash->{NAME}, "version", "") ne $json->{version})) {
         $hash->{helper}{version_options} = $json->{version};
@@ -815,6 +1031,10 @@ sub BindingsIo_processCommand($$) {
     }
     if (exists $json->{version_options}) {
       $hash->{helper}{version_options} = $json->{version_options};
+    }
+    # a new connection means no update is running (anymore)
+    if (exists $json->{version} && ReadingsVal($hash->{NAME}, "update_status", "") =~ /^(starting|installing)/) {
+      readingsSingleUpdate($hash, "update_status", "finished, fhempy ".$json->{version}." running", 1);
     }
     # leftover of the release party in fhempy 1.0.x - 2.3.0
     readingsDelete($hash, "release_party") if (exists $hash->{READINGS}{release_party});
@@ -824,6 +1044,7 @@ sub BindingsIo_processCommand($$) {
       }
       readingsSingleUpdate($hash, $key, $json->{$key}, 1);
     }
+    BindingsIo_installing($hash) if ($hash->{localBinding});
   } elsif ($json->{msgtype} eq "set_update") {
     my $devname = $json->{NAME};
     my $devhash = $defs{$devname};
@@ -910,14 +1131,18 @@ sub BindingsIo_readWebsocketMessage {
   }
 
   if (defined($response) && $response ne "") {
-    $hash->{frame}->append($response);
-    # empty frames (e.g. a pong) are defined but false, keep going
-    while (defined(my $r = $hash->{frame}->next)) {
-      if ($hash->{frame}->is_pong) {
+    $hash->{".wsBuffer"} .= $response;
+    while (my ($opcode, $r) = BindingsIo_wsNextFrame($hash)) {
+      if ($opcode == 0xA) {
         # answer to our keepalive ping, receiving it is all we need
         next;
-      } elsif ($hash->{frame}->is_ping or $hash->{frame}->is_close) {
-        DevIo_DecodeWS($hash, $response);
+      } elsif ($opcode == 0x9) {
+        syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0xA, $r)) if (defined($hash->{TCPDev}));
+      } elsif ($opcode == 0x8) {
+        Log3 $hash, 3, "BindingsIo ($hash->{NAME}): ".$hash->{BindingType}." closed the connection";
+        syswrite($hash->{TCPDev}, BindingsIo_wsFrame(0x8, substr($r, 0, 2))) if (defined($hash->{TCPDev}));
+        DevIo_Disconnected($hash);
+        return "Websocket connection closed unexpected";
       } elsif ($r eq "") {
         next;
       } else {
@@ -979,8 +1204,42 @@ sub BindingsIo_readWebsocketMessage {
       with no fallback to a newer one. The installed version is also allowed.<br>
       Older versions are never offered in the dropdown, but can be requested explicitly at
       the command line.<br>
-      The reading <code>update_status</code> reports progress and installation errors.<br>
-      fhempy restarts after a successful installation.
+      The reading <code>update_status</code> reports progress and installation errors.
+      While the update runs, the update icon of the default devStateIcon spins.<br>
+      fhempy restarts after a successful installation.<br>
+      fhempy installs the FHEM modules (10_BindingsIo.pm, 10_fhempy.pm, ...) of the new version
+      and reloads them in FHEM, FHEM update and shutdown restart are not needed.
+      The files are taken from the GitHub release of the version, also when fhempy runs on
+      another host. A failure is reported in <code>update_status</code>.
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-installPeer"></a>
+    <li><code>installPeer &lt;host&gt; &lt;user&gt; &lt;password&gt;</code><br>
+      install fhempy on another computer (peer) via SSH, e.g. a Raspberry Pi close to your
+      Bluetooth devices. Only available on the local fhempy (fhempy_local).<br>
+      The peer needs SSH enabled (Raspberry Pi Imager settings) and a user with sudo rights.
+      host is the host name (e.g. <code>raspberrypi.local</code>) or the IP address.<br>
+      fhempy installs the system packages for the Bluetooth modules, Python, fhempy and a
+      systemd service on the peer and creates <code>fhempy_peer_&lt;IP&gt;</code> afterwards.
+      The reading <code>peer_install</code> shows the progress.<br>
+      The SSH host key of the peer is trusted on first use and checked on later
+      installations (.fhempy/peer_installer/known_hosts).<br>
+      The password is used for this installation only, it's neither stored nor logged by
+      fhempy (FHEM itself logs every command with global verbose 5).
+    </li>
+
+    <br>
+
+    <a id="BindingsIo-set-defaultDevStateIcon"></a>
+    <li><code>defaultDevStateIcon</code><br>
+      reset the devStateIcon attribute to the fhempy default.<br>
+      On the local fhempy the default shows the button <b>+ Install modules</b>, it opens a
+      window with all fhempy modules. <i>Set up</i> asks for the parameters a module needs
+      and defines the device.<br>
+      The default is set once when the device is created and updated together with fhempy
+      as long as it is unchanged. A changed or deleted devStateIcon stays as it is.
     </li>
 
     <br>
@@ -988,6 +1247,25 @@ sub BindingsIo_readWebsocketMessage {
     <a id="BindingsIo-set-restart"></a>
     <li><code>restart</code><br>
       restart fhempy
+    </li>
+  </ul>
+
+  <br>
+
+  <a id="BindingsIo-attr"></a>
+  <b>Attributes</b>
+  <ul>
+    <a id="BindingsIo-attr-autoUpdate"></a>
+    <li><code>autoUpdate 0|1</code><br>
+      1 installs a newer fhempy release automatically, including the FHEM modules,
+      once a day at <code>autoUpdateTime</code>. fhempy checks for updates on connection
+      to FHEM and every twelve hours and restarts after the installation.
+      Every version is tried only once. Default: 0
+    </li>
+    <a id="BindingsIo-attr-autoUpdateTime"></a>
+    <li><code>autoUpdateTime HH:MM</code><br>
+      time of day for <code>autoUpdate</code>, choose a time when a short fhempy restart
+      doesn't matter. Default: 03:00
     </li>
   </ul>
 

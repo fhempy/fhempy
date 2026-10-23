@@ -1,6 +1,25 @@
 {
   "requirements": [
     "meross-iot==0.4.8.0",
-    "setuptools==84.0.0"
-  ]
+    "setuptools==84.2.1"
+  ],
+  "installer": {
+    "title": "Meross",
+    "description": "Control Meross plugs, lights and garage doors",
+    "category": "home",
+    "order": 120,
+    "name": "meross",
+    "logo": "meross.png",
+    "args": [
+      "setup"
+    ],
+    "params": [
+      {
+        "type": "username"
+      },
+      {
+        "type": "password"
+      }
+    ]
+  }
 }

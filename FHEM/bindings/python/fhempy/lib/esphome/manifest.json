@@ -1,6 +1,15 @@
 {
   "requirements": [
     "esphome==2026.9.1",
-    "esphome-device-builder==1.21.0"
-  ]
+    "esphome-device-builder==1.25.0"
+  ],
+  "installer": {
+    "title": "ESPHome",
+    "description": "Installs and starts the ESPHome dashboard for easy ESPHome device management",
+    "category": "home",
+    "order": 40,
+    "name": "esphome",
+    "single": true,
+    "logo": "esphome.png"
+  }
 }

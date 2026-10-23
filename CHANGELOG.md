@@ -2,6 +2,83 @@
 
 <!-- version list -->
 
+## v2.6.1 (2026-10-22)
+
+### Features
+
+- Tuya dialog with the found devices after the scan, click creates them
+  ([#731](https://github.com/fhempy/fhempy/pull/731),
+  [`3c50c82`](https://github.com/fhempy/fhempy/commit/3c50c8228987ee13f5b5b044fa30053b5720a642))
+
+
+## v2.6.0 (2026-10-22)
+
+### Documentation
+
+- Simpler architecture diagram in README ([#728](https://github.com/fhempy/fhempy/pull/728),
+  [`379927d`](https://github.com/fhempy/fhempy/commit/379927d9ecc57a071e45e91459ca9728deb6f4a9))
+
+### Features
+
+- Module installer in FHEMWEB, button + Install modules at the local fhempy
+  ([#730](https://github.com/fhempy/fhempy/pull/730),
+  [`4be4891`](https://github.com/fhempy/fhempy/commit/4be48914e88e85ba23c94fa7c63a089190f659f9))
+
+- Super simple installation of fhempy in FHEM and on peers
+  ([#729](https://github.com/fhempy/fhempy/pull/729),
+  [`9aff854`](https://github.com/fhempy/fhempy/commit/9aff8542c42cfe2f9f762803366dcd0fa15b2cec))
+
+- Update installs and reloads the FHEM modules, autoUpdate attribute
+  ([#727](https://github.com/fhempy/fhempy/pull/727),
+  [`be73031`](https://github.com/fhempy/fhempy/commit/be7303182271c690d4f5e628bc2b10e487c0c635))
+
+
+## v2.5.1 (2026-10-21)
+
+### Bug Fixes
+
+- Show a running fhempy update in FHEMWEB, devStateIcon only set once
+  ([#723](https://github.com/fhempy/fhempy/pull/723),
+  [`8c98f8e`](https://github.com/fhempy/fhempy/commit/8c98f8e81dd557fd3532eb0d7c0cc4ce980bc63e))
+
+- **scooter**: Drop a stale BlueZ connection so the scooter is found again
+  ([#726](https://github.com/fhempy/fhempy/pull/726),
+  [`1ead7ad`](https://github.com/fhempy/fhempy/commit/1ead7ad4932c51c2b3bbf0a01c77f0403fd91942))
+
+
+## v2.5.0 (2026-10-20)
+
+### Bug Fixes
+
+- Drop stale BlueZ connections so Bluetooth devices are found again
+  ([#722](https://github.com/fhempy/fhempy/pull/722),
+  [`68c3faf`](https://github.com/fhempy/fhempy/commit/68c3fafd359c07428d8745e137da0992ef0a2b10))
+
+- **deps**: Update libraries (greeclimate 3.5.3, pyTibber 0.39, httpx 0.28.1, kia 4.38.1, ...)
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+- **deps**: Update libraries (greeclimate, pyTibber, httpx, kia, websockets, ...)
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+- **scooter**: Reconnect after switching the scooter off and on with keep_connected
+  ([#719](https://github.com/fhempy/fhempy/pull/719),
+  [`02fd5ab`](https://github.com/fhempy/fhempy/commit/02fd5ab3e8013d5b4a6d7cbde9206a05bfb95a1b))
+
+### Features
+
+- Add mantra_ble module to control mAntra ceiling fan lamps
+  ([#721](https://github.com/fhempy/fhempy/pull/721),
+  [`037d8c6`](https://github.com/fhempy/fhempy/commit/037d8c602459665a86263107182f6b026d96c37c))
+
+### Testing
+
+- **gree_climate**: Simulate bound session for greeclimate 3.5
+  ([#720](https://github.com/fhempy/fhempy/pull/720),
+  [`f0a431a`](https://github.com/fhempy/fhempy/commit/f0a431a9b80d1aa0d24dab0a1c9660cfc7604a45))
+
+
 ## v2.4.1 (2026-10-20)
 
 ### Bug Fixes

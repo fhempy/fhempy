@@ -1,5 +1,23 @@
 {
   "requirements": [
     "warema-wms-controller==0.2.4"
-  ]
+  ],
+  "installer": {
+    "title": "Warema",
+    "description": "Control Warema blinds via the WMS WebControl gateway",
+    "category": "home",
+    "order": 190,
+    "name": "warema",
+    "icon": "🪟",
+    "params": [
+      {
+        "label": "Gateway IP address",
+        "placeholder": "192.168.1.50"
+      },
+      {
+        "label": "Channel",
+        "placeholder": "1"
+      }
+    ]
+  }
 }
