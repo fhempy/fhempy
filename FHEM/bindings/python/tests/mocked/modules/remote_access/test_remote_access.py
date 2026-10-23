@@ -326,10 +326,8 @@ class FakeEsphome:
     """web page in the home network with a websocket"""
 
     async def page(self, request):
-        return web.Response(
-            text=f"ESPHome {request.headers.get('Origin', '-')} "
-            f"{request.headers.get('Cookie', '-')}"
-        )
+        self.headers = dict(request.headers)
+        return web.Response(text="ESPHome")
 
     async def events(self, request):
         ws = web.WebSocketResponse()
@@ -391,7 +389,9 @@ async def test_web_pages(module):
         ) as resp:
             assert resp.status == 200
             text = await resp.text()
-        assert text == f"ESPHome http://127.0.0.1:{port} theme=dark"
+        assert text == "ESPHome"
+        assert esphome.headers["Origin"] == f"http://127.0.0.1:{port}"
+        assert esphome.headers["Cookie"] == "theme=dark"
         async with session.ws_connect(proxy_url + "/events", headers=cookie) as ws:
             await ws.send_str("hi")
             msg = await ws.receive(timeout=5)
