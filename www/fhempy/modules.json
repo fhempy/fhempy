@@ -980,20 +980,6 @@
   ]
  },
  {
-  "id": "aktionsfinder",
-  "title": "Aktionsfinder",
-  "description": "Keep informed about product promotions",
-  "category": "tools",
-  "name": "offers",
-  "icon": "🏷️",
-  "params": [
-   {
-    "label": "Product",
-    "placeholder": "Mineralwasser"
-   }
-  ]
- },
- {
   "id": "gfprobt",
   "title": "GF Pro irrigation",
   "description": "Control GF Pro Bluetooth irrigation control",
