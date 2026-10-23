@@ -31,7 +31,8 @@ The page continues by itself after each step, the reading `state` shows where yo
 
 The module creates its own FHEMWEB instance (`WEBremote`, only reachable from this computer)
 with an `allowed` device (`allowed_WEBremote`), so only the Tailscale address needs the
-password. The password is created randomly, the user name is `fhem`. The phone remembers the
+password. It looks like your FHEMWEB `WEB` (room icons, style, hidden rooms... are copied on
+every start). The password is created randomly, the user name is `fhem`. The phone remembers the
 login for 30 days (attribute `basicAuthExpiry` of the allowed device).
 
 Before the address is switched on, the module checks that FHEMWEB refuses requests without
@@ -43,7 +44,8 @@ password. If it doesn't, the remote access stays off.
 
 ## Commands and attributes
 
-- `set remote restart`: restart Tailscale
+- `set remote restart`: start again (checks FHEMWEB and the password, copies the look of
+  FHEMWEB, restarts Tailscale)
 - `set remote logout`: log out of Tailscale, e.g. to use another account
 - `attr remote hostname <name>`: first part of the address, default `fhem`
 

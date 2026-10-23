@@ -27,6 +27,17 @@ ICON = "it_internet"
 WAIT_INTERVAL = 3
 ONLINE_INTERVAL = 60
 SOCKET_TIMEOUT = 30
+# look of the FHEMWEB "WEB" (icons, style, hidden rooms...), copied to the
+# FHEMWEB of the remote access. Not copied: HTTPS, csrfToken, allowfrom...
+LOOK_ATTRIBUTES = (
+    "Css CssFiles JavaScripts SVGcache addHtmlTitle column confirmDelete "
+    "defaultRoom detailLinks deviceOverview endPlotNow endPlotNowByHour "
+    "endPlotToday extraRooms forbiddenroom hiddengroup hiddengroupRegexp "
+    "hiddenroom hiddenroomRegexp iconPath mainInputLength menuEntries "
+    "nameDisplay nrAxis plotEmbed ploteditor plotfork plotmode plotsize "
+    "plotWeekStartDay roomIcons smallscreenCommands sortRooms "
+    "stylesheetPrefix styleData title viewport"
+)
 LOGIN_HELP = (
     "Log in with Google, Microsoft, Apple or GitHub, a free Tailscale account "
     "is created automatically."
@@ -80,6 +91,7 @@ class remote_access(generic.FhemModule):
         self.problem = ""
         self._unique_id = None
         self._wakeup = asyncio.Event()
+        self._run_task = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -106,7 +118,10 @@ class remote_access(generic.FhemModule):
                     f"{MIN_PASSWORD_LENGTH} characters, no spaces).",
                 },
                 "new_password": {"help": "Create a new random password."},
-                "restart": {"help": "Restart Tailscale."},
+                "restart": {
+                    "help": "Start again: checks FHEMWEB, password and look of "
+                    "FHEMWEB and restarts Tailscale."
+                },
                 "logout": {
                     "help": "Log out of Tailscale, e.g. to use another account. "
                     "The remote access stops until you log in again."
@@ -117,7 +132,7 @@ class remote_access(generic.FhemModule):
             await fhem.CommandAttr(hash, f"{hash['NAME']} icon {ICON}")
         self._unique_id = await fhem.getUniqueId(hash)
         await self.load_password()
-        self.create_async_task(self.run())
+        self._run_task = self.create_async_task(self.run())
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -230,6 +245,15 @@ class remote_access(generic.FhemModule):
             " return 'error: FHEMWEB could not be created: ' . $err"
             " if (!defined($defs{$web}));"
             ' CommandAttr(undef, "$web comment $comment");'
+            # same look as the FHEMWEB in the home network
+            " my ($src) = grep { $_ ne $web && defined($defs{$_}) && $defs{$_}{TYPE} eq 'FHEMWEB' }"
+            " ('WEB', devspec2array('TYPE=FHEMWEB:FILTER=TEMPORARY!=1'));"
+            f" if ($src) {{ foreach my $an (qw({LOOK_ATTRIBUTES})) {{"
+            " my $v = AttrVal($src, $an, undef);"
+            ' if (!defined($v)) { CommandDeleteAttr(undef, "$web $an")'
+            " if (defined($attr{$web}{$an})); }"
+            " elsif (AttrVal($web, $an, '') ne $v) {"
+            ' CommandAttr(undef, "$web $an $v"); } } }'
             " 'port ' . $defs{$web}{PORT}",
         )
         match = re.match(r"port (\d+)", str(result or ""))
@@ -420,9 +444,13 @@ class remote_access(generic.FhemModule):
         self.create_async_task(self.logout())
 
     async def restart(self):
+        """start again from the beginning, also after an error: FHEMWEB,
+        password and look of FHEMWEB are checked again"""
+        if self._run_task is not None:
+            self.cancel_async_task(self._run_task)
         await self.ts.stop()
         self.url = ""
-        self._wakeup.set()
+        self._run_task = self.create_async_task(self.run())
 
     async def logout(self):
         await self.ts.stop_funnel()

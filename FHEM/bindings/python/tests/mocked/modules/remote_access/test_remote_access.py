@@ -242,6 +242,9 @@ async def test_setup_flow(module):
     html = module.setup_html()
     assert f"https://{DNS}" in html and "data:image/png;base64" in html
     assert module.password in html
+    # same look as the FHEMWEB WEB
+    setup = next(c for c in module.fake.commands if "FHEMWEB $p" in c)
+    assert "roomIcons" in setup and "HTTPS" not in setup
     # the detail page reloads for every step
     assert any("location.reload()" in js for _, js in mock_fhem.javascript)
 
@@ -255,6 +258,11 @@ async def test_no_funnel_without_password(module):
     assert "doesn't ask for a password" in state()
     await asyncio.sleep(0.3)
     assert module.fake_ts.load().get("target") is None
+
+    # fixed by the user, set restart starts again
+    module.fhemweb.protected = True
+    await module.set_restart(module.hash, {})
+    await wait_for(lambda: state() == f"online: https://{DNS}")
 
 
 @pytest.mark.asyncio
