@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v2.8.0 (2026-10-23)
+
+### Features
+
+- Remove aktionsfinder module ([#743](https://github.com/fhempy/fhempy/pull/743),
+  [`63102f3`](https://github.com/fhempy/fhempy/commit/63102f3f56bf568563fde1fe48fa630b8f8e9fe4))
+
+- **push**: Push notifications to phones and tablets (replaces Pushbullet)
+  ([#744](https://github.com/fhempy/fhempy/pull/744),
+  [`6ca3a52`](https://github.com/fhempy/fhempy/commit/6ca3a52eac787b843e1b92aae2e000312a9b036d))
+
+- **push**: Push notifications to phones and tablets, replaces Pushbullet
+  ([#744](https://github.com/fhempy/fhempy/pull/744),
+  [`6ca3a52`](https://github.com/fhempy/fhempy/commit/6ca3a52eac787b843e1b92aae2e000312a9b036d))
+
+
 ## v2.7.3 (2026-10-23)
 
 ### Bug Fixes
