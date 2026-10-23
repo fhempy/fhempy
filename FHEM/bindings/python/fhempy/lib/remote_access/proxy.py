@@ -207,7 +207,7 @@ class AuthProxy:
                 await answer.write_eof()
                 return answer
         except aiohttp.ClientError as err:
-            self.logger.debug(f"Proxy to {self.target} failed: {err}")
+            self.logger.debug(f"Proxy to {self.target} failed: {type(err).__name__}")
             return web.Response(status=502, text=f"{self.target} is not reachable")
 
     async def websocket(self, request, url):
@@ -226,7 +226,9 @@ class AuthProxy:
                 protocols=protocols,
             )
         except (aiohttp.ClientError, aiohttp.WSServerHandshakeError) as err:
-            self.logger.debug(f"Websocket to {self.target} failed: {err}")
+            self.logger.debug(
+                f"Websocket to {self.target} failed: {type(err).__name__}"
+            )
             return web.Response(status=502, text=f"{self.target} is not reachable")
         client = web.WebSocketResponse(
             protocols=[upstream.protocol] if upstream.protocol else ()
