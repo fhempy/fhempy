@@ -26,8 +26,8 @@ UPD 2026-10-22_23:42:33 4646 www/fhempy/matter.png
 UPD 2026-10-22_23:42:33 1882 www/fhempy/mcp_server.png
 UPD 2026-10-22_23:42:33 1869 www/fhempy/meross.png
 UPD 2026-10-22_23:42:33 3849 www/fhempy/miio.png
-UPD 2026-10-23_08:13:28 17675 www/fhempy/modules.js
-UPD 2026-10-23_08:13:28 27199 www/fhempy/modules.json
+UPD 2026-10-23_11:53:09 17692 www/fhempy/modules.js
+UPD 2026-10-23_11:53:09 27454 www/fhempy/modules.json
 UPD 2026-10-22_23:42:33 6803 www/fhempy/mqtt_ha_discovery.png
 UPD 2026-10-22_23:42:33 3910 www/fhempy/nefit.png
 UPD 2026-10-22_23:42:33 1628 www/fhempy/nespresso_ble.png
