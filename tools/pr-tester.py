@@ -798,18 +798,7 @@ class Runner:
         else:
             # names from the downloaded source, not from the GitHub response
             modules = [m for m in fhem_modules(fhem_src) if f"FHEM/{m}.pm" in changed]
-        www = []
-        for path in www_files(self.inst.src):
-            if target["pr"] is None:
-                # master: installed or missing files which differ from master
-                differs = not same_file(
-                    os.path.join(self.inst.src, path),
-                    os.path.join(self.ctx["dir"], path),
-                )
-            else:
-                differs = path in changed
-            if differs:
-                www.append(path)
+        www = self.changed_www_files(target, changed)
         if not modules and not www:
             return [], []
         print()
@@ -823,6 +812,18 @@ class Runner:
         if ask("Copy them into FHEM? They are restored after the test."):
             return modules, www
         return [], []
+
+    def changed_www_files(self, target, changed):
+        if target["pr"] is not None:
+            return [p for p in www_files(self.inst.src) if p in changed]
+        # master: installed or missing files which differ from master
+        return [
+            p
+            for p in www_files(self.inst.src)
+            if not same_file(
+                os.path.join(self.inst.src, p), os.path.join(self.ctx["dir"], p)
+            )
+        ]
 
     def install_fhem_modules(self, modules, state):
         if not modules:
