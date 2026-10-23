@@ -318,7 +318,10 @@
   }
 
   function loadCatalog(cb) {
-    if (modules.length) return cb();
+    if (modules.length) {
+      cb();
+      return;
+    }
     $.ajax({ url: base + "modules.json", dataType: "json", cache: false })
       .done(function (list) {
         modules = list;
