@@ -1,0 +1,12 @@
+{
+  "requirements": [],
+  "installer": {
+    "title": "System update",
+    "description": "Keeps the Raspberry Pi up to date: security updates every night, health check afterwards, critical packages only on your click",
+    "category": "tools",
+    "order": 31,
+    "name": "system_update",
+    "single": true,
+    "icon": "🔄"
+  }
+}
