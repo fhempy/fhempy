@@ -112,6 +112,8 @@ sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib
 ```
 
 ### 3. Define your first device
+fhempy searches your network and Bluetooth on its own ([autodiscovery](FHEM/bindings/python/fhempy/lib/autodiscovery/README.md)). Found devices are shown right after the installation, new ones later as a popup, one click creates them.
+
 The easiest way: click **+ Install modules** next to `fhempy_local` in the room *fhempy*. Search or browse all modules, click one and press *Set up*. If a module needs more information (e.g. a login or an IP address), the window asks for it and creates the device for you.
 
 <p align="center"><img src="docs/images/module-installer.png" alt="fhempy module installer: search, categories and a tile with logo for every module" width="700"></p>
@@ -121,7 +123,6 @@ Of course you can also define devices like any other FHEM device, pick a module 
 define matter fhempy matter
 define castdevice fhempy googlecast "Living Room"
 define eq3bt fhempy eq3bt 00:11:22:33:44:66:77
-define upnp fhempy discover_upnp
 ```
 The module's README (linked in the list) explains its options. Its Python libraries are installed automatically on first use.
 
@@ -207,9 +208,10 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |Module | Description|
 |-------|------------|
 |[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
-|[discover_ble](FHEM/bindings/python/fhempy/lib/discover_ble/)|Discover Bluetooth LE devices|
-|[discover_mdns](FHEM/bindings/python/fhempy/lib/discover_mdns/)|Discover mDNS (e.g. Google Cast) devices|
-|[discover_upnp](FHEM/bindings/python/fhempy/lib/discover_upnp/)|Discover UPnP devices|
+|[autodiscovery](FHEM/bindings/python/fhempy/lib/autodiscovery/README.md)|Finds devices in your network and via Bluetooth, adds residents and Bluetooth tags|
+|[discover_ble](FHEM/bindings/python/fhempy/lib/discover_ble/README.md)|Replaced by autodiscovery|
+|[discover_mdns](FHEM/bindings/python/fhempy/lib/discover_mdns/README.md)|Replaced by autodiscovery|
+|[discover_upnp](FHEM/bindings/python/fhempy/lib/discover_upnp/README.md)|Replaced by autodiscovery|
 
 ### 🧰 Information & tools
 |Module | Description|
