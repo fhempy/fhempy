@@ -11,7 +11,12 @@ FAN_STATES = ("on", "off")
 FAN_PRESETS = ("summer", "winter", "breeze", "sleep")
 MIN_FAN_SPEED = 0
 MAX_FAN_SPEED = 31
+MIN_BRIGHTNESS = 0
+MAX_BRIGHTNESS = 100
+MIN_CT = 2700
+MAX_CT = 6500
 CHOOSE_PREFIX = "choose "
+
 
 # Input validator functions (executed by fhempy before handlers run)
 def _hex_id(value):
@@ -23,17 +28,20 @@ def _hex_id(value):
     except (ValueError, TypeError):
         raise ValueError("expected a 4-digit hexadecimal ID (e.g. 1F42)") from None
 
+
 def _light_state(value):
     val = str(value).lower()
     if val not in LIGHT_STATES:
         raise ValueError(CHOOSE_PREFIX + " or ".join(LIGHT_STATES))
     return val
 
+
 def _fan_state(value):
     val = str(value).lower()
     if val not in FAN_STATES:
         raise ValueError(CHOOSE_PREFIX + " or ".join(FAN_STATES))
     return val
+
 
 def _fan_speed(value):
     try:
@@ -50,6 +58,26 @@ def _fan_preset(value):
     if val not in FAN_PRESETS:
         raise ValueError(CHOOSE_PREFIX + " or ".join(FAN_PRESETS))
     return val
+
+
+def _brightness(value):
+    try:
+        number = int(value)
+    except (ValueError, TypeError, OverflowError):
+        raise ValueError("expected a whole number") from None
+    if not MIN_BRIGHTNESS <= number <= MAX_BRIGHTNESS:
+        raise ValueError(f"expected {MIN_BRIGHTNESS} to {MAX_BRIGHTNESS}")
+    return number
+
+
+def _color_temp(value):
+    try:
+        number = int(value)
+    except (ValueError, TypeError, OverflowError):
+        raise ValueError("expected a whole number") from None
+    if not MIN_CT <= number <= MAX_CT:
+        raise ValueError(f"expected {MIN_CT} to {MAX_CT}")
+    return number
 
 
 class mantra_ble(generic.FhemModule):
@@ -94,6 +122,18 @@ class mantra_ble(generic.FhemModule):
                 "params": {"state": {"format": _light_state}},
                 "options": ",".join(LIGHT_STATES),
                 "help": "<b>light [on|off]</b><br>Switch light on or off.",
+            },
+            "brightness": {
+                "args": ["brightness"],
+                "params": {"brightness": {"format": _brightness}},
+                "options": f"slider,{MIN_BRIGHTNESS},1,{MAX_BRIGHTNESS}",
+                "help": f"<b>brightness [0-{MAX_BRIGHTNESS}]</b><br>Set light brightness percentage (0 turns off).",
+            },
+            "ct": {
+                "args": ["ct"],
+                "params": {"ct": {"format": _color_temp}},
+                "options": f"colorpicker,CT,{MIN_CT},100,{MAX_CT}",
+                "help": f"<b>ct [{MIN_CT}-{MAX_CT}]</b><br>Set color temperature in Kelvin ({MIN_CT}K warm to {MAX_CT}K cold).",
             },
             "fan": {
                 "args": ["state"],
@@ -140,6 +180,8 @@ class mantra_ble(generic.FhemModule):
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "off")
         await fhem.readingsBulkUpdateIfChanged(hash, "light", "off")
         await fhem.readingsBulkUpdateIfChanged(hash, "fan", "off")
+        await fhem.readingsBulkUpdateIfChanged(hash, "brightness", 100)
+        await fhem.readingsBulkUpdateIfChanged(hash, "ct", 4000)
         await fhem.readingsEndUpdate(hash, 1)
 
     # -------------------------------------------------------------------------
@@ -164,6 +206,38 @@ class mantra_ble(generic.FhemModule):
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "light", state)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", state)
+        await fhem.readingsEndUpdate(hash, 1)
+
+    async def set_brightness(self, hash, params):
+        brightness = params["brightness"]
+        if brightness == 0:
+            await self.set_off(hash, {})
+            return
+
+        device_name = hash["NAME"]
+        ct = int(await fhem.ReadingsVal(device_name, "ct", 4000))
+        await self._transmit_light_ct(brightness, ct)
+
+        await fhem.readingsBeginUpdate(hash)
+        await fhem.readingsBulkUpdateIfChanged(hash, "brightness", brightness)
+        await fhem.readingsBulkUpdateIfChanged(hash, "light", "on")
+        await fhem.readingsBulkUpdateIfChanged(hash, "state", "on")
+        await fhem.readingsEndUpdate(hash, 1)
+
+    async def set_ct(self, hash, params):
+        ct = params["ct"]
+        device_name = hash["NAME"]
+        brightness = int(await fhem.ReadingsVal(device_name, "brightness", 100))
+        if brightness == 0:
+            brightness = 100
+
+        await self._transmit_light_ct(brightness, ct)
+
+        await fhem.readingsBeginUpdate(hash)
+        await fhem.readingsBulkUpdateIfChanged(hash, "ct", ct)
+        await fhem.readingsBulkUpdateIfChanged(hash, "brightness", brightness)
+        await fhem.readingsBulkUpdateIfChanged(hash, "light", "on")
+        await fhem.readingsBulkUpdateIfChanged(hash, "state", "on")
         await fhem.readingsEndUpdate(hash, 1)
 
     async def set_fan(self, hash, params):
@@ -217,6 +291,25 @@ class mantra_ble(generic.FhemModule):
     # -------------------------------------------------------------------------
     # CORE BLUETOOTH TRANSMISSION (ASYNC)
     # -------------------------------------------------------------------------
+
+    async def _transmit_light_ct(self, brightness, ct):
+        """Calculates multi-channel brightness/CCT values and transmits command 0x02."""
+        br = max(0.01, min(1.0, brightness / 100.0))
+        ct_rev = max(0.0, min(1.0, (ct - MIN_CT) / (MAX_CT - MIN_CT)))
+        warm = br * (1.0 - ct_rev)
+        cold = br * ct_rev
+
+        param = int(round(warm * 255))
+        arg0 = int(round(cold * 255))
+        arg1 = int(round(br * 7))
+        arg2 = int(round(ct_rev * 6))
+        arg3 = int(round(br * 255))
+        arg4 = int(round(ct_rev * 255))
+
+        enc_cmd = BleAdvEncCmd(0x02, param, arg0, arg1, arg2, arg3, arg4)
+        current_state = await fhem.ReadingsVal(self.hash["NAME"], "state", "off")
+        duration = 0.35 if current_state == "on" else 0.9
+        await self._transmit_ble(enc_cmd, duration=duration)
 
     async def _transmit_ble(self, enc_cmd, duration=0.35):
         """Builds the BLE payload and executes hcitool asynchronously."""
