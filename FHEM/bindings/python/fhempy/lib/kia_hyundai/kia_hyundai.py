@@ -20,6 +20,16 @@ USAGE = (
     "Usage: define my_car fhempy kia_hyundai (official Pleos API, Europe) or "
     "define my_car fhempy kia_hyundai USERNAME PASSWORD PIN CAR_BRAND REGION_CODE"
 )
+# set commands which need the car data of the first successful update
+CAR_COMMANDS = (
+    "lock",
+    "unlock",
+    "start_climate",
+    "stop_climate",
+    "start_charge",
+    "stop_charge",
+    "charge_limits",
+)
 
 
 class kia_hyundai(generic.FhemModule):
@@ -31,6 +41,8 @@ class kia_hyundai(generic.FhemModule):
         self._pleos_status = ""
         self._wakeup = asyncio.Event()
         self._unique_id = None
+        self.vm = None
+        self.vehicle = None
 
     @staticmethod
     def validate_define(args, argsh):
@@ -184,6 +196,15 @@ class kia_hyundai(generic.FhemModule):
             self.logger.exception("Failed to update readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in CAR_COMMANDS and self.vehicle is None:
+            return (
+                "Not connected to the car yet, please wait until the car data "
+                "was loaded (reading state is online)"
+            )
+        return await super().Set(hash, args, argsh)
+
     # Set functions in format: set_NAMEOFSETFUNCTION(self, hash, params)
     async def set_update_data(self, hash, params):
         if self.pleos:
@@ -231,8 +252,8 @@ class kia_hyundai(generic.FhemModule):
         )
 
     async def set_charge_limits(self, hash, params):
-        utils.run_blocking_task(
-            functools.partial(
+        self.create_async_task(
+            self.execute_command(
                 self.vm.set_charge_limits,
                 self.vehicle.id,
                 params["ac_limit"],
@@ -241,11 +262,21 @@ class kia_hyundai(generic.FhemModule):
         )
 
     async def execute_command(self, command, *kwargs):
-        # check token
-        await utils.run_blocking(functools.partial(self.vm.check_and_refresh_token))
+        try:
+            # check token
+            await utils.run_blocking(functools.partial(self.vm.check_and_refresh_token))
 
-        # execute function
-        await utils.run_blocking(functools.partial(command, *kwargs))
+            # execute function
+            await utils.run_blocking(functools.partial(command, *kwargs))
+        except Exception as exc:
+            # runs in background, FHEM already got the reply of the set
+            self.logger.error(
+                f"Command {getattr(command, '__name__', command)} failed: "
+                + utils.describe_exception(exc)
+            )
+            await fhem.readingsSingleUpdate(
+                self.hash, "last_command_error", utils.describe_exception(exc), 1
+            )
 
     # --- Pleos Vehicle Data API (EU Data Act) ---
 
