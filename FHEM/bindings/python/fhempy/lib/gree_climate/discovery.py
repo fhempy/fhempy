@@ -32,7 +32,7 @@ def _unpad(data):
 def decrypt_pack(response):
     pack = base64.b64decode(response["pack"])
     if "tag" in response:
-        cipher = AES.new(GCM_KEY, AES.MODE_GCM, nonce=GCM_NONCE)
+        cipher = AES.new(GCM_KEY, AES.MODE_GCM, nonce=GCM_NONCE)  # NOSONAR
         cipher.update(GCM_AAD)
         data = cipher.decrypt_and_verify(pack, base64.b64decode(response["tag"]))
     else:

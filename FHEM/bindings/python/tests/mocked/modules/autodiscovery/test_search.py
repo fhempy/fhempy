@@ -24,7 +24,7 @@ def test_tuya_plain_and_encrypted():
     info = {"ip": "192.168.1.30", "gwId": "bf123", "version": "3.3"}
     plain = json.dumps(info).encode()
     assert tuya.parse(tuya_package(plain)) == info
-    encrypted = AES.new(tuya.UDP_KEY, AES.MODE_ECB).encrypt(pkcs7(plain))
+    encrypted = AES.new(tuya.UDP_KEY, AES.MODE_ECB).encrypt(pkcs7(plain))  # NOSONAR
     assert tuya.parse(tuya_package(encrypted)) == info
     assert tuya.parse(b"garbage") is None
     assert tuya.parse(tuya_package(b'{"foo": 1}')) is None
@@ -33,13 +33,13 @@ def test_tuya_plain_and_encrypted():
 def gree_answer(info, gcm):
     data = json.dumps(info).encode()
     if gcm:
-        cipher = AES.new(gree.GCM_KEY, AES.MODE_GCM, nonce=gree.GCM_NONCE)
+        cipher = AES.new(gree.GCM_KEY, AES.MODE_GCM, nonce=gree.GCM_NONCE)  # NOSONAR
         cipher.update(gree.GCM_AAD)
         pack, tag = cipher.encrypt_and_digest(data)
         answer = {"t": "pack", "pack": base64.b64encode(pack).decode()}
         answer["tag"] = base64.b64encode(tag).decode()
     else:
-        pack = AES.new(gree.ECB_KEY, AES.MODE_ECB).encrypt(pkcs7(data))
+        pack = AES.new(gree.ECB_KEY, AES.MODE_ECB).encrypt(pkcs7(data))  # NOSONAR
         answer = {"t": "pack", "pack": base64.b64encode(pack).decode()}
     return json.dumps(answer).encode()
 

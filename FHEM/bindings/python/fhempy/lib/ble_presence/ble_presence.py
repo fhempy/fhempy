@@ -123,7 +123,7 @@ class presence_tracker:
         ):
             return
         self._lastupdate[mac] = now
-        asyncio.create_task(
+        listener.create_async_task(
             listener.update_readings(
                 "present",
                 mac,

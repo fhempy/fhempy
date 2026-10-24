@@ -94,6 +94,7 @@ class Engine:
         self._popup_queue = []
         self._popup_task = None
         self._mdns_pending = set()
+        self._background = set()
         self.ble_state = "off"
         self.running = False
 
@@ -309,7 +310,7 @@ class Engine:
                 known["rssi"] = advertisement.rssi
                 continue
             # the callback mustn't wait
-            asyncio.create_task(self.found(found, rule))
+            self._run_later(self.found(found, rule))
 
     # --- search() of the modules ---
 
@@ -538,8 +539,14 @@ class Engine:
         if ret:
             return ret
         candidate["device"] = name
-        asyncio.create_task(self._set_when_ready(hash, name, command))
+        self._run_later(self._set_when_ready(hash, name, command))
         return ""
+
+    def _run_later(self, coro):
+        # keep a reference, the event loop holds tasks only weakly
+        task = asyncio.create_task(coro)
+        self._background.add(task)
+        task.add_done_callback(self._background.discard)
 
     async def _set_when_ready(self, hash, name, command, timeout=1800):
         """New controllers install their software first, up to some minutes."""
