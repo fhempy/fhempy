@@ -1,12 +1,5 @@
 {
-  "requirements": [],
-  "installer": {
-    "title": "Discover mDNS",
-    "description": "Finds mDNS devices (e.g. Google Cast) in your network",
-    "category": "presence",
-    "order": 30,
-    "name": "discover_mdns",
-    "single": true,
-    "icon": "🔎"
-  }
+  "requirements": [
+    "bleak==3.0.2"
+  ]
 }

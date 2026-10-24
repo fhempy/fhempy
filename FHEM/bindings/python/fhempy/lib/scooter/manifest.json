@@ -19,5 +19,25 @@
         "optional": true
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name_prefix": [
+          "MIScooter",
+          "NBScooter"
+        ]
+      },
+      {
+        "manufacturer_id": 16974
+      }
+    ],
+    "title": "{name}",
+    "name": "scooter",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ],
+    "hint": "Press the power button of the scooter when it beeps, this pairs it once."
   }
 }

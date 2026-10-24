@@ -16,5 +16,21 @@
         "type": "mac"
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name": "Flower care"
+      },
+      {
+        "name": "Flower mate"
+      }
+    ],
+    "title": "Plant sensor",
+    "name": "plant",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ]
   }
 }

@@ -72,5 +72,16 @@
         "help": "32 characters, the module Xiaomi tokens gets all tokens from the cloud"
       }
     ]
+  },
+  "discovery": {
+    "search": true,
+    "title": "{title}",
+    "unique": "{id}",
+    "exists": "{ip}",
+    "action": "installer",
+    "prefill": {
+      "1": "{ip}"
+    },
+    "hint": "Xiaomi devices need their token, the module xiaomi_tokens gets it from your Xiaomi account."
   }
 }
