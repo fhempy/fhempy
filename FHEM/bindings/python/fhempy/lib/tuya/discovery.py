@@ -11,7 +11,8 @@ from hashlib import md5
 from Cryptodome.Cipher import AES
 
 PORTS = (6666, 6667)
-UDP_KEY = md5(b"yGAdlopoPVldABfn").digest()  # NOSONAR, fixed by the protocol
+# fixed by the protocol, not a password hash
+UDP_KEY = md5(b"yGAdlopoPVldABfn", usedforsecurity=False).digest()
 PREFIX = bytes.fromhex("000055aa")
 
 
