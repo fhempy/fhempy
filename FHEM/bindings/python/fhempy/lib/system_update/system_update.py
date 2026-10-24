@@ -94,7 +94,7 @@ def tool(name):
     return None
 
 
-async def run_command(args, timeout=60):
+async def run_command(args, limit=60):
     """(exit code, output) of a program, 127 if it doesn't exist"""
     if args[0] is None:
         return 127, "program not found"
@@ -109,11 +109,12 @@ async def run_command(args, timeout=60):
     except OSError as err:
         return 127, str(err)
     try:
-        out, _ = await asyncio.wait_for(proc.communicate(), timeout)
+        async with asyncio.timeout(limit):
+            out, _ = await proc.communicate()
     except asyncio.TimeoutError:
         proc.kill()
         await proc.wait()
-        return 124, f"{os.path.basename(args[0])} did not finish within {timeout}s"
+        return 124, f"{os.path.basename(args[0])} did not finish within {limit}s"
     return proc.returncode, out.decode("utf-8", "replace")
 
 
@@ -413,8 +414,8 @@ class system_update(generic.FhemModule):
             return [tool("python3"), "-I", self.helper_source(), *args]
         return [tool("sudo"), "-n", helper.INSTALL_PATH, *args]
 
-    async def run_helper(self, *args, timeout=60):
-        return await run_command(self.helper_command(*args), timeout)
+    async def run_helper(self, *args, limit=60):
+        return await run_command(self.helper_command(*args), limit)
 
     async def check_helper(self):
         """True if the helper can be used, else the readings explain why"""
@@ -500,19 +501,19 @@ class system_update(generic.FhemModule):
 
     # --- set commands ---
 
-    async def set_check(self, hash, params):
+    def set_check(self, hash, params):
         self.create_async_task(self.check(refresh=True))
 
-    async def set_update(self, hash, params):
+    def set_update(self, hash, params):
         self.create_async_task(self.update("all"))
 
-    async def set_update_all(self, hash, params):
+    def set_update_all(self, hash, params):
         self.create_async_task(self.update("everything"))
 
-    async def set_repair(self, hash, params):
+    def set_repair(self, hash, params):
         self.create_async_task(self.repair())
 
-    async def set_reboot(self, hash, params):
+    def set_reboot(self, hash, params):
         self.create_async_task(self.reboot("Rebooting (set reboot)"))
 
     # --- check ---
@@ -527,7 +528,7 @@ class system_update(generic.FhemModule):
     async def refresh_and_list(self, refresh):
         if refresh:
             await self.set_state("checking")
-            code, out = await self.run_helper("refresh", timeout=REFRESH_TIMEOUT)
+            code, out = await self.run_helper("refresh", limit=REFRESH_TIMEOUT)
             if code != 0:
                 await self.failed("apt-get update failed: " + last_line(out))
                 return False
@@ -600,7 +601,7 @@ class system_update(generic.FhemModule):
             }
             await self.save_state({**await self.load_state(), "pending": pending})
             await self.set_state(f"updating {len(packages)} packages")
-            code, out = await self.run_helper("upgrade", *packages, timeout=7200)
+            code, out = await self.run_helper("upgrade", *packages, limit=7200)
             if code != 0:
                 await self.save_state(
                     {
@@ -640,7 +641,7 @@ class system_update(generic.FhemModule):
 
         return [
             inst
-            for inst in list(fhem_pythonbinding.loadedModuleInstances.values())
+            for inst in fhem_pythonbinding.loadedModuleInstances.copy().values()
             if getattr(inst, "hash", {}).get("FHEMPYTYPE") == fhempy_type
             and inst is not self
         ]
@@ -740,17 +741,14 @@ class system_update(generic.FhemModule):
 
     async def peers(self):
         """state of the BindingsIo devices (connections to fhempy)"""
-        result = await asyncio.wait_for(
-            fhem.sendCommandHash(
+        async with asyncio.timeout(30):
+            result = await fhem.sendCommandHash(
                 self.hash,
                 "join(' ', map { $_ . '=' . ReadingsVal($_, 'state', '') }"
                 " devspec2array('TYPE=BindingsIo'))",
-            ),
-            30,
-        )
-        return dict(
-            part.split("=", 1) for part in str(result or "").split() if "=" in part
-        )
+            )
+        pairs = (p.split("=", 1) for p in str(result or "").split() if "=" in p)
+        return {name: state for name, state in pairs}
 
     async def health_snapshot(self):
         try:
@@ -766,28 +764,30 @@ class system_update(generic.FhemModule):
         for attempt in range(HEALTH_RETRIES):
             if attempt:
                 await asyncio.sleep(HEALTH_DELAY)
-            problems = []
-            try:
-                peers = await self.peers()
-            except (asyncio.TimeoutError, OSError):
-                peers = None
-                problems.append("FHEM does not answer")
-            if peers is not None:
-                lost = [
-                    name
-                    for name, state in (before.get("peers") or {}).items()
-                    if state == "opened" and peers.get(name) != "opened"
-                ]
-                if lost:
-                    problems.append("fhempy not connected: " + ", ".join(lost))
-            new_failed = sorted(
-                set(await self.failed_units()) - set(before.get("failed_units") or [])
+            problems = await self.peer_problems(before) + await self.unit_problems(
+                before
             )
-            if new_failed:
-                problems.append("failed services: " + ", ".join(new_failed))
             if not problems:
                 break
         return problems
+
+    async def peer_problems(self, before):
+        try:
+            peers = await self.peers()
+        except (asyncio.TimeoutError, OSError):
+            return ["FHEM does not answer"]
+        lost = [
+            name
+            for name, state in (before.get("peers") or {}).items()
+            if state == "opened" and peers.get(name) != "opened"
+        ]
+        return ["fhempy not connected: " + ", ".join(lost)] if lost else []
+
+    async def unit_problems(self, before):
+        new_failed = sorted(
+            set(await self.failed_units()) - set(before.get("failed_units") or [])
+        )
+        return ["failed services: " + ", ".join(new_failed)] if new_failed else []
 
     # --- reboot ---
 
@@ -843,7 +843,7 @@ class system_update(generic.FhemModule):
             if not await self.check_helper():
                 return
             await self.set_state("repairing")
-            code, out = await self.run_helper("repair", timeout=3600)
+            code, out = await self.run_helper("repair", limit=3600)
             if code != 0:
                 await self.failed("repair failed: " + last_line(out))
                 return

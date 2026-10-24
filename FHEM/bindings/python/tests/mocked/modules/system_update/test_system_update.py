@@ -124,7 +124,7 @@ class FakeSystem:
         self.helper_version = str(helper.HELPER_VERSION)
         self.calls = []
 
-    async def run(self, args, timeout=60):
+    async def run(self, args, limit=60):
         args = [str(a) for a in args]
         self.calls.append(args)
         name = args[0].rsplit("/", 1)[-1]

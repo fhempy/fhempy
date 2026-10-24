@@ -24,7 +24,7 @@ import sys
 import tempfile
 import time
 
-HELPER_VERSION = 2
+HELPER_VERSION = 3
 INSTALL_PATH = "/usr/local/sbin/fhempy-system-update"
 SUDOERS_PATH = "/etc/sudoers.d/fhempy-system-update"
 # readable for fhem, written only by this helper
@@ -71,12 +71,14 @@ def output(args):
     return result.stdout.decode("utf-8", "replace")
 
 
-def write_json(path, data, mode=0o644):
+def write_json(path, data, shared=True):
     directory = os.path.dirname(path)
+    # mkstemp creates the file only readable for root
     fd, tmp = tempfile.mkstemp(dir=directory, prefix=".tmp")
     with os.fdopen(fd, "w") as f:
         json.dump(data, f)
-    os.chmod(tmp, mode)
+    if shared:
+        share(tmp)
     os.replace(tmp, path)
 
 
@@ -96,9 +98,25 @@ def pid_alive(pid):
     return True
 
 
-def ensure_state_dir():
-    os.makedirs(STATE_DIR, mode=0o755, exist_ok=True)
-    os.chmod(STATE_DIR, 0o755)
+def state_gid():
+    """group of the fhempy user, set by install"""
+    try:
+        return os.stat(STATE_DIR).st_gid
+    except OSError:
+        return 0
+
+
+def ensure_state_dir(gid=None):
+    os.makedirs(STATE_DIR, mode=0o750, exist_ok=True)
+    if gid is not None:
+        os.chown(STATE_DIR, 0, gid)
+    os.chmod(STATE_DIR, 0o750)
+
+
+def share(path):
+    """readable for the group of the fhempy user, not for others"""
+    os.chown(path, 0, state_gid())
+    os.chmod(path, 0o640)
 
 
 def upgradable():
@@ -113,8 +131,9 @@ def held():
 
 def release_holds():
     """unhold packages of an upgrade which got killed"""
-    holds = read_json(HOLD_FILE).get("packages") or []
-    holds = [p for p in holds if PACKAGE.match(str(p))]
+    stored = set(read_json(HOLD_FILE).get("packages") or [])
+    # only names apt-mark itself lists are passed on
+    holds = sorted(p for p in held() if p in stored)
     if holds:
         run(["apt-mark", "unhold"] + holds, stdout=subprocess.DEVNULL)
     try:
@@ -141,7 +160,7 @@ def do_upgrade(packages, log):
     release_holds()
     to_hold = sorted(upgradable() - set(packages) - held())
     if to_hold:
-        write_json(HOLD_FILE, {"packages": to_hold}, mode=0o600)
+        write_json(HOLD_FILE, {"packages": to_hold}, shared=False)
         run(["apt-mark", "hold"] + to_hold, stdout=log, stderr=log)
     try:
         log.write(("$ " + " ".join(UPGRADE) + "\n").encode())
@@ -164,7 +183,7 @@ def cmd_upgrade_now(packages):
     write_json(STATUS_FILE, status)
     code = 1
     with open(LOG_FILE, "wb") as log:
-        os.chmod(LOG_FILE, 0o644)
+        share(LOG_FILE)
         try:
             code = do_upgrade(packages, log)
         except Exception as exc:  # status must be written in any case
@@ -227,7 +246,7 @@ def cmd_install(user):
         tmp = INSTALL_PATH + ".new"
         shutil.copyfile(source, tmp)
         os.chown(tmp, 0, 0)
-        os.chmod(tmp, 0o755)
+        os.chmod(tmp, 0o700)
         os.replace(tmp, INSTALL_PATH)
     line = f"{user} ALL=(root) NOPASSWD: {INSTALL_PATH}\n"
     fd, tmp = tempfile.mkstemp(dir="/etc/sudoers.d", prefix=".fhempy")
@@ -238,7 +257,7 @@ def cmd_install(user):
         os.remove(tmp)
         sys.exit("visudo rejected the sudoers line, nothing changed")
     os.replace(tmp, SUDOERS_PATH)
-    ensure_state_dir()
+    ensure_state_dir(pwd.getpwnam(user).pw_gid)
     print(f"Installed {INSTALL_PATH}, {user} may run it with sudo.")
     return 0
 
