@@ -277,6 +277,65 @@ async def test_unregister_and_invalid(module):
 
 
 @pytest.mark.asyncio
+async def test_history(module, mocker):
+    from fhempy.lib.push import push
+
+    await register(module, "p1", "Pixel 7")
+    await register(module, "p2", "iPhone")
+    # the welcome message isn't part of the list
+    assert module._history == []
+
+    await module.Set(
+        module.hash,
+        [NAME, "message", "Somebody", "rings"],
+        {"title": "Door", "action": "Open:set door open", "to": "iphone"},
+    )
+    await wait_for(lambda: len(module._history) == 1)
+    entry = module._history[0]
+    assert entry["title"] == "Door"
+    assert entry["body"] == "Somebody rings"
+    assert entry["to"] == ["iPhone"]
+    assert entry["actions"] == ["Open"]
+    assert (entry["delivered"], entry["total"]) == (1, 1)
+    assert readings()["history"] == "1 message"
+    stored = json.loads(readings()[".history"])
+    assert stored[0]["id"] == entry["id"]
+    # the command itself stays out of the list
+    assert "set door open" not in readings()[".history"]
+
+    # the used button is shown in the list
+    token = next(iter(module._actions))
+    await module.Set(module.hash, [NAME, "action", token], {})
+    assert module._history[0]["used"]["label"] == "Open"
+
+    module.service.status["p1"] = 500
+    await module.Set(module.hash, [NAME, "message", "Hi"], {})
+    await wait_for(lambda: len(module._history) == 2)
+    assert (module._history[1]["delivered"], module._history[1]["total"]) == (1, 2)
+    assert "to" not in module._history[1]
+    listed = await module.Set(module.hash, [NAME, "history"], {})
+    assert [m["body"] for m in json.loads(listed)] == ["Somebody rings", "Hi"]
+
+    # older than 7 days or too many: removed
+    module._history[0]["ts"] -= push.HISTORY_SECONDS + 60
+    mocker.patch.object(push, "MAX_HISTORY", 2)
+    for text in ("one", "two"):
+        await module.Set(module.hash, [NAME, "message", text], {})
+    await wait_for(lambda: module._history[-1]["body"] == "two")
+    assert [m["body"] for m in module._history] == ["one", "two"]
+
+    # survives a restart
+    again = push.push(logger)
+    again.http_session = module.http_session
+    await again.Define({"NAME": NAME, "FHEMPYTYPE": "push"}, [], {})
+    assert [m["body"] for m in again._history] == ["one", "two"]
+
+    assert await module.Set(module.hash, [NAME, "clear_history"], {}) is None
+    assert module._history == []
+    assert readings()["history"] == "0 messages"
+
+
+@pytest.mark.asyncio
 async def test_detail_page(module):
     await register(module, "p1", "Pixel 7")
     module.fake.remote = "1 https://fhem.tail1234.ts.net"
@@ -291,6 +350,9 @@ async def test_detail_page(module):
     )
     assert config["addresses"][0]["qr"].startswith("<img")
     assert config["remote_access"] is True
+    assert config["history"] == []
+    # with a phone the list of messages comes first
+    assert page.index("fhempyPushHistory") < page.index('id="fhempyPush"')
 
 
 @pytest.mark.asyncio
