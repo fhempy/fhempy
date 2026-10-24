@@ -91,3 +91,32 @@ async def test_no_zappi_found(mocker):
 
     assert device.zappi_box is None
     assert mock_fhem.readings["testzappi"]["state"] == "no zappi found"
+
+
+@pytest.mark.asyncio
+async def test_set_without_zappi(mocker):
+    # sets crashed with AttributeError while no zappi was connected
+    async def get_without_zappi(self, url, data=None, oauth=False):
+        return [{"zappi": []}]
+
+    device = await define_device(mocker, HUB_SERIAL, get_without_zappi)
+    testhash = device.hash
+
+    assert device.zappi_box is None
+    for cmd in (["charge_mode", "Eco"], ["green_energy_ratio", "50"]):
+        ret = await device.Set(testhash, ["testzappi"] + cmd, {})
+        assert "Not connected to the zappi yet" in ret
+
+
+@pytest.mark.asyncio
+async def test_set_request_failed(mocker):
+    device = await define_device(mocker, ZAPPI_SERIAL, mock_api([]))
+    mocker.patch.object(
+        device.zappi_box,
+        "set_charge_mode",
+        mocker.AsyncMock(side_effect=TimeoutError()),
+    )
+
+    ret = await device.Set(device.hash, ["testzappi", "charge_mode", "Eco"], {})
+
+    assert ret == "Request to myenergi failed: TimeoutError"
