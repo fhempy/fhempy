@@ -121,7 +121,7 @@ class FakeSystem:
         self.throttled = "throttled=0x0"
         self.failed_units = ""
         self.upgrade_code = 0
-        self.helper_version = "1"
+        self.helper_version = str(helper.HELPER_VERSION)
         self.calls = []
 
     async def run(self, args, timeout=60):

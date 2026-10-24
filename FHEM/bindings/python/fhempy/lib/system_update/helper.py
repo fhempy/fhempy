@@ -16,6 +16,7 @@ Only the Python standard library is used, it runs with the system Python.
 
 import json
 import os
+import pwd
 import re
 import shutil
 import subprocess
@@ -23,7 +24,7 @@ import sys
 import tempfile
 import time
 
-HELPER_VERSION = 1
+HELPER_VERSION = 2
 INSTALL_PATH = "/usr/local/sbin/fhempy-system-update"
 SUDOERS_PATH = "/etc/sudoers.d/fhempy-system-update"
 # readable for fhem, written only by this helper
@@ -123,9 +124,16 @@ def release_holds():
 
 
 def check_packages(packages):
+    """the requested packages which have an update: the names passed on
+    to apt are the ones of apt itself, never the command line arguments"""
     bad = [p for p in packages if not PACKAGE.match(p)]
     if bad or not packages:
         sys.exit("invalid package names: " + " ".join(bad or ["(none)"]))
+    requested = set(packages)
+    valid = sorted(p for p in upgradable() if p in requested)
+    if not valid:
+        sys.exit("no update available for " + " ".join(sorted(requested)))
+    return valid
 
 
 def do_upgrade(packages, log):
@@ -145,7 +153,7 @@ def do_upgrade(packages, log):
 
 def cmd_upgrade_now(packages):
     """runs the upgrade, the status file tells fhempy the result"""
-    check_packages(packages)
+    packages = check_packages(packages)
     ensure_state_dir()
     status = {
         "running": True,
@@ -170,7 +178,7 @@ def cmd_upgrade_now(packages):
 def cmd_upgrade(packages):
     """starts the upgrade outside of fhempy: a restart of fhempy or FHEM
     (e.g. by the update itself) must not kill apt in the middle"""
-    check_packages(packages)
+    packages = check_packages(packages)
     status = read_json(STATUS_FILE)
     if status.get("running") and pid_alive(status.get("pid")):
         sys.exit("an update is already running")
@@ -210,6 +218,10 @@ def cmd_reboot():
 def cmd_install(user):
     if not USER.match(user):
         sys.exit(f"invalid user name {user}")
+    try:
+        user = pwd.getpwnam(user).pw_name
+    except KeyError:
+        sys.exit(f"user {user} does not exist")
     source = os.path.realpath(__file__)
     if source != INSTALL_PATH:
         tmp = INSTALL_PATH + ".new"
