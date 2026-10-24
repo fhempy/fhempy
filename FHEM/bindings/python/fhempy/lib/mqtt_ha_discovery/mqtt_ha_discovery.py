@@ -5,6 +5,7 @@ import re
 import aiomqtt
 
 from .. import fhem, generic, utils
+from ..autodiscovery.engine import Engine
 
 # HomeAssistant allows abbreviated and full key names in discovery payloads.
 # ESPHome sends abbreviations, Zigbee2MQTT and Tasmota the full names.
@@ -129,6 +130,8 @@ class mqtt_ha_discovery(generic.FhemModule):
         self._errors = utils.ErrorLogger(logger)
 
         self.reset_existing_devices_task = None
+        # devices offered by autodiscovery: device_id -> name, entities
+        self._pending = {}
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -138,7 +141,8 @@ class mqtt_ha_discovery(generic.FhemModule):
             "force_autocreate": {
                 "default": False,
                 "format": "bool",
-                "help": "Always create a new device on discovery.",
+                "help": "Always create a new device on discovery, also while "
+                "autodiscovery runs (it asks first otherwise).",
             }
         }
         await self.set_attr_config(attr_config)
@@ -218,6 +222,9 @@ class mqtt_ha_discovery(generic.FhemModule):
                 device_name, device_id, payload_json
             )
             if fhem_device_name is None:
+                pending = self._pending.get(device_id)
+                if pending is not None:
+                    pending["entities"][(component, object_id)] = payload_json
                 continue
             await self.set_attributes(
                 fhem_device_name, component, object_id, payload_json
@@ -419,6 +426,37 @@ class mqtt_ha_discovery(generic.FhemModule):
                 self.remember_device(device_id, fhem_name)
                 return fhem_name
 
+        engine = Engine.running_instance()
+        if engine is not None and not self._attr_force_autocreate:
+            # autodiscovery asks before the device is created
+            await self.offer_device(engine, device_name, device_id, fhem_name)
+            return None
+
         await fhem.CommandDefine(self.hash, f"{fhem_name} MQTT2_DEVICE")
         self.remember_device(device_id, fhem_name)
         return fhem_name
+
+    async def offer_device(self, engine, device_name, device_id, fhem_name):
+        if device_id in self._pending:
+            return
+        self._pending[device_id] = {"entities": {}}
+
+        async def create():
+            ret = await fhem.CommandDefine(self.hash, f"{fhem_name} MQTT2_DEVICE")
+            if ret:
+                return str(ret)
+            self.remember_device(device_id, fhem_name)
+            pending = self._pending.pop(device_id, {"entities": {}})
+            for (component, object_id), payload in pending["entities"].items():
+                await self.set_attributes(fhem_name, component, object_id, payload)
+            return ""
+
+        await engine.report(
+            "mqtt_ha_discovery",
+            device_id,
+            device_name,
+            "MQTT device",
+            create,
+            hint="Found via Home Assistant MQTT discovery (e.g. ESPHome, "
+            "Zigbee2MQTT, Tasmota)",
+        )
