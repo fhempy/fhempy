@@ -27,6 +27,8 @@ class nefit(generic.FhemModule):
 
         self.first_run = True
         self.module_shutdown = False
+        self._nefit_client = None
+        self._connected = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -185,6 +187,14 @@ class nefit(generic.FhemModule):
     async def set_attr_access_key(self, hash):
         if self._attr_password != "" and self._attr_access_key != "":
             self.create_async_task(self.nefit_connect())
+
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and not self._connected:
+            if self._nefit_client is None:
+                return "Please set attributes access_key and password first"
+            return "Not connected to Nefit Easy yet, please try again later"
+        return await super().Set(hash, args, argsh)
 
     async def set_dayassunday_activate(self, hash, params):
         day = params["function_param"]
@@ -416,6 +426,7 @@ class nefit(generic.FhemModule):
 
         await self._nefit_client.connect()
         await self._nefit_client.xmppclient.connected_event.wait()
+        self._connected = True
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connected", 1)
 
@@ -430,6 +441,7 @@ class nefit(generic.FhemModule):
         pass
 
     async def session_end_callback(self):
+        self._connected = False
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "disconnected", 1)
         if not self.module_shutdown:
             await asyncio.sleep(10)
