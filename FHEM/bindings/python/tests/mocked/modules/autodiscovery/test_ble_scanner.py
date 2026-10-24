@@ -2,10 +2,19 @@ import logging
 from types import SimpleNamespace
 
 import pytest
+import pytest_asyncio
 
 from fhempy.lib.autodiscovery import residents
-from fhempy.lib.core import ble_scanner
-from fhempy.lib.core.ble_scanner import BleScanner
+from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+
+@pytest_asyncio.fixture
+async def ble_scanner():
+    # bleak is installed with the module, not with fhempy
+    await check_and_install_dependencies("autodiscovery")
+    from fhempy.lib.core import ble_scanner
+
+    return ble_scanner
 
 
 def device(address, path=""):
@@ -16,8 +25,9 @@ def advertisement(rssi, name=""):
     return SimpleNamespace(rssi=rssi, local_name=name)
 
 
-def test_recent_device():
-    scanner = BleScanner(logging.getLogger(__name__))
+@pytest.mark.asyncio
+async def test_recent_device(ble_scanner):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
     dev = device("aa:bb:cc:dd:ee:ff")
     scanner._detection(dev, advertisement(-50))
     assert scanner.recent_device("AA:BB:CC:DD:EE:FF") == (dev, -50)
@@ -26,8 +36,8 @@ def test_recent_device():
 
 
 @pytest.mark.asyncio
-async def test_paused():
-    scanner = BleScanner(logging.getLogger(__name__))
+async def test_paused(ble_scanner):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
     async with scanner.paused():
         async with scanner.paused():
             assert scanner._pause_count == 2
@@ -38,15 +48,17 @@ async def test_paused():
         pass
 
 
-def test_seen_by():
+@pytest.mark.asyncio
+async def test_seen_by(ble_scanner):
     dev = device("AA", "/org/bluez/hci1/dev_AA")
     assert ble_scanner.seen_by(dev, None)
     assert ble_scanner.seen_by(dev, "hci1")
     assert not ble_scanner.seen_by(dev, "hci0")
 
 
-def test_interval_mode_after_adapter_recovery():
-    scanner = BleScanner(logging.getLogger(__name__))
+@pytest.mark.asyncio
+async def test_interval_mode_after_adapter_recovery(ble_scanner):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
     assert scanner.effective_mode == ble_scanner.MODE_CONTINUOUS
     scanner.adapter_recovered()
     assert scanner.effective_mode == ble_scanner.MODE_INTERVAL
