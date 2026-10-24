@@ -366,6 +366,15 @@
   "logo": "zigbee2mqtt.png"
  },
  {
+  "id": "system_update",
+  "title": "System update",
+  "description": "Keeps the Raspberry Pi up to date: security updates every night, health check afterwards, critical packages only on your click",
+  "category": "tools",
+  "name": "system_update",
+  "single": true,
+  "icon": "🔄"
+ },
+ {
   "id": "discover_upnp",
   "title": "Discover UPnP",
   "description": "Finds UPnP devices in your network",

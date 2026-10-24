@@ -226,6 +226,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
 |[push](FHEM/bindings/python/fhempy/lib/push/README.md)|Push notifications to phones and tablets (Android, iPhone), no app and no account, replaces Pushbullet|
 |[remote_access](FHEM/bindings/python/fhempy/lib/remote_access/README.md)|FHEM on your phone from anywhere: https address with password via Tailscale Funnel, no VPN app or port forwarding|
+|[system_update](FHEM/bindings/python/fhempy/lib/system_update/README.md)|Keeps the Raspberry Pi up to date: security updates every night, backup before and health check after each update, critical packages only on your click|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|

@@ -306,6 +306,16 @@ class github_backup(generic.FhemModule):
             result = await self.run_backup()
         await self.update_backup_readings(result)
 
+    async def backup_and_wait(self):
+        """Backup now, returns None or the error. system_update uses it
+        before an update."""
+        if self._attr_github_token == "":
+            return "github_token is not set"
+        async with self.backup_lock:
+            result = await self.run_backup()
+        await self.update_backup_readings(result)
+        return result["error"]
+
     async def run_backup(self):
         result = {"uploaded": [], "unchanged": [], "failed": [], "error": None}
         files = await utils.run_blocking(functools.partial(self.files_to_backup))
