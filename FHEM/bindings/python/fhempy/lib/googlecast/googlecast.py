@@ -11,6 +11,7 @@ import aiohttp
 
 # PyChromecast
 import pychromecast
+from pychromecast.error import PyChromecastError
 
 # DashCast
 import pychromecast.controllers.dashcast as dashcast
@@ -35,7 +36,11 @@ from ..core.zeroconf import zeroconf
 from .spotcast.spotify_controller import SpotifyController
 from . import tts
 
-connection_update_lock = threading.Lock()
+# set commands which work without a connected cast device
+SET_WITHOUT_CAST = ("authcode",)
+# max seconds a pychromecast thread waits for FHEM reading updates; the
+# socket thread must not hang, otherwise heartbeat and reconnect stop
+LISTENER_TIMEOUT = 30
 
 
 class googlecast(generic.FhemModule):
@@ -52,6 +57,7 @@ class googlecast(generic.FhemModule):
         self.spotipy = None
         self.spotify_access_token = None
         self.tts_server = None
+        self.connection_update_lock = threading.Lock()
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -171,6 +177,19 @@ class googlecast(generic.FhemModule):
                 await utils.run_blocking(self.tts_server.remove_files)
         except Exception:
             self.logger.exception("Failed to undefine googlecast")
+
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._set_conf:
+            if args[1] not in SET_WITHOUT_CAST and self.cast is None:
+                return (
+                    f"Cast device {hash.get('CASTNAME', '')} not found yet,"
+                    + " please make sure it is switched on and in the same network"
+                )
+        try:
+            return await super().Set(hash, args, argsh)
+        except PyChromecastError as err:
+            return f"Cast device {hash.get('CASTNAME', '')} not connected: {err!r}"
 
     async def set_auth_url(self):
         spotipy_scope = (
@@ -656,12 +675,12 @@ class googlecast(generic.FhemModule):
         def castFound(chromecast):
             if chromecast.name == self.hash["CASTNAME"] and self.cast is None:
                 self.logger.info("Discovered cast: " + chromecast.name)
-                self.cast = chromecast
                 # add status listener
-                self.cast.register_connection_listener(self)
-                self.cast.register_status_listener(self)
+                chromecast.register_connection_listener(self)
+                chromecast.register_status_listener(self)
                 # add media controller listener
-                self.cast.media_controller.register_status_listener(self)
+                chromecast.media_controller.register_status_listener(self)
+                self.cast = chromecast
                 self.logger.debug("wait for chromecast")
                 # timeout 0.001 just waits for status to be ready
                 # but we just need the thread to start by calling wait()
@@ -685,55 +704,49 @@ class googlecast(generic.FhemModule):
     # THREADING: this function is called by run_once pychromecast thread
     def new_connection_status(self, status):
         # connection update might come from different threads
-        connection_update_lock.acquire()
-        self.logger.debug("new_connection_status: " + status.status)
+        with self.connection_update_lock:
+            self.logger.debug("new_connection_status: " + status.status)
 
-        # prevent to many disconnect events
-        if status.status != self.connectionStateCache:
-            self.connectionStateCache = status.status
-            # run reading updates in main thread
-            res = asyncio.run_coroutine_threadsafe(
-                self.updateConnectionReadings(self.hash, status), self.loop
-            )
-            res.result()
+            # prevent to many disconnect events
+            if status.status != self.connectionStateCache:
+                self.connectionStateCache = status.status
+                # run reading updates in main thread
+                self.run_in_loop(self.updateConnectionReadings(self.hash, status))
 
-        if status.status == "CONNECTED":
-            # run reading updates in main thread
-            res = asyncio.run_coroutine_threadsafe(
-                self.updateDeviceReadings(self.hash), self.loop
-            )
-            res.result()
-        connection_update_lock.release()
+            if status.status == "CONNECTED":
+                # run reading updates in main thread
+                self.run_in_loop(self.updateDeviceReadings(self.hash))
+
+    # THREADING: called by pychromecast threads, waits with timeout so that a
+    # hanging FHEM connection can't block heartbeat and reconnect of the cast
+    def run_in_loop(self, coro):
+        fut = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        try:
+            fut.result(LISTENER_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            self.logger.warning("Reading update took too long, continue")
+        except Exception:
+            self.logger.exception("Reading update failed")
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_cast_status(self, status):
         self.logger.debug("new_cast_status")
         # run reading updates in main thread
-        res = asyncio.run_coroutine_threadsafe(
-            self.updateStatusReadings(self.hash, status), self.loop
-        )
-        res.result()
+        self.run_in_loop(self.updateStatusReadings(self.hash, status))
 
     # THREADING: this function is called by run_once pychromecast thread
     def new_media_status(self, status):
-        asyncio.run_coroutine_threadsafe(
-            self.stop_updateCurrentPosition(), self.loop
-        ).result()
+        self.run_in_loop(self.stop_updateCurrentPosition())
         if (
             status.player_state == "PLAYING"
             and self.currPosTask is None
             and status.duration
             and status.duration > 0
         ):
-            asyncio.run_coroutine_threadsafe(
-                self.run_updateCurrentPosition(), self.loop
-            ).result()
+            self.run_in_loop(self.run_updateCurrentPosition())
         self.logger.debug("new_media_status")
         # run reading updates in main thread
-        res = asyncio.run_coroutine_threadsafe(
-            self.updateMediaStatusReadings(self.hash, status), self.loop
-        )
-        res.result()
+        self.run_in_loop(self.updateMediaStatusReadings(self.hash, status))
 
     async def run_updateCurrentPosition(self):
         self.currPosTask = self.create_async_task(self.updateCurrentPosition())
@@ -747,7 +760,11 @@ class googlecast(generic.FhemModule):
         try:
             while True:
                 await asyncio.sleep(30)
-                self.cast.media_controller.update_status()
+                try:
+                    self.cast.media_controller.update_status()
+                except PyChromecastError:
+                    # not connected, pychromecast reconnects in background
+                    pass
         except concurrent.futures.CancelledError:
             # task was cancelled, nothing playing
             pass
