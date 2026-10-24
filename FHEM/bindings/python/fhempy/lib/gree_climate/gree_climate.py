@@ -30,7 +30,7 @@ class gree_climate(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         attr_config = {
             "interval": {
                 "default": 60,
@@ -261,6 +261,15 @@ class gree_climate(generic.FhemModule):
             self.logger.exception("Failed to update_readings")
         await fhem.readingsEndUpdate(self.hash, 1)
 
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and self.device is None:
+            return (
+                "Air conditioner not found yet, please make sure it is switched "
+                "on and in the same network"
+            )
+        return await super().Set(hash, args, argsh)
+
     async def set_on(self, hash, params):
         self.device.power = True
         self.create_async_task(self.send_command())
@@ -328,4 +337,11 @@ class gree_climate(generic.FhemModule):
 
     async def send_command(self):
         # the device confirms the new values, readings follow via _handle_state
-        await self.device.push_state_update()
+        try:
+            await self.device.push_state_update()
+        except Exception as exc:
+            # runs in background, FHEM already got the reply of the set
+            self.logger.error(
+                "Failed to send command to air conditioner: "
+                + utils.describe_exception(exc)
+            )

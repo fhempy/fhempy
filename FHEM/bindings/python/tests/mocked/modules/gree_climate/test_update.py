@@ -46,7 +46,9 @@ async def test_state_update(mocker):
     # update_state only sends the request, the answer arrives as a packet
     assert gree.send.await_count >= 1
     gree.packet_received(
-        state_packet(Pow=1, Mod=1, SetTem=22, TemRec=0, TemUn=0, WdSpd=0, SwingLfRig=0, SwUpDn=0),
+        state_packet(
+            Pow=1, Mod=1, SetTem=22, TemRec=0, TemUn=0, WdSpd=0, SwingLfRig=0, SwUpDn=0
+        ),
         ("192.0.2.10", 7000),
     )
     await asyncio.sleep(0.5)
@@ -69,3 +71,22 @@ async def test_set_mode(mocker):
     assert "Mod" in sent["pack"]["opt"] if "pack" in sent else True
     assert gree.power is True
     assert gree.mode == 4
+
+
+@pytest.mark.asyncio
+async def test_set_while_not_found(mocker):
+    # sets crashed with AttributeError while the device was not found
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("gree_climate")
+    from fhempy.lib.gree_climate.gree_climate import gree_climate
+
+    testhash = {"NAME": "testac", "FHEMPYTYPE": "gree_climate"}
+    device = gree_climate(logging.getLogger(__name__))
+    mocker.patch.object(device, "scan_devices", AsyncMock(return_value=None))
+    mocker.patch.object(device, "update_loop", AsyncMock())
+    await device.Define(testhash, ["testac", "fhempy", "gree_climate", "testac"], {})
+
+    for cmd in (["on"], ["mode", "Cool"], ["desiredTemp", "22"]):
+        ret = await device.Set(testhash, ["testac"] + cmd, {})
+        assert "Air conditioner not found yet" in ret
+    assert "on:noArg" in await device.Set(testhash, ["testac", "?"], {})
