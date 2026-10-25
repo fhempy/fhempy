@@ -10,6 +10,7 @@ UPD 2026-10-22_23:42:33 4444 www/fhempy/ble_monitor.png
 UPD 2026-10-22_23:42:33 452 www/fhempy/bluetooth.svg
 UPD 2026-10-22_23:42:33 7897 www/fhempy/bmw.png
 UPD 2026-10-22_23:42:33 4236 www/fhempy/discover_upnp.png
+UPD 2026-10-25_19:03:41 20110 www/fhempy/discovery.js
 UPD 2026-10-22_23:42:33 962 www/fhempy/dlna_dmr.svg
 UPD 2026-10-22_23:42:33 4649 www/fhempy/eq3bt.png
 UPD 2026-10-22_23:42:33 4728 www/fhempy/erelax_vaillant.png
@@ -27,8 +28,8 @@ UPD 2026-10-22_23:42:33 4646 www/fhempy/matter.png
 UPD 2026-10-22_23:42:33 1882 www/fhempy/mcp_server.png
 UPD 2026-10-22_23:42:33 1869 www/fhempy/meross.png
 UPD 2026-10-22_23:42:33 3849 www/fhempy/miio.png
-UPD 2026-10-23_11:53:09 17692 www/fhempy/modules.js
-UPD 2026-10-25_18:53:55 27729 www/fhempy/modules.json
+UPD 2026-10-25_19:03:41 18083 www/fhempy/modules.js
+UPD 2026-10-25_19:03:41 27327 www/fhempy/modules.json
 UPD 2026-10-22_23:42:33 6803 www/fhempy/mqtt_ha_discovery.png
 UPD 2026-10-22_23:42:33 3910 www/fhempy/nefit.png
 UPD 2026-10-22_23:42:33 1628 www/fhempy/nespresso_ble.png
