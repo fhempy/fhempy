@@ -157,8 +157,69 @@ class autodiscovery(generic.FhemModule):
             if scanner is not None and scanner.scanning:
                 ble += f" ({scanner.scanning})"
             await fhem.readingsBulkUpdateIfChanged(self.hash, "bluetooth", ble)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "bluetooth_warning", self.ble_warning() or "none"
+            )
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
+
+    def ble_warning(self):
+        """Text if the Bluetooth scan can't run passively, '' otherwise"""
+        scanner = self.engine.ble_scanner if self.engine else None
+        problem = scanner.passive_problem if scanner is not None else ""
+        if not problem:
+            return ""
+        # bleak is a requirement of this module, imported only when needed
+        from ..core import ble_scanner
+
+        if problem == ble_scanner.PASSIVE_NEEDS_EXPERIMENTAL:
+            return (
+                "BlueZ runs without --experimental, Bluetooth is scanned actively. "
+                "That disturbs WiFi and connected Bluetooth devices more."
+            )
+        if problem == ble_scanner.PASSIVE_NEEDS_KERNEL:
+            return (
+                "Linux kernel older than 5.10, Bluetooth is scanned actively. "
+                "Update the operating system to scan passively."
+            )
+        return ""
+
+    def ble_warning_html(self):
+        warning = self.ble_warning()
+        if not warning:
+            return ""
+        box = (
+            '<div style="margin:0 0 12px;padding:10px 14px;border-radius:10px;'
+            'border:1px solid #e0a000;background:rgba(224,160,0,0.12)">'
+            f"<b>&#9888; {html.escape(warning)}</b>"
+        )
+        from ..core import ble_scanner
+
+        if self.engine.ble_scanner.passive_problem != (
+            ble_scanner.PASSIVE_NEEDS_EXPERIMENTAL
+        ):
+            return box + "</div>"
+        command = ble_scanner.EXPERIMENTAL_COMMAND
+        copy = (
+            "var t=document.getElementById('fhempyBlueZCmd');t.select();"
+            "if(navigator.clipboard){navigator.clipboard.writeText(t.value)}"
+            "else{document.execCommand('copy')}"
+            "this.innerText='Copied';return false;"
+        )
+        return (
+            box
+            + "<div style='margin:6px 0'>Run this once in a terminal of the "
+            "Raspberry Pi, it starts BlueZ with --experimental, also after a "
+            "reboot. fhempy switches to the passive scan within an hour, or right "
+            "away after a restart of fhempy.</div>"
+            '<textarea id="fhempyBlueZCmd" readonly rows="4" '
+            'style="width:100%;box-sizing:border-box;font-family:monospace;'
+            'font-size:12px">'
+            f"{html.escape(command)}</textarea>"
+            f'<a href="#" onclick="{html.escape(copy)}" style="display:inline-block;'
+            "margin-top:6px;padding:3px 12px;border-radius:12px;background:#4B8BBE;"
+            'color:#fff;text-decoration:none">Copy command</a></div>'
+        )
 
     def popup_javascript(self, function, *args):
         params = ",".join(js_value(arg) for arg in (self.hash["NAME"], *args))
@@ -316,7 +377,11 @@ class autodiscovery(generic.FhemModule):
         ret = "".join(
             button.format(js=html.escape(js), text=text) for js, text in buttons
         )
-        return f'<div id="fhempyDiscoveryButtons">{ret}</div>' + str(detail)
+        return (
+            self.ble_warning_html()
+            + f'<div id="fhempyDiscoveryButtons">{ret}</div>'
+            + str(detail)
+        )
 
 
 def public(candidates):

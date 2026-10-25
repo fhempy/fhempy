@@ -131,3 +131,48 @@ async def test_active_scan_if_passive_scan_fails(ble_scanner, mocker):
     await scanner._scan(active=True, duration=0)
     assert [s.mode for s in scanners] == ["passive", "active"]
     assert scanner.scanning == "active"
+
+
+@pytest.mark.asyncio
+async def test_passive_problem(ble_scanner, mocker):
+    mocker.patch.object(ble_scanner.platform, "release", return_value="6.12.47")
+    experimental = (
+        "passive scanning on Linux requires BlueZ >= 5.56 with --experimental "
+        "enabled and Linux kernel >= 5.10"
+    )
+    assert ble_scanner.passive_problem(experimental) == "experimental"
+    assert ble_scanner.passive_problem("something else") == ""
+    mocker.patch.object(ble_scanner.platform, "release", return_value="5.4.83-v7l+")
+    assert ble_scanner.passive_problem(experimental) == "kernel"
+
+
+@pytest.mark.asyncio
+async def test_warning_and_passive_retry_after_bluez_fix(ble_scanner, mocker):
+    from bleak.exc import BleakError
+
+    mocker.patch.object(ble_scanner.platform, "release", return_value="6.12.47")
+    experimental = {"on": False}
+
+    class FakeBleakScanner:
+        def __init__(self, callback, scanning_mode="active", bluez=None):
+            self.mode = scanning_mode
+
+        async def start(self):
+            if self.mode == "passive" and not experimental["on"]:
+                raise BleakError("requires BlueZ >= 5.56 with --experimental")
+
+        async def stop(self):
+            return
+
+    mocker.patch.object(ble_scanner, "BleakScanner", FakeBleakScanner)
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    changes = []
+    scanner.add_state_callback(lambda: changes.append(scanner.passive_problem))
+    await scanner._scan(active=False, duration=0)
+    assert scanner.passive_problem == "experimental"
+    # the user ran the command, the next passive try works
+    experimental["on"] = True
+    scanner._passive_supported = True
+    await scanner._scan(active=False, duration=0)
+    assert scanner.passive_problem == ""
+    assert changes == ["experimental", ""]

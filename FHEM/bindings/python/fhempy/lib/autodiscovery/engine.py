@@ -268,6 +268,7 @@ class Engine:
                 return
             self._ble = scanner_module.BleScanner.get_instance(self.logger)
             self._ble.add_callback(self._ble_advertisement)
+            self._ble.add_state_callback(self._ble_state_changed)
         interval = self.frontends[0].ble_interval()
         if mode == "interval":
             self._ble.set_mode("interval", interval)
@@ -278,7 +279,11 @@ class Engine:
     def _stop_ble(self):
         if self._ble is not None:
             self._ble.remove_callback(self._ble_advertisement)
+            self._ble.remove_state_callback(self._ble_state_changed)
             self._ble = None
+
+    def _ble_state_changed(self):
+        self._run_later(self._notify_frontends())
 
     @property
     def ble_scanner(self):

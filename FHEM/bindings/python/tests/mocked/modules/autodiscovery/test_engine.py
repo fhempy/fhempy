@@ -1,3 +1,4 @@
+import html
 import asyncio
 import logging
 
@@ -231,3 +232,25 @@ async def test_failed_exists_check_is_retried(engine, mocker):
     with pytest.raises(ConnectionError):
         await engine.found(candidate, rule)
     assert engine.candidates == {}
+
+
+@pytest.mark.asyncio
+async def test_detail_page_shows_bluez_command(mocker):
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("autodiscovery")
+    from fhempy.lib.core import ble_scanner
+
+    device = autodiscovery(logging.getLogger(__name__))
+    device.engine = mocker.MagicMock()
+    device.engine.ble_scanner.passive_problem = ""
+    assert device.ble_warning_html() == ""
+    device.engine.ble_scanner.passive_problem = "experimental"
+    warning = device.ble_warning_html()
+    assert "--experimental" in device.ble_warning()
+    assert "Copy command" in warning
+    assert "fhempy-experimental.conf" in warning
+    assert html.escape(ble_scanner.EXPERIMENTAL_COMMAND) in warning
+    device.engine.ble_scanner.passive_problem = "kernel"
+    assert "Copy command" not in device.ble_warning_html()
