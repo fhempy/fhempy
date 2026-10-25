@@ -1,5 +1,6 @@
 {
   "requirements": [
+    "aiomqtt==1.2.1",
     "bleak==3.0.2"
   ],
   "installer": {

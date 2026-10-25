@@ -92,7 +92,7 @@ A `search()` reports devices with `ctx.found(ip=..., title=..., <key>=...)`, hel
 `await ctx.udp_broadcast(port, payload, wait)`, `await ctx.udp_listen(ports, wait)` and
 `await ctx.hostname(ip)`. Example: [goodwe/discovery.py](FHEM/bindings/python/fhempy/lib/goodwe/discovery.py).
 
-Modules which find devices themselves (e.g. mqtt_ha_discovery) offer them with
+Parts which find devices themselves (e.g. MQTT discovery in `autodiscovery/mqtt.py`) offer them with
 `Engine.running_instance().report(...)`.
 
 `python3 manifest2modules.py` also builds `lib/autodiscovery/discovery.json`.

@@ -24,6 +24,9 @@ class autodiscovery(generic.FhemModule):
         self._attr_ble = "continuous"
         self._attr_ble_interval = 300
         self._attr_notify = ""
+        self._attr_mqtt = "auto"
+        self._attr_mqtt_username = ""
+        self._attr_mqtt_password = ""
         self._search = {}
 
     @staticmethod
@@ -65,6 +68,20 @@ class autodiscovery(generic.FhemModule):
                     "default": "",
                     "help": "Name of a push device, new devices are also sent "
                     "to the phones.",
+                },
+                "mqtt": {
+                    "default": "auto",
+                    "help": "MQTT broker for Home Assistant MQTT discovery: auto "
+                    "(default: broker on this computer, brokers announced via "
+                    "mDNS and of mqtt_ha_discovery), off or host[:port].",
+                },
+                "mqtt_username": {
+                    "default": "",
+                    "help": "Username of the MQTT broker, if needed.",
+                },
+                "mqtt_password": {
+                    "default": "",
+                    "help": "Password of the MQTT broker, if needed.",
                 },
             }
         )
@@ -138,6 +155,9 @@ class autodiscovery(generic.FhemModule):
 
     def popup_enabled(self):
         return self._attr_popup == 1
+
+    def mqtt_settings(self):
+        return (self._attr_mqtt, self._attr_mqtt_username, self._attr_mqtt_password)
 
     async def candidates_changed(self):
         self.engine.forget_old()
@@ -254,6 +274,16 @@ class autodiscovery(generic.FhemModule):
 
     async def set_attr_ble_interval(self, hash):
         await self.set_attr_ble(hash)
+
+    async def set_attr_mqtt(self, hash):
+        if self.engine is not None and self.engine.running:
+            self.engine.update_mqtt()
+
+    async def set_attr_mqtt_username(self, hash):
+        await self.set_attr_mqtt(hash)
+
+    async def set_attr_mqtt_password(self, hash):
+        await self.set_attr_mqtt(hash)
 
     # --- set ---
 
