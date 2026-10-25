@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.10.0 (2026-10-25)
+
+### Features
+
+- Autodiscovery module ([#758](https://github.com/fhempy/fhempy/pull/758),
+  [`d1ebf35`](https://github.com/fhempy/fhempy/commit/d1ebf351c8d9b1afe954ea8b95dff5775da1fd3b))
+
+- Mantra_ble brightness and color temperature ([#759](https://github.com/fhempy/fhempy/pull/759),
+  [`b5e3fcb`](https://github.com/fhempy/fhempy/commit/b5e3fcb6c45fb2ffd226098efbff1eada9c43ded))
+
+- **push**: Messages of the last 7 days on the device page
+  ([#760](https://github.com/fhempy/fhempy/pull/760),
+  [`dd6dfc6`](https://github.com/fhempy/fhempy/commit/dd6dfc6cecae1f800258ac3e3c542889d629e67c))
+
+
 ## v2.9.1 (2026-10-25)
 
 ### Bug Fixes
