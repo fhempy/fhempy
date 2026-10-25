@@ -2,6 +2,73 @@
 
 <!-- version list -->
 
+## v2.9.1 (2026-10-25)
+
+### Bug Fixes
+
+- Release D-Bus connection after Bluetooth reconnect
+  ([#762](https://github.com/fhempy/fhempy/pull/762),
+  [`d2b6458`](https://github.com/fhempy/fhempy/commit/d2b645811271da6d59ad5174cf7cb14bbc2e4d32))
+
+
+## v2.9.0 (2026-10-24)
+
+### Bug Fixes
+
+- Dlna_dmr set commands while renderer is offline
+  ([#752](https://github.com/fhempy/fhempy/pull/752),
+  [`42e73a4`](https://github.com/fhempy/fhempy/commit/42e73a4c1e81b3b13df86d43bb3699f37375675a))
+
+- Erelax_vaillant set commands before login ([#756](https://github.com/fhempy/fhempy/pull/756),
+  [`9647dc9`](https://github.com/fhempy/fhempy/commit/9647dc9e28ba13d5bfd1b91a5b4037ee60562489))
+
+- Goodwe set operation_mode before inverter is connected
+  ([#754](https://github.com/fhempy/fhempy/pull/754),
+  [`ff3eca0`](https://github.com/fhempy/fhempy/commit/ff3eca0a88b43e22189e25675b3481e86032f418))
+
+- Googlecast set without connection, keep reconnect alive
+  ([#750](https://github.com/fhempy/fhempy/pull/750),
+  [`a739d5a`](https://github.com/fhempy/fhempy/commit/a739d5a741840b7886ff6337aa362c8f94bcfbf3))
+
+- Gree_climate set commands while air conditioner is not found
+  ([#753](https://github.com/fhempy/fhempy/pull/753),
+  [`9a5205d`](https://github.com/fhempy/fhempy/commit/9a5205d2016cb5b6ace8bbdb4af28fb989cd01af))
+
+- Kia_hyundai car commands before first update ([#751](https://github.com/fhempy/fhempy/pull/751),
+  [`73086a9`](https://github.com/fhempy/fhempy/commit/73086a9692e5a3a00be0bc9368dae98ad056d721))
+
+- Nefit set commands without connection ([#757](https://github.com/fhempy/fhempy/pull/757),
+  [`50b807a`](https://github.com/fhempy/fhempy/commit/50b807ad07bea2c335f66cb9d6c7146c58cec6c4))
+
+- Zappi set commands without connected zappi ([#755](https://github.com/fhempy/fhempy/pull/755),
+  [`fc054d2`](https://github.com/fhempy/fhempy/commit/fc054d210b0c45a6328f54eb693ed6ba93efb6b6))
+
+- **homekit**: Set commands for characteristics without description
+  ([#746](https://github.com/fhempy/fhempy/pull/746),
+  [`6a0e1d9`](https://github.com/fhempy/fhempy/commit/6a0e1d936eab6bb073342e1eb7e8d6b3c520ba6c))
+
+- **system_update**: Helper passes only apt's own package names to apt
+  ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+- **system_update**: SonarCloud findings ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+- **zigbee2mqtt**: Keep existing configuration.yaml on reinstall
+  ([#747](https://github.com/fhempy/fhempy/pull/747),
+  [`9a93fcf`](https://github.com/fhempy/fhempy/commit/9a93fcf53dfc2caa269976c937e22f44cf0a9a7f))
+
+- **zigbee2mqtt**: Write default configuration outside the event loop
+  ([#747](https://github.com/fhempy/fhempy/pull/747),
+  [`9a93fcf`](https://github.com/fhempy/fhempy/commit/9a93fcf53dfc2caa269976c937e22f44cf0a9a7f))
+
+### Features
+
+- **system_update**: New module keeps the Raspberry Pi up to date safely
+  ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+
 ## v2.8.1 (2026-10-23)
 
 

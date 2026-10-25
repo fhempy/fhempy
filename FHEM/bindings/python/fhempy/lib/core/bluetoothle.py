@@ -354,6 +354,8 @@ class BluetoothLE:
                     self._dev_hash, "rssi", self._rssi, 1
                 )
 
+                # a client left over from a failed attempt
+                await self._release_client(self._client)
                 self._client = BleakClient(
                     self._device,
                     disconnected_callback=self._disconnect_callback,
@@ -471,8 +473,7 @@ class BluetoothLE:
         if self.connection_task:
             self.connection_task.cancel()
 
-        if self._client and self._client.is_connected:
-            await self._client.disconnect()
+        await self._release_client(self._client)
 
     def _disconnect_callback(self, client: BleakClient):
         self.connected.clear()
@@ -483,14 +484,31 @@ class BluetoothLE:
         if self.disconnect_listener:
             await self.disconnect_listener(client)
 
-        self._client = None
-        self._device = None
+        await self._release_client(client)
+        # a reconnect might already have created a new client
+        if self._client is client:
+            self._client = None
+            self._device = None
 
         if not self._disconnect_called:
             self.logger.error("Device disconnected, reconnect now")
             await self.connect()
         else:
             self.logger.info("Device disconnected")
+
+    async def _release_client(self, client: BleakClient):
+        """
+        Bleak opens a D-Bus connection per client and closes it only in
+        disconnect(), not when the device disconnects by itself. Without
+        this every reconnect leaks one D-Bus connection (#761).
+        """
+        if client is None:
+            return
+        try:
+            async with asyncio.timeout(15):
+                await client.disconnect()
+        except Exception:
+            self.logger.debug("Failed to release Bluetooth client", exc_info=True)
 
     @property
     def is_connected(self) -> bool:
