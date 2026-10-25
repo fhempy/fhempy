@@ -78,5 +78,12 @@
         ]
       }
     ]
+  },
+  "discovery": {
+    "search": true,
+    "title": "{title}",
+    "unique": "{id}",
+    "action": "installer",
+    "hint": "Tuya devices need the keys of your Tuya account: set up Tuya once, it finds all devices then."
   }
 }

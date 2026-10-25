@@ -14,7 +14,7 @@ from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
-from ..discover_upnp.discover_upnp import ssdp
+from ..core.ssdp import ssdp
 
 DEFAULT_LISTEN_PORT = 8301
 

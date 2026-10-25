@@ -15,5 +15,18 @@
         "type": "mac"
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name": "MJ_HT_V1"
+      }
+    ],
+    "title": "Temperature sensor",
+    "name": "temperature",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ]
   }
 }

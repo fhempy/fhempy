@@ -16,7 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
-from . import bt_recovery
+from . import ble_scanner, bt_recovery
 from .bt_pairing_state import PairingState
 
 # wait time after a failed pairing attempt
@@ -170,6 +170,13 @@ class BluetoothLE:
         self._device = None
         self._rssi = None
         adapter_working = False
+
+        # the shared scan of autodiscovery saw the device a moment ago
+        scanner = ble_scanner.BleScanner.running_instance()
+        recent = scanner.recent_device(self.addr) if scanner else None
+        if recent is not None and ble_scanner.seen_by(recent[0], adapter):
+            self._device, self._rssi = recent
+            return True
 
         def match_address(device, adv):
             nonlocal adapter_working
@@ -356,7 +363,9 @@ class BluetoothLE:
                     bluez=self._bluez_args(adapter),
                 )
                 try:
-                    await self._client.connect()
+                    # some adapters can't scan and connect at the same time
+                    async with ble_scanner.paused():
+                        await self._client.connect()
                 except BleakError:
                     self.logger.exception("Failed to connect")
                 except asyncio.TimeoutError:
@@ -405,6 +414,9 @@ class BluetoothLE:
             adapter, self.adapter_details[adapter]["address"]
         )
         if result:
+            scanner = ble_scanner.BleScanner.running_instance()
+            if scanner is not None:
+                scanner.adapter_recovered()
             await fhem.readingsSingleUpdate(
                 self._dev_hash, "connection_recovery", f"{adapter} {result}", 1
             )

@@ -14,5 +14,14 @@
         "type": "ip"
       }
     ]
+  },
+  "discovery": {
+    "search": true,
+    "title": "{title}",
+    "unique": "{mac}",
+    "exists": "{ip}",
+    "define": [
+      "{ip}"
+    ]
   }
 }

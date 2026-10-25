@@ -1,0 +1,468 @@
+[
+ {
+  "module": "ble_monitor",
+  "title": "BLE monitor",
+  "name": "ble_sensor",
+  "logo": "ble_monitor.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "manufacturer_id": 220
+     },
+     {
+      "name": "LYWSD03MMC"
+     },
+     {
+      "name_prefix": [
+       "GVH5",
+       "Govee_"
+      ]
+     }
+    ],
+    "title": "{name}",
+    "name": "ble_sensor",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "E.g. Oral-B toothbrushes only send while they are used."
+   }
+  ]
+ },
+ {
+  "module": "dlna_dmr",
+  "title": "DLNA renderer",
+  "name": "dlna",
+  "logo": "dlna_dmr.svg",
+  "rules": [
+   {
+    "ssdp": [
+     {
+      "device_type": "urn:schemas-upnp-org:device:MediaRenderer:1"
+     }
+    ],
+    "title": "{friendly_name}",
+    "model": "{manufacturer} {model_name}",
+    "unique": "{udn}",
+    "define": [
+     "{udn}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "eq3bt",
+  "title": "eQ-3 thermostat",
+  "name": "thermostat",
+  "logo": "eq3bt.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name_prefix": [
+       "CC-RT-BLE",
+       "CC-RT-M-BLE"
+      ]
+     }
+    ],
+    "title": "Radiator thermostat",
+    "name": "thermostat",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "params": [
+     {
+      "label": "PIN",
+      "help": "Only for eqiva thermostats with pairing PIN",
+      "optional": true
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "module": "gfprobt",
+  "title": "GF Pro irrigation",
+  "name": "irrigation",
+  "logo": "bluetooth.svg",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name": "GfBT Project"
+     }
+    ],
+    "title": "GF Pro irrigation",
+    "name": "irrigation",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "goodwe",
+  "title": "GoodWe",
+  "name": "goodwe",
+  "logo": "goodwe.png",
+  "rules": [
+   {
+    "search": true,
+    "title": "{title}",
+    "unique": "{mac}",
+    "exists": "{ip}",
+    "define": [
+     "{ip}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "googlecast",
+  "title": "Google Cast",
+  "name": "cast",
+  "logo": "googlecast.png",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_googlecast._tcp.local."
+     }
+    ],
+    "title": "{txt.fn}",
+    "model": "{txt.md}",
+    "unique": "{txt.id}",
+    "exists": "{txt.fn}",
+    "define": [
+     "{txt.fn}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "gree_climate",
+  "title": "Gree air conditioner",
+  "name": "gree",
+  "logo": "gree_climate.png",
+  "rules": [
+   {
+    "search": true,
+    "title": "{name}",
+    "unique": "{mac}",
+    "exists": "{name}",
+    "define": [
+     "{name}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "homekit",
+  "title": "HomeKit devices",
+  "name": "homekit",
+  "logo": "homekit.png",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_hap._tcp.local.",
+      "txt": {
+       "sf": "1"
+      }
+     },
+     {
+      "type": "_hap._udp.local.",
+      "txt": {
+       "sf": "1"
+      }
+     }
+    ],
+    "title": "{name}",
+    "model": "{txt.md}",
+    "unique": "{txt.id}",
+    "define": [
+     "{txt.id}"
+    ],
+    "params": [
+     {
+      "label": "Setup code",
+      "placeholder": "123-45-678",
+      "help": "HomeKit code printed on the device or its box"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "module": "matter",
+  "title": "Matter",
+  "name": "matter",
+  "logo": "matter.png",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_matterc._udp.local."
+     }
+    ],
+    "title": "{txt.DN}",
+    "unique": "{name}",
+    "exists": false,
+    "action": "set",
+    "set": {
+     "device": "matter",
+     "command": "pair",
+     "name": "matter"
+    },
+    "params": [
+     {
+      "label": "Pairing code",
+      "placeholder": "3497-011-2332",
+      "help": "11 digit code or text of the QR code (MT:...), printed on the device or from 'share device' in Apple/Google Home"
+     }
+    ],
+    "hint": "The device is in pairing mode."
+   },
+   {
+    "ble": [
+     {
+      "service_uuid": "0000fff6-0000-1000-8000-00805f9b34fb"
+     }
+    ],
+    "title": "New Matter device",
+    "unique": "{address}",
+    "exists": false,
+    "action": "set",
+    "set": {
+     "device": "matter",
+     "command": "pair_new_device",
+     "name": "matter"
+    },
+    "params": [
+     {
+      "label": "Pairing code",
+      "placeholder": "3497-011-2332",
+      "help": "11 digit code or text of the QR code (MT:...) printed on the device or its box"
+     }
+    ],
+    "hint": "Brand-new device, pairing uses Bluetooth (attribute bluetooth_adapter of the matter device)."
+   }
+  ]
+ },
+ {
+  "module": "miflora",
+  "title": "Xiaomi plant sensor",
+  "name": "mi_plant",
+  "logo": "xiaomi.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name": "Flower care"
+     },
+     {
+      "name": "Flower mate"
+     }
+    ],
+    "title": "Plant sensor",
+    "name": "plant",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "miio",
+  "title": "Xiaomi WiFi",
+  "name": "xiaomi",
+  "logo": "miio.png",
+  "rules": [
+   {
+    "search": true,
+    "title": "{title}",
+    "unique": "{id}",
+    "exists": "{ip}",
+    "action": "installer",
+    "prefill": {
+     "1": "{ip}"
+    },
+    "hint": "Xiaomi devices need their token, the module xiaomi_tokens gets it from your Xiaomi account."
+   }
+  ]
+ },
+ {
+  "module": "miscale",
+  "title": "Xiaomi scale",
+  "name": "mi_scale",
+  "logo": "xiaomi.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name": "MI_SCALE"
+     },
+     {
+      "name": "MIBCS"
+     },
+     {
+      "name": "MIBFS"
+     }
+    ],
+    "title": "Mi Scale",
+    "name": "scale",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "Scales only send while somebody stands on them."
+   }
+  ]
+ },
+ {
+  "module": "mitemp",
+  "title": "Xiaomi temperature sensor",
+  "name": "mi_temp",
+  "logo": "xiaomi.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name": "MJ_HT_V1"
+     }
+    ],
+    "title": "Temperature sensor",
+    "name": "temperature",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "mqtt_ha_discovery",
+  "title": "MQTT discovery",
+  "name": "mqtt_ha",
+  "logo": "mqtt_ha_discovery.png",
+  "rules": [
+   {
+    "search": true,
+    "single": true,
+    "title": "MQTT devices",
+    "hint": "A MQTT broker runs on this computer. MQTT discovery offers the devices of ESPHome, Zigbee2MQTT, Tasmota... found there."
+   },
+   {
+    "mdns": [
+     {
+      "type": "_mqtt._tcp.local."
+     }
+    ],
+    "single": true,
+    "title": "MQTT devices",
+    "define": [
+     "{ip}",
+     "{port}"
+    ],
+    "params": [
+     {
+      "label": "Username",
+      "optional": true
+     },
+     {
+      "label": "Password",
+      "optional": true,
+      "secret": true
+     }
+    ],
+    "hint": "A MQTT broker was found in the network. MQTT discovery offers the devices of ESPHome, Zigbee2MQTT, Tasmota... found there."
+   }
+  ]
+ },
+ {
+  "module": "nespresso_ble",
+  "title": "Nespresso",
+  "name": "nespresso",
+  "logo": "nespresso_ble.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name_prefix": "Expert_"
+     }
+    ],
+    "title": "{name}",
+    "name": "nespresso",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ]
+   }
+  ]
+ },
+ {
+  "module": "scooter",
+  "title": "Xiaomi / Ninebot scooter",
+  "name": "my_scooter",
+  "logo": "xiaomi.png",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name_prefix": [
+       "MIScooter",
+       "NBScooter"
+      ]
+     },
+     {
+      "manufacturer_id": 16974
+     }
+    ],
+    "title": "{name}",
+    "name": "scooter",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "Press the power button of the scooter when it beeps, this pairs it once."
+   }
+  ]
+ },
+ {
+  "module": "spotify",
+  "title": "Spotify",
+  "name": "spotify",
+  "logo": "spotify.png",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_spotify-connect._tcp.local."
+     }
+    ],
+    "single": true,
+    "title": "Spotify",
+    "hint": "A Spotify Connect speaker was found. The Spotify module asks for your Spotify login afterwards."
+   }
+  ]
+ },
+ {
+  "module": "tuya",
+  "title": "Tuya local",
+  "name": "tuya_local",
+  "logo": "tuya.png",
+  "rules": [
+   {
+    "search": true,
+    "title": "{title}",
+    "unique": "{id}",
+    "action": "installer",
+    "hint": "Tuya devices need the keys of your Tuya account: set up Tuya once, it finds all devices then."
+   }
+  ]
+ }
+]

@@ -1,0 +1,14 @@
+{
+  "requirements": [
+    "bleak==3.0.2"
+  ],
+  "installer": {
+    "title": "Autodiscovery",
+    "description": "Finds devices in your network and via Bluetooth and offers to set them up, also residents and their phones",
+    "category": "presence",
+    "order": 5,
+    "name": "fhempy_discovery",
+    "single": true,
+    "icon": "🔍"
+  }
+}

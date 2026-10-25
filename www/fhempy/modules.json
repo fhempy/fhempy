@@ -1,5 +1,14 @@
 [
  {
+  "id": "autodiscovery",
+  "title": "Autodiscovery",
+  "description": "Finds devices in your network and via Bluetooth and offers to set them up, also residents and their phones",
+  "category": "presence",
+  "name": "fhempy_discovery",
+  "single": true,
+  "icon": "🔍"
+ },
+ {
   "id": "remote_access",
   "title": "Remote access",
   "description": "Open FHEM on your phone from anywhere, without VPN app and router setup (free Tailscale account)",
@@ -112,15 +121,6 @@
   ]
  },
  {
-  "id": "discover_ble",
-  "title": "Discover Bluetooth",
-  "description": "Lists the Bluetooth LE devices nearby",
-  "category": "presence",
-  "name": "discover_ble",
-  "single": true,
-  "logo": "bluetooth.svg"
- },
- {
   "id": "eq3bt",
   "title": "eQ-3 thermostat",
   "description": "Control EQ3 Bluetooth radiator thermostats",
@@ -131,7 +131,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    },
    {
     "label": "PIN",
@@ -261,23 +261,14 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
  {
-  "id": "discover_mdns",
-  "title": "Discover mDNS",
-  "description": "Finds mDNS devices (e.g. Google Cast) in your network",
-  "category": "presence",
-  "name": "discover_mdns",
-  "single": true,
-  "icon": "🔎"
- },
- {
   "id": "dlna_dmr",
   "title": "DLNA renderer",
-  "description": "Control DLNA MediaRenderer devices, discover_upnp creates them on its own",
+  "description": "Control DLNA MediaRenderer devices, autodiscovery finds them on its own",
   "category": "media",
   "name": "dlna",
   "logo": "dlna_dmr.svg",
@@ -285,7 +276,7 @@
    {
     "label": "UDN",
     "placeholder": "uuid:...",
-    "help": "Unique device name, shown by discover_upnp"
+    "help": "Unique device name, autodiscovery fills it in"
    }
   ]
  },
@@ -375,15 +366,6 @@
   "icon": "🔄"
  },
  {
-  "id": "discover_upnp",
-  "title": "Discover UPnP",
-  "description": "Finds UPnP devices in your network",
-  "category": "presence",
-  "name": "discover_upnp",
-  "single": true,
-  "logo": "discover_upnp.png"
- },
- {
   "id": "esphome",
   "title": "ESPHome",
   "description": "Installs and starts the ESPHome dashboard for easy ESPHome device management",
@@ -450,7 +432,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -545,7 +527,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -715,7 +697,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -730,7 +712,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address of the tag. Easier: 'Add Bluetooth tag' of autodiscovery finds the tag held next to the Raspberry Pi."
    }
   ]
  },
@@ -832,7 +814,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -846,7 +828,7 @@
   "params": [
    {
     "label": "HomeKit ID",
-    "help": "Device ID shown by the module discover_mdns"
+    "help": "Device ID, autodiscovery fills it in"
    },
    {
     "label": "Setup code",
@@ -899,7 +881,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -1008,7 +990,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -1052,7 +1034,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    },
    {
     "label": "Auth code",
