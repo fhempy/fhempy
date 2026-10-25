@@ -26,7 +26,7 @@ self.addEventListener("push", function (event) {
     body: msg.body || "",
     icon: fhemRoot() + "/images/default/fhemicon_ios.png",
     tag: msg.tag,
-    data: { url: msg.url || "", dev: msg.dev || "" },
+    data: { url: msg.url || "", dev: msg.dev || "", id: msg.tag || "" },
     timestamp: Date.now()
   };
   if (msg.image) options.image = msg.image;
@@ -80,5 +80,8 @@ self.addEventListener("notificationclick", function (event) {
     event.waitUntil(runAction(data.dev, event.action));
     return;
   }
-  event.waitUntil(openPage(data.url || fhemRoot()));
+  /* without url: the list of messages, this one highlighted */
+  var url = data.url || (data.dev ? fhemRoot() + "?detail=" + encodeURIComponent(data.dev) +
+    "#fhempy_push_msg=" + encodeURIComponent(data.id || "") : fhemRoot());
+  event.waitUntil(openPage(url));
 });
