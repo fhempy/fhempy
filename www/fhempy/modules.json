@@ -1099,11 +1099,11 @@
  },
  {
   "id": "mantra_ble",
-  "title": "mAntra ceiling fan",
-  "description": "mAntra ceiling fan lamps",
+  "title": "mAntra lighting",
+  "description": "Control mAntra ceiling fan lamps via BLE",
   "category": "bt",
   "name": "fan",
-  "logo": "bluetooth.svg",
+  "logo": "mantra.png",
   "params": [
    {
     "label": "Lamp ID",
