@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.9.1 (2026-10-25)
+
+### Bug Fixes
+
+- Release D-Bus connection after Bluetooth reconnect
+  ([#762](https://github.com/fhempy/fhempy/pull/762),
+  [`d2b6458`](https://github.com/fhempy/fhempy/commit/d2b645811271da6d59ad5174cf7cb14bbc2e4d32))
+
+
 ## v2.9.0 (2026-10-24)
 
 ### Bug Fixes
