@@ -86,6 +86,7 @@ class mantra_ble(generic.FhemModule):
         self.lamp_id = None
         self.codec = CODECS[0]
         self.conf = BleAdvConfig()
+        self._tx_lock = asyncio.Lock()
 
     @staticmethod
     def validate_define(args, argsh):
@@ -180,8 +181,11 @@ class mantra_ble(generic.FhemModule):
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "off")
         await fhem.readingsBulkUpdateIfChanged(hash, "light", "off")
         await fhem.readingsBulkUpdateIfChanged(hash, "fan", "off")
-        await fhem.readingsBulkUpdateIfChanged(hash, "brightness", 100)
-        await fhem.readingsBulkUpdateIfChanged(hash, "ct", 4000)
+        # Keep the last brightness/color temperature across restarts
+        if await fhem.ReadingsVal(device_name, "brightness", "") == "":
+            await fhem.readingsBulkUpdateIfChanged(hash, "brightness", 100)
+        if await fhem.ReadingsVal(device_name, "ct", "") == "":
+            await fhem.readingsBulkUpdateIfChanged(hash, "ct", 4000)
         await fhem.readingsEndUpdate(hash, 1)
 
     # -------------------------------------------------------------------------
@@ -312,7 +316,15 @@ class mantra_ble(generic.FhemModule):
         await self._transmit_ble(enc_cmd, duration=duration)
 
     async def _transmit_ble(self, enc_cmd, duration=0.35):
-        """Builds the BLE payload and executes hcitool asynchronously."""
+        """Builds the BLE payload and executes hcitool asynchronously.
+
+        Serialized by a lock, otherwise overlapping sends (e.g. slider moves)
+        would mix up the advertising data of two commands on hci0.
+        """
+        async with self._tx_lock:
+            await self._transmit_ble_locked(enc_cmd, duration)
+
+    async def _transmit_ble_locked(self, enc_cmd, duration):
         self.conf.tx_count = int(time.time() * 10) % 65535
 
         adv_list = self.codec.encode_advs(enc_cmd, self.conf)
