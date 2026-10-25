@@ -22,11 +22,28 @@ Found are:
 
 | How | Devices |
 |-----|---------|
-| mDNS | Google Cast, HomeKit (not paired yet), Spotify Connect, Matter (commissioning mode), MQTT broker |
+| mDNS | Google Cast, HomeKit (not paired yet), Spotify Connect, Matter (commissioning mode) |
 | UPnP | DLNA media renderers |
 | Bluetooth | eQ-3 thermostats, Nespresso, Xiaomi/Ninebot scooters, Mi Flora, Mi thermometers, Mi scales, Oral-B toothbrushes, Govee, Matter devices to pair |
-| Search | Tuya, Gree air conditioners, Xiaomi WiFi devices (miio), GoodWe inverters, local MQTT broker |
-| mqtt_ha_discovery | New Zigbee2MQTT/Tasmota/... devices, while `fhempy_discovery` runs |
+| Search | Tuya, Gree air conditioners, Xiaomi WiFi devices (miio), GoodWe inverters |
+| MQTT | Every ESPHome/Zigbee2MQTT/Tasmota/... device which sends Home Assistant MQTT discovery |
+
+## MQTT devices
+
+autodiscovery listens for Home Assistant MQTT discovery messages (`homeassistant/#`) on
+
+- the broker on this computer (port 1883, e.g. Mosquitto or the MQTT2_SERVER of FHEM),
+- brokers announced via mDNS (`_mqtt._tcp`),
+- the broker of a `mqtt_ha_discovery` device, if you have one.
+
+Each new device is offered on its own, *Create* defines a MQTT2_DEVICE with
+`readingList` and `setList` (switch, light, sensor). *Create all* doesn't create MQTT
+devices. If FHEM itself isn't connected to the broker yet (no MQTT2_SERVER on that port,
+no MQTT2_CLIENT), a MQTT2_CLIENT `mqtt_broker` is created first, with `autocreate no`.
+After connecting, autodiscovery sends `online` to `homeassistant/status`, like Home
+Assistant does, so the devices send their discovery messages again.
+
+Zigbee2MQTT needs `homeassistant: true` in its configuration.yaml to send them.
 
 ## Residents
 
@@ -64,6 +81,8 @@ Pi, it starts BlueZ with `--experimental`, also after a reboot.
 | `ble` | continuous | `interval`: scan every `ble_interval` seconds, `off`: no Bluetooth |
 | `ble_interval` | 300 | Seconds between two scans with `ble interval` |
 | `notify` | | Name of a push device, found devices are also sent to your phone |
+| `mqtt` | auto | MQTT broker for MQTT devices: `auto`, `off` or `host[:port]` |
+| `mqtt_username`, `mqtt_password` | | Login of the MQTT broker, if needed |
 | `disable` | 0 | 1: stops all searches |
 
 ## Set / Get

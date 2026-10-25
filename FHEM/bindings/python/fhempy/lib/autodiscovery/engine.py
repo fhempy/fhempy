@@ -6,6 +6,7 @@ fhempy instance.
 - SSDP: advertisements are received right away, a search runs every 10min
 - Bluetooth LE: the shared scan of core/ble_scanner, only if bleak works
 - search(): discovery.py of the modules, every 10 minutes one after another
+- MQTT: Home Assistant discovery messages on the brokers found, see mqtt.py
 
 A found device which doesn't exist in FHEM yet is shown in a popup on every
 open FHEMWEB page, never created on its own. Ignored and already shown
@@ -28,6 +29,8 @@ from ..core.ssdp import ssdp
 from ..core.zeroconf import zeroconf
 from . import catalog
 from .context import SearchContext
+from .mqtt import MDNS_TYPE as MQTT_MDNS_TYPE
+from .mqtt import MqttDiscovery
 
 KEY = "fhempy_autodiscovery"
 SEARCH_INTERVAL = 600
@@ -98,6 +101,7 @@ class Engine:
         self._background = set()
         self.ble_state = "off"
         self.running = False
+        self.mqtt = MqttDiscovery(self)
 
     # --- frontends: the autodiscovery devices in FHEM ---
 
@@ -136,9 +140,18 @@ class Engine:
         self._tasks.append(asyncio.create_task(self._ssdp_loop()))
         self._tasks.append(asyncio.create_task(self._search_loop()))
         await self.update_ble()
+        self.update_mqtt()
+
+    def update_mqtt(self):
+        """Starts or restarts MQTT discovery (attributes mqtt...)"""
+        if self.frontends and hasattr(self.frontends[0], "mqtt_settings"):
+            self.mqtt.configure(*self.frontends[0].mqtt_settings())
+        else:
+            self.mqtt.configure()
 
     async def stop(self):
         self.running = False
+        self.mqtt.stop()
         for task in self._tasks:
             task.cancel()
         self._tasks = []
@@ -178,9 +191,7 @@ class Engine:
     # --- mDNS ---
 
     async def _start_mdns(self):
-        types = catalog.mdns_types(self.catalog)
-        if not types:
-            return
+        types = sorted(set(catalog.mdns_types(self.catalog)) | {MQTT_MDNS_TYPE})
         try:
             self._zeroconf = zeroconf.get_instance(self.logger).get_async_zeroconf()
             self._browser = AsyncServiceBrowser(self._zeroconf.zeroconf, types, self)
@@ -214,6 +225,8 @@ class Engine:
         except Exception:
             self.logger.debug(f"No service info for {name}", exc_info=True)
             return
+        if service_type == MQTT_MDNS_TYPE:
+            self.mqtt.found_broker(values["ip"], values["port"])
         for entry, rule in catalog.match_mdns(self.catalog, service_type, values):
             await self.found(catalog.candidate(entry, rule, values, "mdns"), rule)
 
@@ -352,8 +365,10 @@ class Engine:
 
     # --- devices found by other modules ---
 
-    async def report(self, module, unique, title, kind, create, model="", hint=""):
-        """Other modules offer devices they found, e.g. mqtt_ha_discovery.
+    async def report(
+        self, module, unique, title, kind, create, model="", hint="", logo=""
+    ):
+        """Devices found by other parts, e.g. MQTT discovery (mqtt.py).
         create: coroutine function called on a click on Create, returns an
         error text or ''."""
         entry = next((e for e in self.catalog if e["module"] == module), {})
@@ -377,6 +392,8 @@ class Engine:
         for key in ("logo", "icon"):
             if entry.get(key):
                 candidate[key] = entry[key]
+        if logo:
+            candidate["logo"] = logo
         await self.found(candidate, {"exists": False})
 
     # --- found devices ---

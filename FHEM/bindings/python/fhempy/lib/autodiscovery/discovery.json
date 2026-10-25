@@ -345,45 +345,6 @@
   ]
  },
  {
-  "module": "mqtt_ha_discovery",
-  "title": "MQTT discovery",
-  "name": "mqtt_ha",
-  "logo": "mqtt_ha_discovery.png",
-  "rules": [
-   {
-    "search": true,
-    "single": true,
-    "title": "MQTT devices",
-    "hint": "A MQTT broker runs on this computer. MQTT discovery offers the devices of ESPHome, Zigbee2MQTT, Tasmota... found there."
-   },
-   {
-    "mdns": [
-     {
-      "type": "_mqtt._tcp.local."
-     }
-    ],
-    "single": true,
-    "title": "MQTT devices",
-    "define": [
-     "{ip}",
-     "{port}"
-    ],
-    "params": [
-     {
-      "label": "Username",
-      "optional": true
-     },
-     {
-      "label": "Password",
-      "optional": true,
-      "secret": true
-     }
-    ],
-    "hint": "A MQTT broker was found in the network. MQTT discovery offers the devices of ESPHome, Zigbee2MQTT, Tasmota... found there."
-   }
-  ]
- },
- {
   "module": "nespresso_ble",
   "title": "Nespresso",
   "name": "nespresso",
