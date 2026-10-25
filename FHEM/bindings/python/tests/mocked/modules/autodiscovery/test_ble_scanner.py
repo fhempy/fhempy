@@ -100,3 +100,34 @@ async def test_find_tag(mocker, adverts, expected):
     mocker.patch.object(residents, "used_addresses", side_effect=used)
     tag = await residents.find_tag({}, FakeScanner(adverts), seconds=0)
     assert (tag and tag["address"]) == expected
+
+
+@pytest.mark.asyncio
+async def test_active_scan_if_passive_scan_fails(ble_scanner, mocker):
+    # BlueZ without --experimental
+    from bleak.exc import BleakError
+
+    scanners = []
+
+    class FakeBleakScanner:
+        def __init__(self, callback, scanning_mode="active", bluez=None):
+            self.mode = scanning_mode
+            scanners.append(self)
+
+        async def start(self):
+            if self.mode == "passive":
+                raise BleakError(
+                    "passive scanning on Linux requires BlueZ >= 5.56 with "
+                    "--experimental enabled and Linux kernel >= 5.10"
+                )
+
+        async def stop(self):
+            return
+
+    mocker.patch.object(ble_scanner, "BleakScanner", FakeBleakScanner)
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    await scanner._scan(active=False, duration=0)
+    assert scanner._passive_supported is False
+    await scanner._scan(active=True, duration=0)
+    assert [s.mode for s in scanners] == ["passive", "active"]
+    assert scanner.scanning == "active"

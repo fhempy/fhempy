@@ -43,7 +43,7 @@ RECENT_MAX_AGE = 60
 def _passive_args():
     """BlueZ advertisement monitor patterns matching (nearly) all devices."""
     from bleak.assigned_numbers import AdvertisementDataType
-    from bleak.backends.bluezdbus.advertisement_monitor import OrPattern
+    from bleak.args.bluez import OrPattern
 
     return {
         "or_patterns": [
@@ -215,9 +215,9 @@ class BleScanner:
         try:
             await scanner.start()
         except BleakError as exc:
-            if not active and "AdvertisementMonitor" in str(exc):
-                # BlueZ without experimental features, scan actively
-                self.logger.info("Passive Bluetooth scan not supported, scan active")
+            if not active:
+                # e.g. BlueZ without --experimental or an old kernel
+                self.logger.info(f"Passive Bluetooth scan not possible ({exc}), scan active")
                 self._passive_supported = False
                 return
             raise

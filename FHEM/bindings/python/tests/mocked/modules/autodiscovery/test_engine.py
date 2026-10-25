@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import pytest
@@ -194,3 +195,39 @@ def test_define_arg():
     assert define_arg("abc") == "abc"
     assert define_arg("Living Room") == '"Living Room"'
     assert define_arg('a"b') == '"a\\"b"'
+
+
+@pytest.mark.asyncio
+async def test_frontend_update_while_checking_if_device_exists(engine, mocker):
+    # the frontend reads the candidates while FHEM answers the exists check
+    started = asyncio.Event()
+    answer = asyncio.Event()
+
+    async def send(hash, cmd):
+        if "return 0" in cmd:
+            started.set()
+            await answer.wait()
+            return "0"
+        return ""
+
+    mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
+    candidate, rule = cast_candidate(engine)
+    engine.shown.add(candidate["id"])
+    task = asyncio.create_task(engine.found(candidate, rule))
+    await started.wait()
+    assert engine.open_candidates() == []
+    answer.set()
+    await task
+    assert [c["id"] for c in engine.open_candidates()] == [candidate["id"]]
+
+
+@pytest.mark.asyncio
+async def test_failed_exists_check_is_retried(engine, mocker):
+    async def send(hash, cmd):
+        raise ConnectionError("FHEM gone")
+
+    mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
+    candidate, rule = cast_candidate(engine)
+    with pytest.raises(ConnectionError):
+        await engine.found(candidate, rule)
+    assert engine.candidates == {}
