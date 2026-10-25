@@ -22,12 +22,13 @@ UPD 2026-10-22_23:42:33 3888 www/fhempy/gree_climate.png
 UPD 2026-10-22_23:42:33 5017 www/fhempy/homekit.png
 UPD 2026-10-22_23:42:33 8593 www/fhempy/huawei_modbus.png
 UPD 2026-10-22_23:42:33 5775 www/fhempy/kia_hyundai.png
+UPD 2026-10-25_18:53:55 11544 www/fhempy/mantra.png
 UPD 2026-10-22_23:42:33 4646 www/fhempy/matter.png
 UPD 2026-10-22_23:42:33 1882 www/fhempy/mcp_server.png
 UPD 2026-10-22_23:42:33 1869 www/fhempy/meross.png
 UPD 2026-10-22_23:42:33 3849 www/fhempy/miio.png
 UPD 2026-10-23_11:53:09 17692 www/fhempy/modules.js
-UPD 2026-10-24_20:57:41 27719 www/fhempy/modules.json
+UPD 2026-10-25_18:53:55 27729 www/fhempy/modules.json
 UPD 2026-10-22_23:42:33 6803 www/fhempy/mqtt_ha_discovery.png
 UPD 2026-10-22_23:42:33 3910 www/fhempy/nefit.png
 UPD 2026-10-22_23:42:33 1628 www/fhempy/nespresso_ble.png
@@ -35,9 +36,9 @@ UPD 2026-10-22_23:42:33 275 www/fhempy/object_detection.svg
 UPD 2026-10-22_23:42:33 11027 www/fhempy/openmeteo_weather.png
 UPD 2026-10-22_23:42:33 8526 www/fhempy/piclock.png
 UPD 2026-10-22_23:42:33 3402 www/fhempy/prusalink.png
-UPD 2026-10-23_22:14:24 14505 www/fhempy/push.js
+UPD 2026-10-25_18:55:02 25292 www/fhempy/push.js
 UPD 2026-10-23_22:14:24 238 www/fhempy/push_manifest.json
-UPD 2026-10-23_22:14:24 3096 www/fhempy/push_sw.js
+UPD 2026-10-25_18:55:02 3328 www/fhempy/push_sw.js
 UPD 2026-10-22_23:42:33 7223 www/fhempy/pyit600.png
 UPD 2026-10-22_23:42:33 6531 www/fhempy/rct_power.png
 UPD 2026-10-22_23:42:33 4899 www/fhempy/ring.png
