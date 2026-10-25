@@ -51,6 +51,11 @@ All Bluetooth modules share one scan, it runs passively where possible and stops
 a module connects to a device. If the adapter has problems the scan falls back to 10
 seconds every 5 minutes for one hour.
 
+The passive scan needs BlueZ with `--experimental` (and Linux 5.10 or newer). Without
+it the scan runs actively, the reading `bluetooth_warning` and the detail page of
+`fhempy_discovery` show a warning with a command to copy. Run it once on the Raspberry
+Pi, it starts BlueZ with `--experimental`, also after a reboot.
+
 ## Attributes
 
 | Attribute | Default | |

@@ -20,6 +20,8 @@ adapter, or with mode "interval", it only scans 10s every 5 minutes.
 
 import asyncio
 import contextlib
+import platform
+import re
 import time
 
 from bleak import BleakScanner
@@ -38,6 +40,39 @@ RECOVERY_FALLBACK = 3600
 NO_ADAPTER_RETRY = 600
 # devices seen within this time are found without scanning again
 RECENT_MAX_AGE = 60
+# try passive again, e.g. after BlueZ was restarted with --experimental
+PASSIVE_RETRY = 3600
+
+PASSIVE_NEEDS_EXPERIMENTAL = "experimental"
+PASSIVE_NEEDS_KERNEL = "kernel"
+# starts bluetoothd with --experimental, also after a reboot
+EXPERIMENTAL_COMMAND = (
+    'B="$(ls /usr/libexec/bluetooth/bluetoothd /usr/lib/bluetooth/bluetoothd '
+    '2>/dev/null | head -n1)" && [ -n "$B" ] && '
+    "sudo mkdir -p /etc/systemd/system/bluetooth.service.d && "
+    "printf '[Service]\\nExecStart=\\nExecStart=%s --experimental\\n' \"$B\" | "
+    "sudo tee /etc/systemd/system/bluetooth.service.d/fhempy-experimental.conf "
+    ">/dev/null && sudo systemctl daemon-reload && sudo systemctl restart bluetooth"
+)
+
+
+def kernel_supports_passive(release=None):
+    """Passive scans need Linux 5.10 or newer."""
+    match = re.match(r"(\d+)\.(\d+)", release or platform.release())
+    if not match:
+        return True
+    return (int(match.group(1)), int(match.group(2))) >= (5, 10)
+
+
+def passive_problem(error):
+    """Why a passive scan failed: PASSIVE_NEEDS_EXPERIMENTAL,
+    PASSIVE_NEEDS_KERNEL or '' (unknown)."""
+    if not kernel_supports_passive():
+        return PASSIVE_NEEDS_KERNEL
+    text = str(error)
+    if "experimental" in text or "AdvertisementMonitor" in text:
+        return PASSIVE_NEEDS_EXPERIMENTAL
+    return ""
 
 
 def _passive_args():
@@ -81,7 +116,12 @@ class BleScanner:
         self._interval = DEFAULT_INTERVAL
         self._fallback_until = 0
         self._passive_supported = True
+        self._passive_failed = 0
         self._last_active = 0
+        # why the passive scan doesn't work, see passive_problem()
+        self.passive_problem = ""
+        self._passive_logged = False
+        self._state_callbacks = []
         self._errors = utils.ErrorLogger(logger)
         self.scanning = ""
 
@@ -99,6 +139,25 @@ class BleScanner:
         if not self._callbacks and self._task is not None:
             self._task.cancel()
             self._task = None
+
+    def add_state_callback(self, callback):
+        """callback() is called when passive_problem changes"""
+        if callback not in self._state_callbacks:
+            self._state_callbacks.append(callback)
+
+    def remove_state_callback(self, callback):
+        if callback in self._state_callbacks:
+            self._state_callbacks.remove(callback)
+
+    def _set_passive_problem(self, problem):
+        if problem == self.passive_problem:
+            return
+        self.passive_problem = problem
+        for callback in list(self._state_callbacks):
+            try:
+                callback()
+            except Exception:
+                self.logger.exception("Failed to handle Bluetooth scan state")
 
     def set_mode(self, mode, interval=DEFAULT_INTERVAL):
         self._mode = mode
@@ -179,6 +238,11 @@ class BleScanner:
                     self.scanning = f"every {self._interval}s"
                     await self._wait_changed(self._interval)
                     continue
+                if (
+                    not self._passive_supported
+                    and time.monotonic() - self._passive_failed > PASSIVE_RETRY
+                ):
+                    self._passive_supported = True
                 if not self._passive_supported:
                     await self._scan(active=True, duration=ACTIVE_REFRESH)
                 elif time.monotonic() - self._last_active > ACTIVE_REFRESH:
@@ -199,6 +263,23 @@ class BleScanner:
                 )
                 await self._wait_changed(NO_ADAPTER_RETRY)
 
+    def _passive_failed_with(self, exc):
+        self._passive_supported = False
+        self._passive_failed = time.monotonic()
+        problem = passive_problem(exc)
+        if problem != self.passive_problem or not self._passive_logged:
+            self._passive_logged = True
+            if problem == PASSIVE_NEEDS_EXPERIMENTAL:
+                self.logger.warning(
+                    "BlueZ runs without --experimental, Bluetooth is scanned "
+                    "actively. Run once to scan passively: " + EXPERIMENTAL_COMMAND
+                )
+            else:
+                self.logger.info(
+                    f"Passive Bluetooth scan not possible ({exc}), scan active"
+                )
+        self._set_passive_problem(problem)
+
     async def _scan(self, active, duration):
         """Scans until duration is over, the mode changes or a pause starts."""
         if active:
@@ -208,8 +289,8 @@ class BleScanner:
                 scanner = BleakScanner(
                     self._detection, scanning_mode="passive", bluez=_passive_args()
                 )
-            except (BleakError, ImportError, ValueError):
-                self._passive_supported = False
+            except (BleakError, ImportError, ValueError) as exc:
+                self._passive_failed_with(exc)
                 return
         mode = self.effective_mode
         try:
@@ -217,10 +298,11 @@ class BleScanner:
         except BleakError as exc:
             if not active:
                 # e.g. BlueZ without --experimental or an old kernel
-                self.logger.info(f"Passive Bluetooth scan not possible ({exc}), scan active")
-                self._passive_supported = False
+                self._passive_failed_with(exc)
                 return
             raise
+        if not active:
+            self._set_passive_problem("")
         self.scanning = "active" if active else "passive"
         self._errors.success()
         if active:
