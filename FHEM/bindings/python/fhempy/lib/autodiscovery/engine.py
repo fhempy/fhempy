@@ -39,6 +39,7 @@ MDNS_INFO_TIMEOUT = 3000
 # how long the candidates of the BLE scan are kept without advertisement
 BLE_FORGET = 3600
 
+STATUS_CHECKING = "checking"
 STATUS_NEW = "new"
 STATUS_EXISTS = "exists"
 STATUS_CREATED = "created"
@@ -387,8 +388,16 @@ class Engine:
             return
         candidate["first_seen"] = now
         candidate["last_seen"] = now
+        # other updates run while FHEM is asked if the device exists
+        candidate["status"] = STATUS_CHECKING
         self.candidates[candidate["id"]] = candidate
-        if await self.exists(candidate, rule):
+        try:
+            exists = await self.exists(candidate, rule)
+        except Exception:
+            # try again when the device is seen next time
+            del self.candidates[candidate["id"]]
+            raise
+        if exists:
             candidate["status"] = STATUS_EXISTS
             return
         if candidate["id"] in self.ignored:
