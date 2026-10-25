@@ -2,6 +2,32 @@
 
 <!-- version list -->
 
+## v2.10.1 (2026-10-25)
+
+### Bug Fixes
+
+- Silence httpx request log on INFO level ([#764](https://github.com/fhempy/fhempy/pull/764),
+  [`8f73dea`](https://github.com/fhempy/fhempy/commit/8f73dea8962ecccbf11460c460fbba53c246baea))
+
+- **autodiscovery**: KeyError status and active scan without passive support
+  ([#763](https://github.com/fhempy/fhempy/pull/763),
+  [`86c7b0c`](https://github.com/fhempy/fhempy/commit/86c7b0cda434b7aa72438f687ae59d02f80cd3b2))
+
+### Features
+
+- Install modules button on the BindingsIo detail page
+  ([#765](https://github.com/fhempy/fhempy/pull/765),
+  [`8eb7c0f`](https://github.com/fhempy/fhempy/commit/8eb7c0f341af04184a246d7f13ace6d696bc312d))
+
+- **autodiscovery**: Offer every new MQTT device from Home Assistant discovery
+  ([#767](https://github.com/fhempy/fhempy/pull/767),
+  [`8e270e1`](https://github.com/fhempy/fhempy/commit/8e270e10e0eed46b48ea237f14cd03ea61b89c46))
+
+- **autodiscovery**: Warning with command when BlueZ runs without --experimental
+  ([#766](https://github.com/fhempy/fhempy/pull/766),
+  [`420c01e`](https://github.com/fhempy/fhempy/commit/420c01e421fadbc08d435d3fc79275670e7f8919))
+
+
 ## v2.10.0 (2026-10-25)
 
 ### Features
