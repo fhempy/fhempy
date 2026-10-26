@@ -128,6 +128,10 @@ class autodiscovery(generic.FhemModule):
         await self.set_get_config(
             {
                 "candidates": {"help": "Found devices as JSON."},
+                "device": {
+                    "args": ["id"],
+                    "help": "Name of the FHEM device created for a found device.",
+                },
                 "search": {
                     "args": ["kind"],
                     "help": "Result of searchPhones, searchBluetooth or searchTag "
@@ -375,6 +379,10 @@ class autodiscovery(generic.FhemModule):
             if c["status"] in (STATUS_NEW, STATUS_IGNORED)
         ]
         return json.dumps(public(listed), ensure_ascii=False)
+
+    async def get_device(self, hash, params):
+        candidate = self.engine.candidates.get(params["id"]) or {}
+        return candidate.get("device", "")
 
     async def get_search(self, hash, params):
         entry = self._search.get(params["kind"])

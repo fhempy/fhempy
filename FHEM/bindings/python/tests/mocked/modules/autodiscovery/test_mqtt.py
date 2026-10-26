@@ -87,6 +87,7 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
     assert mock_fhem.command_define == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 MQTT2_DEVICE"
     ]
+    assert candidate["device"] == "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01"
     assert len(mock_fhem.command_attr) == 2
     assert "Temperature=>lc($EVENT)" in mock_fhem.command_attr[0]
 

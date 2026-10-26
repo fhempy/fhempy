@@ -54,6 +54,7 @@
       ".fhempyDiscovery input[type=text],.fhempyDiscovery input[type=password]{width:100%;margin:3px 0 0;box-sizing:border-box;padding:5px 8px;border-radius:8px;border:1px solid rgba(128,128,128,0.45);font-size:13px;background:transparent;color:inherit}" +
       ".fhempyDiscovery label{font-size:12px;font-weight:600;display:block;margin-top:5px}" +
       ".fhempyDiscovery .fdDone{font-size:12px;color:#3fa34d;font-weight:600}" +
+      ".fhempyDiscovery .fdDone a{color:inherit;text-decoration:underline}" +
       ".fhempyDiscovery .fdErr{font-size:12px;color:#d64545;white-space:pre-wrap}" +
       ".fhempyDiscovery .fdEmpty{opacity:0.75;margin:16px 0;text-align:center}" +
       ".fhempyDiscovery .fdChoice{display:flex;gap:8px;align-items:center;padding:7px 9px;border:1px solid rgba(128,128,128,0.35);border-radius:10px;margin:6px 0;cursor:pointer}" +
@@ -103,8 +104,13 @@
       '<div class="fdInfo">' + esc(info.join(" · ")) + "</div>" +
       (d.hint ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
     if (st.created) {
-      return html + '<div class="fdDone">✓ ' + (d.action == "set" ?
-        "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy") + "</div></div></div>";
+      /* a click on the link opens the new device */
+      var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
+      if (st.device) {
+        var link = '<a href="' + FW_root + "?detail=" + encodeURIComponent(st.device) + '">' + esc(st.device) + "</a>";
+        done = (d.action == "set" ? "pairing started, see " : "created: ") + link;
+      }
+      return html + '<div class="fdDone">✓ ' + done + "</div></div></div>";
     }
     if (d.status == "ignored") {
       return html + '<div class="fdBtns"><span class="fdBtn fdGrey fdUnignore">Offer again</span></div></div></div>';
@@ -177,9 +183,17 @@
     render(container);
     cmd(command, function (r) {
       st.busy = false;
-      if (r) st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
-      else st.created = true;
+      if (r) {
+        st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
+        render(container);
+        return;
+      }
+      st.created = true;
       render(container);
+      cmd("get " + dev + " device " + arg(d.id), function (name) {
+        st.device = (name || "").trim();
+        if (st.device) render(container);
+      });
     });
   }
 
