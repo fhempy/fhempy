@@ -258,6 +258,9 @@ class MqttDiscovery:
         if ret:
             return str(ret)
         device["created"] = name
+        candidate = self.engine.candidates.get(f"mqtt:{device_id}")
+        if candidate is not None:
+            candidate["device"] = name
         for (component, object_id), payload in list(device["entities"].items()):
             await mqtt_ha.set_attributes(hash, name, component, object_id, payload)
         return ""

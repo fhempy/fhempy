@@ -121,6 +121,22 @@ async def test_create_quotes_define_arguments(engine, fhem_mock):
     assert ret == ""
     assert fhem_mock[1] == ['Living_Room fhempy googlecast "Living Room"']
     assert candidate["status"] == engine_module.STATUS_CREATED
+    # the popup links to the new device
+    assert candidate["device"] == "Living_Room"
+
+
+@pytest.mark.asyncio
+async def test_get_device_of_created_candidate(mocker):
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("autodiscovery")
+    device = autodiscovery(logging.getLogger(__name__))
+    device.engine = mocker.MagicMock()
+    device.engine.candidates = {"mqtt:x": {"device": "MQTT2_Lamp"}, "mqtt:y": {}}
+    assert await device.get_device({}, {"id": "mqtt:x"}) == "MQTT2_Lamp"
+    assert await device.get_device({}, {"id": "mqtt:y"}) == ""
+    assert await device.get_device({}, {"id": "unknown"}) == ""
 
 
 @pytest.mark.asyncio
