@@ -623,7 +623,7 @@ BindingsIo_Write($$$$$) {
     }
   }
 
-  if($function ne "event" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
+  if($function ne "event" && $function ne "events" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
 
@@ -678,6 +678,9 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   } elsif ($function eq "event") {
     $msg{"msgtype"} = "event";
+    $waitforresponse = 0;
+  } elsif ($function eq "events") {
+    $msg{"msgtype"} = "events";
     $waitforresponse = 0;
   } elsif ($function eq "version") {
     $msg{"msgtype"} = "version";

@@ -372,6 +372,9 @@ class fhempy:
                 await self.handle_function(hash, msg)
             elif hash["msgtype"] == "event":
                 await self.handle_event(hash, msg)
+            elif hash["msgtype"] == "events":
+                id_received_timestamp.pop(hash.get("id"), None)
+                await fhem.dispatch_recorded_events(hash["NAME"], hash["args"])
 
     async def handle_event(self, hash, msg):
         # events don't get a reply

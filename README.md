@@ -77,6 +77,13 @@ define push fhempy push
 ```
 Open the device on the phone and tap *Enable notifications*. Then send from notify or DOIF with `set push message Washing machine is done`, on Android also with picture and buttons which run FHEM commands. The [push README](FHEM/bindings/python/fhempy/lib/push/README.md) explains every step.
 
+## 🕰️ Timeline
+See what happened at home, e.g. during your holidays:
+```
+define timeline fhempy timeline
+```
+fhempy records the events of all FHEM devices and shows them on the device page as a story per day: doors, lights, motion, who came home. Signal strength, last seen and similar technical events are hidden automatically, temperatures and power become small daily curves, and everything unusual while nobody was at home is highlighted. The [timeline README](FHEM/bindings/python/fhempy/lib/timeline/README.md) explains every step.
+
 ## 🚀 Quick start
 
 ### 1. Install fhempy
@@ -229,6 +236,7 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[push](FHEM/bindings/python/fhempy/lib/push/README.md)|Push notifications to phones and tablets (Android, iPhone), no app and no account, replaces Pushbullet|
 |[remote_access](FHEM/bindings/python/fhempy/lib/remote_access/README.md)|FHEM on your phone from anywhere: https address with password via Tailscale Funnel, no VPN app or port forwarding|
 |[system_update](FHEM/bindings/python/fhempy/lib/system_update/README.md)|Keeps the Raspberry Pi up to date: security updates every night, backup before and health check after each update, critical packages only on your click|
+|[timeline](FHEM/bindings/python/fhempy/lib/timeline/README.md)|What happened at home, e.g. during the holidays: all events as readable story per day, without technical noise|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|
