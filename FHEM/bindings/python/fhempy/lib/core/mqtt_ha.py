@@ -28,6 +28,11 @@ DISCOVERY_TOPIC = "homeassistant/#"
 # Home Assistant defaults
 DEFAULT_PAYLOAD_ON = "ON"
 DEFAULT_PAYLOAD_OFF = "OFF"
+DEFAULT_PAYLOAD_OPEN = "OPEN"
+DEFAULT_PAYLOAD_CLOSE = "CLOSE"
+DEFAULT_PAYLOAD_STOP = "STOP"
+DEFAULT_PAYLOAD_LOCK = "LOCK"
+DEFAULT_PAYLOAD_UNLOCK = "UNLOCK"
 DEFAULT_PAYLOAD_AVAILABLE = "online"
 DEFAULT_PAYLOAD_NOT_AVAILABLE = "offline"
 DEFAULT_BRIGHTNESS_SCALE = 255
@@ -176,6 +181,11 @@ def fhem_device_name(device_name, device_id):
 
 def supported(component, payload_json):
     """A reading or set command is created for the entity"""
+    if component in PLATFORMS:
+        return any(
+            value and key.endswith("_topic") and key not in OTHER_TOPICS
+            for key, value in payload_json.items()
+        )
     return bool(
         payload_json.get("state_topic")
         or (component in COMMANDS and payload_json.get("command_topic"))
@@ -225,7 +235,9 @@ def command_payload(template, value="$EVTPART1"):
         return value
     if not isinstance(template, str):
         return None
-    converted = re.sub(r"\{\{\s*value\s*\}\}", value, template)
+    converted = re.sub(
+        r"\{\{\s*(?:value|position|tilt_position)\s*\}\}", value, template
+    )
     if "{{" in converted or "{%" in converted:
         return None
     return converted
@@ -334,6 +346,10 @@ class DeviceAttributes:
         self.availability_mode = "latest"
         self.web_cmd = []
         self.state_format = []
+        # stateFormat of the device itself, e.g. temperatures of a thermostat
+        self.main_state_format = []
+        # the reading state is set, no stateFormat needed
+        self.has_state = False
         self.primary = None
 
     # readings
@@ -371,11 +387,12 @@ class DeviceAttributes:
         spec["json"] = True
         spec["prefix"] = spec["prefix"] or prefix
 
-    def add_set(self, name, args, topic, payload):
+    def add_set(self, name, args, topic, payload, perl=False):
+        """perl: payload is a perl expression returning topic and message"""
         if not topic or " " in topic or payload is None or name in self.sets:
             return
         cmd = name + (":" + args if args else "")
-        if payload.startswith("{ ") and payload.endswith(" }"):
+        if perl:
             self.sets[name] = f"{cmd} {payload}"
         else:
             self.sets[name] = f"{cmd} {topic} {payload}".rstrip()
@@ -470,15 +487,16 @@ class DeviceAttributes:
         }
         if self.web_cmd:
             attrs["webCmd"] = ":".join(self.web_cmd)
-        elif self.state_format:
-            attrs["stateFormat"] = " ".join(self.state_format[:3])
+        state_format = self.main_state_format or self.state_format[:3]
+        if state_format and not self.has_state:
+            attrs["stateFormat"] = " ".join(state_format)
         return attrs
 
 
 def _is_primary(component, payload_json, entities):
     """The entity which is the device itself: Home Assistant names it like the
     device (name null), or the only light of the device."""
-    if component not in ("light", "switch"):
+    if component not in PRIMARY_COMPONENTS:
         return False
     if payload_json.get("name") is None:
         return True
@@ -506,6 +524,7 @@ def add_light(dev, object_id, payload_json, primary, shared_topic):
 
     if primary and dev.primary is None:
         dev.primary = object_id
+        dev.has_state = True
         dev.web_cmd = ["on", "off"]
         if any(mode in BRIGHTNESS_MODES for mode in modes):
             dev.web_cmd.append("brightness")
@@ -546,6 +565,7 @@ def _add_json_light(dev, prefix, payload_json, unprefixed):
             "colorpicker,RGB",
             cmd_t,
             _color_command(cmd_t, color_mode),
+            perl=True,
         )
     effects = payload_json.get("effect_list")
     if payload_json.get("effect") and isinstance(effects, list):
@@ -652,6 +672,7 @@ def _add_default_light_values(dev, prefix, payload_json):
                 "colorpicker,RGB",
                 topic,
                 _rgb_command(topic),
+                perl=True,
             )
 
 
@@ -679,6 +700,7 @@ def add_switch(dev, object_id, payload_json, primary):
         )
     if primary and dev.primary is None:
         dev.primary = object_id
+        dev.has_state = True
         dev.web_cmd = ["on", "off"]
 
 
@@ -716,8 +738,417 @@ def add_value_entity(dev, component, object_id, payload_json):
         dev.add_set(name, "textField", cmd_t, payload)
 
 
+# --- climate, cover, fan, lock, siren ---
+
+# topics which aren't state or command topics of an entity
+OTHER_TOPICS = ("availability_topic", "json_attributes_topic")
+DEFAULT_MIN_TEMP = 7
+DEFAULT_MAX_TEMP = 35
+DEFAULT_MIN_HUMIDITY = 30
+DEFAULT_MAX_HUMIDITY = 99
+DEFAULT_HVAC_MODES = ["auto", "off", "cool", "heat", "dry", "fan_only"]
+DEFAULT_FAN_MODES = ["auto", "low", "medium", "high"]
+DEFAULT_SWING_MODES = ["on", "off"]
+
+
+def _options(values):
+    """FHEM dropdown of the values, None if a value can't be used in it"""
+    if not isinstance(values, list):
+        return None
+    values = [str(value) for value in values]
+    if not values or any(" " in v or "," in v or not v for v in values):
+        return None
+    return ",".join(values)
+
+
+def _slider(low, step, high):
+    floats = any(isinstance(v, float) and not v.is_integer() for v in (low, step, high))
+    values = [
+        int(v) if isinstance(v, float) and v.is_integer() else v
+        for v in (low, step, high)
+    ]
+    return "slider," + ",".join(str(v) for v in values) + (",1" if floats else "")
+
+
+def _state(dev, payload_json, prefix, name, topic_key, template_key, onoff=False):
+    """reading of a state topic of the entity"""
+    return dev.add_reading(
+        payload_json.get(topic_key),
+        payload_json.get(template_key),
+        _cmd_name(prefix, name),
+        onoff,
+    )
+
+
+def _command(dev, payload_json, prefix, name, args, topic_key, template_key):
+    """set command which publishes the argument (with the command template)"""
+    template = payload_json.get(template_key) if template_key else None
+    dev.add_set(
+        _cmd_name(prefix, name),
+        args,
+        payload_json.get(topic_key),
+        command_payload(template),
+    )
+
+
+def _payload_command(dev, payload_json, prefix, name, payload_key, default):
+    """set command without argument, e.g. open of a cover. A payload set to
+    null in the discovery config disables the command."""
+    payload = payload_json.get(payload_key, default)
+    template = payload_json.get("command_template")
+    if payload is not None and template:
+        payload = command_payload(template, str(payload))
+    dev.add_set(
+        _cmd_name(prefix, name),
+        "noArg",
+        payload_json.get("command_topic"),
+        None if payload is None else str(payload),
+    )
+
+
+def _set_primary(dev, object_id, primary, web_cmd, has_state=True):
+    if primary and dev.primary is None:
+        dev.primary = object_id
+        dev.web_cmd = web_cmd
+        dev.has_state = has_state
+
+
+def add_climate(dev, object_id, payload_json, primary):
+    """Thermostats and air conditioners like Home Assistant's climate card"""
+    prefix = _name(object_id, payload_json, primary)
+    current = _state(
+        dev,
+        payload_json,
+        prefix,
+        "current_temperature",
+        "current_temperature_topic",
+        "current_temperature_template",
+    )
+    target = _state(
+        dev,
+        payload_json,
+        prefix,
+        "desired_temp",
+        "temperature_state_topic",
+        "temperature_state_template",
+    )
+    for name in ("mode", "fan_mode", "swing_mode", "swing_horizontal_mode"):
+        _state(
+            dev,
+            payload_json,
+            prefix,
+            name,
+            f"{name}_state_topic",
+            f"{name}_state_template",
+        )
+    _state(dev, payload_json, prefix, "action", "action_topic", "action_template")
+    _state(
+        dev,
+        payload_json,
+        prefix,
+        "preset_mode",
+        "preset_mode_state_topic",
+        "preset_mode_value_template",
+    )
+    _state(
+        dev,
+        payload_json,
+        prefix,
+        "current_humidity",
+        "current_humidity_topic",
+        "current_humidity_template",
+    )
+    _state(
+        dev,
+        payload_json,
+        prefix,
+        "humidity",
+        "target_humidity_state_topic",
+        "target_humidity_state_template",
+    )
+    for name, key in (
+        ("desired_temp_low", "temperature_low"),
+        ("desired_temp_high", "temperature_high"),
+    ):
+        _state(
+            dev,
+            payload_json,
+            prefix,
+            name,
+            f"{key}_state_topic",
+            f"{key}_state_template",
+        )
+
+    step = payload_json.get("temp_step", 1)
+    temp = _slider(
+        payload_json.get("min_temp", DEFAULT_MIN_TEMP),
+        step if isinstance(step, (int, float)) and step > 0 else 1,
+        payload_json.get("max_temp", DEFAULT_MAX_TEMP),
+    )
+    for name, key in (
+        ("desired_temp", "temperature"),
+        ("desired_temp_low", "temperature_low"),
+        ("desired_temp_high", "temperature_high"),
+    ):
+        _command(
+            dev,
+            payload_json,
+            prefix,
+            name,
+            temp,
+            f"{key}_command_topic",
+            f"{key}_command_template",
+        )
+    for name, modes, default in (
+        ("mode", "modes", DEFAULT_HVAC_MODES),
+        ("fan_mode", "fan_modes", DEFAULT_FAN_MODES),
+        ("swing_mode", "swing_modes", DEFAULT_SWING_MODES),
+        ("swing_horizontal_mode", "swing_horizontal_modes", DEFAULT_SWING_MODES),
+        ("preset_mode", "preset_modes", []),
+    ):
+        options = _options(payload_json.get(modes, default))
+        if options:
+            _command(
+                dev,
+                payload_json,
+                prefix,
+                name,
+                options,
+                f"{name}_command_topic",
+                f"{name}_command_template",
+            )
+    _command(
+        dev,
+        payload_json,
+        prefix,
+        "humidity",
+        _slider(
+            payload_json.get("min_humidity", DEFAULT_MIN_HUMIDITY),
+            1,
+            payload_json.get("max_humidity", DEFAULT_MAX_HUMIDITY),
+        ),
+        "target_humidity_command_topic",
+        "target_humidity_command_template",
+    )
+    for cmd, key, default in (
+        ("on", "payload_on", "ON"),
+        ("off", "payload_off", "OFF"),
+    ):
+        payload = command_payload(
+            payload_json.get("power_command_template"),
+            str(payload_json.get(key, default)),
+        )
+        dev.add_set(
+            _cmd_name(prefix, cmd),
+            "noArg",
+            payload_json.get("power_command_topic"),
+            payload,
+        )
+
+    if isinstance(current, str):
+        unit = "°" + str(payload_json.get("temperature_unit", "C"))
+        dev.main_state_format = [f"{current} {unit}"] + (
+            [f"({target} {unit})"] if isinstance(target, str) else []
+        )
+    if payload_json.get("temperature_command_topic"):
+        _set_primary(
+            dev, object_id, primary, [_cmd_name(prefix, "desired_temp")], False
+        )
+    else:
+        _set_primary(dev, object_id, primary, [], False)
+
+
+def add_cover(dev, object_id, payload_json, primary):
+    """Blinds, shutters, garage doors"""
+    prefix = _name(object_id, payload_json, primary)
+    dev.add_reading(
+        payload_json.get("state_topic"),
+        payload_json.get("value_template"),
+        prefix or "state",
+        False,
+        None if prefix else "state",
+    )
+    _state(dev, payload_json, prefix, "position", "position_topic", "position_template")
+    _state(
+        dev, payload_json, prefix, "tilt", "tilt_status_topic", "tilt_status_template"
+    )
+    for name, key, default in (
+        ("open", "payload_open", DEFAULT_PAYLOAD_OPEN),
+        ("close", "payload_close", DEFAULT_PAYLOAD_CLOSE),
+        ("stop", "payload_stop", DEFAULT_PAYLOAD_STOP),
+    ):
+        _payload_command(dev, payload_json, prefix, name, key, default)
+    position = _slider(
+        payload_json.get("position_closed", 0),
+        1,
+        payload_json.get("position_open", 100),
+    )
+    _command(
+        dev,
+        payload_json,
+        prefix,
+        "position",
+        position,
+        "set_position_topic",
+        "set_position_template",
+    )
+    tilt = _slider(
+        payload_json.get("tilt_min", 0), 1, payload_json.get("tilt_max", 100)
+    )
+    _command(
+        dev,
+        payload_json,
+        prefix,
+        "tilt",
+        tilt,
+        "tilt_command_topic",
+        "tilt_command_template",
+    )
+    web_cmd = ["open", "stop", "close"] if payload_json.get("command_topic") else []
+    if payload_json.get("set_position_topic"):
+        web_cmd.append("position")
+    _set_primary(
+        dev, object_id, primary, web_cmd, bool(payload_json.get("state_topic"))
+    )
+
+
+def add_fan(dev, object_id, payload_json, primary):
+    prefix = _name(object_id, payload_json, primary)
+    dev.add_reading(
+        payload_json.get("state_topic"),
+        payload_json.get("state_value_template"),
+        prefix or "state",
+        True,
+        None if prefix else "state",
+    )
+    for name in ("percentage", "preset_mode", "oscillation", "direction"):
+        template = f"{name}_value_template"
+        _state(dev, payload_json, prefix, name, f"{name}_state_topic", template)
+    for cmd, key, default in (
+        ("on", "payload_on", "ON"),
+        ("off", "payload_off", "OFF"),
+    ):
+        _payload_command(dev, payload_json, prefix, cmd, key, default)
+    speed = _slider(
+        payload_json.get("speed_range_min", 1),
+        1,
+        payload_json.get("speed_range_max", 100),
+    )
+    _command(
+        dev,
+        payload_json,
+        prefix,
+        "percentage",
+        speed,
+        "percentage_command_topic",
+        "percentage_command_template",
+    )
+    presets = _options(payload_json.get("preset_modes"))
+    if presets:
+        _command(
+            dev,
+            payload_json,
+            prefix,
+            "preset_mode",
+            presets,
+            "preset_mode_command_topic",
+            "preset_mode_command_template",
+        )
+    _command(
+        dev,
+        payload_json,
+        prefix,
+        "direction",
+        "forward,reverse",
+        "direction_command_topic",
+        "direction_command_template",
+    )
+    for cmd, key, default in (
+        ("oscillation_on", "payload_oscillation_on", "oscillate_on"),
+        ("oscillation_off", "payload_oscillation_off", "oscillate_off"),
+    ):
+        payload = command_payload(
+            payload_json.get("oscillation_command_template"),
+            str(payload_json.get(key, default)),
+        )
+        dev.add_set(
+            _cmd_name(prefix, cmd),
+            "noArg",
+            payload_json.get("oscillation_command_topic"),
+            payload,
+        )
+    _set_primary(
+        dev, object_id, primary, ["on", "off"], bool(payload_json.get("state_topic"))
+    )
+
+
+def add_lock(dev, object_id, payload_json, primary):
+    prefix = _name(object_id, payload_json, primary)
+    dev.add_reading(
+        payload_json.get("state_topic"),
+        payload_json.get("value_template"),
+        prefix or "state",
+        False,
+        None if prefix else "state",
+    )
+    for name, key, default in (
+        ("lock", "payload_lock", DEFAULT_PAYLOAD_LOCK),
+        ("unlock", "payload_unlock", DEFAULT_PAYLOAD_UNLOCK),
+        # only if the lock can open the door
+        ("open", "payload_open", None),
+    ):
+        _payload_command(dev, payload_json, prefix, name, key, default)
+    _set_primary(
+        dev,
+        object_id,
+        primary,
+        ["lock", "unlock"],
+        bool(payload_json.get("state_topic")),
+    )
+
+
+def add_siren(dev, object_id, payload_json, primary):
+    prefix = _name(object_id, payload_json, primary)
+    dev.add_reading(
+        payload_json.get("state_topic"),
+        payload_json.get("state_value_template"),
+        prefix or "state",
+        True,
+        None if prefix else "state",
+    )
+    on = payload_json.get("payload_on", "ON")
+    off = payload_json.get("payload_off", "OFF")
+    template = payload_json.get("command_template")
+    off_template = payload_json.get("command_off_template") or template
+    if template:
+        # templates with tone, duration and volume can't be converted
+        on_payload = command_payload(template, str(on))
+        off_payload = command_payload(off_template, str(off))
+    else:
+        # Home Assistant sends the state as JSON without command template
+        on_payload = json.dumps({"state": on}, separators=(",", ":"))
+        off_payload = json.dumps({"state": off}, separators=(",", ":"))
+    cmd_t = payload_json.get("command_topic")
+    dev.add_set(_cmd_name(prefix, "on"), "noArg", cmd_t, on_payload)
+    dev.add_set(_cmd_name(prefix, "off"), "noArg", cmd_t, off_payload)
+    _set_primary(
+        dev, object_id, primary, ["on", "off"], bool(payload_json.get("state_topic"))
+    )
+
+
+PLATFORMS = {
+    "climate": add_climate,
+    "cover": add_cover,
+    "fan": add_fan,
+    "lock": add_lock,
+    "siren": add_siren,
+}
+
+
 # components with set commands
 COMMANDS = ("light", "switch", "select", "number", "button", "text")
+# components which can be the device itself
+PRIMARY_COMPONENTS = ("light", "switch", "climate", "cover", "fan", "lock", "siren")
 
 
 def generate_attributes(entities):
@@ -744,6 +1175,8 @@ def generate_attributes(entities):
             add_light(dev, object_id, payload_json, primary, shared)
         elif component == "switch":
             add_switch(dev, object_id, payload_json, primary)
+        elif component in PLATFORMS:
+            PLATFORMS[component](dev, object_id, payload_json, primary)
         else:
             add_value_entity(dev, component, object_id, payload_json)
         dev.add_json(payload_json.get("json_attributes_topic"))
