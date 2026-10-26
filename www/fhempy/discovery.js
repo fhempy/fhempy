@@ -105,10 +105,12 @@
       (d.hint ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
     if (st.created) {
       /* a click on the link opens the new device */
-      var link = st.device ? '<a href="' + FW_root + "?detail=" + encodeURIComponent(st.device) + '">' + esc(st.device) + "</a>" : "";
-      return html + '<div class="fdDone">✓ ' + (d.action == "set" ?
-        "pairing started, see " + (link || "the " + esc(d.kind) + " device") :
-        "created: " + (link || "see the room fhempy")) + "</div></div></div>";
+      var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
+      if (st.device) {
+        var link = '<a href="' + FW_root + "?detail=" + encodeURIComponent(st.device) + '">' + esc(st.device) + "</a>";
+        done = (d.action == "set" ? "pairing started, see " : "created: ") + link;
+      }
+      return html + '<div class="fdDone">✓ ' + done + "</div></div></div>";
     }
     if (d.status == "ignored") {
       return html + '<div class="fdBtns"><span class="fdBtn fdGrey fdUnignore">Offer again</span></div></div></div>';
