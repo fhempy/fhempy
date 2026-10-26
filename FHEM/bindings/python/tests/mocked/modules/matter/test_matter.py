@@ -10,7 +10,8 @@ from tests.utils import mock_fhem
 
 from fhempy.lib.matter import clusters, server
 from fhempy.lib.matter.matter import matter
-from fhempy.lib.matter.controller import matter_controller
+from fhempy.lib.matter.client import MatterServerError
+from fhempy.lib.matter.controller import matter_controller, pairing_error
 
 logger = logging.getLogger(__name__)
 
@@ -445,3 +446,22 @@ async def test_controller_shows_fhem_in_other_apps(mocker):
         mocker.Mock(logger=logger, external_url=None), client
     )
     client.send_command.assert_called_once_with("get_fabric_label")
+
+
+def test_server_accepts_test_certificates_only_with_test_dcl(mocker):
+    start = mocker.patch.object(server.child_process, "start")
+    server.start("/usr/bin/node", {}, 5580)
+    assert "--enable-test-net-dcl" not in start.call_args[0][0]
+
+    server.start("/usr/bin/node", {}, 5580, test_dcl=True)
+    args = start.call_args[0][0]
+    assert args[args.index("--enable-test-net-dcl") + 1] == "true"
+
+
+def test_pairing_error_tells_how_to_pair_test_certificates():
+    exc = MatterServerError(
+        1,
+        "Commission failed: This device uses a test/development certificate. "
+        'To commission it, enable the "Test DCL" option in the settings',
+    )
+    assert "attr test_dcl 1" in pairing_error(exc)
