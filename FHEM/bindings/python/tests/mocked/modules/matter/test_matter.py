@@ -462,6 +462,6 @@ def test_pairing_error_tells_how_to_pair_test_certificates():
     exc = MatterServerError(
         1,
         "Commission failed: This device uses a test/development certificate. "
-        'To commission it, enable the "Test DCL" option in the settings'
+        'To commission it, enable the "Test DCL" option in the settings',
     )
     assert "attr test_dcl 1" in pairing_error(exc)
