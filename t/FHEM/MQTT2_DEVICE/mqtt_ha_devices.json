@@ -632,5 +632,345 @@
    "setList": [],
    "stateFormat": "temperature °C humidity %"
   }
+ },
+ {
+  "name": "z2m_thermostat",
+  "discovery": [
+   [
+    "homeassistant/climate/0xtrv/climate/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xtrv"
+      ],
+      "name": "Heizung"
+     },
+     "name": null,
+     "state_topic": "zigbee2mqtt/Heizung",
+     "temperature_unit": "C",
+     "temp_step": 0.5,
+     "min_temp": "5",
+     "max_temp": "30",
+     "current_temperature_topic": "zigbee2mqtt/Heizung",
+     "current_temperature_template": "{{ value_json[\"local_temperature\"] }}",
+     "temperature_command_topic": "zigbee2mqtt/Heizung/set/occupied_heating_setpoint",
+     "temperature_state_topic": "zigbee2mqtt/Heizung",
+     "temperature_state_template": "{{ value_json[\"occupied_heating_setpoint\"] }}",
+     "mode_state_topic": "zigbee2mqtt/Heizung",
+     "mode_state_template": "{{ value_json[\"system_mode\"] }}",
+     "mode_command_topic": "zigbee2mqtt/Heizung/set/system_mode",
+     "modes": [
+      "off",
+      "heat",
+      "auto"
+     ],
+     "action_topic": "zigbee2mqtt/Heizung",
+     "action_template": "{% set values = {None:None,'idle':'idle','heat':'heating'} %}{{ values[value_json[\"running_state\"]] }}",
+     "preset_mode_command_topic": "zigbee2mqtt/Heizung/set/preset",
+     "preset_modes": [
+      "manual",
+      "schedule",
+      "holiday"
+     ],
+     "preset_mode_state_topic": "zigbee2mqtt/Heizung",
+     "preset_mode_value_template": "{{ value_json.preset }}"
+    }
+   ],
+   [
+    "homeassistant/sensor/0xtrv/battery/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xtrv"
+      ],
+      "name": "Heizung"
+     },
+     "name": "Battery",
+     "state_topic": "zigbee2mqtt/Heizung",
+     "value_template": "{{ value_json.battery }}",
+     "unit_of_measurement": "%"
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Heizung",
+    "{\"local_temperature\":19.5,\"occupied_heating_setpoint\":21,\"system_mode\":\"heat\",\"running_state\":\"heat\",\"preset\":\"manual\",\"battery\":87}"
+   ]
+  ],
+  "readings": {
+   "local_temperature": "19.5",
+   "occupied_heating_setpoint": "21",
+   "system_mode": "heat",
+   "preset": "manual",
+   "battery": "87"
+  },
+  "STATE": "19.5 °C (21 °C)",
+  "sets": [
+   [
+    "desired_temp 21.5",
+    "zigbee2mqtt/Heizung/set/occupied_heating_setpoint 21.5"
+   ],
+   [
+    "mode auto",
+    "zigbee2mqtt/Heizung/set/system_mode auto"
+   ],
+   [
+    "preset_mode holiday",
+    "zigbee2mqtt/Heizung/set/preset holiday"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Heizung:.* { json2nameValue($EVENT) }"
+   ],
+   "setList": [
+    "desired_temp:slider,5,0.5,30,1 zigbee2mqtt/Heizung/set/occupied_heating_setpoint $EVTPART1",
+    "mode:off,heat,auto zigbee2mqtt/Heizung/set/system_mode $EVTPART1",
+    "preset_mode:manual,schedule,holiday zigbee2mqtt/Heizung/set/preset $EVTPART1"
+   ],
+   "webCmd": "desired_temp",
+   "stateFormat": "local_temperature °C (occupied_heating_setpoint °C)"
+  }
+ },
+ {
+  "name": "z2m_cover",
+  "discovery": [
+   [
+    "homeassistant/cover/0xcov/cover/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xcov"
+      ],
+      "name": "Rollo"
+     },
+     "name": null,
+     "command_topic": "zigbee2mqtt/Rollo/set",
+     "state_topic": "zigbee2mqtt/Rollo",
+     "value_template": "{{ value_json.state }}",
+     "state_open": "OPEN",
+     "state_closed": "CLOSE",
+     "state_stopped": "STOP",
+     "position_topic": "zigbee2mqtt/Rollo",
+     "position_template": "{{ value_json[\"position\"] }}",
+     "set_position_topic": "zigbee2mqtt/Rollo/set",
+     "set_position_template": "{ \"position\": {{ position }} }"
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Rollo",
+    "{\"state\":\"OPEN\",\"position\":80}"
+   ]
+  ],
+  "readings": {
+   "state": "OPEN",
+   "position": "80"
+  },
+  "STATE": "OPEN",
+  "sets": [
+   [
+    "open",
+    "zigbee2mqtt/Rollo/set OPEN"
+   ],
+   [
+    "stop",
+    "zigbee2mqtt/Rollo/set STOP"
+   ],
+   [
+    "close",
+    "zigbee2mqtt/Rollo/set CLOSE"
+   ],
+   [
+    "position 40",
+    "zigbee2mqtt/Rollo/set { \"position\": 40 }"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Rollo:.* { json2nameValue($EVENT) }"
+   ],
+   "setList": [
+    "open:noArg zigbee2mqtt/Rollo/set OPEN",
+    "close:noArg zigbee2mqtt/Rollo/set CLOSE",
+    "stop:noArg zigbee2mqtt/Rollo/set STOP",
+    "position:slider,0,1,100 zigbee2mqtt/Rollo/set { \"position\": $EVTPART1 }"
+   ],
+   "webCmd": "open:stop:close:position"
+  }
+ },
+ {
+  "name": "z2m_lock",
+  "discovery": [
+   [
+    "homeassistant/lock/0xlock/lock/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xlock"
+      ],
+      "name": "Tuer"
+     },
+     "name": null,
+     "command_topic": "zigbee2mqtt/Tuer/set",
+     "state_topic": "zigbee2mqtt/Tuer",
+     "value_template": "{{ value_json[\"state\"] }}",
+     "state_locked": "LOCK",
+     "state_unlocked": "UNLOCK"
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Tuer",
+    "{\"state\":\"LOCK\"}"
+   ]
+  ],
+  "readings": {
+   "state": "LOCK"
+  },
+  "STATE": "LOCK",
+  "sets": [
+   [
+    "unlock",
+    "zigbee2mqtt/Tuer/set UNLOCK"
+   ],
+   [
+    "lock",
+    "zigbee2mqtt/Tuer/set LOCK"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Tuer:.* { json2nameValue($EVENT) }"
+   ],
+   "setList": [
+    "lock:noArg zigbee2mqtt/Tuer/set LOCK",
+    "unlock:noArg zigbee2mqtt/Tuer/set UNLOCK"
+   ],
+   "webCmd": "lock:unlock"
+  }
+ },
+ {
+  "name": "esphome_fan",
+  "discovery": [
+   [
+    "homeassistant/fan/fan1/fan/config",
+    {
+     "name": null,
+     "stat_t": "fan1/fan/fan/state",
+     "cmd_t": "fan1/fan/fan/command",
+     "pct_stat_t": "fan1/fan/fan/speed_level/state",
+     "pct_cmd_t": "fan1/fan/fan/speed_level/command",
+     "spd_rng_max": 3,
+     "osc_stat_t": "fan1/fan/fan/oscillation/state",
+     "osc_cmd_t": "fan1/fan/fan/oscillation/command",
+     "dev": {
+      "ids": "fan1mac",
+      "name": "fan1"
+     }
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "fan1/fan/fan/state",
+    "ON"
+   ],
+   [
+    "fan1/fan/fan/speed_level/state",
+    "2"
+   ],
+   [
+    "fan1/fan/fan/oscillation/state",
+    "oscillate_on"
+   ]
+  ],
+  "readings": {
+   "state": "on",
+   "percentage": "2",
+   "oscillation": "oscillate_on"
+  },
+  "STATE": "on",
+  "sets": [
+   [
+    "off",
+    "fan1/fan/fan/command OFF"
+   ],
+   [
+    "percentage 3",
+    "fan1/fan/fan/speed_level/command 3"
+   ],
+   [
+    "oscillation_off",
+    "fan1/fan/fan/oscillation/command oscillate_off"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "fan1/fan/fan/state:.* { { state=>lc($EVENT) } }",
+    "fan1/fan/fan/speed_level/state:.* { { percentage=>$EVENT } }",
+    "fan1/fan/fan/oscillation/state:.* { { oscillation=>$EVENT } }"
+   ],
+   "setList": [
+    "on:noArg fan1/fan/fan/command ON",
+    "off:noArg fan1/fan/fan/command OFF",
+    "percentage:slider,1,1,3 fan1/fan/fan/speed_level/command $EVTPART1",
+    "oscillation_on:noArg fan1/fan/fan/oscillation/command oscillate_on",
+    "oscillation_off:noArg fan1/fan/fan/oscillation/command oscillate_off"
+   ],
+   "webCmd": "on:off"
+  }
+ },
+ {
+  "name": "siren",
+  "discovery": [
+   [
+    "homeassistant/siren/alarm/siren/config",
+    {
+     "name": null,
+     "command_topic": "alarm/siren/set",
+     "state_topic": "alarm/siren/state",
+     "device": {
+      "identifiers": [
+       "alarm1"
+      ],
+      "name": "Alarm"
+     }
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "alarm/siren/state",
+    "OFF"
+   ]
+  ],
+  "readings": {
+   "state": "off"
+  },
+  "STATE": "off",
+  "sets": [
+   [
+    "on",
+    "alarm/siren/set {\"state\":\"ON\"}"
+   ],
+   [
+    "off",
+    "alarm/siren/set {\"state\":\"OFF\"}"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "alarm/siren/state:.* { { state=>lc($EVENT) } }"
+   ],
+   "setList": [
+    "on:noArg alarm/siren/set {\"state\":\"ON\"}",
+    "off:noArg alarm/siren/set {\"state\":\"OFF\"}"
+   ],
+   "webCmd": "on:off"
+  }
  }
 ]

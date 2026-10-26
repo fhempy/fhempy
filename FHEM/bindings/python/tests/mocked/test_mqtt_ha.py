@@ -125,3 +125,18 @@ async def test_set_attributes_collects_entities(mocker):
     count = len(mock_fhem.command_attr)
     await mqtt_ha.set_attributes({}, "lamp", *entities(SCENARIOS[0])[0])
     assert len(mock_fhem.command_attr) == count
+
+
+def test_climate_cover_fan_lock_siren_are_supported():
+    # climate has no state_topic or command_topic
+    assert mqtt_ha.supported("climate", {"mode_command_topic": "x/set/mode"})
+    assert not mqtt_ha.supported("climate", {"availability_topic": "x/status"})
+    assert mqtt_ha.supported("lock", {"command_topic": "x/set"})
+
+
+def test_command_template_variables():
+    assert mqtt_ha.command_payload('{ "position": {{ position }} }') == (
+        '{ "position": $EVTPART1 }'
+    )
+    assert mqtt_ha.command_payload("{{ tilt_position }}") == "$EVTPART1"
+    assert mqtt_ha.command_payload("{{ value | int }}") is None
