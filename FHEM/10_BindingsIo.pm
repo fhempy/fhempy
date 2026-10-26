@@ -90,6 +90,7 @@ sub BindingsIo_Initialize {
   $hash->{ReadyFn}  = \&BindingsIo_Ready;
   $hash->{WriteFn}  = \&BindingsIo_Write;
   $hash->{FW_detailFn} = \&BindingsIo_detailFn;
+  $hash->{FW_deviceOverview} = 1;
 
   $hash->{Clients} = "PythonModule:fhempy"; # NodeModule
 

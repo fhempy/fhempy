@@ -223,8 +223,13 @@ def uv_index_args():
 # them with these overrides (the marker never matches).
 # netifaces: required by python-miio, used only by its firmware updater. It has
 # no wheels for Python >= 3.10 and needs a compiler and Python headers.
+# pycryptodome: hyundai_kia_connect_api >= 4.40 requires pycryptodome>=4, all
+# greeclimate versions require <4. Both work with 3.x (kia_hyundai uses only
+# PKCS1_v1_5 and RSA), keeping 3.x avoids that every install of one of them
+# swaps pycryptodome while other modules have already imported it.
 UV_OVERRIDES = [
     'netifaces; python_version < "0"',
+    "pycryptodome>=3.24,<4",
 ]
 
 
