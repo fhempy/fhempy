@@ -2713,29 +2713,6 @@ files = [
 tmodbus = {version = ">=0.5", extras = ["async-serial"]}
 
 [[package]]
-name = "hyundai-kia-connect-api"
-version = "4.38.1"
-description = "Python API for Hyundai, Kia, and Genesis car infotainment systems"
-optional = false
-python-versions = ">=3.12"
-groups = ["all"]
-files = [
-    {file = "hyundai_kia_connect_api-4.38.1-py3-none-any.whl", hash = "sha256:b52ba534a63725ce2a9c21b05cb8f446fb5bdb0fe130d0b1c5265a24e176da32"},
-    {file = "hyundai_kia_connect_api-4.38.1.tar.gz", hash = "sha256:aefc61b1a2edf0de597c938ddd3124b931ab48c12269ac72b111c4cd2891c073"},
-]
-
-[package.dependencies]
-beautifulsoup4 = ">=4.15.0"
-certifi = ">=2026.7.22"
-pycryptodome = ">=3.24.0"
-requests = "*"
-tzdata = ">=2026.5"
-
-[package.extras]
-google = ["geopy (>=2.2.0)"]
-image = ["Pillow (>=10.0.0)", "numpy (>=1.26.0)"]
-
-[[package]]
 name = "icmplib"
 version = "3.0.4"
 description = "Easily forge ICMP packets and make your own ping and traceroute."
@@ -7741,4 +7718,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "8e11a2754752d2979c953ac12d2dd32d2d7a61a104ece94ad7e350ab5b9ec7bb"
+content-hash = "66c2141a9f4c16af108b30984aa2a6778234ee3173408308204d35fbce57745e"
