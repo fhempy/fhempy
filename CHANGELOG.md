@@ -2,6 +2,65 @@
 
 <!-- version list -->
 
+## v2.10.2 (2026-10-26)
+
+### Bug Fixes
+
+- FHEM files of fhempy are never lost, missing ones come back
+  ([#768](https://github.com/fhempy/fhempy/pull/768),
+  [`1b8809c`](https://github.com/fhempy/fhempy/commit/1b8809c9c409171cca5f89b785cf20452ae1e65f))
+
+- Kia_hyundai uses hyundai_kia_connect_api 4.41.2 (Kia EU login)
+  ([#778](https://github.com/fhempy/fhempy/pull/778),
+  [`ee3d502`](https://github.com/fhempy/fhempy/commit/ee3d5025621f21422f53fad5074460fed96fbced))
+
+- Lock fake tailscale state file in remote_access tests
+  ([#773](https://github.com/fhempy/fhempy/pull/773),
+  [`e7d63a8`](https://github.com/fhempy/fhempy/commit/e7d63a843adcffcc01a7eec2da68840b3f5dd01f))
+
+- Miio accepts old device types like vacuum ([#776](https://github.com/fhempy/fhempy/pull/776),
+  [`e5e6ad6`](https://github.com/fhempy/fhempy/commit/e5e6ad6d084b0395ee0655abf13fc88a9d5a626b))
+
+- Remote_access reacts to logout during a running check
+  ([#777](https://github.com/fhempy/fhempy/pull/777),
+  [`695208b`](https://github.com/fhempy/fhempy/commit/695208b68dfd23d51ea6dcb1a6da399051ec533f))
+
+- Show device overview on BindingsIo detail page again
+  ([#780](https://github.com/fhempy/fhempy/pull/780),
+  [`51bf1d9`](https://github.com/fhempy/fhempy/commit/51bf1d9f45bf320d2d2db2581be5e4dc2a646d0a))
+
+- **autodiscovery**: Set up MQTT devices like Home Assistant
+  ([#781](https://github.com/fhempy/fhempy/pull/781),
+  [`d89beee`](https://github.com/fhempy/fhempy/commit/d89beee5a37dc2d0de341ee496bf7f5f3129aa0a))
+
+- **push**: Show why the device page can't load instead of Loading...
+  ([#768](https://github.com/fhempy/fhempy/pull/768),
+  [`1b8809c`](https://github.com/fhempy/fhempy/commit/1b8809c9c409171cca5f89b785cf20452ae1e65f))
+
+### Features
+
+- **autodiscovery**: Link to the created device ([#782](https://github.com/fhempy/fhempy/pull/782),
+  [`1097e3e`](https://github.com/fhempy/fhempy/commit/1097e3ed51d55de0138715e12ff44446f2d575ac))
+
+- **matter**: Attr test_dcl to pair devices with test certificates
+  ([#779](https://github.com/fhempy/fhempy/pull/779),
+  [`54f6aad`](https://github.com/fhempy/fhempy/commit/54f6aada00e9cd840b1448f0f6cfc8c744963a76))
+
+- **mqtt_ha**: Thermostats, covers, fans, locks and sirens like Home Assistant
+  ([#783](https://github.com/fhempy/fhempy/pull/783),
+  [`0328efc`](https://github.com/fhempy/fhempy/commit/0328efc46b0b026afec18c206e20cbe3c4145f6b))
+
+### Refactoring
+
+- No nested ternary in the created tile ([#782](https://github.com/fhempy/fhempy/pull/782),
+  [`1097e3e`](https://github.com/fhempy/fhempy/commit/1097e3ed51d55de0138715e12ff44446f2d575ac))
+
+### Testing
+
+- Attr and set return an empty string on success ([#781](https://github.com/fhempy/fhempy/pull/781),
+  [`d89beee`](https://github.com/fhempy/fhempy/commit/d89beee5a37dc2d0de341ee496bf7f5f3129aa0a))
+
+
 ## v2.10.1 (2026-10-25)
 
 ### Bug Fixes
