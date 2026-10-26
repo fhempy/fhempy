@@ -351,6 +351,8 @@ async def test_detail_page(module):
     assert config["addresses"][0]["qr"].startswith("<img")
     assert config["remote_access"] is True
     assert config["history"] == []
+    # a missing push.js is shown instead of a page stuck at Loading...
+    assert ".fail(function" in page
     # with a phone the list of messages comes first
     assert page.index("fhempyPushHistory") < page.index('id="fhempyPush"')
 
