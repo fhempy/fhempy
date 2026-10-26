@@ -18,7 +18,7 @@ InternalTimer(time()+0.5, sub {
 	my @published;
 	{
 		no warnings 'redefine';
-		*main::IOWrite = sub { my ($hash, $fn, $msg) = @_; push @published, $msg; return undef; };
+		*main::IOWrite = sub ($@) { my ($hash, $fn, $msg) = @_; push @published, $msg; return undef; };
 	}
 	my $io = { NAME => q[m2s] };
 
@@ -30,7 +30,7 @@ InternalTimer(time()+0.5, sub {
 			my $value = $attrs->{$attr};
 			$value = join(qq[\n], @{$value}) if (ref($value) eq q[ARRAY]);
 			next if ($value eq q[]);
-			is(CommandAttr(undef, qq[$name $attr $value]), U(), qq[$name attr $attr]);
+			ok(!CommandAttr(undef, qq[$name $attr $value]), qq[$name attr $attr]);
 		}
 
 		foreach my $msg (@{$sc->{messages}}) {
@@ -53,7 +53,7 @@ InternalTimer(time()+0.5, sub {
 
 		foreach my $set (@{$sc->{sets}}) {
 			@published = ();
-			is(CommandSet(undef, qq[$name $set->[0]]), U(), qq[set $name $set->[0]]);
+			ok(!CommandSet(undef, qq[$name $set->[0]]), qq[set $name $set->[0]]);
 			is(\@published, [$set->[1]], qq[set $name $set->[0] publishes]);
 		}
 	}
