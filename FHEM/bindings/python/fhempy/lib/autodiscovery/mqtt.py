@@ -38,9 +38,11 @@ def local_addresses():
 
 def supported(component, payload_json):
     """mqtt_ha creates readings or sets for the entity"""
-    return component in mqtt_ha.GENERATORS and bool(
-        payload_json.get("stat_t") or payload_json.get("cmd_t")
-    )
+    return mqtt_ha.supported(component, payload_json)
+
+
+def entity_list(device):
+    return [(c, o, p) for (c, o), p in device["entities"].items()]
 
 
 class MqttDiscovery:
@@ -52,6 +54,8 @@ class MqttDiscovery:
         self._brokers = {}
         self._credentials = {}
         self._local_task = None
+        # (host, port) -> connected aiomqtt client
+        self._clients = {}
         # device_id -> name, fhem_name, entities, broker, created/exists
         self.devices = {}
         self.mode = "auto"
@@ -96,6 +100,7 @@ class MqttDiscovery:
         for task in self._brokers.values():
             task.cancel()
         self._brokers = {}
+        self._clients = {}
 
     async def _local_loop(self):
         """A broker on this computer, e.g. Mosquitto or MQTT2_SERVER"""
@@ -159,6 +164,7 @@ class MqttDiscovery:
                         await client.subscribe(mqtt_ha.DISCOVERY_TOPIC)
                         # ESPHome, Zigbee2MQTT... send their discovery again
                         await client.publish(BIRTH_TOPIC, "online")
+                        self._clients[key] = client
                         self._errors.success(f"{host}:{port}")
                         async for message in messages:
                             try:
@@ -171,6 +177,7 @@ class MqttDiscovery:
                                     f"{message.topic}"
                                 )
             except aiomqtt.MqttError as exc:
+                self._clients.pop(key, None)
                 # MqttError isn't an OSError, log it without traceback
                 self._errors.failed(
                     f"MQTT discovery: connection to {host}:{port} failed, retry "
@@ -199,12 +206,8 @@ class MqttDiscovery:
             if device is not None:
                 device["entities"][(component, object_id)] = payload_json
                 if device.get("created"):
-                    await mqtt_ha.set_attributes(
-                        self.engine.hash,
-                        device["created"],
-                        component,
-                        object_id,
-                        payload_json,
+                    await mqtt_ha.set_device_attributes(
+                        self.engine.hash, device["created"], entity_list(device)
                     )
                 continue
             device = {
@@ -258,9 +261,21 @@ class MqttDiscovery:
         if ret:
             return str(ret)
         device["created"] = name
-        for (component, object_id), payload in list(device["entities"].items()):
-            await mqtt_ha.set_attributes(hash, name, component, object_id, payload)
+        await mqtt_ha.set_device_attributes(hash, name, entity_list(device))
+        await self.request_states(device["broker"])
         return ""
+
+    async def request_states(self, broker):
+        """Devices send their states (and discovery) again after Home
+        Assistant's birth message: the new device gets its readings now and
+        not only with the next change."""
+        client = self._clients.get(tuple(broker))
+        if client is None:
+            return
+        try:
+            await client.publish(BIRTH_TOPIC, "online")
+        except Exception as exc:
+            self.logger.debug(f"Failed to request the states: {exc}")
 
     async def ensure_mqtt_client(self, hash, broker):
         """FHEM receives the messages of the broker: it is the MQTT2_SERVER of

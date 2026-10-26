@@ -1,0 +1,636 @@
+[
+ {
+  "name": "hue_z2m",
+  "discovery": [
+   [
+    "homeassistant/light/0x001788010301ba38/light/config",
+    {
+     "availability": [
+      {
+       "topic": "zigbee2mqtt/bridge/state",
+       "value_template": "{{ value_json.state }}"
+      },
+      {
+       "topic": "zigbee2mqtt/Wandlampe/availability",
+       "value_template": "{{ value_json.state }}"
+      }
+     ],
+     "availability_mode": "all",
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x001788010301ba38"
+      ],
+      "manufacturer": "Philips",
+      "model": "Hue White and color ambiance",
+      "name": "Wandlampe"
+     },
+     "origin": {
+      "name": "Zigbee2MQTT"
+     },
+     "name": null,
+     "schema": "json",
+     "brightness": true,
+     "brightness_scale": 254,
+     "command_topic": "zigbee2mqtt/Wandlampe/set",
+     "state_topic": "zigbee2mqtt/Wandlampe",
+     "supported_color_modes": [
+      "xy",
+      "color_temp"
+     ],
+     "max_mireds": 454,
+     "min_mireds": 153,
+     "effect": true,
+     "effect_list": [
+      "blink",
+      "breathe",
+      "okay",
+      "channel_change",
+      "finish_effect",
+      "stop_effect"
+     ],
+     "unique_id": "0x001788010301ba38_light_zigbee2mqtt"
+    }
+   ],
+   [
+    "homeassistant/select/0x001788010301ba38/power_on_behavior/config",
+    {
+     "availability": [
+      {
+       "topic": "zigbee2mqtt/bridge/state",
+       "value_template": "{{ value_json.state }}"
+      },
+      {
+       "topic": "zigbee2mqtt/Wandlampe/availability",
+       "value_template": "{{ value_json.state }}"
+      }
+     ],
+     "availability_mode": "all",
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x001788010301ba38"
+      ],
+      "manufacturer": "Philips",
+      "model": "Hue White and color ambiance",
+      "name": "Wandlampe"
+     },
+     "origin": {
+      "name": "Zigbee2MQTT"
+     },
+     "name": "Power-on behavior",
+     "command_topic": "zigbee2mqtt/Wandlampe/set/power_on_behavior",
+     "state_topic": "zigbee2mqtt/Wandlampe",
+     "value_template": "{{ value_json[\"power_on_behavior\"] }}",
+     "options": [
+      "off",
+      "on",
+      "toggle",
+      "previous"
+     ]
+    }
+   ],
+   [
+    "homeassistant/sensor/0x001788010301ba38/linkquality/config",
+    {
+     "availability": [
+      {
+       "topic": "zigbee2mqtt/bridge/state",
+       "value_template": "{{ value_json.state }}"
+      },
+      {
+       "topic": "zigbee2mqtt/Wandlampe/availability",
+       "value_template": "{{ value_json.state }}"
+      }
+     ],
+     "availability_mode": "all",
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x001788010301ba38"
+      ],
+      "manufacturer": "Philips",
+      "model": "Hue White and color ambiance",
+      "name": "Wandlampe"
+     },
+     "origin": {
+      "name": "Zigbee2MQTT"
+     },
+     "name": "Linkquality",
+     "state_topic": "zigbee2mqtt/Wandlampe",
+     "value_template": "{{ value_json.linkquality }}",
+     "unit_of_measurement": "lqi"
+    }
+   ],
+   [
+    "homeassistant/update/0x001788010301ba38/update/config",
+    {
+     "availability": [
+      {
+       "topic": "zigbee2mqtt/bridge/state",
+       "value_template": "{{ value_json.state }}"
+      },
+      {
+       "topic": "zigbee2mqtt/Wandlampe/availability",
+       "value_template": "{{ value_json.state }}"
+      }
+     ],
+     "availability_mode": "all",
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x001788010301ba38"
+      ],
+      "manufacturer": "Philips",
+      "model": "Hue White and color ambiance",
+      "name": "Wandlampe"
+     },
+     "origin": {
+      "name": "Zigbee2MQTT"
+     },
+     "name": null,
+     "state_topic": "zigbee2mqtt/Wandlampe",
+     "command_topic": "zigbee2mqtt/bridge/request/device/ota_update/update",
+     "value_template": "{\"installed_version\":{{ value_json['update']['installed_version'] }}}"
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Wandlampe",
+    "{\"state\":\"ON\",\"brightness\":200,\"color_temp\":300,\"color_mode\":\"color_temp\",\"color\":{\"x\":0.45,\"y\":0.41},\"linkquality\":120,\"power_on_behavior\":\"previous\",\"update\":{\"state\":\"idle\"}}"
+   ],
+   [
+    "zigbee2mqtt/bridge/state",
+    "{\"state\":\"online\"}"
+   ],
+   [
+    "zigbee2mqtt/Wandlampe/availability",
+    "{\"state\":\"online\"}"
+   ]
+  ],
+  "readings": {
+   "state": "on",
+   "brightness": "200",
+   "color_temp": "300",
+   "color_mode": "color_temp",
+   "color_x": "0.45",
+   "linkquality": "120",
+   "power_on_behavior": "previous",
+   "update_state": "idle",
+   "availability": "online"
+  },
+  "STATE": "on",
+  "later": [
+   [
+    [
+     "zigbee2mqtt/Wandlampe/availability",
+     "{\"state\":\"offline\"}"
+    ]
+   ],
+   {
+    "availability": "offline"
+   },
+   [
+    [
+     "zigbee2mqtt/Wandlampe/availability",
+     "{\"state\":\"online\"}"
+    ],
+    [
+     "zigbee2mqtt/bridge/state",
+     "offline"
+    ]
+   ],
+   {
+    "availability": "offline"
+   },
+   [
+    [
+     "zigbee2mqtt/bridge/state",
+     "online"
+    ],
+    [
+     "zigbee2mqtt/Wandlampe",
+     "{\"state\":\"OFF\"}"
+    ]
+   ],
+   {
+    "availability": "online",
+    "state": "off"
+   }
+  ],
+  "sets": [
+   [
+    "on",
+    "zigbee2mqtt/Wandlampe/set {\"state\":\"ON\"}"
+   ],
+   [
+    "off",
+    "zigbee2mqtt/Wandlampe/set {\"state\":\"OFF\"}"
+   ],
+   [
+    "brightness 100",
+    "zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"brightness\":100}"
+   ],
+   [
+    "color_temp 250",
+    "zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"color_temp\":250}"
+   ],
+   [
+    "color FF0000",
+    "zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"color\":{\"x\":0.7006,\"y\":0.2993}}"
+   ],
+   [
+    "effect breathe",
+    "zigbee2mqtt/Wandlampe/set {\"effect\":\"breathe\"}"
+   ],
+   [
+    "power_on_behavior off",
+    "zigbee2mqtt/Wandlampe/set/power_on_behavior off"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Wandlampe:.* { my $r = json2nameValue($EVENT); $r->{state} = lc($r->{state}) if (($r->{state} // '') =~ /^(ON|OFF)$/); $r }",
+    "zigbee2mqtt/bridge/state:.* { my $p = $EVENT =~ /^\\s*\\{/ ? (json2nameValue($EVENT)->{state} // '') : $EVENT; return undef if ($p ne 'online' && $p ne 'offline'); my $v = $p eq 'online' ? 1 : 0; my @a = map { $_ == 0 ? $v : ReadingsVal($NAME, \".availability$_\", 1) } (0..1); return { '.availability0' => $v, availability => (grep { !$_ } @a) ? 'offline' : 'online' } }",
+    "zigbee2mqtt/Wandlampe/availability:.* { my $p = $EVENT =~ /^\\s*\\{/ ? (json2nameValue($EVENT)->{state} // '') : $EVENT; return undef if ($p ne 'online' && $p ne 'offline'); my $v = $p eq 'online' ? 1 : 0; my @a = map { $_ == 1 ? $v : ReadingsVal($NAME, \".availability$_\", 1) } (0..1); return { '.availability1' => $v, availability => (grep { !$_ } @a) ? 'offline' : 'online' } }"
+   ],
+   "setList": [
+    "on:noArg zigbee2mqtt/Wandlampe/set {\"state\":\"ON\"}",
+    "off:noArg zigbee2mqtt/Wandlampe/set {\"state\":\"OFF\"}",
+    "brightness:colorpicker,BRI,0,1,254 zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"brightness\":$EVTPART1}",
+    "color_temp:colorpicker,CT,153,1,454 zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"color_temp\":$EVTPART1}",
+    "color:colorpicker,RGB { my @c = map { $_ > 0.04045 ? (($_ + 0.055) / 1.055) ** 2.4 : $_ / 12.92 } map { hex($_) / 255 } ($EVTPART1 =~ /^#?(..)(..)(..)/); my $X = $c[0] * 0.664511 + $c[1] * 0.154324 + $c[2] * 0.162028; my $Y = $c[0] * 0.283881 + $c[1] * 0.668433 + $c[2] * 0.047685; my $s = $X + $Y + $c[0] * 0.000088 + $c[1] * 0.07231 + $c[2] * 0.986039 || 1; sprintf('zigbee2mqtt/Wandlampe/set {\"state\":\"ON\",\"color\":{\"x\":%.4f,\"y\":%.4f}}', $X / $s, $Y / $s) }",
+    "effect:blink,breathe,okay,channel_change,finish_effect,stop_effect zigbee2mqtt/Wandlampe/set {\"effect\":\"$EVTPART1\"}",
+    "power_on_behavior:off,on,toggle,previous zigbee2mqtt/Wandlampe/set/power_on_behavior $EVTPART1"
+   ],
+   "webCmd": "on:off:brightness"
+  }
+ },
+ {
+  "name": "esphome_rgb",
+  "discovery": [
+   [
+    "homeassistant/light/esp/licht/config",
+    {
+     "name": "Licht",
+     "schema": "json",
+     "clrm": true,
+     "sup_clrm": [
+      "rgb"
+     ],
+     "brightness": true,
+     "stat_t": "~/light/licht/state",
+     "cmd_t": "~/light/licht/command",
+     "avty_t": "~/status",
+     "~": "esp",
+     "uniq_id": "esplicht",
+     "dev": {
+      "ids": "b4e62d451d0d",
+      "name": "esp",
+      "mdl": "d1_mini",
+      "mf": "espressif"
+     },
+     "effect": true,
+     "fx_list": [
+      "None",
+      "Rainbow Effect"
+     ]
+    }
+   ],
+   [
+    "homeassistant/sensor/esp/temp/config",
+    {
+     "name": "Temp",
+     "stat_t": "esp/sensor/temp/state",
+     "unit_of_meas": "°C",
+     "avty_t": "esp/status",
+     "uniq_id": "esptemp",
+     "dev": {
+      "ids": "b4e62d451d0d",
+      "name": "esp",
+      "mdl": "d1_mini",
+      "mf": "espressif"
+     }
+    }
+   ],
+   [
+    "homeassistant/switch/esp/relay/config",
+    {
+     "name": "Relay",
+     "stat_t": "esp/switch/relay/state",
+     "cmd_t": "esp/switch/relay/command",
+     "avty_t": "esp/status",
+     "uniq_id": "esprelay",
+     "dev": {
+      "ids": "b4e62d451d0d",
+      "name": "esp",
+      "mdl": "d1_mini",
+      "mf": "espressif"
+     }
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "esp/status",
+    "online"
+   ],
+   [
+    "esp/light/licht/state",
+    "{\"state\":\"OFF\",\"brightness\":10,\"color_mode\":\"rgb\",\"color\":{\"r\":255,\"g\":0,\"b\":0}}"
+   ],
+   [
+    "esp/sensor/temp/state",
+    "21.5"
+   ],
+   [
+    "esp/switch/relay/state",
+    "ON"
+   ]
+  ],
+  "readings": {
+   "availability": "online",
+   "state": "off",
+   "brightness": "10",
+   "color_r": "255",
+   "Temp": "21.5",
+   "Relay": "on"
+  },
+  "STATE": "off",
+  "later": [
+   [
+    [
+     "esp/status",
+     "offline"
+    ]
+   ],
+   {
+    "availability": "offline"
+   }
+  ],
+  "sets": [
+   [
+    "on",
+    "esp/light/licht/command {\"state\":\"ON\"}"
+   ],
+   [
+    "color FF8000",
+    "esp/light/licht/command {\"state\":\"ON\",\"color\":{\"r\":255,\"g\":128,\"b\":0}}"
+   ],
+   [
+    "brightness 128",
+    "esp/light/licht/command {\"state\":\"ON\",\"brightness\":128}"
+   ],
+   [
+    "Relay_on",
+    "esp/switch/relay/command ON"
+   ],
+   [
+    "Relay_off",
+    "esp/switch/relay/command OFF"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "esp/light/licht/state:.* { my $r = json2nameValue($EVENT); $r->{state} = lc($r->{state}) if (($r->{state} // '') =~ /^(ON|OFF)$/); $r }",
+    "esp/sensor/temp/state:.* { { Temp=>$EVENT } }",
+    "esp/switch/relay/state:.* { { Relay=>lc($EVENT) } }",
+    "esp/status:.* { my $p = $EVENT; return undef if ($p ne 'online' && $p ne 'offline'); my $v = $p eq 'online' ? 1 : 0; return { '.availability0' => $v, availability => $v ? 'online' : 'offline' } }"
+   ],
+   "setList": [
+    "on:noArg esp/light/licht/command {\"state\":\"ON\"}",
+    "off:noArg esp/light/licht/command {\"state\":\"OFF\"}",
+    "brightness:colorpicker,BRI,0,1,255 esp/light/licht/command {\"state\":\"ON\",\"brightness\":$EVTPART1}",
+    "color:colorpicker,RGB { sprintf('esp/light/licht/command {\"state\":\"ON\",\"color\":{\"r\":%d,\"g\":%d,\"b\":%d}}', map { $_ * 255 } map { hex($_) / 255 } ($EVTPART1 =~ /^#?(..)(..)(..)/)) }",
+    "Relay_on:noArg esp/switch/relay/command ON",
+    "Relay_off:noArg esp/switch/relay/command OFF"
+   ],
+   "webCmd": "on:off:brightness"
+  }
+ },
+ {
+  "name": "two_lights",
+  "discovery": [
+   [
+    "homeassistant/device/kitchen/config",
+    {
+     "dev": {
+      "ids": "ea334450945afc",
+      "name": "Kitchen"
+     },
+     "o": {
+      "name": "bla2mqtt"
+     },
+     "cmps": {
+      "lamp": {
+       "p": "light",
+       "schema": "json",
+       "name": "Lamp",
+       "stat_t": "kitchen/lamp",
+       "cmd_t": "kitchen/lamp/set",
+       "sup_clrm": [
+        "hs"
+       ]
+      },
+      "spot": {
+       "p": "light",
+       "schema": "json",
+       "name": "Spot",
+       "stat_t": "kitchen/spot",
+       "cmd_t": "kitchen/spot/set",
+       "sup_clrm": [
+        "brightness"
+       ]
+      }
+     }
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "kitchen/lamp",
+    "{\"state\":\"ON\",\"color_mode\":\"hs\",\"color\":{\"h\":120,\"s\":100}}"
+   ],
+   [
+    "kitchen/spot",
+    "{\"state\":\"OFF\",\"brightness\":3}"
+   ]
+  ],
+  "readings": {
+   "Lamp_state": "on",
+   "Lamp_color_h": "120",
+   "Spot_state": "off",
+   "Spot_brightness": "3"
+  },
+  "sets": [
+   [
+    "Lamp_color 00FF00",
+    "kitchen/lamp/set {\"state\":\"ON\",\"color\":{\"h\":120.0,\"s\":100.0}}"
+   ],
+   [
+    "Lamp_color 0000FF",
+    "kitchen/lamp/set {\"state\":\"ON\",\"color\":{\"h\":240.0,\"s\":100.0}}"
+   ],
+   [
+    "Spot_off",
+    "kitchen/spot/set {\"state\":\"OFF\"}"
+   ],
+   [
+    "Spot_brightness 7",
+    "kitchen/spot/set {\"state\":\"ON\",\"brightness\":7}"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "kitchen/lamp:.* { my $r = json2nameValue($EVENT, 'Lamp_'); $r->{Lamp_state} = lc($r->{Lamp_state}) if (($r->{Lamp_state} // '') =~ /^(ON|OFF)$/); $r }",
+    "kitchen/spot:.* { my $r = json2nameValue($EVENT, 'Spot_'); $r->{Spot_state} = lc($r->{Spot_state}) if (($r->{Spot_state} // '') =~ /^(ON|OFF)$/); $r }"
+   ],
+   "setList": [
+    "Lamp_on:noArg kitchen/lamp/set {\"state\":\"ON\"}",
+    "Lamp_off:noArg kitchen/lamp/set {\"state\":\"OFF\"}",
+    "Lamp_brightness:colorpicker,BRI,0,1,255 kitchen/lamp/set {\"state\":\"ON\",\"brightness\":$EVTPART1}",
+    "Lamp_color:colorpicker,RGB { my @c = map { hex($_) / 255 } ($EVTPART1 =~ /^#?(..)(..)(..)/); my ($mx, $mn) = (sort { $a <=> $b } @c)[2, 0]; my $d = $mx - $mn; my $h = !$d ? 0 : $mx == $c[0] ? 60 * ($c[1] - $c[2]) / $d : $mx == $c[1] ? 60 * (($c[2] - $c[0]) / $d + 2) : 60 * (($c[0] - $c[1]) / $d + 4); $h += 360 if ($h < 0); sprintf('kitchen/lamp/set {\"state\":\"ON\",\"color\":{\"h\":%.1f,\"s\":%.1f}}', $h, $mx ? $d / $mx * 100 : 0) }",
+    "Spot_on:noArg kitchen/spot/set {\"state\":\"ON\"}",
+    "Spot_off:noArg kitchen/spot/set {\"state\":\"OFF\"}",
+    "Spot_brightness:colorpicker,BRI,0,1,255 kitchen/spot/set {\"state\":\"ON\",\"brightness\":$EVTPART1}"
+   ]
+  }
+ },
+ {
+  "name": "default_schema",
+  "discovery": [
+   [
+    "homeassistant/light/bulb/light/config",
+    {
+     "name": "Bulb",
+     "cmd_t": "tasmota/cmnd/POWER",
+     "stat_t": "tasmota/stat/RESULT",
+     "stat_val_tpl": "{{ value_json.POWER }}",
+     "bri_cmd_t": "tasmota/cmnd/Dimmer",
+     "bri_stat_t": "tasmota/stat/RESULT",
+     "bri_val_tpl": "{{ value_json.Dimmer }}",
+     "bri_scl": 100,
+     "rgb_cmd_t": "tasmota/cmnd/Color2",
+     "pl_on": "ON",
+     "pl_off": "OFF",
+     "dev": {
+      "ids": "tasmota1",
+      "name": "Bulb"
+     }
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "tasmota/stat/RESULT",
+    "{\"POWER\":\"ON\",\"Dimmer\":40}"
+   ]
+  ],
+  "readings": {
+   "state": "on",
+   "POWER": "ON",
+   "Dimmer": "40"
+  },
+  "STATE": "on",
+  "sets": [
+   [
+    "off",
+    "tasmota/cmnd/POWER OFF"
+   ],
+   [
+    "brightness 50",
+    "tasmota/cmnd/Dimmer 50"
+   ],
+   [
+    "color FF0080",
+    "tasmota/cmnd/Color2 255,0,128"
+   ]
+  ],
+  "attributes": {
+   "readingList": [
+    "tasmota/stat/RESULT:.* { my $r = json2nameValue($EVENT); $r->{state} = $r->{POWER}; $r->{state} = lc($r->{state}) if (($r->{state} // '') =~ /^(ON|OFF)$/); $r }"
+   ],
+   "setList": [
+    "on:noArg tasmota/cmnd/POWER ON",
+    "off:noArg tasmota/cmnd/POWER OFF",
+    "brightness:colorpicker,BRI,0,1,100 tasmota/cmnd/Dimmer $EVTPART1",
+    "color:colorpicker,RGB { 'tasmota/cmnd/Color2 ' . join(',', map { hex($_) } ($EVTPART1 =~ /^#?(..)(..)(..)/)) }"
+   ],
+   "webCmd": "on:off:brightness"
+  }
+ },
+ {
+  "name": "z2m_sensor",
+  "discovery": [
+   [
+    "homeassistant/sensor/0x00158d0001/temperature/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x00158d0001"
+      ],
+      "manufacturer": "Xiaomi",
+      "model": "WSDCGQ11LM",
+      "name": "Wohnzimmer Temp"
+     },
+     "name": "Temperature",
+     "state_topic": "zigbee2mqtt/Wohnzimmer Temp",
+     "value_template": "{{ value_json.temperature }}",
+     "unit_of_measurement": "°C"
+    }
+   ],
+   [
+    "homeassistant/sensor/0x00158d0001/humidity/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x00158d0001"
+      ],
+      "manufacturer": "Xiaomi",
+      "model": "WSDCGQ11LM",
+      "name": "Wohnzimmer Temp"
+     },
+     "name": "Humidity",
+     "state_topic": "zigbee2mqtt/Wohnzimmer Temp",
+     "value_template": "{{ value_json.humidity }}",
+     "unit_of_measurement": "%"
+    }
+   ],
+   [
+    "homeassistant/binary_sensor/0x00158d0001/battery_low/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0x00158d0001"
+      ],
+      "manufacturer": "Xiaomi",
+      "model": "WSDCGQ11LM",
+      "name": "Wohnzimmer Temp"
+     },
+     "name": "Battery low",
+     "state_topic": "zigbee2mqtt/Wohnzimmer Temp",
+     "value_template": "{{ value_json.battery_low }}",
+     "payload_on": true,
+     "payload_off": false
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Wohnzimmer Temp",
+    "{\"temperature\":21.3,\"humidity\":55,\"battery_low\":false}"
+   ]
+  ],
+  "readings": {
+   "temperature": "21.3",
+   "humidity": "55",
+   "battery_low": "false"
+  },
+  "STATE": "21.3 °C 55 %",
+  "sets": [],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Wohnzimmer.Temp:.* { my $r = json2nameValue($EVENT); $r->{battery_low} = lc($r->{battery_low}) if (($r->{battery_low} // '') =~ /^(ON|OFF)$/); $r }"
+   ],
+   "setList": [],
+   "stateFormat": "temperature °C humidity %"
+  }
+ }
+]

@@ -24,6 +24,7 @@ def z2m_entity(ieee, name, component="sensor", **extra):
         },
         "name": name,
         "state_topic": "zigbee2mqtt/wohnzimmer_temp",
+        "value_template": "{{ value_json.%s }}" % name.lower(),
         **extra,
     }
     topic = f"homeassistant/{component}/{ieee}/{name.lower()}/config"
@@ -83,24 +84,43 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
     assert candidate["action"] == "callback"
     assert mock_fhem.command_define == []
 
+    published = []
+
+    class Client:
+        async def publish(self, topic, payload):
+            published.append((topic, payload))
+
+    engine.mqtt._clients[BROKER] = Client()
     assert await engine.create({"NAME": "x"}, candidate["id"], "", {}) == ""
     assert mock_fhem.command_define == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 MQTT2_DEVICE"
     ]
-    assert len(mock_fhem.command_attr) == 2
-    assert "Temperature=>lc($EVENT)" in mock_fhem.command_attr[0]
+    # the devices send their states again: readings right after the creation
+    assert published == [("homeassistant/status", "online")]
+    # one JSON topic with temperature and humidity
+    assert mock_fhem.command_attr == [
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 readingList "
+        "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT) }",
+    ]
 
     # entities after the creation are added to the device
+    mock_fhem.attributes["MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01"] = {
+        "readingList": mock_fhem.command_attr[0].split(" ", 2)[2]
+    }
     mock_fhem.command_attr.clear()
     await engine.mqtt.handle_message(
         BROKER,
         *z2m_entity(
-            "0x01", "Battery", state_topic="zigbee2mqtt/wohnzimmer_temp/battery"
+            "0x01",
+            "Battery",
+            state_topic="zigbee2mqtt/wohnzimmer_temp/battery",
+            value_template=None,
         ),
     )
     assert mock_fhem.command_attr == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 readingList "
-        "zigbee2mqtt/wohnzimmer_temp/battery:.* { { Battery=>lc($EVENT) } }"
+        "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT) }\n"
+        "zigbee2mqtt/wohnzimmer_temp/battery:.* { { Battery=>$EVENT } }"
     ]
 
 
@@ -111,14 +131,21 @@ async def test_existing_and_unsupported_devices_are_not_offered(engine, fhem_cal
     assert engine.candidates == {}
 
     fhem_calls["existing"] = ""
-    # no topics and unknown components
+    # no topics and components without state or command topic
     await engine.mqtt.handle_message(
         BROKER,
         "homeassistant/sensor/x/y/config",
         b'{"name": "no topics"}',
     )
     await engine.mqtt.handle_message(
-        BROKER, *z2m_entity("0x03", "Contact", component="binary_sensor")
+        BROKER,
+        *z2m_entity(
+            "0x03",
+            "Action",
+            component="device_automation",
+            state_topic=None,
+            topic="zigbee2mqtt/wohnzimmer_temp/action",
+        ),
     )
     await engine.mqtt.handle_message(BROKER, "homeassistant/status", b"online")
     await engine.mqtt.handle_message(
