@@ -2,6 +2,44 @@
 
 <!-- version list -->
 
+## v2.11.2 (2026-10-27)
+
+### Bug Fixes
+
+- **mqtt_ha**: StateFormat shows the main function, battery only when low
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+### Features
+
+- **timeline**: Device history popup, events only on change per click, unchanged curves folded away
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+- **timeline**: Device links, events only on change per click, unchanged curves folded away
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+- **timeline**: History of a device in a popup ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+### Refactoring
+
+- **mqtt_ha**: Smaller stateFormat helpers, icon constants
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+- **timeline**: No shadowed variable in the device popup
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+### Testing
+
+- **mqtt_ha**: Read the JSON files without changing $/ for FHEMWEB
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+
 ## v2.11.1 (2026-10-27)
 
 ### Bug Fixes
