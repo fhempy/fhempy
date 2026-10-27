@@ -123,6 +123,12 @@ class timeline(generic.FhemModule):
                     "help": "Timeline as JSON, from/to as YYYY-MM-DD "
                     "(default: last 7 days). Used by the detail page.",
                 },
+                "device": {
+                    "args": ["device", "days"],
+                    "params": {"days": {"optional": True}},
+                    "help": "History of one device of the last days (default "
+                    "7) as JSON. Used by the popup of the detail page.",
+                },
                 "details": {
                     "args": ["day"],
                     "help": "Hidden events of a day (YYYY-MM-DD) as JSON.",
@@ -549,6 +555,51 @@ class timeline(generic.FhemModule):
             "absences": self.store.absences(start - 86400, end),
             "periods": self.store.long_absences(PERIOD_MIN_SECONDS),
             "first": self.store.first_ts(),
+        }
+
+    async def get_device(self, hash, params):
+        if self.store is None:
+            return json.dumps({"error": "The timeline is starting"})
+        device = params["device"]
+        if device not in self.infos:
+            return json.dumps({"error": f"Unknown device {device}"})
+        try:
+            days = int(params.get("days") or DEFAULT_DAYS)
+        except ValueError:
+            return json.dumps({"error": "days must be a number"})
+        days = min(max(days, 1), MAX_DAYS)
+        await self.flush()
+        now = time.time()
+        end = day_start(datetime.date.today().isoformat()) + 86400
+        start = end - days * 86400
+        data = await utils.run_blocking(
+            functools.partial(self.query_device, device, start, end)
+        )
+        rows = [
+            row for row in data["story"] if not matches(self._hidden_rules, *row[1:3])
+        ]
+        entries = story.build_entries(rows, self.infos, data["absences"], now)
+        entries.reverse()
+        info = self.infos[device]
+        return json.dumps(
+            {
+                "device": device,
+                "text": story.label(self.infos, device),
+                "type": info.get("TYPE", ""),
+                "room": info.get("room", ""),
+                "from": start,
+                "to": end,
+                "entries": entries,
+                "trends": story.build_device_trends(data["hourly"], self.infos),
+            },
+            ensure_ascii=False,
+        )
+
+    def query_device(self, device, start, end):
+        return {
+            "story": self.store.device_story(device, start, end),
+            "hourly": self.store.device_hourly(device, start, end),
+            "absences": self.store.absences(start - 86400, end),
         }
 
     async def get_details(self, hash, params):

@@ -93,6 +93,24 @@ class Store:
                 (start, end),
             ).fetchall()
 
+    def device_story(self, device, start, end):
+        with self._lock:
+            return self._db.execute(
+                "SELECT ts, device, reading, value, category FROM events"
+                " WHERE layer = 'story' AND device = ? AND ts >= ? AND ts < ?"
+                " ORDER BY ts",
+                (device, start, end),
+            ).fetchall()
+
+    def device_hourly(self, device, start, end):
+        with self._lock:
+            return self._db.execute(
+                "SELECT hour, device, reading, category, min, max, sum, n"
+                " FROM hourly WHERE device = ? AND hour >= ? AND hour < ?"
+                " ORDER BY hour",
+                (device, int(start), int(end)),
+            ).fetchall()
+
     def details(self, start, end, limit=500):
         with self._lock:
             return self._db.execute(

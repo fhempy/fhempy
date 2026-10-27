@@ -257,6 +257,20 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
     assert [e["text"] for e in data["days"][0]["entries"]] == ["Hallway: action double"]
 
+    # history of one device for the popup
+    history = json.loads(await module.Get(hash, ["tl", "device", "hall"], {}))
+    assert history["text"] == "Hallway"
+    # action single came before "Always show"
+    assert [e["text"] for e in history["entries"]] == ["Hallway: action double"]
+    assert [t["reading"] for t in history["trends"]] == ["temperature"]
+    assert history["trends"][0]["points"][0][1] == 21.5
+    assert history["to"] - history["from"] == 7 * 86400
+    history = json.loads(await module.Get(hash, ["tl", "device", "hall", "99"], {}))
+    assert history["to"] - history["from"] == 31 * 86400
+    assert json.loads(await module.Get(hash, ["tl", "device", "nodevice"], {})) == {
+        "error": "Unknown device nodevice"
+    }
+
     # events only on change, curves which changed
     trend = data["days"][0]["trends"][0]
     assert trend["changed"] is False and trend["on_change"] is False
