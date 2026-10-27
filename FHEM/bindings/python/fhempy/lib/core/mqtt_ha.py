@@ -532,20 +532,24 @@ BATTERY_LOW_TEXT = " battery low"
 BATTERY_LOW_ICON = "measure_battery_0@red"
 BATTERY_LOW_PERCENT = 20
 # words and icons of a binary sensor's device class: on, off, icon on, icon off
+OPEN_CLOSED = ("open", "closed")
+ALARM_ICONS = ("secur_alarm@red", "secur_alarm")
+MOTION_ICONS = ("motion_detector@red", "motion_detector")
+WINDOW_ICONS = ("fts_window_1w_open@red", "fts_window_1w")
 BINARY_STATES = {
-    "door": ("open", "closed", "fts_door_open@red", "fts_door"),
-    "garage_door": ("open", "closed", "fts_garage_door_100@red", "fts_garage"),
-    "window": ("open", "closed", "fts_window_1w_open@red", "fts_window_1w"),
-    "opening": ("open", "closed", "fts_window_1w_open@red", "fts_window_1w"),
+    "door": OPEN_CLOSED + ("fts_door_open@red", "fts_door"),
+    "garage_door": OPEN_CLOSED + ("fts_garage_door_100@red", "fts_garage"),
+    "window": OPEN_CLOSED + WINDOW_ICONS,
+    "opening": OPEN_CLOSED + WINDOW_ICONS,
     "smoke": ("smoke", "ok", "secur_smoke_detector@red", "secur_smoke_detector"),
-    "gas": ("gas", "ok", "secur_alarm@red", "secur_alarm"),
-    "carbon_monoxide": ("CO", "ok", "secur_alarm@red", "secur_alarm"),
+    "gas": ("gas", "ok") + ALARM_ICONS,
+    "carbon_monoxide": ("CO", "ok") + ALARM_ICONS,
     "moisture": ("wet", "dry", "humidity@red", "humidity"),
-    "safety": ("unsafe", "safe", "secur_alarm@red", "secur_alarm"),
-    "motion": ("motion", "no motion", "motion_detector@red", "motion_detector"),
-    "occupancy": ("occupied", "clear", "motion_detector@red", "motion_detector"),
-    "presence": ("present", "away", "motion_detector@red", "motion_detector"),
-    "vibration": ("vibration", "calm", "motion_detector@red", "motion_detector"),
+    "safety": ("unsafe", "safe") + ALARM_ICONS,
+    "motion": ("motion", "no motion") + MOTION_ICONS,
+    "occupancy": ("occupied", "clear") + MOTION_ICONS,
+    "presence": ("present", "away") + MOTION_ICONS,
+    "vibration": ("vibration", "calm") + MOTION_ICONS,
 }
 # not the main function of a device
 DIAGNOSTIC_CATEGORIES = ("diagnostic", "config")
@@ -851,22 +855,41 @@ def add_value_entity(dev, component, object_id, payload_json):
         dev.add_set(name, "textField", cmd_t, payload)
 
 
+def _add_main_binary(dev, reading, device_class, payload_json):
+    """the binary sensor shown as state, e.g. the contact of a door sensor"""
+    if device_class not in BINARY_STATES:
+        return
+    priority = list(BINARY_STATES).index(device_class)
+    current = dev.main_binary
+    if current is None or priority < current["priority"]:
+        dev.main_binary = {
+            "reading": reading,
+            "device_class": device_class,
+            "priority": priority,
+            "on": _payload_text(payload_json.get("payload_on", DEFAULT_PAYLOAD_ON)),
+            "off": _payload_text(payload_json.get("payload_off", DEFAULT_PAYLOAD_OFF)),
+        }
+
+
+def _add_battery(dev, component, reading, unit, payload_json):
+    if component == "binary_sensor":
+        on = _payload_text(payload_json.get("payload_on", DEFAULT_PAYLOAD_ON))
+        dev.battery_low.append(
+            f"lc(ReadingsVal($name, {perl_quote(reading)}, '')) eq {perl_quote(on)}"
+        )
+    elif component == "sensor" and unit == "%":
+        dev.battery_low.append(
+            f"ReadingsNum($name, {perl_quote(reading)}, 100) <= {BATTERY_LOW_PERCENT}"
+        )
+
+
 def _add_state_value(dev, component, reading, unit, payload_json):
     """the reading for the stateFormat: main function or low battery"""
     device_class = payload_json.get("device_class")
     if device_class == "battery" or (
         component == "binary_sensor" and reading.endswith("battery_low")
     ):
-        if component == "binary_sensor":
-            on = _payload_text(payload_json.get("payload_on", DEFAULT_PAYLOAD_ON))
-            dev.battery_low.append(
-                f"lc(ReadingsVal($name, {perl_quote(reading)}, '')) eq {perl_quote(on)}"
-            )
-        elif component == "sensor" and unit == "%":
-            dev.battery_low.append(
-                f"ReadingsNum($name, {perl_quote(reading)}, 100) <= "
-                f"{BATTERY_LOW_PERCENT}"
-            )
+        _add_battery(dev, component, reading, unit, payload_json)
         return
     if (
         payload_json.get("entity_category") in DIAGNOSTIC_CATEGORIES
@@ -875,18 +898,7 @@ def _add_state_value(dev, component, reading, unit, payload_json):
     ):
         return
     if component == "binary_sensor":
-        if device_class not in BINARY_STATES:
-            return
-        priority = list(BINARY_STATES).index(device_class)
-        current = dev.main_binary
-        if current is None or priority < current["priority"]:
-            dev.main_binary = {
-                "reading": reading,
-                "device_class": device_class,
-                "priority": priority,
-                "on": _payload_text(payload_json.get("payload_on", "ON")),
-                "off": _payload_text(payload_json.get("payload_off", "OFF")),
-            }
+        _add_main_binary(dev, reading, device_class, payload_json)
     elif component == "sensor":
         if unit:
             dev.state_format.append([("r", reading), ("t", f" {unit}")])
