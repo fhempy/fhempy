@@ -605,6 +605,8 @@
       "name": "Wohnzimmer Temp"
      },
      "name": "Battery low",
+     "device_class": "battery",
+     "entity_category": "diagnostic",
      "state_topic": "zigbee2mqtt/Wohnzimmer Temp",
      "value_template": "{{ value_json.battery_low }}",
      "payload_on": true,
@@ -624,13 +626,244 @@
    "battery_low": "false"
   },
   "STATE": "21.3 °C 55 %",
+  "later": [
+   [
+    [
+     "zigbee2mqtt/Wohnzimmer Temp",
+     "{\"temperature\":21.3,\"humidity\":55,\"battery_low\":true}"
+    ]
+   ],
+   {
+    "battery_low": "true",
+    "STATE": "21.3 °C 55 % battery low"
+   }
+  ],
   "sets": [],
   "attributes": {
    "readingList": [
     "zigbee2mqtt/Wohnzimmer.Temp:.* { my $r = json2nameValue($EVENT); $r->{battery_low} = lc($r->{battery_low}) if (($r->{battery_low} // '') =~ /^(ON|OFF)$/); $r }"
    ],
    "setList": [],
-   "stateFormat": "temperature °C humidity %"
+   "stateFormat": "{ ReadingsVal($name, 'temperature', '') . ' °C' . ' ' . ReadingsVal($name, 'humidity', '') . ' %' . ((lc(ReadingsVal($name, 'battery_low', '')) eq 'true') ? ' battery low' : '') }"
+  }
+ },
+ {
+  "name": "z2m_contact",
+  "discovery": [
+   [
+    "homeassistant/binary_sensor/0xcontact/contact/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xcontact"
+      ],
+      "manufacturer": "Aqara",
+      "model": "Door and window sensor",
+      "model_id": "MCCGQ11LM",
+      "name": "Contact_39_Eingang"
+     },
+     "name": null,
+     "device_class": "door",
+     "state_topic": "zigbee2mqtt/Contact_39_Eingang",
+     "value_template": "{{ value_json.contact }}",
+     "payload_on": false,
+     "payload_off": true
+    }
+   ],
+   [
+    "homeassistant/sensor/0xcontact/battery/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xcontact"
+      ],
+      "manufacturer": "Aqara",
+      "model": "Door and window sensor",
+      "model_id": "MCCGQ11LM",
+      "name": "Contact_39_Eingang"
+     },
+     "name": "Battery",
+     "device_class": "battery",
+     "entity_category": "diagnostic",
+     "state_class": "measurement",
+     "unit_of_measurement": "%",
+     "state_topic": "zigbee2mqtt/Contact_39_Eingang",
+     "value_template": "{{ value_json.battery }}"
+    }
+   ],
+   [
+    "homeassistant/sensor/0xcontact/voltage/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xcontact"
+      ],
+      "manufacturer": "Aqara",
+      "model": "Door and window sensor",
+      "model_id": "MCCGQ11LM",
+      "name": "Contact_39_Eingang"
+     },
+     "name": "Voltage",
+     "device_class": "voltage",
+     "entity_category": "diagnostic",
+     "unit_of_measurement": "mV",
+     "state_topic": "zigbee2mqtt/Contact_39_Eingang",
+     "value_template": "{{ value_json.voltage }}"
+    }
+   ],
+   [
+    "homeassistant/sensor/0xcontact/linkquality/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xcontact"
+      ],
+      "manufacturer": "Aqara",
+      "model": "Door and window sensor",
+      "model_id": "MCCGQ11LM",
+      "name": "Contact_39_Eingang"
+     },
+     "name": "Linkquality",
+     "entity_category": "diagnostic",
+     "unit_of_measurement": "lqi",
+     "state_topic": "zigbee2mqtt/Contact_39_Eingang",
+     "value_template": "{{ value_json.linkquality }}"
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Contact_39_Eingang",
+    "{\"battery\":43,\"contact\":true,\"linkquality\":134,\"voltage\":2915}"
+   ]
+  ],
+  "readings": {
+   "contact": "true",
+   "battery": "43",
+   "voltage": "2915",
+   "linkquality": "134"
+  },
+  "STATE": "closed",
+  "ICON": "fts_door",
+  "later": [
+   [
+    [
+     "zigbee2mqtt/Contact_39_Eingang",
+     "{\"battery\":43,\"contact\":false}"
+    ]
+   ],
+   {
+    "STATE": "open",
+    "ICON": "fts_door_open"
+   },
+   [
+    [
+     "zigbee2mqtt/Contact_39_Eingang",
+     "{\"battery\":15,\"contact\":true}"
+    ]
+   ],
+   {
+    "STATE": "closed battery low",
+    "ICON": "measure_battery_0"
+   }
+  ],
+  "sets": [],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Contact_39_Eingang:.* { my $r = json2nameValue($EVENT); $r->{contact} = lc($r->{contact}) if (($r->{contact} // '') =~ /^(ON|OFF)$/); $r }"
+   ],
+   "setList": [],
+   "stateFormat": "{ my $v = lc(ReadingsVal($name, 'contact', '')); ($v eq 'false' ? 'open' : $v eq 'true' ? 'closed' : $v eq '' ? '???' : $v) . ((ReadingsNum($name, 'battery', 100) <= 20) ? ' battery low' : '') }",
+   "devStateIcon": "{ (my $s = $state) =~ s/ battery low$//; my $i = { 'open' => 'fts_door_open@red', 'closed' => 'fts_door' }->{$s}; return undef if (!$i || !FW_iconName($i)); FW_makeImage($i, $s) . ($state ne $s ? ' ' . FW_makeImage('measure_battery_0@red', 'battery low') : '') }"
+  }
+ },
+ {
+  "name": "z2m_motion",
+  "discovery": [
+   [
+    "homeassistant/binary_sensor/0xmotion/occupancy/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xmotion"
+      ],
+      "name": "Flur"
+     },
+     "name": "Occupancy",
+     "device_class": "occupancy",
+     "state_topic": "zigbee2mqtt/Flur",
+     "value_template": "{{ value_json.occupancy }}",
+     "payload_on": true,
+     "payload_off": false
+    }
+   ],
+   [
+    "homeassistant/sensor/0xmotion/illuminance/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xmotion"
+      ],
+      "name": "Flur"
+     },
+     "name": "Illuminance",
+     "device_class": "illuminance",
+     "unit_of_measurement": "lx",
+     "state_topic": "zigbee2mqtt/Flur",
+     "value_template": "{{ value_json.illuminance }}"
+    }
+   ],
+   [
+    "homeassistant/binary_sensor/0xmotion/battery_low/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xmotion"
+      ],
+      "name": "Flur"
+     },
+     "name": "Battery low",
+     "device_class": "battery",
+     "entity_category": "diagnostic",
+     "state_topic": "zigbee2mqtt/Flur",
+     "value_template": "{{ value_json.battery_low }}",
+     "payload_on": true,
+     "payload_off": false
+    }
+   ]
+  ],
+  "messages": [
+   [
+    "zigbee2mqtt/Flur",
+    "{\"occupancy\":true,\"illuminance\":20,\"battery_low\":false}"
+   ]
+  ],
+  "readings": {
+   "occupancy": "true",
+   "illuminance": "20",
+   "battery_low": "false"
+  },
+  "STATE": "occupied",
+  "ICON": "motion_detector",
+  "later": [
+   [
+    [
+     "zigbee2mqtt/Flur",
+     "{\"occupancy\":false,\"battery_low\":true}"
+    ]
+   ],
+   {
+    "STATE": "clear battery low"
+   }
+  ],
+  "sets": [],
+  "attributes": {
+   "readingList": [
+    "zigbee2mqtt/Flur:.* { my $r = json2nameValue($EVENT); $r->{battery_low} = lc($r->{battery_low}) if (($r->{battery_low} // '') =~ /^(ON|OFF)$/); $r->{occupancy} = lc($r->{occupancy}) if (($r->{occupancy} // '') =~ /^(ON|OFF)$/); $r }"
+   ],
+   "setList": [],
+   "stateFormat": "{ my $v = lc(ReadingsVal($name, 'occupancy', '')); ($v eq 'true' ? 'occupied' : $v eq 'false' ? 'clear' : $v eq '' ? '???' : $v) . ((lc(ReadingsVal($name, 'battery_low', '')) eq 'true') ? ' battery low' : '') }",
+   "devStateIcon": "{ (my $s = $state) =~ s/ battery low$//; my $i = { 'occupied' => 'motion_detector@red', 'clear' => 'motion_detector' }->{$s}; return undef if (!$i || !FW_iconName($i)); FW_makeImage($i, $s) . ($state ne $s ? ' ' . FW_makeImage('measure_battery_0@red', 'battery low') : '') }"
   }
  },
  {
@@ -820,6 +1053,23 @@
      "state_locked": "LOCK",
      "state_unlocked": "UNLOCK"
     }
+   ],
+   [
+    "homeassistant/sensor/0xlock/battery/config",
+    {
+     "device": {
+      "identifiers": [
+       "zigbee2mqtt_0xlock"
+      ],
+      "name": "Tuer"
+     },
+     "name": "Battery",
+     "device_class": "battery",
+     "entity_category": "diagnostic",
+     "unit_of_measurement": "%",
+     "state_topic": "zigbee2mqtt/Tuer",
+     "value_template": "{{ value_json.battery }}"
+    }
    ]
   ],
   "messages": [
@@ -832,6 +1082,17 @@
    "state": "LOCK"
   },
   "STATE": "LOCK",
+  "later": [
+   [
+    [
+     "zigbee2mqtt/Tuer",
+     "{\"state\":\"LOCK\",\"battery\":5}"
+    ]
+   ],
+   {
+    "STATE": "LOCK battery low"
+   }
+  ],
   "sets": [
    [
     "unlock",
@@ -850,7 +1111,8 @@
     "lock:noArg zigbee2mqtt/Tuer/set LOCK",
     "unlock:noArg zigbee2mqtt/Tuer/set UNLOCK"
    ],
-   "webCmd": "lock:unlock"
+   "webCmd": "lock:unlock",
+   "stateFormat": "{ ReadingsVal($name, 'state', '') . ((ReadingsNum($name, 'battery', 100) <= 20) ? ' battery low' : '') }"
   }
  },
  {

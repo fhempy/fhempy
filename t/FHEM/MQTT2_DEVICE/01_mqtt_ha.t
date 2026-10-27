@@ -22,6 +22,27 @@ InternalTimer(time()+0.5, sub {
 	}
 	my $io = { NAME => q[m2s] };
 
+	# icons of FHEMWEB like on a page: devStateIcon returns them as HTML
+	$main::FW_wname = q[WEB];
+	FW_setStylesheet();
+	FW_readIcons($_) foreach (qw(f18 fhemSVG openautomation default));
+	open($fh, q[<], dirname(__FILE__) . q[/mqtt_ha_icons.json]) or die $!;
+	foreach my $icon (@{JSON->new->decode(<$fh>)}) {
+		ok(FW_iconName($icon), qq[FHEMWEB has the icon $icon]);
+	}
+	close($fh);
+	my $check_state = sub {
+		my ($name, $key, $expected, $after) = @_;
+		if ($key eq q[STATE]) {
+			is($defs{$name}{STATE}, $expected, qq[$name STATE$after]);
+		} elsif ($key eq q[ICON]) {
+			my ($html) = FW_dev2image($name);
+			like($html, qr/^<.*\b\Q$expected\E(?=[ "])/s, qq[$name icon $expected$after]);
+		} else {
+			is(ReadingsVal($name, $key, undef), $expected, qq[$name reading $key$after]);
+		}
+	};
+
 	foreach my $sc (@{$scenarios}) {
 		my $name = $sc->{name};
 		is(CommandDefine(undef, qq[$name MQTT2_DEVICE]), U(), qq[$name defined]);
@@ -39,15 +60,17 @@ InternalTimer(time()+0.5, sub {
 		foreach my $reading (sort keys %{$sc->{readings}}) {
 			is(ReadingsVal($name, $reading, undef), $sc->{readings}{$reading}, qq[$name reading $reading]);
 		}
-		is($defs{$name}{STATE}, $sc->{STATE}, qq[$name STATE]) if (defined($sc->{STATE}));
+		foreach my $key (qw(STATE ICON)) {
+			$check_state->($name, $key, $sc->{$key}, q[]) if (defined($sc->{$key}));
+		}
 
 		my @later = @{$sc->{later} // []};
 		while (@later) {
 			my ($msgs, $expected) = splice(@later, 0, 2);
 			MQTT2_DEVICE_Parse($io, join(qq[\0], q[cid], @{$_})) foreach (@{$msgs});
-			foreach my $reading (sort keys %{$expected}) {
-				is(ReadingsVal($name, $reading, undef), $expected->{$reading},
-					qq[$name reading $reading after ] . join(q[, ], map { $_->[1] } @{$msgs}));
+			my $after = q[ after ] . join(q[, ], map { $_->[1] } @{$msgs});
+			foreach my $key (sort keys %{$expected}) {
+				$check_state->($name, $key, $expected->{$key}, $after);
 			}
 		}
 

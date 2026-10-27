@@ -122,10 +122,11 @@ async def test_full_key_names_without_node_id(mocker):
         )
     )
     assert mock_fhem.command_define == ["MQTT2_outside_temp_outside_temp MQTT2_DEVICE"]
-    assert mock_fhem.command_attr[-1] == (
+    assert mock_fhem.command_attr[-2:] == [
         "MQTT2_outside_temp_outside_temp readingList "
-        "garden/temp:.* { { outside_temp=>$EVENT } }"
-    )
+        "garden/temp:.* { { outside_temp=>$EVENT } }",
+        "MQTT2_outside_temp_outside_temp stateFormat outside_temp",
+    ]
 
 
 @pytest.mark.asyncio
