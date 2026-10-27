@@ -264,7 +264,9 @@ class MqttDiscovery:
         candidate = self.engine.candidates.get(f"mqtt:{device_id}")
         if candidate is not None:
             candidate["device"] = name
-        await mqtt_ha.set_device_attributes(hash, name, entity_list(device))
+        entities = entity_list(device)
+        await mqtt_ha.set_device_attributes(hash, name, entities)
+        await mqtt_ha.set_new_device_details(hash, name, device["name"], entities)
         await self.request_states(device["broker"])
         return ""
 

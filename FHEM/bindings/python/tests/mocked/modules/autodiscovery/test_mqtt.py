@@ -67,7 +67,9 @@ def engine():
 
 @pytest.mark.asyncio
 async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls):
-    await engine.mqtt.handle_message(BROKER, *z2m_entity("0x01", "Temperature"))
+    await engine.mqtt.handle_message(
+        BROKER, *z2m_entity("0x01", "Temperature", device_class="temperature")
+    )
     await engine.mqtt.handle_message(BROKER, *z2m_entity("0x01", "Humidity"))
     await engine.mqtt.handle_message(BROKER, *z2m_entity("0x02", "Temperature"))
 
@@ -98,15 +100,27 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
     assert candidate["device"] == "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01"
     # the devices send their states again: readings right after the creation
     assert published == [("homeassistant/status", "online")]
-    # one JSON topic with temperature and humidity
+    # one JSON topic with temperature and humidity, the friendly name of
+    # Zigbee2MQTT as alias, icon and events only on changes
     assert mock_fhem.command_attr == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 readingList "
         "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT) }",
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 alias Wohnzimmer Temp",
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 icon temp_temperature",
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 event-on-change-reading .*",
+    ]
+    setreadings = [c for c in fhem_calls["commands"] if "CommandSetReading" in c]
+    assert setreadings == [
+        "CommandSetReading(undef, "
+        "'MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 model WSDCGQ11LM')",
+        "CommandSetReading(undef, "
+        "'MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 manufacturer Xiaomi')",
     ]
 
     # entities after the creation are added to the device
     mock_fhem.attributes["MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01"] = {
-        "readingList": mock_fhem.command_attr[0].split(" ", 2)[2]
+        "readingList": mock_fhem.command_attr[0].split(" ", 2)[2],
+        "alias": "Wohnzimmer Temp",
     }
     mock_fhem.command_attr.clear()
     await engine.mqtt.handle_message(
@@ -171,7 +185,7 @@ async def test_mqtt2_client_created_without_mqtt_in_fhem(engine, fhem_calls):
         "mqtt_broker autocreate no",
         "mqtt_broker username fhem",
     ]
-    assert "set mqtt_broker password secret" in fhem_calls["commands"][-1]
+    assert any("set mqtt_broker password secret" in c for c in fhem_calls["commands"])
 
 
 def test_brokers(engine, mocker):

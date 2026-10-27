@@ -140,3 +140,52 @@ def test_command_template_variables():
     )
     assert mqtt_ha.command_payload("{{ tilt_position }}") == "$EVTPART1"
     assert mqtt_ha.command_payload("{{ value | int }}") is None
+
+
+def test_default_icon_of_new_devices():
+    assert mqtt_ha.default_icon([("sensor", "a", {}), ("light", "b", {})]) == (
+        "light_light"
+    )
+    # battery is diagnostic, the device is a contact sensor
+    entities = [
+        (
+            "sensor",
+            "battery",
+            {"device_class": "battery", "entity_category": "diagnostic"},
+        ),
+        ("binary_sensor", "contact", {"device_class": "door"}),
+    ]
+    assert mqtt_ha.default_icon(entities) == "fts_door"
+    assert mqtt_ha.default_icon([("sensor", "x", {"device_class": "battery"})]) is (
+        None
+    )
+
+
+def test_device_readings_with_zigbee_model():
+    device = {
+        "identifiers": ["zigbee2mqtt_0x001788010301ba38"],
+        "manufacturer": "Philips",
+        "model": "Hue white and color ambiance E26/E27/E14",
+        "model_id": "9290022166",
+    }
+    assert mqtt_ha.device_readings([("light", "light", {"device": device})]) == {
+        "model": "Hue white and color ambiance E26/E27/E14",
+        "zigbeeModel": "9290022166",
+        "manufacturer": "Philips",
+    }
+    # older Zigbee2MQTT versions put the model id in brackets
+    device = {
+        "identifiers": ["zigbee2mqtt_0x01"],
+        "model": "Hue white and color ambiance (9290012573A)",
+    }
+    assert mqtt_ha.device_readings([("light", "light", {"device": device})]) == {
+        "model": "Hue white and color ambiance",
+        "zigbeeModel": "9290012573A",
+    }
+    # ESPHome
+    device = {"identifiers": ["abc"], "model": "esp32dev", "manufacturer": "espressif"}
+    assert mqtt_ha.device_readings([("switch", "s", {"device": device})]) == {
+        "model": "esp32dev",
+        "manufacturer": "espressif",
+    }
+    assert mqtt_ha.device_readings([("switch", "s", {})]) == {}

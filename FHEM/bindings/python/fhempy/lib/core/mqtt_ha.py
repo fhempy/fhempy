@@ -1266,6 +1266,104 @@ async def set_device_attributes(hash, fhem_device_name, entities):
             await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
 
 
+# FHEMWEB icon of a new device: first matching component, then the device
+# class of a sensor (diagnostic entities like battery are skipped)
+ICONS_BY_COMPONENT = (
+    ("light", "light_light"),
+    ("lock", "secur_locked"),
+    ("cover", "fts_shutter"),
+    ("climate", "sani_heating"),
+    ("fan", "vent_ventilation"),
+    ("siren", "secur_alarm"),
+    ("switch", "message_socket"),
+)
+ICONS_BY_DEVICE_CLASS = (
+    ("smoke", "secur_smoke_detector"),
+    ("moisture", "secur_alarm"),
+    ("door", "fts_door"),
+    ("garage_door", "fts_garage"),
+    ("window", "fts_window_1w"),
+    ("opening", "fts_window_1w"),
+    ("vibration", "fts_window_1w"),
+    ("motion", "motion_detector"),
+    ("occupancy", "motion_detector"),
+    ("presence", "motion_detector"),
+    ("temperature", "temp_temperature"),
+    ("humidity", "humidity"),
+    ("carbon_dioxide", "vent_ambient_air"),
+    ("pm25", "vent_ambient_air"),
+    ("volatile_organic_compounds", "vent_ambient_air"),
+    ("illuminance", "message_light_intensity"),
+    ("power", "measure_power"),
+    ("energy", "measure_power"),
+    ("pressure", "weather_barometric_pressure"),
+)
+
+
+def default_icon(entities):
+    """FHEMWEB icon for the device of the entities, None if unknown"""
+    components = {component for component, _, _ in entities}
+    for component, icon in ICONS_BY_COMPONENT:
+        if component in components:
+            return icon
+    classes = {
+        payload_json.get("device_class")
+        for _, _, payload_json in entities
+        if payload_json.get("entity_category") not in ("diagnostic", "config")
+    }
+    for device_class, icon in ICONS_BY_DEVICE_CLASS:
+        if device_class in classes:
+            return icon
+    return None
+
+
+def device_readings(entities):
+    """Readings with the model of the device: model, manufacturer and the
+    model id (zigbeeModel for Zigbee2MQTT devices)"""
+    dev = next(
+        (
+            p["device"]
+            for _, _, p in entities
+            if isinstance(p.get("device"), dict) and p["device"]
+        ),
+        {},
+    )
+    model = str(dev.get("model") or "")
+    model_id = str(dev.get("model_id") or "")
+    # older Zigbee2MQTT versions: "Hue white and color ambiance (9290012573A)"
+    if not model_id and model.endswith(")") and " (" in model:
+        model, _, model_id = model[:-1].rpartition(" (")
+    ids = dev.get("identifiers")
+    first_id = ids[0] if isinstance(ids, list) and ids else ids
+    zigbee = str(first_id or "").startswith("zigbee2mqtt_")
+    readings = {
+        "model": model,
+        "zigbeeModel" if zigbee else "modelId": model_id,
+        "manufacturer": str(dev.get("manufacturer") or ""),
+    }
+    return {name: value for name, value in readings.items() if value}
+
+
+async def set_new_device_details(hash, fhem_device_name, alias, entities):
+    """For devices created by autodiscovery: alias (friendly name), icon,
+    event-on-change-reading .* and the model readings. Attributes set by the
+    user are kept."""
+    attrs = {
+        "alias": alias,
+        "icon": default_icon(entities),
+        "event-on-change-reading": ".*",
+    }
+    for attr, value in attrs.items():
+        if value and not await fhem.AttrVal(fhem_device_name, attr, ""):
+            await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {value}")
+    for reading, value in device_readings(entities).items():
+        await fhem.sendCommandHash(
+            hash,
+            "CommandSetReading(undef, "
+            f"{fhem.perlString(f'{fhem_device_name} {reading} {value}')})",
+        )
+
+
 # fhem device name -> {(component, object_id): payload_json}
 _entities = {}
 
