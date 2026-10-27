@@ -67,13 +67,35 @@
       "#fhempyTimeline .ftlHiddenRow{padding:2px 0 4px 68px}" +
       "#fhempyTimeline .ftlTrends{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 16px;margin:4px 0 4px 68px}" +
       "#fhempyTimeline .ftlTrend{font-size:12px}" +
+      "#fhempyTimeline a.ftlDevice,#fhempyTimelineDetails a.ftlDevice{color:inherit;text-decoration:none}" +
+      "#fhempyTimeline a.ftlDevice:hover,#fhempyTimelineDetails a.ftlDevice:hover{text-decoration:underline}" +
+      "#fhempyTimeline .ftlTrend .ftlAction{opacity:0;font-size:10px}" +
+      "#fhempyTimeline .ftlTrend:hover .ftlAction{opacity:0.8}" +
       "#fhempyTimeline .ftlTrend svg{display:block;width:100%;height:26px}" +
       "#fhempyTimeline .ftlQuiet{opacity:0.75;font-size:13px;padding-left:68px}" +
       "#fhempyTimeline .ftlMore{margin:14px 0;text-align:center}" +
       "#fhempyTimeline .ftlButton{display:inline-block;padding:4px 16px;border-radius:14px;background:#4B8BBE;color:#fff;cursor:pointer;font-weight:600}" +
       "#fhempyTimeline .ftlEmpty{opacity:0.75;margin:16px 0}" +
+      "#fhempyTimelineDevice{font-family:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;line-height:1.4}" +
+      "#fhempyTimelineDevice .ftlBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}" +
+      "#fhempyTimelineDevice .ftlChip{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;cursor:pointer;font-size:13px}" +
+      "#fhempyTimelineDevice .ftlChip.ftlOn{border-color:transparent;background:rgba(75,139,190,0.18)}" +
+      "#fhempyTimelineDevice .ftlButton{display:inline-block;padding:4px 16px;border-radius:14px;background:#4B8BBE;color:#fff;cursor:pointer;font-weight:600;text-decoration:none}" +
+      "#fhempyTimelineDevice .ftlSection{font-weight:600;margin:10px 0 4px}" +
+      "#fhempyTimelineDevice .ftlTrend{font-size:12px;margin-bottom:8px}" +
+      "#fhempyTimelineDevice .ftlTrend svg{display:block;width:100%;height:44px}" +
+      "#fhempyTimelineDevice .ftlEntry{display:grid;grid-template-columns:44px 10px minmax(0,1fr) auto;gap:8px;padding:3px 0;align-items:start}" +
+      "#fhempyTimelineDevice .ftlTime{font-size:13px;opacity:0.7;font-variant-numeric:tabular-nums;padding-top:1px}" +
+      "#fhempyTimelineDevice .ftlDot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-top:5px}" +
+      "#fhempyTimelineDevice .ftlMeta{font-size:12px;opacity:0.65}" +
+      "#fhempyTimelineDevice .ftlBarLine{height:4px;border-radius:2px;margin-top:4px;opacity:0.55;max-width:100%}" +
+      "#fhempyTimelineDevice .ftlAlert{background:rgba(208,102,42,0.13);border-radius:6px;padding:5px 6px;margin:0 -6px}" +
+      "#fhempyTimelineDevice .ftlAction{font-size:11px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
+      "#fhempyTimelineDevice .ftlAxis{display:flex;font-size:11px;opacity:0.6;margin:-4px 0 6px}" +
+      "#fhempyTimelineDevice .ftlAxis span{flex:1;text-align:center}" +
+      "#fhempyTimelineDevice .ftlEmpty{opacity:0.75;margin:8px 0}" +
       "#fhempyTimelineDetails .ftlDetail{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
-      "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
+      "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;margin-left:4px;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
       "@media (max-width:600px){#fhempyTimeline .ftlTrends,#fhempyTimeline .ftlHiddenRow,#fhempyTimeline .ftlQuiet{margin-left:0;padding-left:0}}" +
       "</style>");
   }
@@ -164,6 +186,19 @@
     return (entry.children || []).some(visible);
   }
 
+  function deviceLink(name, text) {
+    if (!name) return esc(text);
+    return '<a class="ftlDevice" data-device="' + esc(name) + '" href="' + esc(FW_root + "?detail=" + encodeURIComponent(name)) +
+      '" title="History of ' + esc(name) + ' (Ctrl+click opens the device)">' + esc(text) + "</a>";
+  }
+
+  function onChangeAction(item) {
+    if (!item.device || item.on_change) return "";
+    return '<span class="ftlAction" data-onchange="' + esc(item.device + ":" + item.reading) +
+      '" title="Add ' + esc(item.reading) + " to event-on-change-reading of " + esc(item.device) +
+      ': events only when the value changes">Only on change</span>';
+  }
+
   function dot(category) {
     var info = categoryInfo[category] || categoryInfo.devices;
     return '<span class="ftlDot" style="background:' + info.color + '" title="' + esc(info.title) + '"></span>';
@@ -195,7 +230,7 @@
   function entryHtml(entry) {
     var html = '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '">' +
       '<span class="ftlTime">' + clock(entry.ts) + "</span>" + dot(entry.category) +
-      '<div class="ftlText">' + esc(entry.text);
+      '<div class="ftlText">' + deviceLink(entry.device, entry.text);
     var meta = entryMeta(entry);
     if (meta) html += '<div class="ftlMeta">' + meta + "</div>";
     html += durationBar(entry);
@@ -229,15 +264,28 @@
     return '<svg viewBox="0 0 100 26" preserveAspectRatio="none">' + line + "</svg>";
   }
 
+  function trendHtml(t) {
+    return '<div class="ftlTrend">' + deviceLink(t.device, t.text) + " <span style=\"opacity:0.7\">" +
+      fmt(t.min) + (t.changed ? " – " + fmt(t.max) : "") + "</span> " + onChangeAction(t) + sparkline(t) + "</div>";
+  }
+
   function trendsHtml(day) {
     var trends = day.trends.filter(function (t) { return visible(t); });
     if (!trends.length) return "";
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + trends.length + ")</span></div>" +
-      '<div class="ftlTrends" style="display:none">';
-    trends.forEach(function (t) {
-      html += '<div class="ftlTrend">' + esc(t.text) + " <span style=\"opacity:0.7\">" +
-        fmt(t.min) + " – " + fmt(t.max) + "</span>" + sparkline(t) + "</div>";
-    });
+    // curves which stayed the same all day only on demand
+    var changed = trends.filter(function (t) { return t.changed; });
+    var same = trends.filter(function (t) { return !t.changed; });
+    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + changed.length + " changed" +
+      (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
+      '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
+    changed.forEach(function (t) { html += trendHtml(t); });
+    html += "</div>";
+    if (same.length) {
+      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle">Show ' + same.length +
+        " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
+      same.forEach(function (t) { html += trendHtml(t); });
+      html += "</div>";
+    }
     return html + "</div>";
   }
 
@@ -333,6 +381,118 @@
     $("#fhempyTimeline").html('<div class="ftlEmpty">The timeline could not be loaded: ' + esc(text) + "</div>");
   }
 
+  function periodSparkline(trend, from, to) {
+    var low = trend.min, span = trend.max - trend.min || 1;
+    var info = categoryInfo[trend.category] || categoryInfo.devices;
+    var lines = [], line = [], last = null;
+    trend.points.forEach(function (p) {
+      // no value for more than 2 hours: gap in the curve
+      if (last !== null && p[0] - last > 7200) { lines.push(line); line = []; }
+      last = p[0];
+      line.push(((p[0] + 1800 - from) * 100 / (to - from)).toFixed(2) + "," + (36 - (p[1] - low) / span * 30).toFixed(1));
+    });
+    lines.push(line);
+    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none">';
+    for (var t = from + 86400; t < to; t += 86400) {
+      var x = ((t - from) * 100 / (to - from)).toFixed(2);
+      html += '<line x1="' + x + '" x2="' + x + '" y1="0" y2="40" stroke="rgba(128,128,128,0.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
+    }
+    lines.forEach(function (pts) {
+      if (pts.length > 1) {
+        html += '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>';
+      } else if (pts.length) {
+        var xy = pts[0].split(",");
+        html += '<line x1="' + xy[0] + '" x2="' + (+xy[0] + 0.4) + '" y1="' + xy[1] + '" y2="' + xy[1] + '" stroke="' + info.color + '" stroke-width="3" vector-effect="non-scaling-stroke"/>';
+      }
+    });
+    return html + "</svg>";
+  }
+
+  function deviceEntryHtml(entry) {
+    var meta = entryMeta(entry);
+    return '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '"><span class="ftlTime">' + clock(entry.ts) + "</span>" +
+      dot(entry.category) + '<div class="ftlText">' + esc(entry.text) + (meta ? '<div class="ftlMeta">' + meta + "</div>" : "") +
+      durationBar(entry) + "</div><span></span></div>";
+  }
+
+  function deviceHtml(data, days) {
+    var html = '<div class="ftlBar"><span class="ftlMeta" style="margin-right:auto">' +
+      esc([data.type, (data.room || "").split(",")[0]].filter(function (x) { return x; }).join(" · ")) + "</span>" +
+      '<span class="ftlChip ftlDeviceDays' + (days === 7 ? " ftlOn" : "") + '" data-days="7">7 days</span>' +
+      '<span class="ftlChip ftlDeviceDays' + (days === 31 ? " ftlOn" : "") + '" data-days="31">31 days</span>' +
+      '<a class="ftlButton ftlOpen" href="' + esc(FW_root + "?detail=" + encodeURIComponent(data.device)) + '">Open device</a></div>';
+    var changed = data.trends.filter(function (t) { return t.changed; });
+    var same = data.trends.filter(function (t) { return !t.changed; });
+    if (changed.length) {
+      html += '<div class="ftlSection">Curves</div>';
+      changed.forEach(function (t) {
+        html += '<div class="ftlTrend ftlWide">' + esc(t.reading) + ' <span style="opacity:0.7">' + fmt(t.min) + " – " + fmt(t.max) +
+          "</span> " + onChangeAction(t) + periodSparkline(t, data.from, data.to) + "</div>";
+      });
+      if (days <= 7) {
+        html += '<div class="ftlAxis">';
+        for (var day = data.from; day < data.to; day += 86400) {
+          html += "<span>" + esc(new Date((day + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" })) + "</span>";
+        }
+        html += "</div>";
+      }
+    }
+    if (same.length) {
+      html += '<div class="ftlMeta" style="margin:4px 0 8px">Unchanged: ' + same.map(function (t) {
+        return esc(t.reading) + " " + fmt(t.min);
+      }).join(" · ") + "</div>";
+    }
+    html += '<div class="ftlSection">Story</div>';
+    if (!data.entries.length) {
+      html += '<div class="ftlEmpty">Nothing in the story of this device in the last ' + days + " days.</div>";
+    }
+    var lastDay = "";
+    data.entries.forEach(function (entry) {
+      var day = dayIso(new Date(entry.ts * 1000));
+      if (day !== lastDay) {
+        html += '<div class="ftlDayName" style="margin:8px 0 2px">' + esc(dayTitle(day)) + "</div>";
+        lastDay = day;
+      }
+      html += deviceEntryHtml(entry);
+    });
+    return html;
+  }
+
+  function showDevice(name, days) {
+    days = days || 7;
+    cmd("get " + device + " device " + name + " " + days, function (r) {
+      var data;
+      try { data = JSON.parse(r); } catch (e) { data = { error: r }; }
+      var d = $("#fhempyTimelineDevice");
+      if (!d.length) {
+        d = $('<div id="fhempyTimelineDevice"></div>');
+        $("body").append(d);
+        d.on("click", "[data-onchange]", onChangeClick);
+        d.on("click", ".ftlDeviceDays", function () {
+          showDevice(d.attr("data-device"), +$(this).attr("data-days"));
+        });
+      }
+      d.attr("data-device", name);
+      d.html(data.error ? '<div class="ftlEmpty">' + esc(data.error) + "</div>" : deviceHtml(data, days));
+      if (!d.hasClass("ui-dialog-content")) {
+        d.dialog({
+          modal: true,
+          width: Math.min(760, $(window).width() - 20),
+          maxHeight: $(window).height() - 80,
+          close: function () { $(this).dialog("destroy").remove(); }
+        });
+      }
+      d.dialog("option", "title", data.text || name);
+    });
+  }
+
+  function deviceClick(e) {
+    // ctrl, shift or middle click open the device as usual
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    showDevice($(this).attr("data-device"));
+  }
+
   function showDetails(day) {
     cmd("get " + device + " details " + day, function (r) {
       var rows;
@@ -344,9 +504,10 @@
         " (newest first, at most 500). Signal strength, last seen and similar are only counted.</div>";
       if (!rows.length) html += "<div>Nothing stored for this day.</div>";
       rows.forEach(function (row) {
-        html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + esc(row.text) + "</span>" +
+        html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + deviceLink(row.device, row.text) + "</span>" +
+          "<span>" + onChangeAction(row) +
           '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
-          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span></div>';
+          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span></span></div>';
       });
       d.html(html);
       $("body").append(d);
@@ -357,11 +518,30 @@
         maxHeight: $(window).height() - 80,
         close: function () { $(this).remove(); }
       });
-      d.on("click", ".ftlAction", function () {
+      d.on("click", "[data-onchange]", onChangeClick);
+      d.on("click", "a.ftlDevice", deviceClick);
+      d.on("click", "[data-show]", function () {
         var target = $(this).attr("data-show");
         var el = $(this);
         cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
       });
+    });
+  }
+
+  function onChangeClick() {
+    var target = $(this).attr("data-onchange");
+    var el = $(this);
+    cmd("set " + device + " on_change " + target, function (r) {
+      if (r && r.trim()) {
+        el.text(r.trim());
+        return;
+      }
+      days.forEach(function (day) {
+        day.trends.forEach(function (t) {
+          if (t.device + ":" + t.reading === target) t.on_change = true;
+        });
+      });
+      $('[data-onchange="' + target.replace(/["\\]/g, "") + '"]').text("Only on change ✓").removeAttr("data-onchange").removeClass("ftlAction");
     });
   }
 
@@ -399,8 +579,15 @@
       $(this).text(children.is(":visible") ? "Hide devices" : "Show " + children.children().length + " devices");
     });
     root.on("click", ".ftlTrendToggle", function () {
-      $(this).parent().next(".ftlTrends").toggle();
+      $(this).parent().next(".ftlTrendBox").toggle();
     });
+    root.on("click", ".ftlSameToggle", function () {
+      var same = $(this).parent().next(".ftlSame");
+      same.css("display", same.is(":visible") ? "none" : "grid");
+      $(this).text(same.is(":visible") ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    });
+    root.on("click", "[data-onchange]", onChangeClick);
+    root.on("click", "a.ftlDevice", deviceClick);
     root.on("click", ".ftlDetails", function () {
       showDetails($(this).attr("data-day"));
     });

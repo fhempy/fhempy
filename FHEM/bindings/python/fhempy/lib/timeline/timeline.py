@@ -34,7 +34,7 @@ ROOM = "Timeline"
 ROOM_ICON = "time_calendar"
 DEVICE_ICON = "time_calendar"
 # attributes of other devices which change their text or classification
-INFO_ATTRS = ("alias", "room", "genericDeviceType")
+INFO_ATTRS = ("alias", "room", "genericDeviceType", classify.ON_CHANGE_ATTR)
 # FHEM only counts these events, they are never shown and would only cost
 # traffic and space ("device:reading: value")
 SKIP_EVENTS = f"^[^:]+:(?i:{classify.TECH_READINGS}): "
@@ -104,6 +104,12 @@ class timeline(generic.FhemModule):
                     "help": "Let fhempy decide again whether device:reading "
                     "is shown.",
                 },
+                "on_change": {
+                    "args": ["reading"],
+                    "help": "Add the reading of device:reading to the "
+                    "attribute event-on-change-reading of the device, so "
+                    "FHEM only creates events when its value changes.",
+                },
             }
         )
         await self.set_get_config(
@@ -116,6 +122,12 @@ class timeline(generic.FhemModule):
                     },
                     "help": "Timeline as JSON, from/to as YYYY-MM-DD "
                     "(default: last 7 days). Used by the detail page.",
+                },
+                "device": {
+                    "args": ["device", "days"],
+                    "params": {"days": {"optional": True}},
+                    "help": "History of one device of the last days (default "
+                    "7) as JSON. Used by the popup of the detail page.",
                 },
                 "details": {
                     "args": ["day"],
@@ -464,6 +476,21 @@ class timeline(generic.FhemModule):
     async def set_auto(self, hash, params):
         return await self.change_rules(params["reading"], False, False)
 
+    async def set_on_change(self, hash, params):
+        device, _, reading = params["reading"].partition(":")
+        if device not in self.infos or not classify.READING_NAME_RE.match(reading):
+            return "Use device:reading of an existing device"
+        attr = classify.ON_CHANGE_ATTR
+        current = await fhem.AttrVal(device, attr, "")
+        info = self.infos[device]
+        info[attr] = current
+        if classify.on_change(info, reading):
+            return None
+        value = f"{current},{reading}" if current else reading
+        await fhem.CommandAttr(self.hash, f"{device} {attr} {value}")
+        info[attr] = value
+        return None
+
     # --- gets ---
 
     @staticmethod
@@ -530,6 +557,51 @@ class timeline(generic.FhemModule):
             "first": self.store.first_ts(),
         }
 
+    async def get_device(self, hash, params):
+        if self.store is None:
+            return json.dumps({"error": "The timeline is starting"})
+        device = params["device"]
+        if device not in self.infos:
+            return json.dumps({"error": f"Unknown device {device}"})
+        try:
+            days = int(params.get("days") or DEFAULT_DAYS)
+        except ValueError:
+            return json.dumps({"error": "days must be a number"})
+        days = min(max(days, 1), MAX_DAYS)
+        await self.flush()
+        now = time.time()
+        end = day_start(datetime.date.today().isoformat()) + 86400
+        start = end - days * 86400
+        data = await utils.run_blocking(
+            functools.partial(self.query_device, device, start, end)
+        )
+        rows = [
+            row for row in data["story"] if not matches(self._hidden_rules, *row[1:3])
+        ]
+        entries = story.build_entries(rows, self.infos, data["absences"], now)
+        entries.reverse()
+        info = self.infos[device]
+        return json.dumps(
+            {
+                "device": device,
+                "text": story.label(self.infos, device),
+                "type": info.get("TYPE", ""),
+                "room": info.get("room", ""),
+                "from": start,
+                "to": end,
+                "entries": entries,
+                "trends": story.build_device_trends(data["hourly"], self.infos),
+            },
+            ensure_ascii=False,
+        )
+
+    def query_device(self, device, start, end):
+        return {
+            "story": self.store.device_story(device, start, end),
+            "hourly": self.store.device_hourly(device, start, end),
+            "absences": self.store.absences(start - 86400, end),
+        }
+
     async def get_details(self, hash, params):
         if self.store is None:
             return json.dumps({"error": "The timeline is starting"})
@@ -551,6 +623,9 @@ class timeline(generic.FhemModule):
                     "value": value,
                     "layer": layer,
                     "text": story.entry_text(self.infos, device, reading, value),
+                    "on_change": classify.on_change(
+                        self.infos.get(device, {}), reading
+                    ),
                 }
                 for ts, device, reading, value, layer in rows
             ],

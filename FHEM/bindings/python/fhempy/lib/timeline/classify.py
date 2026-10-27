@@ -198,6 +198,24 @@ def number(value):
         return None
 
 
+# FHEM attribute which limits the events of a device to real changes
+ON_CHANGE_ATTR = "event-on-change-reading"
+READING_NAME_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+def on_change(info, reading):
+    """True if FHEM only creates events for reading when its value changes"""
+    for item in str(info.get(ON_CHANGE_ATTR, "")).split(","):
+        # "reading:threshold" for numbers
+        name = item.strip().split(":")[0]
+        try:
+            if name and re.fullmatch(name, reading):
+                return True
+        except re.error:
+            continue
+    return False
+
+
 def is_tech_reading(reading):
     return bool(_TECH_RE.match(reading))
 

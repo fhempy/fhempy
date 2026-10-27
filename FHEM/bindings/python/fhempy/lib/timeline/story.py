@@ -286,15 +286,48 @@ def build_trends(rows, infos):
                 "min": low,
                 "max": high,
                 "points": [None] * 24,
+                "on_change": classify.on_change(infos.get(device, {}), reading),
             }
             trends[(device, reading)] = trend
         trend["min"] = min(trend["min"], low)
         trend["max"] = max(trend["max"], high)
         trend["points"][moment.hour] = round(total / count, 2)
+    for trends in days.values():
+        for trend in trends.values():
+            trend["changed"] = trend["max"] != trend["min"]
     return {
         day: sorted(trends.values(), key=lambda t: (t["category"], t["text"]))
         for day, trends in days.items()
     }
+
+
+def build_device_trends(rows, infos):
+    """rows: (hour, device, reading, category, min, max, sum, n) of one device
+    -> one trend per reading with the hourly averages of the whole period"""
+    trends = {}
+    for hour, device, reading, category, low, high, total, count in rows:
+        if not count:
+            continue
+        trend = trends.get(reading)
+        if trend is None:
+            name = label(infos, device)
+            trend = {
+                "device": device,
+                "reading": reading,
+                "text": name if reading == "state" else f"{name}: {reading}",
+                "category": category,
+                "min": low,
+                "max": high,
+                "points": [],
+                "on_change": classify.on_change(infos.get(device, {}), reading),
+            }
+            trends[reading] = trend
+        trend["min"] = min(trend["min"], low)
+        trend["max"] = max(trend["max"], high)
+        trend["points"].append([hour, round(total / count, 2)])
+    for trend in trends.values():
+        trend["changed"] = trend["max"] != trend["min"]
+    return sorted(trends.values(), key=lambda t: (not t["changed"], t["reading"]))
 
 
 def build(first_day, last_day, rows, hourly_rows, hidden, absences, infos, now):
