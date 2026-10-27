@@ -32,7 +32,10 @@ MISSING_FILES_CMD = (
     "my $mp = $main::attr{global}{modpath};; my @missing;; "
     "if (open(my $fh, '<', $mp.'/FHEM/" + CONTROLS_FILE + "')) { "
     "while (my $line = <$fh>) { my @p = split(' ', $line);; "
-    "push @missing, $p[3] if (@p == 4 && $p[0] eq 'UPD' && !-e $mp.'/'.$p[3]);; } "
+    "next if (@p != 4 || $p[0] ne 'UPD');; "
+    # unreadable files (mode 000 written by fhempy 2.10.2 - 2.11.0) count as missing
+    "my @st = CORE::stat($mp.'/'.$p[3]);; "
+    "push @missing, $p[3] if (!@st || !($st[2] & 0400));; } "
     "close($fh);; } join(' ', @missing)"
 )
 
@@ -117,10 +120,13 @@ def install_command(version, files):
         "  last if (@errors);; "
         "  my $content = MIME::Base64::decode_base64($data);; "
         "  my $file = $modpath.'/'.$path;; "
+        # CORE::stat, other FHEM modules might import File::stat into main
+        "  my @stat = CORE::stat($file);; "
+        # an unreadable file (mode 000) gets the mode of a new file
+        "  my $mode = @stat && ($stat[2] & 0400) ? $stat[2] & 07777 : undef;; "
         "  my $old;; "
         "  if (open(my $in, '<:raw', $file)) { local $/;; $old = <$in>;; close($in);; } "
-        "  next if (defined($old) && $old eq $content);; "
-        "  my @stat = stat($file);; "
+        "  next if (defined($mode) && defined($old) && $old eq $content);; "
         "  File::Path::make_path(File::Basename::dirname($file));; "
         "  my $tmp = $file.'.fhempy_new';; "
         "  my $out;; "
@@ -128,10 +134,10 @@ def install_command(version, files):
         "  my $written = print {$out} $content;; "
         "  if (!close($out) || !$written) { push @errors, \"$path: $!\";; unlink($tmp);; next;; } "
         # a new file gets the mode of FHEM's own files (e.g. 0744 or 0644)
-        "  my @ref = stat($modpath.'/'.($path =~ m{^www/} ? 'www/pgm2/fhemweb.js' "
-        "    : 'FHEM/98_update.pm'));; "
-        "  chmod(@stat ? $stat[2] & 07777 : ($path =~ m{/bin/} ? 0755 "
-        "    : (@ref ? $ref[2] & 0777 : 0644)), $tmp);; "
+        "  my @ref = CORE::stat($modpath.'/'.($path =~ m{^www/} "
+        "    ? 'www/pgm2/fhemweb.js' : 'FHEM/98_update.pm'));; "
+        "  chmod(defined($mode) ? $mode : ($path =~ m{/bin/} ? 0755 "
+        "    : (@ref && ($ref[2] & 0400) ? $ref[2] & 0777 : 0644)), $tmp);; "
         "  if (!rename($tmp, $file)) { push @errors, \"$path: $!\";; unlink($tmp);; next;; } "
         "  push @changed, $path;; "
         "} "
