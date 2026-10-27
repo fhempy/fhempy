@@ -9,11 +9,16 @@ use File::Basename;
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	my $file = dirname(__FILE__) . q[/mqtt_ha_devices.json];
-	open(my $fh, q[<], $file) or die "$file: $!";
-	local $/;
-	my $scenarios = JSON->new->decode(<$fh>);
-	close($fh);
+	# $/ only while reading: FW_makeImage reads the icons line by line
+	my $read_json = sub {
+		my $file = dirname(__FILE__) . q[/] . shift;
+		open(my $fh, q[<], $file) or die "$file: $!";
+		local $/;
+		my $data = JSON->new->decode(<$fh>);
+		close($fh);
+		return $data;
+	};
+	my $scenarios = $read_json->(q[mqtt_ha_devices.json]);
 
 	my @published;
 	{
@@ -26,11 +31,9 @@ InternalTimer(time()+0.5, sub {
 	$main::FW_wname = q[WEB];
 	FW_setStylesheet();
 	FW_readIcons($_) foreach (qw(f18 fhemSVG openautomation default));
-	open($fh, q[<], dirname(__FILE__) . q[/mqtt_ha_icons.json]) or die $!;
-	foreach my $icon (@{JSON->new->decode(<$fh>)}) {
+	foreach my $icon (@{$read_json->(q[mqtt_ha_icons.json])}) {
 		ok(FW_iconName($icon), qq[FHEMWEB has the icon $icon]);
 	}
-	close($fh);
 	my $check_state = sub {
 		my ($name, $key, $expected, $after) = @_;
 		if ($key eq q[STATE]) {
