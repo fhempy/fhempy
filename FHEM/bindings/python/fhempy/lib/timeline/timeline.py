@@ -34,7 +34,7 @@ ROOM = "Timeline"
 ROOM_ICON = "time_calendar"
 DEVICE_ICON = "time_calendar"
 # attributes of other devices which change their text or classification
-INFO_ATTRS = ("alias", "room", "genericDeviceType")
+INFO_ATTRS = ("alias", "room", "genericDeviceType", classify.ON_CHANGE_ATTR)
 # FHEM only counts these events, they are never shown and would only cost
 # traffic and space ("device:reading: value")
 SKIP_EVENTS = f"^[^:]+:(?i:{classify.TECH_READINGS}): "
@@ -103,6 +103,12 @@ class timeline(generic.FhemModule):
                     "args": ["reading"],
                     "help": "Let fhempy decide again whether device:reading "
                     "is shown.",
+                },
+                "on_change": {
+                    "args": ["reading"],
+                    "help": "Add the reading of device:reading to the "
+                    "attribute event-on-change-reading of the device, so "
+                    "FHEM only creates events when its value changes.",
                 },
             }
         )
@@ -464,6 +470,21 @@ class timeline(generic.FhemModule):
     async def set_auto(self, hash, params):
         return await self.change_rules(params["reading"], False, False)
 
+    async def set_on_change(self, hash, params):
+        device, _, reading = params["reading"].partition(":")
+        if device not in self.infos or not classify.READING_NAME_RE.match(reading):
+            return "Use device:reading of an existing device"
+        attr = classify.ON_CHANGE_ATTR
+        current = await fhem.AttrVal(device, attr, "")
+        info = self.infos[device]
+        info[attr] = current
+        if classify.on_change(info, reading):
+            return None
+        value = f"{current},{reading}" if current else reading
+        await fhem.CommandAttr(self.hash, f"{device} {attr} {value}")
+        info[attr] = value
+        return None
+
     # --- gets ---
 
     @staticmethod
@@ -551,6 +572,9 @@ class timeline(generic.FhemModule):
                     "value": value,
                     "layer": layer,
                     "text": story.entry_text(self.infos, device, reading, value),
+                    "on_change": classify.on_change(
+                        self.infos.get(device, {}), reading
+                    ),
                 }
                 for ts, device, reading, value, layer in rows
             ],

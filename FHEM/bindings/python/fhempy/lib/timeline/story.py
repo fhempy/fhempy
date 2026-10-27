@@ -286,11 +286,15 @@ def build_trends(rows, infos):
                 "min": low,
                 "max": high,
                 "points": [None] * 24,
+                "on_change": classify.on_change(infos.get(device, {}), reading),
             }
             trends[(device, reading)] = trend
         trend["min"] = min(trend["min"], low)
         trend["max"] = max(trend["max"], high)
         trend["points"][moment.hour] = round(total / count, 2)
+    for trends in days.values():
+        for trend in trends.values():
+            trend["changed"] = trend["max"] != trend["min"]
     return {
         day: sorted(trends.values(), key=lambda t: (t["category"], t["text"]))
         for day, trends in days.items()

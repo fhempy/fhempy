@@ -67,13 +67,17 @@
       "#fhempyTimeline .ftlHiddenRow{padding:2px 0 4px 68px}" +
       "#fhempyTimeline .ftlTrends{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 16px;margin:4px 0 4px 68px}" +
       "#fhempyTimeline .ftlTrend{font-size:12px}" +
+      "#fhempyTimeline a.ftlDevice,#fhempyTimelineDetails a.ftlDevice{color:inherit;text-decoration:none}" +
+      "#fhempyTimeline a.ftlDevice:hover,#fhempyTimelineDetails a.ftlDevice:hover{text-decoration:underline}" +
+      "#fhempyTimeline .ftlTrend .ftlAction{opacity:0;font-size:10px}" +
+      "#fhempyTimeline .ftlTrend:hover .ftlAction{opacity:0.8}" +
       "#fhempyTimeline .ftlTrend svg{display:block;width:100%;height:26px}" +
       "#fhempyTimeline .ftlQuiet{opacity:0.75;font-size:13px;padding-left:68px}" +
       "#fhempyTimeline .ftlMore{margin:14px 0;text-align:center}" +
       "#fhempyTimeline .ftlButton{display:inline-block;padding:4px 16px;border-radius:14px;background:#4B8BBE;color:#fff;cursor:pointer;font-weight:600}" +
       "#fhempyTimeline .ftlEmpty{opacity:0.75;margin:16px 0}" +
       "#fhempyTimelineDetails .ftlDetail{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
-      "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
+      "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;margin-left:4px;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
       "@media (max-width:600px){#fhempyTimeline .ftlTrends,#fhempyTimeline .ftlHiddenRow,#fhempyTimeline .ftlQuiet{margin-left:0;padding-left:0}}" +
       "</style>");
   }
@@ -164,6 +168,19 @@
     return (entry.children || []).some(visible);
   }
 
+  function deviceLink(name, text) {
+    if (!name) return esc(text);
+    return '<a class="ftlDevice" href="' + esc(FW_root + "?detail=" + encodeURIComponent(name)) + '" title="Open ' +
+      esc(name) + '">' + esc(text) + "</a>";
+  }
+
+  function onChangeAction(item) {
+    if (!item.device || item.on_change) return "";
+    return '<span class="ftlAction" data-onchange="' + esc(item.device + ":" + item.reading) +
+      '" title="Add ' + esc(item.reading) + " to event-on-change-reading of " + esc(item.device) +
+      ': events only when the value changes">Only on change</span>';
+  }
+
   function dot(category) {
     var info = categoryInfo[category] || categoryInfo.devices;
     return '<span class="ftlDot" style="background:' + info.color + '" title="' + esc(info.title) + '"></span>';
@@ -195,7 +212,7 @@
   function entryHtml(entry) {
     var html = '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '">' +
       '<span class="ftlTime">' + clock(entry.ts) + "</span>" + dot(entry.category) +
-      '<div class="ftlText">' + esc(entry.text);
+      '<div class="ftlText">' + deviceLink(entry.device, entry.text);
     var meta = entryMeta(entry);
     if (meta) html += '<div class="ftlMeta">' + meta + "</div>";
     html += durationBar(entry);
@@ -229,15 +246,28 @@
     return '<svg viewBox="0 0 100 26" preserveAspectRatio="none">' + line + "</svg>";
   }
 
+  function trendHtml(t) {
+    return '<div class="ftlTrend">' + deviceLink(t.device, t.text) + " <span style=\"opacity:0.7\">" +
+      fmt(t.min) + (t.changed ? " – " + fmt(t.max) : "") + "</span> " + onChangeAction(t) + sparkline(t) + "</div>";
+  }
+
   function trendsHtml(day) {
     var trends = day.trends.filter(function (t) { return visible(t); });
     if (!trends.length) return "";
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + trends.length + ")</span></div>" +
-      '<div class="ftlTrends" style="display:none">';
-    trends.forEach(function (t) {
-      html += '<div class="ftlTrend">' + esc(t.text) + " <span style=\"opacity:0.7\">" +
-        fmt(t.min) + " – " + fmt(t.max) + "</span>" + sparkline(t) + "</div>";
-    });
+    // curves which stayed the same all day only on demand
+    var changed = trends.filter(function (t) { return t.changed; });
+    var same = trends.filter(function (t) { return !t.changed; });
+    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + changed.length + " changed" +
+      (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
+      '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
+    changed.forEach(function (t) { html += trendHtml(t); });
+    html += "</div>";
+    if (same.length) {
+      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle">Show ' + same.length +
+        " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
+      same.forEach(function (t) { html += trendHtml(t); });
+      html += "</div>";
+    }
     return html + "</div>";
   }
 
@@ -344,9 +374,10 @@
         " (newest first, at most 500). Signal strength, last seen and similar are only counted.</div>";
       if (!rows.length) html += "<div>Nothing stored for this day.</div>";
       rows.forEach(function (row) {
-        html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + esc(row.text) + "</span>" +
+        html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + deviceLink(row.device, row.text) + "</span>" +
+          "<span>" + onChangeAction(row) +
           '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
-          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span></div>';
+          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span></span></div>';
       });
       d.html(html);
       $("body").append(d);
@@ -357,11 +388,29 @@
         maxHeight: $(window).height() - 80,
         close: function () { $(this).remove(); }
       });
-      d.on("click", ".ftlAction", function () {
+      d.on("click", "[data-onchange]", onChangeClick);
+      d.on("click", "[data-show]", function () {
         var target = $(this).attr("data-show");
         var el = $(this);
         cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
       });
+    });
+  }
+
+  function onChangeClick() {
+    var target = $(this).attr("data-onchange");
+    var el = $(this);
+    cmd("set " + device + " on_change " + target, function (r) {
+      if (r && r.trim()) {
+        el.text(r.trim());
+        return;
+      }
+      days.forEach(function (day) {
+        day.trends.forEach(function (t) {
+          if (t.device + ":" + t.reading === target) t.on_change = true;
+        });
+      });
+      $('[data-onchange="' + target.replace(/["\\]/g, "") + '"]').text("Only on change ✓").removeAttr("data-onchange").removeClass("ftlAction");
     });
   }
 
@@ -399,8 +448,14 @@
       $(this).text(children.is(":visible") ? "Hide devices" : "Show " + children.children().length + " devices");
     });
     root.on("click", ".ftlTrendToggle", function () {
-      $(this).parent().next(".ftlTrends").toggle();
+      $(this).parent().next(".ftlTrendBox").toggle();
     });
+    root.on("click", ".ftlSameToggle", function () {
+      var same = $(this).parent().next(".ftlSame");
+      same.css("display", same.is(":visible") ? "none" : "grid");
+      $(this).text(same.is(":visible") ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    });
+    root.on("click", "[data-onchange]", onChangeClick);
     root.on("click", ".ftlDetails", function () {
       showDetails($(this).attr("data-day"));
     });

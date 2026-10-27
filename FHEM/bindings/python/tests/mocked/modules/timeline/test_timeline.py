@@ -53,6 +53,15 @@ def test_classify():
     assert classify.device_category(generic) == "light"
 
 
+def test_on_change():
+    attr = "event-on-change-reading"
+    assert classify.on_change({attr: ".*"}, "temperature")
+    assert classify.on_change({attr: "battery,temp.*:0.5"}, "temperature")
+    assert not classify.on_change({attr: "battery"}, "temperature")
+    assert not classify.on_change({attr: "(broken"}, "temperature")
+    assert not classify.on_change({}, "temperature")
+
+
 def test_skip_events_regexp():
     # FHEM uses the same regexp (Perl) for "device:reading: value"
     skip = re.compile(SKIP_EVENTS)
@@ -248,6 +257,26 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
     assert [e["text"] for e in data["days"][0]["entries"]] == ["Hallway: action double"]
 
+    # events only on change, curves which changed
+    trend = data["days"][0]["trends"][0]
+    assert trend["changed"] is False and trend["on_change"] is False
+    mock_fhem.attributes["hall"] = {"event-on-change-reading": "battery"}
+    assert await module.Set(hash, ["tl", "on_change", "hall:temperature"], {}) is None
+    assert "hall event-on-change-reading battery,temperature" in mock_fhem.command_attr
+    data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
+    assert data["days"][0]["trends"][0]["on_change"] is True
+    mock_fhem.command_attr.clear()
+    mock_fhem.attributes["hall"] = {"event-on-change-reading": "battery,temperature"}
+    assert await module.Set(hash, ["tl", "on_change", "hall:temperature"], {}) is None
+    assert mock_fhem.command_attr == []
+    assert await module.Set(hash, ["tl", "on_change", "hall:a;b"], {}) == (
+        "Use device:reading of an existing device"
+    )
+    assert await module.Set(hash, ["tl", "on_change", "nodevice:state"], {}) == (
+        "Use device:reading of an existing device"
+    )
+
+    mock_fhem.attributes.pop("hall")
     assert await module.Get(hash, ["tl", "entries", "26.10.2026"], {}) == (
         "Use YYYY-MM-DD for from and to"
     )
