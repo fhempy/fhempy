@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.11.1 (2026-10-27)
+
+### Bug Fixes
+
+- FHEM files of fhempy no longer get mode 000 on update
+  ([#789](https://github.com/fhempy/fhempy/pull/789),
+  [`3d22a1b`](https://github.com/fhempy/fhempy/commit/3d22a1bea41e92560a35159cae9e18f99babbf1e))
+
+
 ## v2.11.0 (2026-10-27)
 
 ### Bug Fixes
