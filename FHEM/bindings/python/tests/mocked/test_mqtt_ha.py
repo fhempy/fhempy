@@ -29,6 +29,38 @@ def test_attributes_tested_in_fhem(scenario):
     assert mqtt_ha.generate_attributes(entities(scenario)) == scenario["attributes"]
 
 
+def test_icons_tested_in_fhem():
+    # 01_mqtt_ha.t checks that FHEMWEB has these icons
+    icons = json.loads(FIXTURE.with_name("mqtt_ha_icons.json").read_text())
+    assert mqtt_ha.all_icons() == icons
+
+
+@pytest.mark.asyncio
+async def test_legacy_state_format_is_replaced(mocker):
+    """stateFormat of older versions showed battery, voltage and linkquality"""
+    mock_fhem.mock_module(mocker)
+    mock_fhem.command_attr.clear()
+    scenario = next(s for s in SCENARIOS if s["name"] == "z2m_contact")
+    name = "MQTT2_Contact"
+    attrs = scenario["attributes"]
+    mock_fhem.attributes[name] = {
+        "readingList": "\n".join(attrs["readingList"]),
+        "stateFormat": "battery % voltage mV linkquality lqi",
+    }
+    await mqtt_ha.set_device_attributes({"NAME": "x"}, name, entities(scenario))
+    assert mock_fhem.command_attr == [
+        f"{name} stateFormat {attrs['stateFormat']}",
+        f"{name} devStateIcon {attrs['devStateIcon']}",
+    ]
+
+    # stateFormat of the user is kept
+    mock_fhem.command_attr.clear()
+    mock_fhem.attributes[name]["stateFormat"] = "contact"
+    mock_fhem.attributes[name]["devStateIcon"] = "true:fts_door"
+    await mqtt_ha.set_device_attributes({"NAME": "x"}, name, entities(scenario))
+    assert mock_fhem.command_attr == []
+
+
 def test_zigbee2mqtt_light_like_home_assistant():
     attrs = mqtt_ha.generate_attributes(entities(SCENARIOS[0]))
     # one JSON topic for the light and all other entities of the device

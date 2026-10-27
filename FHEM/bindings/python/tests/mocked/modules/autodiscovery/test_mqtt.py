@@ -105,6 +105,7 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
     assert mock_fhem.command_attr == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 readingList "
         "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT) }",
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 stateFormat temperature",
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 alias Wohnzimmer Temp",
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 icon temp_temperature",
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 event-on-change-reading .*",
@@ -121,6 +122,7 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
     mock_fhem.attributes["MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01"] = {
         "readingList": mock_fhem.command_attr[0].split(" ", 2)[2],
         "alias": "Wohnzimmer Temp",
+        "stateFormat": "temperature",
     }
     mock_fhem.command_attr.clear()
     await engine.mqtt.handle_message(

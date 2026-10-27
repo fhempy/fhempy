@@ -345,9 +345,20 @@ class DeviceAttributes:
         self.availability = []
         self.availability_mode = "latest"
         self.web_cmd = []
+        # stateFormat parts: ("r", reading) or ("t", text)
+        # values of the sensors with unit, e.g. temperature and humidity
         self.state_format = []
+        # sensors without unit, e.g. action of a remote control
+        self.state_text = []
         # stateFormat of the device itself, e.g. temperatures of a thermostat
         self.main_state_format = []
+        # main binary sensor, e.g. the contact of a door sensor
+        self.main_binary = None
+        # perl conditions: the battery is low
+        self.battery_low = []
+        # stateFormat written by older versions, replaced by the new one
+        self.legacy_state_format = []
+        self.legacy_main_state_format = []
         # the reading state is set, no stateFormat needed
         self.has_state = False
         self.primary = None
@@ -487,10 +498,114 @@ class DeviceAttributes:
         }
         if self.web_cmd:
             attrs["webCmd"] = ":".join(self.web_cmd)
-        state_format = self.main_state_format or self.state_format[:3]
-        if state_format and not self.has_state:
-            attrs["stateFormat"] = " ".join(state_format)
+        attrs.update(self.state_attributes())
         return attrs
+
+    def legacy_state_format_text(self):
+        """stateFormat which older versions wrote, None if there was none"""
+        legacy = self.legacy_main_state_format or self.legacy_state_format[:3]
+        if legacy and not self.has_state:
+            return " ".join(legacy)
+        return None
+
+    def state_attributes(self):
+        """stateFormat (and devStateIcon) with the main function of the
+        device, the battery only when it is low"""
+        battery = " || ".join(self.battery_low)
+        if self.has_state:
+            if not battery:
+                return {}
+            return {"stateFormat": _state_perl([("r", "state")], battery)}
+        if self.main_binary is not None and not self.main_state_format:
+            return _binary_state_attributes(self.main_binary, battery)
+        parts = self.main_state_format or _join_parts(
+            self.state_format[:3] or self.state_text[:1]
+        )
+        if not parts:
+            return {}
+        if battery:
+            return {"stateFormat": _state_perl(parts, battery)}
+        return {"stateFormat": "".join(value for _, value in parts)}
+
+
+BATTERY_LOW_TEXT = " battery low"
+BATTERY_LOW_ICON = "measure_battery_0@red"
+BATTERY_LOW_PERCENT = 20
+# words and icons of a binary sensor's device class: on, off, icon on, icon off
+OPEN_CLOSED = ("open", "closed")
+ALARM_ICONS = ("secur_alarm@red", "secur_alarm")
+MOTION_ICONS = ("motion_detector@red", "motion_detector")
+WINDOW_ICONS = ("fts_window_1w_open@red", "fts_window_1w")
+BINARY_STATES = {
+    "door": OPEN_CLOSED + ("fts_door_open@red", "fts_door"),
+    "garage_door": OPEN_CLOSED + ("fts_garage_door_100@red", "fts_garage"),
+    "window": OPEN_CLOSED + WINDOW_ICONS,
+    "opening": OPEN_CLOSED + WINDOW_ICONS,
+    "smoke": ("smoke", "ok", "secur_smoke_detector@red", "secur_smoke_detector"),
+    "gas": ("gas", "ok") + ALARM_ICONS,
+    "carbon_monoxide": ("CO", "ok") + ALARM_ICONS,
+    "moisture": ("wet", "dry", "humidity@red", "humidity"),
+    "safety": ("unsafe", "safe") + ALARM_ICONS,
+    "motion": ("motion", "no motion") + MOTION_ICONS,
+    "occupancy": ("occupied", "clear") + MOTION_ICONS,
+    "presence": ("present", "away") + MOTION_ICONS,
+    "vibration": ("vibration", "calm") + MOTION_ICONS,
+}
+# not the main function of a device
+DIAGNOSTIC_CATEGORIES = ("diagnostic", "config")
+DIAGNOSTIC_CLASSES = ("battery", "voltage", "signal_strength")
+DIAGNOSTIC_UNITS = ("lqi", "dBm")
+
+
+def _join_parts(groups):
+    """parts of several values separated by a space"""
+    parts = []
+    for group in groups:
+        if parts:
+            parts.append(("t", " "))
+        parts += group
+    return parts
+
+
+def _state_perl(parts, battery):
+    values = " . ".join(
+        f"ReadingsVal($name, {perl_quote(value)}, '')"
+        if kind == "r"
+        else perl_quote(value)
+        for kind, value in parts
+    )
+    return f"{{ {values} . (({battery}) ? {perl_quote(BATTERY_LOW_TEXT)} : '') }}"
+
+
+def _binary_state_attributes(binary, battery):
+    """open/closed... as state, shown as icon (red when on) and a red battery
+    icon when the battery is low"""
+    on, off, icon_on, icon_off = BINARY_STATES[binary["device_class"]]
+    low = f" . (({battery}) ? {perl_quote(BATTERY_LOW_TEXT)} : '')" if battery else ""
+    state_format = (
+        f"{{ my $v = lc(ReadingsVal($name, {perl_quote(binary['reading'])}, ''));"
+        f" ($v eq {perl_quote(binary['on'])} ? {perl_quote(on)} :"
+        f" $v eq {perl_quote(binary['off'])} ? {perl_quote(off)} :"
+        f" $v eq '' ? '???' : $v){low} }}"
+    )
+    dev_state_icon = (
+        f"{{ (my $s = $state) =~ s/{BATTERY_LOW_TEXT}$//;"
+        f" my $i = {{ {perl_quote(on)} => {perl_quote(icon_on)},"
+        f" {perl_quote(off)} => {perl_quote(icon_off)} }}->{{$s}};"
+        # without the icon FHEMWEB shows the state as text
+        " return undef if (!$i || !FW_iconName($i));"
+        " FW_makeImage($i, $s) . ($state ne $s ? ' ' ."
+        f" FW_makeImage({perl_quote(BATTERY_LOW_ICON)},"
+        f" {perl_quote(BATTERY_LOW_TEXT.strip())}) : '') }}"
+    )
+    return {"stateFormat": state_format, "devStateIcon": dev_state_icon}
+
+
+def _payload_text(value):
+    """value of a payload like json2nameValue writes it to the reading"""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value).lower()
 
 
 def _is_primary(component, payload_json, entities):
@@ -718,7 +833,9 @@ def add_value_entity(dev, component, object_id, payload_json):
         name = reading
     unit = payload_json.get("unit_of_measurement")
     if component == "sensor" and isinstance(reading, str) and unit:
-        dev.state_format.append(f"{reading} {unit}")
+        dev.legacy_state_format.append(f"{reading} {unit}")
+    if isinstance(reading, str):
+        _add_state_value(dev, component, reading, unit, payload_json)
     cmd_t = payload_json.get("command_topic")
     payload = command_payload(payload_json.get("command_template"))
     if component == "select":
@@ -736,6 +853,57 @@ def add_value_entity(dev, component, object_id, payload_json):
         )
     elif component == "text":
         dev.add_set(name, "textField", cmd_t, payload)
+
+
+def _add_main_binary(dev, reading, device_class, payload_json):
+    """the binary sensor shown as state, e.g. the contact of a door sensor"""
+    if device_class not in BINARY_STATES:
+        return
+    priority = list(BINARY_STATES).index(device_class)
+    current = dev.main_binary
+    if current is None or priority < current["priority"]:
+        dev.main_binary = {
+            "reading": reading,
+            "device_class": device_class,
+            "priority": priority,
+            "on": _payload_text(payload_json.get("payload_on", DEFAULT_PAYLOAD_ON)),
+            "off": _payload_text(payload_json.get("payload_off", DEFAULT_PAYLOAD_OFF)),
+        }
+
+
+def _add_battery(dev, component, reading, unit, payload_json):
+    if component == "binary_sensor":
+        on = _payload_text(payload_json.get("payload_on", DEFAULT_PAYLOAD_ON))
+        dev.battery_low.append(
+            f"lc(ReadingsVal($name, {perl_quote(reading)}, '')) eq {perl_quote(on)}"
+        )
+    elif component == "sensor" and unit == "%":
+        dev.battery_low.append(
+            f"ReadingsNum($name, {perl_quote(reading)}, 100) <= {BATTERY_LOW_PERCENT}"
+        )
+
+
+def _add_state_value(dev, component, reading, unit, payload_json):
+    """the reading for the stateFormat: main function or low battery"""
+    device_class = payload_json.get("device_class")
+    if device_class == "battery" or (
+        component == "binary_sensor" and reading.endswith("battery_low")
+    ):
+        _add_battery(dev, component, reading, unit, payload_json)
+        return
+    if (
+        payload_json.get("entity_category") in DIAGNOSTIC_CATEGORIES
+        or device_class in DIAGNOSTIC_CLASSES
+        or unit in DIAGNOSTIC_UNITS
+    ):
+        return
+    if component == "binary_sensor":
+        _add_main_binary(dev, reading, device_class, payload_json)
+    elif component == "sensor":
+        if unit:
+            dev.state_format.append([("r", reading), ("t", f" {unit}")])
+        else:
+            dev.state_text.append([("r", reading)])
 
 
 # --- climate, cover, fan, lock, siren ---
@@ -947,8 +1115,13 @@ def add_climate(dev, object_id, payload_json, primary):
 
     if isinstance(current, str):
         unit = "°" + str(payload_json.get("temperature_unit", "C"))
-        dev.main_state_format = [f"{current} {unit}"] + (
+        dev.legacy_main_state_format = [f"{current} {unit}"] + (
             [f"({target} {unit})"] if isinstance(target, str) else []
+        )
+        dev.main_state_format = [("r", current), ("t", f" {unit}")] + (
+            [("t", " ("), ("r", target), ("t", f" {unit})")]
+            if isinstance(target, str)
+            else []
         )
     if payload_json.get("temperature_command_topic"):
         _set_primary(
@@ -1156,6 +1329,10 @@ def generate_attributes(entities):
 
     entities: list of (component, object_id, payload_json)
     """
+    return generate_device(entities).attributes()
+
+
+def generate_device(entities):
     dev = DeviceAttributes()
     entities = [e for e in entities if supported(e[0], e[2])]
     state_topics = {}
@@ -1180,7 +1357,7 @@ def generate_attributes(entities):
         else:
             add_value_entity(dev, component, object_id, payload_json)
         dev.add_json(payload_json.get("json_attributes_topic"))
-    return dev.attributes()
+    return dev
 
 
 # --- write to FHEM ---
@@ -1249,7 +1426,8 @@ async def set_device_attributes(hash, fhem_device_name, entities):
 
     entities: list of (component, object_id, payload_json)
     """
-    attrs = generate_attributes(entities)
+    dev = generate_device(entities)
+    attrs = dev.attributes()
     for attr, merge in (
         ("readingList", merge_reading_list),
         ("setList", merge_set_list),
@@ -1261,9 +1439,15 @@ async def set_device_attributes(hash, fhem_device_name, entities):
         new = merge(current, attrs[attr])
         if new != current:
             await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {new}")
-    for attr in ("webCmd", "stateFormat"):
-        if attr in attrs and not await fhem.AttrVal(fhem_device_name, attr, ""):
-            await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
+    legacy = dev.legacy_state_format_text()
+    for attr in ("webCmd", "stateFormat", "devStateIcon"):
+        if attr not in attrs:
+            continue
+        current = await fhem.AttrVal(fhem_device_name, attr, "")
+        # stateFormat of older versions (battery, voltage, linkquality)
+        if not current or (attr == "stateFormat" and current == legacy):
+            if current != attrs[attr]:
+                await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
 
 
 # FHEMWEB icon of a new device: first matching component, then the device
@@ -1298,6 +1482,15 @@ ICONS_BY_DEVICE_CLASS = (
     ("energy", "measure_power"),
     ("pressure", "weather_barometric_pressure"),
 )
+
+
+def all_icons():
+    """FHEMWEB icons used for the devices (without color)"""
+    icons = {icon for _, icon in ICONS_BY_COMPONENT + ICONS_BY_DEVICE_CLASS}
+    for states in BINARY_STATES.values():
+        icons.update(states[2:])
+    icons.add(BATTERY_LOW_ICON)
+    return sorted({icon.split("@")[0] for icon in icons})
 
 
 def default_icon(entities):
