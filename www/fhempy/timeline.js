@@ -431,8 +431,8 @@
       });
       if (days <= 7) {
         html += '<div class="ftlAxis">';
-        for (var t = data.from; t < data.to; t += 86400) {
-          html += "<span>" + esc(new Date((t + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" })) + "</span>";
+        for (var day = data.from; day < data.to; day += 86400) {
+          html += "<span>" + esc(new Date((day + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" })) + "</span>";
         }
         html += "</div>";
       }
