@@ -27,6 +27,15 @@
   "icon": "🔔"
  },
  {
+  "id": "timeline",
+  "title": "Timeline",
+  "description": "See what happened at home, e.g. during your holidays, without technical noise",
+  "category": "tools",
+  "name": "timeline",
+  "single": true,
+  "icon": "🕰️"
+ },
+ {
   "id": "mcp_server",
   "title": "AI (MCP server)",
   "description": "Control FHEM in plain language with AI apps (Claude, LM Studio...), the AI can also create automations",
