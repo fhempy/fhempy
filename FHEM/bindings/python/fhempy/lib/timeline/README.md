@@ -12,6 +12,8 @@ on the device page as a story per day, newest first:
   always
 - absences of a day or more are offered as buttons, e.g. *Away Aug 12 – Aug 26*
 
+![Timeline with a few days of holidays: the opened terrace door while nobody was at home is highlighted](screenshot.png)
+
 ## Set up
 
 ```
