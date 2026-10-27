@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v2.11.0 (2026-10-27)
+
+### Bug Fixes
+
+- **autodiscovery**: Link to the created device for residents and tags
+  ([#785](https://github.com/fhempy/fhempy/pull/785),
+  [`26d7481`](https://github.com/fhempy/fhempy/commit/26d74819614c94307e5a94ac103dec402ce367e7))
+
+- **wienernetze_smartmeter**: Clear error when the portal returns no JSON
+  ([#786](https://github.com/fhempy/fhempy/pull/786),
+  [`f8b61ec`](https://github.com/fhempy/fhempy/commit/f8b61ecec2e4b7d80042ac90e0066dc85f8f557d))
+
+### Documentation
+
+- **timeline**: Screenshot in the module README ([#788](https://github.com/fhempy/fhempy/pull/788),
+  [`ecb7a71`](https://github.com/fhempy/fhempy/commit/ecb7a71c4ff88f452a81cb1c71c6631e5de63bd8))
+
+### Features
+
+- **autodiscovery**: MQTT devices get alias, icon, model readings and event-on-change-reading
+  ([#787](https://github.com/fhempy/fhempy/pull/787),
+  [`a6619e6`](https://github.com/fhempy/fhempy/commit/a6619e6612afc1494f2a509efc051b25f3d09934))
+
+- **timeline**: What happened at home as story per day
+  ([#784](https://github.com/fhempy/fhempy/pull/784),
+  [`58465c1`](https://github.com/fhempy/fhempy/commit/58465c1315058b3954f1a01a866e4b51aee005d2))
+
+
 ## v2.10.2 (2026-10-26)
 
 ### Bug Fixes
