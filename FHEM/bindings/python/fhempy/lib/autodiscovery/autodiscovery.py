@@ -28,6 +28,8 @@ class autodiscovery(generic.FhemModule):
         self._attr_mqtt_username = ""
         self._attr_mqtt_password = ""
         self._search = {}
+        # devices created by the resident and tag dialogs, for the link
+        self._created = {}
 
     @staticmethod
     def validate_define(args, argsh):
@@ -130,7 +132,8 @@ class autodiscovery(generic.FhemModule):
                 "candidates": {"help": "Found devices as JSON."},
                 "device": {
                     "args": ["id"],
-                    "help": "Name of the FHEM device created for a found device.",
+                    "help": "Name of the FHEM device created for a found device "
+                    "(id), or the last added resident or tag.",
                 },
                 "search": {
                     "args": ["kind"],
@@ -356,19 +359,23 @@ class autodiscovery(generic.FhemModule):
         self._start_search("tag", residents.find_tag(self.hash, scanner))
 
     async def set_addResident(self, hash, params):
-        return await residents.create_resident(
+        error, name = await residents.create_resident(
             self.hash,
             params.get("person", ""),
             params.get("mac", ""),
             params.get("bt", ""),
         )
+        self._created["resident"] = name
+        return error
 
     async def set_addTag(self, hash, params):
         if not params.get("address"):
             return "address missing"
-        return await residents.create_tag(
+        error, name = await residents.create_tag(
             self.hash, params.get("title") or "tag", params["address"]
         )
+        self._created["tag"] = name
+        return error
 
     # --- get ---
 
@@ -381,8 +388,9 @@ class autodiscovery(generic.FhemModule):
         return json.dumps(public(listed), ensure_ascii=False)
 
     async def get_device(self, hash, params):
+        """Name of the created device: candidate id, resident or tag"""
         candidate = self.engine.candidates.get(params["id"]) or {}
-        return candidate.get("device", "")
+        return candidate.get("device") or self._created.get(params["id"], "")
 
     async def get_search(self, hash, params):
         entry = self._search.get(params["kind"])

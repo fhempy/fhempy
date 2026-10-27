@@ -21,6 +21,17 @@
   var state = {};
 
   function esc(t) { return $("<div>").text(t === undefined || t === null ? "" : String(t)).html(); }
+  /* a click opens the detail page of the device */
+  function deviceLink(name) {
+    return '<a href="' + FW_root + "?detail=" + encodeURIComponent(name) + '">' + esc(name) + "</a>";
+  }
+  /* shows the link to the created resident or tag below the done message */
+  function showCreated(d, kind) {
+    cmd("get " + dev + " device " + kind, function (name) {
+      name = (name || "").trim();
+      if (name) d.find(".fdDone").first().after('<div class="fdDone">Open ' + deviceLink(name) + "</div>");
+    });
+  }
 
   /* FHEM command argument: quoted if needed, ; doubled for the command line */
   function arg(v) {
@@ -107,7 +118,7 @@
       /* a click on the link opens the new device */
       var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
       if (st.device) {
-        var link = '<a href="' + FW_root + "?detail=" + encodeURIComponent(st.device) + '">' + esc(st.device) + "</a>";
+        var link = deviceLink(st.device);
         done = (d.action == "set" ? "pairing started, see " : "created: ") + link;
       }
       return html + '<div class="fdDone">✓ ' + done + "</div></div></div>";
@@ -375,6 +386,7 @@
           { text: "Add another resident", click: function () { resident = { person: "", mac: "", bt: "" }; stepNetwork(); } },
           { text: "Close", click: function () { $(this).dialog("close"); } }
         ]);
+        showCreated(d, "resident");
       });
     }
 
@@ -414,6 +426,7 @@
                   if (r) { $("#fdError").text(r); return; }
                   d.html('<div class="fdDone" style="font-size:16px;margin:10px 0">✓ ' + esc(title) + " was added</div>");
                   buttons(d, [{ text: "Add another tag", click: start }, { text: "Close", click: function () { $(this).dialog("close"); } }]);
+                  showCreated(d, "tag");
                 });
               } },
               { text: "Search again", click: start }

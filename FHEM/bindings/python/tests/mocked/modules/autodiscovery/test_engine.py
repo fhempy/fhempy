@@ -140,6 +140,32 @@ async def test_get_device_of_created_candidate(mocker):
 
 
 @pytest.mark.asyncio
+async def test_get_device_of_added_resident_and_tag(mocker):
+    from fhempy.lib.autodiscovery import residents
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("autodiscovery")
+    device = autodiscovery(logging.getLogger(__name__))
+    device.hash = {"NAME": "autodiscovery"}
+    device.engine = mocker.MagicMock()
+    device.engine.candidates = {}
+    mocker.patch.object(
+        residents, "create_resident", mocker.AsyncMock(return_value=("", "rr_Anna"))
+    )
+    mocker.patch.object(
+        residents,
+        "create_tag",
+        mocker.AsyncMock(return_value=("", "presence_Keys")),
+    )
+    assert await device.set_addResident({}, {"person": "Anna", "mac": "x"}) == ""
+    assert await device.set_addTag({}, {"title": "Keys", "address": "y"}) == ""
+    # the dialogs link to the new devices
+    assert await device.get_device({}, {"id": "resident"}) == "rr_Anna"
+    assert await device.get_device({}, {"id": "tag"}) == "presence_Keys"
+
+
+@pytest.mark.asyncio
 async def test_create_requires_params(engine, fhem_mock):
     values = {"txt": {"sf": "1", "id": "AA:BB"}, "name": "Velux"}
     entry, rule = next(catalog.match_mdns(engine.catalog, "_hap._tcp.local.", values))
@@ -270,3 +296,13 @@ async def test_detail_page_shows_bluez_command(mocker):
     assert html.escape(ble_scanner.EXPERIMENTAL_COMMAND) in warning
     device.engine.ble_scanner.passive_problem = "kernel"
     assert "Copy command" not in device.ble_warning_html()
+
+
+@pytest.mark.asyncio
+async def test_create_tag_returns_device_name(fhem_mock, mocker):
+    from fhempy.lib.autodiscovery import residents
+
+    mocker.patch.object(residents.fhem, "CommandAttr", mocker.AsyncMock())
+    ret = await residents.create_tag({"NAME": "x"}, "Keys", "AA:BB")
+    assert ret == ("", "presence_Keys")
+    assert fhem_mock[1] == ["presence_Keys fhempy ble_presence AA:BB"]
