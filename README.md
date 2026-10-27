@@ -26,6 +26,7 @@
   <a href="#-matter">Matter</a> ·
   <a href="#-ai">AI</a> ·
   <a href="#-remote-access">Remote access</a> ·
+  <a href="#-timeline">Timeline</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -35,6 +36,7 @@
 ## ✨ Why fhempy?
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
+- **What happened at home?** The timeline shows all events as a readable story per day, e.g. of your holidays, without technical noise. See [Timeline](#-timeline).
 - **FHEM on your phone, from anywhere**: one `define` gives you a fixed https address with password, no VPN app and no port forwarding. See [Remote access](#-remote-access).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
@@ -77,7 +79,7 @@ define push fhempy push
 ```
 Open the device on the phone and tap *Enable notifications*. Then send from notify or DOIF with `set push message Washing machine is done`, on Android also with picture and buttons which run FHEM commands. The [push README](FHEM/bindings/python/fhempy/lib/push/README.md) explains every step.
 
-## 🕰️ Timeline
+## 🕒 Timeline
 See what happened at home, e.g. during your holidays:
 ```
 define timeline fhempy timeline
@@ -192,7 +194,6 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |-------|------------|
 |[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
-|[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours|
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
