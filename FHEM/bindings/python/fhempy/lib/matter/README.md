@@ -101,6 +101,7 @@ the readings so the device can be supported.
 | `port` | Port of the Matter server, default 5580. Only reachable from this computer. |
 | `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0` |
 | `primary_interface` | Network interface for IPv6 (e.g. `eth0`), only if pairing fails on computers with several interfaces |
+| `test_dcl` | `1`: also pair devices with a test/development certificate (beta firmware). Only if you trust the vendor. Default `0` |
 | `autocreate` | `1` (default): create FHEM devices automatically |
 
 ## Use an existing Matter server

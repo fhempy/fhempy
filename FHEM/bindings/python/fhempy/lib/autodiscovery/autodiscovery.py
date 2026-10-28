@@ -3,7 +3,7 @@ import json
 
 from .. import fhem, generic
 from . import residents
-from .engine import STATUS_IGNORED, STATUS_NEW, Engine
+from .engine import STATUS_CHECKING, Engine
 
 USAGE = "Usage: define fhempy_discovery fhempy autodiscovery"
 MAX_PARAMS = 6
@@ -28,6 +28,8 @@ class autodiscovery(generic.FhemModule):
         self._attr_mqtt_username = ""
         self._attr_mqtt_password = ""
         self._search = {}
+        # devices created by the resident and tag dialogs, for the link
+        self._created = {}
 
     @staticmethod
     def validate_define(args, argsh):
@@ -94,9 +96,7 @@ class autodiscovery(generic.FhemModule):
                     "help": "Creates a found device: create &lt;id&gt; "
                     "[name=&lt;device name&gt;] [p0=&lt;value&gt;...]",
                 },
-                "createAll": {
-                    "help": "Creates all found devices which need no input."
-                },
+                "createAll": {"help": "Creates all found devices which need no input."},
                 "ignore": {"args": ["id"], "help": "Don't offer this device again."},
                 "unignore": {
                     "args": ["id"],
@@ -128,6 +128,11 @@ class autodiscovery(generic.FhemModule):
         await self.set_get_config(
             {
                 "candidates": {"help": "Found devices as JSON."},
+                "device": {
+                    "args": ["id"],
+                    "help": "Name of the FHEM device created for a found device "
+                    "(id), or the last added resident or tag.",
+                },
                 "search": {
                     "args": ["kind"],
                     "help": "Result of searchPhones, searchBluetooth or searchTag "
@@ -227,8 +232,7 @@ class autodiscovery(generic.FhemModule):
             "this.innerText='Copied';return false;"
         )
         return (
-            box
-            + "<div style='margin:6px 0'>Run this once in a terminal of the "
+            box + "<div style='margin:6px 0'>Run this once in a terminal of the "
             "Raspberry Pi, it starts BlueZ with --experimental, also after a "
             "reboot. fhempy switches to the passive scan within an hour, or right "
             "away after a restart of fhempy.</div>"
@@ -259,12 +263,10 @@ class autodiscovery(generic.FhemModule):
         names = ", ".join(f"{c['title']} ({c['kind']})" for c in candidates)
         url = f"?detail={self.hash['NAME']}"
         command = (
-            f"set {self._attr_notify} message title=\"New device found\" "
+            f'set {self._attr_notify} message title="New device found" '
             f"url={url} {names}"
         )
-        await fhem.sendCommandHash(
-            self.hash, f"fhem({fhem.perlString(command)}, 1)"
-        )
+        await fhem.sendCommandHash(self.hash, f"fhem({fhem.perlString(command)}, 1)")
 
     # --- attributes ---
 
@@ -352,29 +354,39 @@ class autodiscovery(generic.FhemModule):
         self._start_search("tag", residents.find_tag(self.hash, scanner))
 
     async def set_addResident(self, hash, params):
-        return await residents.create_resident(
+        error, name = await residents.create_resident(
             self.hash,
             params.get("person", ""),
             params.get("mac", ""),
             params.get("bt", ""),
         )
+        self._created["resident"] = name
+        return error
 
     async def set_addTag(self, hash, params):
         if not params.get("address"):
             return "address missing"
-        return await residents.create_tag(
+        error, name = await residents.create_tag(
             self.hash, params.get("title") or "tag", params["address"]
         )
+        self._created["tag"] = name
+        return error
 
     # --- get ---
 
     async def get_candidates(self, hash, params):
+        """New devices, devices in FHEM and ignored devices; deleted devices
+        are new again."""
+        await self.engine.recheck()
         listed = [
-            c
-            for c in self.engine.candidates.values()
-            if c["status"] in (STATUS_NEW, STATUS_IGNORED)
+            c for c in self.engine.candidates.values() if c["status"] != STATUS_CHECKING
         ]
         return json.dumps(public(listed), ensure_ascii=False)
+
+    async def get_device(self, hash, params):
+        """Name of the created device: candidate id, resident or tag"""
+        candidate = self.engine.candidates.get(params["id"]) or {}
+        return candidate.get("device") or self._created.get(params["id"], "")
 
     async def get_search(self, hash, params):
         entry = self._search.get(params["kind"])
@@ -432,5 +444,7 @@ def public(candidates):
         "prefill",
         "status",
         "source",
+        "device",
+        "deleted",
     )
     return [{k: c[k] for k in keys if k in c} for c in candidates]

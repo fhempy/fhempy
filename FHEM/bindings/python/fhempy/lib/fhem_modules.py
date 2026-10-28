@@ -28,6 +28,28 @@ STORED_VERSION_CMD = (
 )
 
 
+MISSING_FILES_CMD = (
+    "my $mp = $main::attr{global}{modpath};; my @missing;; "
+    "if (open(my $fh, '<', $mp.'/FHEM/" + CONTROLS_FILE + "')) { "
+    "while (my $line = <$fh>) { my @p = split(' ', $line);; "
+    "next if (@p != 4 || $p[0] ne 'UPD');; "
+    # unreadable files (mode 000 written by fhempy 2.10.2 - 2.11.0) count as missing
+    "my @st = CORE::stat($mp.'/'.$p[3]);; "
+    "push @missing, $p[3] if (!@st || !($st[2] & 0400));; } "
+    "close($fh);; } join(' ', @missing)"
+)
+
+
+def valid_path(path):
+    """Only files of the FHEM directory and the module installer of FHEMWEB."""
+    return (
+        path.startswith(("FHEM/", "www/fhempy/"))
+        and ".." not in path.split("/")
+        and "\\" not in path
+        and "'" not in path
+    )
+
+
 def controls_files(controls):
     """Files listed in the controls file, limited to the FHEM directory and the
     module installer of FHEMWEB (www/fhempy)."""
@@ -37,12 +59,7 @@ def controls_files(controls):
         if len(parts) != 4 or parts[0] != "UPD":
             continue
         path = parts[3]
-        if (
-            not path.startswith(("FHEM/", "www/fhempy/"))
-            or ".." in path.split("/")
-            or "\\" in path
-            or "'" in path
-        ):
+        if not valid_path(path):
             logger.warning("Ignore unexpected file in controls file: %s", path)
             continue
         files.append(path)
@@ -59,7 +76,9 @@ def needs_install(installed, running):
         return installed != running
 
 
-async def download(version):
+async def download(version, only=None):
+    """Files of the controls file at the tag of version, only=paths limits it to
+    these files (without the controls file)."""
     # Keep aiohttp's import out of the binding's startup path.
     import aiohttp
 
@@ -73,9 +92,11 @@ async def download(version):
 
         controls = await get(CONTROLS_FILE)
         for path in controls_files(controls.decode("utf-8")):
-            files[path] = await get(path)
-        # write the controls file last, FHEM update relies on it
-        files["FHEM/" + CONTROLS_FILE] = controls
+            if only is None or path in only:
+                files[path] = await get(path)
+        if only is None:
+            # write the controls file last, FHEM update relies on it
+            files["FHEM/" + CONTROLS_FILE] = controls
     return files
 
 
@@ -99,17 +120,24 @@ def install_command(version, files):
         "  last if (@errors);; "
         "  my $content = MIME::Base64::decode_base64($data);; "
         "  my $file = $modpath.'/'.$path;; "
+        # CORE::stat, other FHEM modules might import File::stat into main
+        "  my @stat = CORE::stat($file);; "
+        # an unreadable file (mode 000) gets the mode of a new file
+        "  my $mode = @stat && ($stat[2] & 0400) ? $stat[2] & 07777 : undef;; "
         "  my $old;; "
         "  if (open(my $in, '<:raw', $file)) { local $/;; $old = <$in>;; close($in);; } "
-        "  next if (defined($old) && $old eq $content);; "
-        "  my @stat = stat($file);; "
+        "  next if (defined($mode) && defined($old) && $old eq $content);; "
         "  File::Path::make_path(File::Basename::dirname($file));; "
         "  my $tmp = $file.'.fhempy_new';; "
         "  my $out;; "
         "  if (!open($out, '>:raw', $tmp)) { push @errors, \"$path: $!\";; next;; } "
         "  my $written = print {$out} $content;; "
         "  if (!close($out) || !$written) { push @errors, \"$path: $!\";; unlink($tmp);; next;; } "
-        "  chmod(@stat ? $stat[2] & 07777 : ($path =~ m{/bin/} ? 0755 : 0644), $tmp);; "
+        # a new file gets the mode of FHEM's own files (e.g. 0744 or 0644)
+        "  my @ref = CORE::stat($modpath.'/'.($path =~ m{^www/} "
+        "    ? 'www/pgm2/fhemweb.js' : 'FHEM/98_update.pm'));; "
+        "  chmod(defined($mode) ? $mode : ($path =~ m{/bin/} ? 0755 "
+        "    : (@ref && ($ref[2] & 0400) ? $ref[2] & 0777 : 0644)), $tmp);; "
         "  if (!rename($tmp, $file)) { push @errors, \"$path: $!\";; unlink($tmp);; next;; } "
         "  push @changed, $path;; "
         "} "
@@ -144,6 +172,7 @@ async def install():
     try:
         installed = await fhem.sendCommandName(COMMAND_NAME, STORED_VERSION_CMD)
         if not needs_install(installed, __version__):
+            await restore_missing(installed)
             return
         logger.info("Install FHEM modules of fhempy %s", __version__)
         try:
@@ -160,3 +189,20 @@ async def install():
         logger.info("FHEM modules installed: %s", ret or "no changes")
     except Exception:
         logger.exception("Failed to install FHEM modules")
+
+
+async def restore_missing(version):
+    """Files of the controls file which are missing in FHEM (e.g. deleted by
+    mistake) are installed again from the tag of the installed version."""
+    result = await fhem.sendCommandName(COMMAND_NAME, MISSING_FILES_CMD)
+    missing = [path for path in str(result or "").split() if valid_path(path)]
+    if not missing:
+        return
+    logger.warning("FHEM files of fhempy are missing: %s", ", ".join(missing))
+    try:
+        files = await download(version, only=set(missing))
+    except Exception as error:
+        logger.warning("Couldn't download the missing FHEM files: %s", error)
+        return
+    ret = await fhem.sendCommandName(COMMAND_NAME, install_command(version, files))
+    logger.info("Missing FHEM files installed again: %s", ret or "none")

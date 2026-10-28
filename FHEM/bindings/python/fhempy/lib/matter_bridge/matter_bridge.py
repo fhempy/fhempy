@@ -395,7 +395,16 @@ class matter_bridge(generic.FhemModule):
                 self.execute_command(message.get("id"), message.get("command", {}))
             )
         elif event == "pairing_mode":
-            if message.get("minutes"):
+            if message.get("busy"):
+                await self.update_state(
+                    "pairing mode opened by an app",
+                    "An app already opened pairing mode with its own code (e.g. "
+                    "Android while adding the bridge to Home Assistant). Finish "
+                    "it there or wait 15 minutes, then try 'set pairing_mode' "
+                    "again. Home Assistant needs to reach fhempy directly: same "
+                    "network, IPv6, in Docker network_mode host.",
+                )
+            elif message.get("minutes"):
                 await self.update_state(
                     f"pairing mode for {message.get('minutes')} minutes",
                     "Scan the QR code on this page with the new app now.",

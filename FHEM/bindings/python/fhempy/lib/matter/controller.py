@@ -133,6 +133,14 @@ class matter_controller:
                 "uses for IPv6 link-local addresses. Only needed if pairing "
                 "fails and the computer has several network interfaces.",
             },
+            "test_dcl": {
+                "default": "0",
+                "options": "0,1",
+                "format": "int",
+                "help": "1: also pair devices with a test/development "
+                "certificate (e.g. beta firmware). Only enable this if you "
+                "trust the vendor.",
+            },
             "autocreate": {
                 "default": "1",
                 "options": "0,1",
@@ -236,7 +244,12 @@ class matter_controller:
             return await self.install_server() and await self.start_server()
         await self.apply_restored_backup()
         settings = self.server_settings()
-        port, adapter, interface = settings
+        port, adapter, interface, test_dcl = settings
+        if test_dcl == 1:
+            self.logger.warning(
+                "Matter server accepts devices with test certificates "
+                "(attr test_dcl 1), only use this if you trust the vendor"
+            )
         self._log_offset = await utils.run_blocking(functools.partial(server.log_size))
         try:
             self.proc = server.start(
@@ -245,6 +258,7 @@ class matter_controller:
                 port,
                 bluetooth_adapter=int(adapter) if str(adapter).isdigit() else None,
                 primary_interface=interface or None,
+                test_dcl=test_dcl == 1,
                 logger=self.logger,
             )
             self._started_with = settings
@@ -281,6 +295,7 @@ class matter_controller:
             self.fhemdev._attr_port,
             self.fhemdev._attr_bluetooth_adapter,
             self.fhemdev._attr_primary_interface,
+            self.fhemdev._attr_test_dcl,
         )
 
     async def _settings_changed(self, hash):
@@ -294,6 +309,7 @@ class matter_controller:
     set_attr_port = _settings_changed
     set_attr_bluetooth_adapter = _settings_changed
     set_attr_primary_interface = _settings_changed
+    set_attr_test_dcl = _settings_changed
 
     async def stop_server(self):
         if self.proc is None:
@@ -669,6 +685,12 @@ def pairing_error(exc):
             "Codes from other apps are only valid for a few minutes."
         )
     if isinstance(exc, MatterServerError):
+        if "test/development certificate" in text:
+            return (
+                "the device uses a test/development certificate (e.g. beta "
+                "firmware). If you trust the vendor, set attr test_dcl 1 "
+                "and pair again."
+            )
         return (
             f"{text}. Check the code, put the device in pairing mode again "
             "and retry. IPv6 must be enabled in your network."

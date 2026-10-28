@@ -16,7 +16,12 @@ define fhempy_discovery fhempy autodiscovery
   page: *Create*, *Ignore* or *Later*. Each device pops up only once, also with several
   fhempy instances (peers).
 - Nothing is created automatically, you always decide.
-- Devices which already exist in FHEM aren't offered.
+- Devices which already exist in FHEM aren't offered. The list *Found devices* shows
+  them collapsed below the new devices (*Already in FHEM*, with a link to the device),
+  ignored devices as well (*Ignored*, button *Offer again*). A search field filters
+  the list by name, type, model or IP.
+- A device deleted in FHEM is offered again in *Found devices* within a minute
+  (without popup), *Create* sets it up again.
 
 Found are:
 
@@ -90,7 +95,7 @@ Pi, it starts BlueZ with `--experimental`, also after a reboot.
 - `set fhempy_discovery scan`: searches again now
 - `set fhempy_discovery createAll`: creates all found devices without required input
 - `set fhempy_discovery ignore <id>` / `unignore <id>`
-- `get fhempy_discovery candidates`: all found devices as JSON
+- `get fhempy_discovery candidates`: all found devices as JSON (new, in FHEM, ignored)
 
 ## For developers
 

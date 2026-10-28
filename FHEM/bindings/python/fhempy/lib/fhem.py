@@ -28,6 +28,8 @@ wsconnection = None
 release_check_lock = asyncio.Lock()
 # callbacks for events of other FHEM devices: {device name: [callback]}
 event_listeners = {}
+# recorder device name -> callback, see setEventRecorder
+recorder_listeners = {}
 # ids to match FHEM replies to commands sent by fhempy
 await_ids = itertools.count(1)
 
@@ -459,6 +461,56 @@ async def dispatch_event(device, event):
             await callback(device, reading, value)
         except Exception:
             logger.exception(f"Failed to handle event of {device}: {event}")
+
+
+async def setEventRecorder(hash, enable, skip=""):
+    """FHEM sends the events of all devices to fhempy, collected once per
+    second, they are passed to the callback registered with
+    register_recorder_listener. Events matching the regexp skip
+    ("device:reading: value") are only counted.
+    Returns "ok", "old" if the FHEM modules are too old (update all needed)
+    or an error message."""
+    cmd = (
+        "defined(&fhempy_setEventRecorder) ? "
+        f"(fhempy_setEventRecorder({perlString(hash['NAME'])}, "
+        f"{1 if enable else 0}, {perlString(skip)}) // 'ok') : 'old'"
+    )
+    return await sendCommandHash(hash, cmd)
+
+
+def register_recorder_listener(device, callback):
+    """callback(events, skipped) is awaited for each batch of events of the
+    recorder device: events is a list of (time, device, reading, value),
+    skipped maps device names to the number of skipped events."""
+    recorder_listeners[device] = callback
+
+
+def unregister_recorder_listener(device, callback):
+    if recorder_listeners.get(device) == callback:
+        del recorder_listeners[device]
+
+
+async def dispatch_recorded_events(device, args):
+    callback = recorder_listeners.get(device)
+    if callback is None or not args:
+        return
+    events = []
+    for entry in args[0] or []:
+        try:
+            timestamp, name, event = entry
+            parts = event.split(": ", 1)
+            if len(parts) > 1:
+                reading, value = parts
+            else:
+                reading, value = "state", parts[0]
+            events.append((float(timestamp), name, reading, value))
+        except (TypeError, ValueError):
+            logger.debug(f"Invalid recorded event: {entry}")
+    skipped = args[1] if len(args) > 1 and isinstance(args[1], dict) else {}
+    try:
+        await callback(events, skipped)
+    except Exception:
+        logger.exception(f"Failed to handle recorded events of {device}")
 
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):

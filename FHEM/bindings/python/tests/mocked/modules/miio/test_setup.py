@@ -48,7 +48,32 @@ async def test_define_unknown_type(mocker):
         ["testmiio2", "fhempy", "miio", "nodevice", "127.0.0.1", "00" * 16],
         {},
     )
-    assert ret == "Device nodevice not found."
+    assert ret.startswith("Device type nodevice not found, use one of: ")
+    assert "roborockvacuum" in ret
+    assert mock_fhem.readings["testmiio2"]["state"] == "unknown type nodevice"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "devtype, expected", [("vacuum", "RoborockVacuum"), ("plugv1", "ChuangmiPlug")]
+)
+async def test_define_legacy_type(mocker, devtype, expected):
+    # python-miio renamed types, existing defines like "miio vacuum" must work
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("miio")
+    from fhempy.lib.miio.miio import miio
+
+    device = miio(logging.getLogger(__name__))
+    mocker.patch.object(device, "create_async_task", lambda coro: coro.close())
+    ret = await device.Define(
+        {"NAME": "testmiio4", "FHEMPYTYPE": "miio"},
+        ["testmiio4", "fhempy", "miio", devtype, "127.0.0.1", "00" * 16],
+        {},
+    )
+    assert ret is None
+    assert type(device._device).__name__ == expected
+    assert "status" in device._set_list
+    assert mock_fhem.readings["testmiio4"]["state"] == "active"
 
 
 @pytest.mark.asyncio

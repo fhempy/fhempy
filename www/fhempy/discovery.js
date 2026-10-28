@@ -10,6 +10,8 @@
  * fhempyDiscovery.tag(dev): adds a Bluetooth tag held next to the Raspberry Pi
  *
  * The device is created with set <dev> create <id> [name=...] [p0=...].
+ * The list has a search, devices in FHEM and ignored devices are collapsed
+ * below the new ones. Devices deleted in FHEM are new again.
  */
 (function () {
   "use strict";
@@ -19,8 +21,21 @@
   var devices = [];
   /* id -> state of a tile: busy, created (device name), error */
   var state = {};
+  /* text of the search field */
+  var filter = "";
 
   function esc(t) { return $("<div>").text(t === undefined || t === null ? "" : String(t)).html(); }
+  /* a click opens the detail page of the device */
+  function deviceLink(name) {
+    return '<a href="' + FW_root + "?detail=" + encodeURIComponent(name) + '">' + esc(name) + "</a>";
+  }
+  /* shows the link to the created resident or tag below the done message */
+  function showCreated(d, kind) {
+    cmd("get " + dev + " device " + kind, function (name) {
+      name = (name || "").trim();
+      if (name) d.find(".fdDone").first().after('<div class="fdDone">Open ' + deviceLink(name) + "</div>");
+    });
+  }
 
   /* FHEM command argument: quoted if needed, ; doubled for the command line */
   function arg(v) {
@@ -54,8 +69,12 @@
       ".fhempyDiscovery input[type=text],.fhempyDiscovery input[type=password]{width:100%;margin:3px 0 0;box-sizing:border-box;padding:5px 8px;border-radius:8px;border:1px solid rgba(128,128,128,0.45);font-size:13px;background:transparent;color:inherit}" +
       ".fhempyDiscovery label{font-size:12px;font-weight:600;display:block;margin-top:5px}" +
       ".fhempyDiscovery .fdDone{font-size:12px;color:#3fa34d;font-weight:600}" +
+      ".fhempyDiscovery .fdDone a{color:inherit;text-decoration:underline}" +
       ".fhempyDiscovery .fdErr{font-size:12px;color:#d64545;white-space:pre-wrap}" +
       ".fhempyDiscovery .fdEmpty{opacity:0.75;margin:16px 0;text-align:center}" +
+      ".fhempyDiscovery input.fdSearch{margin:0 0 10px}" +
+      ".fhempyDiscovery details.fdMore{margin-top:12px}" +
+      ".fhempyDiscovery details.fdMore summary{cursor:pointer;font-weight:600;font-size:13px;opacity:0.8;margin-bottom:8px}" +
       ".fhempyDiscovery .fdChoice{display:flex;gap:8px;align-items:center;padding:7px 9px;border:1px solid rgba(128,128,128,0.35);border-radius:10px;margin:6px 0;cursor:pointer}" +
       ".fhempyDiscovery .fdChoice input{margin:0}" +
       ".fhempyDiscovery .fdStep{font-weight:600;font-size:15px;margin:4px 0 8px}" +
@@ -100,11 +119,21 @@
     var info = [d.kind, d.model, d.ip].filter(function (x) { return x && x != d.title; });
     var html = '<div class="fdTile' + (d.status == "ignored" ? " fdOff" : "") + '" data-i="' + i + '">' +
       logo(d) + '<div style="min-width:0;flex:1"><div class="fdTitle">' + esc(d.title) + "</div>" +
-      '<div class="fdInfo">' + esc(info.join(" · ")) + "</div>" +
+      '<div class="fdInfo">' + esc(info.join(" · ")) + "</div>";
+    if (!st.created && (d.status == "exists" || d.status == "created")) {
+      /* in FHEM already: link to the device */
+      return html + '<div class="fdDone">✓ in FHEM' + (d.device ? ": " + deviceLink(d.device) : "") + "</div></div></div>";
+    }
+    html += (d.deleted && !st.created ? '<div class="fdHint">Deleted in FHEM, Create sets it up again.</div>' : "") +
       (d.hint ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
     if (st.created) {
-      return html + '<div class="fdDone">✓ ' + (d.action == "set" ?
-        "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy") + "</div></div></div>";
+      /* a click on the link opens the new device */
+      var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
+      if (st.device) {
+        var link = deviceLink(st.device);
+        done = (d.action == "set" ? "pairing started, see " : "created: ") + link;
+      }
+      return html + '<div class="fdDone">✓ ' + done + "</div></div></div>";
     }
     if (d.status == "ignored") {
       return html + '<div class="fdBtns"><span class="fdBtn fdGrey fdUnignore">Offer again</span></div></div></div>';
@@ -122,24 +151,65 @@
     return html + "</div></div>";
   }
 
+  /* the device contains all words of the search */
+  function matches(d) {
+    var text = [d.title, d.kind, d.model, d.ip, d.module, d.device].join(" ").toLowerCase();
+    return filter.toLowerCase().split(/\s+/).every(function (w) { return text.indexOf(w) >= 0; });
+  }
+
+  /* new devices on top, devices in FHEM and ignored devices collapsed below;
+     tiles changed in this dialog stay where they are */
+  function section(d) {
+    if (state[d.id] || d.status == "new") return "new";
+    return d.status == "ignored" ? "ignored" : "fhem";
+  }
+
   function render(container, empty) {
-    var list = devices.filter(function (d) { return d.status != "ignored" || state[d.id]; });
-    var ignored = devices.length - list.length;
+    var search = container.children(".fdSearch");
+    var results = container.children(".fdResults");
+    if (!results.length) {
+      search = $('<input type="text" class="fdSearch" placeholder="Search (name, type, IP...)">').val(filter);
+      results = $('<div class="fdResults"></div>');
+      container.empty().append(search, results);
+      search.on("input", function () {
+        filter = $(this).val().trim();
+        render(container, empty);
+      });
+    }
+    var open = {};
+    results.find("details.fdMore").each(function () { open[$(this).data("s")] = this.open; });
+    search.toggle(devices.length > 1);
     if (!devices.length) {
-      container.html('<div class="fdEmpty">' + (empty || "No new devices found yet.") + "</div>");
+      results.html('<div class="fdEmpty">' + (empty || "No new devices found yet.") + "</div>");
       return;
     }
-    container.html('<div class="fdList">' + devices.map(tile).join("") + "</div>" +
-      (ignored ? '<div class="fdInfo" style="margin-top:8px">Greyed out: ignored devices.</div>' : ""));
-    container.find(".fdCreate").click(function () { create(container, devices[$(this).closest(".fdTile").data("i")]); });
-    container.find(".fdIgnore").click(function () {
+    var groups = { "new": "", fhem: "", ignored: "" }, count = { "new": 0, fhem: 0, ignored: 0 };
+    devices.forEach(function (d, i) {
+      if (!matches(d)) return;
+      var s = section(d);
+      groups[s] += tile(d, i);
+      count[s]++;
+    });
+    function more(s, title) {
+      if (!count[s]) return "";
+      /* opened by the search, otherwise as the user left it */
+      var isOpen = filter ? true : open[s];
+      return '<details class="fdMore" data-s="' + s + '"' + (isOpen ? " open" : "") + "><summary>" + title +
+        " (" + count[s] + ')</summary><div class="fdList">' + groups[s] + "</div></details>";
+    }
+    var html = count["new"] ? '<div class="fdList">' + groups["new"] + "</div>" :
+      '<div class="fdEmpty">' + (filter ? "No device matches the search." : (empty || "No new devices found yet.")) + "</div>";
+    results.html(html + more("fhem", "Already in FHEM") + more("ignored", "Ignored"));
+    results.find(".fdCreate").click(function () { create(container, devices[$(this).closest(".fdTile").data("i")]); });
+    results.find(".fdIgnore").click(function () {
       var d = devices[$(this).closest(".fdTile").data("i")];
       cmd("set " + dev + " ignore " + arg(d.id), function () {
         d.status = "ignored";
+        delete state[d.id];
         render(container, empty);
       });
     });
-    container.find(".fdUnignore").click(function () {
+    results.find(".fdUnignore").click(function () {
       var d = devices[$(this).closest(".fdTile").data("i")];
       cmd("set " + dev + " unignore " + arg(d.id), function () {
         d.status = "new";
@@ -177,9 +247,17 @@
     render(container);
     cmd(command, function (r) {
       st.busy = false;
-      if (r) st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
-      else st.created = true;
+      if (r) {
+        st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
+        render(container);
+        return;
+      }
+      st.created = true;
       render(container);
+      cmd("get " + dev + " device " + arg(d.id), function (name) {
+        st.device = (name || "").trim();
+        if (st.device) render(container);
+      });
     });
   }
 
@@ -199,6 +277,7 @@
   }
 
   function showDevices(title, empty) {
+    filter = "";
     var d = dialog("fhempyDiscoveryList", title);
     var container = $('<div class="fdIntro"></div>');
     d.html('<div class="fdIntro">These devices were found in your network and via Bluetooth. ' +
@@ -236,6 +315,7 @@
     var container = $(selector);
     css();
     container.addClass("fhempyDiscovery").css("max-height", "none");
+    filter = "";
     function refresh(count) {
       if (!document.body.contains(container[0])) return;
       load(function () {
@@ -361,6 +441,7 @@
           { text: "Add another resident", click: function () { resident = { person: "", mac: "", bt: "" }; stepNetwork(); } },
           { text: "Close", click: function () { $(this).dialog("close"); } }
         ]);
+        showCreated(d, "resident");
       });
     }
 
@@ -400,6 +481,7 @@
                   if (r) { $("#fdError").text(r); return; }
                   d.html('<div class="fdDone" style="font-size:16px;margin:10px 0">✓ ' + esc(title) + " was added</div>");
                   buttons(d, [{ text: "Add another tag", click: start }, { text: "Close", click: function () { $(this).dialog("close"); } }]);
+                  showCreated(d, "tag");
                 });
               } },
               { text: "Search again", click: start }
