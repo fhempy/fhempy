@@ -196,6 +196,7 @@ def build_entries(rows, infos, absences, now):
             "text": entry_text(infos, device, reading, value),
             "room": infos.get(device, {}).get("room", ""),
             "duration": value.lower() in ACTIVE_VALUES,
+            "on_change": classify.on_change(infos.get(device, {}), reading),
         }
         entries.append(entry)
         last[key] = entry

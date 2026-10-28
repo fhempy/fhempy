@@ -63,6 +63,7 @@
       "#fhempyTimeline .ftlAlert .ftlText{color:#d0662a;font-weight:600}" +
       "#fhempyTimeline .ftlAction{font-size:11px;opacity:0;cursor:pointer;white-space:nowrap;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px}" +
       "#fhempyTimeline .ftlEntry:hover .ftlAction{opacity:0.8}" +
+      "#fhempyTimeline .ftlActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;align-items:flex-start}" +
       "@media (hover:none){#fhempyTimeline .ftlAction{opacity:0.6}}" +
       "#fhempyTimeline .ftlChildren{margin:4px 0 0 0;padding-left:10px;border-left:2px solid rgba(128,128,128,0.3)}" +
       "#fhempyTimeline .ftlLink{cursor:pointer;font-size:12px;opacity:0.75;text-decoration:underline}" +
@@ -246,8 +247,8 @@
     }
     html += "</div>";
     if (entry.device) {
-      html += '<span class="ftlAction" data-hide="' + esc(entry.device + ":" + entry.reading) +
-        '" title="Don\'t show ' + esc(entry.device + ":" + entry.reading) + ' anymore">Show less</span>';
+      html += '<span class="ftlActions">' + onChangeAction(entry) + '<span class="ftlAction" data-hide="' + esc(entry.device + ":" + entry.reading) +
+        '" title="Don\'t show ' + esc(entry.device + ":" + entry.reading) + ' anymore">Show less</span></span>';
     } else {
       html += "<span></span>";
     }
@@ -437,7 +438,7 @@
     var meta = entryMeta(entry);
     return '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '"><span class="ftlTime">' + clock(entry.ts) + "</span>" +
       dot(entry.category) + '<div class="ftlText">' + esc(entry.text) + (meta ? '<div class="ftlMeta">' + meta + "</div>" : "") +
-      durationBar(entry) + "</div><span></span></div>";
+      durationBar(entry) + "</div><span>" + onChangeAction(entry) + "</span></div>";
   }
 
   function deviceHtml(data, days) {
@@ -579,7 +580,7 @@
         return;
       }
       days.forEach(function (day) {
-        day.trends.forEach(function (t) {
+        day.trends.concat(day.entries).forEach(function (t) {
           if (t.device + ":" + t.reading === target) t.on_change = true;
         });
       });
