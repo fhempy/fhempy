@@ -168,3 +168,33 @@ async def test_not_found_without_stale_connection(ble, mocker):
     drop, report_failure = await not_found_with_working_adapter(ble, mocker, None)
     drop.assert_awaited_once()
     report_failure.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_unexpected_disconnect_releases_client(ble, mocker):
+    # bleak closes its D-Bus connection only in disconnect() (#761)
+    client = mocker.MagicMock(is_connected=False)
+    client.disconnect = mocker.AsyncMock()
+    ble._client = client
+    connect = mocker.patch.object(ble, "connect", mocker.AsyncMock())
+
+    await ble.async_disconnected(client)
+
+    client.disconnect.assert_awaited_once()
+    connect.assert_awaited_once()
+    assert ble._client is None
+
+
+@pytest.mark.asyncio
+async def test_unexpected_disconnect_keeps_new_client(ble, mocker):
+    old_client = mocker.MagicMock(is_connected=False)
+    old_client.disconnect = mocker.AsyncMock(side_effect=Exception("dbus"))
+    new_client = mocker.MagicMock(is_connected=True)
+    new_client.disconnect = mocker.AsyncMock()
+    ble._client = new_client
+    mocker.patch.object(ble, "connect", mocker.AsyncMock())
+
+    await ble.async_disconnected(old_client)
+
+    old_client.disconnect.assert_awaited_once()
+    assert ble._client is new_client

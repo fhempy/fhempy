@@ -16,6 +16,8 @@ If you want to create your own module:
 5. Do define test_mymodule fhempy mymodule in FHEM to see if the new module was found
 6. Add an `installer` section to mymodule/manifest.json, it gives the module a tile in
    the module installer of FHEMWEB (see below)
+7. Add a `discovery` section if devices of the module can be found in the network or
+   via Bluetooth (see [Autodiscovery](#autodiscovery))
 
 ## Module installer tile
 
@@ -49,6 +51,51 @@ The "Install modules" dialog shows every module with an `installer` section in i
 
 `python3 manifest2modules.py` builds `www/fhempy/modules.json` from it, the GitHub action
 of a pull request does this as well.
+
+## Autodiscovery
+
+The autodiscovery module finds devices for every module with a `discovery` section in
+its `manifest.json`. One rule or a list of rules:
+
+```json
+"discovery": {
+  "mdns": ["_googlecast._tcp.local."],
+  "unique": "{txt.id}",
+  "title": "{txt.fn}",
+  "model": "{txt.md}",
+  "exists": "{txt.fn}",
+  "define": ["{txt.fn}"]
+}
+```
+
+- Source, one of:
+  - `mdns`: service types, optionally `{"type": ..., "txt": {"sf": "1"}}` to filter TXT
+    records. Values: `{name}`, `{host}`, `{ip}`, `{port}`, `{txt.<key>}`
+  - `ssdp`: UPnP device types. Values: `{udn}`, `{friendly_name}`, `{model_name}`,
+    `{manufacturer}`, `{ip}`
+  - `ble`: list of matchers with `name`, `name_prefix`, `manufacturer_id` or
+    `service_uuid`, the rule may set `min_rssi`
+    (default -80, the neighbour's devices are weaker). Values: `{address}`, `{name}`,
+    `{rssi}`
+  - `search: true`: `lib/<module>/discovery.py` has `async def search(ctx)`, for
+    devices with their own protocol (e.g. a UDP broadcast). It runs every 10 minutes
+    and must only import packages fhempy always has.
+- `unique`: identifies the device, or `single: true` if one device is enough
+- `exists`: text searched in the DEF of existing devices of the module (default:
+  `unique`), `false` to always offer the device
+- `define`: define arguments, `params`: arguments the user enters (like the installer)
+- `action`: `define` (default), `installer` (opens the module installer, `prefill`
+  fills its params) or `set` (`set: {device, command, args}` runs a set on a controller
+  device, e.g. Matter pairing; the controller is created if needed)
+
+A `search()` reports devices with `ctx.found(ip=..., title=..., <key>=...)`, helpers are
+`await ctx.udp_broadcast(port, payload, wait)`, `await ctx.udp_listen(ports, wait)` and
+`await ctx.hostname(ip)`. Example: [goodwe/discovery.py](FHEM/bindings/python/fhempy/lib/goodwe/discovery.py).
+
+Parts which find devices themselves (e.g. MQTT discovery in `autodiscovery/mqtt.py`) offer them with
+`Engine.running_instance().report(...)`.
+
+`python3 manifest2modules.py` also builds `lib/autodiscovery/discovery.json`.
 
 ## Keep the event loop responsive
 

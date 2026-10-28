@@ -87,3 +87,30 @@ async def test_start_climate(mocker):
     assert options.defrost is True
     assert options.climate is True
     assert options.heating == 0
+
+
+@pytest.mark.asyncio
+async def test_car_command_before_first_update(mocker):
+    device, testhash, calls = await setup_device(mocker)
+
+    ret = await device.Set(testhash, ["testcar", "lock"], {})
+    await asyncio.sleep(0.5)
+
+    assert "Not connected to the car yet" in ret
+    device.vm.lock.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_car_command_error_is_shown(mocker):
+    device, testhash, calls = await setup_device(mocker)
+    device.vehicle = device.vm.vehicles["vehicle1"]
+    device.vm.lock.side_effect = RuntimeError("car not reachable")
+
+    assert await device.Set(testhash, ["testcar", "lock"], {}) in (None, "")
+    await asyncio.sleep(1)
+
+    device.vm.lock.assert_called_once_with("vehicle1")
+    assert (
+        mock_fhem.readings["testcar"]["last_command_error"]
+        == "RuntimeError: car not reachable"
+    )

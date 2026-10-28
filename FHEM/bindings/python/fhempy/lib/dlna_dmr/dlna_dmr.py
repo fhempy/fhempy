@@ -1,4 +1,5 @@
 """Support for DLNA DMR (Device Media Renderer)."""
+
 import asyncio
 import datetime as dt
 import functools
@@ -13,7 +14,7 @@ from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
-from ..discover_upnp.discover_upnp import ssdp
+from ..core.ssdp import ssdp
 
 DEFAULT_LISTEN_PORT = 8301
 
@@ -86,9 +87,12 @@ class dlna_dmr(FhemModule):
 
     async def removed_device(self, upnp_device):
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
+        if self.device is None:
+            return
         self.update_task.cancel()
-        await self.device.cleanup()
+        device = self.device
         self.device = None
+        await device.cleanup()
 
     async def async_start_event_handler(
         self, server_host: str, server_port: int, requester
@@ -159,6 +163,15 @@ class dlna_dmr(FhemModule):
         }
         ssdp.getInstance(self.logger).register_listener(self, ssdp_filter)
         await ssdp.getInstance(self.logger).start_search()
+
+    # FHEM Function
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and self.device is None:
+            return (
+                "Renderer is offline, please make sure it is switched on and "
+                "in the same network"
+            )
+        return await super().Set(hash, args, argsh)
 
     async def set_play(self, hash, params):
         if params["url"] == "":

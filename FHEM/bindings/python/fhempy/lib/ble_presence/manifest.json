@@ -1,6 +1,7 @@
 {
   "requirements": [
-    "bluepy==1.3.0"
+    "bluepy==1.3.0",
+    "bleak==3.0.2"
   ],
   "installer": {
     "title": "BLE presence",
@@ -11,7 +12,8 @@
     "logo": "bluetooth.svg",
     "params": [
       {
-        "type": "mac"
+        "type": "mac",
+        "help": "Bluetooth address of the tag. Easier: 'Add Bluetooth tag' of autodiscovery finds the tag held next to the Raspberry Pi."
       }
     ]
   }

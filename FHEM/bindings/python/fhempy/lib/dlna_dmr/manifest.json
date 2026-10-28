@@ -4,7 +4,7 @@
   ],
   "installer": {
     "title": "DLNA renderer",
-    "description": "Control DLNA MediaRenderer devices, discover_upnp creates them on its own",
+    "description": "Control DLNA MediaRenderer devices, autodiscovery finds them on its own",
     "category": "media",
     "order": 30,
     "name": "dlna",
@@ -13,8 +13,21 @@
       {
         "label": "UDN",
         "placeholder": "uuid:...",
-        "help": "Unique device name, shown by discover_upnp"
+        "help": "Unique device name, autodiscovery fills it in"
       }
+    ]
+  },
+  "discovery": {
+    "ssdp": [
+      {
+        "device_type": "urn:schemas-upnp-org:device:MediaRenderer:1"
+      }
+    ],
+    "title": "{friendly_name}",
+    "model": "{manufacturer} {model_name}",
+    "unique": "{udn}",
+    "define": [
+      "{udn}"
     ]
   }
 }

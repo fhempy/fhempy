@@ -23,5 +23,28 @@
         "optional": true
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name_prefix": [
+          "CC-RT-BLE",
+          "CC-RT-M-BLE"
+        ]
+      }
+    ],
+    "title": "Radiator thermostat",
+    "name": "thermostat",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ],
+    "params": [
+      {
+        "label": "PIN",
+        "help": "Only for eqiva thermostats with pairing PIN",
+        "optional": true
+      }
+    ]
   }
 }

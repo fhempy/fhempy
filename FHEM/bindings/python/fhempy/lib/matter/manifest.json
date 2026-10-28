@@ -8,5 +8,53 @@
     "name": "matter",
     "single": true,
     "logo": "matter.png"
-  }
+  },
+  "discovery": [
+    {
+      "mdns": [
+        "_matterc._udp.local."
+      ],
+      "title": "{txt.DN}",
+      "unique": "{name}",
+      "exists": false,
+      "action": "set",
+      "set": {
+        "device": "matter",
+        "command": "pair",
+        "name": "matter"
+      },
+      "params": [
+        {
+          "label": "Pairing code",
+          "placeholder": "3497-011-2332",
+          "help": "11 digit code or text of the QR code (MT:...), printed on the device or from 'share device' in Apple/Google Home"
+        }
+      ],
+      "hint": "The device is in pairing mode."
+    },
+    {
+      "ble": [
+        {
+          "service_uuid": "0000fff6-0000-1000-8000-00805f9b34fb"
+        }
+      ],
+      "title": "New Matter device",
+      "unique": "{address}",
+      "exists": false,
+      "action": "set",
+      "set": {
+        "device": "matter",
+        "command": "pair_new_device",
+        "name": "matter"
+      },
+      "params": [
+        {
+          "label": "Pairing code",
+          "placeholder": "3497-011-2332",
+          "help": "11 digit code or text of the QR code (MT:...) printed on the device or its box"
+        }
+      ],
+      "hint": "Brand-new device, pairing uses Bluetooth (attribute bluetooth_adapter of the matter device)."
+    }
+  ]
 }

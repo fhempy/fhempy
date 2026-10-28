@@ -6,6 +6,8 @@
  * Every module of the catalog (modules.json, built from the manifest.json files
  * by manifest2modules.py) has a tile. "Set up" defines the device
  * right away, modules needing more parameters ask for them first.
+ * fhempyModules("", {id: "miio", prefill: {"1": "192.168.1.5"}}) opens the
+ * module directly with prefilled parameters (used by autodiscovery).
  */
 (function () {
   "use strict";
@@ -25,7 +27,7 @@
   ];
   var byCat = {};
   categories.forEach(function (c) { byCat[c.id] = c; });
-  var popular = ["matter", "matter_bridge", "zigbee2mqtt", "mcp_server", "remote_access",
+  var popular = ["autodiscovery", "matter", "matter_bridge", "zigbee2mqtt", "mcp_server", "remote_access",
                  "tuya_smartlife", "googlecast", "esphome", "openmeteo_weather"];
 
   /*
@@ -347,7 +349,7 @@
     });
   }
 
-  window.fhempyModules = function (search) {
+  window.fhempyModules = function (search, open) {
     css();
     $("#fhempyModules").remove();
     view = { cat: "all", search: search || "" };
@@ -366,7 +368,14 @@
         buttons([{ text: "Close", click: close }]);
         return;
       }
-      loadDefined(renderMain);
+      loadDefined(function () {
+        if (!open || !byId[open.id]) {
+          renderMain();
+          return;
+        }
+        renderDetail(byId[open.id]);
+        $.each(open.prefill || {}, function (i, v) { $("#fmParam" + i).val(v); });
+      });
     });
   };
 })();

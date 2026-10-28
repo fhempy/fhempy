@@ -3,7 +3,9 @@
  * module push. fhempyPush(cfg) shows the next step for this browser:
  * open the https address, add to home screen (iPhone), enable notifications.
  * cfg: {dev, key, devices: [{id, name}], addresses: [{url, kind, qr, ca}],
- *       remote_access}
+ *       remote_access, history: [{id, ts, title, body, image, url, to,
+ *       actions, used, delivered, total}]}
+ * fhempyPushHistory shows the sent messages of the last 7 days.
  */
 (function () {
   "use strict";
@@ -11,7 +13,10 @@
   var cfg;
   var box;
 
-  function esc(t) { return $("<div>").text(t === undefined ? "" : String(t)).html(); }
+  function esc(t) {
+    return String(t === undefined || t === null ? "" : t).replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
 
   function css() {
     if ($("#fhempyPushCss").length) return;
@@ -29,6 +34,34 @@
       "#fhempyPush .fpOption table td{vertical-align:top;padding-right:14px}" +
       "#fhempyPush input.fpName{font-size:15px;padding:6px;width:14em;max-width:90%}" +
       "#fhempyPush ol{margin:4px 0;padding-left:22px}" +
+      /* messages of the last 7 days */
+      "#fhempyPushHistory{max-width:720px;line-height:1.4}" +
+      "#fhempyPushHistory .fhHead{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 10px}" +
+      "#fhempyPushHistory .fhCount{opacity:.7;flex:1;min-width:10em}" +
+      "#fhempyPushHistory .fhSearch{font-size:15px;padding:7px 12px;border-radius:18px;border:1px solid rgba(128,128,128,.45);background:transparent;color:inherit;width:13em;max-width:100%}" +
+      "#fhempyPushHistory .fhDay{font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin:16px 4px 6px}" +
+      "#fhempyPushHistory .fhMsg{display:flex;gap:12px;padding:12px;margin:0 0 8px;border-radius:14px;background:rgba(128,128,128,.10);transition:background .6s}" +
+      "#fhempyPushHistory .fhMsg.fhNew{background:rgba(42,110,187,.30)}" +
+      "#fhempyPushHistory .fhAvatar{flex:0 0 38px;height:38px;border-radius:50%;color:#fff;font-weight:bold;font-size:17px;display:flex;align-items:center;justify-content:center}" +
+      "#fhempyPushHistory .fhMain{flex:1;min-width:0}" +
+      "#fhempyPushHistory .fhTop{display:flex;gap:8px;align-items:baseline}" +
+      "#fhempyPushHistory .fhTitle{font-weight:bold;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      "#fhempyPushHistory .fhTime{font-size:12px;opacity:.65;white-space:nowrap}" +
+      "#fhempyPushHistory .fhBody{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}" +
+      "#fhempyPushHistory .fhBody.fhClamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}" +
+      "#fhempyPushHistory .fhBody a{font-size:inherit;overflow-wrap:anywhere}" +
+      "#fhempyPushHistory .fhMore{font-size:12px;opacity:.7;cursor:pointer;text-decoration:underline}" +
+      "#fhempyPushHistory .fhImg{display:block;margin-top:8px;max-width:100%;max-height:220px;border-radius:10px}" +
+      "#fhempyPushHistory .fhChips{margin-top:8px}" +
+      "#fhempyPushHistory .fhChip{display:inline-block;font-size:13px;padding:3px 10px;margin:0 6px 4px 0;border-radius:12px;border:1px solid rgba(128,128,128,.45)}" +
+      "#fhempyPushHistory .fhChip.fhUsed{border-color:#3fa34d;background:rgba(63,163,77,.15)}" +
+      "#fhempyPushHistory .fhMeta{font-size:12px;opacity:.65;margin-top:6px}" +
+      "#fhempyPushHistory .fhMeta .fhWarn{color:#d64545;opacity:1;font-weight:bold}" +
+      "#fhempyPushHistory .fhMeta a{color:inherit}" +
+      "#fhempyPushHistory .fhEmpty{text-align:center;padding:26px 10px;opacity:.85}" +
+      "#fhempyPushHistory .fhBell{font-size:40px;width:76px;height:76px;line-height:76px;border-radius:50%;background:rgba(128,128,128,.12);margin:0 auto 10px}" +
+      "#fhempyPushHistory .fhFoot{text-align:right;margin-top:6px}" +
+      "#fhempyPushHistory .fhLink{background:none;border:0;color:inherit;opacity:.6;text-decoration:underline;cursor:pointer;font-size:12px}" +
       "</style>");
   }
 
@@ -334,12 +367,204 @@
     });
   }
 
+  /* --- messages of the last 7 days --- */
+
+  var hist = { list: [], query: "", highlight: null };
+
+  function avatarColor(text) {
+    var h = 0;
+    for (var i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360;
+    return "hsl(" + h + ",55%,45%)";
+  }
+
+  function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  }
+
+  function dayLabel(date) {
+    var days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+    if (days < 2 && window.Intl && Intl.RelativeTimeFormat) {
+      var text = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(-days, "day");
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+    return date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  function timeText(ts) {
+    return new Date(ts * 1000).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }
+
+  /* text with clickable web addresses */
+  function linkify(text) {
+    return esc(text).replace(/https?:\/\/[^\s<>"']*[^\s<>"'.,;:!?)\]]/g, function (url) {
+      return '<a href="' + url + '" target="_blank" rel="noopener">' + url + "</a>";
+    });
+  }
+
+  function safeUrl(url) {
+    return /^https?:\/\//i.test(url || "") ? url : "";
+  }
+
+  function messageHtml(m) {
+    var title = m.title || "FHEM";
+    var body = m.body || "";
+    var long = body.length > 220 || body.split("\n").length > 4;
+    var html = '<div class="fhMsg" id="fhMsg-' + esc(m.id) + '">' +
+      '<div class="fhAvatar" style="background:' + avatarColor(title) + '">' +
+      esc(Array.from(title)[0].toUpperCase()) + "</div>" +
+      '<div class="fhMain"><div class="fhTop"><span class="fhTitle">' + esc(title) + "</span>" +
+      '<span class="fhTime" title="' + esc(new Date(m.ts * 1000).toLocaleString()) + '">' +
+      esc(timeText(m.ts)) + "</span></div>";
+    if (body) {
+      html += '<div class="fhBody' + (long ? " fhClamp" : "") + '">' + linkify(body) + "</div>";
+      if (long) html += '<span class="fhMore">Show more</span>';
+    }
+    var image = safeUrl(m.image);
+    if (image) {
+      html += '<a href="' + esc(image) + '" target="_blank" rel="noopener">' +
+        '<img class="fhImg" loading="lazy" alt="" src="' + esc(image) + '"></a>';
+    }
+    if (m.actions && m.actions.length) {
+      html += '<div class="fhChips">' + m.actions.map(function (label) {
+        var used = m.used && m.used.label === label;
+        return '<span class="fhChip' + (used ? " fhUsed" : "") + '">' +
+          (used ? "✓ " : "") + esc(label) + (used ? " · " + esc(timeText(m.used.ts)) : "") + "</span>";
+      }).join("") + "</div>";
+    }
+    var meta = [];
+    if (m.to && m.to.length) meta.push("to " + esc(m.to.join(", ")));
+    if (m.total !== undefined) {
+      if (m.delivered === m.total) {
+        meta.push(m.total === 1 ? "✓ delivered" : "✓ delivered to " + m.total + " devices");
+      } else {
+        meta.push('<span class="fhWarn">⚠ delivered to ' + m.delivered + " of " + m.total + "</span>");
+      }
+    }
+    var url = safeUrl(m.url);
+    if (url) meta.push('<a href="' + esc(url) + '" target="_blank" rel="noopener">opens a page</a>');
+    if (meta.length) html += '<div class="fhMeta">' + meta.join(" · ") + "</div>";
+    return html + "</div></div>";
+  }
+
+  function matches(m, query) {
+    if (!query) return true;
+    var text = ((m.title || "") + " " + (m.body || "") + " " + (m.actions || []).join(" ")).toLowerCase();
+    return query.split(/\s+/).every(function (word) { return text.indexOf(word) >= 0; });
+  }
+
+  function historyListHtml() {
+    var query = hist.query.trim().toLowerCase();
+    var list = hist.list.filter(function (m) { return matches(m, query); });
+    if (!hist.list.length) {
+      return '<div class="fhEmpty"><div class="fhBell">🔔</div>' +
+        "<b>No messages in the last 7 days</b><br>" +
+        '<span class="fpHint">Every message of <code>set ' + esc(cfg.dev) +
+        " message ...</code> appears here.</span></div>";
+    }
+    if (!list.length) {
+      return '<div class="fhEmpty"><b>No message found</b><br><span class="fpHint">' +
+        "Search for another word.</span></div>";
+    }
+    var html = "";
+    var lastDay = null;
+    list.slice().reverse().forEach(function (m) {
+      var date = new Date(m.ts * 1000);
+      var day = startOfDay(date);
+      if (day !== lastDay) {
+        html += '<div class="fhDay">' + esc(dayLabel(date)) + "</div>";
+        lastDay = day;
+      }
+      html += messageHtml(m);
+    });
+    return html;
+  }
+
+  function renderHistoryList() {
+    $("#fhList").html(historyListHtml());
+    $("#fhCount").text(hist.list.length === 1 ? "1 message in the last 7 days" :
+      hist.list.length + " messages in the last 7 days");
+    $("#fhClear").toggle(hist.list.length > 0);
+    if (hist.highlight) {
+      var el = document.getElementById("fhMsg-" + hist.highlight);
+      hist.highlight = null;
+      if (el) {
+        el.scrollIntoView({ block: "center" });
+        $(el).addClass("fhNew");
+        setTimeout(function () { $(el).removeClass("fhNew"); }, 2500);
+      }
+    }
+  }
+
+  function renderHistory() {
+    var area = $("#fhempyPushHistory");
+    if (!area.length) return;
+    area.html('<div class="fhHead"><span class="fhCount" id="fhCount"></span>' +
+      '<input type="search" class="fhSearch" id="fhSearch" placeholder="🔍 Search" ' +
+      'autocomplete="off"></div><div id="fhList"></div>' +
+      '<div class="fhFoot"><button class="fhLink" id="fhClear">Clear list</button></div>');
+    $("#fhSearch").val(hist.query).on("input", function () {
+      hist.query = $(this).val();
+      renderHistoryList();
+    });
+    area.on("click", ".fhMore, .fhClamp", function () {
+      var msg = $(this).closest(".fhMsg");
+      msg.find(".fhBody").removeClass("fhClamp");
+      msg.find(".fhMore").remove();
+    });
+    $("#fhClear").on("click", function () {
+      $("<div>Delete the list of sent messages?</div>").dialog({
+        modal: true, dialogClass: "no-close", width: "auto",
+        buttons: [
+          { text: "Delete", click: function () {
+            $(this).dialog("close").remove();
+            cmd("set " + cfg.dev + " clear_history", reloadHistory);
+          } },
+          { text: "Cancel", click: function () { $(this).dialog("close").remove(); } }
+        ]
+      });
+    });
+    renderHistoryList();
+  }
+
+  function reloadHistory() {
+    cmd("set " + cfg.dev + " history", function (resp) {
+      try {
+        var list = JSON.parse(resp);
+        if (!Array.isArray(list)) return;
+        var known = {};
+        hist.list.forEach(function (m) { known[m.id] = true; });
+        var added = list.filter(function (m) { return !known[m.id]; });
+        hist.list = list;
+        renderHistoryList();
+        /* new messages light up shortly */
+        added.forEach(function (m) {
+          var el = $(document.getElementById("fhMsg-" + m.id)).addClass("fhNew");
+          setTimeout(function () { el.removeClass("fhNew"); }, 2500);
+        });
+      } catch (e) { /* FHEM answered with an error text */ }
+    });
+  }
+
+  /* FHEMWEB updates the reading history on every change of the list */
+  function watchHistory() {
+    var watch = document.getElementById("fhWatch");
+    if (watch) watch.setValueFn = reloadHistory;
+  }
+
   window.fhempyPush = function (config) {
     cfg = config;
     box = $("#fhempyPush");
+    hist.list = cfg.history || [];
+    var m = location.hash.match(/fhempy_push_msg=([\w-]+)/);
+    if (m) {
+      hist.highlight = m[1];
+      history.replaceState(null, "", location.pathname + location.search);
+    }
     css();
     addManifest();
     render();
+    renderHistory();
+    watchHistory();
     pendingAction();
   };
 })();

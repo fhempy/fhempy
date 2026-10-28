@@ -28,5 +28,14 @@
         ]
       }
     ]
+  },
+  "discovery": {
+    "search": true,
+    "title": "{name}",
+    "unique": "{mac}",
+    "exists": "{name}",
+    "define": [
+      "{name}"
+    ]
   }
 }

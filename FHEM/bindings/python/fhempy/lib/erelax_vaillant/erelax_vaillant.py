@@ -23,6 +23,8 @@ class erelax_vaillant(generic.FhemModule):
 
         unknown_key = "thisisnotmagic012345678901234567"
         self.home = None
+        self.thermostat_client = None
+        self.devices = []
         self.unknown_code = utils.decrypt_string(
             (
                 "eJwVwdsOgiAAANAvalNLrEcJM5chh"
@@ -82,20 +84,50 @@ class erelax_vaillant(generic.FhemModule):
         self.password = args[4]
         self.create_async_task(self.do_update_loop())
 
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and not self._connected():
+            return (
+                "Not connected to Vaillant yet, please wait until state is "
+                "connected and check username and password"
+            )
+        return await super().Set(hash, args, argsh)
+
+    def _connected(self):
+        return (
+            self.thermostat_client is not None
+            and self.home is not None
+            and len(self.home.rooms) > 0
+            and len(self.devices) > 0
+        )
+
+    async def _send(self, coro):
+        try:
+            await coro
+        except Exception as exc:
+            # runs in background, FHEM already got the reply of the set
+            self.logger.error(
+                "Failed to send command to Vaillant: " + utils.describe_exception(exc)
+            )
+
     # vaillant-netatmo-api 0.13 removed setminormode/setsystemmode, changes go
     # through the homes API (sethomedata/setstate). Only one home and one room
     # are supported, like the thermostat readings.
     async def set_away(self, hash, params):
         self.create_async_task(
-            self.thermostat_client.async_set_home_data(
-                self.home.id, TemperatureControlMode.HEATING, ThermMode.AWAY
+            self._send(
+                self.thermostat_client.async_set_home_data(
+                    self.home.id, TemperatureControlMode.HEATING, ThermMode.AWAY
+                )
             )
         )
 
     async def set_home(self, hash, params):
         self.create_async_task(
-            self.thermostat_client.async_set_home_data(
-                self.home.id, TemperatureControlMode.HEATING, ThermMode.SCHEDULE
+            self._send(
+                self.thermostat_client.async_set_home_data(
+                    self.home.id, TemperatureControlMode.HEATING, ThermMode.SCHEDULE
+                )
             )
         )
 
@@ -110,12 +142,14 @@ class erelax_vaillant(generic.FhemModule):
     async def _set_manual_temperature(self, temperature, duration):
         endtime = datetime.datetime.now() + datetime.timedelta(minutes=duration)
         self.create_async_task(
-            self.thermostat_client.async_set_state_for_room(
-                self.home.id,
-                self.home.rooms[0].id,
-                ThermSetpointMode.MANUAL,
-                therm_setpoint_temperature=temperature,
-                therm_setpoint_end_time=endtime,
+            self._send(
+                self.thermostat_client.async_set_state_for_room(
+                    self.home.id,
+                    self.home.rooms[0].id,
+                    ThermSetpointMode.MANUAL,
+                    therm_setpoint_temperature=temperature,
+                    therm_setpoint_end_time=endtime,
+                )
             )
         )
 
@@ -131,8 +165,10 @@ class erelax_vaillant(generic.FhemModule):
         else:
             control_mode, therm_mode = TemperatureControlMode.HEATING, ThermMode.HG
         self.create_async_task(
-            self.thermostat_client.async_set_home_data(
-                self.home.id, control_mode, therm_mode
+            self._send(
+                self.thermostat_client.async_set_home_data(
+                    self.home.id, control_mode, therm_mode
+                )
             )
         )
 

@@ -26,6 +26,7 @@
   <a href="#-matter">Matter</a> ·
   <a href="#-ai">AI</a> ·
   <a href="#-remote-access">Remote access</a> ·
+  <a href="#-timeline">Timeline</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -35,6 +36,7 @@
 ## ✨ Why fhempy?
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
+- **What happened at home?** The timeline shows all events as a readable story per day, e.g. of your holidays, without technical noise. See [Timeline](#-timeline).
 - **FHEM on your phone, from anywhere**: one `define` gives you a fixed https address with password, no VPN app and no port forwarding. See [Remote access](#-remote-access).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
@@ -77,6 +79,13 @@ define push fhempy push
 ```
 Open the device on the phone and tap *Enable notifications*. Then send from notify or DOIF with `set push message Washing machine is done`, on Android also with picture and buttons which run FHEM commands. The [push README](FHEM/bindings/python/fhempy/lib/push/README.md) explains every step.
 
+## 🕒 Timeline
+See what happened at home, e.g. during your holidays:
+```
+define timeline fhempy timeline
+```
+fhempy records the events of all FHEM devices and shows them on the device page as a story per day: doors, lights, motion, who came home. Signal strength, last seen and similar technical events are hidden automatically, temperatures and power become small daily curves, and everything unusual while nobody was at home is highlighted. The [timeline README](FHEM/bindings/python/fhempy/lib/timeline/README.md) explains every step.
+
 ## 🚀 Quick start
 
 ### 1. Install fhempy
@@ -112,6 +121,8 @@ sudo apt install python3-dev python3-venv libffi-dev libssl-dev libjpeg-dev zlib
 ```
 
 ### 3. Define your first device
+fhempy searches your network and Bluetooth on its own ([autodiscovery](FHEM/bindings/python/fhempy/lib/autodiscovery/README.md)). Found devices are shown right after the installation, new ones later as a popup, one click creates them.
+
 The easiest way: click **+ Install modules** next to `fhempy_local` in the room *fhempy*. Search or browse all modules, click one and press *Set up*. If a module needs more information (e.g. a login or an IP address), the window asks for it and creates the device for you.
 
 <p align="center"><img src="docs/images/module-installer.png" alt="fhempy module installer: search, categories and a tile with logo for every module" width="700"></p>
@@ -121,7 +132,6 @@ Of course you can also define devices like any other FHEM device, pick a module 
 define matter fhempy matter
 define castdevice fhempy googlecast "Living Room"
 define eq3bt fhempy eq3bt 00:11:22:33:44:66:77
-define upnp fhempy discover_upnp
 ```
 The module's README (linked in the list) explains its options. Its Python libraries are installed automatically on first use.
 
@@ -184,7 +194,6 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |-------|------------|
 |[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
-|[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth interfaces every X hours|
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
@@ -207,9 +216,10 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |Module | Description|
 |-------|------------|
 |[arp_presence](FHEM/bindings/python/fhempy/lib/arp_presence/)|ARP based presence detection, works also for iOS|
-|[discover_ble](FHEM/bindings/python/fhempy/lib/discover_ble/)|Discover Bluetooth LE devices|
-|[discover_mdns](FHEM/bindings/python/fhempy/lib/discover_mdns/)|Discover mDNS (e.g. Google Cast) devices|
-|[discover_upnp](FHEM/bindings/python/fhempy/lib/discover_upnp/)|Discover UPnP devices|
+|[autodiscovery](FHEM/bindings/python/fhempy/lib/autodiscovery/README.md)|Finds devices in your network and via Bluetooth, adds residents and Bluetooth tags|
+|[discover_ble](FHEM/bindings/python/fhempy/lib/discover_ble/README.md)|Replaced by autodiscovery|
+|[discover_mdns](FHEM/bindings/python/fhempy/lib/discover_mdns/README.md)|Replaced by autodiscovery|
+|[discover_upnp](FHEM/bindings/python/fhempy/lib/discover_upnp/README.md)|Replaced by autodiscovery|
 
 ### 🧰 Information & tools
 |Module | Description|
@@ -226,6 +236,8 @@ Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) p
 |[prusalink](FHEM/bindings/python/fhempy/lib/prusalink/README.md)|Prusa 3D printer|
 |[push](FHEM/bindings/python/fhempy/lib/push/README.md)|Push notifications to phones and tablets (Android, iPhone), no app and no account, replaces Pushbullet|
 |[remote_access](FHEM/bindings/python/fhempy/lib/remote_access/README.md)|FHEM on your phone from anywhere: https address with password via Tailscale Funnel, no VPN app or port forwarding|
+|[system_update](FHEM/bindings/python/fhempy/lib/system_update/README.md)|Keeps the Raspberry Pi up to date: security updates every night, backup before and health check after each update, critical packages only on your click|
+|[timeline](FHEM/bindings/python/fhempy/lib/timeline/README.md)|What happened at home, e.g. during the holidays: all events as readable story per day, without technical noise|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
 |[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|

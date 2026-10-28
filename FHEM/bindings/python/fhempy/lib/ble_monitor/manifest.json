@@ -18,5 +18,28 @@
         "type": "mac"
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "manufacturer_id": 220
+      },
+      {
+        "name": "LYWSD03MMC"
+      },
+      {
+        "name_prefix": [
+          "GVH5",
+          "Govee_"
+        ]
+      }
+    ],
+    "title": "{name}",
+    "name": "ble_sensor",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ],
+    "hint": "E.g. Oral-B toothbrushes only send while they are used."
   }
 }

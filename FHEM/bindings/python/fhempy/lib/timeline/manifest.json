@@ -1,0 +1,12 @@
+{
+  "requirements": [],
+  "installer": {
+    "title": "Timeline",
+    "description": "See what happened at home, e.g. during your holidays, without technical noise",
+    "category": "tools",
+    "order": 8,
+    "name": "timeline",
+    "single": true,
+    "icon": "🕰️"
+  }
+}

@@ -9,6 +9,11 @@ Functionality:
  - if the device wasn't found within FHEM, it will be created automatically
  - after that it updates the readingList and setList based on the HomeAssistant discovery topics if the topic wasn't configured yet
 
+While autodiscovery (`fhempy_discovery`) runs, new devices aren't created here:
+autodiscovery offers each new device in a popup and also listens on the broker of this
+device. Existing devices are still updated here. Attribute `force_autocreate 1` creates
+all new devices right away as before.
+
 # Usage
 ```
 define mqttha fhempy mqtt_ha_discovery [IP] [PORT]

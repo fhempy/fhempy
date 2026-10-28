@@ -353,6 +353,10 @@ def test_uv_drops_netifaces_with_override(tmp_path, monkeypatch):
     with open(overrides) as f:
         assert 'netifaces; python_version < "0"' in f.read().splitlines()
 
+    # hyundai_kia_connect_api wants pycryptodome>=4, greeclimate <4
+    with open(overrides) as f:
+        assert "pycryptodome>=3.24,<4" in f.read().splitlines()
+
     # the file is written again if a tmp cleaner removed it
     os.remove(overrides)
     args = pkg_installer.install_args("python-miio==0.5.12", True, None, None, False)

@@ -9,5 +9,13 @@
     "order": 20,
     "name": "spotify",
     "logo": "spotify.png"
+  },
+  "discovery": {
+    "mdns": [
+      "_spotify-connect._tcp.local."
+    ],
+    "single": true,
+    "title": "Spotify",
+    "hint": "A Spotify Connect speaker was found. The Spotify module asks for your Spotify login afterwards."
   }
 }

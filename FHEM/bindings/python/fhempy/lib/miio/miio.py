@@ -21,6 +21,21 @@ class _NoReceiveErrors(logging.Filter):
 
 logging.getLogger("miio.miioprotocol").addFilter(_NoReceiveErrors())
 
+# types of older python-miio versions, still used in existing defines
+LEGACY_TYPES = {
+    "vacuum": "roborockvacuum",
+    "fansa1": "fan",
+    "fanv2": "fan",
+    "fanza1": "fan",
+    "fanza3": "fan",
+    "fanza4": "fan",
+    "plug": "chuangmiplug",
+    "plugv1": "chuangmiplug",
+    "plugv3": "chuangmiplug",
+    "airhumidifierca1": "airhumidifier",
+    "airhumidifiercb1": "airhumidifier",
+}
+
 
 class miio(generic.FhemModule):
     def __init__(self, logger):
@@ -50,7 +65,7 @@ class miio(generic.FhemModule):
         self.hash = hash
         if len(args) < 6:
             return "Usage: define miiodev fhempy miio <TYPE> <IP> <TOKEN>"
-        self._miio_devtype = args[3]
+        self._miio_devtype = LEGACY_TYPES.get(args[3], args[3])
         self._miio_ip = args[4]
         self._miio_token = args[5]
 
@@ -60,7 +75,17 @@ class miio(generic.FhemModule):
                 self._miio_device_class = device_class
                 break
         if self._miio_device_class is None:
-            return f"Device {self._miio_devtype} not found."
+            types = sorted(
+                c.get_device_group().name for c in DeviceGroupMeta._device_classes
+            )
+            msg = f"Device type {self._miio_devtype} not found, use one of: " + (
+                ", ".join(types)
+            )
+            self.logger.error(msg)
+            await fhem.readingsSingleUpdateIfChanged(
+                hash, "state", f"unknown type {self._miio_devtype}", 1
+            )
+            return msg
 
         # DeviceGroup.commands is overwritten by click >= 8.2 (Group takes commands
         # as second positional argument), use the metaclass registry instead

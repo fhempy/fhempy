@@ -2,6 +2,297 @@
 
 <!-- version list -->
 
+## v2.12.0 (2026-10-28)
+
+### Bug Fixes
+
+- **timeline**: Opened groups and curves stay open after Show less
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+### Features
+
+- **autodiscovery**: Offer deleted devices again, search and collapsed sections in Found devices
+  ([#801](https://github.com/fhempy/fhempy/pull/801),
+  [`7e5c941`](https://github.com/fhempy/fhempy/commit/7e5c94188c36e0edf603b84a8ee15a516e77243e))
+
+- **timeline**: Newest events on top, only the timeline scrolls
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+- **timeline**: Newest events on top, only the timeline scrolls, opened sections stay open
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+- **timeline**: Only on change also for story entries
+  ([#803](https://github.com/fhempy/fhempy/pull/803),
+  [`63f63c6`](https://github.com/fhempy/fhempy/commit/63f63c681225d96212d1f0798d254a83484ba673))
+
+- **timeline**: Shown directly in its room, wide layout on laptops
+  ([#804](https://github.com/fhempy/fhempy/pull/804),
+  [`1215779`](https://github.com/fhempy/fhempy/commit/1215779917e0a9549b413476834368478b6dc78c))
+
+
+## v2.11.3 (2026-10-28)
+
+### Bug Fixes
+
+- **matter_bridge**: Understandable message when an app already opened pairing mode
+  ([#800](https://github.com/fhempy/fhempy/pull/800),
+  [`db53e7e`](https://github.com/fhempy/fhempy/commit/db53e7e5cd0a8d70916b52c4b80c024d942d48df))
+
+- **timeline**: Popups can be closed on phones ([#793](https://github.com/fhempy/fhempy/pull/793),
+  [`ccb5e55`](https://github.com/fhempy/fhempy/commit/ccb5e5511f07802657e4be412ffe7ce2daa5f4bf))
+
+### Features
+
+- **timeline**: Ignore completely button for hidden events
+  ([#799](https://github.com/fhempy/fhempy/pull/799),
+  [`20622c6`](https://github.com/fhempy/fhempy/commit/20622c616d2a5b07acd6e9f68889995e3885f34c))
+
+
+## v2.11.2 (2026-10-27)
+
+### Bug Fixes
+
+- **mqtt_ha**: StateFormat shows the main function, battery only when low
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+### Features
+
+- **timeline**: Device history popup, events only on change per click, unchanged curves folded away
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+- **timeline**: Device links, events only on change per click, unchanged curves folded away
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+- **timeline**: History of a device in a popup ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+### Refactoring
+
+- **mqtt_ha**: Smaller stateFormat helpers, icon constants
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+- **timeline**: No shadowed variable in the device popup
+  ([#791](https://github.com/fhempy/fhempy/pull/791),
+  [`ca81a5f`](https://github.com/fhempy/fhempy/commit/ca81a5f897c7706754d61c950a32b9f5989b955e))
+
+### Testing
+
+- **mqtt_ha**: Read the JSON files without changing $/ for FHEMWEB
+  ([#790](https://github.com/fhempy/fhempy/pull/790),
+  [`082eab8`](https://github.com/fhempy/fhempy/commit/082eab8f3306dc4431302e1f3ddb2f21b581f6e8))
+
+
+## v2.11.1 (2026-10-27)
+
+### Bug Fixes
+
+- FHEM files of fhempy no longer get mode 000 on update
+  ([#789](https://github.com/fhempy/fhempy/pull/789),
+  [`3d22a1b`](https://github.com/fhempy/fhempy/commit/3d22a1bea41e92560a35159cae9e18f99babbf1e))
+
+
+## v2.11.0 (2026-10-27)
+
+### Bug Fixes
+
+- **autodiscovery**: Link to the created device for residents and tags
+  ([#785](https://github.com/fhempy/fhempy/pull/785),
+  [`26d7481`](https://github.com/fhempy/fhempy/commit/26d74819614c94307e5a94ac103dec402ce367e7))
+
+- **wienernetze_smartmeter**: Clear error when the portal returns no JSON
+  ([#786](https://github.com/fhempy/fhempy/pull/786),
+  [`f8b61ec`](https://github.com/fhempy/fhempy/commit/f8b61ecec2e4b7d80042ac90e0066dc85f8f557d))
+
+### Documentation
+
+- **timeline**: Screenshot in the module README ([#788](https://github.com/fhempy/fhempy/pull/788),
+  [`ecb7a71`](https://github.com/fhempy/fhempy/commit/ecb7a71c4ff88f452a81cb1c71c6631e5de63bd8))
+
+### Features
+
+- **autodiscovery**: MQTT devices get alias, icon, model readings and event-on-change-reading
+  ([#787](https://github.com/fhempy/fhempy/pull/787),
+  [`a6619e6`](https://github.com/fhempy/fhempy/commit/a6619e6612afc1494f2a509efc051b25f3d09934))
+
+- **timeline**: What happened at home as story per day
+  ([#784](https://github.com/fhempy/fhempy/pull/784),
+  [`58465c1`](https://github.com/fhempy/fhempy/commit/58465c1315058b3954f1a01a866e4b51aee005d2))
+
+
+## v2.10.2 (2026-10-26)
+
+### Bug Fixes
+
+- FHEM files of fhempy are never lost, missing ones come back
+  ([#768](https://github.com/fhempy/fhempy/pull/768),
+  [`1b8809c`](https://github.com/fhempy/fhempy/commit/1b8809c9c409171cca5f89b785cf20452ae1e65f))
+
+- Kia_hyundai uses hyundai_kia_connect_api 4.41.2 (Kia EU login)
+  ([#778](https://github.com/fhempy/fhempy/pull/778),
+  [`ee3d502`](https://github.com/fhempy/fhempy/commit/ee3d5025621f21422f53fad5074460fed96fbced))
+
+- Lock fake tailscale state file in remote_access tests
+  ([#773](https://github.com/fhempy/fhempy/pull/773),
+  [`e7d63a8`](https://github.com/fhempy/fhempy/commit/e7d63a843adcffcc01a7eec2da68840b3f5dd01f))
+
+- Miio accepts old device types like vacuum ([#776](https://github.com/fhempy/fhempy/pull/776),
+  [`e5e6ad6`](https://github.com/fhempy/fhempy/commit/e5e6ad6d084b0395ee0655abf13fc88a9d5a626b))
+
+- Remote_access reacts to logout during a running check
+  ([#777](https://github.com/fhempy/fhempy/pull/777),
+  [`695208b`](https://github.com/fhempy/fhempy/commit/695208b68dfd23d51ea6dcb1a6da399051ec533f))
+
+- Show device overview on BindingsIo detail page again
+  ([#780](https://github.com/fhempy/fhempy/pull/780),
+  [`51bf1d9`](https://github.com/fhempy/fhempy/commit/51bf1d9f45bf320d2d2db2581be5e4dc2a646d0a))
+
+- **autodiscovery**: Set up MQTT devices like Home Assistant
+  ([#781](https://github.com/fhempy/fhempy/pull/781),
+  [`d89beee`](https://github.com/fhempy/fhempy/commit/d89beee5a37dc2d0de341ee496bf7f5f3129aa0a))
+
+- **push**: Show why the device page can't load instead of Loading...
+  ([#768](https://github.com/fhempy/fhempy/pull/768),
+  [`1b8809c`](https://github.com/fhempy/fhempy/commit/1b8809c9c409171cca5f89b785cf20452ae1e65f))
+
+### Features
+
+- **autodiscovery**: Link to the created device ([#782](https://github.com/fhempy/fhempy/pull/782),
+  [`1097e3e`](https://github.com/fhempy/fhempy/commit/1097e3ed51d55de0138715e12ff44446f2d575ac))
+
+- **matter**: Attr test_dcl to pair devices with test certificates
+  ([#779](https://github.com/fhempy/fhempy/pull/779),
+  [`54f6aad`](https://github.com/fhempy/fhempy/commit/54f6aada00e9cd840b1448f0f6cfc8c744963a76))
+
+- **mqtt_ha**: Thermostats, covers, fans, locks and sirens like Home Assistant
+  ([#783](https://github.com/fhempy/fhempy/pull/783),
+  [`0328efc`](https://github.com/fhempy/fhempy/commit/0328efc46b0b026afec18c206e20cbe3c4145f6b))
+
+### Refactoring
+
+- No nested ternary in the created tile ([#782](https://github.com/fhempy/fhempy/pull/782),
+  [`1097e3e`](https://github.com/fhempy/fhempy/commit/1097e3ed51d55de0138715e12ff44446f2d575ac))
+
+### Testing
+
+- Attr and set return an empty string on success ([#781](https://github.com/fhempy/fhempy/pull/781),
+  [`d89beee`](https://github.com/fhempy/fhempy/commit/d89beee5a37dc2d0de341ee496bf7f5f3129aa0a))
+
+
+## v2.10.1 (2026-10-25)
+
+### Bug Fixes
+
+- Silence httpx request log on INFO level ([#764](https://github.com/fhempy/fhempy/pull/764),
+  [`8f73dea`](https://github.com/fhempy/fhempy/commit/8f73dea8962ecccbf11460c460fbba53c246baea))
+
+- **autodiscovery**: KeyError status and active scan without passive support
+  ([#763](https://github.com/fhempy/fhempy/pull/763),
+  [`86c7b0c`](https://github.com/fhempy/fhempy/commit/86c7b0cda434b7aa72438f687ae59d02f80cd3b2))
+
+### Features
+
+- Install modules button on the BindingsIo detail page
+  ([#765](https://github.com/fhempy/fhempy/pull/765),
+  [`8eb7c0f`](https://github.com/fhempy/fhempy/commit/8eb7c0f341af04184a246d7f13ace6d696bc312d))
+
+- **autodiscovery**: Offer every new MQTT device from Home Assistant discovery
+  ([#767](https://github.com/fhempy/fhempy/pull/767),
+  [`8e270e1`](https://github.com/fhempy/fhempy/commit/8e270e10e0eed46b48ea237f14cd03ea61b89c46))
+
+- **autodiscovery**: Warning with command when BlueZ runs without --experimental
+  ([#766](https://github.com/fhempy/fhempy/pull/766),
+  [`420c01e`](https://github.com/fhempy/fhempy/commit/420c01e421fadbc08d435d3fc79275670e7f8919))
+
+
+## v2.10.0 (2026-10-25)
+
+### Features
+
+- Autodiscovery module ([#758](https://github.com/fhempy/fhempy/pull/758),
+  [`d1ebf35`](https://github.com/fhempy/fhempy/commit/d1ebf351c8d9b1afe954ea8b95dff5775da1fd3b))
+
+- Mantra_ble brightness and color temperature ([#759](https://github.com/fhempy/fhempy/pull/759),
+  [`b5e3fcb`](https://github.com/fhempy/fhempy/commit/b5e3fcb6c45fb2ffd226098efbff1eada9c43ded))
+
+- **push**: Messages of the last 7 days on the device page
+  ([#760](https://github.com/fhempy/fhempy/pull/760),
+  [`dd6dfc6`](https://github.com/fhempy/fhempy/commit/dd6dfc6cecae1f800258ac3e3c542889d629e67c))
+
+
+## v2.9.1 (2026-10-25)
+
+### Bug Fixes
+
+- Release D-Bus connection after Bluetooth reconnect
+  ([#762](https://github.com/fhempy/fhempy/pull/762),
+  [`d2b6458`](https://github.com/fhempy/fhempy/commit/d2b645811271da6d59ad5174cf7cb14bbc2e4d32))
+
+
+## v2.9.0 (2026-10-24)
+
+### Bug Fixes
+
+- Dlna_dmr set commands while renderer is offline
+  ([#752](https://github.com/fhempy/fhempy/pull/752),
+  [`42e73a4`](https://github.com/fhempy/fhempy/commit/42e73a4c1e81b3b13df86d43bb3699f37375675a))
+
+- Erelax_vaillant set commands before login ([#756](https://github.com/fhempy/fhempy/pull/756),
+  [`9647dc9`](https://github.com/fhempy/fhempy/commit/9647dc9e28ba13d5bfd1b91a5b4037ee60562489))
+
+- Goodwe set operation_mode before inverter is connected
+  ([#754](https://github.com/fhempy/fhempy/pull/754),
+  [`ff3eca0`](https://github.com/fhempy/fhempy/commit/ff3eca0a88b43e22189e25675b3481e86032f418))
+
+- Googlecast set without connection, keep reconnect alive
+  ([#750](https://github.com/fhempy/fhempy/pull/750),
+  [`a739d5a`](https://github.com/fhempy/fhempy/commit/a739d5a741840b7886ff6337aa362c8f94bcfbf3))
+
+- Gree_climate set commands while air conditioner is not found
+  ([#753](https://github.com/fhempy/fhempy/pull/753),
+  [`9a5205d`](https://github.com/fhempy/fhempy/commit/9a5205d2016cb5b6ace8bbdb4af28fb989cd01af))
+
+- Kia_hyundai car commands before first update ([#751](https://github.com/fhempy/fhempy/pull/751),
+  [`73086a9`](https://github.com/fhempy/fhempy/commit/73086a9692e5a3a00be0bc9368dae98ad056d721))
+
+- Nefit set commands without connection ([#757](https://github.com/fhempy/fhempy/pull/757),
+  [`50b807a`](https://github.com/fhempy/fhempy/commit/50b807ad07bea2c335f66cb9d6c7146c58cec6c4))
+
+- Zappi set commands without connected zappi ([#755](https://github.com/fhempy/fhempy/pull/755),
+  [`fc054d2`](https://github.com/fhempy/fhempy/commit/fc054d210b0c45a6328f54eb693ed6ba93efb6b6))
+
+- **homekit**: Set commands for characteristics without description
+  ([#746](https://github.com/fhempy/fhempy/pull/746),
+  [`6a0e1d9`](https://github.com/fhempy/fhempy/commit/6a0e1d936eab6bb073342e1eb7e8d6b3c520ba6c))
+
+- **system_update**: Helper passes only apt's own package names to apt
+  ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+- **system_update**: SonarCloud findings ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+- **zigbee2mqtt**: Keep existing configuration.yaml on reinstall
+  ([#747](https://github.com/fhempy/fhempy/pull/747),
+  [`9a93fcf`](https://github.com/fhempy/fhempy/commit/9a93fcf53dfc2caa269976c937e22f44cf0a9a7f))
+
+- **zigbee2mqtt**: Write default configuration outside the event loop
+  ([#747](https://github.com/fhempy/fhempy/pull/747),
+  [`9a93fcf`](https://github.com/fhempy/fhempy/commit/9a93fcf53dfc2caa269976c937e22f44cf0a9a7f))
+
+### Features
+
+- **system_update**: New module keeps the Raspberry Pi up to date safely
+  ([#749](https://github.com/fhempy/fhempy/pull/749),
+  [`1edbc58`](https://github.com/fhempy/fhempy/commit/1edbc58c6de213b61e989af5e48194b0d98a4251))
+
+
 ## v2.8.1 (2026-10-23)
 
 
