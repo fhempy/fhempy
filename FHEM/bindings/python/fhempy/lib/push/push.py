@@ -643,7 +643,11 @@ class push(generic.FhemModule):
         sections = history + setup if self._devices else setup + history
         return (
             sections + "<script>jQuery.getScript(FW_root+'/fhempy/push.js',function(){"
-            f"fhempyPush({config_json})}});</script>"
+            f"fhempyPush({config_json})}}).fail(function(x,status){{"
+            # e.g. file missing or not readable for FHEM: say so instead of Loading...
+            "jQuery('#fhempyPush').text('FHEM could not load www/fhempy/push.js ('"
+            "+(x.status||status)+'). Please run: update force pythonbinding');"
+            "});</script>"
         )
 
 

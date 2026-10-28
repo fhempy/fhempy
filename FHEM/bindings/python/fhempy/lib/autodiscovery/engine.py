@@ -11,6 +11,8 @@ fhempy instance.
 A found device which doesn't exist in FHEM yet is shown in a popup on every
 open FHEMWEB page, never created on its own. Ignored and already shown
 devices are stored in FHEM (getKeyValue), fhempy peers share this list.
+Found devices which exist in FHEM are checked again every minute: a deleted
+device is offered again in the list of found devices (no popup).
 """
 
 import asyncio
@@ -36,6 +38,8 @@ KEY = "fhempy_autodiscovery"
 SEARCH_INTERVAL = 600
 SEARCH_TIMEOUT = 30
 SSDP_INTERVAL = 600
+# check if existing devices were deleted in FHEM
+RECHECK_INTERVAL = 60
 # collect devices before showing the popup, e.g. after a power failure
 POPUP_DELAY = 10
 MDNS_INFO_TIMEOUT = 3000
@@ -139,6 +143,7 @@ class Engine:
         self._tasks.append(asyncio.create_task(self._start_mdns()))
         self._tasks.append(asyncio.create_task(self._ssdp_loop()))
         self._tasks.append(asyncio.create_task(self._search_loop()))
+        self._tasks.append(asyncio.create_task(self._recheck_loop()))
         await self.update_ble()
         self.update_mqtt()
 
@@ -366,11 +371,21 @@ class Engine:
     # --- devices found by other modules ---
 
     async def report(
-        self, module, unique, title, kind, create, model="", hint="", logo=""
+        self,
+        module,
+        unique,
+        title,
+        kind,
+        create,
+        model="",
+        hint="",
+        logo="",
+        check=None,
     ):
         """Devices found by other parts, e.g. MQTT discovery (mqtt.py).
         create: coroutine function called on a click on Create, returns an
-        error text or ''."""
+        error text or ''. check: coroutine function, returns the name of the
+        device in FHEM or ''."""
         entry = next((e for e in self.catalog if e["module"] == module), {})
         candidate = {
             "id": f"{module}:{unique}",
@@ -389,6 +404,8 @@ class Engine:
             "exists": unique,
             "create": create,
         }
+        if check is not None:
+            candidate["check"] = check
         for key in ("logo", "icon"):
             if entry.get(key):
                 candidate[key] = entry[key]
@@ -410,6 +427,7 @@ class Engine:
             return
         candidate["first_seen"] = now
         candidate["last_seen"] = now
+        candidate["rule"] = rule
         # other updates run while FHEM is asked if the device exists
         candidate["status"] = STATUS_CHECKING
         self.candidates[candidate["id"]] = candidate
@@ -421,7 +439,13 @@ class Engine:
             raise
         if exists:
             candidate["status"] = STATUS_EXISTS
+            candidate["device"] = exists
             return
+        self._set_open(candidate)
+        await self._notify_frontends()
+
+    def _set_open(self, candidate):
+        """Status new or ignored, the popup for new devices not shown yet"""
         if candidate["id"] in self.ignored:
             candidate["status"] = STATUS_IGNORED
         else:
@@ -432,25 +456,76 @@ class Engine:
             )
             if candidate["id"] not in self.shown:
                 self._queue_popup(candidate["id"])
-        await self._notify_frontends()
 
     async def exists(self, candidate, rule):
-        """The device exists in FHEM already (any device of the module with the
-        unique value in its definition or reading address)."""
+        """Name of the device in FHEM (any device of the module with the
+        unique value in its definition or reading address), '' if none."""
+        if candidate.get("check"):
+            return await candidate["check"]() or ""
         if rule.get("exists") is False:
-            return False
+            return ""
         value = "" if rule.get("single") else candidate["exists"]
         cmd = (
             f"my $m = {fhem.perlString(candidate['module'])};; "
             f"my $u = lc({fhem.perlString(value)});; "
             "foreach my $d (keys %main::defs) { "
             "next if (($main::defs{$d}{FHEMPYTYPE} // '') ne $m);; "
-            "return 1 if ($u eq '');; "
-            "return 1 if (index(lc($main::defs{$d}{DEF} // ''), $u) >= 0);; "
-            "return 1 if (lc(ReadingsVal($d, 'address', '')) eq $u);; "
-            "} return 0;;"
+            "return $d if ($u eq '');; "
+            "return $d if (index(lc($main::defs{$d}{DEF} // ''), $u) >= 0);; "
+            "return $d if (lc(ReadingsVal($d, 'address', '')) eq $u);; "
+            "} return '';;"
         )
-        return str(await fhem.sendCommandHash(self.hash, cmd)).strip() == "1"
+        return str(await fhem.sendCommandHash(self.hash, cmd) or "").strip()
+
+    # --- devices deleted in FHEM ---
+
+    async def _recheck_loop(self):
+        while True:
+            await asyncio.sleep(RECHECK_INTERVAL)
+            try:
+                await self.recheck()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger.exception("Failed to check the existing devices")
+
+    async def recheck(self):
+        """Devices which exist(ed) in FHEM: deleted ones are offered again.
+        Devices of a pairing (action set) stay as they are."""
+        known = [
+            c
+            for c in self.candidates.values()
+            if c["status"] in (STATUS_EXISTS, STATUS_CREATED) and c["action"] != "set"
+        ]
+        if not known:
+            return
+        names = sorted({c["device"] for c in known if c.get("device")})
+        missing = set()
+        if names:
+            cmd = (
+                "join(' ', grep { !defined($main::defs{$_}) } ("
+                + ", ".join(fhem.perlString(n) for n in names)
+                + "))"
+            )
+            missing = set(str(await fhem.sendCommandHash(self.hash, cmd) or "").split())
+        changed = False
+        for candidate in known:
+            if candidate.get("device") and candidate["device"] not in missing:
+                continue
+            # deleted or renamed
+            name = await self.exists(candidate, candidate.get("rule", {}))
+            if name:
+                candidate["device"] = name
+                continue
+            self.logger.info(f"{candidate['title']} was deleted, offered again")
+            candidate.pop("device", None)
+            candidate["deleted"] = True
+            # no popup, the device was deleted on purpose
+            self.shown.add(candidate["id"])
+            self._set_open(candidate)
+            changed = True
+        if changed:
+            await self._notify_frontends()
 
     def open_candidates(self):
         return [c for c in self.candidates.values() if c["status"] == STATUS_NEW]
@@ -549,6 +624,7 @@ class Engine:
             candidate["device"] = name
         if ret:
             return str(ret)
+        candidate.pop("deleted", None)
         candidate["status"] = STATUS_CREATED
         await self._notify_frontends()
         return ""

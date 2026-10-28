@@ -197,7 +197,15 @@ def install(node, env, version):
         raise RuntimeError(proc.stdout.decode(errors="replace")[-2000:])
 
 
-def start(node, env, port, bluetooth_adapter=None, primary_interface=None, logger=None):
+def start(
+    node,
+    env,
+    port,
+    bluetooth_adapter=None,
+    primary_interface=None,
+    test_dcl=False,
+    logger=None,
+):
     args = [
         node,
         server_script(),
@@ -214,6 +222,9 @@ def start(node, env, port, bluetooth_adapter=None, primary_interface=None, logge
         args += ["--bluetooth-adapter", str(bluetooth_adapter)]
     if primary_interface:
         args += ["--primary-interface", primary_interface]
+    if test_dcl:
+        # accept devices with test/development certificates (beta firmware)
+        args += ["--enable-test-net-dcl", "true"]
     return child_process.start(
         args,
         cwd=base_directory(),

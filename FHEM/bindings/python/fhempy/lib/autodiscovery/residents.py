@@ -264,15 +264,16 @@ async def free_name(hash, name):
 
 async def create_resident(hash, person, mac="", bt_address=""):
     """ROOMMATE with the phone in the network (arp_presence) and via
-    Bluetooth (bt_presence). Home if any of both sees the phone."""
+    Bluetooth (bt_presence). Home if any of both sees the phone.
+    Returns (error text or '', name of the ROOMMATE)."""
     if not mac and not bt_address:
-        return "Choose the phone in the network or via Bluetooth"
+        return "Choose the phone in the network or via Bluetooth", ""
     base = device_name(person, "")
     if not base:
-        return "Please enter a name"
+        return "Please enter a name", ""
     residents, error = await residents_device(hash)
     if error:
-        return str(error)
+        return str(error), ""
     presence = []
     if mac:
         name = await free_name(hash, f"presence_{base}_phone")
@@ -280,7 +281,7 @@ async def create_resident(hash, person, mac="", bt_address=""):
             hash, f"{name} fhempy arp_presence {define_arg(mac)}"
         )
         if ret:
-            return str(ret)
+            return str(ret), ""
         presence.append(name)
     if bt_address:
         name = await free_name(hash, f"presence_{base}_bluetooth")
@@ -288,7 +289,7 @@ async def create_resident(hash, person, mac="", bt_address=""):
             hash, f"{name} fhempy bt_presence {define_arg(bt_address)}"
         )
         if ret:
-            return str(ret)
+            return str(ret), ""
         presence.append(name)
     roommate = await free_name(hash, f"rr_{base}")
     ret = await fhem.sendCommandHash(
@@ -296,23 +297,24 @@ async def create_resident(hash, person, mac="", bt_address=""):
         f"CommandDefine(undef, {fhem.perlString(f'{roommate} ROOMMATE {residents}')})",
     )
     if ret:
-        return str(ret)
+        return str(ret), ""
     commands = [
         f"{roommate} rr_presenceDevices {','.join(presence)}",
         f"{roommate} alias {person}",
     ]
     for command in commands:
         await fhem.CommandAttr(hash, command)
-    return ""
+    return "", roommate
 
 
 async def create_tag(hash, title, address):
+    """Returns (error text or '', name of the ble_presence device)."""
     base = device_name(title, "tag")
     name = await free_name(hash, f"presence_{base}")
     ret = await fhem.CommandDefine(
         hash, f"{name} fhempy ble_presence {define_arg(address)}"
     )
     if ret:
-        return str(ret)
+        return str(ret), ""
     await fhem.CommandAttr(hash, f"{name} alias {title}")
-    return ""
+    return "", name

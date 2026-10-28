@@ -33,6 +33,7 @@ class FakeWienerNetze:
         self.tokens_issued = 0
         self.api_calls = []
         self.expire_next_api_call = False
+        self.maintenance = False
 
     def app(self):
         from aiohttp import web
@@ -124,6 +125,13 @@ class FakeWienerNetze:
     async def app_config(self, request):
         from aiohttp import web
 
+        if self.maintenance:
+            return web.Response(
+                status=503,
+                text="<html><head><title>Wir sind bald wieder für Sie da!"
+                "</title></head><body></body></html>",
+                content_type="text/html",
+            )
         return web.json_response(
             {
                 "b2cApiUrl": self.url("/b2c/1.0"),
@@ -219,6 +227,21 @@ async def test_wrong_password(fake_server, session):
     with pytest.raises(SmartmeterLoginError, match="Invalid username or password"):
         await client.login()
     assert not client.is_logged_in()
+
+
+@pytest.mark.asyncio
+async def test_portal_maintenance(fake_server, session):
+    from fhempy.lib.wienernetze_smartmeter.api.client import AsyncSmartmeter
+    from fhempy.lib.wienernetze_smartmeter.api.errors import (
+        SmartmeterConnectionError,
+    )
+
+    fake_server.maintenance = True
+    client = AsyncSmartmeter(USERNAME, PASSWORD, session)
+    with pytest.raises(
+        SmartmeterConnectionError, match="HTTP 503, maybe maintenance.*bald wieder"
+    ):
+        await client.login()
 
 
 @pytest.mark.asyncio
