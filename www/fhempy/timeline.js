@@ -14,6 +14,9 @@
   var loading = false;
   var keepScroll = true;
   var expanded = {};
+  var wide = false;
+  var WIDE_MIN = 1100;
+  var NARROW_MAX = 520;
   var filter = { categories: {}, search: "" };
 
   var categoryInfo = {
@@ -47,6 +50,15 @@
       "#fhempyTimeline .ftlPeriod{background:rgba(208,102,42,0.14);border-color:transparent}" +
       "#fhempyTimeline input.ftlSearch{border-radius:14px;padding:3px 10px;border:1px solid rgba(128,128,128,0.4);min-width:140px}" +
       "#fhempyTimeline input.ftlDate{border-radius:14px;padding:2px 8px;border:1px solid rgba(128,128,128,0.4)}" +
+      "#fhempyTimeline.ftlRoom{max-width:none;margin-top:6px}" +
+      "#fhempyTimeline.ftlWideMode .ftlDay{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:36px;align-items:start}" +
+      "#fhempyTimeline.ftlWideMode .ftlDayHead{grid-column:1/-1}" +
+      "#fhempyTimeline.ftlWideMode .ftlDaySide .ftlHiddenRow{padding-left:0}" +
+      "#fhempyTimeline.ftlWideMode .ftlDaySide .ftlTrends{margin-left:0;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}" +
+      "#fhempyTimeline.ftlNarrow .ftlEntry{grid-template-columns:40px 10px minmax(0,1fr);gap:6px}" +
+      "#fhempyTimeline.ftlNarrow .ftlActions{grid-column:3;justify-content:flex-start}" +
+      "#fhempyTimeline.ftlNarrow .ftlAction{opacity:0.6}" +
+      "#fhempyTimeline.ftlNarrow .ftlTrends,#fhempyTimeline.ftlNarrow .ftlHiddenRow,#fhempyTimeline.ftlNarrow .ftlQuiet{margin-left:0;padding-left:0}" +
       "#fhempyTimeline .ftlScroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:4px}" +
       "#fhempyTimeline .ftlDay{border-top:1px solid rgba(128,128,128,0.3);padding:10px 0 6px}" +
       "#fhempyTimeline .ftlDayHead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:6px}" +
@@ -306,14 +318,14 @@
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(dayTitle(day.day)) + "</span>" +
       (day.absent ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + info.join(" · ") + "</span></div>";
-    // newest first, like the days
+    // newest first, like the days; on wide screens the curves are shown next to the story
+    html += '<div class="ftlDayMain">';
     entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
-    html += trendsHtml(day);
     if (day.hidden) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlDetails" data-day="' + day.day + '">+ ' +
         day.hidden.toLocaleString() + " technical events and measurements</span></div>";
     }
-    return html + "</div>";
+    return html + '</div><div class="ftlDaySide">' + trendsHtml(day) + "</div></div>";
   }
 
   function quietHtml(group) {
@@ -325,8 +337,9 @@
       (away ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + (group.length === 1 ? "quiet day" : group.length + " quiet days") +
       (hidden ? " · " + hidden.toLocaleString() + " hidden events" : "") + "</span></div>";
+    html += '<div class="ftlDayMain"></div><div class="ftlDaySide">';
     group.forEach(function (day) { html += trendsHtml(day); });
-    return html + "</div>";
+    return html + "</div></div>";
   }
 
   function barHtml() {
@@ -358,6 +371,10 @@
 
   function render() {
     var root = $("#fhempyTimeline");
+    wide = root.width() >= WIDE_MIN;
+    root.toggleClass("ftlWideMode", wide);
+    // phones: buttons below the text instead of next to it
+    root.toggleClass("ftlNarrow", root.width() < NARROW_MAX);
     var scrollTop = root.find(".ftlScroll").scrollTop() || 0;
     var html = barHtml() + '<div class="ftlScroll">';
     if (!days.length) {
@@ -606,8 +623,14 @@
   // e.g. after "Show less" or a filter
   function restoreExpanded(root) {
     root.find("[data-key]").each(function () {
-      if (expanded[$(this).attr("data-key")]) setExpanded($(this), true);
+      if (isOpen($(this).attr("data-key"))) setExpanded($(this), true);
     });
+  }
+
+  // curves are open by default where there is room for them next to the story
+  function isOpen(key) {
+    if (Object.prototype.hasOwnProperty.call(expanded, key)) return expanded[key];
+    return wide && key.charAt(0) === "t";
   }
 
   function bind() {
@@ -638,10 +661,14 @@
       render();
     });
     root.on("click", ".ftlOlder", loadOlder);
-    $(window).on("resize", fitScroll);
+    $(window).on("resize", function () {
+      var root = $("#fhempyTimeline");
+      if ((root.width() >= WIDE_MIN) !== wide || (root.width() < NARROW_MAX) !== root.hasClass("ftlNarrow")) render();
+      else fitScroll();
+    });
     root.on("click", ".ftlToggle, .ftlTrendToggle, .ftlSameToggle", function () {
       var key = $(this).attr("data-key");
-      expanded[key] = !expanded[key];
+      expanded[key] = !isOpen(key);
       setExpanded($(this), expanded[key]);
     });
     root.on("click", "[data-onchange]", onChangeClick);
@@ -659,6 +686,23 @@
       });
     });
   }
+
+  // room view: the summary of the timeline device takes the whole width
+  // instead of its row in the device table
+  window.fhempyTimelineRoom = function (name) {
+    var marker = $("#fhempyTimelineRoom");
+    var row = marker.closest("tr");
+    if (!$("#fhempyTimeline").length) {
+      var page = row.parents("table").last();
+      $('<div id="fhempyTimeline" class="ftlRoom"></div>').insertBefore(page.length ? page : marker);
+    }
+    row.hide();
+    var block = row.closest("table.block");
+    if (block.length && !block.find("> tbody > tr:visible, > tr:visible").length) {
+      block.closest("tr").hide().prev("tr.devTypeTr").hide();
+    }
+    if (device !== name) window.fhempyTimeline(name);
+  };
 
   window.fhempyTimeline = function (name) {
     device = name;

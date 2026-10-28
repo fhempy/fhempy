@@ -30,6 +30,7 @@ fhempy_Initialize($)
   $hash->{NotifyFn} = 'fhempy_Notify';
   $hash->{AttrList} = 'IODev disable:0,1 '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempy_detailFn";
+  $hash->{FW_summaryFn} = "fhempy_summaryFn";
   $hash->{FW_deviceOverview} = 1;
 
   return undef;
@@ -339,6 +340,21 @@ fhempy_detailFn($$$)
   # without this the attribute list only shows .*
   fhempy_setBaseAttrList($hash) if ($init_done && ($hash->{".AttrList"} // ".*") eq ".*");
   return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
+}
+
+# In a room the timeline is shown on the whole page instead of its device
+# row, all other fhempy devices keep the usual row (undef).
+sub
+fhempy_summaryFn($$$$)
+{
+  my ($FW_wname, $d, $room, $pageHash) = @_;
+  my $hash = $defs{$d};
+  return undef if (!$room || !$hash || ($hash->{FHEMPYTYPE} // '') ne 'timeline');
+  my $name = $d;
+  $name =~ s/[^A-Za-z0-9._]//g;
+  return "<div id=\"fhempyTimelineRoom\"></div><script>".
+         "jQuery.getScript(FW_root+\"/fhempy/timeline.js\",".
+         "function(){fhempyTimelineRoom(\"$name\")})</script>";
 }
 
 # Notification to the phones of the fhempy module push, for notify/DOIF:

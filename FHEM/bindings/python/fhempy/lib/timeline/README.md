@@ -21,7 +21,7 @@ define timeline fhempy timeline
 ```
 
 Or use the *Timeline* tile in *Install modules* of the fhempy device. Then open the device `timeline`: that's it,
-the timeline fills up as soon as something happens at home. The device is put into the room *Timeline*.
+the timeline fills up as soon as something happens at home. The device is put into the room *Timeline*: a click on *Timeline* in the menu shows the timeline on the whole page. On wide screens the curves of each day are shown next to the story.
 
 The FHEM modules of fhempy have to be up to date (`update all`, restart FHEM), otherwise the state says
 *FHEM update needed*.
