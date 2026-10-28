@@ -225,12 +225,16 @@ class MqttDiscovery:
                 raise
 
     async def _offer(self, device_id, device, payload_json):
-        existing = await mqtt_ha.existing_device(
-            self.engine.hash, device["fhem_name"], payload_json
-        )
-        if existing:
-            device["exists"] = existing
-            return
+        """Offered also if it exists in FHEM: shown again when deleted"""
+
+        async def check():
+            existing = await mqtt_ha.existing_device(
+                self.engine.hash, device["fhem_name"], payload_json
+            )
+            if not existing:
+                # deleted: no updates of its attributes anymore
+                device.pop("created", None)
+            return existing or ""
 
         async def create():
             return await self.create(device_id)
@@ -241,6 +245,7 @@ class MqttDiscovery:
             device["name"],
             "MQTT device",
             create,
+            check=check,
             model=mqtt_ha.device_model(payload_json),
             hint="Found via Home Assistant MQTT discovery (e.g. ESPHome, "
             "Zigbee2MQTT, Tasmota), creates a MQTT2_DEVICE",
