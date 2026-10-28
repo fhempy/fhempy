@@ -705,3 +705,22 @@ async def test_changing_module_type_does_not_call_the_old_validator(monkeypatch)
     OldModule.validate_define.assert_not_called()
     assert finished_returns(pb) == [""]
     assert CountingModule.calls == ["Undefine", "Define"]
+
+
+@pytest.mark.asyncio
+async def test_orphaned_tailscale_is_stopped_without_remote_access(monkeypatch):
+    from fhempy.lib.remote_access import tailscale
+
+    monkeypatch.setattr(fhem_pythonbinding, "ORPHAN_CHECK_DELAY", 0)
+    stop_orphan = AsyncMock()
+    monkeypatch.setattr(tailscale, "stop_orphan", stop_orphan)
+    instance = Mock(hash={"NAME": "remote", "FHEMPYTYPE": "remote_access"})
+    monkeypatch.setattr(fhem_pythonbinding, "loadedModuleInstances", {})
+
+    fhem_pythonbinding.loadedModuleInstances["remote"] = instance
+    await fhem_pythonbinding.stop_orphans()
+    stop_orphan.assert_not_called()
+
+    del fhem_pythonbinding.loadedModuleInstances["remote"]
+    await fhem_pythonbinding.stop_orphans()
+    stop_orphan.assert_called_once()

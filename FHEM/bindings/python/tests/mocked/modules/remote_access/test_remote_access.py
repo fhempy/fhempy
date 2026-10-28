@@ -333,6 +333,92 @@ async def test_password_and_logout(module):
     assert module.fake_ts.load()["target"] is None
 
 
+class Stopping:
+    _stopping = True
+
+
+def daemon_pid():
+    info = tailscale.read_pid_file()
+    return info["pid"] if info else None
+
+
+@pytest.mark.asyncio
+async def test_tailscale_survives_fhempy_restart(module, mocker):
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    await define(module)
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+    pid = daemon_pid()
+    assert pid == module.ts.daemon.pid and tailscale.daemon_alive(pid)
+
+    # fhempy restarts for an update: tailscaled and Funnel keep running
+    mocker.patch("fhempy.lib.fhem.wsconnection", Stopping())
+    await module.Undefine(module.hash)
+    assert tailscale.daemon_alive(pid)
+    assert module.fake_ts.load()["target"] is not None
+    mocker.patch("fhempy.lib.fhem.wsconnection", None)
+
+    # the next fhempy takes tailscaled over instead of starting another one
+    second = ra.remote_access(logger)
+    second.fake_ts = module.fake_ts
+    module.ts = second.ts
+    module.sites = second.sites
+    mock_fhem.readings[NAME]["state"] = "-"
+    await define(second)
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+    assert second.ts.daemon is None and second.ts.daemon_pid == pid
+    assert daemon_pid() == pid
+
+    # a new Tailscale version restarts tailscaled
+    await second.Undefine(second.hash)
+    assert daemon_pid() is None and not tailscale.daemon_alive(pid)
+    tailscale.write_pid_file(pid, "1.80.0")
+    third = ra.remote_access(logger)
+    module.ts = third.ts
+    module.sites = third.sites
+    await define(third)
+    await wait_for(lambda: daemon_pid() not in (None, pid))
+    assert tailscale.read_pid_file()["version"] == "1.90.0"
+    await third.Undefine(third.hash)
+    assert daemon_pid() is None
+
+
+@pytest.mark.asyncio
+async def test_orphaned_tailscale_is_stopped(module, mocker):
+    await define(module)
+    await wait_for(lambda: daemon_pid() is not None)
+    pid = daemon_pid()
+    mocker.patch("fhempy.lib.fhem.wsconnection", Stopping())
+    await module.Undefine(module.hash)
+    mocker.patch("fhempy.lib.fhem.wsconnection", None)
+    assert tailscale.daemon_alive(pid)
+
+    # the device was deleted while fhempy didn't run
+    await tailscale.stop_orphan(logger)
+    assert not tailscale.daemon_alive(pid)
+    assert daemon_pid() is None
+    # a stale pid file of another process isn't trusted
+    tailscale.write_pid_file(os.getpid(), "1.90.0")
+    assert not tailscale.daemon_alive(os.getpid())
+    await tailscale.stop_orphan(logger)
+    assert daemon_pid() is None
+
+
+def test_rotate_log(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = os.path.join(tmp_path, ".fhempy", "log", "tailscale.log")
+    os.makedirs(os.path.dirname(path))
+    with open(path, "ab") as log:
+        log.write(b"x" * 100)
+        log.flush()
+        tailscale.rotate_log(max_bytes=50)
+        # tailscaled keeps its file open and writes at the new end
+        log.write(b"new\n")
+    with open(path, "rb") as f:
+        assert f.read() == b"new\n"
+    with open(path + ".1", "rb") as f:
+        assert f.read() == b"x" * 100
+
+
 class FakeEsphome:
     """web page in the home network with a websocket"""
 
