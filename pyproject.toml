@@ -35,7 +35,7 @@ websockets = "==17.3"
 importlib_metadata = "7.2.1"
 pycryptodomex = "3.24.1"
 ifaddr = "==0.2.0"
-zeroconf = "==0.151.2"
+zeroconf = "==0.151.5"
 markdown2 = "2.5.5"
 requests = "2.34.2"
 async-upnp-client = "0.49.0"
@@ -79,12 +79,12 @@ bt_proximity = "==0.2.1"
 btsocket = "==0.3.0"
 construct = "==2.10.70"
 cryptography = [
-    { version = "==50.0.1", markers = "platform_system != 'Darwin' or platform_machine != 'x86_64'" },
+    { version = "==50.0.2", markers = "platform_system != 'Darwin' or platform_machine != 'x86_64'" },
     { version = "==48.0.1", markers = "platform_system == 'Darwin' and platform_machine == 'x86_64'" },
 ]
 dbus-python = "==1.5.0"
-esphome = "==2026.9.1"
-esphome-device-builder = "==1.25.0"
+esphome = "==2026.10.1"
+esphome-device-builder = "==1.26.0"
 goodwe = "==0.4.10"
 greeclimate = "==3.5.3"
 httpx = "==0.28.1"
