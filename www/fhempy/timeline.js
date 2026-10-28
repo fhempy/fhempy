@@ -475,14 +475,27 @@
       d.attr("data-device", name);
       d.html(data.error ? '<div class="ftlEmpty">' + esc(data.error) + "</div>" : deviceHtml(data, days));
       if (!d.hasClass("ui-dialog-content")) {
-        d.dialog({
-          modal: true,
-          width: Math.min(760, $(window).width() - 20),
-          maxHeight: $(window).height() - 80,
-          close: function () { $(this).dialog("destroy").remove(); }
-        });
+        openDialog(d, 760, function () { $(this).dialog("destroy").remove(); });
       }
       d.dialog("option", "title", data.text || name);
+    });
+  }
+
+  // popups: Close button, Escape and a tap next to the popup close them,
+  // also on phones where the title bar button is hard to hit
+  function openDialog(d, width, close) {
+    d.dialog({
+      modal: true,
+      closeOnEscape: true,
+      width: Math.min(width, $(window).width() - 20),
+      maxHeight: $(window).height() - 40,
+      position: { my: "center top+10", at: "center top", of: window, collision: "fit" },
+      buttons: [{ text: "Close", click: function () { $(this).dialog("close"); } }],
+      close: close
+    });
+    d.dialog("widget").css("position", "fixed");
+    $(".ui-widget-overlay").last().on("click", function () {
+      if (d.hasClass("ui-dialog-content")) d.dialog("close");
     });
   }
 
@@ -511,13 +524,8 @@
       });
       d.html(html);
       $("body").append(d);
-      d.dialog({
-        modal: true,
-        title: "Hidden events",
-        width: Math.min(700, $(window).width() - 20),
-        maxHeight: $(window).height() - 80,
-        close: function () { $(this).remove(); }
-      });
+      openDialog(d, 700, function () { $(this).dialog("destroy").remove(); });
+      d.dialog("option", "title", "Hidden events");
       d.on("click", "[data-onchange]", onChangeClick);
       d.on("click", "a.ftlDevice", deviceClick);
       d.on("click", "[data-show]", function () {
