@@ -416,10 +416,20 @@ async function openPairingMode() {
     }
     // like "Turn on pairing mode" in an app, with the code of the bridge
     const commissioner = server.env.get(DeviceCommissioner);
-    await commissioner.allowBasicCommissioning(() => {
-        clearTimeout(pairingModeTimer);
-        send({ event: "pairing_mode", minutes: 0 });
-    });
+    try {
+        await commissioner.allowBasicCommissioning(() => {
+            clearTimeout(pairingModeTimer);
+            send({ event: "pairing_mode", minutes: 0 });
+        });
+    } catch (error) {
+        // an app opened pairing mode with its own code already, e.g. Android
+        // while it hands the bridge over to Home Assistant
+        if (/enhanced/i.test(String(error?.message ?? error))) {
+            send({ event: "pairing_mode", busy: true });
+            return;
+        }
+        throw error;
+    }
     clearTimeout(pairingModeTimer);
     pairingModeTimer = setTimeout(() => commissioner.endCommissioning(), PAIRING_MODE_MINUTES * 60_000);
     send({ event: "pairing_mode", minutes: PAIRING_MODE_MINUTES });

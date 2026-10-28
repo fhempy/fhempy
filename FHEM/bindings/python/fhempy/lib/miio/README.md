@@ -8,20 +8,24 @@ https://github.com/rytilahti/python-miio
 define cam fhempy miio <TYPE> <IP> <TOKEN>
 ```
  - TYPE: Choose one of the following types
+    - airconditionermiot
     - airconditioningcompanion
+    - airconditioningcompanionmcn02
     - airconditioningcompanionv3
     - airdehumidifier
+    - airdogx3
     - airfresh
+    - airfresha1
     - airfresht2017
     - airhumidifier
-    - airhumidifierca1
-    - airhumidifiercb1
     - airhumidifierjsq
+    - airhumidifierjsqs
     - airhumidifiermiot
     - airhumidifiermjjsq
     - airpurifier
     - airpurifiermiot
     - airqualitymonitor
+    - airqualitymonitorcgdn1
     - alarmclock
     - aqaracamera
     - ceil
@@ -29,39 +33,46 @@ define cam fhempy miio <TYPE> <IP> <TOKEN>
     - chuangmiir
     - chuangmiplug
     - cooker
+    - curtainmiot
     - device
+    - dreamevacuum
     - fan
+    - fan1c
+    - fanleshow
+    - fanmiot
     - fanp5
-    - fansa1
-    - fanv2
-    - fanza1
-    - fanza3
-    - fanza4
+    - fanza5
+    - g1vacuum
     - gateway
-    - gatewayalarm
-    - gatewaydevice
-    - gatewaylight
-    - gatewayradio
-    - gatewayzigbee
     - heater
+    - heatermiot
+    - huizuo
+    - huizuolampfan
+    - huizuolampheater
+    - huizuolampscene
     - miotdevice
+    - petwaterdispenser
     - philipsbulb
     - philipseyecare
     - philipsmoonlight
     - philipsrwread
     - philipswhitebulb
-    - plug
-    - plugv1
-    - plugv3
     - powerstrip
     - pwznrelay
+    - roborockvacuum
+    - roidmivacuummiot
+    - scisharecoffee
     - toiletlid
-    - vacuum
     - viomivacuum
+    - walkingpad
     - waterpurifier
+    - waterpurifieryunmi
     - wifirepeater
     - wifispeaker
     - yeelight
+    - yeelightdualcontrolmodule
+
+   Older names like vacuum, fanv2, plugv1 or airhumidifierca1 still work.
 
  - IP: IP address of the device. It's recommended to set the device to a static IP address to prevent IP changes via DHCP.
 

@@ -4,6 +4,7 @@ import logging
 import pytest
 from tests.utils import mock_fhem
 
+from fhempy.lib.core import mqtt_ha
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 
 ESPHOME_SWITCH = {
@@ -26,7 +27,13 @@ Z2M_SENSOR = {
     "state_topic": "zigbee2mqtt/Wohnzimmer Temp",
     "unique_id": "0x00158d0001_temperature_zigbee2mqtt",
     "unit_of_measurement": "°C",
+    "value_template": "{{ value_json.temperature }}",
 }
+AVAILABILITY = (
+    "baerli/status:.* { my $p = $EVENT; return undef if ($p ne 'online' && "
+    "$p ne 'offline'); my $v = $p eq 'online' ? 1 : 0; return { "
+    "'.availability0' => $v, availability => $v ? 'online' : 'offline' } }"
+)
 
 
 class Msg:
@@ -44,11 +51,18 @@ async def define_device(mocker, existing=None):
     mock_fhem.command_define.clear()
     mock_fhem.command_attr.clear()
     mock_fhem.attributes.clear()
+    mqtt_ha._entities.clear()
+
+    async def command_attr(hash, attrdef):
+        name, attr, value = attrdef.split(" ", 2)
+        mock_fhem.attributes.setdefault(name, {})[attr] = value
+        mock_fhem.command_attr.append(attrdef)
 
     async def command_list(hash, listcmd):
         return existing or ""
 
     mocker.patch("fhempy.lib.fhem.CommandList", command_list)
+    mocker.patch("fhempy.lib.fhem.CommandAttr", command_attr)
     device = mqtt_ha_discovery(logging.getLogger(__name__))
     mocker.patch.object(device, "create_async_task", lambda coro: coro.close())
     await device.Define(
@@ -72,10 +86,10 @@ async def test_esphome_switch(mocker):
     assert mock_fhem.command_define == ["MQTT2_baerli_b4e62d451d0d MQTT2_DEVICE"]
     assert mock_fhem.command_attr == [
         "MQTT2_baerli_b4e62d451d0d readingList "
-        "baerli/switch/yellow/state:.* { { yellow=>lc($EVENT) } }",
+        "baerli/switch/yellow/state:.* { { yellow=>lc($EVENT) } }\n" + AVAILABILITY,
         "MQTT2_baerli_b4e62d451d0d setList "
-        "yellow_on baerli/switch/yellow/command ON\n"
-        "yellow_off baerli/switch/yellow/command OFF",
+        "yellow_on:noArg baerli/switch/yellow/command ON\n"
+        "yellow_off:noArg baerli/switch/yellow/command OFF",
     ]
 
 
@@ -92,9 +106,11 @@ async def test_full_key_names_without_node_id(mocker):
     assert mock_fhem.command_define == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x00158d0001 MQTT2_DEVICE"
     ]
+    # topic with space, JSON message: a reading for each value
     assert mock_fhem.command_attr == [
         "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x00158d0001 readingList "
-        "zigbee2mqtt/Wohnzimmer Temp:.* { { Temperature=>lc($EVENT) } }"
+        "zigbee2mqtt/Wohnzimmer.Temp:.* { json2nameValue($EVENT) }",
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x00158d0001 stateFormat temperature °C",
     ]
 
     # topic without node_id and without device
@@ -106,10 +122,11 @@ async def test_full_key_names_without_node_id(mocker):
         )
     )
     assert mock_fhem.command_define == ["MQTT2_outside_temp_outside_temp MQTT2_DEVICE"]
-    assert mock_fhem.command_attr[-1] == (
+    assert mock_fhem.command_attr[-2:] == [
         "MQTT2_outside_temp_outside_temp readingList "
-        "garden/temp:.* { { outside_temp=>lc($EVENT) } }"
-    )
+        "garden/temp:.* { { outside_temp=>$EVENT } }",
+        "MQTT2_outside_temp_outside_temp stateFormat outside_temp",
+    ]
 
 
 @pytest.mark.asyncio
@@ -148,15 +165,23 @@ async def test_device_discovery(mocker):
     )
     # one device for all components
     assert mock_fhem.command_define == ["MQTT2_Kitchen_ea334450945afc MQTT2_DEVICE"]
-    assert mock_fhem.command_attr[0].endswith(
-        "kitchen/temp:.* { { Temp=>lc($EVENT) } }"
-    )
-    assert mock_fhem.command_attr[2] == (
-        "MQTT2_Kitchen_ea334450945afc setList "
-        'Lamp_on kitchen/lamp/set {"state": "ON", "transition": 1}\n'
-        'Lamp_off kitchen/lamp/set {"state": "OFF", "transition": 1}\n'
-        "Lamp_brightness:colorpicker,BRI,0,5,255 kitchen/lamp/set "
+    reading_list = mock_fhem.attributes["MQTT2_Kitchen_ea334450945afc"][
+        "readingList"
+    ].split("\n")
+    assert sorted(reading_list) == [
+        "kitchen/lamp:.* { my $r = json2nameValue($EVENT); $r->{state} = "
+        "lc($r->{state}) if (($r->{state} // '') =~ /^(ON|OFF)$/); $r }",
+        "kitchen/temp:.* { { Temp=>$EVENT } }",
+    ]
+    # the only light is the device itself: on, off, brightness
+    assert mock_fhem.attributes["MQTT2_Kitchen_ea334450945afc"]["setList"] == (
+        'on:noArg kitchen/lamp/set {"state":"ON"}\n'
+        'off:noArg kitchen/lamp/set {"state":"OFF"}\n'
+        "brightness:colorpicker,BRI,0,1,255 kitchen/lamp/set "
         '{"state":"ON","brightness":$EVTPART1}'
+    )
+    assert mock_fhem.attributes["MQTT2_Kitchen_ea334450945afc"]["webCmd"] == (
+        "on:off:brightness"
     )
 
 
@@ -177,5 +202,9 @@ async def test_existing_device_from_readinglist(mocker):
     assert mock_fhem.command_attr[0] == (
         "myswitch readingList baerli/switch/yellow/state:.* { { yellow=>lc($EVENT) } }"
     )
-    assert mock_fhem.command_attr[1].startswith("myswitch setList yellow_on")
-    assert len(mock_fhem.command_attr) == 2
+    assert mock_fhem.command_attr[1] == (
+        "myswitch readingList baerli/switch/yellow/state:.* "
+        "{ { yellow=>lc($EVENT) } }\n" + AVAILABILITY
+    )
+    assert mock_fhem.command_attr[2].startswith("myswitch setList yellow_on")
+    assert len(mock_fhem.command_attr) == 3

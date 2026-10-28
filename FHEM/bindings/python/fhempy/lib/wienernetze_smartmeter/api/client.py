@@ -243,11 +243,20 @@ class AsyncSmartmeter:
                     const.API_CONFIG_URL,
                     headers={"Authorization": f"Bearer {self._access_token}"},
                 ) as response:
-                    config = await response.json(content_type=None)
+                    status = response.status
+                    text = await response.text()
         except Exception as exception:
             raise SmartmeterConnectionError(
                 f"Could not obtain API key: {exception!r}"
             ) from exception
+        try:
+            config = json.loads(text)
+        except ValueError:
+            # during maintenance the portal answers with an HTML page
+            raise SmartmeterConnectionError(
+                f"Could not obtain API key: smartmeter portal returned no JSON "
+                f"(HTTP {status}, maybe maintenance): {_page_message(text)!r}"
+            ) from None
         if not isinstance(config, dict):
             raise SmartmeterConnectionError("Unexpected app-config.json format")
         for key in ("b2cApiKey", "b2bApiKey"):
