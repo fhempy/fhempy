@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import fcntl
 import io
 import json
 import logging
@@ -26,7 +27,7 @@ ENABLE_URL = "https://login.tailscale.com/f/funnel?node=n1"
 
 # tailscale command line tool: answers from the state file next to it
 FAKE_TAILSCALE = r"""
-import json, os, sys, time
+import contextlib, fcntl, json, os, sys, time
 
 state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fake.json")
 
@@ -39,10 +40,19 @@ def save(state):
         json.dump(state, f)
     os.replace(state_file + ".tmp", state_file)
 
+@contextlib.contextmanager
+def change():
+    # calls run in parallel: without the lock a status call writes back
+    # the backend it read before a logout
+    with open(state_file + ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        state = load()
+        yield state
+        save(state)
+
 args = [a for a in sys.argv[1:] if not a.startswith("--socket=")]
-state = load()
-state.setdefault("calls", []).append(args)
-save(state)
+with change() as state:
+    state.setdefault("calls", []).append(args)
 if args[:1] == ["status"]:
     print(json.dumps({
         "BackendState": state["backend"],
@@ -50,8 +60,8 @@ if args[:1] == ["status"]:
         "Self": {"DNSName": "%s." % state["dns"] if state["backend"] == "Running" else ""},
     }))
 elif args[:1] == ["up"]:
-    state["auth_url"] = state["login_url"]
-    save(state)
+    with change() as state:
+        state["auth_url"] = state["login_url"]
     while load()["backend"] != "Running":
         time.sleep(0.05)
 elif args[:2] == ["funnel", "status"]:
@@ -61,12 +71,12 @@ elif args[:2] == ["funnel", "status"]:
     print(json.dumps({"AllowFunnel": allow}))
 elif args[:1] == ["funnel"] and any(a.startswith("--https=") for a in args):
     port = [a for a in args if a.startswith("--https=")][0].split("=")[1]
-    ports = state.setdefault("ports", {})
-    if args[-1] == "off":
-        ports.pop(port, None)
-    else:
-        ports[port] = args[-1]
-    save(state)
+    with change() as state:
+        ports = state.setdefault("ports", {})
+        if args[-1] == "off":
+            ports.pop(port, None)
+        else:
+            ports[port] = args[-1]
 elif args[:1] == ["funnel"]:
     if not state.get("funnel_enabled"):
         print("Funnel is not enabled on your tailnet.\nTo enable, visit:\n")
@@ -74,18 +84,17 @@ elif args[:1] == ["funnel"]:
         while not load().get("funnel_enabled"):
             time.sleep(0.05)
         print("Success.")
-    state = load()
-    state["target"] = args[-1]
-    save(state)
+    with change() as state:
+        state["target"] = args[-1]
 elif args[:2] == ["serve", "reset"]:
-    state["target"] = None
-    state["ports"] = {}
-    save(state)
+    with change() as state:
+        state["target"] = None
+        state["ports"] = {}
 elif args[:1] == ["logout"]:
-    state["backend"] = "NeedsLogin"
-    state["auth_url"] = ""
-    state["target"] = None
-    save(state)
+    with change() as state:
+        state["backend"] = "NeedsLogin"
+        state["auth_url"] = ""
+        state["target"] = None
 """
 
 FAKE_TAILSCALED = r"""
@@ -129,9 +138,11 @@ class FakeTailscale:
         os.replace(self.file + ".tmp", self.file)
 
     def update(self, **changes):
-        state = self.load()
-        state.update(changes)
-        self.save(state)
+        with open(self.file + ".lock", "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            state = self.load()
+            state.update(changes)
+            self.save(state)
 
 
 class FakeFhemweb:

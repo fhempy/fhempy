@@ -4,9 +4,10 @@ use warnings;
 use Test2::V0;
 use Test2::Tools::Compare qw{is like};
 our %defs;
+our %modules;
 
 InternalTimer(time()+0.5, sub {
-	plan(3);
+	plan(4);
 
 	# a real local define would start fhempy, only the flag matters here
 	my $local = q[fhempy_detail_local];
@@ -20,6 +21,7 @@ InternalTimer(time()+0.5, sub {
 	like (BindingsIo_detailFn(q[WEB], $local, q[], undef), qr/fhempyModules\(\).*Install modules/, q[local fhempy shows Install modules]);
 	is (BindingsIo_detailFn(q[WEB], $remote, q[], undef), U(), q[no button on a remote peer]);
 	is (BindingsIo_detailFn(q[WEB], $local, q[], {}), U(), q[no button in room overview]);
+	is ($modules{BindingsIo}{FW_deviceOverview}, 1, q[device overview stays visible below the button]);
 
 	done_testing();
 	exit(0);

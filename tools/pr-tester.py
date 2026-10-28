@@ -711,6 +711,26 @@ def write_json(path, data):
         json.dump(data, f, indent=2)
 
 
+def copy_into(src, dst, mode_of=None):
+    """Copies the content of src to dst. An existing dst keeps its owner and
+    mode, a new one gets the mode of the file mode_of (e.g. the other FHEM files)
+    or 0644 (0755 for programs)."""
+    if os.path.exists(dst):
+        shutil.copyfile(src, dst)
+        return
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copyfile(src, dst)
+    try:
+        mode = os.stat(mode_of).st_mode & 0o777
+    except (OSError, TypeError):
+        mode = 0o755 if os.stat(src).st_mode & 0o111 else 0o644
+    os.chmod(dst, mode)
+
+
+# FHEM's own files, new files get the same mode
+MODE_REFERENCE = {"FHEM": "FHEM/98_update.pm", "www": "www/pgm2/fhemweb.js"}
+
+
 def remove(path):
     try:
         os.unlink(path)
@@ -828,16 +848,11 @@ class Runner:
     def install_fhem_modules(self, modules, state):
         if not modules:
             return
-        os.makedirs(self.inst.backup_dir, exist_ok=True)
         state["fhem_modules"] = []
         for module in modules:
-            dst = self.fhem_file(module)
-            backup = os.path.join(self.inst.backup_dir, module + ".pm")
-            if os.path.exists(dst) and not os.path.exists(backup):
-                shutil.copy2(dst, backup)
-            state["fhem_modules"].append(module)
-            write_json(self.inst.state_file, state)
-            shutil.copy(os.path.join(self.inst.src, "FHEM", module + ".pm"), dst)
+            self.install_file(
+                os.path.join("FHEM", module + ".pm"), state, state["fhem_modules"], module
+            )
             self.fhem.cmd_or_ask(f"reload {module}")
 
     def install_www_files(self, paths, state):
@@ -845,34 +860,41 @@ class Runner:
             return
         state["www_files"] = []
         for path in paths:
-            dst = os.path.join(self.ctx["dir"], path)
-            backup = os.path.join(self.inst.backup_dir, path)
-            if os.path.exists(dst) and not os.path.exists(backup):
+            self.install_file(path, state, state["www_files"], path)
+        info("FHEMWEB files copied, reload the browser page (Ctrl+F5) to see them")
+
+    def install_file(self, path, state, copied, name):
+        """Copies path of the pull request into FHEM. The original goes to the
+        backup first, a file FHEM didn't have is noted in state["new_files"]:
+        only those may be deleted by the restore."""
+        dst = os.path.join(self.ctx["dir"], path)
+        backup = self.backup_file(path)
+        if os.path.exists(dst):
+            if not os.path.exists(backup):
                 os.makedirs(os.path.dirname(backup), exist_ok=True)
                 shutil.copy2(dst, backup)
-            state["www_files"].append(path)
-            write_json(self.inst.state_file, state)
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copy(os.path.join(self.inst.src, path), dst)
-        info("FHEMWEB files copied, reload the browser page (Ctrl+F5) to see them")
+        elif not os.path.exists(backup):
+            state.setdefault("new_files", []).append(path)
+        copied.append(name)
+        write_json(self.inst.state_file, state)
+        reference = MODE_REFERENCE.get(path.split("/")[0])
+        copy_into(
+            os.path.join(self.inst.src, path),
+            dst,
+            os.path.join(self.ctx["dir"], reference) if reference else None,
+        )
 
     def restore_www_files(self, state):
         copied = set(state.get("www_files") or [])
-        # paths from the FHEM directory, not from the state file
-        paths = [p for p in www_files(self.ctx["dir"]) if p in copied]
+        # paths from the FHEM and backup directories, not from the state file;
+        # a file missing in FHEM is put back too
+        found = set(www_files(self.ctx["dir"])) | set(www_files(self.inst.backup_dir))
+        paths = sorted(p for p in found if p in copied)
         if not paths:
             return
         info("Restoring the FHEMWEB files: " + ", ".join(paths))
-        backups = set(www_files(self.inst.backup_dir))
         for path in paths:
-            dst = os.path.join(self.ctx["dir"], path)
-            backup = os.path.join(self.inst.backup_dir, path)
-            if path in backups:
-                shutil.copy2(backup, dst)
-                os.unlink(backup)
-            else:
-                # new file of the pull request
-                remove(dst)
+            self.restore_file(path, state, "www_files", path)
 
     def installed_fhem_modules(self):
         return fhem_modules(os.path.join(self.ctx["dir"], "FHEM"))
@@ -882,26 +904,52 @@ class Runner:
 
     def restore_fhem_modules(self, state):
         copied = set(state.get("fhem_modules") or [])
-        # names from the FHEM directory, not from the state file
-        modules = [m for m in self.installed_fhem_modules() if m in copied]
+        # names from the FHEM and backup directories, not from the state file
+        found = set(self.installed_fhem_modules()) | set(
+            fhem_modules(self.inst.backup_dir)
+        )
+        modules = sorted(m for m in found if m in copied)
         if not modules:
             return
         info("Restoring the FHEM modules: " + ", ".join(modules))
         fhem = self.fhem or Fhem(self.ctx["dir"], self.args.telnet_port)
         if fhem.method is None:
             fhem.connect()
-        backups = fhem_modules(self.inst.backup_dir)
         for module in modules:
-            backup = os.path.join(self.inst.backup_dir, module + ".pm")
-            if module in backups:
-                shutil.copy2(backup, self.fhem_file(module))
-                os.unlink(backup)
-            else:
-                # new module of the pull request
-                os.unlink(self.fhem_file(module))
+            path = os.path.join("FHEM", module + ".pm").replace(os.sep, "/")
+            result = self.restore_file(path, state, "fhem_modules", module)
+            if result == "removed":
                 warn(f"{module} is new, please run in FHEM: shutdown restart")
-                continue
-            fhem.cmd_or_ask(f"reload {module}")
+            elif result == "restored":
+                fhem.cmd_or_ask(f"reload {module}")
+
+    def backup_file(self, path):
+        # FHEM modules directly in the backup directory, like older versions did
+        if FHEM_MODULE_RE.match(path):
+            return os.path.join(self.inst.backup_dir, os.path.basename(path))
+        return os.path.join(self.inst.backup_dir, path)
+
+    def restore_file(self, path, state, key, name):
+        """Puts the original of path back. Runs again if the restore was
+        interrupted: entries leave the state file as soon as they are done, and a
+        file without backup is only deleted if FHEM didn't have it before."""
+        dst = os.path.join(self.ctx["dir"], path)
+        backup = self.backup_file(path)
+        new_files = state.get("new_files") or []
+        if os.path.exists(backup):
+            copy_into(backup, dst, backup)
+            os.unlink(backup)
+            result = "restored"
+        elif path in new_files:
+            remove(dst)
+            result = "removed"
+        else:
+            warn(f"No backup of {path}, the file stays as it is")
+            result = "kept"
+        state[key] = [entry for entry in state.get(key) or [] if entry != name]
+        state["new_files"] = [entry for entry in new_files if entry != path]
+        write_json(self.inst.state_file, state)
+        return result
 
     # the test fhempy
 
