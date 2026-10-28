@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v2.12.0 (2026-10-28)
+
+### Bug Fixes
+
+- **timeline**: Opened groups and curves stay open after Show less
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+### Features
+
+- **autodiscovery**: Offer deleted devices again, search and collapsed sections in Found devices
+  ([#801](https://github.com/fhempy/fhempy/pull/801),
+  [`7e5c941`](https://github.com/fhempy/fhempy/commit/7e5c94188c36e0edf603b84a8ee15a516e77243e))
+
+- **timeline**: Newest events on top, only the timeline scrolls
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+- **timeline**: Newest events on top, only the timeline scrolls, opened sections stay open
+  ([#802](https://github.com/fhempy/fhempy/pull/802),
+  [`cd65755`](https://github.com/fhempy/fhempy/commit/cd6575559b97dc3fd0228b6db1921a70de9ab91e))
+
+- **timeline**: Only on change also for story entries
+  ([#803](https://github.com/fhempy/fhempy/pull/803),
+  [`63f63c6`](https://github.com/fhempy/fhempy/commit/63f63c681225d96212d1f0798d254a83484ba673))
+
+- **timeline**: Shown directly in its room, wide layout on laptops
+  ([#804](https://github.com/fhempy/fhempy/pull/804),
+  [`1215779`](https://github.com/fhempy/fhempy/commit/1215779917e0a9549b413476834368478b6dc78c))
+
+
 ## v2.11.3 (2026-10-28)
 
 ### Bug Fixes
