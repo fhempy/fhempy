@@ -12,6 +12,7 @@ import datetime
 import functools
 import json
 import os
+import re
 import time
 
 from .. import fhem, generic, utils
@@ -98,6 +99,12 @@ class timeline(generic.FhemModule):
                 "show": {
                     "args": ["reading"],
                     "help": "Always show device:reading in the timeline.",
+                },
+                "ignore": {
+                    "args": ["reading"],
+                    "help": "Ignore device:reading (or device:* for all "
+                    "readings) completely: adds it to the attribute "
+                    "skip_events, FHEM doesn't send these events anymore.",
                 },
                 "auto": {
                     "args": ["reading"],
@@ -475,6 +482,22 @@ class timeline(generic.FhemModule):
 
     async def set_auto(self, hash, params):
         return await self.change_rules(params["reading"], False, False)
+
+    async def set_ignore(self, hash, params):
+        device, _, reading = params["reading"].partition(":")
+        if not device or not reading:
+            return "Use device:reading or device:*"
+        # reading names never contain ":", so "^device:reading:" matches exactly
+        rule = f"^{re.escape(device)}:"
+        if reading != "*":
+            rule += f"{re.escape(reading)}:"
+        current = self._attr_skip_events
+        if rule in current.split("|"):
+            return None
+        value = f"{current}|{rule}" if current else rule
+        await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} skip_events {value}")
+        self._attr_skip_events = value
+        return None
 
     async def set_on_change(self, hash, params):
         device, _, reading = params["reading"].partition(":")
