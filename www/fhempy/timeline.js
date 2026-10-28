@@ -12,6 +12,8 @@
   var periods = [];
   var firstDay = "";
   var loading = false;
+  var keepScroll = true;
+  var expanded = {};
   var filter = { categories: {}, search: "" };
 
   var categoryInfo = {
@@ -45,6 +47,7 @@
       "#fhempyTimeline .ftlPeriod{background:rgba(208,102,42,0.14);border-color:transparent}" +
       "#fhempyTimeline input.ftlSearch{border-radius:14px;padding:3px 10px;border:1px solid rgba(128,128,128,0.4);min-width:140px}" +
       "#fhempyTimeline input.ftlDate{border-radius:14px;padding:2px 8px;border:1px solid rgba(128,128,128,0.4)}" +
+      "#fhempyTimeline .ftlScroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:4px}" +
       "#fhempyTimeline .ftlDay{border-top:1px solid rgba(128,128,128,0.3);padding:10px 0 6px}" +
       "#fhempyTimeline .ftlDayHead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:6px}" +
       "#fhempyTimeline .ftlDayName{font-weight:600;font-size:15px}" +
@@ -166,6 +169,7 @@
         return;
       }
       days = append ? days.concat(data.days) : data.days;
+      keepScroll = append;
       periods = data.periods || [];
       firstDay = data.first;
       render();
@@ -238,7 +242,7 @@
       html += '<div class="ftlChildren" style="display:none">';
       entry.children.forEach(function (child) { html += entryHtml(child); });
       html += "</div>";
-      html += '<div><span class="ftlLink ftlToggle">Show ' + entry.children.length + " devices</span></div>";
+      html += '<div><span class="ftlLink ftlToggle" data-key="g' + entry.ts + '">Show ' + entry.children.length + " devices</span></div>";
     }
     html += "</div>";
     if (entry.device) {
@@ -275,13 +279,13 @@
     // curves which stayed the same all day only on demand
     var changed = trends.filter(function (t) { return t.changed; });
     var same = trends.filter(function (t) { return !t.changed; });
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + changed.length + " changed" +
+    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed.length + " changed" +
       (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
       '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
     changed.forEach(function (t) { html += trendHtml(t); });
     html += "</div>";
     if (same.length) {
-      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle">Show ' + same.length +
+      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '">Show ' + same.length +
         " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
       same.forEach(function (t) { html += trendHtml(t); });
       html += "</div>";
@@ -301,7 +305,8 @@
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(dayTitle(day.day)) + "</span>" +
       (day.absent ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + info.join(" · ") + "</span></div>";
-    entries.forEach(function (entry) { html += entryHtml(entry); });
+    // newest first, like the days
+    entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
     html += trendsHtml(day);
     if (day.hidden) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlDetails" data-day="' + day.day + '">+ ' +
@@ -341,9 +346,19 @@
     return html + "</div>";
   }
 
+  // only the list of days scrolls, filters and the page stay where they are
+  function fitScroll() {
+    var list = $("#fhempyTimeline .ftlScroll");
+    if (!list.length) return;
+    var top = list[0].getBoundingClientRect().top + (window.scrollY || 0) + ($("#content").scrollTop() || 0);
+    var height = window.innerHeight - top - 12;
+    list.css("max-height", Math.max(height, Math.round(window.innerHeight * 0.7)) + "px");
+  }
+
   function render() {
     var root = $("#fhempyTimeline");
-    var html = barHtml();
+    var scrollTop = root.find(".ftlScroll").scrollTop() || 0;
+    var html = barHtml() + '<div class="ftlScroll">';
     if (!days.length) {
       html += '<div class="ftlEmpty">Nothing recorded yet. The timeline fills up as soon as something happens at home.</div>';
     }
@@ -360,9 +375,19 @@
     if (days.length && days[days.length - 1].day > firstDay) {
       html += '<div class="ftlMore"><span class="ftlButton ftlOlder">Show older days</span></div>';
     }
+    html += "</div>";
     var search = root.find(".ftlSearch");
     var focused = search.is(":focus");
     root.html(html);
+    restoreExpanded(root);
+    fitScroll();
+    var list = root.find(".ftlScroll");
+    list.scrollTop(keepScroll ? scrollTop : 0);
+    keepScroll = true;
+    // the next older days are loaded when the end of the list is reached
+    list.on("scroll", function () {
+      if (this.scrollTop + this.clientHeight >= this.scrollHeight - 40 && root.find(".ftlOlder").length) loadOlder();
+    });
     if (focused) {
       search = root.find(".ftlSearch");
       search.focus();
@@ -562,6 +587,28 @@
     });
   }
 
+  function setExpanded(toggle, open) {
+    if (toggle.hasClass("ftlToggle")) {
+      var children = toggle.parent().siblings(".ftlChildren");
+      children.toggle(open);
+      toggle.text(open ? "Hide devices" : "Show " + children.children().length + " devices");
+    } else if (toggle.hasClass("ftlTrendToggle")) {
+      toggle.parent().next(".ftlTrendBox").toggle(open);
+    } else {
+      var same = toggle.parent().next(".ftlSame");
+      same.css("display", open ? "grid" : "none");
+      toggle.text(open ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    }
+  }
+
+  // what the user opened stays open when the timeline is drawn again,
+  // e.g. after "Show less" or a filter
+  function restoreExpanded(root) {
+    root.find("[data-key]").each(function () {
+      if (expanded[$(this).attr("data-key")]) setExpanded($(this), true);
+    });
+  }
+
   function bind() {
     var root = $("#fhempyTimeline");
     root.on("click", ".ftlRange", function () {
@@ -590,18 +637,11 @@
       render();
     });
     root.on("click", ".ftlOlder", loadOlder);
-    root.on("click", ".ftlToggle", function () {
-      var children = $(this).parent().siblings(".ftlChildren");
-      children.toggle();
-      $(this).text(children.is(":visible") ? "Hide devices" : "Show " + children.children().length + " devices");
-    });
-    root.on("click", ".ftlTrendToggle", function () {
-      $(this).parent().next(".ftlTrendBox").toggle();
-    });
-    root.on("click", ".ftlSameToggle", function () {
-      var same = $(this).parent().next(".ftlSame");
-      same.css("display", same.is(":visible") ? "none" : "grid");
-      $(this).text(same.is(":visible") ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    $(window).on("resize", fitScroll);
+    root.on("click", ".ftlToggle, .ftlTrendToggle, .ftlSameToggle", function () {
+      var key = $(this).attr("data-key");
+      expanded[key] = !expanded[key];
+      setExpanded($(this), expanded[key]);
     });
     root.on("click", "[data-onchange]", onChangeClick);
     root.on("click", "a.ftlDevice", deviceClick);
