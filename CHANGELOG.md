@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v2.11.3 (2026-10-28)
+
+### Bug Fixes
+
+- **matter_bridge**: Understandable message when an app already opened pairing mode
+  ([#800](https://github.com/fhempy/fhempy/pull/800),
+  [`db53e7e`](https://github.com/fhempy/fhempy/commit/db53e7e5cd0a8d70916b52c4b80c024d942d48df))
+
+- **timeline**: Popups can be closed on phones ([#793](https://github.com/fhempy/fhempy/pull/793),
+  [`ccb5e55`](https://github.com/fhempy/fhempy/commit/ccb5e5511f07802657e4be412ffe7ce2daa5f4bf))
+
+### Features
+
+- **timeline**: Ignore completely button for hidden events
+  ([#799](https://github.com/fhempy/fhempy/pull/799),
+  [`20622c6`](https://github.com/fhempy/fhempy/commit/20622c616d2a5b07acd6e9f68889995e3885f34c))
+
+
 ## v2.11.2 (2026-10-27)
 
 ### Bug Fixes
