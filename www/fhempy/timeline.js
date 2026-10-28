@@ -520,7 +520,9 @@
         html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + deviceLink(row.device, row.text) + "</span>" +
           "<span>" + onChangeAction(row) +
           '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
-          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span></span></div>';
+          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span>' +
+          '<span class="ftlAction" data-ignore="' + esc(row.device + ":" + row.reading) + '" title="Don\'t record ' +
+          esc(row.device + ":" + row.reading) + ' at all anymore (attribute skip_events)">Ignore completely</span></span></div>';
       });
       d.html(html);
       $("body").append(d);
@@ -532,6 +534,13 @@
         var target = $(this).attr("data-show");
         var el = $(this);
         cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
+      });
+      d.on("click", "[data-ignore]", function () {
+        var target = $(this).attr("data-ignore");
+        cmd("set " + device + " ignore " + target, function () {
+          d.find('[data-ignore="' + target.replace(/["\\]/g, "") + '"]').text("Ignored from now on")
+            .removeAttr("data-ignore").removeClass("ftlAction");
+        });
       });
     });
   }

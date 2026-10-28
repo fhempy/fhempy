@@ -257,6 +257,20 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
     assert [e["text"] for e in data["days"][0]["entries"]] == ["Hallway: action double"]
 
+    # "Ignore completely" adds the reading to skip_events
+    assert await module.Set(hash, ["tl", "ignore", "hall:link-quality"], {}) is None
+    assert "tl skip_events ^hall:link\\-quality:" in mock_fhem.command_attr
+    assert await module.Set(hash, ["tl", "ignore", "smoke:*"], {}) is None
+    assert "tl skip_events ^hall:link\\-quality:|^smoke:" in mock_fhem.command_attr
+    mock_fhem.command_attr.clear()
+    assert await module.Set(hash, ["tl", "ignore", "smoke:*"], {}) is None
+    assert mock_fhem.command_attr == []
+    skip = re.compile(f"{SKIP_EVENTS}|{module._attr_skip_events}")
+    assert skip.match("hall:link-quality: 80")
+    assert not skip.match("hall:link-quality2: 80")
+    assert skip.match("smoke:state: alarm")
+    assert not skip.match("smoker:state: alarm")
+
     # history of one device for the popup
     history = json.loads(await module.Get(hash, ["tl", "device", "hall"], {}))
     assert history["text"] == "Hallway"

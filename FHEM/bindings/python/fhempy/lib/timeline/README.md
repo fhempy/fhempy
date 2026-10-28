@@ -46,6 +46,7 @@ If something is wrong:
 
 - **Show less** next to an entry hides this reading (attribute `hidden`)
 - **Always show** in the list of hidden events of a day shows a reading in the story (attribute `always_show`)
+- **Ignore completely** in the list of hidden events of a day adds a reading to `skip_events`, FHEM doesn't send its events anymore and nothing is stored
 - **Only on change** next to a curve or a hidden event adds the reading to `event-on-change-reading` of the device, so FHEM only creates events when the value changes
 - Click a device name for the history of the device (story and curves of the last 7 or 31 days) with an *Open device* button, Ctrl+click opens the device directly
 - Curves which stayed the same all day are folded away, *Show unchanged curves* shows them
