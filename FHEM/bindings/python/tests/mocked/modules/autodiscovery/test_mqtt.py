@@ -6,7 +6,7 @@ from tests.utils import mock_fhem
 
 from fhempy.lib.autodiscovery import catalog
 from fhempy.lib.autodiscovery import mqtt as mqtt_module
-from fhempy.lib.autodiscovery.engine import STATUS_NEW, Engine
+from fhempy.lib.autodiscovery.engine import STATUS_EXISTS, STATUS_NEW, Engine
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 
 from .test_engine import FakeFrontend
@@ -46,6 +46,8 @@ def fhem_calls(mocker):
             return "1" if state["server"] else "0"
         if "while (defined" in cmd:
             return cmd.split("my $n = ")[1].split(";;")[0].strip("\"'")
+        if "grep { !defined" in cmd:
+            return state.get("deleted", "")
         return ""
 
     async def command_list(hash, listcmd):
@@ -145,7 +147,10 @@ async def test_each_device_offered_once_and_created_on_click(engine, fhem_calls)
 async def test_existing_and_unsupported_devices_are_not_offered(engine, fhem_calls):
     fhem_calls["existing"] = "MyTempSensor"
     await engine.mqtt.handle_message(BROKER, *z2m_entity("0x01", "Temperature"))
-    assert engine.candidates == {}
+    # listed as in FHEM, offered again when deleted
+    candidate = engine.candidates.pop("mqtt:zigbee2mqtt_0x01")
+    assert candidate["status"] == STATUS_EXISTS
+    assert candidate["device"] == "MyTempSensor"
 
     fhem_calls["existing"] = ""
     # no topics and components without state or command topic
@@ -169,6 +174,24 @@ async def test_existing_and_unsupported_devices_are_not_offered(engine, fhem_cal
         BROKER, "homeassistant/sensor/x/z/config", b"not json"
     )
     assert engine.candidates == {}
+
+
+@pytest.mark.asyncio
+async def test_deleted_mqtt_device_is_offered_again(engine, fhem_calls):
+    fhem_calls["existing"] = "MyTempSensor"
+    await engine.mqtt.handle_message(BROKER, *z2m_entity("0x01", "Temperature"))
+    candidate = engine.candidates["mqtt:zigbee2mqtt_0x01"]
+    assert candidate["status"] == STATUS_EXISTS
+
+    fhem_calls["existing"] = ""
+    fhem_calls["deleted"] = "MyTempSensor"
+    await engine.recheck()
+    assert candidate["status"] == STATUS_NEW
+    assert candidate["deleted"] is True
+    assert await engine.create({"NAME": "x"}, candidate["id"], "", {}) == ""
+    assert mock_fhem.command_define[-1] == (
+        "MQTT2_Wohnzimmer_Temp_zigbee2mqtt_0x01 MQTT2_DEVICE"
+    )
 
 
 @pytest.mark.asyncio

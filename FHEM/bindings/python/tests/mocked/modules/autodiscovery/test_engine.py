@@ -1,5 +1,6 @@
-import html
 import asyncio
+import html
+import json
 import logging
 
 import pytest
@@ -100,6 +101,104 @@ async def test_existing_device_is_not_offered(engine, fhem_mock, mocker):
     assert engine._popup_task is None
 
 
+def fhem_devices(mocker, devices):
+    """FHEM with the devices {name: DEF} of the module googlecast"""
+
+    async def send(hash, cmd):
+        if "getKeyValue" in cmd or "setKeyValue" in cmd:
+            return ""
+        if "grep { !defined" in cmd:
+            names = [n.strip("'\"") for n in cmd.rsplit(" (", 1)[1][:-2].split(", ")]
+            return " ".join(n for n in names if n not in devices)
+        if "return '';;" in cmd:
+            unique = cmd.split("my $u = lc(")[1].split(")")[0].strip("'\"").lower()
+            for name, definition in devices.items():
+                if unique in definition.lower():
+                    return name
+            return ""
+        return ""
+
+    mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
+
+
+@pytest.mark.asyncio
+async def test_deleted_device_is_offered_again(engine, mocker):
+    devices = {"Living_Room": "Living Room"}
+    fhem_devices(mocker, devices)
+    candidate, rule = cast_candidate(engine)
+    await engine.found(candidate, rule)
+    assert candidate["status"] == engine_module.STATUS_EXISTS
+    assert candidate["device"] == "Living_Room"
+    assert engine.open_candidates() == []
+
+    # still there
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_EXISTS
+
+    # renamed in FHEM
+    devices["Wohnzimmer"] = devices.pop("Living_Room")
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_EXISTS
+    assert candidate["device"] == "Wohnzimmer"
+
+    # deleted: new again, in the list but without popup
+    devices.clear()
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_NEW
+    assert candidate["deleted"] is True
+    assert "device" not in candidate
+    assert [c["id"] for c in engine.open_candidates()] == [candidate["id"]]
+    assert engine._popup_task is None
+    assert engine.frontends[0].changes == 1
+
+    # created again
+    mocker.patch.object(
+        engine_module.fhem, "CommandDefine", mocker.AsyncMock(return_value="")
+    )
+    assert await engine.create({"NAME": "x"}, candidate["id"], "", {}) == ""
+    assert candidate["status"] == engine_module.STATUS_CREATED
+    assert "deleted" not in candidate
+    devices[candidate["device"]] = "Living Room"
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_CREATED
+
+    # deleted again
+    devices.clear()
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_NEW
+
+
+@pytest.mark.asyncio
+async def test_deleted_ignored_device_stays_ignored(engine, mocker):
+    devices = {"Living_Room": "Living Room"}
+    fhem_devices(mocker, devices)
+    candidate, rule = cast_candidate(engine)
+    await engine.found(candidate, rule)
+    engine.ignored.add(candidate["id"])
+    devices.clear()
+    await engine.recheck()
+    assert candidate["status"] == engine_module.STATUS_IGNORED
+
+
+@pytest.mark.asyncio
+async def test_get_candidates_lists_all_but_checking(mocker):
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("autodiscovery")
+    device = autodiscovery(logging.getLogger(__name__))
+    device.engine = mocker.MagicMock()
+    device.engine.recheck = mocker.AsyncMock()
+    device.engine.candidates = {
+        s: {"id": s, "status": s, "device": "d", "create": print}
+        for s in ("new", "ignored", "exists", "created", "checking")
+    }
+    listed = json.loads(await device.get_candidates({}, {}))
+    device.engine.recheck.assert_awaited_once()
+    assert [c["id"] for c in listed] == ["new", "ignored", "exists", "created"]
+    assert listed[2] == {"id": "exists", "status": "exists", "device": "d"}
+
+
 @pytest.mark.asyncio
 async def test_ignore_and_unignore(engine, fhem_mock):
     candidate, rule = cast_candidate(engine)
@@ -187,8 +286,6 @@ async def test_create_with_set_uses_existing_controller(engine, fhem_mock, mocke
         commands.append(cmd)
         if "FHEMPYTYPE} // '') eq" in cmd:
             return "matter_ctrl"
-        if "return 0" in cmd:
-            return "0"
         return ""
 
     mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
@@ -247,10 +344,10 @@ async def test_frontend_update_while_checking_if_device_exists(engine, mocker):
     answer = asyncio.Event()
 
     async def send(hash, cmd):
-        if "return 0" in cmd:
+        if "return '';;" in cmd:
             started.set()
             await answer.wait()
-            return "0"
+            return ""
         return ""
 
     mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
