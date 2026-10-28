@@ -479,6 +479,8 @@
           modal: true,
           width: Math.min(760, $(window).width() - 20),
           maxHeight: $(window).height() - 80,
+          // Esc isn't available on touch screens
+          buttons: [{ text: "Close", click: function () { $(this).dialog("close"); } }],
           close: function () { $(this).dialog("destroy").remove(); }
         });
       }
@@ -516,6 +518,7 @@
         title: "Hidden events",
         width: Math.min(700, $(window).width() - 20),
         maxHeight: $(window).height() - 80,
+        buttons: [{ text: "Close", click: function () { $(this).dialog("close"); } }],
         close: function () { $(this).remove(); }
       });
       d.on("click", "[data-onchange]", onChangeClick);
