@@ -293,6 +293,10 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     assert "hall event-on-change-reading battery,temperature" in mock_fhem.command_attr
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
     assert data["days"][0]["trends"][0]["on_change"] is True
+    assert data["days"][0]["entries"][0]["on_change"] is False
+    assert await module.Set(hash, ["tl", "on_change", "hall:action"], {}) is None
+    data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
+    assert data["days"][0]["entries"][0]["on_change"] is True
     mock_fhem.command_attr.clear()
     mock_fhem.attributes["hall"] = {"event-on-change-reading": "battery,temperature"}
     assert await module.Set(hash, ["tl", "on_change", "hall:temperature"], {}) is None
