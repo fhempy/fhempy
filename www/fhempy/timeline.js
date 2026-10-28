@@ -13,6 +13,7 @@
   var firstDay = "";
   var loading = false;
   var keepScroll = true;
+  var expanded = {};
   var filter = { categories: {}, search: "" };
 
   var categoryInfo = {
@@ -241,7 +242,7 @@
       html += '<div class="ftlChildren" style="display:none">';
       entry.children.forEach(function (child) { html += entryHtml(child); });
       html += "</div>";
-      html += '<div><span class="ftlLink ftlToggle">Show ' + entry.children.length + " devices</span></div>";
+      html += '<div><span class="ftlLink ftlToggle" data-key="g' + entry.ts + '">Show ' + entry.children.length + " devices</span></div>";
     }
     html += "</div>";
     if (entry.device) {
@@ -278,13 +279,13 @@
     // curves which stayed the same all day only on demand
     var changed = trends.filter(function (t) { return t.changed; });
     var same = trends.filter(function (t) { return !t.changed; });
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle">Curves (' + changed.length + " changed" +
+    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed.length + " changed" +
       (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
       '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
     changed.forEach(function (t) { html += trendHtml(t); });
     html += "</div>";
     if (same.length) {
-      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle">Show ' + same.length +
+      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '">Show ' + same.length +
         " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
       same.forEach(function (t) { html += trendHtml(t); });
       html += "</div>";
@@ -378,6 +379,7 @@
     var search = root.find(".ftlSearch");
     var focused = search.is(":focus");
     root.html(html);
+    restoreExpanded(root);
     fitScroll();
     var list = root.find(".ftlScroll");
     list.scrollTop(keepScroll ? scrollTop : 0);
@@ -585,6 +587,28 @@
     });
   }
 
+  function setExpanded(toggle, open) {
+    if (toggle.hasClass("ftlToggle")) {
+      var children = toggle.parent().siblings(".ftlChildren");
+      children.toggle(open);
+      toggle.text(open ? "Hide devices" : "Show " + children.children().length + " devices");
+    } else if (toggle.hasClass("ftlTrendToggle")) {
+      toggle.parent().next(".ftlTrendBox").toggle(open);
+    } else {
+      var same = toggle.parent().next(".ftlSame");
+      same.css("display", open ? "grid" : "none");
+      toggle.text(open ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    }
+  }
+
+  // what the user opened stays open when the timeline is drawn again,
+  // e.g. after "Show less" or a filter
+  function restoreExpanded(root) {
+    root.find("[data-key]").each(function () {
+      if (expanded[$(this).attr("data-key")]) setExpanded($(this), true);
+    });
+  }
+
   function bind() {
     var root = $("#fhempyTimeline");
     root.on("click", ".ftlRange", function () {
@@ -614,18 +638,10 @@
     });
     root.on("click", ".ftlOlder", loadOlder);
     $(window).on("resize", fitScroll);
-    root.on("click", ".ftlToggle", function () {
-      var children = $(this).parent().siblings(".ftlChildren");
-      children.toggle();
-      $(this).text(children.is(":visible") ? "Hide devices" : "Show " + children.children().length + " devices");
-    });
-    root.on("click", ".ftlTrendToggle", function () {
-      $(this).parent().next(".ftlTrendBox").toggle();
-    });
-    root.on("click", ".ftlSameToggle", function () {
-      var same = $(this).parent().next(".ftlSame");
-      same.css("display", same.is(":visible") ? "none" : "grid");
-      $(this).text(same.is(":visible") ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+    root.on("click", ".ftlToggle, .ftlTrendToggle, .ftlSameToggle", function () {
+      var key = $(this).attr("data-key");
+      expanded[key] = !expanded[key];
+      setExpanded($(this), expanded[key]);
     });
     root.on("click", "[data-onchange]", onChangeClick);
     root.on("click", "a.ftlDevice", deviceClick);
