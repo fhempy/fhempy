@@ -12,6 +12,7 @@
   var periods = [];
   var firstDay = "";
   var loading = false;
+  var keepScroll = true;
   var filter = { categories: {}, search: "" };
 
   var categoryInfo = {
@@ -45,6 +46,7 @@
       "#fhempyTimeline .ftlPeriod{background:rgba(208,102,42,0.14);border-color:transparent}" +
       "#fhempyTimeline input.ftlSearch{border-radius:14px;padding:3px 10px;border:1px solid rgba(128,128,128,0.4);min-width:140px}" +
       "#fhempyTimeline input.ftlDate{border-radius:14px;padding:2px 8px;border:1px solid rgba(128,128,128,0.4)}" +
+      "#fhempyTimeline .ftlScroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:4px}" +
       "#fhempyTimeline .ftlDay{border-top:1px solid rgba(128,128,128,0.3);padding:10px 0 6px}" +
       "#fhempyTimeline .ftlDayHead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:6px}" +
       "#fhempyTimeline .ftlDayName{font-weight:600;font-size:15px}" +
@@ -166,6 +168,7 @@
         return;
       }
       days = append ? days.concat(data.days) : data.days;
+      keepScroll = append;
       periods = data.periods || [];
       firstDay = data.first;
       render();
@@ -301,7 +304,8 @@
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(dayTitle(day.day)) + "</span>" +
       (day.absent ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + info.join(" · ") + "</span></div>";
-    entries.forEach(function (entry) { html += entryHtml(entry); });
+    // newest first, like the days
+    entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
     html += trendsHtml(day);
     if (day.hidden) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlDetails" data-day="' + day.day + '">+ ' +
@@ -341,9 +345,19 @@
     return html + "</div>";
   }
 
+  // only the list of days scrolls, filters and the page stay where they are
+  function fitScroll() {
+    var list = $("#fhempyTimeline .ftlScroll");
+    if (!list.length) return;
+    var top = list[0].getBoundingClientRect().top + (window.scrollY || 0) + ($("#content").scrollTop() || 0);
+    var height = window.innerHeight - top - 12;
+    list.css("max-height", Math.max(height, Math.round(window.innerHeight * 0.7)) + "px");
+  }
+
   function render() {
     var root = $("#fhempyTimeline");
-    var html = barHtml();
+    var scrollTop = root.find(".ftlScroll").scrollTop() || 0;
+    var html = barHtml() + '<div class="ftlScroll">';
     if (!days.length) {
       html += '<div class="ftlEmpty">Nothing recorded yet. The timeline fills up as soon as something happens at home.</div>';
     }
@@ -360,9 +374,18 @@
     if (days.length && days[days.length - 1].day > firstDay) {
       html += '<div class="ftlMore"><span class="ftlButton ftlOlder">Show older days</span></div>';
     }
+    html += "</div>";
     var search = root.find(".ftlSearch");
     var focused = search.is(":focus");
     root.html(html);
+    fitScroll();
+    var list = root.find(".ftlScroll");
+    list.scrollTop(keepScroll ? scrollTop : 0);
+    keepScroll = true;
+    // the next older days are loaded when the end of the list is reached
+    list.on("scroll", function () {
+      if (this.scrollTop + this.clientHeight >= this.scrollHeight - 40 && root.find(".ftlOlder").length) loadOlder();
+    });
     if (focused) {
       search = root.find(".ftlSearch");
       search.focus();
@@ -590,6 +613,7 @@
       render();
     });
     root.on("click", ".ftlOlder", loadOlder);
+    $(window).on("resize", fitScroll);
     root.on("click", ".ftlToggle", function () {
       var children = $(this).parent().siblings(".ftlChildren");
       children.toggle();
