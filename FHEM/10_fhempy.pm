@@ -30,6 +30,7 @@ fhempy_Initialize($)
   $hash->{NotifyFn} = 'fhempy_Notify';
   $hash->{AttrList} = 'IODev disable:0,1 '.$readingFnAttributes;
   $hash->{FW_detailFn} = "fhempy_detailFn";
+  $hash->{FW_summaryFn} = "fhempy_summaryFn";
   $hash->{FW_deviceOverview} = 1;
 
   return undef;
@@ -145,6 +146,7 @@ fhempy_Undefine($$)
 {
   my ($hash, $name) = @_;
 
+  RemoveInternalTimer($hash, "fhempy_sendRecordedEvents");
   IOWrite($hash, $hash, "Undefine", [], {});
 
   return undef;
@@ -214,17 +216,96 @@ fhempy_setEventDevices($$)
   return undef;
 }
 
+# Called by Python modules (e.g. timeline) to receive the events of all FHEM
+# devices. They are collected and sent once per second as one message, events
+# matching $skip ("device:reading: value") are only counted per device.
+# $enable 0 stops the events.
+sub
+fhempy_setEventRecorder($$;$)
+{
+  my ($name, $enable, $skip) = @_;
+  my $hash = $defs{$name};
+  return "Unknown device $name" if (!defined($hash));
+
+  RemoveInternalTimer($hash, "fhempy_sendRecordedEvents");
+  delete $hash->{".recordTimer"};
+  delete $hash->{".recordedEvents"};
+  delete $hash->{".skippedEvents"};
+  if (!$enable) {
+    delete $hash->{".eventRecorder"};
+    delete $hash->{".eventSkip"};
+    setDisableNotifyFn($hash, 1);
+    return undef;
+  }
+
+  my $skipRe;
+  if (defined($skip) && $skip ne "") {
+    $skipRe = eval { qr/$skip/ };
+    return "Invalid regexp $skip: $@" if (!defined($skipRe));
+  }
+  $hash->{".eventRecorder"} = 1;
+  $hash->{".eventSkip"} = $skipRe;
+  # without NOTIFYDEV FHEM calls NotifyFn for the events of all devices
+  setNotifyDev($hash, undef);
+  setDisableNotifyFn($hash, 0);
+  return undef;
+}
+
+sub
+fhempy_recordEvents($$$)
+{
+  my ($hash, $dev, $events) = @_;
+  my $devName = $dev->{NAME};
+  return undef if ($devName eq $hash->{NAME});
+
+  my $skipRe = $hash->{".eventSkip"};
+  my $queue = $hash->{".recordedEvents"} //= [];
+  my $now = sprintf("%.3f", time());
+  foreach my $event (@{$events}) {
+    next if (!defined($event));
+    if ((defined($skipRe) && "$devName:$event" =~ $skipRe)
+        || @{$queue} >= 10000) {
+      $hash->{".skippedEvents"}{$devName}++;
+      next;
+    }
+    push(@{$queue}, [$now, $devName, $event]);
+  }
+  if (!$hash->{".recordTimer"}) {
+    $hash->{".recordTimer"} = 1;
+    InternalTimer(gettimeofday() + 1, "fhempy_sendRecordedEvents", $hash, 0);
+  }
+  return undef;
+}
+
+sub
+fhempy_sendRecordedEvents($)
+{
+  my ($hash) = @_;
+  delete $hash->{".recordTimer"};
+  my $events = delete $hash->{".recordedEvents"} // [];
+  my $skipped = delete $hash->{".skippedEvents"} // {};
+  return undef if (!@{$events} && !%{$skipped});
+
+  my $iohash = $hash->{IODev};
+  # fhempy is offline, the events are lost
+  return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
+  IOWrite($hash, $hash, "events", [$events, $skipped], {});
+  return undef;
+}
+
 sub
 fhempy_Notify($$)
 {
   my ($hash, $dev) = @_;
 
   return undef if (IsDisabled($hash->{NAME}));
-  my $iohash = $hash->{IODev};
-  return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
 
   my $events = deviceEvents($dev, 1);
   return undef if (!$events);
+  return fhempy_recordEvents($hash, $dev, $events) if ($hash->{".eventRecorder"});
+
+  my $iohash = $hash->{IODev};
+  return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
 
   foreach my $event (@{$events}) {
     next if (!defined($event));
@@ -259,6 +340,21 @@ fhempy_detailFn($$$)
   # without this the attribute list only shows .*
   fhempy_setBaseAttrList($hash) if ($init_done && ($hash->{".AttrList"} // ".*") eq ".*");
   return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
+}
+
+# In a room the timeline is shown on the whole page instead of its device
+# row, all other fhempy devices keep the usual row (undef).
+sub
+fhempy_summaryFn($$$$)
+{
+  my ($FW_wname, $d, $room, $pageHash) = @_;
+  my $hash = $defs{$d};
+  return undef if (!$room || !$hash || ($hash->{FHEMPYTYPE} // '') ne 'timeline');
+  my $name = $d;
+  $name =~ s/[^A-Za-z0-9._]//g;
+  return "<div id=\"fhempyTimelineRoom\"></div><script>".
+         "jQuery.getScript(FW_root+\"/fhempy/timeline.js\",".
+         "function(){fhempyTimelineRoom(\"$name\")})</script>";
 }
 
 # Notification to the phones of the fhempy module push, for notify/DOIF:

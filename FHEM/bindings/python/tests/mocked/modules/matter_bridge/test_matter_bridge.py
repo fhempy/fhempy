@@ -301,6 +301,10 @@ async def test_bridge_module(mocker, tmp_path):
 
         await bridge.set_pairing_mode(hash, {})
         await wait_for(lambda: readings.get("state", "").startswith("pairing mode"))
+        # an app opened pairing mode with its own code already
+        await bridge.handle_message({"event": "pairing_mode", "busy": True})
+        assert readings["state"] == "pairing mode opened by an app"
+        assert "Home Assistant" in readings["next_step"]
 
         html = bridge.pairing_html()
         assert '<img src="data:image/png;base64,' in html and "3497-011-2332" in html
