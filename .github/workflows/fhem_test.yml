@@ -27,19 +27,19 @@ jobs:
 
     steps: 
     - name: Checkout Repostory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         ref: ${{ github.event.pull_request.head.ref }}
         fetch-depth: 0
         
     - name: update controls file for FHEM Module
-      uses: fhem/fhem-controls-actions@v2.3.0
+      uses: fhem/fhem-controls-actions@v4.0.2
       with:
         filename: controls_pythonbinding.txt 
 
     - name: update controls file for python binary
-      uses: fhem/fhem-controls-actions@v2.3.0
+      uses: fhem/fhem-controls-actions@v4.0.2
       with:
         filename: controls_pythonbinding.txt 
         directory: FHEM/bindings/python/bin
@@ -47,7 +47,7 @@ jobs:
         extension: ''
 
     - name: update controls file for the module installer of FHEMWEB
-      uses: fhem/fhem-controls-actions@4fad1d6c17038fb18ca424a521eb9a05d1d960f4 # v2.3.0
+      uses: fhem/fhem-controls-actions@080433badc9c569ee4134616ceb34ff3976ab079 # v4.0.2
       with:
         filename: controls_pythonbinding.txt 
         directory: www/fhempy
@@ -55,7 +55,7 @@ jobs:
         extension: ''
 
     - name: Commit changes
-      uses: EndBug/add-and-commit@v9
+      uses: EndBug/add-and-commit@v11
       with:
         default_author: github_actions 
         commit: --signoff
@@ -73,9 +73,9 @@ jobs:
 
     steps: 
     - name: Checkout Repostory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
-    - uses: shogo82148/actions-setup-perl@v1.33.0
+    - uses: shogo82148/actions-setup-perl@v1.44.3
       with:
         perl-version: ${{ matrix.perl }}
         install-modules-with: cpanm
