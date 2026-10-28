@@ -109,7 +109,7 @@ playwright = "==1.64.0"
 pyTibber = "==0.39.0"
 # pybluez 0.30 wasn't released yet, we use the github tag
 # pybluez = "==0.30"
-pychromecast = "==14.0.10"
+pychromecast = "==14.1.0"
 pygatt = "==5.0.0"
 pyit600 = "==0.5.1"
 pyjwt = "==2.15.1"
