@@ -12,12 +12,41 @@
     "params": [
       {
         "label": "HomeKit ID",
-        "help": "Device ID shown by the module discover_mdns"
+        "help": "Device ID, autodiscovery fills it in"
       },
       {
         "label": "Setup code",
         "placeholder": "123-45-678",
         "help": "Pairing code printed on the device"
+      }
+    ]
+  },
+  "discovery": {
+    "mdns": [
+      {
+        "type": "_hap._tcp.local.",
+        "txt": {
+          "sf": "1"
+        }
+      },
+      {
+        "type": "_hap._udp.local.",
+        "txt": {
+          "sf": "1"
+        }
+      }
+    ],
+    "title": "{name}",
+    "model": "{txt.md}",
+    "unique": "{txt.id}",
+    "define": [
+      "{txt.id}"
+    ],
+    "params": [
+      {
+        "label": "Setup code",
+        "placeholder": "123-45-678",
+        "help": "HomeKit code printed on the device or its box"
       }
     ]
   }

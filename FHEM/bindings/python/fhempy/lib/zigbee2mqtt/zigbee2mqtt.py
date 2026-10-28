@@ -15,6 +15,29 @@ from .. import fhem, utils
 from ..core import child_process, pending_restore
 from ..core.shell_env import interactive_shell_env
 
+DEFAULT_CONFIG = (
+    "homeassistant: false\n"
+    "permit_join: false\n"
+    "mqtt:\n"
+    "  base_topic: zigbee2mqtt\n"
+    "  server: 'mqtt://localhost'\n"
+    "  client_id: 'zigbee_pi'\n"
+    "serial:\n"
+    "  port: /dev/ttyUSB0\n"
+    "frontend:\n"
+    "  port: 8080\n"
+)
+
+
+def write_default_config(conf_file):
+    """Write the default configuration, return False if one exists already."""
+    if os.path.exists(conf_file):
+        return False
+    os.makedirs(os.path.dirname(conf_file), exist_ok=True)
+    with open(conf_file, "w") as file:
+        file.write(DEFAULT_CONFIG)
+    return True
+
 
 class zigbee2mqtt(FhemModule):
     def __init__(self, logger):
@@ -188,20 +211,15 @@ class zigbee2mqtt(FhemModule):
                 )
                 await self._shell(subprocess.call, "pnpm run build", cwd=z2m_directory)
 
-                z2m_conf = (
-                    "homeassistant: false\n"
-                    "permit_join: false\n"
-                    "mqtt:\n"
-                    "  base_topic: zigbee2mqtt\n"
-                    "  server: 'mqtt://localhost'\n"
-                    "  client_id: 'zigbee_pi'\n"
-                    "serial:\n"
-                    "  port: /dev/ttyUSB0\n"
-                    "frontend:\n"
-                    "  port: 8080\n"
-                )
-                with open(z2m_directory + "/data/configuration.yaml", "w") as file:
-                    file.writelines(z2m_conf)
+                # never replace an existing configuration, it holds the
+                # network key and PAN ID of the paired zigbee network
+                z2m_conf_file = os.path.join(z2m_directory, "data/configuration.yaml")
+                if not await utils.run_blocking(
+                    functools.partial(write_default_config, z2m_conf_file)
+                ):
+                    self.logger.info(
+                        "Keep existing zigbee2mqtt configuration " + z2m_conf_file
+                    )
 
                 await self.create_weblink()
                 await fhem.readingsSingleUpdate(

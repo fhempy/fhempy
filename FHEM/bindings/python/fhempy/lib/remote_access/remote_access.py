@@ -340,6 +340,9 @@ class remote_access(generic.FhemModule):
             await self.update_status("error", str(err))
             return
         while True:
+            # clear before the check: a logout or hostname change during the
+            # check wakes the next one instead of waiting ONLINE_INTERVAL
+            self._wakeup.clear()
             try:
                 online = await self.step()
             except asyncio.CancelledError:
@@ -348,7 +351,6 @@ class remote_access(generic.FhemModule):
                 self.logger.exception("Remote access check failed")
                 await self.update_status("error", str(err))
                 online = False
-            self._wakeup.clear()
             try:
                 await asyncio.wait_for(
                     self._wakeup.wait(), ONLINE_INTERVAL if online else WAIT_INTERVAL

@@ -1,5 +1,14 @@
 [
  {
+  "id": "autodiscovery",
+  "title": "Autodiscovery",
+  "description": "Finds devices in your network and via Bluetooth and offers to set them up, also residents and their phones",
+  "category": "presence",
+  "name": "fhempy_discovery",
+  "single": true,
+  "icon": "🔍"
+ },
+ {
   "id": "remote_access",
   "title": "Remote access",
   "description": "Open FHEM on your phone from anywhere, without VPN app and router setup (free Tailscale account)",
@@ -16,6 +25,15 @@
   "name": "push",
   "single": true,
   "icon": "🔔"
+ },
+ {
+  "id": "timeline",
+  "title": "Timeline",
+  "description": "See what happened at home, e.g. during your holidays, without technical noise",
+  "category": "tools",
+  "name": "timeline",
+  "single": true,
+  "icon": "🕰️"
  },
  {
   "id": "mcp_server",
@@ -112,15 +130,6 @@
   ]
  },
  {
-  "id": "discover_ble",
-  "title": "Discover Bluetooth",
-  "description": "Lists the Bluetooth LE devices nearby",
-  "category": "presence",
-  "name": "discover_ble",
-  "single": true,
-  "logo": "bluetooth.svg"
- },
- {
   "id": "eq3bt",
   "title": "eQ-3 thermostat",
   "description": "Control EQ3 Bluetooth radiator thermostats",
@@ -131,7 +140,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    },
    {
     "label": "PIN",
@@ -261,23 +270,14 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
  {
-  "id": "discover_mdns",
-  "title": "Discover mDNS",
-  "description": "Finds mDNS devices (e.g. Google Cast) in your network",
-  "category": "presence",
-  "name": "discover_mdns",
-  "single": true,
-  "icon": "🔎"
- },
- {
   "id": "dlna_dmr",
   "title": "DLNA renderer",
-  "description": "Control DLNA MediaRenderer devices, discover_upnp creates them on its own",
+  "description": "Control DLNA MediaRenderer devices, autodiscovery finds them on its own",
   "category": "media",
   "name": "dlna",
   "logo": "dlna_dmr.svg",
@@ -285,7 +285,7 @@
    {
     "label": "UDN",
     "placeholder": "uuid:...",
-    "help": "Unique device name, shown by discover_upnp"
+    "help": "Unique device name, autodiscovery fills it in"
    }
   ]
  },
@@ -366,13 +366,13 @@
   "logo": "zigbee2mqtt.png"
  },
  {
-  "id": "discover_upnp",
-  "title": "Discover UPnP",
-  "description": "Finds UPnP devices in your network",
-  "category": "presence",
-  "name": "discover_upnp",
+  "id": "system_update",
+  "title": "System update",
+  "description": "Keeps the Raspberry Pi up to date: security updates every night, health check afterwards, critical packages only on your click",
+  "category": "tools",
+  "name": "system_update",
   "single": true,
-  "logo": "discover_upnp.png"
+  "icon": "🔄"
  },
  {
   "id": "esphome",
@@ -441,7 +441,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -536,7 +536,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -706,7 +706,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -721,7 +721,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address of the tag. Easier: 'Add Bluetooth tag' of autodiscovery finds the tag held next to the Raspberry Pi."
    }
   ]
  },
@@ -823,7 +823,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -837,7 +837,7 @@
   "params": [
    {
     "label": "HomeKit ID",
-    "help": "Device ID shown by the module discover_mdns"
+    "help": "Device ID, autodiscovery fills it in"
    },
    {
     "label": "Setup code",
@@ -890,7 +890,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -928,52 +928,67 @@
    {
     "label": "Device type",
     "options": [
-     "vacuum",
+     "roborockvacuum",
      "viomivacuum",
+     "dreamevacuum",
+     "roidmivacuummiot",
+     "g1vacuum",
+     "airconditionermiot",
+     "airconditioningcompanion",
+     "airconditioningcompanionmcn02",
+     "airconditioningcompanionv3",
+     "airdehumidifier",
+     "airdogx3",
+     "airfresh",
+     "airfresha1",
+     "airfresht2017",
+     "airhumidifier",
+     "airhumidifierjsq",
+     "airhumidifierjsqs",
+     "airhumidifiermiot",
+     "airhumidifiermjjsq",
      "airpurifier",
      "airpurifiermiot",
-     "airhumidifier",
-     "airhumidifiermiot",
-     "airdehumidifier",
-     "airfresh",
      "airqualitymonitor",
-     "fan",
-     "fanp5",
-     "fansa1",
-     "fanv2",
-     "fanza1",
-     "fanza3",
-     "fanza4",
-     "heater",
+     "airqualitymonitorcgdn1",
+     "alarmclock",
+     "aqaracamera",
      "ceil",
+     "chuangmicamera",
+     "chuangmiir",
+     "chuangmiplug",
+     "cooker",
+     "curtainmiot",
+     "fan",
+     "fan1c",
+     "fanleshow",
+     "fanmiot",
+     "fanp5",
+     "fanza5",
+     "gateway",
+     "heater",
+     "heatermiot",
+     "huizuo",
+     "huizuolampfan",
+     "huizuolampheater",
+     "huizuolampscene",
+     "petwaterdispenser",
      "philipsbulb",
      "philipseyecare",
      "philipsmoonlight",
+     "philipsrwread",
      "philipswhitebulb",
-     "yeelight",
-     "plug",
-     "plugv1",
-     "plugv3",
-     "chuangmiplug",
      "powerstrip",
      "pwznrelay",
-     "waterpurifier",
-     "cooker",
+     "scisharecoffee",
      "toiletlid",
+     "walkingpad",
+     "waterpurifier",
+     "waterpurifieryunmi",
      "wifirepeater",
      "wifispeaker",
-     "chuangmiir",
-     "chuangmicamera",
-     "aqaracamera",
-     "alarmclock",
-     "airconditioningcompanion",
-     "airconditioningcompanionv3",
-     "airfresht2017",
-     "airhumidifierca1",
-     "airhumidifiercb1",
-     "airhumidifierjsq",
-     "airhumidifiermjjsq",
-     "gateway",
+     "yeelight",
+     "yeelightdualcontrolmodule",
      "miotdevice",
      "device"
     ]
@@ -999,7 +1014,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    }
   ]
  },
@@ -1043,7 +1058,7 @@
    {
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
-    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. The module discover_ble lists the devices nearby."
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
    },
    {
     "label": "Auth code",
@@ -1090,11 +1105,11 @@
  },
  {
   "id": "mantra_ble",
-  "title": "mAntra ceiling fan",
-  "description": "mAntra ceiling fan lamps",
+  "title": "mAntra lighting",
+  "description": "Control mAntra ceiling fan lamps via BLE",
   "category": "bt",
   "name": "fan",
-  "logo": "bluetooth.svg",
+  "logo": "mantra.png",
   "params": [
    {
     "label": "Lamp ID",

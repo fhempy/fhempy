@@ -10,6 +10,7 @@ class goodwe(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self._errors = utils.ErrorLogger(logger)
+        self.inverter = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -40,6 +41,15 @@ class goodwe(generic.FhemModule):
 
         self.create_async_task(self.update_loop())
 
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and self.inverter is None:
+            return (
+                "Not connected to the inverter yet, please check that it is "
+                "reachable at " + str(getattr(self, "ip", ""))
+            )
+        return await super().Set(hash, args, argsh)
+
     async def set_operation_mode(self, hash, params):
         if params["mode"] == "general":
             set_mode = OperationMode.GENERAL
@@ -57,11 +67,19 @@ class goodwe(generic.FhemModule):
             set_mode = OperationMode.ECO_DISCHARGE
         else:
             set_mode = OperationMode.GENERAL
-        self.create_async_task(
-            self.inverter.set_operation_mode(
-                set_mode
+        self.create_async_task(self.send_operation_mode(set_mode))
+
+    async def send_operation_mode(self, set_mode):
+        try:
+            await self.inverter.set_operation_mode(set_mode)
+            await fhem.readingsSingleUpdate(
+                self.hash, "operation_mode", self.get_enum_name(set_mode), 1
             )
-        )
+        except Exception as exc:
+            # runs in background, FHEM already got the reply of the set
+            self.logger.error(
+                "Failed to set operation mode: " + utils.describe_exception(exc)
+            )
 
     def get_enum_name(self, enum_value):
         for name, value in OperationMode.__members__.items():
@@ -87,7 +105,9 @@ class goodwe(generic.FhemModule):
                 await self.handle_data(runtime_data)
 
                 operation_mode = await self.inverter.get_operation_mode()
-                await fhem.readingsSingleUpdate(self.hash, "operation_mode", self.get_enum_name(operation_mode), 1)
+                await fhem.readingsSingleUpdate(
+                    self.hash, "operation_mode", self.get_enum_name(operation_mode), 1
+                )
                 self._errors.success()
             except Exception:
                 self._errors.failed("Failed to read data from inverter")

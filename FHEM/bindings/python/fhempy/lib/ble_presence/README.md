@@ -39,3 +39,19 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' PATH_FROM_FIND
 ```
 define ble_tag fhempy ble_presence <MAC>
 ```
+The easiest way: open the autodiscovery device (`fhempy_discovery`), click
+"Add Bluetooth tag" and hold the tag next to the Raspberry Pi. The tag with the
+strongest signal is created, no MAC needed.
+
+The tag is found by the Bluetooth scan shared with autodiscovery and the other
+Bluetooth modules (see the attribute `ble` of autodiscovery). bluepy and its
+permissions above are only needed to read the battery level.
+
+### Attributes
+- `absent_timeout`: seconds without advertisement until the tag is absent
+  (default 60)
+- `read_characteristics`: battery (default), all or off
+- `hci_device`: adapter used to read the battery level (default hci0)
+
+AirTags, Samsung SmartTags and other Find My tags change their address every
+few minutes and can't be tracked.

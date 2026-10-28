@@ -18,5 +18,25 @@
         "type": "mac"
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name": "MI_SCALE"
+      },
+      {
+        "name": "MIBCS"
+      },
+      {
+        "name": "MIBFS"
+      }
+    ],
+    "title": "Mi Scale",
+    "name": "scale",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ],
+    "hint": "Scales only send while somebody stands on them."
   }
 }

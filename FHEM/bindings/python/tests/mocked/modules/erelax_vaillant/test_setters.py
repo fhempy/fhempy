@@ -80,3 +80,47 @@ async def test_setters_use_homes_api(mocker):
     assert call.args == ("home1", "room1", ThermSetpointMode.MANUAL)
     assert call.kwargs["therm_setpoint_temperature"] == 21.5
     await device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_set_before_login(mocker):
+    # sets failed with AttributeError in the background before the login
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("erelax_vaillant")
+
+    from vaillant_netatmo_api import AuthClient
+
+    from fhempy.lib.erelax_vaillant.erelax_vaillant import erelax_vaillant
+
+    mocker.patch.object(
+        AuthClient, "async_token", AsyncMock(side_effect=RuntimeError("login"))
+    )
+    testhash = {"NAME": "vaillant", "FHEMPYTYPE": "erelax_vaillant"}
+    mock_fhem.readings.pop("vaillant", None)
+    device = erelax_vaillant(logging.getLogger(__name__))
+    await device.Define(
+        testhash,
+        ["vaillant", "fhempy", "erelax_vaillant", "user", "pass"],
+        {},
+    )
+    await asyncio.sleep(0.1)
+    try:
+        for cmd in (["away"], ["system_mode", "summer"], ["desiredTemperature", "21"]):
+            ret = await device.Set(testhash, ["vaillant"] + cmd, {})
+            assert "Not connected to Vaillant yet" in ret
+    finally:
+        await device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_send_error_is_logged(mocker):
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("erelax_vaillant")
+    from fhempy.lib.erelax_vaillant.erelax_vaillant import erelax_vaillant
+
+    device = erelax_vaillant(logging.getLogger(__name__))
+    error = mocker.patch.object(device.logger, "error")
+
+    await device._send(AsyncMock(side_effect=TimeoutError())())
+
+    error.assert_called_once_with("Failed to send command to Vaillant: TimeoutError")

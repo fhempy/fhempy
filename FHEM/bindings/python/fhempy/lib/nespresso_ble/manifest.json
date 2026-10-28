@@ -19,5 +19,18 @@
         "optional": true
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name_prefix": "Expert_"
+      }
+    ],
+    "title": "{name}",
+    "name": "nespresso",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ]
   }
 }

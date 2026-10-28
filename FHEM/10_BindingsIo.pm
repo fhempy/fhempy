@@ -89,6 +89,8 @@ sub BindingsIo_Initialize {
   $hash->{ReadFn}   = \&BindingsIo_Read;
   $hash->{ReadyFn}  = \&BindingsIo_Ready;
   $hash->{WriteFn}  = \&BindingsIo_Write;
+  $hash->{FW_detailFn} = \&BindingsIo_detailFn;
+  $hash->{FW_deviceOverview} = 1;
 
   $hash->{Clients} = "PythonModule:fhempy"; # NodeModule
 
@@ -249,6 +251,19 @@ BindingsIo_defaultDevStateIcon() {
   }';
   $devstate_cmd =~ tr/\n//d;
   return $devstate_cmd;
+}
+
+# "Install modules" button on the detail page of the local fhempy, the
+# devStateIcon might be changed or deleted by the user
+sub
+BindingsIo_detailFn($$$$) {
+  my ($FW_wname, $d, $room, $pageHash) = @_;
+  return undef if ($pageHash || !InternalVal($d, "localBinding", 0));
+  return "<div id=\"fhempyModulesButton\" style=\"margin:0 0 10px 0\">"
+    ."<a href=\"#\" onclick=\"jQuery.getScript(FW_root+'/fhempy/modules.js',function(){fhempyModules()});return false;\""
+    ." title=\"Install fhempy modules: Matter, Zigbee2MQTT, Tuya, weather, cars...\""
+    ." style=\"display:inline-block;padding:4px 14px;border-radius:14px;background:#4B8BBE;text-decoration:none;white-space:nowrap\">"
+    ."<span style=\"color:#fff;font-weight:600\">&#43; Install modules</span></a></div>";
 }
 
 # checksum of a devStateIcon, ignores whitespace and ;; from fhem.cfg
@@ -608,7 +623,7 @@ BindingsIo_Write($$$$$) {
     }
   }
 
-  if($function ne "event" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
+  if($function ne "event" && $function ne "events" && ($hash->{STATE} eq "disconnected" || !DevIo_IsOpen($hash))) {
     if ($init_done == 1 && $hash->{NAME} ne $devhash->{NAME}) {
       readingsSingleUpdate($devhash, "state", $hash->{BindingType}." server offline", 1);
 
@@ -663,6 +678,9 @@ BindingsIo_Write($$$$$) {
     $waitforresponse = 0;
   } elsif ($function eq "event") {
     $msg{"msgtype"} = "event";
+    $waitforresponse = 0;
+  } elsif ($function eq "events") {
+    $msg{"msgtype"} = "events";
     $waitforresponse = 0;
   } elsif ($function eq "version") {
     $msg{"msgtype"} = "version";
@@ -1237,7 +1255,8 @@ sub BindingsIo_readWebsocketMessage {
       reset the devStateIcon attribute to the fhempy default.<br>
       On the local fhempy the default shows the button <b>+ Install modules</b>, it opens a
       window with all fhempy modules. <i>Set up</i> asks for the parameters a module needs
-      and defines the device.<br>
+      and defines the device. The same button is shown on the detail page of the local fhempy
+      device.<br>
       The default is set once when the device is created and updated together with fhempy
       as long as it is unchanged. A changed or deleted devStateIcon stays as it is.
     </li>

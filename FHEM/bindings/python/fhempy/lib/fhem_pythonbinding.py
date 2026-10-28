@@ -3,6 +3,7 @@ import functools
 import getopt
 import http
 import importlib
+import ipaddress
 import logging
 import os
 import signal
@@ -24,6 +25,7 @@ from . import (
     utils,
     version,
 )
+from .autodiscovery import first_start
 from .core.loop_watchdog import LoopWatchdog
 from .core.peer_installer import peer_installer
 from .core.zeroconf import zeroconf
@@ -118,6 +120,10 @@ async def pybinding(websocket):
     loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(pb.shutdown()))
     fhem.updateConnection(pb)
     await activate_internal_modules()
+    discovery_task = None
+    if ipaddress.ip_address(websocket.remote_address[0]).is_loopback:
+        # only the local fhempy, peers use the IODev of their devices
+        discovery_task = asyncio.create_task(first_start.define_once(logger))
     await fhem.send_version()
     release_task = asyncio.create_task(fhem.send_latest_release())
     # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
@@ -138,6 +144,8 @@ async def pybinding(websocket):
     finally:
         release_task.cancel()
         modules_task.cancel()
+        if discovery_task is not None:
+            discovery_task.cancel()
         pb.connection_closed()
 
 
@@ -364,6 +372,9 @@ class fhempy:
                 await self.handle_function(hash, msg)
             elif hash["msgtype"] == "event":
                 await self.handle_event(hash, msg)
+            elif hash["msgtype"] == "events":
+                id_received_timestamp.pop(hash.get("id"), None)
+                await fhem.dispatch_recorded_events(hash["NAME"], hash["args"])
 
     async def handle_event(self, hash, msg):
         # events don't get a reply
@@ -992,6 +1003,8 @@ def _cancel_all_tasks_with_timeout(
 def run():
     global exit_code
     logging.getLogger("asyncio").setLevel(logging.WARNING)
+    # httpx logs every request on INFO, polling modules (e.g. prusalink) flood the log
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     # Python 3.14+ doesn't create an event loop in get_event_loop() anymore
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

@@ -78,6 +78,14 @@ The FHEM command of a button never leaves FHEM: the notification only contains a
 24 hours. If the phone can't reach FHEM directly (e.g. the password of the remote access is needed), FHEM opens and
 runs the command there. The reading `last_action` shows the last command run by a button.
 
+## Messages of the last 7 days
+
+The device page shows every message of the last 7 days, newest first and grouped by day: title, text, picture,
+which button was used and whether all phones got it. The search field finds old messages, a tap on a notification
+opens the list with this message highlighted (unless the message has its own `url`). New messages appear without
+reloading the page. *Clear list* or `set push clear_history` deletes the list. The commands of the buttons are not
+stored in the list.
+
 ## Readings
 
 | Reading | Meaning |
@@ -86,6 +94,7 @@ runs the command there. The reading `last_action` shows the last command run by 
 | `devices` | Names of these phones |
 | `message` | Last message sent |
 | `delivered` | How many phones accepted the last message, e.g. `2 of 2` |
+| `history` | Number of messages in the list of the last 7 days |
 | `last_error` | Last problem while sending |
 | `local_https` | Local https address, if created |
 
@@ -93,6 +102,7 @@ runs the command there. The reading `last_action` shows the last command run by 
 
 - `message ...`: see above
 - `test`: sends a test message to all phones
+- `clear_history`: deletes the list of messages on the device page
 - `remove_device <name>`: this phone gets no notifications anymore (or tap *Turn off on this device* on the phone)
 - `local_https [hostname]`: creates the local https address (the button on the device page does this for you)
 

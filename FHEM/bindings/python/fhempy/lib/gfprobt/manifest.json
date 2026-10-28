@@ -15,5 +15,18 @@
         "type": "mac"
       }
     ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name": "GfBT Project"
+      }
+    ],
+    "title": "GF Pro irrigation",
+    "name": "irrigation",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ]
   }
 }

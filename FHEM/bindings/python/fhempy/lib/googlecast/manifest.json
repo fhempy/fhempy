@@ -20,5 +20,17 @@
         "optional": true
       }
     ]
+  },
+  "discovery": {
+    "mdns": [
+      "_googlecast._tcp.local."
+    ],
+    "title": "{txt.fn}",
+    "model": "{txt.md}",
+    "unique": "{txt.id}",
+    "exists": "{txt.fn}",
+    "define": [
+      "{txt.fn}"
+    ]
   }
 }

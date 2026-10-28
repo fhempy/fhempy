@@ -31,6 +31,9 @@ VAPID_SUBJECT = "mailto:fhempy@users.noreply.github.com"
 # seconds a message waits at the push service if the phone is offline
 TTL = 24 * 3600
 ACTION_SECONDS = 24 * 3600
+# sent messages shown on the detail page
+HISTORY_SECONDS = 7 * 24 * 3600
+MAX_HISTORY = 200
 MAX_ACTIONS = 2
 MAX_DEVICE_NAME = 40
 # push services accept about 4 KB of encrypted data
@@ -113,6 +116,7 @@ class push(generic.FhemModule):
         self._vapid = None
         self._devices = {}
         self._actions = {}
+        self._history = []
         self._unique_id = None
         self._session = None
         self.https = LocalHttps(self)
@@ -135,6 +139,9 @@ class push(generic.FhemModule):
                     'action="Light on:set light on" Somebody rings</code>',
                 },
                 "test": {"help": "Sends a test message to all phones."},
+                "clear_history": {
+                    "help": "Deletes the list of sent messages on the detail page."
+                },
                 "remove_device": {
                     "args": ["device"],
                     "options": "",
@@ -153,6 +160,7 @@ class push(generic.FhemModule):
         self._unique_id = await fhem.getUniqueId(hash)
         await self.load_vapid()
         await self.load_devices()
+        await self.load_history()
         await self.update_device_readings()
         self.create_async_task(self.https.renew_if_needed())
 
@@ -176,6 +184,8 @@ class push(generic.FhemModule):
             return await self.unregister(args[2])
         if cmd == "action" and len(args) == 3:
             return await self.run_action(args[2])
+        if cmd == "history" and len(args) == 2:
+            return json.dumps(self._history, ensure_ascii=False)
         return await super().Set(hash, args, argsh)
 
     # FHEM FUNCTION
@@ -291,6 +301,7 @@ class push(generic.FhemModule):
         await self.send(
             {"title": "FHEM", "body": f"Notifications work on {name} 👍"},
             [key],
+            record=False,
         )
         return None
 
@@ -345,6 +356,8 @@ class push(generic.FhemModule):
             payload = self.build_payload(text, options)
         except ValueError as err:
             return str(err)
+        if options.get("to"):
+            payload["to"] = [self._devices[key]["name"] for key in targets]
         await fhem.readingsSingleUpdate(self.hash, "message", text, 1)
         self.create_async_task(self.send(payload, targets))
         return None
@@ -367,16 +380,22 @@ class push(generic.FhemModule):
         for key in ("action", "action2")[:MAX_ACTIONS]:
             if options.get(key):
                 label, command = parse_action(options[key])
-                actions.append({"action": self.add_action(command), "title": label})
+                token = self.add_action(command, payload["tag"], label)
+                actions.append({"action": token, "title": label})
         if actions:
             payload["actions"] = actions
         return payload
 
-    def add_action(self, command):
+    def add_action(self, command, message_id=None, label=None):
         now = time.monotonic()
         self._actions = {t: a for t, a in self._actions.items() if a["expires"] > now}
         token = secrets.token_urlsafe(16)
-        self._actions[token] = {"command": command, "expires": now + ACTION_SECONDS}
+        self._actions[token] = {
+            "command": command,
+            "expires": now + ACTION_SECONDS,
+            "message": message_id,
+            "label": label,
+        }
         return token
 
     async def run_action(self, token):
@@ -386,6 +405,10 @@ class push(generic.FhemModule):
         command = action["command"]
         self.logger.info(f"Button of a notification runs: {command}")
         await fhem.readingsSingleUpdate(self.hash, "last_action", command, 1)
+        for entry in self._history:
+            if entry["id"] == action.get("message"):
+                entry["used"] = {"label": action["label"], "ts": int(time.time())}
+                await self.save_history()
         result = await fhem.sendCommandHash(
             self.hash,
             f"AnalyzeCommandChain(undef, {fhem.perlString(command)}) // ''",
@@ -399,9 +422,10 @@ class push(generic.FhemModule):
             self._session = aiohttp.ClientSession()
         return self._session
 
-    async def send(self, payload, targets):
+    async def send(self, payload, targets, record=True):
         """sends to all targets in parallel, returns the number delivered"""
         payload = dict(payload, dev=self.hash["NAME"])
+        to = payload.pop("to", None)
         data = json.dumps(payload, ensure_ascii=False)
         results = await asyncio.gather(
             *(self.send_one(key, data) for key in targets if key in self._devices)
@@ -412,6 +436,8 @@ class push(generic.FhemModule):
         )
         if any(ok is None for ok in results):
             await self.save_devices()
+        if record:
+            await self.add_history(payload, to, delivered, len(results))
         return delivered
 
     async def send_one(self, key, data):
@@ -447,6 +473,69 @@ class push(generic.FhemModule):
         self.logger.error(f"Notification failed: {error}")
         await fhem.readingsSingleUpdate(self.hash, "last_error", error, 1)
         return False
+
+    # --- sent messages of the last 7 days ---
+
+    async def load_history(self):
+        stored = await fhem.ReadingsVal(self.hash["NAME"], ".history", "")
+        try:
+            history = json.loads(stored) if stored else []
+        except ValueError:
+            history = []
+        if isinstance(history, list):
+            self._history = [
+                entry
+                for entry in history
+                if isinstance(entry, dict) and "id" in entry and "ts" in entry
+            ]
+        self.prune_history()
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "history", self.history_text(), 1
+        )
+
+    def prune_history(self):
+        oldest = time.time() - HISTORY_SECONDS
+        self._history = [e for e in self._history if e["ts"] >= oldest]
+        del self._history[:-MAX_HISTORY]
+
+    async def save_history(self):
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            ".history",
+            json.dumps(self._history, ensure_ascii=False, separators=(",", ":")),
+            0,
+        )
+        # the detail page reloads the list on this event
+        await fhem.readingsSingleUpdate(self.hash, "history", self.history_text(), 1)
+
+    def history_text(self):
+        count = len(self._history)
+        return f"{count} message" + ("s" if count != 1 else "")
+
+    async def add_history(self, payload, to, delivered, total):
+        entry = {
+            "id": payload["tag"],
+            "ts": int(time.time()),
+            "title": payload["title"],
+            "body": payload["body"],
+            "delivered": delivered,
+            "total": total,
+        }
+        for key in ("image", "url"):
+            if payload.get(key):
+                entry[key] = payload[key]
+        if to:
+            entry["to"] = to
+        if payload.get("actions"):
+            entry["actions"] = [a["title"] for a in payload["actions"]]
+        self._history.append(entry)
+        self.prune_history()
+        await self.save_history()
+
+    async def set_clear_history(self, hash, params):
+        self._history = []
+        await self.save_history()
+        return None
 
     # --- local https ---
 
@@ -533,16 +622,32 @@ class push(generic.FhemModule):
             ],
             "addresses": addresses,
             "remote_access": remote_defined,
+            "history": self._history,
         }
         config_json = json.dumps(config).replace("<", "\\u003c")
-        return (
+        setup = (
             '<div class="makeTable wide"><span class="mkTitle">'
             "Notifications on your phone</span>"
             '<table class="block wide"><tr class="odd"><td>'
             f'<div id="fhempyPush">{html.escape("Loading...")}</div>'
             "</td></tr></table></div>"
-            "<script>jQuery.getScript(FW_root+'/fhempy/push.js',function(){"
-            f"fhempyPush({config_json})}});</script>"
+        )
+        history = (
+            '<div class="makeTable wide"><span class="mkTitle">Messages</span>'
+            '<table class="block wide"><tr class="odd"><td>'
+            '<div id="fhempyPushHistory"></div>'
+            f'<span id="fhWatch" informId="{html.escape(name)}-history" hidden>'
+            "</span></td></tr></table></div>"
+        )
+        # with phones the messages come first, the setup is done
+        sections = history + setup if self._devices else setup + history
+        return (
+            sections + "<script>jQuery.getScript(FW_root+'/fhempy/push.js',function(){"
+            f"fhempyPush({config_json})}}).fail(function(x,status){{"
+            # e.g. file missing or not readable for FHEM: say so instead of Loading...
+            "jQuery('#fhempyPush').text('FHEM could not load www/fhempy/push.js ('"
+            "+(x.status||status)+'). Please run: update force pythonbinding');"
+            "});</script>"
         )
 
 

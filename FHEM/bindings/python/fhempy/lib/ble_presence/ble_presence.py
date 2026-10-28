@@ -11,11 +11,11 @@ from bluepy.btle import (
     BTLEDisconnectError,
     Peripheral,
     ScanEntry,
-    Scanner,
 )
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
+from ..core.ble_scanner import MODE_INTERVAL, BleScanner, paused
 
 
 class PeripheralTimeout(Peripheral):
@@ -71,97 +71,87 @@ class PeripheralTimeout(Peripheral):
             self._connect(addr, addrType, iface, timeout)
 
 
-class scanner:
+READING_INTERVAL = 10
 
-    scanner_instance = None
+
+class presence_tracker:
+    """Presence of the tags from the shared Bluetooth scan (core/ble_scanner).
+    A tag is absent if it wasn't seen for absent_timeout seconds."""
+
+    tracker_instance = None
 
     def __init__(self, logger):
         self.logger = logger
-        self.loop = asyncio.get_event_loop()
         self._mac_listener = {}
-        self._mac_lastfound = {}
-        self._scan_task = None
-        self._scan_interval = 10
-        self._scan_duration = 10
-        self._iface = 0
-        self._errors = utils.ErrorLogger(logger)
+        self._lastfound = {}
+        self._lastupdate = {}
+        self._check_task = None
+        self._scanner = BleScanner.get_instance(logger)
 
     @staticmethod
     def get_instance(logger):
-        if scanner.scanner_instance is None:
-            scanner.scanner_instance = scanner(logger)
-        return scanner.scanner_instance
+        if presence_tracker.tracker_instance is None:
+            presence_tracker.tracker_instance = presence_tracker(logger)
+        return presence_tracker.tracker_instance
 
     def register_mac_listener(self, mac, listener):
         self._mac_listener[mac.lower()] = listener
-        if self._scan_task is None:
-            self._scan_task = asyncio.create_task(self.loop_scan())
+        self._scanner.add_callback(self.handle_advertisement)
+        if self._check_task is None:
+            self._check_task = asyncio.create_task(self.check_loop())
 
     def unregister_mac_listener(self, mac):
         # registered in lower case
         self._mac_listener.pop(mac.lower(), None)
         if len(self._mac_listener) == 0:
-            if self._scan_task:
-                self._scan_task.cancel()
-                self._scan_task = None
+            self._scanner.remove_callback(self.handle_advertisement)
+            if self._check_task:
+                self._check_task.cancel()
+                self._check_task = None
 
-    def handleDiscovery(self, dev, isNewDev, isNewData):
-        asyncio.run_coroutine_threadsafe(
-            self.handle_discovery(dev, isNewDev, isNewData), self.loop
-        ).result()
-
-    async def handle_discovery(self, dev, isNewDev, isNewData):
-        if dev.addr.lower() in self._mac_listener:
-            self.logger.debug(f"found {dev.addr.lower()}")
-            if isNewDev:
-                self._mac_lastfound[dev.addr.lower()] = time.time()
-                name = ""
-                if dev.getValueText(ScanEntry.SHORT_LOCAL_NAME):
-                    name = dev.getValueText(ScanEntry.SHORT_LOCAL_NAME)
-                else:
-                    name = dev.getValueText(ScanEntry.COMPLETE_LOCAL_NAME)
-                await getattr(self._mac_listener[dev.addr.lower()], "update_readings")(
-                    "present", dev.addr.lower(), name, dev.rssi
-                )
-
-    def set_scan_interval(self, scan_interval):
-        self._scan_interval = scan_interval
-
-    def set_scan_duration(self, scan_duration):
-        self._scan_duration = scan_duration
-
-    def set_hci_device(self, hci_nr):
-        self._iface = hci_nr
-
-    async def loop_scan(self):
-        while True:
-            for mac in self._mac_lastfound:
-                self._mac_lastfound[mac] = 0
-            try:
-                await utils.run_blocking(functools.partial(self._do_scan))
-                self._errors.success()
-            except Exception:
-                self._errors.failed("Bluetooth scan failed")
-            for mac in self._mac_listener:
-                try:
-                    if mac not in self._mac_lastfound or self._mac_lastfound[mac] == 0:
-                        await getattr(self._mac_listener[mac], "update_readings")(
-                            "absent", mac, "", 0
-                        )
-                    else:
-                        await getattr(
-                            self._mac_listener[mac], "check_update_characteristics"
-                        )()
-                except Exception:
-                    self.logger.exception("Failed to handle updates after scan")
-            await asyncio.sleep(self._scan_interval)
-
-    def _do_scan(self):
-        self.scanner = Scanner(self._iface).withDelegate(self)
-        try:
-            self.scanner.scan(self._scan_duration)
-        except BTLEDisconnectError:
+    def handle_advertisement(self, device, advertisement):
+        mac = device.address.lower()
+        listener = self._mac_listener.get(mac)
+        if listener is None:
             return
+        now = time.monotonic()
+        self._lastfound[mac] = now
+        # tags advertise every second, the readings are updated every 10s
+        if (
+            listener._presence == "present"
+            and now - self._lastupdate.get(mac, 0) < READING_INTERVAL
+        ):
+            return
+        self._lastupdate[mac] = now
+        listener.create_async_task(
+            listener.update_readings(
+                "present",
+                mac,
+                advertisement.local_name or device.name or "",
+                advertisement.rssi,
+            )
+        )
+
+    def absent_after(self, listener):
+        timeout = listener._attr_absent_timeout
+        if self._scanner.effective_mode == MODE_INTERVAL:
+            # a tag can only be seen once per scan
+            timeout = max(timeout, self._scanner.interval + 30)
+        return timeout
+
+    async def check_loop(self):
+        while True:
+            await asyncio.sleep(5)
+            now = time.monotonic()
+            for mac, listener in list(self._mac_listener.items()):
+                try:
+                    lastfound = self._lastfound.get(mac, 0)
+                    if now - lastfound > self.absent_after(listener):
+                        await listener.update_readings("absent", mac, "", 0)
+                    else:
+                        await listener.check_update_characteristics()
+                except Exception:
+                    self.logger.exception("Failed to update presence")
 
 
 class ble_presence(FhemModule):
@@ -179,9 +169,8 @@ class ble_presence(FhemModule):
         self._hci_nr = 0
         self._errors = utils.ErrorLogger(logger)
 
-        self._attr_scan_interval = 10
+        self._attr_absent_timeout = 60
         self._attr_hci_device = "hci0"
-        self._attr_scan_duration = 10
         self._attr_read_characteristics = "battery"
 
     async def update_readings(self, presence, address, name, rssi):
@@ -217,6 +206,11 @@ class ble_presence(FhemModule):
                 self._last_char_update = time.time() - 7200 + 600
 
     async def update_characteristics(self):
+        # the shared scan pauses while connected
+        async with paused():
+            await self._read_characteristics()
+
+    async def _read_characteristics(self):
         try:
             await utils.run_blocking(
                 functools.partial(
@@ -278,9 +272,17 @@ class ble_presence(FhemModule):
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
         self._attr_list = {
-            "scan_interval": {"default": 10, "format": "int"},
-            "hci_device": {"default": "hci0"},
-            "scan_duration": {"default": 10, "format": "int"},
+            "absent_timeout": {
+                "default": 60,
+                "format": "int",
+                "help": "Seconds without Bluetooth advertisement until the tag "
+                "is absent (default 60). The Bluetooth scan is shared with "
+                "autodiscovery, see its attribute ble.",
+            },
+            "hci_device": {
+                "default": "hci0",
+                "help": "Adapter used to read the battery level.",
+            },
             "read_characteristics": {
                 "default": "battery",
                 "options": "all,off,battery",
@@ -294,19 +296,16 @@ class ble_presence(FhemModule):
         self._address = args[3]
         self.hash["MAC"] = args[3]
 
-        scanner.get_instance(self.logger).register_mac_listener(self._address, self)
-
-    async def set_attr_scan_interval(self, hash):
-        scanner.get_instance(self.logger).set_scan_interval(self._attr_scan_interval)
-
-    async def set_attr_scan_duration(self, hash):
-        scanner.get_instance(self.logger).set_scan_duration(self._attr_scan_duration)
+        presence_tracker.get_instance(self.logger).register_mac_listener(
+            self._address, self
+        )
 
     async def set_attr_hci_device(self, hash):
         self._hci_nr = re.search(r"\d+$", self._attr_hci_device)[0]
-        scanner.get_instance(self.logger).set_hci_device(self._hci_nr)
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
-        scanner.get_instance(self.logger).unregister_mac_listener(self._address)
+        presence_tracker.get_instance(self.logger).unregister_mac_listener(
+            self._address
+        )
         await super().Undefine(hash)

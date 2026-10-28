@@ -112,7 +112,9 @@ my $html = <<'HTML';
         '<div class="fhempySetupAction" style="margin-top:6px"><span style="display:inline-block;padding:3px 14px;border-radius:12px;'+
         'background:#4B8BBE;color:#fff;font-size:13px">Set up</span></div></div>';
     }
-    $("#fhempyInstallSteps").html(html + '</div>');
+    $("#fhempyInstallSteps").html('<div id="fhempyFoundTitle" style="font-weight:600;margin:4px 0 8px">Found in your network</div>'+
+      '<div id="fhempyFound" style="margin-bottom:14px"></div>' + html + '</div>');
+    foundDevices();
     $("#fhempyInstallInfo").html('<a href="#" id="fhempyInstallMore" style="font-weight:600">&#43; Show all '+
       'fhempy modules</a>');
     $("#fhempyInstallMore").click(function(e) {
@@ -144,6 +146,22 @@ my $html = <<'HTML';
         if (r != "") { tileState(i, '<span style="color:#d64545;font-size:12px">'+esc(r)+'</span>'); return; }
         t.done = t.name;
         tileState(i, icon("done")+openLink(t.name));
+      });
+    });
+  }
+  /* autodiscovery shows the devices found in the network and via Bluetooth */
+  function foundDevices() {
+    var find = '{(grep {InternalVal($_,"FHEMPYTYPE","") eq "autodiscovery"} sort keys %defs)[0] // ""}';
+    FW_cmd(FW_root+"?cmd="+encodeURIComponent(find)+"&XHR=1", function(r) {
+      var name = (r || "").replace(/[\r\n]+$/, "");
+      function show() {
+        $.getScript(FW_root+"/fhempy/discovery.js", function() { fhempyDiscovery.inline(name, "#fhempyFound"); });
+      }
+      if (name != "") { show(); return; }
+      name = "fhempy_discovery";
+      FW_cmd(FW_root+"?cmd="+encodeURIComponent("define "+name+" fhempy autodiscovery")+"&XHR=1", function(d) {
+        if ((d || "").replace(/[\r\n]+$/, "") != "") { $("#fhempyFoundTitle,#fhempyFound").remove(); return; }
+        show();
       });
     });
   }

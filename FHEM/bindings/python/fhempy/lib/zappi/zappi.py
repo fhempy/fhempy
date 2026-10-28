@@ -131,6 +131,18 @@ class zappi(generic.FhemModule):
             return zappi_serials[0]
         return None
 
+    # FHEM FUNCTION
+    async def Set(self, hash, args, argsh):
+        if len(args) > 1 and args[1] in self._conf_set and self.zappi_box is None:
+            return (
+                "Not connected to the zappi yet, please check serial number, "
+                "API key and state"
+            )
+        try:
+            return await super().Set(hash, args, argsh)
+        except Exception as exc:
+            return "Request to myenergi failed: " + utils.describe_exception(exc)
+
     async def set_green_energy_ratio(self, hash, params):
         # update green energy ratio
         green_eng = params["green_energy"]
