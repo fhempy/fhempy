@@ -111,6 +111,15 @@ class Store:
                 (device, int(start), int(end)),
             ).fetchall()
 
+    def curve(self, device, reading, start, end):
+        with self._lock:
+            return self._db.execute(
+                "SELECT hour, category, min, max, sum, n FROM hourly"
+                " WHERE device = ? AND reading = ? AND hour >= ? AND hour < ?"
+                " ORDER BY hour",
+                (device, reading, int(start), int(end)),
+            ).fetchall()
+
     def details(self, start, end, limit=500):
         with self._lock:
             return self._db.execute(

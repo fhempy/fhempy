@@ -93,6 +93,33 @@
       "#fhempyTimeline .ftlTrend .ftlAction{opacity:0;font-size:10px}" +
       "#fhempyTimeline .ftlTrend:hover .ftlAction{opacity:0.8}" +
       "#fhempyTimeline .ftlTrend svg{display:block;width:100%;height:26px}" +
+      "svg[data-curve]{cursor:zoom-in}" +
+      "#fhempyTimelineCurve{font-family:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;line-height:1.4}" +
+      "#fhempyTimelineCurve .ftcNav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}" +
+      "#fhempyTimelineCurve .ftcStep{width:30px;height:30px;border-radius:50%;border:1px solid rgba(128,128,128,0.4);background:none;color:inherit;" +
+      "font-size:18px;line-height:26px;cursor:pointer;padding:0}" +
+      "#fhempyTimelineCurve .ftcStep:disabled{opacity:0.3;cursor:default}" +
+      "#fhempyTimelineCurve .ftcRange{font-weight:600;font-size:15px;min-width:120px;text-align:center}" +
+      "#fhempyTimelineCurve .ftcChips{display:flex;gap:6px;margin-left:auto}" +
+      "#fhempyTimelineCurve .ftlChip{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;cursor:pointer;font-size:13px;user-select:none}" +
+      "#fhempyTimelineCurve .ftlChip.ftlOn{border-color:transparent;background:rgba(75,139,190,0.18)}" +
+      "#fhempyTimelineCurve .ftcStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 10px}" +
+      "#fhempyTimelineCurve .ftcStat{border-radius:8px;background:rgba(128,128,128,0.09);padding:6px 10px;min-width:0}" +
+      "#fhempyTimelineCurve .ftcStat b{display:block;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
+      "#fhempyTimelineCurve .ftcStat span{font-size:11px;opacity:0.65;white-space:nowrap}" +
+      "#fhempyTimelineCurve .ftcChart{position:relative;touch-action:pan-y;transition:opacity .15s}" +
+      "#fhempyTimelineCurve .ftcChart.ftcLoading{opacity:0.4}" +
+      "#fhempyTimelineCurve .ftcChart svg{display:block;width:100%;overflow:visible;cursor:crosshair}" +
+      "#fhempyTimelineCurve .ftcChart text{fill:currentColor;opacity:0.6;font-size:11px}" +
+      "#fhempyTimelineCurve .ftcTip{position:absolute;top:0;pointer-events:none;background:rgba(40,40,40,0.92);color:#fff;font-size:12px;" +
+      "padding:4px 8px;border-radius:6px;white-space:nowrap;display:none}" +
+      "#fhempyTimelineCurve .ftcTip b{font-size:15px}" +
+      "#fhempyTimelineCurve .ftcEmpty{display:flex;align-items:center;justify-content:center;opacity:0.6}" +
+      "#fhempyTimelineCurve .ftcFoot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:13px}" +
+      "#fhempyTimelineCurve .ftcFoot a{color:inherit;opacity:0.8}" +
+      "#fhempyTimelineCurve .ftlAction{font-size:12px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:1px 6px}" +
+      "@media (max-width:600px){#fhempyTimelineCurve .ftcStats{grid-template-columns:repeat(2,minmax(0,1fr))}" +
+      "#fhempyTimelineCurve .ftcChips{margin-left:0;width:100%;justify-content:center}#fhempyTimelineCurve .ftcNav{justify-content:center}}" +
       "#fhempyTimeline .ftlQuiet{opacity:0.75;font-size:13px;padding-left:68px}" +
       "#fhempyTimeline .ftlMore{margin:14px 0;text-align:center}" +
       "#fhempyTimeline .ftlButton{display:inline-block;padding:4px 16px;border-radius:14px;background:#4B8BBE;color:#fff;cursor:pointer;font-weight:600}" +
@@ -278,6 +305,11 @@
     return " data-tip='" + JSON.stringify(tips) + "'" + (withDay ? ' data-tipday="1"' : "");
   }
 
+  // a click on a curve opens it big (showCurve)
+  function curveAttr(trend, day, days) {
+    return ' data-curve="' + esc(trend.device + ":" + trend.reading) + '" data-day="' + day + '" data-days="' + days + '"';
+  }
+
   function sparkline(trend, dayStart) {
     var pts = [], tips = [];
     var low = trend.min, high = trend.max;
@@ -291,7 +323,8 @@
     var info = categoryInfo[trend.category] || categoryInfo.devices;
     if (!pts.length) return "";
     var line = pts.length > 1 ? '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>' : "";
-    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) + ">" + line + "</svg>";
+    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) +
+      curveAttr(trend, dayIso(new Date(dayStart * 1000)), 1) + ">" + line + "</svg>";
   }
 
   function trendHtml(t, dayStart) {
@@ -471,7 +504,8 @@
       tips.push([+x.toFixed(2), p[0], p[1]]);
     });
     lines.push(line);
-    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none"' + tipAttr(tips, true) + ">";
+    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none"' + tipAttr(tips, true) +
+      curveAttr(trend, dayIso(new Date((to - 1) * 1000)), Math.round((to - from) / 86400)) + ">";
     for (var t = from + 86400; t < to; t += 86400) {
       var x = ((t - from) * 100 / (to - from)).toFixed(2);
       html += '<line x1="' + x + '" x2="' + x + '" y1="0" y2="40" stroke="rgba(128,128,128,0.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
@@ -535,6 +569,258 @@
       html += deviceEntryHtml(entry);
     });
     return html;
+  }
+
+  // curve popup: one reading big, day / 7 days / 31 days, step back and forth
+  var curve = null;
+
+  function niceTicks(low, high) {
+    if (high - low < 1e-9) { low -= Math.max(Math.abs(low) * 0.05, 0.5); high += Math.max(Math.abs(high) * 0.05, 0.5); }
+    var raw = (high - low) / 4;
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var step = [1, 2, 2.5, 5, 10].map(function (f) { return f * mag; }).filter(function (f) { return f >= raw; })[0];
+    var ticks = [];
+    for (var v = Math.floor(low / step) * step; v <= high + step * 0.001; v += step) ticks.push(+v.toFixed(10));
+    if (ticks[ticks.length - 1] < high) ticks.push(+(ticks[ticks.length - 1] + step).toFixed(10));
+    return ticks;
+  }
+
+  function curveRangeText(data, days) {
+    if (days === 1) return dayTitle(data.day);
+    return shortDate(addDays(data.day, 1 - days)) + " – " + shortDate(data.day);
+  }
+
+  // 31 days: 6 hour steps instead of hours, otherwise the curve is too busy
+  function bucketPoints(points, span, from) {
+    var result = [], bucket = null;
+    points.forEach(function (p) {
+      var start = p[0] - ((p[0] - from) % span);
+      if (!bucket || bucket[0] !== start) {
+        bucket = [start, 0, p[2], p[3], 0];
+        result.push(bucket);
+      }
+      bucket[1] += p[1];
+      bucket[4] += 1;
+      bucket[2] = Math.min(bucket[2], p[2]);
+      bucket[3] = Math.max(bucket[3], p[3]);
+    });
+    return result.map(function (b) { return [b[0], Math.round(b[1] / b[4] * 100) / 100, b[2], b[3]]; });
+  }
+
+  function pointTime(ts, days) {
+    var text = clock(ts) + "–" + clock(ts + curve.span);
+    if (days === 1) return text;
+    return new Date(ts * 1000).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) + ", " + text;
+  }
+
+  function curveStats(data, days) {
+    var pts = data.raw || data.points;
+    if (!pts.length) return "";
+    var low = pts[0], high = pts[0];
+    pts.forEach(function (p) { if (p[2] < low[2]) low = p; if (p[3] > high[3]) high = p; });
+    var last = pts[pts.length - 1];
+    var when = function (p) {
+      if (days === 1) return clock(p[0]);
+      var date = new Date(p[0] * 1000);
+      return (days <= 7 ? date.toLocaleDateString(undefined, { weekday: "short" }) : shortDate(dayIso(date))) + " " + clock(p[0]);
+    };
+    var stat = function (value, text) { return '<div class="ftcStat"><b>' + fmt(value) + "</b><span>" + text + "</span></div>"; };
+    return '<div class="ftcStats">' +
+      stat(last[1], data.day === data.today ? "Latest · " + clock(last[0]) : "Last · " + when(last)) +
+      stat(data.min, "Min · " + when(low)) + stat(data.max, "Max · " + when(high)) +
+      stat(data.avg, "Average") + "</div>";
+  }
+
+  // time axis: hours of a day, weekdays or dates
+  function timeAxis(data, days, x, top, h, height) {
+    var svg = "", t;
+    if (days === 1) {
+      for (t = data.from; t <= data.to; t += 3 * 3600) {
+        svg += '<text x="' + x(t).toFixed(1) + '" y="' + (height - 6) + '" text-anchor="middle">' + clock(t).slice(0, 2) + "</text>";
+      }
+    } else {
+      var every = days <= 7 ? 1 : 7;
+      for (var i = 0; i < days; i++) {
+        t = dayDate(addDays(data.day, i - days + 1)).getTime() / 1000;
+        if (i % every) continue;
+        if (i) svg += '<line x1="' + x(t).toFixed(1) + '" x2="' + x(t).toFixed(1) + '" y1="' + top + '" y2="' + (top + h) + '" stroke="currentColor" stroke-opacity="0.12"/>';
+        var label = days <= 7 ? new Date((t + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" }) : shortDate(addDays(data.day, i - days + 1));
+        svg += '<text x="' + x(days <= 7 ? t + 43200 : t).toFixed(1) + '" y="' + (height - 6) + '" text-anchor="' + (days <= 7 ? "middle" : "start") + '">' + esc(label) + "</text>";
+      }
+    }
+    return svg;
+  }
+
+  // min-max band and average line, gaps where values are missing for more than 2 hours
+  function curveLines(data, x, y, color) {
+    var svg = "";
+    var parts = [], part = [], last = null;
+    data.points.forEach(function (p) {
+      if (last !== null && p[0] - last > curve.span + 7200) { parts.push(part); part = []; }
+      last = p[0];
+      part.push(p);
+    });
+    parts.push(part);
+    parts.forEach(function (pts) {
+      var mid = function (p) { return x(p[0] + curve.span / 2).toFixed(1); };
+      if (pts.length === 1) {
+        svg += '<circle cx="' + mid(pts[0]) + '" cy="' + y(pts[0][1]).toFixed(1) + '" r="2.5" fill="' + color + '"/>';
+        return;
+      }
+      var band = pts.map(function (p) { return mid(p) + "," + y(p[3]).toFixed(1); }).concat(
+        pts.slice().reverse().map(function (p) { return mid(p) + "," + y(p[2]).toFixed(1); }));
+      svg += '<polygon points="' + band.join(" ") + '" fill="' + color + '" fill-opacity="0.15"/>';
+      svg += '<polyline fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" points="' +
+        pts.map(function (p) { return mid(p) + "," + y(p[1]).toFixed(1); }).join(" ") + '"/>';
+    });
+    return svg;
+  }
+
+  function curveChart(data, days, width) {
+    var height = width < 500 ? 200 : 260;
+    var left = 46, right = 10, top = 10, bottom = 24;
+    var w = width - left - right, h = height - top - bottom;
+    if (!data.points.length) {
+      return '<div class="ftcEmpty" style="height:' + height + 'px">No values in this period</div>';
+    }
+    var ticks = niceTicks(data.min, data.max);
+    var low = ticks[0], span = ticks[ticks.length - 1] - low || 1;
+    var x = function (ts) { return left + (ts - data.from) * w / (data.to - data.from); };
+    var y = function (v) { return top + h - (v - low) * h / span; };
+    var info = categoryInfo[data.category] || categoryInfo.devices;
+    var svg = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '">';
+    ticks.forEach(function (t) {
+      svg += '<line x1="' + left + '" x2="' + (left + w) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
+        '" stroke="currentColor" stroke-opacity="0.12"/>' +
+        '<text x="' + (left - 6) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
+    });
+    svg += timeAxis(data, days, x, top, h, height);
+    svg += curveLines(data, x, y, info.color);
+    svg += '<line class="ftcCross" y1="' + top + '" y2="' + (top + h) + '" stroke="currentColor" stroke-opacity="0.35" style="display:none"/>' +
+      '<circle class="ftcDot" r="4" fill="' + info.color + '" stroke="#fff" stroke-width="1.5" style="display:none"/>';
+    curve.geometry = { x: x, y: y, left: left, w: w };
+    return svg + '</svg><div class="ftcTip"></div>';
+  }
+
+  function curveHover(e) {
+    if (!curve || !curve.data || !curve.data.points.length || !curve.geometry) return;
+    var chart = $(this), svg = chart.find("svg")[0];
+    if (!svg) return;
+    var ev = e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length ? e.originalEvent.touches[0] : e;
+    var rect = svg.getBoundingClientRect();
+    var px = ev.clientX - rect.left, g = curve.geometry;
+    var best = null;
+    var half = curve.span / 2;
+    curve.data.points.forEach(function (p) {
+      if (!best || Math.abs(g.x(p[0] + half) - px) < Math.abs(g.x(best[0] + half) - px)) best = p;
+    });
+    var cx = g.x(best[0] + half), cy = g.y(best[1]);
+    chart.find(".ftcCross").attr({ x1: cx, x2: cx }).show();
+    chart.find(".ftcDot").attr({ cx: cx, cy: cy }).show();
+    var tip = chart.find(".ftcTip");
+    tip.html("<b>" + fmt(best[1]) + "</b>" + (best[2] !== best[3] ? ' <span style="opacity:0.75">' + fmt(best[2]) + " – " + fmt(best[3]) + "</span>" : "") +
+      "<br>" + esc(pointTime(best[0], curve.days))).show();
+    var left = Math.max(0, Math.min(cx - tip.outerWidth() / 2, rect.width - tip.outerWidth()));
+    var top = cy - tip.outerHeight() - 12;
+    tip.css({ left: left, top: top < 0 ? cy + 12 : top });
+  }
+
+  function curveLeave() {
+    $(this).find(".ftcCross, .ftcDot, .ftcTip").hide();
+  }
+
+  function renderCurve() {
+    var d = $("#fhempyTimelineCurve"), data = curve.data, days = curve.days;
+    if (data.error) {
+      d.html('<div class="ftlEmpty">' + esc(data.error) + "</div>");
+      return;
+    }
+    var chips = [[1, "Day"], [7, "7 days"], [31, "31 days"]].map(function (c) {
+      return '<span class="ftlChip ftcDays' + (days === c[0] ? " ftlOn" : "") + '" data-days="' + c[0] + '">' + c[1] + "</span>";
+    }).join("");
+    var html = '<div class="ftcNav"><button class="ftcStep" data-step="-1" title="Earlier (←)">‹</button>' +
+      '<span class="ftcRange">' + esc(curveRangeText(data, days)) + "</span>" +
+      '<button class="ftcStep" data-step="1" title="Later (→)"' + (data.day >= data.today ? " disabled" : "") + ">›</button>" +
+      '<span class="ftcChips">' + chips + "</span></div>" + curveStats(data, days) +
+      '<div class="ftcChart"></div><div class="ftcFoot">' +
+      '<a href="#" class="ftcHistory">History of ' + esc(data.label) + "</a>" +
+      '<a href="' + esc(FW_root + "?detail=" + encodeURIComponent(data.device)) + '">Open device</a>' +
+      onChangeAction(data) + "</div>";
+    d.html(html);
+    var chart = d.find(".ftcChart");
+    chart.html(curveChart(data, days, Math.max(260, Math.floor(chart.width()))));
+  }
+
+  function loadCurve() {
+    var d = $("#fhempyTimelineCurve");
+    d.find(".ftcChart").addClass("ftcLoading");
+    var request = curve.target + " " + curve.day + " " + curve.days;
+    curve.request = request;
+    cmd("get " + device + " curve " + request, function (r) {
+      if (!curve || curve.request !== request) return;
+      try { curve.data = JSON.parse(r); } catch (e) { curve.data = { error: r }; }
+      curve.span = curve.days > 7 ? 6 * 3600 : 3600;
+      curve.data.raw = curve.data.points;
+      if (curve.data.points && curve.span > 3600) curve.data.points = bucketPoints(curve.data.points, curve.span, curve.data.from);
+      if (!d.hasClass("ui-dialog-content")) {
+        openDialog(d, 880, function () {
+          $(this).dialog("destroy").remove();
+          $(document).off(".ftlCurve");
+          $(window).off(".ftlCurve");
+          curve = null;
+        });
+        $(document).on("keydown.ftlCurve", function (e) {
+          if (e.key === "Escape" && d.hasClass("ui-dialog-content")) d.dialog("close");
+          else if (e.key === "ArrowLeft") stepCurve(-1);
+          else if (e.key === "ArrowRight") stepCurve(1);
+        });
+        $(window).on("resize.ftlCurve", function () { if (curve && curve.data) renderCurve(); });
+      }
+      d.dialog("option", "title", (curve.data.label || curve.target.split(":")[0]) + " · " + curve.target.split(":")[1]);
+      renderCurve();
+    });
+  }
+
+  function stepCurve(direction) {
+    if (!curve || !curve.data || curve.data.error) return;
+    var day = addDays(curve.day, direction * curve.days);
+    if (day > curve.data.today) {
+      if (curve.day >= curve.data.today) return;
+      day = curve.data.today;
+    }
+    curve.day = day;
+    loadCurve();
+  }
+
+  function showCurve(target, day, days) {
+    hideTip();
+    var d = $("#fhempyTimelineCurve");
+    if (!d.length) {
+      d = $('<div id="fhempyTimelineCurve"></div>');
+      $("body").append(d);
+      d.on("click", ".ftcStep", function () { stepCurve(+$(this).attr("data-step")); });
+      d.on("click", ".ftcDays", function () {
+        curve.days = +$(this).attr("data-days");
+        loadCurve();
+      });
+      d.on("click", ".ftcHistory", function (e) {
+        e.preventDefault();
+        var name = curve.data.device;
+        d.dialog("close");
+        showDevice(name);
+      });
+      d.on("click", "[data-onchange]", onChangeClick);
+      d.on("mousemove touchstart touchmove", ".ftcChart", curveHover);
+      d.on("mouseleave", ".ftcChart", curveLeave);
+    }
+    curve = { target: target, day: day, days: days || 1 };
+    loadCurve();
+  }
+
+  function curveClick(e) {
+    e.preventDefault();
+    var svg = $(this);
+    showCurve(svg.attr("data-curve"), svg.attr("data-day"), +svg.attr("data-days"));
   }
 
   function showDevice(name, days) {
@@ -768,6 +1054,7 @@
     if (bindTips.done) return;
     bindTips.done = true;
     $(document).on("mousemove touchstart touchmove", "svg[data-tip]", showTip);
+    $(document).on("click", "svg[data-curve]", curveClick);
     $(document).on("mouseleave", "svg[data-tip]", hideTip);
     $(document).on("touchstart", function (e) {
       if (!$(e.target).closest("svg[data-tip]").length) hideTip();

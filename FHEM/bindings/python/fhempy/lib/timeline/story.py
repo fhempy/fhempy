@@ -339,6 +339,35 @@ def build_device_trends(rows, infos):
     return sorted(trends.values(), key=lambda t: (not t["changed"], t["reading"]))
 
 
+def build_curve(device, reading, rows, infos, start, end, last, today):
+    """rows: (hour, category, min, max, sum, n) of one reading -> one curve
+    with [hour, avg, min, max] per hour for the curve popup"""
+    points = [
+        [hour, round(total / count, 2), low, high]
+        for hour, _, low, high, total, count in rows
+        if count
+    ]
+    total = sum(row[4] for row in rows)
+    count = sum(row[5] for row in rows)
+    info = infos.get(device, {})
+    return {
+        "device": device,
+        "reading": reading,
+        "label": label(infos, device),
+        "category": rows[-1][1] if rows else "",
+        "room": info.get("room", ""),
+        "from": start,
+        "to": end,
+        "day": last.isoformat(),
+        "today": today.isoformat(),
+        "points": points,
+        "min": min((p[2] for p in points), default=None),
+        "max": max((p[3] for p in points), default=None),
+        "avg": round(total / count, 2) if count else None,
+        "on_change": classify.on_change(info, reading),
+    }
+
+
 def build(first_day, last_day, rows, hourly_rows, hidden, absences, infos, now):
     """the response of get entries, newest day first"""
     entries = build_entries(rows, infos, absences, now)

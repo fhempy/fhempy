@@ -308,6 +308,23 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
         "error": "Unknown device nodevice"
     }
 
+    # one curve for the curve popup
+    curve = json.loads(await module.Get(hash, ["tl", "curve", "hall:temperature"], {}))
+    assert curve["label"] == "Hallway" and curve["category"] == "climate"
+    assert [p[1:] for p in curve["points"]] == [[21.5, 21.5, 21.5]]
+    assert curve["min"] == curve["max"] == curve["avg"] == 21.5
+    assert curve["day"] == curve["today"]
+    assert curve["to"] - curve["from"] in (82800, 86400, 90000)
+    week = json.loads(
+        await module.Get(
+            hash, ["tl", "curve", "hall:temperature", "2000-01-07", "7"], {}
+        )
+    )
+    assert week["points"] == [] and week["avg"] is None and week["day"] == "2000-01-07"
+    assert json.loads(await module.Get(hash, ["tl", "curve", "hall:a;b"], {})) == {
+        "error": "Use device:reading of an existing device"
+    }
+
     # events only on change, curves which changed
     trend = data["days"][0]["trends"][0]
     assert trend["changed"] is False and trend["on_change"] is False
