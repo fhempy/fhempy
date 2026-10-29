@@ -106,7 +106,7 @@ paho-mqtt = "==1.6.1"
 pexpect = "==4.9.0"
 pillow = "==12.3.0"
 playwright = "==1.64.0"
-pyTibber = "==0.39.0"
+pyTibber = "==0.39.1"
 # pybluez 0.30 wasn't released yet, we use the github tag
 # pybluez = "==0.30"
 pychromecast = "==14.1.0"
