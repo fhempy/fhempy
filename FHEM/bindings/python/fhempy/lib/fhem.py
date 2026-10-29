@@ -42,6 +42,12 @@ def updateConnection(ws):
     wsconnection = ws
 
 
+def fhempy_stopping():
+    """True while fhempy undefines all devices for a restart, update or
+    shutdown, False if a single device is deleted, modified or disabled"""
+    return bool(getattr(wsconnection, "_stopping", False))
+
+
 # FHEM waits this long (ms) for a function reply if it doesn't send its timeout,
 # see BindingsIo_Write in 10_BindingsIo.pm
 DEFAULT_FUNCTION_TIMEOUT = 3000

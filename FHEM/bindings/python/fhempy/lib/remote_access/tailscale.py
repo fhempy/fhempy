@@ -3,7 +3,8 @@
 fhempy downloads the official Tailscale binaries to .fhempy/tailscale and
 runs its own tailscaled in userspace networking mode: no root, no TUN device,
 no changes to the network of the computer. An installed system Tailscale is
-not touched.
+not touched. tailscaled keeps running when fhempy restarts (e.g. for an
+update), the next fhempy takes it over with the pid file.
 """
 
 import asyncio
@@ -13,6 +14,8 @@ import json
 import os
 import platform
 import re
+import shutil
+import signal
 import subprocess
 import tarfile
 
@@ -34,6 +37,8 @@ ARCHITECTURES = {
 }
 BINARIES = ("tailscale", "tailscaled")
 VERSION = re.compile(r"\d+\.\d+\.\d+")
+# seconds until the tailscaled of a previous fhempy is killed
+STOP_TIMEOUT = 10
 LOGIN_URL = re.compile(r"https://login\.tailscale\.com/\S+")
 
 
@@ -156,12 +161,106 @@ def funnel_active(serve_config):
     return 443 in funnel_ports(serve_config)
 
 
+def pid_path():
+    return os.path.join(base_directory(), "tailscaled.pid")
+
+
+def write_pid_file(pid, version):
+    with open(pid_path() + ".new", "w", encoding="utf-8") as f:
+        json.dump({"pid": pid, "version": version}, f)
+    os.replace(pid_path() + ".new", pid_path())
+
+
+def read_pid_file():
+    try:
+        with open(pid_path(), encoding="utf-8") as f:
+            info = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(info, dict) or not isinstance(info.get("pid"), int):
+        return None
+    return info
+
+
+def remove_pid_file(pid):
+    """removes the pid file if it belongs to pid (or pid is None)"""
+    info = read_pid_file()
+    if info is not None and pid is not None and info["pid"] != pid:
+        return
+    try:
+        os.remove(pid_path())
+    except OSError:
+        pass
+
+
+def daemon_alive(pid):
+    """True if pid is the tailscaled of fhempy (pids are reused)"""
+    # int(): the pid of the pid file is never used as path
+    proc_dir = os.path.join("/proc", str(int(pid)))
+    try:
+        with open(os.path.join(proc_dir, "cmdline"), "rb") as f:
+            args = f.read().decode(errors="replace").split("\0")
+        with open(os.path.join(proc_dir, "stat"), "rb") as f:
+            stat = f.read().decode(errors="replace")
+    except OSError:
+        return False
+    # Z = exited, not reaped yet
+    if stat.rsplit(")", 1)[-1].split()[:1] == ["Z"]:
+        return False
+    # args[1]: script started by an interpreter (tests)
+    return binary("tailscaled") in args[:2]
+
+
+async def stop_pid(pid):
+    """stop the tailscaled of a previous fhempy, it's not our child"""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            # own session, stops the whole process group
+            os.killpg(pid, sig)
+        except (ProcessLookupError, PermissionError):
+            return
+        for _ in range(STOP_TIMEOUT * 10):
+            if not daemon_alive(pid):
+                return
+            await asyncio.sleep(0.1)
+
+
+async def stop_orphan(logger):
+    """stop tailscaled if the remote access device doesn't exist anymore,
+    e.g. deleted while fhempy wasn't running"""
+    info = await utils.run_blocking(functools.partial(read_pid_file))
+    if info is None:
+        return
+    if daemon_alive(info["pid"]):
+        logger.info("Stop Tailscale, no remote_access device is defined")
+        await stop_pid(info["pid"])
+    remove_pid_file(info["pid"])
+
+
+def rotate_log(max_bytes=5 * 1024 * 1024):
+    """tailscaled writes to the log itself: copy and truncate, it keeps
+    writing at the (new) end of the file"""
+    path = child_process.log_path("tailscale")
+    try:
+        if os.path.getsize(path) <= max_bytes:
+            return
+        if os.path.exists(path + ".1"):
+            os.replace(path + ".1", path + ".2")
+        shutil.copyfile(path, path + ".1")
+        os.truncate(path, 0)
+    except OSError:
+        pass
+
+
 class Tailscale:
     """tailscaled of fhempy and its command line tool"""
 
     def __init__(self, logger):
         self.logger = logger
+        # Popen if this fhempy started tailscaled
         self.daemon = None
+        self.daemon_pid = None
+        self.daemon_version = None
         self.login_proc = None
         self.funnel_proc = None
         self.funnel_output = ""
@@ -173,36 +272,82 @@ class Tailscale:
     # --- tailscaled ---
 
     def daemon_running(self):
-        return self.daemon is not None and self.daemon.poll() is None
+        if self.daemon is not None:
+            # started by this fhempy, poll() also reaps the exited process
+            if self.daemon.poll() is None:
+                return True
+            self.daemon = None
+            remove_pid_file(self.daemon_pid)
+            self.daemon_pid = None
+            return False
+        if self.daemon_pid is None:
+            # tailscaled of the previous fhempy (update, restart)
+            info = read_pid_file()
+            if info is None:
+                return False
+            self.daemon_pid = info["pid"]
+            self.daemon_version = info.get("version")
+            self.logger.info(f"Tailscale is running already (pid {self.daemon_pid})")
+        if daemon_alive(self.daemon_pid):
+            return True
+        remove_pid_file(self.daemon_pid)
+        self.daemon_pid = None
+        return False
 
-    def start_daemon(self):
+    def start_daemon(self, version):
         os.makedirs(state_directory(), exist_ok=True)
-        self.daemon = child_process.start(
-            [
-                binary("tailscaled"),
-                "--tun=userspace-networking",
-                f"--statedir={state_directory()}",
-                f"--socket={socket_path()}",
-                # random UDP port, a system Tailscale uses 41641
-                "--port=0",
-            ],
-            cwd=base_directory(),
-            stdin=subprocess.DEVNULL,
-            output_log=child_process.OutputLog(
-                child_process.log_path("tailscale"), self.logger
-            ),
-        )
+        path = child_process.log_path("tailscale")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "ab") as log:
+            self.daemon = child_process.start(
+                [
+                    binary("tailscaled"),
+                    "--tun=userspace-networking",
+                    f"--statedir={state_directory()}",
+                    f"--socket={socket_path()}",
+                    # random UDP port, a system Tailscale uses 41641
+                    "--port=0",
+                ],
+                cwd=base_directory(),
+                stdin=subprocess.DEVNULL,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                # keeps running when fhempy restarts for an update, the
+                # remote access stays online, see detach()
+                preexec_fn=None,
+                output_log=child_process.OutputLog(path, self.logger, capture=False),
+            )
+        self.daemon_pid = self.daemon.pid
+        self.daemon_version = version
+        write_pid_file(self.daemon_pid, version)
 
-    async def stop(self):
+    async def stop_daemon(self):
+        daemon, self.daemon = self.daemon, None
+        pid, self.daemon_pid = self.daemon_pid, None
+        if daemon is not None:
+            await child_process.stop(daemon)
+        elif pid is not None:
+            await stop_pid(pid)
+        remove_pid_file(pid)
+
+    async def _stop_cli(self):
         for attr in ("login_proc", "funnel_proc"):
             proc = getattr(self, attr)
             setattr(self, attr, None)
             if proc is not None and proc.returncode is None:
                 proc.kill()
                 await proc.wait()
-        daemon, self.daemon = self.daemon, None
-        if daemon is not None:
-            await child_process.stop(daemon)
+
+    async def stop(self):
+        await self._stop_cli()
+        await self.stop_daemon()
+
+    async def detach(self):
+        """fhempy stops (update, restart): tailscaled keeps running and the
+        next fhempy takes it over, FHEMWEB stays reachable meanwhile"""
+        await self._stop_cli()
+        self.daemon = None
+        self.daemon_pid = None
 
     # --- command line tool ---
 

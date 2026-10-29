@@ -68,6 +68,11 @@ doesn't change the network of your computer. A Tailscale you installed yourself 
 touched. Tailscale Funnel forwards `https://<hostname>.<tailnet>.ts.net` to the FHEMWEB
 instance of the module. The log of Tailscale is in `.fhempy/log/tailscale.log`.
 
+Tailscale keeps running while fhempy restarts, e.g. for an update: FHEMWEB stays reachable from
+your phone. Only the ESPHome/Zigbee2MQTT pages on `:8443` and `:10000` are gone until fhempy
+is back. Tailscale only restarts when fhempy downloaded a new Tailscale version. On a
+fhempy peer running as its own systemd service, systemd stops Tailscale together with fhempy.
+
 If fhempy runs on another computer than FHEM (fhempy peer), the FHEMWEB instance listens in the
 home network (with password) and Tailscale forwards to it.
 

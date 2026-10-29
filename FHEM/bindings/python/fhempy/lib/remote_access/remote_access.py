@@ -8,13 +8,14 @@ the router. The other FHEMWEB instances stay in the home network.
 
 import asyncio
 import base64
+import functools
 import hashlib
 import html
 import ipaddress
 import re
 import secrets
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from . import sites, tailscale
 
 DEFAULT_HOSTNAME = "fhem"
@@ -86,6 +87,7 @@ class remote_access(generic.FhemModule):
         self.login_url = ""
         self.enable_url = ""
         self.port = None
+        self.version = None
         self.fhem_ip = None
         self.status = "starting"
         self.problem = ""
@@ -139,7 +141,12 @@ class remote_access(generic.FhemModule):
     async def Undefine(self, hash):
         await super().Undefine(hash)
         await self.sites.stop()
-        await self.ts.stop()
+        if fhem.fhempy_stopping():
+            # update or restart of fhempy: Tailscale keeps running, FHEMWEB
+            # stays reachable and the next fhempy takes Tailscale over
+            await self.ts.detach()
+        else:
+            await self.ts.stop()
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
@@ -329,6 +336,7 @@ class remote_access(generic.FhemModule):
         try:
             await self.update_status("installing Tailscale")
             version = await tailscale.install(self.logger)
+            self.version = version
             await fhem.readingsSingleUpdateIfChanged(
                 self.hash, "tailscale_version", version, 1
             )
@@ -360,9 +368,13 @@ class remote_access(generic.FhemModule):
 
     async def ensure_daemon(self):
         if self.ts.daemon_running():
-            return True
+            if self.ts.daemon_version == self.version:
+                await utils.run_blocking(functools.partial(tailscale.rotate_log))
+                return True
+            self.logger.info(f"Restart Tailscale with version {self.version}")
+            await self.ts.stop_daemon()
         await self.update_status("starting Tailscale")
-        self.ts.start_daemon()
+        self.ts.start_daemon(self.version)
         for _ in range(SOCKET_TIMEOUT * 2):
             await asyncio.sleep(0.5)
             if not self.ts.daemon_running():

@@ -52,6 +52,9 @@ conf = {"internal_modules": ["discover_fhempy"]}
 
 
 UNDEFINE_TIMEOUT = 60
+# FHEM defines its devices after connecting, afterwards programs which are kept
+# running across fhempy restarts are stopped if their device is gone (s)
+ORPHAN_CHECK_DELAY = 300
 # FHEM is blocked until it gets the reply to a Set. Set handlers which wait
 # for a device or cloud keep running in the background after this time (s).
 SET_REPLY_TIMEOUT = 0.05
@@ -100,6 +103,22 @@ async def activate_internal_modules():
         active_internal_modules.append(instance)
 
 
+async def stop_orphans():
+    """Tailscale of remote_access keeps running when fhempy restarts, stop it
+    if the device was deleted while fhempy wasn't running"""
+    await asyncio.sleep(ORPHAN_CHECK_DELAY)
+    from .remote_access import tailscale
+
+    for instance in loadedModuleInstances.values():
+        dev_hash = getattr(instance, "hash", None) or {}
+        if dev_hash.get("FHEMPYTYPE") == "remote_access":
+            return
+    try:
+        await tailscale.stop_orphan(logger)
+    except Exception:
+        logger.exception("Stopping Tailscale failed")
+
+
 async def pybinding(websocket):
     global zc_info
     if zc_info is not None:
@@ -128,6 +147,7 @@ async def pybinding(websocket):
     release_task = asyncio.create_task(fhem.send_latest_release())
     # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
     modules_task = asyncio.create_task(fhem_modules.install())
+    orphan_task = asyncio.create_task(stop_orphans())
     try:
         async for message in websocket:
             asyncio.create_task(pb.onMessage(message))
@@ -144,6 +164,7 @@ async def pybinding(websocket):
     finally:
         release_task.cancel()
         modules_task.cancel()
+        orphan_task.cancel()
         if discovery_task is not None:
             discovery_task.cancel()
         pb.connection_closed()
