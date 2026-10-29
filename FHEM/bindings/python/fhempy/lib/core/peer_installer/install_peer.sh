@@ -29,14 +29,14 @@ fail() {
 # everything runs in main, so that commands can't read the rest of the
 # script from stdin when it's piped into bash (curl ... | sudo bash)
 main() {
-if [ "$(id -u)" -ne 0 ]; then
+if [[ "$(id -u)" -ne 0 ]]; then
   echo "Please run this script with sudo:"
   echo "curl -fsSL https://raw.githubusercontent.com/fhempy/fhempy/master/install_systemd_fhempy.sh | sudo bash"
   exit 1
 fi
 
-if [ -z "$FHEMPY_USER" ]; then
-  if [ -n "$SUDO_USER" ] && [ "$SUDO_USER" != "root" ]; then
+if [[ -z "$FHEMPY_USER" ]]; then
+  if [[ -n "$SUDO_USER" ]] && [[ "$SUDO_USER" != "root" ]]; then
     FHEMPY_USER=$SUDO_USER
   else
     FHEMPY_USER=fhempy
@@ -49,14 +49,14 @@ if ! id "$FHEMPY_USER" >/dev/null 2>&1; then
   echo "OK"
 fi
 FHEMPY_HOME=$(getent passwd "$FHEMPY_USER" | cut -d: -f6)
-if [ -z "$FHEMPY_HOME" ] || [ ! -d "$FHEMPY_HOME" ]; then
+if [[ -z "$FHEMPY_HOME" ]] || [[ ! -d "$FHEMPY_HOME" ]]; then
   fail "home directory of user $FHEMPY_USER not found"
 fi
 
 # all packages at once, so that no module needs to install anything later
 # (only the Bluetooth modules and piclock need them, fhempy itself doesn't)
 step 1 "installing system packages"
-if [ "$FHEMPY_SKIP_SYSTEM_PACKAGES" != "1" ] && command -v apt-get >/dev/null 2>&1; then
+if [[ "$FHEMPY_SKIP_SYSTEM_PACKAGES" != "1" ]] && command -v apt-get >/dev/null 2>&1; then
   packages="python3 python3-venv python3-dev curl ca-certificates bluez libbluetooth-dev libglib2.0-dev libdbus-1-dev build-essential autoconf libffi-dev libssl-dev libjpeg-dev zlib1g-dev git"
   # PyGObject (eq3bt pairing) builds against libgirepository-2.0 on Debian 13 Trixie
   if apt-cache show libgirepository-2.0-dev >/dev/null 2>&1; then
@@ -89,17 +89,17 @@ export UV_PYTHON_INSTALL_DIR="$FHEMPY_DIR/python"
 
 mkdir -p "$FHEMPY_DIR"
 
-if [ ! -x "$UV" ]; then
+if [[ ! -x "$UV" ]]; then
   echo -n "Installing uv..."
   if command -v curl >/dev/null 2>&1; then
     curl --proto "=https" --tlsv1.2 -LsSf "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
   else
     wget --https-only -qO- "$UV_INSTALLER_URL" | env UV_UNMANAGED_INSTALL="$FHEMPY_DIR/bin" sh >/dev/null 2>&1
   fi
-  if [ -x "$UV" ]; then echo "OK"; else echo "FAILED, using pip instead"; fi
+  if [[ -x "$UV" ]]; then echo "OK"; else echo "FAILED, using pip instead"; fi
 fi
 
-if [ -x "$UV" ]; then
+if [[ -x "$UV" ]]; then
   echo -n "Creating virtual environment with uv..."
   if python3 -c 'import sys; sys.exit(sys.version_info < (3, 13))' 2>/dev/null; then
     "$UV" venv --quiet --seed --allow-existing --python "$(command -v python3)" "$FHEMPY_VENV" || exit 1
@@ -122,21 +122,21 @@ UV="$FHEMPY_DIR/bin/uv"
 export UV_PYTHON_INSTALL_DIR="$FHEMPY_DIR/python"
 
 echo -n "Installing fhempy..."
-if [ -x "$UV" ]; then
+if [[ -x "$UV" ]]; then
   # uv doesn't read pip.conf, pass e.g. piwheels on Raspberry Pi OS
   # piwheels wheels are built for the system Python of the OS release only
   SKIP_PIWHEELS=
-  if [ "$("$FHEMPY_VENV/bin/python" -c 'import sys; print(sys.version_info[:2])')" != "$(python3 -c 'import sys; print(sys.version_info[:2])' 2>/dev/null)" ]; then
+  if [[ "$("$FHEMPY_VENV/bin/python" -c 'import sys; print(sys.version_info[:2])')" != "$(python3 -c 'import sys; print(sys.version_info[:2])' 2>/dev/null)" ]]; then
     SKIP_PIWHEELS=1
   fi
   index_args=()
   for url in $(sed -n 's/^[[:space:]]*extra-index-url[[:space:]]*=[[:space:]]*//p' /etc/pip.conf 2>/dev/null); do
-    if [ -n "$SKIP_PIWHEELS" ] && [[ "$url" == *piwheels* ]]; then
+    if [[ -n "$SKIP_PIWHEELS" ]] && [[ "$url" == *piwheels* ]]; then
       continue
     fi
     index_args+=(--extra-index-url "$url")
   done
-  if [ ${#index_args[@]} -gt 0 ]; then
+  if [[ ${#index_args[@]} -gt 0 ]]; then
     index_args+=(--index-strategy unsafe-best-match)
   fi
   "$UV" pip install --quiet --python "$FHEMPY_VENV/bin/python" "${index_args[@]}" --upgrade-package fhempy fhempy || exit 1
@@ -179,7 +179,7 @@ SERVICEEOF
 
 # the Bluetooth auto recovery may restart bluetoothd as last resort
 SYSTEMCTL=$(command -v systemctl)
-if [ -n "$SYSTEMCTL" ] && [ -d /etc/sudoers.d ]; then
+if [[ -n "$SYSTEMCTL" ]] && [[ -d /etc/sudoers.d ]]; then
   sudoers_tmp=$(mktemp)
   echo "$FHEMPY_USER ALL=NOPASSWD: $SYSTEMCTL restart bluetooth" > "$sudoers_tmp"
   if visudo -c -f "$sudoers_tmp" >/dev/null 2>&1; then
@@ -203,7 +203,7 @@ for _ in $(seq 1 120); do
   fi
   sleep 1
 done
-if [ "$started" -ne 1 ]; then
+if [[ "$started" -ne 1 ]]; then
   fail "fhempy didn't start within 2 minutes, see: sudo journalctl -u fhempy"
 fi
 

@@ -150,10 +150,10 @@ async def pybinding(websocket):
     orphan_task = asyncio.create_task(stop_orphans())
     try:
         async for message in websocket:
-            asyncio.create_task(pb.onMessage(message))
+            pb.create_background_task(pb.onMessage(message))
             await asyncio.sleep(0)
     except asyncio.CancelledError:
-        pass
+        raise
     except websockets.exceptions.ConnectionClosedError:
         if not stop_event.is_set():
             logger.error("Connection closed error", exc_info=True)
@@ -186,6 +186,12 @@ class fhempy:
         self._background_tasks = set()
         # Set commands of a device run one after the other, in FHEM's order
         self._set_locks = {}
+
+    def create_background_task(self, coro):
+        task = asyncio.create_task(coro)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        return task
 
     def register_msg_listener(self, listener, awaitid):
         self._msg_listeners[awaitid] = listener

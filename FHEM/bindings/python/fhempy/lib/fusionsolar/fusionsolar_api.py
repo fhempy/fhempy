@@ -5,7 +5,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import aiohttp
 from Cryptodome.Cipher import PKCS1_OAEP
@@ -309,7 +309,7 @@ class FusionSolarRestApi:
             return False
 
     async def _get_rest_data(self, path, params={}):
-        current_utc_time = int(datetime.utcnow().timestamp() * 1000)
+        current_utc_time = int(datetime.now(timezone.utc).timestamp() * 1000)
         path = path.replace("%STATION%", self._stationname).replace(
             "%CURRENT_UTC_TIME%", str(current_utc_time)
         )

@@ -4,7 +4,7 @@ import logging
 
 from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
 
-from fhempy.lib import fhem
+from fhempy.lib import fhem, utils
 from fhempy.lib.core.zeroconf import zeroconf as fzeroconf
 
 
@@ -18,7 +18,7 @@ class discover_fhempy:
 
     # zeroconf callback
     def update_service(self, zc, type, name):
-        asyncio.create_task(self.foundDevice(zc, type, name))
+        utils.create_background_task(self.foundDevice(zc, type, name))
 
     # zeroconf callback
     def remove_service(self, zc, type, name):
@@ -26,7 +26,7 @@ class discover_fhempy:
 
     # zeroconf callback
     def add_service(self, zc, type, name):
-        asyncio.create_task(self.foundDevice(zc, type, name))
+        utils.create_background_task(self.foundDevice(zc, type, name))
 
     async def foundDevice(self, zc, type, name):
         self.logger.debug(f"Found service: {type} - {name}")

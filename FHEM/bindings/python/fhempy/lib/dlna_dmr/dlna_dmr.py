@@ -357,7 +357,7 @@ class DlnaDmrDevice:
         """State variable(s) changed, update readings."""
         self.logger.debug("event received")
         # create event as it is not async
-        asyncio.create_task(self.dlna_dmrinstance.updateReadings())
+        utils.create_background_task(self.dlna_dmrinstance.updateReadings())
 
     @property
     def dlna_dmrdevice(self):

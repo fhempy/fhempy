@@ -33,8 +33,10 @@ jobs:
         version: 2.5.1
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest tox-gh-actions tox
+        # locked with hashes, regenerate with:
+        # uv pip compile --universal --python-version 3.12 --generate-hashes
+        #   .github/requirements/tests.in -o .github/requirements/tests.txt
+        python -m pip install --require-hashes --only-binary :all: -r .github/requirements/tests.txt
     - name: Test with tox
       run: |
         tox

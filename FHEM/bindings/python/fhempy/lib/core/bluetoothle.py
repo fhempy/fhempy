@@ -293,7 +293,7 @@ class BluetoothLE:
                     # loop is started again on disconnect
                     return
             except asyncio.CancelledError:
-                return
+                raise
             except Exception:
                 self.logger.exception("Failed to connect")
 
@@ -477,7 +477,7 @@ class BluetoothLE:
 
     def _disconnect_callback(self, client: BleakClient):
         self.connected.clear()
-        asyncio.create_task(self.async_disconnected(client))
+        utils.create_background_task(self.async_disconnected(client))
 
     async def async_disconnected(self, client: BleakClient):
         await fhem.readingsSingleUpdate(self._dev_hash, "connection", "disconnected", 1)

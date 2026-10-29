@@ -192,7 +192,7 @@ class eq3bt(generic.FhemModule):
                     self.logger.info("Thermostat reachable again")
             except asyncio.CancelledError:
                 self.logger.info("Stopped update loop")
-                return
+                raise
             except asyncio.TimeoutError:
                 await self._set_offline()
                 self.logger.debug(f"Timeout on update, retry in {waittime}s")

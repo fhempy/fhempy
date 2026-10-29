@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import re
 import time
 
 from bluepy.btle import (
@@ -301,7 +300,10 @@ class ble_presence(FhemModule):
         )
 
     async def set_attr_hci_device(self, hash):
-        self._hci_nr = re.search(r"\d+$", self._attr_hci_device)[0]
+        # trailing number, e.g. hci0 -> 0
+        name = self._attr_hci_device
+        digits = name[len(name.rstrip("0123456789")) :]
+        self._hci_nr = int(digits) if digits else 0
 
     # FHEM FUNCTION
     async def Undefine(self, hash):

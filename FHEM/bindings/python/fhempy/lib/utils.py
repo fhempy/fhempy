@@ -194,6 +194,18 @@ def run_blocking_task(function):
     return asyncio.create_task(run_blocking(function))
 
 
+# the event loop keeps only weak references to tasks
+_background_tasks = set()
+
+
+def create_background_task(coro):
+    """Start a task nobody awaits, keep a reference until it's done."""
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+    return task
+
+
 def to_float(value, default=0.0):
     """Convert a reading value to float, default if it isn't a number."""
     try:

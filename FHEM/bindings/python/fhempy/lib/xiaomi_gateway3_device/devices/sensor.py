@@ -59,11 +59,8 @@ class MotionSensor(BaseDevice):
         self.reset_task = self.create_async_task(self._set_no_motion())
 
     async def _set_no_motion(self):
-        try:
-            await asyncio.sleep(self._attr_reset_motion)
-            await fhem.readingsSingleUpdate(self.hash, "motion", "0", 1)
-        except asyncio.CancelledError:
-            pass
+        await asyncio.sleep(self._attr_reset_motion)
+        await fhem.readingsSingleUpdate(self.hash, "motion", "0", 1)
 
 
 class ContactSensor(BaseDevice):

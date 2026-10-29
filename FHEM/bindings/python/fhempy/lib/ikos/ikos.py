@@ -159,7 +159,7 @@ class ikos(generic.FhemModule):
         best_price = None
         for i in range(0, len(hotels)):
             lowest_price_text = hotels[i].find("strong").text
-            lowest_price = re.findall("\\d+\\.\\d+", lowest_price_text)[0]
+            lowest_price = re.findall(r"\d++\.\d++", lowest_price_text)[0]
             hotel_name = hotels[i].find("a", {"class": "cardtitle htd"})["data-id2"]
             room_type = flights[i].find("a", {"data-toggle": "modal"})["data-id2"]
             if best_price is None or lowest_price < best_price:

@@ -412,6 +412,11 @@ async def force_update_package(package):
     return ret
 
 
+def _read_json(path):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
 async def check_and_install_dependencies(module):
     """Checks the manifest of a specific module and starts installation
     of dependencies
@@ -423,8 +428,11 @@ async def check_and_install_dependencies(module):
                 manifest = _MANIFEST_CACHE[module]
             else:
                 fhempy_root = utils.get_fhempy_root()
-                with open(fhempy_root + "/" + module + "/manifest.json", "r") as f:
-                    manifest = json.load(f)
+                manifest = await utils.run_blocking(
+                    functools.partial(
+                        _read_json, fhempy_root + "/" + module + "/manifest.json"
+                    )
+                )
                 _MANIFEST_CACHE[module] = manifest
 
             if "requirements" in manifest:

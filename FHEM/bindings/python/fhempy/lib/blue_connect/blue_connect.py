@@ -124,7 +124,7 @@ class blue_connect(generic.FhemModule):
                 self._errors.success()
             except asyncio.CancelledError:
                 self.logger.info("Stopping update loop")
-                return
+                raise
             except Exception:
                 self._errors.failed("Failed to update readings")
             await asyncio.sleep(7200)

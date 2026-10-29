@@ -110,11 +110,7 @@ class fhem_forum(generic.FhemModule):
 
     def get_soup_private_messages(self, response):
         soup = BeautifulSoup(response, "html.parser")
-        topics = soup.select(".windowbg.unread_pm")
-        if topics is None:
-            return []
-        entries = soup.select(".windowbg.unread_pm")
-        return entries
+        return soup.select(".windowbg.unread_pm")
 
     async def reading_changed(self, reading, value):
         # readingsBulkUpdateIfChanged doesn't return FHEM's result anymore
