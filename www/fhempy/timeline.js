@@ -54,7 +54,7 @@
       "#fhempyTimeline.ftlWideMode .ftlDay{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:36px;align-items:start}" +
       "#fhempyTimeline.ftlWideMode .ftlDayHead{grid-column:1/-1}" +
       "#fhempyTimeline.ftlWideMode .ftlDaySide .ftlHiddenRow{padding-left:0}" +
-      "#fhempyTimeline.ftlWideMode .ftlDaySide .ftlTrends{margin-left:0;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}" +
+      "#fhempyTimeline.ftlWideMode .ftlDaySide .ftlTrends{margin-left:0;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr))}" +
       "#fhempyTimeline.ftlNarrow .ftlEntry{grid-template-columns:40px 10px minmax(0,1fr);gap:6px}" +
       "#fhempyTimeline.ftlNarrow .ftlActions{grid-column:3;justify-content:flex-start}" +
       "#fhempyTimeline.ftlNarrow .ftlAction{opacity:0.6}" +
@@ -81,8 +81,13 @@
       "#fhempyTimeline .ftlLink{cursor:pointer;font-size:12px;opacity:0.75;text-decoration:underline}" +
       "#fhempyTimeline .ftlToggle{display:inline-block;margin-top:2px}" +
       "#fhempyTimeline .ftlHiddenRow{padding:2px 0 4px 68px}" +
-      "#fhempyTimeline .ftlTrends{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 16px;margin:4px 0 4px 68px}" +
+      "#fhempyTimeline .ftlTrends{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:8px 16px;margin:4px 0 4px 68px}" +
       "#fhempyTimeline .ftlTrend{font-size:12px}" +
+      "#fhempyTimeline .ftlTrendDev{border-left:2px solid rgba(128,128,128,0.3);padding:2px 0 4px 8px;min-width:0}" +
+      "#fhempyTimeline .ftlTrendName{font-size:13px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      "#fhempyTimeline .ftlReading{opacity:0.85}" +
+      "#fhempyTimelineTip{position:fixed;z-index:10000;pointer-events:none;background:rgba(40,40,40,0.92);color:#fff;font-size:12px;" +
+      "padding:2px 7px;border-radius:4px;white-space:nowrap;display:none;font-family:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif}" +
       "#fhempyTimeline a.ftlDevice,#fhempyTimelineDetails a.ftlDevice{color:inherit;text-decoration:none}" +
       "#fhempyTimeline a.ftlDevice:hover,#fhempyTimelineDetails a.ftlDevice:hover{text-decoration:underline}" +
       "#fhempyTimeline .ftlTrend .ftlAction{opacity:0;font-size:10px}" +
@@ -231,7 +236,8 @@
     } else if (entry.end) {
       parts.push(duration(entry.end - entry.ts));
     } else if (entry.running) {
-      parts.push("since " + duration(Date.now() / 1000 - entry.ts));
+      // still on: how long so far
+      parts.push((entry.value ? "still " + esc(entry.value) + " for " : "running for ") + duration(Date.now() / 1000 - entry.ts));
     }
     return parts.join(" · ");
   }
@@ -267,23 +273,50 @@
     return html + "</div>";
   }
 
-  function sparkline(trend) {
-    var pts = [];
+  // hover values: data-tip holds [x in %, start of the hour, value] per point
+  function tipAttr(tips, withDay) {
+    return " data-tip='" + JSON.stringify(tips) + "'" + (withDay ? ' data-tipday="1"' : "");
+  }
+
+  function sparkline(trend, dayStart) {
+    var pts = [], tips = [];
     var low = trend.min, high = trend.max;
     var span = high - low || 1;
     trend.points.forEach(function (v, i) {
       if (v === null) return;
-      pts.push((i * 100 / 23).toFixed(1) + "," + (24 - (v - low) / span * 20).toFixed(1));
+      var x = i * 100 / 23;
+      pts.push(x.toFixed(1) + "," + (24 - (v - low) / span * 20).toFixed(1));
+      tips.push([+x.toFixed(2), dayStart + i * 3600, v]);
     });
     var info = categoryInfo[trend.category] || categoryInfo.devices;
     if (!pts.length) return "";
     var line = pts.length > 1 ? '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>' : "";
-    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none">' + line + "</svg>";
+    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) + ">" + line + "</svg>";
   }
 
-  function trendHtml(t) {
-    return '<div class="ftlTrend">' + deviceLink(t.device, t.text) + " <span style=\"opacity:0.7\">" +
-      fmt(t.min) + (t.changed ? " – " + fmt(t.max) : "") + "</span> " + onChangeAction(t) + sparkline(t) + "</div>";
+  function trendHtml(t, dayStart) {
+    return '<div class="ftlTrend"><span class="ftlReading">' + esc(t.reading) + '</span> <span style="opacity:0.7">' +
+      fmt(t.min) + (t.changed ? " – " + fmt(t.max) : "") + "</span> " + onChangeAction(t) + sparkline(t, dayStart) + "</div>";
+  }
+
+  // curves of one device together under its name
+  function trendGroupsHtml(trends, dayStart) {
+    var groups = [], byDevice = {};
+    trends.forEach(function (t) {
+      if (!byDevice[t.device]) {
+        byDevice[t.device] = { device: t.device, label: t.label || t.text, trends: [] };
+        groups.push(byDevice[t.device]);
+      }
+      byDevice[t.device].trends.push(t);
+    });
+    var html = "";
+    groups.forEach(function (g) {
+      html += '<div class="ftlTrendDev"><div class="ftlTrendName">' + deviceLink(g.device, g.label) +
+        (g.trends.length > 1 ? ' <span style="opacity:0.6;font-weight:normal">' + g.trends.length + " curves</span>" : "") + "</div>";
+      g.trends.forEach(function (t) { html += trendHtml(t, dayStart); });
+      html += "</div>";
+    });
+    return html;
   }
 
   function trendsHtml(day) {
@@ -292,15 +325,16 @@
     // curves which stayed the same all day only on demand
     var changed = trends.filter(function (t) { return t.changed; });
     var same = trends.filter(function (t) { return !t.changed; });
+    var dayStart = dayDate(day.day).getTime() / 1000;
     var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed.length + " changed" +
       (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
       '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
-    changed.forEach(function (t) { html += trendHtml(t); });
+    html += trendGroupsHtml(changed, dayStart);
     html += "</div>";
     if (same.length) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '">Show ' + same.length +
         " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
-      same.forEach(function (t) { html += trendHtml(t); });
+      html += trendGroupsHtml(same, dayStart);
       html += "</div>";
     }
     return html + "</div>";
@@ -427,15 +461,17 @@
   function periodSparkline(trend, from, to) {
     var low = trend.min, span = trend.max - trend.min || 1;
     var info = categoryInfo[trend.category] || categoryInfo.devices;
-    var lines = [], line = [], last = null;
+    var lines = [], line = [], last = null, tips = [];
     trend.points.forEach(function (p) {
       // no value for more than 2 hours: gap in the curve
       if (last !== null && p[0] - last > 7200) { lines.push(line); line = []; }
       last = p[0];
-      line.push(((p[0] + 1800 - from) * 100 / (to - from)).toFixed(2) + "," + (36 - (p[1] - low) / span * 30).toFixed(1));
+      var x = (p[0] + 1800 - from) * 100 / (to - from);
+      line.push(x.toFixed(2) + "," + (36 - (p[1] - low) / span * 30).toFixed(1));
+      tips.push([+x.toFixed(2), p[0], p[1]]);
     });
     lines.push(line);
-    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none">';
+    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none"' + tipAttr(tips, true) + ">";
     for (var t = from + 86400; t < to; t += 86400) {
       var x = ((t - from) * 100 / (to - from)).toFixed(2);
       html += '<line x1="' + x + '" x2="' + x + '" y1="0" y2="40" stroke="rgba(128,128,128,0.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
@@ -687,6 +723,58 @@
     });
   }
 
+  // value and time of the curve point under the mouse or finger
+  function showTip(e) {
+    var svg = this;
+    var tips;
+    try { tips = JSON.parse(svg.getAttribute("data-tip")); } catch (err) { return; }
+    var ev = e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length ? e.originalEvent.touches[0] : e;
+    var rect = svg.getBoundingClientRect();
+    if (!tips.length || !rect.width) return;
+    var x = (ev.clientX - rect.left) * 100 / rect.width;
+    var best = tips[0];
+    tips.forEach(function (t) { if (Math.abs(t[0] - x) < Math.abs(best[0] - x)) best = t; });
+    var text = clock(best[1]) + "–" + clock(best[1] + 3600) + ": " + fmt(best[2]);
+    if (svg.getAttribute("data-tipday")) {
+      text = new Date(best[1] * 1000).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) + " " + text;
+    }
+    var cursor = svg.querySelector(".ftlCursor");
+    if (!cursor) {
+      cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      cursor.setAttribute("class", "ftlCursor");
+      cursor.setAttribute("y1", "0");
+      cursor.setAttribute("y2", "100");
+      cursor.setAttribute("stroke", "rgba(128,128,128,0.6)");
+      cursor.setAttribute("stroke-width", "1");
+      cursor.setAttribute("vector-effect", "non-scaling-stroke");
+      svg.appendChild(cursor);
+    }
+    cursor.setAttribute("x1", best[0]);
+    cursor.setAttribute("x2", best[0]);
+    var tip = $("#fhempyTimelineTip");
+    if (!tip.length) tip = $('<div id="fhempyTimelineTip"></div>').appendTo("body");
+    tip.text(text).show();
+    var left = rect.left + best[0] * rect.width / 100 - tip.outerWidth() / 2;
+    left = Math.max(4, Math.min(left, $(window).width() - tip.outerWidth() - 4));
+    tip.css({ left: left, top: Math.max(4, rect.top - tip.outerHeight() - 4) });
+  }
+
+  function hideTip() {
+    $("#fhempyTimelineTip").hide();
+    $("svg[data-tip] .ftlCursor").remove();
+  }
+
+  function bindTips() {
+    if (bindTips.done) return;
+    bindTips.done = true;
+    $(document).on("mousemove touchstart touchmove", "svg[data-tip]", showTip);
+    $(document).on("mouseleave", "svg[data-tip]", hideTip);
+    $(document).on("touchstart", function (e) {
+      if (!$(e.target).closest("svg[data-tip]").length) hideTip();
+    });
+    document.addEventListener("scroll", hideTip, true);
+  }
+
   // room view: the summary of the timeline device takes the whole width
   // instead of its row in the device table
   window.fhempyTimelineRoom = function (name) {
@@ -714,6 +802,7 @@
     }
     days = [];
     bind();
+    bindTips();
     var today = dayIso(new Date());
     load(addDays(today, -6), today, false);
   };

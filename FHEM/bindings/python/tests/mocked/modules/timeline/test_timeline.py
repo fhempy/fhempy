@@ -106,6 +106,28 @@ def test_story_durations_and_bundling():
     assert not door["alert"]
 
 
+def test_story_repeated_states():
+    # devices which report their state again (e.g. Alexa) don't split entries
+    entries = build(
+        [
+            (0, "light1", "state", "off", "light"),
+            (0, "light1", "state", "on", "light"),
+            (2760, "light1", "state", "on", "light"),
+            (2760, "light1", "state", "off", "light"),
+            (11_640, "light1", "state", "off", "light"),
+            (11_640, "light1", "state", "on", "light"),
+            (15_240, "light1", "state", "on", "light"),
+        ],
+        now=at(20_000),
+    )
+    assert [(e["value"], e["ts"], e["end"], e["running"]) for e in entries] == [
+        ("off", at(0), None, False),
+        ("on", at(0), at(2760), False),
+        ("on", at(11_640), None, True),
+    ]
+    assert entries[1]["count"] == 1 and entries[2]["count"] == 1
+
+
 def test_story_groups_scenes():
     entries = build(
         [
@@ -237,6 +259,7 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     # temperature, action and the 7 events FHEM only counted
     assert today["hidden"] == 9
     assert today["trends"][0]["text"] == "Hallway: temperature"
+    assert today["trends"][0]["label"] == "Hallway"
 
     details = json.loads(await module.Get(hash, ["tl", "details", data["today"]], {}))
     assert [d["text"] for d in details] == [
