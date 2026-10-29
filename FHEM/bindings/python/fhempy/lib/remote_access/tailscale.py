@@ -37,6 +37,8 @@ ARCHITECTURES = {
 }
 BINARIES = ("tailscale", "tailscaled")
 VERSION = re.compile(r"\d+\.\d+\.\d+")
+# seconds until the tailscaled of a previous fhempy is killed
+STOP_TIMEOUT = 10
 LOGIN_URL = re.compile(r"https://login\.tailscale\.com/\S+")
 
 
@@ -193,10 +195,12 @@ def remove_pid_file(pid):
 
 def daemon_alive(pid):
     """True if pid is the tailscaled of fhempy (pids are reused)"""
+    # int(): the pid of the pid file is never used as path
+    proc_dir = os.path.join("/proc", str(int(pid)))
     try:
-        with open(f"/proc/{pid}/cmdline", "rb") as f:
+        with open(os.path.join(proc_dir, "cmdline"), "rb") as f:
             args = f.read().decode(errors="replace").split("\0")
-        with open(f"/proc/{pid}/stat", "rb") as f:
+        with open(os.path.join(proc_dir, "stat"), "rb") as f:
             stat = f.read().decode(errors="replace")
     except OSError:
         return False
@@ -207,7 +211,7 @@ def daemon_alive(pid):
     return binary("tailscaled") in args[:2]
 
 
-async def stop_pid(pid, timeout=10):
+async def stop_pid(pid):
     """stop the tailscaled of a previous fhempy, it's not our child"""
     for sig in (signal.SIGTERM, signal.SIGKILL):
         try:
@@ -215,7 +219,7 @@ async def stop_pid(pid, timeout=10):
             os.killpg(pid, sig)
         except (ProcessLookupError, PermissionError):
             return
-        for _ in range(timeout * 10):
+        for _ in range(STOP_TIMEOUT * 10):
             if not daemon_alive(pid):
                 return
             await asyncio.sleep(0.1)

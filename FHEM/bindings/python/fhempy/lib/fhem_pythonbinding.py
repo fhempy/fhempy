@@ -109,7 +109,7 @@ async def stop_orphans():
     await asyncio.sleep(ORPHAN_CHECK_DELAY)
     from .remote_access import tailscale
 
-    for instance in list(loadedModuleInstances.values()):
+    for instance in loadedModuleInstances.values():
         dev_hash = getattr(instance, "hash", None) or {}
         if dev_hash.get("FHEMPYTYPE") == "remote_access":
             return
