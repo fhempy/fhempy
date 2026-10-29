@@ -239,6 +239,9 @@ class MqttDiscovery:
         async def create():
             return await self.create(device_id)
 
+        async def recreate(name):
+            return await self.recreate(device_id, name)
+
         await self.engine.report(
             "mqtt",
             device_id,
@@ -246,6 +249,7 @@ class MqttDiscovery:
             "MQTT device",
             create,
             check=check,
+            recreate=recreate,
             model=mqtt_ha.device_model(payload_json),
             hint="Found via Home Assistant MQTT discovery (e.g. ESPHome, "
             "Zigbee2MQTT, Tasmota), creates a MQTT2_DEVICE",
@@ -272,6 +276,28 @@ class MqttDiscovery:
         entities = entity_list(device)
         await mqtt_ha.set_device_attributes(hash, name, entities)
         await mqtt_ha.set_new_device_details(hash, name, device["name"], entities)
+        await self.request_states(device["broker"])
+        return ""
+
+    async def recreate(self, device_id, name):
+        """Sets up the existing MQTT2_DEVICE again like a new device, the
+        FHEM name stays (DOIFs and notifies use it). Returns an error text or
+        ''."""
+        device = self.devices.get(device_id)
+        if device is None:
+            return f"MQTT device {device_id} isn't known anymore"
+        hash = self.engine.hash
+        ret = await self.ensure_mqtt_client(hash, device["broker"])
+        if ret:
+            return str(ret)
+        # further entities of the device are added to it
+        device["created"] = name
+        entities = entity_list(device)
+        await mqtt_ha.reset_device_attributes(hash, name, entities)
+        # alias (friendly name), icon and model readings like for a new device
+        await mqtt_ha.set_new_device_details(
+            hash, name, device["name"], entities, replace=("alias", "icon")
+        )
         await self.request_states(device["broker"])
         return ""
 

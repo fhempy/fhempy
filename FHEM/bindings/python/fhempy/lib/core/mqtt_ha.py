@@ -1450,6 +1450,34 @@ async def set_device_attributes(hash, fhem_device_name, entities):
                 await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
 
 
+# attributes with the readings, commands and state of the device
+GENERATED_ATTRS = ("readingList", "setList", "webCmd", "stateFormat", "devStateIcon")
+# attributes of MQTT2_DEVICE attrTemplates (e.g. Zigbee2MQTT autocreate),
+# not used by the generated attributes
+TEMPLATE_ATTRS = ("jsonMap", "getList", "setStateList", "model", "devicetopic")
+
+
+async def reset_device_attributes(hash, fhem_device_name, entities):
+    """Sets up an existing device again like a new one: the generated
+    attributes replace the old ones completely, also lines written by the
+    user or by an attrTemplate. The name and all other attributes (room,
+    group...) are kept.
+
+    entities: list of (component, object_id, payload_json)
+    """
+    attrs = generate_attributes(entities)
+    for attr in GENERATED_ATTRS + TEMPLATE_ATTRS:
+        value = attrs.get(attr) or ""
+        if isinstance(value, list):
+            value = "\n".join(value)
+        current = await fhem.AttrVal(fhem_device_name, attr, "")
+        if value:
+            if value != current:
+                await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {value}")
+        elif current:
+            await fhem.CommandDeleteAttr(hash, f"{fhem_device_name} {attr}")
+
+
 # FHEMWEB icon of a new device: first matching component, then the device
 # class of a sensor (diagnostic entities like battery are skipped)
 ICONS_BY_COMPONENT = (
@@ -1537,17 +1565,20 @@ def device_readings(entities):
     return {name: value for name, value in readings.items() if value}
 
 
-async def set_new_device_details(hash, fhem_device_name, alias, entities):
+async def set_new_device_details(hash, fhem_device_name, alias, entities, replace=()):
     """For devices created by autodiscovery: alias (friendly name), icon,
     event-on-change-reading .* and the model readings. Attributes set by the
-    user are kept."""
+    user are kept, except the ones in replace."""
     attrs = {
         "alias": alias,
         "icon": default_icon(entities),
         "event-on-change-reading": ".*",
     }
     for attr, value in attrs.items():
-        if value and not await fhem.AttrVal(fhem_device_name, attr, ""):
+        if not value:
+            continue
+        current = await fhem.AttrVal(fhem_device_name, attr, "")
+        if not current or (attr in replace and current != value):
             await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {value}")
     for reading, value in device_readings(entities).items():
         await fhem.sendCommandHash(

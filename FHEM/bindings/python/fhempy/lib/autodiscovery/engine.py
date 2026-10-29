@@ -381,11 +381,14 @@ class Engine:
         hint="",
         logo="",
         check=None,
+        recreate=None,
     ):
         """Devices found by other parts, e.g. MQTT discovery (mqtt.py).
         create: coroutine function called on a click on Create, returns an
         error text or ''. check: coroutine function, returns the name of the
-        device in FHEM or ''."""
+        device in FHEM or ''. recreate: coroutine function called with the
+        name of the existing device on a click on Set up again, returns an
+        error text or ''."""
         entry = next((e for e in self.catalog if e["module"] == module), {})
         candidate = {
             "id": f"{module}:{unique}",
@@ -406,6 +409,9 @@ class Engine:
         }
         if check is not None:
             candidate["check"] = check
+        if recreate is not None:
+            candidate["recreate"] = recreate
+            candidate["can_recreate"] = True
         for key in ("logo", "icon"):
             if entry.get(key):
                 candidate[key] = entry[key]
@@ -628,6 +634,31 @@ class Engine:
         candidate["status"] = STATUS_CREATED
         await self._notify_frontends()
         return ""
+
+    async def recreate(self, candidate_id):
+        """Sets up the existing device of the candidate again like a new
+        device, its name in FHEM stays. Returns an error text or ''."""
+        candidate = self.candidates.get(candidate_id)
+        if candidate is None:
+            return f"Device {candidate_id} isn't found (anymore)"
+        if not candidate.get("recreate"):
+            return f"{candidate['title']} can't be set up again"
+        if candidate["status"] not in (STATUS_EXISTS, STATUS_CREATED) or not (
+            candidate.get("device")
+        ):
+            return f"{candidate['title']} isn't in FHEM"
+        ret = await candidate["recreate"](candidate["device"])
+        return str(ret) if ret else ""
+
+    def recreatable(self):
+        """Devices in FHEM which can be set up again"""
+        return [
+            c
+            for c in self.candidates.values()
+            if c.get("recreate")
+            and c.get("device")
+            and c["status"] in (STATUS_EXISTS, STATUS_CREATED)
+        ]
 
     async def _create_with_set(self, hash, candidate, params):
         """e.g. Matter: set <controller> pair <code>, the controller is created

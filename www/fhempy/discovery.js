@@ -121,8 +121,15 @@
       logo(d) + '<div style="min-width:0;flex:1"><div class="fdTitle">' + esc(d.title) + "</div>" +
       '<div class="fdInfo">' + esc(info.join(" · ")) + "</div>";
     if (!st.created && (d.status == "exists" || d.status == "created")) {
-      /* in FHEM already: link to the device */
-      return html + '<div class="fdDone">✓ in FHEM' + (d.device ? ": " + deviceLink(d.device) : "") + "</div></div></div>";
+      /* in FHEM already: link to the device, MQTT devices can be set up again */
+      html += '<div class="fdDone">✓ ' + (st.recreated ? "set up again" : "in FHEM") + (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
+      if (d.can_recreate && d.device) {
+        html += '<div class="fdBtns"><span class="fdBtn fdGrey fdRecreate" title="Readings, commands, state, alias and icon like a new device. ' +
+          'The name and the other attributes (room, group...) stay.">' +
+          (st.busy ? '<span class="fdSpin"></span>' : "") + "Set up again</span></div>" +
+          (st.error ? '<div class="fdErr">' + esc(st.error) + "</div>" : "");
+      }
+      return html + "</div></div>";
     }
     html += (d.deleted && !st.created ? '<div class="fdHint">Deleted in FHEM, Create sets it up again.</div>' : "") +
       (d.hint ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
@@ -160,7 +167,7 @@
   /* new devices on top, devices in FHEM and ignored devices collapsed below;
      tiles changed in this dialog stay where they are */
   function section(d) {
-    if (state[d.id] || d.status == "new") return "new";
+    if ((state[d.id] && !state[d.id].recreate) || d.status == "new") return "new";
     return d.status == "ignored" ? "ignored" : "fhem";
   }
 
@@ -195,12 +202,24 @@
       /* opened by the search, otherwise as the user left it */
       var isOpen = filter ? true : open[s];
       return '<details class="fdMore" data-s="' + s + '"' + (isOpen ? " open" : "") + "><summary>" + title +
-        " (" + count[s] + ')</summary><div class="fdList">' + groups[s] + "</div></details>";
+        " (" + count[s] + ")</summary>" + (s == "fhem" ? recreateAll() : "") + '<div class="fdList">' + groups[s] + "</div></details>";
+    }
+    function recreateAll() {
+      var list = devices.filter(function (d) { return d.can_recreate && d.device && section(d) == "fhem" && matches(d); });
+      if (list.length < 2) return "";
+      return '<div class="fdBtns" style="margin:0 0 8px"><span class="fdBtn fdGrey fdRecreateAll" ' +
+        'title="Sets up these MQTT devices again like new ones, the names stay.">Set up all ' + list.length + " again</span></div>";
     }
     var html = count["new"] ? '<div class="fdList">' + groups["new"] + "</div>" :
       '<div class="fdEmpty">' + (filter ? "No device matches the search." : (empty || "No new devices found yet.")) + "</div>";
     results.html(html + more("fhem", "Already in FHEM") + more("ignored", "Ignored"));
     results.find(".fdCreate").click(function () { create(container, devices[$(this).closest(".fdTile").data("i")]); });
+    results.find(".fdRecreate").click(function () { recreate(container, devices[$(this).closest(".fdTile").data("i")], empty); });
+    results.find(".fdRecreateAll").click(function () {
+      devices.forEach(function (d) {
+        if (d.can_recreate && d.device && section(d) == "fhem" && matches(d)) recreate(container, d, empty);
+      });
+    });
     results.find(".fdIgnore").click(function () {
       var d = devices[$(this).closest(".fdTile").data("i")];
       cmd("set " + dev + " ignore " + arg(d.id), function () {
@@ -215,6 +234,22 @@
         d.status = "new";
         render(container, empty);
       });
+    });
+  }
+
+  /* readings, commands and state like a new device, the name stays */
+  function recreate(container, d, empty) {
+    var st = state[d.id] = state[d.id] || {};
+    if (st.busy) return;
+    st.recreate = true;
+    st.busy = true;
+    st.error = "";
+    render(container, empty);
+    cmd("set " + dev + " recreate " + arg(d.id), function (r) {
+      st.busy = false;
+      if (r) st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
+      else st.recreated = true;
+      render(container, empty);
     });
   }
 

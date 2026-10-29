@@ -177,6 +177,82 @@ async def test_existing_and_unsupported_devices_are_not_offered(engine, fhem_cal
 
 
 @pytest.mark.asyncio
+async def test_existing_device_set_up_again_keeps_its_name(engine, fhem_calls):
+    """e.g. created by Zigbee2MQTT autocreate with an attrTemplate"""
+    fhem_calls["existing"] = "MQTT2_zigbee_wohnzimmer"
+    await engine.mqtt.handle_message(
+        BROKER, *z2m_entity("0x01", "Temperature", device_class="temperature")
+    )
+    candidate = engine.candidates["mqtt:zigbee2mqtt_0x01"]
+    assert candidate["status"] == STATUS_EXISTS
+    assert candidate["can_recreate"] is True
+    name = "MQTT2_zigbee_wohnzimmer"
+    mock_fhem.attributes[name] = {
+        "readingList": "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT,'',$JSONMAP) }\n"
+        "zigbee2mqtt/wohnzimmer_temp:.* { {own=>$EVENT} }",
+        "setList": "attrTemplate:... x",
+        "stateFormat": "battery % voltage mV",
+        "model": "zigbee2mqtt_temp",
+        "room": "Wohnzimmer",
+        "alias": "Temperatur",
+        "icon": "temperature_humidity",
+    }
+    published = []
+
+    class Client:
+        async def publish(self, topic, payload):
+            published.append((topic, payload))
+
+    engine.mqtt._clients[BROKER] = Client()
+    assert await engine.recreate(candidate["id"]) == ""
+    # nothing defined, the name stays, room is kept, alias (friendly name),
+    # icon and model readings like for a new device
+    assert mock_fhem.command_define == []
+    assert mock_fhem.command_attr == [
+        f"{name} readingList zigbee2mqtt/wohnzimmer_temp:.* "
+        "{ json2nameValue($EVENT) }",
+        f"{name} stateFormat temperature",
+        f"{name} alias Wohnzimmer Temp",
+        f"{name} icon temp_temperature",
+        f"{name} event-on-change-reading .*",
+    ]
+    setreadings = [c for c in fhem_calls["commands"] if "CommandSetReading" in c]
+    assert setreadings == [
+        f"CommandSetReading(undef, '{name} model WSDCGQ11LM')",
+        f"CommandSetReading(undef, '{name} manufacturer Xiaomi')",
+    ]
+    deleted = [c for c in fhem_calls["commands"] if "CommandDeleteAttr" in c]
+    assert deleted == [
+        f"CommandDeleteAttr(undef, '{name} setList')",
+        f"CommandDeleteAttr(undef, '{name} model')",
+    ]
+    assert published == [("homeassistant/status", "online")]
+
+    # further entities of the device update it
+    mock_fhem.command_attr.clear()
+    mock_fhem.attributes[name][
+        "readingList"
+    ] = "zigbee2mqtt/wohnzimmer_temp:.* { json2nameValue($EVENT) }"
+    await engine.mqtt.handle_message(
+        BROKER,
+        *z2m_entity(
+            "0x01",
+            "Battery",
+            state_topic="zigbee2mqtt/wohnzimmer_temp/battery",
+            value_template=None,
+        ),
+    )
+    assert mock_fhem.command_attr[0].startswith(f"{name} readingList")
+
+    # only devices in FHEM
+    fhem_calls["existing"] = ""
+    await engine.mqtt.handle_message(BROKER, *z2m_entity("0x02", "Temperature"))
+    assert engine.recreatable() == [candidate]
+    assert "isn't in FHEM" in await engine.recreate("mqtt:zigbee2mqtt_0x02")
+    assert "isn't found" in await engine.recreate("mqtt:unknown")
+
+
+@pytest.mark.asyncio
 async def test_deleted_mqtt_device_is_offered_again(engine, fhem_calls):
     fhem_calls["existing"] = "MyTempSensor"
     await engine.mqtt.handle_message(BROKER, *z2m_entity("0x01", "Temperature"))
