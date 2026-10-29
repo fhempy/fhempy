@@ -141,6 +141,15 @@ def _continue_entry(previous, ts, value):
         return False
     lower = value.lower()
     was_active = previous["value"].lower() in ACTIVE_VALUES
+    if was_active and previous["end"] is None and lower in ACTIVE_VALUES:
+        # still on: devices which repeat their state don't start a new entry
+        if previous["value"] != value:
+            previous["count"] += 1
+        previous["last"] = ts
+        return True
+    if was_active and previous["end"] is not None and lower in INACTIVE_VALUES:
+        # still off
+        return True
     if ts - previous["last"] > MERGE_GAP:
         # off long after on closes the running entry
         closes = was_active and previous["end"] is None and lower in INACTIVE_VALUES
@@ -149,12 +158,10 @@ def _continue_entry(previous, ts, value):
             previous["last"] = ts
         return closes
     if was_active and lower in ACTIVE_VALUES:
-        if previous["end"] is not None or previous["value"] != value:
-            previous["count"] += 1
+        # on again shortly after off
+        previous["count"] += 1
         previous["end"] = None
     elif was_active and lower in INACTIVE_VALUES:
-        if previous["end"] is not None:
-            return True
         previous["end"] = ts
     elif lower == previous["value"].lower():
         previous["count"] += 1
@@ -282,6 +289,7 @@ def build_trends(rows, infos):
                 "device": device,
                 "reading": reading,
                 "text": name if reading == "state" else f"{name}: {reading}",
+                "label": name,
                 "category": category,
                 "room": infos.get(device, {}).get("room", ""),
                 "min": low,
