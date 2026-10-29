@@ -93,6 +93,22 @@ def matches(rules, device, reading, value=""):
     )
 
 
+def visible_rows(rules, rows):
+    """story rows (ts, device, reading, value, ...) not hidden by rules, each
+    device, reading and value checked only once"""
+    if not rules:
+        return rows
+    hidden = {}
+    result = []
+    for row in rows:
+        key = row[1:4]
+        if key not in hidden:
+            hidden[key] = matches(rules, *key)
+        if not hidden[key]:
+            result.append(row)
+    return result
+
+
 class timeline(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
@@ -613,23 +629,11 @@ class timeline(generic.FhemModule):
         await self.flush()
         start = day_start(first.isoformat())
         end = day_start(last.isoformat()) + 86400
-        data = await utils.run_blocking(
-            functools.partial(self.query, start, end, first, last)
-        )
-        rows = [
-            row for row in data["story"] if not matches(self._hidden_rules, *row[1:4])
-        ]
         now = time.time()
-        days = story.build(
-            first.isoformat(),
-            last.isoformat(),
-            rows,
-            data["hourly"],
-            data["hidden"],
-            data["absences"],
-            self.infos,
-            now,
-            data["carry"],
+        # thousands of events a week: reading and building the story would
+        # block fhempy and FHEM for seconds on a Raspberry Pi
+        data, days = await utils.run_blocking(
+            functools.partial(self.query_days, start, end, first, last, now)
         )
         return json.dumps(
             {
@@ -647,9 +651,24 @@ class timeline(generic.FhemModule):
             ensure_ascii=False,
         )
 
+    def query_days(self, start, end, first, last, now):
+        data = self.query(start, end, first, last)
+        days = story.build(
+            first.isoformat(),
+            last.isoformat(),
+            data["story"],
+            data["hourly"],
+            data["hidden"],
+            data["absences"],
+            self.infos,
+            now,
+            data["carry"],
+        )
+        return data, days
+
     def query(self, start, end, first, last):
         return {
-            "story": self.store.story(start, end),
+            "story": visible_rows(self._hidden_rules, self.store.story(start, end)),
             "hourly": self.store.hourly(start, end),
             "carry": self.store.values_before(start),
             "hidden": self.store.hidden(first.isoformat(), last.isoformat()),
@@ -676,10 +695,7 @@ class timeline(generic.FhemModule):
         data = await utils.run_blocking(
             functools.partial(self.query_device, device, start, end)
         )
-        rows = [
-            row for row in data["story"] if not matches(self._hidden_rules, *row[1:4])
-        ]
-        entries = story.build_entries(rows, self.infos, data["absences"], now)
+        entries = story.build_entries(data["story"], self.infos, data["absences"], now)
         activity = story.build_activity(entries, self.infos, now)
         entries.reverse()
         info = self.infos[device]
@@ -742,7 +758,9 @@ class timeline(generic.FhemModule):
 
     def query_device(self, device, start, end):
         return {
-            "story": self.store.device_story(device, start, end),
+            "story": visible_rows(
+                self._hidden_rules, self.store.device_story(device, start, end)
+            ),
             "hourly": self.store.device_hourly(device, start, end),
             "carry": self.store.values_before(start, device),
             "absences": self.store.absences(start - 86400, end),

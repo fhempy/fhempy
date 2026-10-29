@@ -16,6 +16,7 @@ from fhempy.lib.timeline.timeline import (
     matches,
     parse_rules,
     timeline,
+    visible_rows,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,13 @@ def test_hidden_rules_with_values():
     # a value may contain ":", an invalid regexp is taken literally
     assert matches(parse_rules("clock:time:12:30"), "clock", "time", "12:30")
     assert matches(parse_rules("dev:r:a(b"), "dev", "r", "a(b")
+    story_rows = [
+        (1, "Router", "status", "booting", "devices"),
+        (2, "Router", "status", "online", "devices"),
+        (3, "Router", "status", "booting", "devices"),
+    ]
+    assert visible_rows(rules, story_rows) == [story_rows[1]]
+    assert visible_rows([], story_rows) is story_rows
     # the rule the "only this value" buttons build
     assert matches(parse_rules("d:r:set\\sto\\s21\\.5\\x3b"), "d", "r", "set to 21.5;")
 
