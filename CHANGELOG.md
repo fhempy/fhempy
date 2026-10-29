@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.13.2 (2026-10-29)
+
+### Bug Fixes
+
+- **timeline**: Build the story outside the event loop
+  ([#827](https://github.com/fhempy/fhempy/pull/827),
+  [`e973d01`](https://github.com/fhempy/fhempy/commit/e973d01e764221e24ce19836ac28344b8673b96f))
+
+
 ## v2.13.1 (2026-10-29)
 
 ### Features
