@@ -2,6 +2,82 @@
 
 <!-- version list -->
 
+## v2.12.1 (2026-10-29)
+
+### Bug Fixes
+
+- Fhempy creates its own Python environment in containers like fhem-docker
+  ([#814](https://github.com/fhempy/fhempy/pull/814),
+  [`20d77ec`](https://github.com/fhempy/fhempy/commit/20d77ec883ca332776123a8bbcc7b5051be5ccbc))
+
+- **deps**: Bump actions/checkout from 5 to 7 ([#770](https://github.com/fhempy/fhempy/pull/770),
+  [`56e49ab`](https://github.com/fhempy/fhempy/commit/56e49abef69376f47a3de5ecb19dfaf2b18d0c25))
+
+- **deps**: Bump brotlicffi from 1.2.0.2 to 1.2.1.0
+  ([#745](https://github.com/fhempy/fhempy/pull/745),
+  [`8f4991b`](https://github.com/fhempy/fhempy/commit/8f4991b98364fa78b96f80cd1c25516146ea9112))
+
+- **deps**: Bump EndBug/add-and-commit from 9 to 11
+  ([#771](https://github.com/fhempy/fhempy/pull/771),
+  [`0f87ad6`](https://github.com/fhempy/fhempy/commit/0f87ad661055f64ab98f3c60e99898b6c697a86d))
+
+- **deps**: Bump fhem/fhem-controls-actions from 2.3.0 to 4.0.2
+  ([#769](https://github.com/fhempy/fhempy/pull/769),
+  [`6a14620`](https://github.com/fhempy/fhempy/commit/6a146205e55234cb47e3acca0040d6aa5296e768))
+
+- **deps**: Bump python-dateutil from 2.9.0.post0 to 3.0.0
+  ([#772](https://github.com/fhempy/fhempy/pull/772),
+  [`4672036`](https://github.com/fhempy/fhempy/commit/4672036a3c7b101a6573caec8e797d66cd964abe))
+
+- **deps**: Bump shogo82148/actions-setup-perl from 1.33.0 to 1.44.3
+  ([#774](https://github.com/fhempy/fhempy/pull/774),
+  [`08b23e5`](https://github.com/fhempy/fhempy/commit/08b23e5426e055bf33d20a33aade227ece3c9e98))
+
+- **deps**: Bump virtualenv to 21.15.1 ([#748](https://github.com/fhempy/fhempy/pull/748),
+  [`c8cd9e0`](https://github.com/fhempy/fhempy/commit/c8cd9e0771f1a2a673905413012a1eb66e63305e))
+
+- **deps**: Update esphome to 2026.10.1 ([#805](https://github.com/fhempy/fhempy/pull/805),
+  [`dc414e0`](https://github.com/fhempy/fhempy/commit/dc414e079bc583ffa963577a6d4323757470c2b7))
+
+- **deps**: Update pychromecast to 14.1.0 ([#806](https://github.com/fhempy/fhempy/pull/806),
+  [`6ebb83a`](https://github.com/fhempy/fhempy/commit/6ebb83a4d22689e6da1e8a968145e5fde01e9fc0))
+
+- **gree_climate**: Update greeclimate to 4.1.0 ([#813](https://github.com/fhempy/fhempy/pull/813),
+  [`897b080`](https://github.com/fhempy/fhempy/commit/897b08085775aaf064cedb0502bd2968ed7b8004))
+
+- **remote_access**: Keep Tailscale running while fhempy updates
+  ([#807](https://github.com/fhempy/fhempy/pull/807),
+  [`ff54db3`](https://github.com/fhempy/fhempy/commit/ff54db3d5793343d310ed8cc9d474d01c861b520))
+
+- **tibber**: Update pyTibber to 0.39.1 ([#812](https://github.com/fhempy/fhempy/pull/812),
+  [`edf4674`](https://github.com/fhempy/fhempy/commit/edf467454d6d955861e447b8491d5ba1301fad57))
+
+### Build System
+
+- **deps-dev**: Bump brotlicffi from 1.2.0.2 to 1.2.1.0
+  ([#745](https://github.com/fhempy/fhempy/pull/745),
+  [`8f4991b`](https://github.com/fhempy/fhempy/commit/8f4991b98364fa78b96f80cd1c25516146ea9112))
+
+- **deps-dev**: Bump python-dateutil from 2.9.0.post0 to 3.0.0
+  ([#772](https://github.com/fhempy/fhempy/pull/772),
+  [`4672036`](https://github.com/fhempy/fhempy/commit/4672036a3c7b101a6573caec8e797d66cd964abe))
+
+- **deps-dev**: Bump virtualenv from 21.14.11 to 21.14.13
+  ([#748](https://github.com/fhempy/fhempy/pull/748),
+  [`c8cd9e0`](https://github.com/fhempy/fhempy/commit/c8cd9e0771f1a2a673905413012a1eb66e63305e))
+
+### Chores
+
+- Relock after master update ([#745](https://github.com/fhempy/fhempy/pull/745),
+  [`8f4991b`](https://github.com/fhempy/fhempy/commit/8f4991b98364fa78b96f80cd1c25516146ea9112))
+
+- Relock after master update ([#748](https://github.com/fhempy/fhempy/pull/748),
+  [`c8cd9e0`](https://github.com/fhempy/fhempy/commit/c8cd9e0771f1a2a673905413012a1eb66e63305e))
+
+- Update manifest.json for python-dateutil 3.0.0 ([#772](https://github.com/fhempy/fhempy/pull/772),
+  [`4672036`](https://github.com/fhempy/fhempy/commit/4672036a3c7b101a6573caec8e797d66cd964abe))
+
+
 ## v2.12.0 (2026-10-28)
 
 ### Bug Fixes
