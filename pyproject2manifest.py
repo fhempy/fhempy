@@ -1,14 +1,13 @@
 import json
 import os
 import re
-
-import toml
+import tomllib
 
 
 def get_latest_versions_from_pyproject():
     pyproject_path = "pyproject.toml"
-    with open(pyproject_path, "r") as toml_file:
-        content = toml.load(toml_file)
+    with open(pyproject_path, "rb") as toml_file:
+        content = tomllib.load(toml_file)
 
     dependencies = (
         content.get("tool", {})

@@ -179,7 +179,7 @@ class kia_hyundai(generic.FhemModule):
 
     def first_vehicle_id(self):
         # use only first vehicle
-        return list(self.vm.vehicles)[0]
+        return next(iter(self.vm.vehicles))
 
     async def update_readings(self):
         self.vehicle = self.vm.vehicles[self.first_vehicle_id()]

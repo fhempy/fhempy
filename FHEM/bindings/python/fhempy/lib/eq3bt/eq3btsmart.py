@@ -29,6 +29,7 @@ from enum import IntEnum
 
 from construct import Byte
 
+from .. import utils
 from ..core import bluetoothle
 from .structures import AwayDataAdapter, DeviceId, Schedule, Status
 
@@ -226,7 +227,7 @@ class Thermostat:
                 "Unknown notification %s (%s)", data[0], codecs.encode(data, "hex")
             )
         if self._notification_callback:
-            asyncio.create_task(self._notification_callback())
+            utils.create_background_task(self._notification_callback())
 
     async def query_id(self):
         """Query device identification information, e.g. the serial number."""
@@ -407,7 +408,7 @@ class Thermostat:
             "Window open config, temperature: %s duration: %s", temperature, duration
         )
         self._verify_temperature(temperature)
-        if duration < 0 and duration > 3600:
+        if duration < 0 or duration > 3600:
             raise ValueError
 
         value = struct.pack(

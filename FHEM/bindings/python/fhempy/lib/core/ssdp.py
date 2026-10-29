@@ -131,10 +131,7 @@ class ssdp:
             self.logger.exception("Error in handle_msg")
 
     async def search(self):
-        try:
-            await self.search_once()
-        except asyncio.CancelledError:
-            pass
+        await self.search_once()
 
     @staticmethod
     def _source():
@@ -156,6 +153,7 @@ class ssdp:
             )
         except asyncio.CancelledError:
             self.logger.debug("search cancelled")
+            raise
         except Exception as exc:
             self.logger.error(f"SSDP search failed: {exc}")
 

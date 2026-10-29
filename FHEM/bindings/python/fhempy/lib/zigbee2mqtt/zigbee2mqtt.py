@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 
+import aiofiles
 import ifaddr
 from git import Repo
 
@@ -305,8 +306,8 @@ class zigbee2mqtt(FhemModule):
         await self.apply_restored_backup(z2m_directory)
 
         # Load the package.json file
-        with open(z2m_directory + "/package.json", "r") as f:
-            package_data = json.load(f)
+        async with aiofiles.open(z2m_directory + "/package.json", "r") as f:
+            package_data = json.loads(await f.read())
 
         # Extract the version number
         version = package_data["version"]
@@ -357,7 +358,7 @@ class zigbee2mqtt(FhemModule):
                         await self.start_process()
                 await asyncio.sleep(10)
             except asyncio.CancelledError:
-                return
+                raise
 
     async def stop_process(self):
         if self.check_process_task:

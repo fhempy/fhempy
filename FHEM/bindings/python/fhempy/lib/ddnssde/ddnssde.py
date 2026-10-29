@@ -161,7 +161,10 @@ class ddnssde(generic.FhemModule):
 
                 data = await resp.text()
                 soup = BeautifulSoup(data, "html.parser")
-                self.csrf_token = soup.find("input", {"name": "csrf_token"})["value"]
+                csrf_input = soup.find("input", {"name": "csrf_token"})
+                if csrf_input is None:
+                    raise Exception("No csrf_token found on ddnss.de login page")
+                self.csrf_token = csrf_input["value"]
 
             async with session.post(
                 "https://ddnss.de/do.php",
@@ -200,7 +203,10 @@ class ddnssde(generic.FhemModule):
                 data = await resp.text()
                 soup = BeautifulSoup(data, "html.parser")
                 self.hostnames = {}
-                hostarr = soup.find("tbody").findAll("tr")
+                tbody = soup.find("tbody")
+                if tbody is None:
+                    return False
+                hostarr = tbody.findAll("tr")
                 for host in hostarr:
                     hostdetailsarr = host.findAll("td")
                     hostname = hostdetailsarr[1].find("u").text.split()[0]

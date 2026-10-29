@@ -287,10 +287,8 @@ class FhemModule:
         return task
 
     async def _run_coro(self, coro):
-        try:
-            await coro
-        except asyncio.CancelledError:
-            pass
+        # a cancelled task ends as cancelled, _handle_task_result ignores it
+        await coro
 
     def _handle_task_result(self, task):
         if task in self._tasks:

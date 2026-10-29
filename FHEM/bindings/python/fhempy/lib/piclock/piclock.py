@@ -263,11 +263,13 @@ class piclock(generic.FhemModule):
     async def async_button_pressed(self, button):
         if button > 0:
             text = await fhem.AttrVal(
-                self.hash["NAME"], "button_" + str(button) + "_display"
+                self.hash["NAME"], "button_" + str(button) + "_display", ""
             )
             cmd = await fhem.AttrVal(
-                self.hash["NAME"], "button_" + str(button) + "_cmd"
+                self.hash["NAME"], "button_" + str(button) + "_cmd", ""
             )
 
-            await self.show_notification(text)
-            await fhem.sendCommandName(self.hash["NAME"], cmd)
+            if text:
+                await self.show_notification(text)
+            if cmd:
+                await fhem.sendCommandName(self.hash["NAME"], cmd)

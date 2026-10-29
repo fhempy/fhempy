@@ -40,7 +40,7 @@ class fusionsolar(generic.FhemModule):
                 }
             }
         )
-        if len(argsh) > 0 and argsh[list(argsh)[0]][:4] == "http":
+        if len(argsh) > 0 and argsh[next(iter(argsh))][:4] == "http":
             await fhem.readingsSingleUpdate(
                 hash, "state", "Please read HELP to change define", 1
             )

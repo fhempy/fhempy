@@ -80,7 +80,7 @@ def needs_install(installed):
 
 
 def parse_node_version(text):
-    m = re.search(r"v?(\d+)\.(\d+)", text or "")
+    m = re.search(r"v?+(\d++)\.(\d++)", text or "")
     if m is None:
         return None
     return (int(m.group(1)), int(m.group(2)))
