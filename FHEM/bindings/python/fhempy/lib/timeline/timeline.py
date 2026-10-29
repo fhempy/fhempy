@@ -666,7 +666,11 @@ class timeline(generic.FhemModule):
         readings = story.curve_readings(reading, set(rows) | set(carry))
         return json.dumps(
             story.build_curve(
-                device, readings, rows, carry, self.infos, start, end, last, today
+                device,
+                readings,
+                {"rows": rows, "carry": carry},
+                self.infos,
+                (start, end, last, today),
             ),
             ensure_ascii=False,
         )

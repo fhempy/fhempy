@@ -298,6 +298,22 @@ def _classify_number(info, reading):
     return TREND, DEVICES
 
 
+def _classify_story(info, reading, numeric):
+    """(layer, category) of readings which tell a story, None for others"""
+    for regexp, category in _STORY_READINGS:
+        if not regexp.match(reading):
+            continue
+        if category == SECURITY and is_window(reading):
+            # window open detection of a thermostat
+            if device_category(info) == CLIMATE:
+                return STORY, CLIMATE
+        if numeric is None or category in (SECURITY, PRESENCE):
+            return STORY, category
+        # desired-temp 21 is a decision, battery 87 is not
+        return (STORY, CLIMATE) if category == CLIMATE else (TECH, DEVICES)
+    return None
+
+
 def classify(info, reading, value):
     """(layer, category) of one event. info: NAME, TYPE, alias, room,
     genericDeviceType of the device, may be incomplete."""
@@ -308,18 +324,9 @@ def classify(info, reading, value):
         return TECH, DEVICES
 
     numeric = number(value)
-    for regexp, category in _STORY_READINGS:
-        if not regexp.match(reading):
-            continue
-        if category == SECURITY and is_window(reading):
-            # window open detection of a thermostat
-            if device_category(info) == CLIMATE:
-                return STORY, CLIMATE
-        if numeric is None or category == SECURITY or category == PRESENCE:
-            return STORY, category
-        # desired-temp 21 is a decision, battery 87 is not
-        return (STORY, CLIMATE) if category == CLIMATE else (TECH, DEVICES)
-
+    story = _classify_story(info, reading, numeric)
+    if story is not None:
+        return story
     if numeric is not None:
         return _classify_number(info, reading)
     if reading != "state":

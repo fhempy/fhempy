@@ -192,40 +192,53 @@ def _is_alert(entry, infos, absences, now):
     return _is_absent(absences, entry["ts"], now)
 
 
-def _continue_entry(previous, ts, value):
-    """True if the event only continues the previous entry of its reading:
-    on again shortly after off, the matching off or the same value again"""
-    if previous is None:
-        return False
+def _repeats_state(previous, ts, value):
+    """True if the event only repeats what the previous entry already says:
+    the same number, on while still on, off while already off"""
     lower = value.lower()
     if lower == previous["value"].lower() and classify.number(value) is not None:
         # the same target temperature again is no decision
         return True
-    was_active = previous["value"].lower() in ACTIVE_VALUES
-    if was_active and previous["end"] is None and lower in ACTIVE_VALUES:
+    if previous["value"].lower() not in ACTIVE_VALUES:
+        return False
+    if previous["end"] is None and lower in ACTIVE_VALUES:
         # still on: devices which repeat their state don't start a new entry
         if previous["value"] != value:
             previous["count"] += 1
         previous["last"] = ts
         return True
-    if was_active and previous["end"] is not None and lower in INACTIVE_VALUES:
-        # still off
+    # still off
+    return previous["end"] is not None and lower in INACTIVE_VALUES
+
+
+def _close(previous, ts, value):
+    previous["end"] = ts
+    previous["end_value"] = value
+    previous["last"] = ts
+
+
+def _continue_entry(previous, ts, value):
+    """True if the event only continues the previous entry of its reading:
+    on again shortly after off, the matching off or the same value again"""
+    if previous is None:
+        return False
+    if _repeats_state(previous, ts, value):
         return True
+    lower = value.lower()
+    was_active = previous["value"].lower() in ACTIVE_VALUES
     if ts - previous["last"] > MERGE_GAP:
         # off long after on closes the running entry
         closes = was_active and previous["end"] is None and lower in INACTIVE_VALUES
         if closes:
-            previous["end"] = ts
-            previous["end_value"] = value
-            previous["last"] = ts
+            _close(previous, ts, value)
         return closes
     if was_active and lower in ACTIVE_VALUES:
         # on again shortly after off
         previous["count"] += 1
         previous["end"] = None
     elif was_active and lower in INACTIVE_VALUES:
-        previous["end"] = ts
-        previous["end_value"] = value
+        _close(previous, ts, value)
+        return True
     elif lower == previous["value"].lower():
         previous["count"] += 1
     else:
@@ -607,11 +620,14 @@ def _curve_points(rows, held, start, end, now):
     return points
 
 
-def build_curve(device, readings, rows, carry, infos, start, end, last, today):
-    """readings: the reading and maybe its target temperature, rows/carry:
-    reading -> hourly rows / value before the period
+def build_curve(device, readings, data, infos, period):
+    """readings: the reading and maybe its target temperature, data: rows
+    (reading -> hourly rows) and carry (reading -> value before the period),
+    period: start, end, last day, today
     -> the curve for the curve popup with [hour, avg, min, max] per hour"""
     now = time.time()
+    rows, carry = data["rows"], data["carry"]
+    start, end, last, today = period
     reading = readings[0]
     real = rows.get(reading, [])
     points = _curve_points(real, carry.get(reading), start, end, now)
@@ -639,18 +655,23 @@ def build_curve(device, readings, rows, carry, infos, start, end, last, today):
     if not count and points:
         result["avg"] = round(sum(p[1] for p in points) / len(points), 2)
     if len(readings) > 1:
-        target = _curve_points(
-            rows.get(readings[1], []), carry.get(readings[1]), start, end, now
-        )
+        target = _curve_target(readings[1], rows, carry, (start, end, now))
         if target:
-            result["target"] = {
-                "reading": readings[1],
-                "name": reading_label(readings[1]),
-                "points": [[p[0], p[1]] for p in target],
-                "min": min(p[1] for p in target),
-                "max": max(p[1] for p in target),
-            }
+            result["target"] = target
     return result
+
+
+def _curve_target(reading, rows, carry, period):
+    points = _curve_points(rows.get(reading, []), carry.get(reading), *period)
+    if not points:
+        return None
+    return {
+        "reading": reading,
+        "name": reading_label(reading),
+        "points": [[p[0], p[1]] for p in points],
+        "min": min(p[1] for p in points),
+        "max": max(p[1] for p in points),
+    }
 
 
 def curve_readings(reading, readings):
