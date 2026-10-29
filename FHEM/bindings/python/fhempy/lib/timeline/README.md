@@ -51,6 +51,7 @@ If something is wrong:
 - Click a device name for the history of the device (story and curves of the last 7 or 31 days) with an *Open device* button, Ctrl+click opens the device directly
 - Curves which stayed the same all day are folded away, *Show unchanged curves* shows them
 - Curves are grouped by device; hovering a curve (or touching it on a phone) shows the value and the hour
+- Click a curve to open it big: one day, 7 or 31 days with ‹ › (or the arrow keys) to step back and forth, latest, min, max and average value, min–max band and the exact value under the mouse or finger
 - A device which reports *on* again while it is still on doesn't start a new entry; *still on for …* shows how long it has been on so far
 - `set timeline auto <device>:<reading>` lets fhempy decide again
 

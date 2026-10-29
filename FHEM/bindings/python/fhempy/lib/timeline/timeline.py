@@ -136,6 +136,16 @@ class timeline(generic.FhemModule):
                     "help": "History of one device of the last days (default "
                     "7) as JSON. Used by the popup of the detail page.",
                 },
+                "curve": {
+                    "args": ["reading", "day", "days"],
+                    "params": {
+                        "day": {"optional": True},
+                        "days": {"optional": True},
+                    },
+                    "help": "Hourly values of device:reading of the days "
+                    "(default 1) up to day (YYYY-MM-DD, default today) as "
+                    "JSON. Used by the curve popup of the detail page.",
+                },
                 "details": {
                     "args": ["day"],
                     "help": "Hidden events of a day (YYYY-MM-DD) as JSON.",
@@ -615,6 +625,31 @@ class timeline(generic.FhemModule):
                 "entries": entries,
                 "trends": story.build_device_trends(data["hourly"], self.infos),
             },
+            ensure_ascii=False,
+        )
+
+    async def get_curve(self, hash, params):
+        if self.store is None:
+            return json.dumps({"error": "The timeline is starting"})
+        device, _, reading = str(params.get("reading", "")).partition(":")
+        if device not in self.infos or not classify.READING_NAME_RE.match(reading):
+            return json.dumps({"error": "Use device:reading of an existing device"})
+        today = datetime.date.today()
+        try:
+            last = min(self.parse_day(params.get("day"), today), today)
+            days = min(max(int(params.get("days") or 1), 1), MAX_DAYS)
+        except ValueError:
+            return json.dumps({"error": "Use YYYY-MM-DD and a number of days"})
+        await self.flush()
+        start = day_start((last - datetime.timedelta(days=days - 1)).isoformat())
+        end = day_start((last + datetime.timedelta(days=1)).isoformat())
+        rows = await utils.run_blocking(
+            functools.partial(self.store.curve, device, reading, start, end)
+        )
+        return json.dumps(
+            story.build_curve(
+                device, reading, rows, self.infos, start, end, last, today
+            ),
             ensure_ascii=False,
         )
 
