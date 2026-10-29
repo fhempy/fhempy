@@ -97,6 +97,15 @@ class autodiscovery(generic.FhemModule):
                     "[name=&lt;device name&gt;] [p0=&lt;value&gt;...]",
                 },
                 "createAll": {"help": "Creates all found devices which need no input."},
+                "recreate": {
+                    "args": ["id"],
+                    "help": "Sets up a device in FHEM again like a new one "
+                    "(readings, commands, state), the name stays.",
+                },
+                "recreateAll": {
+                    "help": "Sets up all MQTT devices in FHEM again like new "
+                    "ones, the names stay."
+                },
                 "ignore": {"args": ["id"], "help": "Don't offer this device again."},
                 "unignore": {
                     "args": ["id"],
@@ -311,6 +320,17 @@ class autodiscovery(generic.FhemModule):
                 errors.append(f"{candidate['title']}: {ret}")
         return "\n".join(errors)
 
+    async def set_recreate(self, hash, params):
+        return await self.engine.recreate(params["id"])
+
+    async def set_recreateAll(self, hash, params):
+        errors = []
+        for candidate in self.engine.recreatable():
+            ret = await self.engine.recreate(candidate["id"])
+            if ret:
+                errors.append(f"{candidate['title']}: {ret}")
+        return "\n".join(errors)
+
     async def set_ignore(self, hash, params):
         await self.engine.ignore(params["id"])
 
@@ -446,5 +466,6 @@ def public(candidates):
         "source",
         "device",
         "deleted",
+        "can_recreate",
     )
     return [{k: c[k] for k in keys if k in c} for c in candidates]

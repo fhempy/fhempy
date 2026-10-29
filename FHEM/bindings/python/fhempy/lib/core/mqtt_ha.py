@@ -1450,6 +1450,34 @@ async def set_device_attributes(hash, fhem_device_name, entities):
                 await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
 
 
+# attributes with the readings, commands and state of the device
+GENERATED_ATTRS = ("readingList", "setList", "webCmd", "stateFormat", "devStateIcon")
+# attributes of MQTT2_DEVICE attrTemplates (e.g. Zigbee2MQTT autocreate),
+# not used by the generated attributes
+TEMPLATE_ATTRS = ("jsonMap", "getList", "setStateList", "model", "devicetopic")
+
+
+async def reset_device_attributes(hash, fhem_device_name, entities):
+    """Sets up an existing device again like a new one: the generated
+    attributes replace the old ones completely, also lines written by the
+    user or by an attrTemplate. The name and all other attributes (room,
+    alias, icon...) are kept.
+
+    entities: list of (component, object_id, payload_json)
+    """
+    attrs = generate_attributes(entities)
+    for attr in GENERATED_ATTRS + TEMPLATE_ATTRS:
+        value = attrs.get(attr) or ""
+        if isinstance(value, list):
+            value = "\n".join(value)
+        current = await fhem.AttrVal(fhem_device_name, attr, "")
+        if value:
+            if value != current:
+                await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {value}")
+        elif current:
+            await fhem.CommandDeleteAttr(hash, f"{fhem_device_name} {attr}")
+
+
 # FHEMWEB icon of a new device: first matching component, then the device
 # class of a sensor (diagnostic entities like battery are skipped)
 ICONS_BY_COMPONENT = (
