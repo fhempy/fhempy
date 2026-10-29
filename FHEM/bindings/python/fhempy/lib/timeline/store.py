@@ -13,11 +13,11 @@ SCHEMA = (
     " value TEXT NOT NULL, layer TEXT NOT NULL, category TEXT NOT NULL)",
     "CREATE INDEX IF NOT EXISTS events_layer_ts ON events (layer, ts)",
     "CREATE INDEX IF NOT EXISTS events_device_ts ON events (device, ts)",
-    # min/max/average per hour of numeric readings
+    # min/max/average and last value per hour of numeric readings
     "CREATE TABLE IF NOT EXISTS hourly ("
     " hour INTEGER NOT NULL, device TEXT NOT NULL, reading TEXT NOT NULL,"
     " category TEXT NOT NULL, min REAL, max REAL, sum REAL, n INTEGER,"
-    " PRIMARY KEY (device, reading, hour))",
+    " last REAL, PRIMARY KEY (device, reading, hour))",
     "CREATE INDEX IF NOT EXISTS hourly_hour ON hourly (hour)",
     # number of hidden events per day, including the ones FHEM only counted
     "CREATE TABLE IF NOT EXISTS daily (day TEXT PRIMARY KEY, hidden INTEGER)",
@@ -27,6 +27,14 @@ SCHEMA = (
     "CREATE TABLE IF NOT EXISTS frequent ("
     " device TEXT NOT NULL, reading TEXT NOT NULL, PRIMARY KEY (device, reading))",
 )
+
+
+# hourly rows: the last value of hours written before it was stored is the
+# average of the hour
+HOURLY_COLUMNS = (
+    "hour, device, reading, category, min, max, sum, n, COALESCE(last, sum / n)"
+)
+CARRY_DAYS = 31
 
 
 def day_of(ts):
@@ -53,6 +61,10 @@ class Store:
             self._db.execute("PRAGMA synchronous=NORMAL")
             for statement in SCHEMA:
                 self._db.execute(statement)
+            columns = [row[1] for row in self._db.execute("PRAGMA table_info(hourly)")]
+            if "last" not in columns:
+                # databases of versions before 2.14
+                self._db.execute("ALTER TABLE hourly ADD COLUMN last REAL")
             self._db.commit()
 
     def close(self):
@@ -63,18 +75,21 @@ class Store:
 
     def add(self, events, hourly, hidden):
         """events: (ts, device, reading, value, layer, category)
-        hourly: (hour, device, reading) -> [category, min, max, sum, n]
+        hourly: (hour, device, reading) -> [category, min, max, sum, n, last]
         hidden: day -> number of hidden events"""
         with self._lock:
             db = self._db
             db.executemany("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)", events)
             db.executemany(
-                "INSERT INTO hourly VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO hourly"
+                " (hour, device, reading, category, min, max, sum, n, last)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 " ON CONFLICT (device, reading, hour) DO UPDATE SET"
                 " min = MIN(min, excluded.min), max = MAX(max, excluded.max),"
-                " sum = sum + excluded.sum, n = n + excluded.n",
+                " sum = sum + excluded.sum, n = n + excluded.n,"
+                " last = excluded.last",
                 [
-                    (hour, device, reading, *values)
+                    (hour, device, reading, *values[:5], values[5])
                     for (hour, device, reading), values in hourly.items()
                 ],
             )
@@ -105,20 +120,27 @@ class Store:
     def device_hourly(self, device, start, end):
         with self._lock:
             return self._db.execute(
-                "SELECT hour, device, reading, category, min, max, sum, n"
+                f"SELECT {HOURLY_COLUMNS}"
                 " FROM hourly WHERE device = ? AND hour >= ? AND hour < ?"
                 " ORDER BY hour",
                 (device, int(start), int(end)),
             ).fetchall()
 
-    def curve(self, device, reading, start, end):
+    def values_before(self, start, device=None):
+        """last hourly row of each reading in the 31 days before start: the
+        value a reading still had at start if FHEM only sends changes"""
+        where = "hour < ? AND hour >= ?"
+        args = [int(start), int(start) - CARRY_DAYS * 86400]
+        if device is not None:
+            where += " AND device = ?"
+            args.append(device)
         with self._lock:
-            return self._db.execute(
-                "SELECT hour, category, min, max, sum, n FROM hourly"
-                " WHERE device = ? AND reading = ? AND hour >= ? AND hour < ?"
-                " ORDER BY hour",
-                (device, reading, int(start), int(end)),
+            rows = self._db.execute(
+                f"SELECT {HOURLY_COLUMNS}, MAX(hour) FROM hourly WHERE {where}"
+                " GROUP BY device, reading",
+                args,
             ).fetchall()
+        return [row[:-1] for row in rows]
 
     def details(self, start, end, limit=500):
         with self._lock:
@@ -132,7 +154,7 @@ class Store:
     def hourly(self, start, end):
         with self._lock:
             return self._db.execute(
-                "SELECT hour, device, reading, category, min, max, sum, n"
+                f"SELECT {HOURLY_COLUMNS}"
                 " FROM hourly WHERE hour >= ? AND hour < ? ORDER BY hour",
                 (int(start), int(end)),
             ).fetchall()

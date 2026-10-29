@@ -9,7 +9,7 @@ from tests.utils import mock_fhem
 
 from fhempy.lib import fhem
 from fhempy.lib.timeline import classify, story
-from fhempy.lib.timeline.store import Store, day_of
+from fhempy.lib.timeline.store import Store, day_of, day_start
 from fhempy.lib.timeline.timeline import FREQUENT_PER_HOUR, SKIP_EVENTS, timeline
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ INFOS = {
     "light2": {"TYPE": "HUEDevice", "room": "Living", "alias": "Light table"},
     "light3": {"TYPE": "HUEDevice", "room": "Living", "alias": "Light corner"},
     "smoke": {"TYPE": "dummy", "room": "Hall"},
+    "trv": {"TYPE": "MQTT2_DEVICE", "room": "Living", "alias": "Heizung Wohnzimmer"},
 }
 
 
@@ -34,6 +35,13 @@ def test_classify():
     assert c(hall, "linkquality", "120") == ("tech", "devices")
     assert c(hall, "last_seen", "2026-10-26 10:00") == ("tech", "devices")
     assert c(hall, "battery", "87") == ("tech", "devices")
+    trv = INFOS["trv"]
+    assert c(trv, "desired-temp", "20") == ("story", "climate")
+    # the echo of "set trv desired-temp 20" and settings of the thermostat
+    assert c(trv, "desired-temp", "set desired-temp 20") == ("tech", "devices")
+    assert c(trv, "child_lock", "UNLOCK") == ("tech", "devices")
+    assert c(trv, "window", "CLOSED") == ("story", "climate")
+    assert c(INFOS["door"], "window", "closed") == ("story", "security")
     assert c(hall, "battery", "low") == ("story", "devices")
     assert c(hall, "temperature", "21.5 °C") == ("trend", "climate")
     assert c(hall, "power", "1,5 W") == ("trend", "energy")
@@ -128,6 +136,73 @@ def test_story_repeated_states():
     assert entries[1]["count"] == 1 and entries[2]["count"] == 1
 
 
+def test_thermostat_story():
+    entries = build(
+        [
+            (0, "trv", "desired-temp", "21", "climate"),
+            (100, "trv", "desired-temp", "20", "climate"),
+            # FHEM reports the same target again
+            (5000, "trv", "desired-temp", "20", "climate"),
+            (6000, "trv", "window", "CLOSED", "climate"),
+        ]
+    )
+    assert [(e["text"], e["short"]) for e in entries] == [
+        ("Heizung Wohnzimmer set to 21 °C", "Set to 21 °C"),
+        ("Heizung Wohnzimmer set to 20 °C", "Set to 20 °C"),
+        ("Heizung Wohnzimmer: window closed", "Window closed"),
+    ]
+    assert entries[1]["count"] == 1
+    assert story.reading_label("boost_heating_countdown") == "boost heating countdown"
+    assert story.reading_label("measured-temp") == "temperature"
+
+
+def test_thermostat_trends():
+    start = day_start("2026-01-05")
+    hour = int(start)
+
+    def row(h, reading, value):
+        return (
+            hour + h * 3600,
+            "trv",
+            reading,
+            "climate",
+            value,
+            value,
+            value,
+            1,
+            value,
+        )
+
+    rows = [row(0, "temperature", 20.0), row(1, "temperature", 20.5)]
+    rows += [row(5, "temperature", 21.0), row(2, "desired-temp", 22.0)]
+    carry = [row(-30, "desired-temp", 21.0)]
+    days = story.build_trends(rows, INFOS, carry, now=start + 86400)
+    (trend,) = days["2026-01-05"]
+    assert trend["reading"] == "temperature" and trend["unit"] == "°C"
+    # hours without an event keep the last value
+    assert trend["points"][:6] == [20.0, 20.5, 20.5, 20.5, 20.5, 21.0]
+    assert trend["points"][23] == 21.0
+    assert trend["target"]["points"][:3] == [21.0, 21.0, 22.0]
+    assert trend["target"]["points"][23] == 22.0
+    assert trend["target"]["name"] == "target temperature"
+    # no new target the next day: the curve still shows the one set before
+    rows = [row(24, "temperature", 19.0)]
+    days = story.build_trends(rows, INFOS, carry + [row(2, "desired-temp", 22.0)])
+    (trend,) = days["2026-01-06"]
+    assert trend["target"]["points"][0] == 22.0
+
+    trends = story.build_device_trends(
+        rows, INFOS, carry + [row(5, "temperature", 21.0)], start, start + 2 * 86400
+    )
+    assert [t["reading"] for t in trends] == ["temperature"]
+    assert trends[0]["points"][0] == [hour, 21.0]
+    assert trends[0]["target"]["points"][0] == [hour, 21.0]
+    assert story.curve_readings("desired-temp", {"desired-temp", "temperature"}) == [
+        "temperature",
+        "desired-temp",
+    ]
+
+
 def test_story_groups_scenes():
     entries = build(
         [
@@ -177,20 +252,23 @@ def test_store(tmp_path):
     hour = int(now // 3600 * 3600)
     store.add(
         [(now, "door", "state", "open", "story", "security")],
-        {(hour, "hall", "temperature"): ["climate", 20.0, 22.0, 42.0, 2]},
+        {(hour, "hall", "temperature"): ["climate", 20.0, 22.0, 42.0, 2, 22.0]},
         {day_of(now): 3},
     )
     store.add(
         [(now - 30 * 86400, "hall", "temperature", "1", "trend", "climate")],
-        {(hour, "hall", "temperature"): ["climate", 19.0, 21.0, 20.0, 1]},
+        {(hour, "hall", "temperature"): ["climate", 19.0, 21.0, 20.0, 1, 20.0]},
         {day_of(now): 2},
     )
     assert store.story(now - 10, now + 10) == [
         (now, "door", "state", "open", "security")
     ]
     assert store.hourly(hour, hour + 1) == [
-        (hour, "hall", "temperature", "climate", 19.0, 22.0, 62.0, 3)
+        (hour, "hall", "temperature", "climate", 19.0, 22.0, 62.0, 3, 20.0)
     ]
+    # the value a reading still has after its last event
+    assert store.values_before(hour + 7200) == store.hourly(hour, hour + 1)
+    assert store.values_before(hour + 7200, "door") == []
     assert store.hidden(day_of(now), day_of(now)) == {day_of(now): 5}
     store.absence_changed(now - 100_000, True)
     store.absence_changed(now - 100_000 + 50, True)
@@ -264,7 +342,7 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     details = json.loads(await module.Get(hash, ["tl", "details", data["today"]], {}))
     assert [d["text"] for d in details] == [
         "Hallway: action single",
-        "Hallway: temperature 21.5",
+        "Hallway: temperature 21.5 °C",
     ]
 
     # "Show less" and "Always show"
@@ -324,6 +402,27 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     assert json.loads(await module.Get(hash, ["tl", "curve", "hall:a;b"], {})) == {
         "error": "Use device:reading of an existing device"
     }
+
+    # thermostat: target temperature as story and as curve with the temperature
+    t = time.time()
+    await fhem.dispatch_recorded_events(
+        "tl",
+        [
+            [
+                [f"{t:.3f}", "trv", "desired-temp: set desired-temp 21"],
+                [f"{t:.3f}", "trv", "desired-temp: 21"],
+                [f"{t:.3f}", "trv", "temperature: 20.5"],
+            ],
+            {},
+        ],
+    )
+    history = json.loads(await module.Get(hash, ["tl", "device", "trv"], {}))
+    assert [e["short"] for e in history["entries"]] == ["Set to 21 °C"]
+    (trend,) = history["trends"]
+    assert trend["reading"] == "temperature" and trend["target"]["max"] == 21
+    curve = json.loads(await module.Get(hash, ["tl", "curve", "trv:desired-temp"], {}))
+    assert curve["reading"] == "temperature" and curve["name"] == "temperature"
+    assert curve["target"]["points"][-1][1] == 21
 
     # events only on change, curves which changed
     trend = data["days"][0]["trends"][0]

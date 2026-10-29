@@ -127,7 +127,8 @@ _TECH_RE = re.compile(f"^(?:{TECH_READINGS})$", re.IGNORECASE)
 _STORY_READINGS = (
     (
         re.compile(
-            r"^(contact|window|door|.*door.*|lock|lockstate|.*_lock|alarm.*|"
+            r"^(contact|window|door|.*door.*|lock|lockstate|"
+            r"(?!child|keypad|button).*_lock|alarm.*|"
             r"smoke.*|.*leak.*|tamper|sabotage|siren|doorbell|ring|ding|"
             r"vibration|gas|co_alarm|water_alarm)$",
             re.IGNORECASE,
@@ -143,7 +144,8 @@ _STORY_READINGS = (
     ),
     (
         re.compile(
-            r"^(desired-temp|desiredTemperature|target_?temperature|mode|"
+            r"^(desired-temp|desiredTemperature|target_?temperature|"
+            r"(current_|occupied_)?heating_setpoint|setpoint|mode|"
             r"hvac_?mode|boost|window_?open|windowOpen|heating)$",
             re.IGNORECASE,
         ),
@@ -170,6 +172,24 @@ _TREND_READINGS = (
         ENERGY,
     ),
 )
+
+# target temperature of a thermostat and the measured temperature: shown
+# together in one curve
+_SETPOINT_RE = re.compile(
+    r"^(desired-?temp(erature)?|desiredTemperature|target_?temp(erature)?|"
+    r"(current_|occupied_)?heating_setpoint|setpoint)$",
+    re.IGNORECASE,
+)
+_TEMPERATURE_RE = re.compile(
+    r"^(measured-?temp(erature)?|local_?temperature|current_?temperature|"
+    r"room_?temperature|actual_?temperature|temperature|temp)$",
+    re.IGNORECASE,
+)
+# settings of a device, not a door lock or a window of the house
+_SETTING_RE = re.compile(r"^(child|keypad|button)_?lock$", re.IGNORECASE)
+_WINDOW_RE = re.compile(r"^(window|window_?open|window_?detection)$", re.IGNORECASE)
+# value of a reading which only repeats a set command ("set desired-temp 20")
+_COMMAND_ECHO_RE = re.compile(r"^set[ _]", re.IGNORECASE)
 
 _NUMBER_RE = re.compile(r"^\s*(-?\d+(?:[.,]\d+)?)\s*(\S{0,6})\s*$")
 _SECURITY_WORDS = (
@@ -218,6 +238,18 @@ def on_change(info, reading):
 
 def is_tech_reading(reading):
     return bool(_TECH_RE.match(reading))
+
+
+def is_setpoint(reading):
+    return bool(_SETPOINT_RE.match(reading))
+
+
+def is_temperature(reading):
+    return bool(_TEMPERATURE_RE.match(reading))
+
+
+def is_window(reading):
+    return bool(_WINDOW_RE.match(reading))
 
 
 def device_category(info):
@@ -269,14 +301,20 @@ def _classify_number(info, reading):
 def classify(info, reading, value):
     """(layer, category) of one event. info: NAME, TYPE, alias, room,
     genericDeviceType of the device, may be incomplete."""
+    value = str(value)
     if _is_tech_device(info) or is_tech_reading(reading):
         return TECH, DEVICES
+    if _SETTING_RE.match(reading) or _COMMAND_ECHO_RE.match(value):
+        return TECH, DEVICES
 
-    value = str(value)
     numeric = number(value)
     for regexp, category in _STORY_READINGS:
         if not regexp.match(reading):
             continue
+        if category == SECURITY and is_window(reading):
+            # window open detection of a thermostat
+            if device_category(info) == CLIMATE:
+                return STORY, CLIMATE
         if numeric is None or category == SECURITY or category == PRESENCE:
             return STORY, category
         # desired-temp 21 is a decision, battery 87 is not

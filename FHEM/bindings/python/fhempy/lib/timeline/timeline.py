@@ -362,6 +362,9 @@ class timeline(generic.FhemModule):
         ):
             layer = classify.TECH
         self._pending.append((ts, device, reading, value, layer, category))
+        if layer != classify.TREND and classify.is_setpoint(reading):
+            # also a curve, together with the measured temperature
+            self.aggregate(ts, device, reading, value, classify.CLIMATE)
         if layer == classify.STORY:
             self._story_today += 1
             self._last_story = story.entry_text(self.infos, device, reading, value)
@@ -380,12 +383,13 @@ class timeline(generic.FhemModule):
         key = (int(ts // 3600 * 3600), device, reading)
         values = self._hourly.get(key)
         if values is None:
-            self._hourly[key] = [category, number, number, number, 1]
+            self._hourly[key] = [category, number, number, number, 1, number]
         else:
             values[1] = min(values[1], number)
             values[2] = max(values[2], number)
             values[3] += number
             values[4] += 1
+            values[5] = number
 
     async def update_absence(self, ts, state=None):
         if state is None:
@@ -566,6 +570,7 @@ class timeline(generic.FhemModule):
             data["absences"],
             self.infos,
             now,
+            data["carry"],
         )
         return json.dumps(
             {
@@ -587,6 +592,7 @@ class timeline(generic.FhemModule):
         return {
             "story": self.store.story(start, end),
             "hourly": self.store.hourly(start, end),
+            "carry": self.store.values_before(start),
             "hidden": self.store.hidden(first.isoformat(), last.isoformat()),
             "absences": self.store.absences(start - 86400, end),
             "periods": self.store.long_absences(PERIOD_MIN_SECONDS),
@@ -626,7 +632,9 @@ class timeline(generic.FhemModule):
                 "from": start,
                 "to": end,
                 "entries": entries,
-                "trends": story.build_device_trends(data["hourly"], self.infos),
+                "trends": story.build_device_trends(
+                    data["hourly"], self.infos, data["carry"], start, end, now
+                ),
             },
             ensure_ascii=False,
         )
@@ -646,20 +654,32 @@ class timeline(generic.FhemModule):
         await self.flush()
         start = day_start((last - datetime.timedelta(days=days - 1)).isoformat())
         end = day_start((last + datetime.timedelta(days=1)).isoformat())
-        rows = await utils.run_blocking(
-            functools.partial(self.store.curve, device, reading, start, end)
+        data = await utils.run_blocking(
+            functools.partial(self.query_curve, device, start, end)
         )
+        rows = collections.defaultdict(list)
+        for row in data["hourly"]:
+            rows[row[2]].append(row)
+        carry = {row[2]: row[8] for row in data["carry"]}
+        readings = story.curve_readings(reading, set(rows) | set(carry))
         return json.dumps(
             story.build_curve(
-                device, reading, rows, self.infos, start, end, last, today
+                device, readings, rows, carry, self.infos, start, end, last, today
             ),
             ensure_ascii=False,
         )
+
+    def query_curve(self, device, start, end):
+        return {
+            "hourly": self.store.device_hourly(device, start, end),
+            "carry": self.store.values_before(start, device),
+        }
 
     def query_device(self, device, start, end):
         return {
             "story": self.store.device_story(device, start, end),
             "hourly": self.store.device_hourly(device, start, end),
+            "carry": self.store.values_before(start, device),
             "absences": self.store.absences(start - 86400, end),
         }
 
