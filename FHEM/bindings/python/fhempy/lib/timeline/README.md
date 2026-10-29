@@ -52,6 +52,10 @@ If something is wrong:
 - Curves which stayed the same all day are folded away, *Show unchanged curves* shows them
 - Curves are grouped by device; hovering a curve (or touching it on a phone) shows the value and the hour
 - Click a curve to open it big: one day, 7 or 31 days with ‹ › (or the arrow keys) to step back and forth, latest, min, max and average value, min–max band and the exact value under the mouse or finger
+- Thermostats: measured and target temperature in one curve (target dashed), "set desired-temp 20" echoes of FHEM and the same target again don't show up in the story, which says "Heizung set to 20 °C"
+- Readings that only send changes keep their value until the next event, so their curves don't break up
+- The history of a device shows readable names with units, its curves with axes and the values which didn't change
+- Doors, lights, motion, outlets and buttons: the history shows the state now ("Closed since 18:14"), how often and how long ("Open 24× in 7 days · 1 h 22 min in total") and one bar per day with the times it was open/on
 - A device which reports *on* again while it is still on doesn't start a new entry; *still on for …* shows how long it has been on so far
 - `set timeline auto <device>:<reading>` lets fhempy decide again
 

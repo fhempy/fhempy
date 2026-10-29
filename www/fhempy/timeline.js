@@ -110,14 +110,15 @@
       "#fhempyTimelineCurve .ftcStat{border-radius:8px;background:rgba(128,128,128,0.09);padding:6px 10px;min-width:0}" +
       "#fhempyTimelineCurve .ftcStat b{display:block;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
       "#fhempyTimelineCurve .ftcStat span{font-size:11px;opacity:0.65;white-space:nowrap}" +
-      "#fhempyTimelineCurve .ftcChart{position:relative;touch-action:pan-y;transition:opacity .15s}" +
-      "#fhempyTimelineCurve .ftcChart.ftcLoading{opacity:0.4}" +
-      "#fhempyTimelineCurve .ftcChart svg{display:block;width:100%;overflow:visible;cursor:crosshair}" +
-      "#fhempyTimelineCurve .ftcChart text{fill:currentColor;opacity:0.6;font-size:11px}" +
-      "#fhempyTimelineCurve .ftcTip{position:absolute;top:0;pointer-events:none;background:rgba(40,40,40,0.92);color:#fff;font-size:12px;" +
+      ".ftcChart{position:relative;touch-action:pan-y;transition:opacity .15s}" +
+      ".ftcChart.ftcLoading{opacity:0.4}" +
+      ".ftcChart svg{display:block;width:100%;overflow:visible;cursor:crosshair}" +
+      ".ftcChart svg[data-curve]{cursor:zoom-in}" +
+      ".ftcChart text{fill:currentColor;opacity:0.6;font-size:11px}" +
+      ".ftcTip{position:absolute;top:0;pointer-events:none;background:rgba(40,40,40,0.92);color:#fff;font-size:12px;" +
       "padding:4px 8px;border-radius:6px;white-space:nowrap;display:none}" +
-      "#fhempyTimelineCurve .ftcTip b{font-size:15px}" +
-      "#fhempyTimelineCurve .ftcEmpty{display:flex;align-items:center;justify-content:center;opacity:0.6}" +
+      ".ftcTip b{font-size:15px}" +
+      ".ftcEmpty{display:flex;align-items:center;justify-content:center;opacity:0.6}" +
       "#fhempyTimelineCurve .ftcFoot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:10px;font-size:13px}" +
       "#fhempyTimelineCurve .ftcFoot a{color:inherit;opacity:0.8}" +
       "#fhempyTimelineCurve .ftlAction{font-size:12px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:1px 6px}" +
@@ -131,10 +132,7 @@
       "#fhempyTimelineDevice .ftlBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}" +
       "#fhempyTimelineDevice .ftlChip{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;cursor:pointer;font-size:13px}" +
       "#fhempyTimelineDevice .ftlChip.ftlOn{border-color:transparent;background:rgba(75,139,190,0.18)}" +
-      "#fhempyTimelineDevice .ftlButton{display:inline-block;padding:4px 16px;border-radius:14px;background:#4B8BBE;color:#fff;cursor:pointer;font-weight:600;text-decoration:none}" +
       "#fhempyTimelineDevice .ftlSection{font-weight:600;margin:10px 0 4px}" +
-      "#fhempyTimelineDevice .ftlTrend{font-size:12px;margin-bottom:8px}" +
-      "#fhempyTimelineDevice .ftlTrend svg{display:block;width:100%;height:44px}" +
       "#fhempyTimelineDevice .ftlEntry{display:grid;grid-template-columns:44px 10px minmax(0,1fr) auto;gap:8px;padding:3px 0;align-items:start}" +
       "#fhempyTimelineDevice .ftlTime{font-size:13px;opacity:0.7;font-variant-numeric:tabular-nums;padding-top:1px}" +
       "#fhempyTimelineDevice .ftlDot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-top:5px}" +
@@ -142,8 +140,30 @@
       "#fhempyTimelineDevice .ftlBarLine{height:4px;border-radius:2px;margin-top:4px;opacity:0.55;max-width:100%}" +
       "#fhempyTimelineDevice .ftlAlert{background:rgba(208,102,42,0.13);border-radius:6px;padding:5px 6px;margin:0 -6px}" +
       "#fhempyTimelineDevice .ftlAction{font-size:11px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
-      "#fhempyTimelineDevice .ftlAxis{display:flex;font-size:11px;opacity:0.6;margin:-4px 0 6px}" +
-      "#fhempyTimelineDevice .ftlAxis span{flex:1;text-align:center}" +
+      "#fhempyTimelineDevice a.ftlOpen{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;font-size:13px;color:inherit;text-decoration:none;white-space:nowrap}" +
+      "#fhempyTimelineDevice .ftlDevChart{margin:4px 0 14px}" +
+      "#fhempyTimelineDevice .ftaBlock{margin:4px 0 16px}" +
+      "#fhempyTimelineDevice .ftaHead{font-size:15px}#fhempyTimelineDevice .ftaHead b{font-weight:600}" +
+      "#fhempyTimelineDevice .ftaName{opacity:0.7}" +
+      "#fhempyTimelineDevice .ftaStats{font-size:12px;opacity:0.65;margin:1px 0 6px}" +
+      "#fhempyTimelineDevice .ftaRow{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:6px;height:18px;font-size:11px}" +
+      "#fhempyTimelineDevice .ftaRow>span{opacity:0.65;white-space:nowrap;overflow:hidden}" +
+      "#fhempyTimelineDevice .ftaRow.ftaCompact{height:11px}" +
+      "#fhempyTimelineDevice .ftaBar{position:relative;height:12px}" +
+      "#fhempyTimelineDevice .ftaCompact .ftaBar{height:8px}" +
+      "#fhempyTimelineDevice .ftaPast{position:absolute;left:0;top:0;bottom:0;background:rgba(128,128,128,0.12);border-radius:2px}" +
+      "#fhempyTimelineDevice .ftaSeg{position:absolute;top:0;bottom:0;border-radius:2px;min-width:2px;cursor:default}" +
+      "#fhempyTimelineDevice .ftaTick{width:2px;margin-left:-1px;opacity:0.85}" +
+      "#fhempyTimelineDevice .ftaAxis{height:14px}" +
+      "#fhempyTimelineDevice .ftaAxis div{display:flex;justify-content:space-between;opacity:0.55}" +
+      "#fhempyTimelineDevice .ftlValues{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));column-gap:20px;font-size:13px}" +
+      "#fhempyTimelineDevice .ftlValues>div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.15)}" +
+      "#fhempyTimelineDevice .ftlValues span:first-child{opacity:0.7}" +
+      ".ftcLegend{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;font-size:13px;margin:0 0 4px}" +
+      ".ftcKey{white-space:nowrap}.ftcKey b{font-weight:600}" +
+      ".ftcKey i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}" +
+      ".ftcKey i.ftcDash{height:0;border-top:2px dashed;background:none!important;border-radius:0}" +
+      "#fhempyTimeline .ftlTarget{opacity:0.75;color:#d0662a}" +
       "#fhempyTimelineDevice .ftlEmpty{opacity:0.75;margin:8px 0}" +
       "#fhempyTimelineDetails .ftlDetail{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
       "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;margin-left:4px;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
@@ -246,6 +266,8 @@
 
   function onChangeAction(item) {
     if (!item.device || item.on_change) return "";
+    // the same button pressed twice are two presses, not a repeat
+    if (/^(action|click|button|key|press(ed)?|event|scene)$/i.test(item.reading)) return "";
     return '<span class="ftlAction" data-onchange="' + esc(item.device + ":" + item.reading) +
       '" title="Add ' + esc(item.reading) + " to event-on-change-reading of " + esc(item.device) +
       ': events only when the value changes">Only on change</span>';
@@ -313,26 +335,64 @@
     return ' data-curve="' + esc(trend.device + ":" + trend.reading) + '" data-day="' + day + '" data-days="' + days + '"';
   }
 
+  function withUnit(v, unit) {
+    return v === null || v === undefined ? "–" : fmt(v) + (unit ? (unit === "%" ? "" : " ") + unit : "");
+  }
+
+  function rangeText(min, max, unit) {
+    return min === max ? withUnit(min, unit) : fmt(min) + " – " + withUnit(max, unit);
+  }
+
+  function readingName(t) {
+    var name = t.name || t.reading;
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  var TARGET_COLOR = "#d0662a";
+
   function sparkline(trend, dayStart) {
-    var pts = [], tips = [];
+    var pts = [], tips = [], target = trend.target ? trend.target.points : [];
     var low = trend.min, high = trend.max;
+    if (trend.target) { low = Math.min(low, trend.target.min); high = Math.max(high, trend.target.max); }
     var span = high - low || 1;
+    var y = function (v) { return (24 - (v - low) / span * 20).toFixed(1); };
     trend.points.forEach(function (v, i) {
       if (v === null) return;
       var x = i * 100 / 23;
-      pts.push(x.toFixed(1) + "," + (24 - (v - low) / span * 20).toFixed(1));
-      tips.push([+x.toFixed(2), dayStart + i * 3600, v]);
+      pts.push(x.toFixed(1) + "," + y(v));
+      tips.push([+x.toFixed(2), dayStart + i * 3600, v, target[i] === undefined ? null : target[i]]);
     });
     var info = categoryInfo[trend.category] || categoryInfo.devices;
     if (!pts.length) return "";
-    var line = pts.length > 1 ? '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>' : "";
-    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) +
+    var line = "";
+    if (trend.target) {
+      // target temperature as dashed steps behind the measured one
+      var steps = [], last = null;
+      target.forEach(function (v, i) {
+        if (v === null) return;
+        var x = (i * 100 / 23).toFixed(1);
+        if (last !== null) steps.push(x + "," + y(last));
+        steps.push(x + "," + y(v));
+        last = v;
+      });
+      if (steps.length > 1) {
+        line += '<polyline fill="none" stroke="' + TARGET_COLOR + '" stroke-width="1.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke" points="' + steps.join(" ") + '"/>';
+      }
+    }
+    line += pts.length > 1 ? '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>' : "";
+    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) + ' data-unit="' + esc(trend.unit || "") + '"' +
       curveAttr(trend, dayIso(new Date(dayStart * 1000)), 1) + ">" + line + "</svg>";
   }
 
+  function targetText(t) {
+    if (!t.target) return "";
+    return ' <span class="ftlTarget" title="' + esc(readingName(t.target)) + '">target ' + rangeText(t.target.min, t.target.max, t.unit) + "</span>";
+  }
+
   function trendHtml(t, dayStart) {
-    return '<div class="ftlTrend"><span class="ftlReading">' + esc(t.reading) + '</span> <span style="opacity:0.7">' +
-      fmt(t.min) + (t.changed ? " – " + fmt(t.max) : "") + "</span> " + onChangeAction(t) + sparkline(t, dayStart) + "</div>";
+    return '<div class="ftlTrend"><span class="ftlReading">' + esc(readingName(t)) + '</span> <span style="opacity:0.7">' +
+      (t.changed ? rangeText(t.min, t.max, t.unit) : withUnit(t.min, t.unit)) + "</span>" + targetText(t) + " " +
+      onChangeAction(t) + sparkline(t, dayStart) + "</div>";
   }
 
   // curves of one device together under its name
@@ -499,41 +559,103 @@
     $("#fhempyTimeline").html('<div class="ftlEmpty">The timeline could not be loaded: ' + esc(text) + "</div>");
   }
 
-  function periodSparkline(trend, from, to) {
-    var low = trend.min, span = trend.max - trend.min || 1;
-    var info = categoryInfo[trend.category] || categoryInfo.devices;
-    var lines = [], line = [], last = null, tips = [];
-    trend.points.forEach(function (p) {
-      // no value for more than 2 hours: gap in the curve
-      if (last !== null && p[0] - last > 7200) { lines.push(line); line = []; }
-      last = p[0];
-      var x = (p[0] + 1800 - from) * 100 / (to - from);
-      line.push(x.toFixed(2) + "," + (36 - (p[1] - low) / span * 30).toFixed(1));
-      tips.push([+x.toFixed(2), p[0], p[1]]);
-    });
-    lines.push(line);
-    var html = '<svg viewBox="0 0 100 40" preserveAspectRatio="none"' + tipAttr(tips, true) +
-      curveAttr(trend, dayIso(new Date((to - 1) * 1000)), Math.round((to - from) / 86400)) + ">";
-    for (var t = from + 86400; t < to; t += 86400) {
-      var x = ((t - from) * 100 / (to - from)).toFixed(2);
-      html += '<line x1="' + x + '" x2="' + x + '" y1="0" y2="40" stroke="rgba(128,128,128,0.25)" stroke-width="1" vector-effect="non-scaling-stroke"/>';
-    }
-    lines.forEach(function (pts) {
-      if (pts.length > 1) {
-        html += '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>';
-      } else if (pts.length) {
-        var xy = pts[0].split(",");
-        html += '<line x1="' + xy[0] + '" x2="' + (+xy[0] + 0.4) + '" y1="' + xy[1] + '" y2="' + xy[1] + '" stroke="' + info.color + '" stroke-width="3" vector-effect="non-scaling-stroke"/>';
-      }
-    });
-    return html + "</svg>";
+  // "Only on change" once per reading in the history of a device
+  function onChangeOnce(item, shown) {
+    var key = item.device + ":" + item.reading;
+    if (shown[key]) return "";
+    shown[key] = true;
+    return onChangeAction(item);
   }
 
-  function deviceEntryHtml(entry) {
-    var meta = entryMeta(entry);
+  function deviceEntryHtml(entry, shown) {
+    // the room is the one of the device, no need to repeat it
+    var meta = entryMeta($.extend({}, entry, { room: "" }));
     return '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '"><span class="ftlTime">' + clock(entry.ts) + "</span>" +
-      dot(entry.category) + '<div class="ftlText">' + esc(entry.text) + (meta ? '<div class="ftlMeta">' + meta + "</div>" : "") +
-      durationBar(entry) + "</div><span>" + onChangeAction(entry) + "</span></div>";
+      dot(entry.category) + '<div class="ftlText">' + esc(entry.short || entry.text) + (meta ? '<div class="ftlMeta">' + meta + "</div>" : "") +
+      durationBar(entry) + "</div><span>" + onChangeOnce(entry, shown) + "</span></div>";
+  }
+
+  function lastValue(points) {
+    return points.length ? points[points.length - 1][1] : null;
+  }
+
+  // legend of a curve: the latest values, the target temperature dashed
+  function legendHtml(name, unit, points, target, color) {
+    var html = '<span class="ftcKey"><i style="background:' + color + '"></i>' + esc(name) + " <b>" + withUnit(lastValue(points), unit) + "</b></span>";
+    if (target) {
+      html += '<span class="ftcKey"><i class="ftcDash" style="border-color:' + TARGET_COLOR + '"></i>' + esc(readingName(target)) +
+        " <b>" + withUnit(lastValue(target.points), unit) + "</b></span>";
+    }
+    return html;
+  }
+
+  function sinceText(ts) {
+    var day = dayIso(new Date(ts * 1000));
+    var when = day === dayIso(new Date()) ? clock(ts) : shortDay(day) + " " + clock(ts);
+    return "since " + when + " (" + duration(Date.now() / 1000 - ts) + ")";
+  }
+
+  function shortDay(day) {
+    var today = dayIso(new Date());
+    if (day === today) return "Today";
+    if (day === addDays(today, -1)) return "Yesterday";
+    return dayDate(day).toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+  }
+
+  // one row per day with the times something was on/open, newest day first
+  function activityRows(a, data, days, color) {
+    var html = "", now = Date.now() / 1000, compact = days > 7;
+    var last = dayIso(new Date((data.to - 1) * 1000));
+    for (var i = 0; i < days; i++) {
+      var day = addDays(last, -i), start = dayDate(day).getTime() / 1000, end = dayDate(addDays(day, 1)).getTime() / 1000;
+      var label = compact && i % 7 && i ? "" : shortDay(day);
+      var elapsed = Math.max(0, Math.min(100, (now - start) * 100 / (end - start)));
+      html += '<div class="ftaRow' + (compact ? " ftaCompact" : "") + '"><span>' + esc(label) + '</span><div class="ftaBar">' +
+        '<i class="ftaPast" style="width:' + elapsed.toFixed(2) + '%"></i>';
+      a.segments.forEach(function (seg) {
+        var s0 = seg[0], s1 = seg[1] === null ? null : seg[1];
+        if (s0 >= end || (s1 === null ? s0 < start : s1 <= start)) return;
+        var left = (Math.max(s0, start) - start) * 100 / (end - start);
+        var tip;
+        if (s1 === null) {
+          tip = clock(s0) + " " + seg[2];
+          html += '<i class="ftaSeg ftaTick" data-text="' + esc(tip) + '" style="left:' + left.toFixed(2) + "%;background:" + color + '"></i>';
+          return;
+        }
+        var width = Math.max(0.5, (Math.min(s1, end) - Math.max(s0, start)) * 100 / (end - start));
+        tip = seg[2] + " " + clock(s0) + "–" + (s1 >= now - 60 ? "now" : clock(s1)) + " · " + duration(s1 - s0);
+        html += '<i class="ftaSeg" data-text="' + esc(tip) + '" style="left:' + left.toFixed(2) + "%;width:" + width.toFixed(2) + "%;background:" + color + '"></i>';
+      });
+      html += "</div></div>";
+    }
+    return html + '<div class="ftaRow ftaAxis"><span></span><div><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div>';
+  }
+
+  // door, light, motion...: state now, how often and how long, when
+  function activityHtml(a, data, days) {
+    var color = (categoryInfo[a.category] || categoryInfo.devices).color;
+    var durations = a.segments.some(function (seg) { return seg[1] !== null; });
+    var current = a.current.text.charAt(0).toUpperCase() + a.current.text.slice(1);
+    var stats = durations ?
+      esc(a.what) + " " + a.count + "× in " + days + " days · " + duration(a.total) + " in total · longest " + duration(a.longest) :
+      a.count + (a.count === 1 ? " time" : " times") + " in " + days + " days";
+    // a button has no state, only its last press
+    var day = dayIso(new Date(a.current.since * 1000));
+    var now = durations ? "<b>" + esc(current) + "</b> " + esc(sinceText(a.current.since)) :
+      "last <b>" + esc(current) + "</b> " + (day === dayIso(new Date()) ? "at " : shortDay(day) + " ") + clock(a.current.since);
+    return '<div class="ftaBlock"><div class="ftaHead">' + (a.name ? '<span class="ftaName">' + esc(readingName(a)) + " ·</span> " : "") +
+      now + "</div>" +
+      '<div class="ftaStats">' + stats + "</div>" + activityRows(a, data, days, color) + "</div>";
+  }
+
+  function deviceChartModel(t, data, days) {
+    return {
+      from: data.from, to: data.to, day: dayIso(new Date((data.to - 1) * 1000)), days: days, span: 3600,
+      color: (categoryInfo[t.category] || categoryInfo.devices).color, unit: t.unit || "",
+      points: t.points.map(function (p) { return [p[0], p[1], p[1], p[1]]; }),
+      target: t.target ? t.target.points : null,
+      curve: t.device + ":" + t.reading
+    };
   }
 
   function deviceHtml(data, days) {
@@ -541,31 +663,26 @@
       esc([data.type, (data.room || "").split(",")[0]].filter(function (x) { return x; }).join(" · ")) + "</span>" +
       '<span class="ftlChip ftlDeviceDays' + (days === 7 ? " ftlOn" : "") + '" data-days="7">7 days</span>' +
       '<span class="ftlChip ftlDeviceDays' + (days === 31 ? " ftlOn" : "") + '" data-days="31">31 days</span>' +
-      '<a class="ftlButton ftlOpen" href="' + esc(FW_root + "?detail=" + encodeURIComponent(data.device)) + '">Open device</a></div>';
+      '<a class="ftlOpen" href="' + esc(FW_root + "?detail=" + encodeURIComponent(data.device)) + '">Open device ›</a></div>';
     var changed = data.trends.filter(function (t) { return t.changed; });
     var same = data.trends.filter(function (t) { return !t.changed; });
-    if (changed.length) {
-      html += '<div class="ftlSection">Curves</div>';
-      changed.forEach(function (t) {
-        html += '<div class="ftlTrend ftlWide">' + esc(t.reading) + ' <span style="opacity:0.7">' + fmt(t.min) + " – " + fmt(t.max) +
-          "</span> " + onChangeAction(t) + periodSparkline(t, data.from, data.to) + "</div>";
-      });
-      if (days <= 7) {
-        html += '<div class="ftlAxis">';
-        for (var day = data.from; day < data.to; day += 86400) {
-          html += "<span>" + esc(new Date((day + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" })) + "</span>";
-        }
-        html += "</div>";
-      }
-    }
+    var shown = {};
+    changed.forEach(function (t, i) {
+      var info = categoryInfo[t.category] || categoryInfo.devices;
+      html += '<div class="ftlDevChart"><div class="ftcLegend">' + legendHtml(readingName(t), t.unit, t.points, t.target, info.color) +
+        onChangeOnce(t, shown) + "</div>" + '<div class="ftcChart ftcSmall" data-chart="' + i + '"></div></div>';
+    });
+    (data.activity || []).forEach(function (a) { html += activityHtml(a, data, days); });
     if (same.length) {
-      html += '<div class="ftlMeta" style="margin:4px 0 8px">Unchanged: ' + same.map(function (t) {
-        return esc(t.reading) + " " + fmt(t.min);
-      }).join(" · ") + "</div>";
+      html += '<div class="ftlSection">Values without change</div><div class="ftlValues">';
+      same.forEach(function (t) {
+        html += "<div><span>" + esc(readingName(t)) + "</span><span>" + withUnit(t.min, t.unit) + "</span></div>";
+      });
+      html += "</div>";
     }
-    html += '<div class="ftlSection">Story</div>';
+    html += '<div class="ftlSection">What happened</div>';
     if (!data.entries.length) {
-      html += '<div class="ftlEmpty">Nothing in the story of this device in the last ' + days + " days.</div>";
+      html += '<div class="ftlEmpty">Nothing happened in the last ' + days + " days.</div>";
     }
     var lastDay = "";
     data.entries.forEach(function (entry) {
@@ -574,9 +691,18 @@
         html += '<div class="ftlDayName" style="margin:8px 0 2px">' + esc(dayTitle(day)) + "</div>";
         lastDay = day;
       }
-      html += deviceEntryHtml(entry);
+      html += deviceEntryHtml(entry, shown);
     });
     return html;
+  }
+
+  // draws the charts of the device popup once it has its width
+  function drawDeviceCharts(d, data, days) {
+    var changed = data.trends.filter(function (t) { return t.changed; });
+    d.find(".ftcChart[data-chart]").each(function () {
+      var chart = $(this), model = deviceChartModel(changed[+chart.attr("data-chart")], data, days);
+      drawChart(chart, model, chart.width() < 500 ? 130 : 150);
+    });
   }
 
   // curve popup: one reading big, day / 7 days / 31 days, step back and forth
@@ -615,9 +741,9 @@
     return result.map(function (b) { return [b[0], Math.round(b[1] / b[4] * 100) / 100, b[2], b[3]]; });
   }
 
-  function pointTime(ts, days) {
-    var text = clock(ts) + "–" + clock(ts + curve.span);
-    if (days === 1) return text;
+  function pointTime(ts, model) {
+    var text = clock(ts) + "–" + clock(ts + model.span);
+    if (model.days === 1) return text;
     return new Date(ts * 1000).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) + ", " + text;
   }
 
@@ -632,108 +758,136 @@
       var date = new Date(p[0] * 1000);
       return (days <= 7 ? date.toLocaleDateString(undefined, { weekday: "short" }) : shortDate(dayIso(date))) + " " + clock(p[0]);
     };
-    var stat = function (value, text) { return '<div class="ftcStat"><b>' + fmt(value) + "</b><span>" + text + "</span></div>"; };
+    var stat = function (value, text) { return '<div class="ftcStat"><b>' + withUnit(value, data.unit) + "</b><span>" + text + "</span></div>"; };
     return '<div class="ftcStats">' +
-      stat(last[1], data.day === data.today ? "Latest · " + clock(last[0]) : "Last · " + when(last)) +
-      stat(data.min, "Min · " + when(low)) + stat(data.max, "Max · " + when(high)) +
+      stat(last[1], data.day === data.today ? "Now" : "Last · " + when(last)) +
+      stat(data.min, "Lowest · " + when(low)) + stat(data.max, "Highest · " + when(high)) +
       stat(data.avg, "Average") + "</div>";
   }
 
   // time axis: hours of a day, weekdays or dates
-  function timeAxis(data, days, x, top, h, height) {
-    var svg = "", t;
+  function timeAxis(m, x, top, h, height) {
+    var svg = "", t, days = m.days;
     if (days === 1) {
-      for (t = data.from; t <= data.to; t += 3 * 3600) {
+      for (t = m.from; t <= m.to; t += 3 * 3600) {
         svg += '<text x="' + x(t).toFixed(1) + '" y="' + (height - 6) + '" text-anchor="middle">' + clock(t).slice(0, 2) + "</text>";
       }
-    } else {
-      var every = days <= 7 ? 1 : 7;
-      for (var i = 0; i < days; i++) {
-        t = dayDate(addDays(data.day, i - days + 1)).getTime() / 1000;
-        if (i % every) continue;
-        if (i) svg += '<line x1="' + x(t).toFixed(1) + '" x2="' + x(t).toFixed(1) + '" y1="' + top + '" y2="' + (top + h) + '" stroke="currentColor" stroke-opacity="0.12"/>';
-        var label = days <= 7 ? new Date((t + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" }) : shortDate(addDays(data.day, i - days + 1));
-        svg += '<text x="' + x(days <= 7 ? t + 43200 : t).toFixed(1) + '" y="' + (height - 6) + '" text-anchor="' + (days <= 7 ? "middle" : "start") + '">' + esc(label) + "</text>";
-      }
+      return svg;
+    }
+    var every = days <= 7 ? 1 : 7;
+    for (var i = 0; i < days; i += every) {
+      t = dayDate(addDays(m.day, i - days + 1)).getTime() / 1000;
+      if (i) svg += '<line x1="' + x(t).toFixed(1) + '" x2="' + x(t).toFixed(1) + '" y1="' + top + '" y2="' + (top + h) + '" stroke="currentColor" stroke-opacity="0.12"/>';
+      var label = days <= 7 ? new Date((t + 43200) * 1000).toLocaleDateString(undefined, { weekday: "short" }) : shortDate(addDays(m.day, i - days + 1));
+      svg += '<text x="' + x(days <= 7 ? t + 43200 : t).toFixed(1) + '" y="' + (height - 6) + '" text-anchor="' + (days <= 7 ? "middle" : "start") + '">' + esc(label) + "</text>";
     }
     return svg;
   }
 
   // min-max band and average line, gaps where values are missing for more than 2 hours
-  function curveLines(data, x, y, color) {
+  function curveLines(m, x, y) {
     var svg = "";
     var parts = [], part = [], last = null;
-    data.points.forEach(function (p) {
-      if (last !== null && p[0] - last > curve.span + 7200) { parts.push(part); part = []; }
+    m.points.forEach(function (p) {
+      if (last !== null && p[0] - last > m.span + 7200) { parts.push(part); part = []; }
       last = p[0];
       part.push(p);
     });
     parts.push(part);
     parts.forEach(function (pts) {
-      var mid = function (p) { return x(p[0] + curve.span / 2).toFixed(1); };
+      var mid = function (p) { return x(p[0] + m.span / 2).toFixed(1); };
       if (pts.length === 1) {
-        svg += '<circle cx="' + mid(pts[0]) + '" cy="' + y(pts[0][1]).toFixed(1) + '" r="2.5" fill="' + color + '"/>';
+        svg += '<circle cx="' + mid(pts[0]) + '" cy="' + y(pts[0][1]).toFixed(1) + '" r="2.5" fill="' + m.color + '"/>';
         return;
       }
-      var band = pts.map(function (p) { return mid(p) + "," + y(p[3]).toFixed(1); }).concat(
-        pts.slice().reverse().map(function (p) { return mid(p) + "," + y(p[2]).toFixed(1); }));
-      svg += '<polygon points="' + band.join(" ") + '" fill="' + color + '" fill-opacity="0.15"/>';
-      svg += '<polyline fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" points="' +
+      if (pts.some(function (p) { return p[2] !== p[3]; })) {
+        var band = pts.map(function (p) { return mid(p) + "," + y(p[3]).toFixed(1); }).concat(
+          pts.slice().reverse().map(function (p) { return mid(p) + "," + y(p[2]).toFixed(1); }));
+        svg += '<polygon points="' + band.join(" ") + '" fill="' + m.color + '" fill-opacity="0.15"/>';
+      }
+      svg += '<polyline fill="none" stroke="' + m.color + '" stroke-width="2" stroke-linejoin="round" points="' +
         pts.map(function (p) { return mid(p) + "," + y(p[1]).toFixed(1); }).join(" ") + '"/>';
     });
     return svg;
   }
 
-  function curveChart(data, days, width) {
-    var height = width < 500 ? 200 : 260;
+  // target temperature: dashed steps, it only changes when somebody sets it
+  function targetLine(m, x, y) {
+    var steps = [], last = null;
+    m.target.forEach(function (p) {
+      var px = x(p[0]).toFixed(1);
+      if (last !== null) steps.push(px + "," + y(last).toFixed(1));
+      steps.push(px + "," + y(p[1]).toFixed(1));
+      last = p[1];
+    });
+    if (last !== null) steps.push(x(m.target[m.target.length - 1][0] + m.span).toFixed(1) + "," + y(last).toFixed(1));
+    return '<polyline fill="none" stroke="' + TARGET_COLOR + '" stroke-width="1.8" stroke-dasharray="5 4" points="' + steps.join(" ") + '"/>';
+  }
+
+  function targetAt(m, ts) {
+    if (!m.target) return null;
+    var value = null;
+    m.target.forEach(function (p) { if (p[0] <= ts) value = p[1]; });
+    return value;
+  }
+
+  // chart with axes into container, model: from, to, day, days, span,
+  // color, unit, points [[hour, avg, min, max]], target [[hour, value]]
+  function drawChart(container, m, height) {
+    var width = Math.max(240, Math.floor(container.width()));
+    if (!m.points.length) {
+      container.html('<div class="ftcEmpty" style="height:' + height + 'px">No values in this period</div>');
+      return;
+    }
     var left = 46, right = 10, top = 10, bottom = 24;
     var w = width - left - right, h = height - top - bottom;
-    if (!data.points.length) {
-      return '<div class="ftcEmpty" style="height:' + height + 'px">No values in this period</div>';
-    }
-    var ticks = niceTicks(data.min, data.max);
+    var values = [];
+    m.points.forEach(function (p) { values.push(p[2], p[3]); });
+    (m.target || []).forEach(function (p) { values.push(p[1]); });
+    var ticks = niceTicks(Math.min.apply(null, values), Math.max.apply(null, values));
     var low = ticks[0], span = ticks[ticks.length - 1] - low || 1;
-    var x = function (ts) { return left + (ts - data.from) * w / (data.to - data.from); };
+    var x = function (ts) { return left + (ts - m.from) * w / (m.to - m.from); };
     var y = function (v) { return top + h - (v - low) * h / span; };
-    var info = categoryInfo[data.category] || categoryInfo.devices;
-    var svg = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '">';
+    var svg = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '"' +
+      (m.curve ? ' data-curve="' + esc(m.curve) + '" data-day="' + m.day + '" data-days="' + m.days + '"' : "") + ">";
     ticks.forEach(function (t) {
       svg += '<line x1="' + left + '" x2="' + (left + w) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
         '" stroke="currentColor" stroke-opacity="0.12"/>' +
         '<text x="' + (left - 6) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
     });
-    svg += timeAxis(data, days, x, top, h, height);
-    svg += curveLines(data, x, y, info.color);
+    svg += timeAxis(m, x, top, h, height);
+    if (m.target && m.target.length) svg += targetLine(m, x, y);
+    svg += curveLines(m, x, y);
     svg += '<line class="ftcCross" y1="' + top + '" y2="' + (top + h) + '" stroke="currentColor" stroke-opacity="0.35" style="display:none"/>' +
-      '<circle class="ftcDot" r="4" fill="' + info.color + '" stroke="#fff" stroke-width="1.5" style="display:none"/>';
-    curve.geometry = { x: x, y: y, left: left, w: w };
-    return svg + '</svg><div class="ftcTip"></div>';
+      '<circle class="ftcDot" r="4" fill="' + m.color + '" stroke="#fff" stroke-width="1.5" style="display:none"/>';
+    m.geometry = { x: x, y: y };
+    container.html(svg + '</svg><div class="ftcTip"></div>').data("chart", m);
   }
 
-  function curveHover(e) {
-    if (!curve || !curve.data || !curve.data.points.length || !curve.geometry) return;
-    var chart = $(this), svg = chart.find("svg")[0];
-    if (!svg) return;
+  function chartHover(e) {
+    var chart = $(this), m = chart.data("chart"), svg = chart.find("svg")[0];
+    if (!m || !m.geometry || !svg) return;
     var ev = e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length ? e.originalEvent.touches[0] : e;
     var rect = svg.getBoundingClientRect();
-    var px = ev.clientX - rect.left, g = curve.geometry;
-    var best = null;
-    var half = curve.span / 2;
-    curve.data.points.forEach(function (p) {
+    var px = ev.clientX - rect.left, g = m.geometry, half = m.span / 2, best = null;
+    m.points.forEach(function (p) {
       if (!best || Math.abs(g.x(p[0] + half) - px) < Math.abs(g.x(best[0] + half) - px)) best = p;
     });
     var cx = g.x(best[0] + half), cy = g.y(best[1]);
     chart.find(".ftcCross").attr({ x1: cx, x2: cx }).show();
     chart.find(".ftcDot").attr({ cx: cx, cy: cy }).show();
+    var target = targetAt(m, best[0] + half);
     var tip = chart.find(".ftcTip");
-    tip.html("<b>" + fmt(best[1]) + "</b>" + (best[2] !== best[3] ? ' <span style="opacity:0.75">' + fmt(best[2]) + " – " + fmt(best[3]) + "</span>" : "") +
-      "<br>" + esc(pointTime(best[0], curve.days))).show();
+    tip.html("<b>" + withUnit(best[1], m.unit) + "</b>" +
+      (best[2] !== best[3] ? ' <span style="opacity:0.75">' + fmt(best[2]) + " – " + fmt(best[3]) + "</span>" : "") +
+      (target !== null ? '<br><span style="color:#f5a66f">Target ' + withUnit(target, m.unit) + "</span>" : "") +
+      "<br>" + esc(pointTime(best[0], m))).show();
     var left = Math.max(0, Math.min(cx - tip.outerWidth() / 2, rect.width - tip.outerWidth()));
     var top = cy - tip.outerHeight() - 12;
     tip.css({ left: left, top: top < 0 ? cy + 12 : top });
   }
 
-  function curveLeave() {
+  function chartLeave() {
     $(this).find(".ftcCross, .ftcDot, .ftcTip").hide();
   }
 
@@ -750,13 +904,19 @@
       '<span class="ftcRange">' + esc(curveRangeText(data, days)) + "</span>" +
       '<button class="ftcStep" data-step="1" title="Later (→)"' + (data.day >= data.today ? " disabled" : "") + ">›</button>" +
       '<span class="ftcChips">' + chips + "</span></div>" + curveStats(data, days) +
+      (data.target ? '<div class="ftcLegend">' + legendHtml(readingName(data), data.unit, data.raw || data.points, data.target,
+        (categoryInfo[data.category] || categoryInfo.devices).color) + "</div>" : "") +
       '<div class="ftcChart"></div><div class="ftcFoot">' +
       '<a href="#" class="ftcHistory">History of ' + esc(data.label) + "</a>" +
       '<a href="' + esc(FW_root + "?detail=" + encodeURIComponent(data.device)) + '">Open device</a>' +
       onChangeAction(data) + "</div>";
     d.html(html);
     var chart = d.find(".ftcChart");
-    chart.html(curveChart(data, days, Math.max(260, Math.floor(chart.width()))));
+    drawChart(chart, {
+      from: data.from, to: data.to, day: data.day, days: days, span: curve.span, unit: data.unit || "",
+      color: (categoryInfo[data.category] || categoryInfo.devices).color, points: data.points,
+      target: data.target ? data.target.points : null
+    }, chart.width() < 500 ? 200 : 260);
   }
 
   function loadCurve() {
@@ -769,7 +929,15 @@
       try { curve.data = JSON.parse(r); } catch (e) { curve.data = { error: r }; }
       curve.span = curve.days > 7 ? 6 * 3600 : 3600;
       curve.data.raw = curve.data.points;
-      if (curve.data.points && curve.span > 3600) curve.data.points = bucketPoints(curve.data.points, curve.span, curve.data.from);
+      if (curve.data.points && curve.span > 3600) {
+        curve.data.points = bucketPoints(curve.data.points, curve.span, curve.data.from);
+        if (curve.data.target) {
+          // last target of each step
+          var steps = {};
+          curve.data.target.points.forEach(function (p) { steps[p[0] - ((p[0] - curve.data.from) % curve.span)] = p[1]; });
+          curve.data.target.points = Object.keys(steps).map(function (t) { return [+t, steps[t]]; });
+        }
+      }
       if (!d.hasClass("ui-dialog-content")) {
         openDialog(d, 880, function () {
           $(this).dialog("destroy").remove();
@@ -784,7 +952,8 @@
         });
         $(window).on("resize.ftlCurve", function () { if (curve && curve.data) renderCurve(); });
       }
-      d.dialog("option", "title", (curve.data.label || curve.target.split(":")[0]) + " · " + curve.target.split(":")[1]);
+      d.dialog("option", "title", (curve.data.label || curve.target.split(":")[0]) + " · " +
+        (curve.data.name ? readingName(curve.data) : curve.target.split(":")[1]));
       renderCurve();
     });
   }
@@ -818,8 +987,6 @@
         showDevice(name);
       });
       d.on("click", "[data-onchange]", onChangeClick);
-      d.on("mousemove touchstart touchmove", ".ftcChart", curveHover);
-      d.on("mouseleave", ".ftcChart", curveLeave);
     }
     curve = { target: target, day: day, days: days || 1 };
     loadCurve();
@@ -851,6 +1018,7 @@
         openDialog(d, 760, function () { $(this).dialog("destroy").remove(); });
       }
       d.dialog("option", "title", data.text || name);
+      if (!data.error) drawDeviceCharts(d, data, days);
     });
   }
 
@@ -1028,7 +1196,9 @@
     var x = (ev.clientX - rect.left) * 100 / rect.width;
     var best = tips[0];
     tips.forEach(function (t) { if (Math.abs(t[0] - x) < Math.abs(best[0] - x)) best = t; });
-    var text = clock(best[1]) + "–" + clock(best[1] + 3600) + ": " + fmt(best[2]);
+    var unit = svg.getAttribute("data-unit") || "";
+    var text = clock(best[1]) + "–" + clock(best[1] + 3600) + ": " + withUnit(best[2], unit) +
+      (best[3] !== null && best[3] !== undefined ? " · target " + withUnit(best[3], unit) : "");
     if (svg.getAttribute("data-tipday")) {
       text = new Date(best[1] * 1000).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) + " " + text;
     }
@@ -1064,8 +1234,19 @@
     $(document).on("mousemove touchstart touchmove", "svg[data-tip]", showTip);
     $(document).on("click", "svg[data-curve]", curveClick);
     $(document).on("mouseleave", "svg[data-tip]", hideTip);
+    $(document).on("mousemove touchstart touchmove", ".ftcChart", chartHover);
+    $(document).on("mouseenter touchstart", ".ftaSeg", function () {
+      var rect = this.getBoundingClientRect();
+      var tip = $("#fhempyTimelineTip");
+      if (!tip.length) tip = $('<div id="fhempyTimelineTip"></div>').appendTo("body");
+      tip.text($(this).attr("data-text")).show();
+      var left = Math.max(4, Math.min(rect.left + rect.width / 2 - tip.outerWidth() / 2, $(window).width() - tip.outerWidth() - 4));
+      tip.css({ left: left, top: Math.max(4, rect.top - tip.outerHeight() - 6) });
+    });
+    $(document).on("mouseleave", ".ftaSeg", hideTip);
+    $(document).on("mouseleave", ".ftcChart", chartLeave);
     $(document).on("touchstart", function (e) {
-      if (!$(e.target).closest("svg[data-tip]").length) hideTip();
+      if (!$(e.target).closest("svg[data-tip], .ftaSeg").length) hideTip();
     });
     document.addEventListener("scroll", hideTip, true);
   }
