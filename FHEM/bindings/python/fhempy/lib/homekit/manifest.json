@@ -1,10 +1,11 @@
 {
   "requirements": [
-    "aiohomekit==4.0.1"
+    "aiohomekit==4.0.1",
+    "bleak==3.0.2"
   ],
   "installer": {
     "title": "HomeKit devices",
-    "description": "Control HomeKit accessories and bridges (e.g. Velux) directly",
+    "description": "Control HomeKit accessories and bridges (e.g. Velux, Eve Bluetooth devices) directly",
     "category": "home",
     "order": 80,
     "name": "homekit",
@@ -21,33 +22,56 @@
       }
     ]
   },
-  "discovery": {
-    "mdns": [
-      {
-        "type": "_hap._tcp.local.",
-        "txt": {
-          "sf": "1"
+  "discovery": [
+    {
+      "mdns": [
+        {
+          "type": "_hap._tcp.local.",
+          "txt": {
+            "sf": "1"
+          }
+        },
+        {
+          "type": "_hap._udp.local.",
+          "txt": {
+            "sf": "1"
+          }
         }
-      },
-      {
-        "type": "_hap._udp.local.",
-        "txt": {
-          "sf": "1"
+      ],
+      "title": "{name}",
+      "model": "{txt.md}",
+      "unique": "{txt.id}",
+      "define": [
+        "{txt.id}"
+      ],
+      "params": [
+        {
+          "label": "Setup code",
+          "placeholder": "123-45-678",
+          "help": "HomeKit code printed on the device or its box"
         }
-      }
-    ],
-    "title": "{name}",
-    "model": "{txt.md}",
-    "unique": "{txt.id}",
-    "define": [
-      "{txt.id}"
-    ],
-    "params": [
-      {
-        "label": "Setup code",
-        "placeholder": "123-45-678",
-        "help": "HomeKit code printed on the device or its box"
-      }
-    ]
-  }
+      ]
+    },
+    {
+      "ble": [
+        {
+          "manufacturer_id": 76,
+          "manufacturer_data_prefix": "06"
+        }
+      ],
+      "title": "{name}",
+      "model": "HomeKit Bluetooth",
+      "unique": "{homekit_id}",
+      "define": [
+        "{homekit_id}"
+      ],
+      "params": [
+        {
+          "label": "Setup code",
+          "placeholder": "123-45-678",
+          "help": "HomeKit code printed on the device or its box"
+        }
+      ]
+    }
+  ]
 }

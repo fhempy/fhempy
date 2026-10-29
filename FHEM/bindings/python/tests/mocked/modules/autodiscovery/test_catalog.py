@@ -130,20 +130,54 @@ def test_ssdp_media_renderer():
 def test_ble_rssi_and_names():
     entries = catalog.load()
     assert [
-        e["module"]
-        for e, _ in catalog.match_ble(entries, "CC-RT-BLE", set(), set(), -60)
+        e["module"] for e, _ in catalog.match_ble(entries, "CC-RT-BLE", {}, set(), -60)
     ] == ["eq3bt"]
     # the neighbour's thermostat
-    assert not list(catalog.match_ble(entries, "CC-RT-BLE", set(), set(), -95))
+    assert not list(catalog.match_ble(entries, "CC-RT-BLE", {}, set(), -95))
     # scooter by manufacturer id, Matter by service data
     assert [
-        e["module"] for e, _ in catalog.match_ble(entries, "", {16974}, set(), -50)
+        e["module"] for e, _ in catalog.match_ble(entries, "", {16974: b""}, set(), -50)
     ] == ["scooter"]
     matter_uuid = {"0000fff6-0000-1000-8000-00805f9b34fb"}
-    matches = list(catalog.match_ble(entries, "", set(), matter_uuid, -50))
+    matches = list(catalog.match_ble(entries, "", {}, matter_uuid, -50))
     found = catalog.candidate(*matches[0], {"address": "AA"}, "ble")
     assert found["action"] == "set"
     assert found["set"]["command"] == "pair_new_device"
+
+
+# Apple data of an unpaired HomeKit device: type 0x06, length, status flags
+# (bit 0: not paired), device id, category, state number, config, version
+HOMEKIT_UNPAIRED = bytes.fromhex("063101" "0e4582435390" "0a00" "0100" "0202")
+
+
+def test_ble_homekit_by_manufacturer_data():
+    entries = catalog.load()
+    matches = list(
+        catalog.match_ble(
+            entries, "Eve Window Guard", {76: HOMEKIT_UNPAIRED}, set(), -60
+        )
+    )
+    assert [e["module"] for e, _ in matches] == ["homekit"]
+    values = {
+        "address": "AA",
+        "name": "Eve Window Guard",
+        "homekit_id": catalog.homekit_id({76: HOMEKIT_UNPAIRED}),
+    }
+    found = catalog.candidate(*matches[0], values, "ble")
+    assert found["define"] == ["0E:45:82:43:53:90"]
+    assert found["params"][0]["label"] == "Setup code"
+    # iPhones, AirPods etc. send other Apple data types
+    iphone = {76: bytes.fromhex("1005031c4f2a1b")}
+    assert not list(catalog.match_ble(entries, "", iphone, set(), -60))
+
+
+def test_homekit_id_only_for_unpaired_devices():
+    assert catalog.homekit_id({76: HOMEKIT_UNPAIRED}) == "0E:45:82:43:53:90"
+    paired = bytes([0x06, 0x31, 0x00]) + HOMEKIT_UNPAIRED[3:]
+    # paired with Apple Home, can't be paired again (like mDNS sf=0)
+    assert catalog.homekit_id({76: paired}) == ""
+    assert catalog.homekit_id({76: b"\x06"}) == ""
+    assert catalog.homekit_id({}) == ""
 
 
 def test_single_rule_uses_module_as_unique():

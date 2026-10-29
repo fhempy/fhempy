@@ -357,3 +357,183 @@ async def test_failed_pair_verify_closes_connection(mocker):
         await connection.close()
         server.close()
         await server.wait_closed()
+
+
+HOMEKIT_ID = "0E:45:82:43:53:92"
+# Apple data of an unpaired HomeKit device: type 0x06, length, status flags,
+# device id, category (contact sensor), state number, config, version
+HOMEKIT_ADV = bytes.fromhex("063101" "0e4582435392" "0a00" "0100" "0202")
+
+
+@pytest.mark.asyncio
+async def test_ble_controller_uses_shared_scan(mocker):
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+    from aiohomekit.characteristic_cache import CharacteristicCacheMemory
+    from bleak.backends.device import BLEDevice
+    from bleak.backends.scanner import AdvertisementData
+
+    from fhempy.lib.core.ble_scanner import BleScanner
+    from fhempy.lib.homekit.ble import SharedScanBleController
+
+    scanner = MagicMock()
+    mocker.patch.object(BleScanner, "get_instance", return_value=scanner)
+    controller = SharedScanBleController(char_cache=CharacteristicCacheMemory())
+    await controller.async_start()
+    callback = scanner.add_callback.call_args[0][0]
+
+    device = BLEDevice("AA:BB:CC:DD:EE:FF", "Eve Window Guard", None)
+    advertisement = AdvertisementData(
+        local_name="Eve Window Guard",
+        manufacturer_data={76: HOMEKIT_ADV},
+        service_data={},
+        service_uuids=[],
+        tx_power=None,
+        rssi=-60,
+        platform_data=(),
+    )
+    callback(device, advertisement)
+    discovery = await controller.async_find(HOMEKIT_ID.lower(), timeout=1)
+    assert discovery.device.address == "AA:BB:CC:DD:EE:FF"
+
+    await controller.async_stop()
+    scanner.remove_callback.assert_called_once_with(callback)
+
+
+@pytest.mark.asyncio
+async def test_start_ble_only_once_per_controller(mocker):
+    import logging
+    from unittest.mock import AsyncMock
+
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+    from fhempy.lib.homekit.ble import SharedScanBleController
+    from fhempy.lib.homekit.homekit import homekit
+
+    mocker.patch.object(homekit, "ble_controller", None)
+    controller = MagicMock()
+    controller._async_register_backend = AsyncMock()
+    logger = logging.getLogger(__name__)
+    await homekit.start_ble(controller, logger)
+    await homekit.start_ble(controller, logger)
+    controller._async_register_backend.assert_awaited_once()
+    backend = controller._async_register_backend.call_args[0][0]
+    assert isinstance(backend, SharedScanBleController)
+
+
+@pytest.mark.asyncio
+async def test_ble_gateway_waits_for_advertisement(mocker):
+    import json
+    import logging
+    from unittest.mock import AsyncMock
+
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+    from aiohomekit.exceptions import AccessoryDisconnectedError
+
+    from fhempy.lib.homekit import homekit as homekit_module
+    from fhempy.lib.homekit.homekit import homekit
+
+    pairing_data = {"AccessoryPairingID": HOMEKIT_ID, "Connection": "BLE"}
+    mock_fhem.readings.pop("testhkble", None)
+    mock_fhem.attributes["testhkble"] = {"pairing_data": json.dumps(pairing_data)}
+    pairing = MagicMock(spec=["pairing_data", "get_primary_name", "close"])
+    pairing.pairing_data = pairing_data
+    pairing.list_accessories_and_characteristics = AsyncMock(return_value=[])
+    # out of range at the first try
+    pairing.get_primary_name = AsyncMock(
+        side_effect=[AccessoryDisconnectedError("not reachable"), "Window"]
+    )
+    controller = MagicMock()
+    controller.load_pairing.return_value = pairing
+    controller.async_find = AsyncMock(return_value=MagicMock())
+    mocker.patch.object(homekit, "get_controller", AsyncMock(return_value=controller))
+    start_ble = mocker.patch.object(homekit, "start_ble", AsyncMock())
+    mocker.patch.object(homekit_module, "BLE_RETRY_INTERVAL", 0)
+
+    gw = homekit(logging.getLogger(__name__))
+    testhash = {"NAME": "testhkble", "FHEMPYTYPE": "homekit"}
+    args = ["testhkble", "fhempy", "homekit", HOMEKIT_ID, "123-45-678"]
+    await gw.Define(testhash, args, {})
+    await asyncio.wait_for(gw.ready.wait(), 5)
+
+    start_ble.assert_awaited()
+    # the advertisement is needed before the pairing can connect
+    controller.async_find.assert_awaited_with(HOMEKIT_ID.lower())
+    assert mock_fhem.readings["testhkble"]["state"] == "ready"
+    assert mock_fhem.readings["testhkble"]["name"] == "Window"
+    mock_fhem.attributes.pop("testhkble", None)
+
+
+@pytest.mark.asyncio
+async def test_ble_accessory_updates_readings_on_events(mocker):
+    import logging
+    from unittest.mock import AsyncMock
+
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("homekit")
+    from aiohomekit.model import Accessories
+
+    from fhempy.lib import fhem_pythonbinding
+    from fhempy.lib.homekit.homekit import homekit
+
+    # contact sensor (window closed), iid 9 reports events
+    accessories = Accessories.from_list(
+        [
+            {
+                "aid": 1,
+                "services": [
+                    {
+                        "iid": 8,
+                        "type": "00000080-0000-1000-8000-0026BB765291",
+                        "characteristics": [
+                            {
+                                "iid": 9,
+                                "type": "0000006A-0000-1000-8000-0026BB765291",
+                                "format": "uint8",
+                                "perms": ["pr", "ev"],
+                                "value": 0,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    )
+    listeners = []
+    gw = homekit(logging.getLogger(__name__))
+    gw.pairing = MagicMock()
+    gw.pairing.pairing_data = {"Connection": "BLE"}
+    gw.pairing.accessories = accessories
+    gw.pairing.get_primary_name = AsyncMock(return_value="Window")
+    gw.pairing.subscribe = AsyncMock()
+    gw.pairing.dispatcher_connect = MagicMock(
+        side_effect=lambda cb: listeners.append(cb) or MagicMock()
+    )
+    gw.ready.set()
+    mocker.patch.object(fhem_pythonbinding, "getFhemPyDeviceByName", return_value=gw)
+
+    dev = homekit(logging.getLogger(__name__))
+    dev.hash = {"NAME": "testhkbledev", "FHEMPYTYPE": "homekit"}
+    dev.aid = 1
+    dev.set_config = {}
+    mock_fhem.readings.pop("testhkbledev", None)
+    mocker.patch.object(dev, "set_set_config")
+    polling = mocker.patch.object(dev, "update_readings_from_homekit")
+    await dev.setup_device("testhkgw", 1)
+
+    # no polling, it would drain the battery
+    polling.assert_not_called()
+    gw.pairing.subscribe.assert_awaited_once_with([(1, 9)])
+    assert mock_fhem.readings["testhkbledev"]["contact_sensor_state"] == 0
+
+    # window opened
+    listeners[0]({(1, 9): {"value": 1}})
+    for _ in range(5):
+        await asyncio.sleep(0)
+    assert mock_fhem.readings["testhkbledev"]["contact_sensor_state"] == 1
+
+    mocker.patch("fhempy.lib.generic.FhemModule.Undefine")
+    stop_listening = dev._stop_listening
+    await dev.Undefine(dev.hash)
+    stop_listening.assert_called_once()

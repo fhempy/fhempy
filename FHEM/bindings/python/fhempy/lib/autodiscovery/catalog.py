@@ -8,7 +8,7 @@ module's own search() in discovery.py) and how a found device is created.
 Values like "{txt.fn}" are templates, filled with the data of the found device:
 - mdns: name, host, ip, port, type, txt.<key>
 - ssdp: udn, friendly_name, manufacturer, model_name, device_type, ip
-- ble: address, name, rssi
+- ble: address, name, rssi, homekit_id (unpaired HomeKit devices)
 - search(): the keys the module's search() passes to ctx.found()
 """
 
@@ -113,7 +113,7 @@ def match_ssdp(catalog, values):
                 break
 
 
-def _ble_matcher_matches(matcher, name, manufacturer_ids, uuids):
+def _ble_matcher_matches(matcher, name, manufacturer_data, uuids):
     if "name" in matcher and name != matcher["name"]:
         return False
     if "name_prefix" in matcher and not (name or "").startswith(
@@ -121,8 +121,12 @@ def _ble_matcher_matches(matcher, name, manufacturer_ids, uuids):
     ):
         return False
     if "manufacturer_id" in matcher and matcher["manufacturer_id"] not in (
-        manufacturer_ids
+        manufacturer_data
     ):
+        return False
+    if "manufacturer_data_prefix" in matcher and not bytes(
+        manufacturer_data.get(matcher.get("manufacturer_id"), b"")
+    ).startswith(bytes.fromhex(matcher["manufacturer_data_prefix"])):
         return False
     if "service_uuid" in matcher and matcher["service_uuid"].lower() not in uuids:
         return False
@@ -133,13 +137,30 @@ def _as_list(value):
     return value if isinstance(value, list) else [value]
 
 
-def match_ble(catalog, name, manufacturer_ids, uuids, rssi):
-    """uuids: lowercase service UUIDs and service data UUIDs of the advertisement"""
+APPLE_MANUFACTURER_ID = 76
+HOMEKIT_ADVERTISEMENT = 0x06
+
+
+def homekit_id(manufacturer_data):
+    """HomeKit device id (like txt.id of mDNS) of an unpaired HAP-BLE device,
+    '' otherwise. Apple data: type 0x06, length, status flags, device id."""
+    data = bytes(manufacturer_data.get(APPLE_MANUFACTURER_ID, b""))
+    if len(data) < 9 or data[0] != HOMEKIT_ADVERTISEMENT:
+        return ""
+    # status flag bit 0: not paired yet, mDNS rule filters sf=1 the same way
+    if not data[2] & 0x01:
+        return ""
+    return ":".join(f"{byte:02X}" for byte in data[3:9])
+
+
+def match_ble(catalog, name, manufacturer_data, uuids, rssi):
+    """manufacturer_data: {manufacturer id: bytes},
+    uuids: lowercase service UUIDs and service data UUIDs of the advertisement"""
     for entry, rule in rules(catalog, "ble"):
         if rssi is not None and rssi < rule.get("min_rssi", DEFAULT_MIN_RSSI):
             continue
         for matcher in rule["ble"]:
-            if _ble_matcher_matches(matcher, name, manufacturer_ids, uuids):
+            if _ble_matcher_matches(matcher, name, manufacturer_data, uuids):
                 yield entry, rule
                 break
 

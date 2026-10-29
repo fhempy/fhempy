@@ -294,7 +294,7 @@ async def test_create_with_set_uses_existing_controller(engine, fhem_mock, mocke
         catalog.match_ble(
             engine.catalog,
             "",
-            set(),
+            {},
             {"0000fff6-0000-1000-8000-00805f9b34fb"},
             -50,
         )
