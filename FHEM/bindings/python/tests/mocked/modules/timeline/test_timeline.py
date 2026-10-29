@@ -10,7 +10,13 @@ from tests.utils import mock_fhem
 from fhempy.lib import fhem
 from fhempy.lib.timeline import classify, story
 from fhempy.lib.timeline.store import Store, day_of, day_start
-from fhempy.lib.timeline.timeline import FREQUENT_PER_HOUR, SKIP_EVENTS, timeline
+from fhempy.lib.timeline.timeline import (
+    FREQUENT_PER_HOUR,
+    SKIP_EVENTS,
+    matches,
+    parse_rules,
+    timeline,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +86,22 @@ def test_skip_events_regexp():
     assert not skip.match("hall:contact: open")
     # never matches across the reading name
     assert not skip.match("hall:state: T: 21 voltage: 3")
+
+
+def test_hidden_rules_with_values():
+    rules = parse_rules("Router:status:booting|reconnecting Sensor.*:* door:state")
+    assert matches(rules, "Router", "status", "booting")
+    assert matches(rules, "Router", "status", " Reconnecting ")
+    assert not matches(rules, "Router", "status", "online")
+    assert not matches(rules, "Router", "uptime", "booting")
+    assert matches(rules, "Sensor1", "battery", "ok")
+    assert matches(rules, "door", "state", "open")
+    assert not matches(rules, "door2", "state", "open")
+    # a value may contain ":", an invalid regexp is taken literally
+    assert matches(parse_rules("clock:time:12:30"), "clock", "time", "12:30")
+    assert matches(parse_rules("dev:r:a(b"), "dev", "r", "a(b")
+    # the rule the "only this value" buttons build
+    assert matches(parse_rules("d:r:set\\sto\\s21\\.5\\x3b"), "d", "r", "set to 21.5;")
 
 
 def at(seconds):
@@ -310,6 +332,20 @@ def test_store(tmp_path):
     assert store.frequent() == {("hall", "action")}
     store.cleanup(14, 730)
     assert store.first_ts() == now
+    store.add(
+        [
+            (now, "router", "status", "booting", "story", "devices"),
+            (now, "router", "status", "online", "story", "devices"),
+        ],
+        {},
+        {},
+    )
+    # a rule with a value deletes only these events, not the curves
+    skip = re.compile("^router:status: (?:booting)$|^hall:temperature:")
+    assert store.prune(skip) == (1, 1)
+    assert [row[3] for row in store.story(now - 10, now + 10)] == ["open", "online"]
+    assert store.hourly(hour, hour + 1) == []
+    assert store.prune(skip) == (0, 0)
     store.close()
 
 
@@ -376,7 +412,7 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
         "Hallway: temperature 21.5 °C",
     ]
 
-    # "Show less" and "Always show"
+    # "Hide from story" and "Always show"
     assert await module.Set(hash, ["tl", "hide", "door:state"], {}) is None
     assert "tl hidden door:state" in mock_fhem.command_attr
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
@@ -389,7 +425,7 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
     assert [e["text"] for e in data["days"][0]["entries"]] == ["Hallway: action double"]
 
-    # "Ignore completely" adds the reading to skip_events
+    # "Stop recording" adds the reading to skip_events
     assert await module.Set(hash, ["tl", "ignore", "hall:link-quality"], {}) is None
     assert "tl skip_events ^hall:link\\-quality:" in mock_fhem.command_attr
     assert await module.Set(hash, ["tl", "ignore", "smoke:*"], {}) is None
@@ -477,6 +513,28 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     assert await module.Set(hash, ["tl", "on_change", "nodevice:state"], {}) == (
         "Use device:reading of an existing device"
     )
+
+    # "Hide from story" and "Stop recording" for one value only
+    assert await module.Set(hash, ["tl", "auto", "door:state"], {}) is None
+    assert await module.Set(hash, ["tl", "hide", "door:state:open"], {}) is None
+    assert module._attr_hidden == "door:state:open"
+    await fhem.dispatch_recorded_events(
+        "tl", [[[f"{time.time():.3f}", "door", "state: closed"]], {}]
+    )
+    history = json.loads(await module.Get(hash, ["tl", "device", "door"], {}))
+    assert [e["text"] for e in history["entries"]] == ["Terrace door closed"]
+    assert await module.Set(hash, ["tl", "ignore", "door:state:open"], {}) is None
+    assert module._attr_skip_events.endswith("|^door:state: (?:open)$")
+    skip = re.compile(module._attr_skip_events)
+    assert skip.search("door:state: open") and not skip.search("door:state: opened")
+    assert await module.Set(hash, ["tl", "ignore", "door:state:a("], {}) == (
+        "Invalid regexp a("
+    )
+    message = await module.Set(hash, ["tl", "prune"], {})
+    assert message.startswith("Deleted 1 events")
+    assert mock_fhem.readings["tl"]["last_prune"] == message
+    rows = module.store.story(0, time.time() + 10)
+    assert ("door", "state", "open") not in [row[1:4] for row in rows]
 
     mock_fhem.attributes.pop("hall")
     assert await module.Get(hash, ["tl", "entries", "26.10.2026"], {}) == (

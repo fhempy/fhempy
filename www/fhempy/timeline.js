@@ -80,6 +80,10 @@
       "#fhempyTimeline .ftlEntry:hover .ftlAction{opacity:0.8}" +
       "#fhempyTimeline .ftlActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;align-items:flex-start}" +
       "@media (hover:none){#fhempyTimeline .ftlAction{opacity:0.6}}" +
+      ".ftlChoice{position:relative;display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;" +
+      "padding:4px 22px 4px 6px;border-radius:6px;background:rgba(128,128,128,0.13);max-width:100%;box-sizing:border-box}" +
+      "#fhempyTimeline .ftlChoice .ftlAction,.ftlChoice .ftlAction{opacity:1;margin-left:0;background:rgba(255,255,255,0.5)}" +
+      ".ftlChoice .ftlNo{position:absolute;top:3px;right:5px;cursor:pointer;opacity:0.7}" +
       "#fhempyTimeline .ftlChildren{margin:4px 0 0 0;padding-left:10px;border-left:2px solid rgba(128,128,128,0.3)}" +
       "#fhempyTimeline .ftlLink{cursor:pointer;font-size:12px;opacity:0.75;text-decoration:underline}" +
       "#fhempyTimeline .ftlToggle{display:inline-block;margin-top:2px}" +
@@ -167,6 +171,8 @@
       "#fhempyTimelineDevice .ftlEmpty{opacity:0.75;margin:8px 0}" +
       "#fhempyTimelineDetails .ftlDetail{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
       "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;margin-left:4px;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
+      "#fhempyTimelineDetails .ftlDetail>span:last-child{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center}" +
+      "@media (max-width:600px){#fhempyTimelineDetails .ftlDetail{grid-template-columns:48px 1fr}#fhempyTimelineDetails .ftlDetail>span:last-child{grid-column:2;justify-content:flex-start}#fhempyTimelineDetails .ftlAction{margin-left:0}}" +
       "@media (max-width:600px){#fhempyTimeline .ftlTrends,#fhempyTimeline .ftlHiddenRow,#fhempyTimeline .ftlQuiet{margin-left:0;padding-left:0}}" +
       "</style>");
   }
@@ -264,6 +270,43 @@
       '" title="History of ' + esc(name) + ' (Ctrl+click opens the device)">' + esc(text) + "</a>";
   }
 
+  // regexp of exactly this value for hidden and skip_events, without spaces
+  // and ";" which would end the FHEM command
+  function valueRule(value) {
+    return String(value).trim().replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&").replace(/\s/g, "\\s").replace(/;/g, "\\x3b");
+  }
+
+  function shortValue(value) {
+    var text = String(value).trim();
+    return text.length > 24 ? text.substring(0, 23) + "…" : text;
+  }
+
+  // "Hide from story" and "Stop recording" ask: the whole reading or only this value
+  function choiceHtml(attr, verb, item) {
+    var target = item.device + ":" + item.reading;
+    var html = '<span class="ftlChoice">' + verb + ' <span class="ftlAction" ' + attr + '="' + esc(target) +
+      '" title="' + esc(target) + '">every ' + esc(item.reading) + "</span>";
+    html += '<span class="ftlAction" ' + attr + '="' + esc(target + ":" + valueRule(item.value)) + '" title="' +
+      esc(target) + " only with the value " + esc(String(item.value).trim()) + '">only “' + esc(shortValue(item.value)) + "”</span>";
+    return html + '<span class="ftlNo" title="Cancel">✕</span></span>';
+  }
+
+  function hasValue(item) {
+    return item.value !== undefined && item.value !== null && String(item.value).trim() !== "";
+  }
+
+  // does device:reading or device:reading:value of the button match the item
+  function ruleMatches(target, item) {
+    var parts = target.split(":");
+    if (parts[0] !== item.device || parts[1] !== item.reading) return false;
+    if (parts.length < 3) return true;
+    try {
+      return new RegExp("^(?:" + parts.slice(2).join(":") + ")$", "i").test(String(item.value).trim());
+    } catch (e) {
+      return false;
+    }
+  }
+
   function onChangeAction(item) {
     if (!item.device || item.on_change) return "";
     // the same button pressed twice are two presses, not a repeat
@@ -317,8 +360,8 @@
     }
     html += "</div>";
     if (entry.device) {
-      html += '<span class="ftlActions">' + onChangeAction(entry) + '<span class="ftlAction" data-hide="' + esc(entry.device + ":" + entry.reading) +
-        '" title="Don\'t show ' + esc(entry.device + ":" + entry.reading) + ' anymore">Show less</span></span>';
+      html += '<span class="ftlActions">' + onChangeAction(entry) + '<span class="ftlAction" data-hideask="' + esc(entry.device + ":" + entry.reading) +
+        '" data-ts="' + esc(entry.ts) + '" title="Don\'t show ' + esc(entry.device + ":" + entry.reading) + ' in the story anymore, it stays in the hidden events">Hide from story</span></span>';
     } else {
       html += "<span></span>";
     }
@@ -1062,8 +1105,8 @@
           "<span>" + onChangeAction(row) +
           '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
           esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span>' +
-          '<span class="ftlAction" data-ignore="' + esc(row.device + ":" + row.reading) + '" title="Don\'t record ' +
-          esc(row.device + ":" + row.reading) + ' at all anymore (attribute skip_events)">Ignore completely</span></span></div>';
+          '<span class="ftlAction" data-ignoreask="' + rows.indexOf(row) + '" title="Don\'t record ' +
+          esc(row.device + ":" + row.reading) + ' at all anymore (attribute skip_events)">Stop recording</span></span></div>';
       });
       d.html(html);
       $("body").append(d);
@@ -1076,13 +1119,40 @@
         var el = $(this);
         cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
       });
-      d.on("click", "[data-ignore]", function () {
-        var target = $(this).attr("data-ignore");
-        cmd("set " + device + " ignore " + target, function () {
-          d.find('[data-ignore="' + target.replace(/["\\]/g, "") + '"]').text("Ignored from now on")
-            .removeAttr("data-ignore").removeClass("ftlAction");
-        });
+      d.on("click", "[data-ignoreask]", function () {
+        var row = rows[parseInt($(this).attr("data-ignoreask"), 10)];
+        if (!hasValue(row)) {
+          ignore($(this), row.device + ":" + row.reading);
+          return;
+        }
+        $(this).replaceWith(choiceHtml("data-ignore", "Stop recording:", row));
       });
+      d.on("click", "[data-ignore]", function () {
+        ignore($(this).parent(), $(this).attr("data-ignore"));
+      });
+      d.on("click", ".ftlNo", function () {
+        var i = d.find(".ftlDetail").index($(this).closest(".ftlDetail"));
+        $(this).parent().replaceWith('<span class="ftlAction" data-ignoreask="' + i + '">Stop recording</span>');
+      });
+      d.on("click", "[data-prune]", function () {
+        var el = $(this);
+        el.text("Deleting…").removeAttr("data-prune").removeClass("ftlAction");
+        cmd("set " + device + " prune", function (r) { el.text((r || "").trim() || "Deleted"); });
+      });
+
+      function ignore(el, target) {
+        cmd("set " + device + " ignore " + target, function (r) {
+          if (r && r.trim()) {
+            el.replaceWith('<span>' + esc(r.trim()) + "</span>");
+            return;
+          }
+          d.find(".ftlDetail").each(function (i) {
+            if (!ruleMatches(target, rows[i])) return;
+            $(this).children().last().html('Not recorded anymore <span class="ftlAction" data-prune="1" ' +
+              'title="Delete the events already recorded which match skip_events">Delete recorded events</span>');
+          });
+        });
+      }
     });
   }
 
@@ -1118,7 +1188,7 @@
   }
 
   // what the user opened stays open when the timeline is drawn again,
-  // e.g. after "Show less" or a filter
+  // e.g. after "Hide from story" or a filter
   function restoreExpanded(root) {
     root.find("[data-key]").each(function () {
       if (isOpen($(this).attr("data-key"))) setExpanded($(this), true);
@@ -1174,14 +1244,36 @@
     root.on("click", ".ftlDetails", function () {
       showDetails($(this).attr("data-day"));
     });
+    root.on("click", "[data-hideask]", function () {
+      var target = $(this).attr("data-hideask");
+      var ts = $(this).attr("data-ts");
+      var entry = null;
+      function find(e) {
+        if (String(e.ts) === ts && e.device + ":" + e.reading === target) entry = e;
+        (e.children || []).forEach(find);
+      }
+      days.forEach(function (day) { day.entries.forEach(find); });
+      if (!entry || !hasValue(entry)) {
+        hide(target);
+        return;
+      }
+      $(this).replaceWith(choiceHtml("data-hide", "Hide from story:", entry));
+    });
     root.on("click", "[data-hide]", function () {
-      var target = $(this).attr("data-hide");
-      cmd("set " + device + " hide " + target, function () {
-        days.forEach(function (day) {
-          day.entries = day.entries.filter(function (e) { return e.device + ":" + e.reading !== target; });
-        });
-        render();
+      hide($(this).attr("data-hide"));
+    });
+    root.on("click", ".ftlNo", function () {
+      render();
+    });
+  }
+
+  function hide(target) {
+    cmd("set " + device + " hide " + target, function (r) {
+      if (r && r.trim()) return;
+      days.forEach(function (day) {
+        day.entries = day.entries.filter(function (e) { return !ruleMatches(target, e); });
       });
+      render();
     });
   }
 
