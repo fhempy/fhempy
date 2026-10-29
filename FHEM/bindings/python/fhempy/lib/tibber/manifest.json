@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "pyTibber==0.39.0"
+    "pyTibber==0.39.1"
   ],
   "installer": {
     "title": "Tibber",
