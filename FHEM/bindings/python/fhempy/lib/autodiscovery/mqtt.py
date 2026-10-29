@@ -294,7 +294,10 @@ class MqttDiscovery:
         device["created"] = name
         entities = entity_list(device)
         await mqtt_ha.reset_device_attributes(hash, name, entities)
-        await mqtt_ha.set_new_device_details(hash, name, device["name"], entities)
+        # the icon like for a new device, the alias of the user stays
+        await mqtt_ha.set_new_device_details(
+            hash, name, device["name"], entities, replace=("icon",)
+        )
         await self.request_states(device["broker"])
         return ""
 

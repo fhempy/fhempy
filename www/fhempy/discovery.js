@@ -125,7 +125,7 @@
       html += '<div class="fdDone">✓ ' + (st.recreated ? "set up again" : "in FHEM") + (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
       if (d.can_recreate && d.device) {
         html += '<div class="fdBtns"><span class="fdBtn fdGrey fdRecreate" title="Readings, commands and state like a new device. ' +
-          'The name and the other attributes (room, alias...) stay.">' +
+          'Icon like a new device. The name and the other attributes (room, alias...) stay.">' +
           (st.busy ? '<span class="fdSpin"></span>' : "") + "Set up again</span></div>" +
           (st.error ? '<div class="fdErr">' + esc(st.error) + "</div>" : "");
       }

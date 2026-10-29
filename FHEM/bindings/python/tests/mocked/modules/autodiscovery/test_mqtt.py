@@ -195,6 +195,7 @@ async def test_existing_device_set_up_again_keeps_its_name(engine, fhem_calls):
         "model": "zigbee2mqtt_temp",
         "room": "Wohnzimmer",
         "alias": "Temperatur",
+        "icon": "temperature_humidity",
     }
     published = []
 
@@ -204,7 +205,8 @@ async def test_existing_device_set_up_again_keeps_its_name(engine, fhem_calls):
 
     engine.mqtt._clients[BROKER] = Client()
     assert await engine.recreate(candidate["id"]) == ""
-    # nothing defined, the name stays, room and alias of the user are kept
+    # nothing defined, the name stays, room and alias of the user are kept,
+    # the icon like for a new device
     assert mock_fhem.command_define == []
     assert mock_fhem.command_attr == [
         f"{name} readingList zigbee2mqtt/wohnzimmer_temp:.* "

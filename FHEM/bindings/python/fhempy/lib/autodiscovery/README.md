@@ -96,8 +96,9 @@ Pi, it starts BlueZ with `--experimental`, also after a reboot.
 - `set fhempy_discovery createAll`: creates all found devices without required input
 - `set fhempy_discovery recreate <id>` / `recreateAll`: sets up MQTT devices which
   are in FHEM already again like new ones (readingList, setList, webCmd, stateFormat,
-  devStateIcon are replaced, attrTemplate leftovers removed). The FHEM name and the
-  other attributes (room, alias, icon...) stay, so DOIFs and notifies keep working.
+  devStateIcon and the icon are replaced, attrTemplate leftovers removed). The FHEM
+  name and the other attributes (room, alias...) stay, so DOIFs and notifies keep
+  working.
   In the dialog: *Set up again* in *Already in FHEM*.
 - `set fhempy_discovery ignore <id>` / `unignore <id>`
 - `get fhempy_discovery candidates`: all found devices as JSON (new, in FHEM, ignored)
