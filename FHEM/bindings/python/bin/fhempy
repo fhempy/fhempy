@@ -126,8 +126,20 @@ if grep -qE "(lxc|docker|containerd|podman|crio)" /proc/1/cgroup; then
     CONTAINER=1
 fi
 
+# Images which ship fhempy in their system Python (e.g. fhempy-docker) keep using it.
+# Other containers (e.g. fhem-docker) get their own virtual environment like a normal
+# installation, the system Python there is often too old or pip installs are blocked.
+# FHEMPY_SYSTEM_PYTHON=1 or =0 forces one of both.
+SYSTEM_PYTHON=0
+if [ -n "$FHEMPY_SYSTEM_PYTHON" ]; then
+  [ "$FHEMPY_SYSTEM_PYTHON" == 0 ] || SYSTEM_PYTHON=1
+elif [ "$CONTAINER" == 1 ] && python3 -c "import fhempy" >/dev/null 2>&1; then
+  echo "fhempy is installed in the system Python of this container, using it."
+  SYSTEM_PYTHON=1
+fi
+
 # check if I run in a fhempy_venv
-if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
+if [[ "$VIRTUAL_ENV" == "" && "$SYSTEM_PYTHON" == 0 ]]
 then
   mkdir -p "$FHEMPY_DIR"
   find_or_install_uv
@@ -203,7 +215,7 @@ then
 fi
 
 # check if virtual env was activated
-if [[ "$VIRTUAL_ENV" == "" && "$CONTAINER" == 0 ]]
+if [[ "$VIRTUAL_ENV" == "" && "$SYSTEM_PYTHON" == 0 ]]
 then
   echo "No Python virtual environment available. Exit."
   exit 1

@@ -139,7 +139,9 @@ The module's README (linked in the list) explains its options. Its Python librar
 Click the update icon of `fhempy_local` or run `set fhempy_local update`. fhempy installs the new version, restarts and also updates its FHEM modules (`10_BindingsIo.pm`, `10_fhempy.pm`, ...) and reloads them in FHEM. FHEM `update` and `shutdown restart` aren't needed for fhempy anymore. With `attr fhempy_local autoUpdate 1` fhempy installs new releases automatically at night (`autoUpdateTime`, default 03:00).
 
 ### 🐳 Docker
-Running FHEM in Docker? [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a ready-made image per module, e.g. `ghcr.io/fhem/fhempy-docker-<modulename>:latest`. Start the container in the same network as FHEM and connect it with `define fhempy_peer_<modulename> BindingsIo fhempy-<modulename>:15733 fhempy`.
+Running FHEM in Docker? fhempy also runs directly in the FHEM container (e.g. [fhem-docker](https://github.com/fhem/fhem-docker)): it creates its own Python environment in `.fhempy` of the FHEM directory, so keep that directory on a volume. For Bluetooth or Matter use `network_mode: host`.
+
+Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a ready-made image per module, e.g. `ghcr.io/fhem/fhempy-docker-<modulename>:latest`. Start the container in the same network as FHEM and connect it with `define fhempy_peer_<modulename> BindingsIo fhempy-<modulename>:15733 fhempy`.
 
 ## 🧩 Modules
 
