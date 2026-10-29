@@ -42,8 +42,9 @@ SKIP_EVENTS = f"^[^:]+:(?i:{classify.TECH_READINGS}): "
 
 HIDDEN_HELP = (
     "Readings which are never shown in the timeline, e.g. "
-    "<code>Hallway_motion:motion Sensor1:*</code>. Set by the "
-    "<i>Show less</i> button."
+    "<code>Hallway_motion:motion Sensor1:*</code>. With a value only these "
+    "values, e.g. <code>Router:status:booting|reconnecting</code>. Each part "
+    "is a regexp. Set by the <i>Hide from story</i> button."
 )
 ALWAYS_SHOW_HELP = (
     "Readings which are always shown in the timeline, even if fhempy "
@@ -52,17 +53,44 @@ ALWAYS_SHOW_HELP = (
 )
 
 
+def _rule_part(text, flags=0):
+    """regexp of one part of device:reading:value, None for any"""
+    if text in ("", "*", ".*"):
+        return None
+    try:
+        return re.compile(text, flags)
+    except re.error:
+        return re.compile(re.escape(text), flags)
+
+
 def parse_rules(text):
-    rules = set()
+    """device:reading or device:reading:value, each part a regexp"""
+    rules = []
     for word in str(text or "").split():
-        device, _, reading = word.partition(":")
+        device, _, rest = word.partition(":")
+        reading, _, value = rest.partition(":")
         if device:
-            rules.add((device, reading or "*"))
+            rules.append(
+                (
+                    _rule_part(device),
+                    _rule_part(reading),
+                    _rule_part(value, re.IGNORECASE),
+                )
+            )
     return rules
 
 
-def matches(rules, device, reading):
-    return (device, reading) in rules or (device, "*") in rules
+def _part_matches(regexp, text):
+    return regexp is None or regexp.fullmatch(text) is not None
+
+
+def matches(rules, device, reading, value=""):
+    return any(
+        _part_matches(d, device)
+        and _part_matches(r, reading)
+        and _part_matches(v, str(value).strip())
+        for d, r, v in rules
+    )
 
 
 class timeline(generic.FhemModule):
@@ -103,8 +131,13 @@ class timeline(generic.FhemModule):
                 "ignore": {
                     "args": ["reading"],
                     "help": "Ignore device:reading (or device:* for all "
-                    "readings) completely: adds it to the attribute "
-                    "skip_events, FHEM doesn't send these events anymore.",
+                    "readings, device:reading:value for some values) "
+                    "completely: adds it to the attribute skip_events, FHEM "
+                    "doesn't send these events anymore.",
+                },
+                "prune": {
+                    "help": "Delete the stored events which match the "
+                    "attribute skip_events, e.g. after Stop recording.",
                 },
                 "auto": {
                     "args": ["reading"],
@@ -299,10 +332,10 @@ class timeline(generic.FhemModule):
                 self.schedule_reload()
 
     def layer_of(self, device, reading, value, info):
-        if matches(self._hidden_rules, device, reading):
+        if matches(self._hidden_rules, device, reading, value):
             return classify.TECH, classify.DEVICES
         layer, category = classify.classify(info, reading, value)
-        if matches(self._show_rules, device, reading):
+        if matches(self._show_rules, device, reading, value):
             if layer != classify.STORY and category == classify.DEVICES:
                 category = classify.device_category(info)
             return classify.STORY, category
@@ -466,22 +499,23 @@ class timeline(generic.FhemModule):
     # --- sets ---
 
     async def change_rules(self, target, hide, show):
-        device, _, reading = target.partition(":")
+        device, _, rest = target.partition(":")
+        reading, _, value = rest.partition(":")
         if not device:
-            return "Use device:reading or device:*"
-        key = f"{device}:{reading or '*'}"
+            return "Use device:reading, device:reading:value or device:*"
+        key = f"{device}:{reading or '*'}" + (f":{value}" if value else "")
         rules = {}
         for attr, add in (("hidden", hide), ("always_show", show)):
             words = [w for w in getattr(self, "_attr_" + attr).split() if w != key]
             if add:
                 words.append(key)
             rules[attr] = " ".join(words)
-        for attr, value in rules.items():
-            if value:
-                await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} {attr} {value}")
+        for attr, text in rules.items():
+            if text:
+                await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} {attr} {text}")
             elif getattr(self, "_attr_" + attr):
                 await fhem.CommandDeleteAttr(self.hash, f"{self.hash['NAME']} {attr}")
-            setattr(self, "_attr_" + attr, value)
+            setattr(self, "_attr_" + attr, text)
         self._hidden_rules = parse_rules(self._attr_hidden)
         self._show_rules = parse_rules(self._attr_always_show)
         if (device, reading) in self._frequent:
@@ -501,13 +535,21 @@ class timeline(generic.FhemModule):
         return await self.change_rules(params["reading"], False, False)
 
     async def set_ignore(self, hash, params):
-        device, _, reading = params["reading"].partition(":")
+        device, _, rest = params["reading"].partition(":")
+        reading, _, value = rest.partition(":")
         if not device or not reading:
-            return "Use device:reading or device:*"
+            return "Use device:reading, device:reading:value or device:*"
         # reading names never contain ":", so "^device:reading:" matches exactly
         rule = f"^{re.escape(device)}:"
         if reading != "*":
             rule += f"{re.escape(reading)}:"
+        if value:
+            # FHEM events are "device:reading: value"
+            rule += f" (?:{value})$"
+            try:
+                re.compile(rule)
+            except re.error:
+                return f"Invalid regexp {value}"
         current = self._attr_skip_events
         if rule in current.split("|"):
             return None
@@ -515,6 +557,23 @@ class timeline(generic.FhemModule):
         await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} skip_events {value}")
         self._attr_skip_events = value
         return None
+
+    async def set_prune(self, hash, params):
+        if self.store is None:
+            return "The timeline is starting"
+        if not self._attr_skip_events:
+            return "The attribute skip_events is empty, nothing to delete"
+        try:
+            skip = re.compile(self._attr_skip_events)
+        except re.error as err:
+            return f"skip_events is no Python regexp: {err}"
+        await self.flush()
+        events, hours = await utils.run_blocking(
+            functools.partial(self.store.prune, skip)
+        )
+        message = f"Deleted {events} events and {hours} hourly values"
+        await fhem.readingsSingleUpdate(self.hash, "last_prune", message, 1)
+        return message
 
     async def set_on_change(self, hash, params):
         device, _, reading = params["reading"].partition(":")
@@ -558,7 +617,7 @@ class timeline(generic.FhemModule):
             functools.partial(self.query, start, end, first, last)
         )
         rows = [
-            row for row in data["story"] if not matches(self._hidden_rules, *row[1:3])
+            row for row in data["story"] if not matches(self._hidden_rules, *row[1:4])
         ]
         now = time.time()
         days = story.build(
@@ -618,7 +677,7 @@ class timeline(generic.FhemModule):
             functools.partial(self.query_device, device, start, end)
         )
         rows = [
-            row for row in data["story"] if not matches(self._hidden_rules, *row[1:3])
+            row for row in data["story"] if not matches(self._hidden_rules, *row[1:4])
         ]
         entries = story.build_entries(rows, self.infos, data["absences"], now)
         activity = story.build_activity(entries, self.infos, now)

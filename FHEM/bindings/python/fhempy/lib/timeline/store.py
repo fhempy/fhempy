@@ -142,6 +142,44 @@ class Store:
             ).fetchall()
         return [row[:-1] for row in rows]
 
+    def prune(self, skip):
+        """delete events and hourly values matching the regexp skip of
+        "device:reading: value" (searched like FHEM does) -> (events, hourly values) deleted
+        """
+        with self._lock:
+            db = self._db
+            pairs = db.execute("SELECT DISTINCT device, reading FROM events").fetchall()
+            events = 0
+            for device, reading in pairs:
+                values = db.execute(
+                    "SELECT DISTINCT value FROM events WHERE device = ? AND reading = ?",
+                    (device, reading),
+                ).fetchall()
+                gone = [
+                    (device, reading, value)
+                    for (value,) in values
+                    if skip.search(f"{device}:{reading}: {value}")
+                ]
+                for row in gone:
+                    events += db.execute(
+                        "DELETE FROM events WHERE device = ? AND reading = ?"
+                        " AND value = ?",
+                        row,
+                    ).rowcount
+            # curves: a rule which doesn't depend on the value
+            hourly = db.execute(
+                "SELECT DISTINCT device, reading FROM hourly"
+            ).fetchall()
+            hours = 0
+            for device, reading in hourly:
+                if skip.search(f"{device}:{reading}: "):
+                    hours += db.execute(
+                        "DELETE FROM hourly WHERE device = ? AND reading = ?",
+                        (device, reading),
+                    ).rowcount
+            db.commit()
+        return events, hours
+
     def details(self, start, end, limit=500):
         with self._lock:
             return self._db.execute(
