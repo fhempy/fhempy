@@ -311,10 +311,10 @@ class Engine:
         name = advertisement.local_name or device.name or ""
         uuids = {uuid.lower() for uuid in advertisement.service_uuids or []}
         uuids.update(uuid.lower() for uuid in (advertisement.service_data or {}))
-        manufacturer_ids = set((advertisement.manufacturer_data or {}).keys())
+        manufacturer_data = advertisement.manufacturer_data or {}
         matches = list(
             catalog.match_ble(
-                self.catalog, name, manufacturer_ids, uuids, advertisement.rssi
+                self.catalog, name, manufacturer_data, uuids, advertisement.rssi
             )
         )
         if not matches:
@@ -323,6 +323,7 @@ class Engine:
             "address": device.address.upper(),
             "name": name,
             "rssi": advertisement.rssi,
+            "homekit_id": catalog.homekit_id(manufacturer_data),
         }
         for entry, rule in matches:
             found = catalog.candidate(entry, rule, values, "ble")

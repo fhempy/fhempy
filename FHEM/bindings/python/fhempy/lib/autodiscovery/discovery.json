@@ -193,6 +193,27 @@
       "help": "HomeKit code printed on the device or its box"
      }
     ]
+   },
+   {
+    "ble": [
+     {
+      "manufacturer_id": 76,
+      "manufacturer_data_prefix": "06"
+     }
+    ],
+    "title": "{name}",
+    "model": "HomeKit Bluetooth",
+    "unique": "{homekit_id}",
+    "define": [
+     "{homekit_id}"
+    ],
+    "params": [
+     {
+      "label": "Setup code",
+      "placeholder": "123-45-678",
+      "help": "HomeKit code printed on the device or its box"
+     }
+    ]
    }
   ]
  },

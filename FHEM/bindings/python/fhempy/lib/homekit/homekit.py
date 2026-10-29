@@ -21,6 +21,9 @@ from ..core import zeroconf
 # AsyncServiceBrowser for these types (find_brower_for_hap_type)
 HOMEKIT_SERVICES = ["_hap._tcp.local.", "_hap._udp.local."]
 
+# Bluetooth devices which are out of range or asleep
+BLE_RETRY_INTERVAL = 60
+
 
 _aiohomekit_connect_once = SecureHomeKitConnection._connect_once
 
@@ -52,6 +55,8 @@ class homekit(generic.FhemModule):
 
     controller: aiohomekit.Controller = None
     aiobrowser: AsyncServiceBrowser = None
+    # controller which got the Bluetooth transport
+    ble_controller: aiohomekit.Controller = None
     _controller_lock = asyncio.Lock()
 
     @staticmethod
@@ -76,11 +81,30 @@ class homekit(generic.FhemModule):
         await controller.async_start()
         homekit.controller = controller
 
+    @staticmethod
+    async def start_ble(controller, logger):
+        # aiohomekit only starts HAP-BLE if bleak was imported before it. Add it
+        # on demand, setups with network devices only (e.g. Velux) don't need
+        # a Bluetooth scan.
+        async with homekit._controller_lock:
+            if homekit.ble_controller is controller:
+                return
+            homekit.ble_controller = controller
+            try:
+                from .ble import SharedScanBleController
+
+                await controller._async_register_backend(
+                    SharedScanBleController(char_cache=controller._char_cache)
+                )
+            except Exception:
+                logger.exception("HomeKit over Bluetooth not available")
+
     def __init__(self, logger):
         self._ready = asyncio.Event()
         self._setup_running = False
         self._owns_pairing = False
         self.pairing = None
+        self._stop_listening = None
         super().__init__(logger)
         self._errors = utils.ErrorLogger(logger)
 
@@ -96,7 +120,10 @@ class homekit(generic.FhemModule):
             "interval": {
                 "default": 60,
                 "format": "int",
-                "help": "Change interval, default is 60 seconds.",
+                "help": (
+                    "Change interval, default is 60 seconds. Bluetooth devices "
+                    "report changes on their own."
+                ),
             },
             "pairing_data": {
                 "default": "{}",
@@ -130,6 +157,9 @@ class homekit(generic.FhemModule):
 
     async def Undefine(self, hash):
         await super().Undefine(hash)
+        if self._stop_listening is not None:
+            self._stop_listening()
+            self._stop_listening = None
         pairing = getattr(self, "pairing", None)
         self.pairing = None
         # accessory devices share the connection of their gateway
@@ -180,6 +210,10 @@ class homekit(generic.FhemModule):
                 self.hash, f"{self.hash['NAME']} pairing_data {pairing_data}"
             )
         else:
+            if self._attr_pairing_data.get("Connection") == "BLE":
+                # aiohomekit needs the advertisement to connect
+                await homekit.start_ble(controller, self.logger)
+                await self._wait_for_discovery(controller, homekitid)
             self.pairing = controller.load_pairing(
                 self._attr_pairing_data["AccessoryPairingID"],
                 dict(self._attr_pairing_data),
@@ -214,10 +248,14 @@ class homekit(generic.FhemModule):
     async def _wait_for_discovery(self, controller, homekitid):
         # The accessory (e.g. Homebridge) might start after FHEM. async_find
         # returns as soon as zeroconf announces it, so keep waiting for it.
+        # aiohomekit keys Bluetooth devices by the lowercase id
+        homekitid = homekitid.lower()
         while True:
             try:
                 return await controller.async_find(homekitid)
             except AccessoryNotFoundError:
+                # not announced via mDNS, it might be a Bluetooth device
+                await homekit.start_ble(controller, self.logger)
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "waiting for device", 1
                 )
@@ -226,7 +264,7 @@ class homekit(generic.FhemModule):
         # aiohomekit keeps reconnecting in the background and reconnects at
         # once when zeroconf announces the accessory. Wait for that connection
         # instead of failing when the accessory isn't up yet (FHEM start).
-        connection = self.pairing.connection
+        connection = getattr(self.pairing, "connection", None)
         # only IP connections (_hap._tcp) have the reconnect loop
         ensure_connection = getattr(connection, "ensure_connection", None)
         while True:
@@ -236,8 +274,20 @@ class homekit(generic.FhemModule):
                 name = await self.pairing.get_primary_name()
                 accessories = await self.pairing.list_accessories_and_characteristics()
                 return name, accessories
-            except AccessoryDisconnectedError as ex:
-                if ensure_connection is None or connection.is_connected:
+            except Exception as ex:
+                if self._is_ble():
+                    # out of range or asleep, try again later
+                    self.logger.info(f"Waiting for HomeKit Bluetooth device: {ex}")
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "state", "waiting for device", 1
+                    )
+                    await asyncio.sleep(BLE_RETRY_INTERVAL)
+                    continue
+                if (
+                    not isinstance(ex, AccessoryDisconnectedError)
+                    or ensure_connection is None
+                    or connection.is_connected
+                ):
                     raise
                 self.logger.info(f"Waiting for HomeKit device: {ex}")
                 await fhem.readingsSingleUpdateIfChanged(
@@ -265,7 +315,37 @@ class homekit(generic.FhemModule):
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "ready", 1)
 
-        self.create_async_task(self.update_readings_from_homekit())
+        if self._is_ble():
+            await self.update_readings()
+            await self.subscribe_events()
+        else:
+            self.create_async_task(self.update_readings_from_homekit())
+
+    def _is_ble(self):
+        return (
+            self.pairing is not None
+            and self.pairing.pairing_data.get("Connection") == "BLE"
+        )
+
+    async def subscribe_events(self):
+        # Polling would drain the battery of a Bluetooth device. aiohomekit
+        # reads the changed values when the state number in the advertisement
+        # goes up and reports them as events.
+        chars = []
+        for accessory in self.pairing.accessories:
+            if accessory.aid == self.aid:
+                for service in accessory.services:
+                    for char in service.characteristics:
+                        if "ev" in char.perms:
+                            chars.append((self.aid, char.iid))
+        self._stop_listening = self.pairing.dispatcher_connect(self._on_events)
+        await self.pairing.subscribe(chars)
+
+    def _on_events(self, events):
+        # events: {(aid, iid): {"value": value}}
+        self.pairing.accessories.process_changes(events)
+        if any(aid == self.aid for aid, _ in events):
+            self.create_async_task(self.update_readings())
 
     async def update_readings_from_homekit(self):
         while True:

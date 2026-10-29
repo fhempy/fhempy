@@ -830,7 +830,7 @@
  {
   "id": "homekit",
   "title": "HomeKit devices",
-  "description": "Control HomeKit accessories and bridges (e.g. Velux) directly",
+  "description": "Control HomeKit accessories and bridges (e.g. Velux, Eve Bluetooth devices) directly",
   "category": "home",
   "name": "homekit",
   "logo": "homekit.png",
