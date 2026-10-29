@@ -2,6 +2,45 @@
 
 <!-- version list -->
 
+## v2.13.1 (2026-10-29)
+
+### Features
+
+- **timeline**: Device history for doors, lights, motion and buttons
+  ([#826](https://github.com/fhempy/fhempy/pull/826),
+  [`a74399d`](https://github.com/fhempy/fhempy/commit/a74399d82a2bc20000dd1d84e1fced9ab054a208))
+
+- **timeline**: Device history for doors, lights, motion and buttons
+  ([#825](https://github.com/fhempy/fhempy/pull/825),
+  [`8152673`](https://github.com/fhempy/fhempy/commit/815267337538b0684d23ff5a294a8f7ecfc1e71e))
+
+- **timeline**: Hide or stop recording single values, prune recorded events
+  ([#826](https://github.com/fhempy/fhempy/pull/826),
+  [`a74399d`](https://github.com/fhempy/fhempy/commit/a74399d82a2bc20000dd1d84e1fced9ab054a208))
+
+- **timeline**: Readable device history (thermostat target curve, doors, lights, buttons)
+  ([#825](https://github.com/fhempy/fhempy/pull/825),
+  [`8152673`](https://github.com/fhempy/fhempy/commit/815267337538b0684d23ff5a294a8f7ecfc1e71e))
+
+- **timeline**: Thermostats with target temperature curve, readable device history
+  ([#826](https://github.com/fhempy/fhempy/pull/826),
+  [`a74399d`](https://github.com/fhempy/fhempy/commit/a74399d82a2bc20000dd1d84e1fced9ab054a208))
+
+- **timeline**: Thermostats with target temperature curve, readable device history
+  ([#825](https://github.com/fhempy/fhempy/pull/825),
+  [`8152673`](https://github.com/fhempy/fhempy/commit/815267337538b0684d23ff5a294a8f7ecfc1e71e))
+
+### Refactoring
+
+- **timeline**: Smaller functions for SonarCloud (complexity, parameter count)
+  ([#826](https://github.com/fhempy/fhempy/pull/826),
+  [`a74399d`](https://github.com/fhempy/fhempy/commit/a74399d82a2bc20000dd1d84e1fced9ab054a208))
+
+- **timeline**: Smaller functions for SonarCloud (complexity, parameter count)
+  ([#825](https://github.com/fhempy/fhempy/pull/825),
+  [`8152673`](https://github.com/fhempy/fhempy/commit/815267337538b0684d23ff5a294a8f7ecfc1e71e))
+
+
 ## v2.13.0 (2026-10-29)
 
 ### Bug Fixes
