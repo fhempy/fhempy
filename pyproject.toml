@@ -86,7 +86,7 @@ dbus-python = "==1.5.0"
 esphome = "==2026.10.1"
 esphome-device-builder = "==1.26.0"
 goodwe = "==0.4.10"
-greeclimate = "==3.5.3"
+greeclimate = "==4.1.0"
 httpx = "==0.28.1"
 huawei-solar = "==3.0.7"
 # hyundai_kia_connect_api 4.41 needs pycryptodome>=4, greeclimate pins <4,
