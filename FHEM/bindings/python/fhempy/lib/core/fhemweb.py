@@ -5,19 +5,21 @@ from .. import fhem
 SETUP_READING = ".room_setup"
 
 
-async def setup_room(hash, room, room_icon, device_icon):
+async def setup_room(hash, room, room_icon, device_icon, keep_fhempy=False):
     """Once for a new device: put it into room, give it device_icon and the
     room room_icon in all FHEMWEB instances. Existing icons are kept, the
-    user can change everything afterwards."""
+    user can change everything afterwards. keep_fhempy: stay in room fhempy
+    too instead of moving from there."""
     name = hash["NAME"]
     if await fhem.ReadingsVal(name, SETUP_READING, "") == "done":
         return
+    # fhempy puts new devices into room fhempy
+    move = "" if keep_fhempy else " || $cur eq 'fhempy'"
     cmd = (
         f"my $n = {fhem.perlString(name)};"
         f" my $room = {fhem.perlString(room)};"
         " my $cur = AttrVal($n, 'room', '');"
-        # fhempy puts new devices into room fhempy
-        " my $rooms = ($cur eq '' || $cur eq 'fhempy')"
+        f" my $rooms = ($cur eq ''{move})"
         ' ? $room : "$cur,$room";'
         ' CommandAttr(undef, "$n room $rooms")'
         " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"

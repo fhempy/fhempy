@@ -342,14 +342,19 @@ fhempy_detailFn($$$)
   return IOWrite($hash, $hash, "FW_detailFn", [$FW_wname, $d, $room, $pageHash], {});
 }
 
-# In a room the timeline is shown on the whole page instead of its device
-# row, all other fhempy devices keep the usual row (undef).
+# In a room of its own (e.g. Timeline) the timeline is shown on the whole
+# page instead of its device row. In rooms with other devices (fhempy,
+# Everything, ...) and for all other fhempy devices the usual row (undef).
 sub
 fhempy_summaryFn($$$$)
 {
   my ($FW_wname, $d, $room, $pageHash) = @_;
   my $hash = $defs{$d};
-  return undef if (!$room || !$hash || ($hash->{FHEMPYTYPE} // '') ne 'timeline');
+  return undef if (!$room || $room eq 'all' || !$hash || ($hash->{FHEMPYTYPE} // '') ne 'timeline');
+  foreach my $other (keys %defs) {
+    next if ($other eq $d || $defs{$other}{TEMPORARY} || defined($defs{$other}{SNIPPET}));
+    return undef if ((','.AttrVal($other, 'room', '').',') =~ /,\Q$room\E,/);
+  }
   my $name = $d;
   $name =~ s/[^A-Za-z0-9._]//g;
   return "<div id=\"fhempyTimelineRoom\"></div><script>".

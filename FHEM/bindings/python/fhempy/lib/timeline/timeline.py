@@ -221,7 +221,10 @@ class timeline(generic.FhemModule):
                 self.hash, "state", f"error: {utils.describe_exception(exc)}", 1
             )
             return
-        await fhemweb.setup_room(self.hash, ROOM, ROOM_ICON, DEVICE_ICON)
+        # stays in room fhempy like all fhempy devices, there as usual row
+        await fhemweb.setup_room(
+            self.hash, ROOM, ROOM_ICON, DEVICE_ICON, keep_fhempy=True
+        )
         await self.reload_infos()
         await self.update_absence(time.time())
         if not await self.start_recorder():
