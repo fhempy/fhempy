@@ -2,6 +2,40 @@
 
 <!-- version list -->
 
+## v2.13.0 (2026-10-29)
+
+### Bug Fixes
+
+- SonarCloud reliability findings ([#821](https://github.com/fhempy/fhempy/pull/821),
+  [`4c97c27`](https://github.com/fhempy/fhempy/commit/4c97c275508c0f4191bc654466fd8304521fb4d7))
+
+- **timeline**: Full page only in a room of its own, link to device settings
+  ([#820](https://github.com/fhempy/fhempy/pull/820),
+  [`a316bef`](https://github.com/fhempy/fhempy/commit/a316befdce71d659714a048c43e5e09152e9b7d6))
+
+### Chores
+
+- Remove accidentally added uv.lock ([#821](https://github.com/fhempy/fhempy/pull/821),
+  [`4c97c27`](https://github.com/fhempy/fhempy/commit/4c97c275508c0f4191bc654466fd8304521fb4d7))
+
+### Features
+
+- **autodiscovery**: Set up MQTT/Zigbee2MQTT devices in FHEM again like new ones, the name stays
+  ([#816](https://github.com/fhempy/fhempy/pull/816),
+  [`cbdaa41`](https://github.com/fhempy/fhempy/commit/cbdaa41b75b4efc0a26531bedd4cb88d19ee3692))
+
+- **homekit**: HomeKit devices via Bluetooth LE ([#817](https://github.com/fhempy/fhempy/pull/817),
+  [`38dbc52`](https://github.com/fhempy/fhempy/commit/38dbc52ec6b87382afeb682be201fc96a98fbf46))
+
+- **timeline**: Click a curve to open it big in a popup
+  ([#818](https://github.com/fhempy/fhempy/pull/818),
+  [`17421f3`](https://github.com/fhempy/fhempy/commit/17421f3bfb368c6218448c956c4ec594f967777d))
+
+- **timeline**: Curves grouped by device with values on hover, repeated "on" continues the entry
+  ([#815](https://github.com/fhempy/fhempy/pull/815),
+  [`5c06fb8`](https://github.com/fhempy/fhempy/commit/5c06fb857cdf3455db9255f8fd37f58d73f13b30))
+
+
 ## v2.12.1 (2026-10-29)
 
 ### Bug Fixes
