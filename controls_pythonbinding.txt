@@ -10,7 +10,7 @@ UPD 2026-10-22_23:42:33 4444 www/fhempy/ble_monitor.png
 UPD 2026-10-22_23:42:33 452 www/fhempy/bluetooth.svg
 UPD 2026-10-22_23:42:33 7897 www/fhempy/bmw.png
 UPD 2026-10-22_23:42:33 4236 www/fhempy/discover_upnp.png
-UPD 2026-10-28_21:49:00 23841 www/fhempy/discovery.js
+UPD 2026-10-29_21:06:41 25735 www/fhempy/discovery.js
 UPD 2026-10-22_23:42:33 962 www/fhempy/dlna_dmr.svg
 UPD 2026-10-22_23:42:33 4649 www/fhempy/eq3bt.png
 UPD 2026-10-22_23:42:33 4728 www/fhempy/erelax_vaillant.png
