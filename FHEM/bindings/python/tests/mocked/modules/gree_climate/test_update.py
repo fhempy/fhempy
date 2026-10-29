@@ -13,12 +13,12 @@ async def setup_device(mocker):
     await check_and_install_dependencies("gree_climate")
 
     from greeclimate.cipher import CipherV1
-    from greeclimate.device import Device
+    from greeclimate.air_conditioner import AirConditionerDevice
     from greeclimate.deviceinfo import DeviceInfo
 
     from fhempy.lib.gree_climate.gree_climate import gree_climate
 
-    gree = Device(DeviceInfo("192.0.2.10", 7000, "aabbccddeeff", "testac"))
+    gree = AirConditionerDevice(DeviceInfo("192.0.2.10", 7000, "aabbccddeeff", "testac"))
     gree.device_cipher = CipherV1(b"0123456789abcdef")
     gree.send = AsyncMock()
     # simulate a bound session, greeclimate >= 3.5 ignores packets otherwise

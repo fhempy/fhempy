@@ -1,8 +1,8 @@
 import asyncio
 import time
 
+from greeclimate.air_conditioner import AirConditionerDevice
 from greeclimate.device import (
-    Device,
     FanSpeed,
     HorizontalSwing,
     Mode,
@@ -100,7 +100,8 @@ class gree_climate(generic.FhemModule):
         device_infos = await self.discovery.scan(wait_for=5)
         for device_info in device_infos:
             try:
-                device = Device(device_info)
+                # greeclimate >= 4 keeps the AC properties in AirConditionerDevice
+                device = AirConditionerDevice(device_info)
                 await device.bind()
             except Exception as ex:
                 self.logger.warning(
