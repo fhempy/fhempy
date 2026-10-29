@@ -156,6 +156,37 @@ def test_thermostat_story():
     assert story.reading_label("measured-temp") == "temperature"
 
 
+def test_device_activity():
+    entries = build(
+        [
+            (0, "door", "state", "open", "security"),
+            (300, "door", "state", "closed", "security"),
+            (5000, "door", "state", "open", "security"),
+            (5060, "door", "state", "closed", "security"),
+            (6000, "hall", "action", "single", "devices"),
+            (7000, "hall", "action", "double", "devices"),
+        ],
+        now=at(9000),
+    )
+    door = story.build_activity(
+        [e for e in entries if e["device"] == "door"], INFOS, at(9000)
+    )
+    (state,) = door
+    assert state["name"] == "" and state["what"] == "Open"
+    assert state["count"] == 2 and state["total"] == 360 and state["longest"] == 300
+    assert state["segments"][0] == [at(0), at(300), "Open"]
+    assert state["current"] == {"text": "closed", "since": at(5060)}
+    (action,) = story.build_activity(
+        [e for e in entries if e["device"] == "hall"], INFOS, at(9000)
+    )
+    assert action["name"] == "action" and action["count"] == 2
+    assert [s[1:] for s in action["segments"]] == [
+        [None, "Action single"],
+        [None, "Action double"],
+    ]
+    assert action["current"] == {"text": "double", "since": at(7000)}
+
+
 def test_thermostat_trends():
     start = day_start("2026-01-05")
     hour = int(start)

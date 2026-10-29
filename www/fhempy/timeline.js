@@ -142,6 +142,20 @@
       "#fhempyTimelineDevice .ftlAction{font-size:11px;cursor:pointer;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
       "#fhempyTimelineDevice a.ftlOpen{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;font-size:13px;color:inherit;text-decoration:none;white-space:nowrap}" +
       "#fhempyTimelineDevice .ftlDevChart{margin:4px 0 14px}" +
+      "#fhempyTimelineDevice .ftaBlock{margin:4px 0 16px}" +
+      "#fhempyTimelineDevice .ftaHead{font-size:15px}#fhempyTimelineDevice .ftaHead b{font-weight:600}" +
+      "#fhempyTimelineDevice .ftaName{opacity:0.7}" +
+      "#fhempyTimelineDevice .ftaStats{font-size:12px;opacity:0.65;margin:1px 0 6px}" +
+      "#fhempyTimelineDevice .ftaRow{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:6px;height:18px;font-size:11px}" +
+      "#fhempyTimelineDevice .ftaRow>span{opacity:0.65;white-space:nowrap;overflow:hidden}" +
+      "#fhempyTimelineDevice .ftaRow.ftaCompact{height:11px}" +
+      "#fhempyTimelineDevice .ftaBar{position:relative;height:12px}" +
+      "#fhempyTimelineDevice .ftaCompact .ftaBar{height:8px}" +
+      "#fhempyTimelineDevice .ftaPast{position:absolute;left:0;top:0;bottom:0;background:rgba(128,128,128,0.12);border-radius:2px}" +
+      "#fhempyTimelineDevice .ftaSeg{position:absolute;top:0;bottom:0;border-radius:2px;min-width:2px;cursor:default}" +
+      "#fhempyTimelineDevice .ftaTick{width:2px;margin-left:-1px;opacity:0.85}" +
+      "#fhempyTimelineDevice .ftaAxis{height:14px}" +
+      "#fhempyTimelineDevice .ftaAxis div{display:flex;justify-content:space-between;opacity:0.55}" +
       "#fhempyTimelineDevice .ftlValues{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));column-gap:20px;font-size:13px}" +
       "#fhempyTimelineDevice .ftlValues>div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.15)}" +
       "#fhempyTimelineDevice .ftlValues span:first-child{opacity:0.7}" +
@@ -252,6 +266,8 @@
 
   function onChangeAction(item) {
     if (!item.device || item.on_change) return "";
+    // the same button pressed twice are two presses, not a repeat
+    if (/^(action|click|button|key|press(ed)?|event|scene)$/i.test(item.reading)) return "";
     return '<span class="ftlAction" data-onchange="' + esc(item.device + ":" + item.reading) +
       '" title="Add ' + esc(item.reading) + " to event-on-change-reading of " + esc(item.device) +
       ': events only when the value changes">Only on change</span>';
@@ -552,7 +568,8 @@
   }
 
   function deviceEntryHtml(entry, shown) {
-    var meta = entryMeta(entry);
+    // the room is the one of the device, no need to repeat it
+    var meta = entryMeta($.extend({}, entry, { room: "" }));
     return '<div class="ftlEntry' + (entry.alert ? " ftlAlert" : "") + '"><span class="ftlTime">' + clock(entry.ts) + "</span>" +
       dot(entry.category) + '<div class="ftlText">' + esc(entry.short || entry.text) + (meta ? '<div class="ftlMeta">' + meta + "</div>" : "") +
       durationBar(entry) + "</div><span>" + onChangeOnce(entry, shown) + "</span></div>";
@@ -570,6 +587,65 @@
         " <b>" + withUnit(lastValue(target.points), unit) + "</b></span>";
     }
     return html;
+  }
+
+  function sinceText(ts) {
+    var day = dayIso(new Date(ts * 1000));
+    var when = day === dayIso(new Date()) ? clock(ts) : shortDay(day) + " " + clock(ts);
+    return "since " + when + " (" + duration(Date.now() / 1000 - ts) + ")";
+  }
+
+  function shortDay(day) {
+    var today = dayIso(new Date());
+    if (day === today) return "Today";
+    if (day === addDays(today, -1)) return "Yesterday";
+    return dayDate(day).toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+  }
+
+  // one row per day with the times something was on/open, newest day first
+  function activityRows(a, data, days, color) {
+    var html = "", now = Date.now() / 1000, compact = days > 7;
+    var last = dayIso(new Date((data.to - 1) * 1000));
+    for (var i = 0; i < days; i++) {
+      var day = addDays(last, -i), start = dayDate(day).getTime() / 1000, end = dayDate(addDays(day, 1)).getTime() / 1000;
+      var label = compact && i % 7 && i ? "" : shortDay(day);
+      var elapsed = Math.max(0, Math.min(100, (now - start) * 100 / (end - start)));
+      html += '<div class="ftaRow' + (compact ? " ftaCompact" : "") + '"><span>' + esc(label) + '</span><div class="ftaBar">' +
+        '<i class="ftaPast" style="width:' + elapsed.toFixed(2) + '%"></i>';
+      a.segments.forEach(function (seg) {
+        var s0 = seg[0], s1 = seg[1] === null ? null : seg[1];
+        if (s0 >= end || (s1 === null ? s0 < start : s1 <= start)) return;
+        var left = (Math.max(s0, start) - start) * 100 / (end - start);
+        var tip;
+        if (s1 === null) {
+          tip = clock(s0) + " " + seg[2];
+          html += '<i class="ftaSeg ftaTick" data-text="' + esc(tip) + '" style="left:' + left.toFixed(2) + "%;background:" + color + '"></i>';
+          return;
+        }
+        var width = Math.max(0.5, (Math.min(s1, end) - Math.max(s0, start)) * 100 / (end - start));
+        tip = seg[2] + " " + clock(s0) + "–" + (s1 >= now - 60 ? "now" : clock(s1)) + " · " + duration(s1 - s0);
+        html += '<i class="ftaSeg" data-text="' + esc(tip) + '" style="left:' + left.toFixed(2) + "%;width:" + width.toFixed(2) + "%;background:" + color + '"></i>';
+      });
+      html += "</div></div>";
+    }
+    return html + '<div class="ftaRow ftaAxis"><span></span><div><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div>';
+  }
+
+  // door, light, motion...: state now, how often and how long, when
+  function activityHtml(a, data, days) {
+    var color = (categoryInfo[a.category] || categoryInfo.devices).color;
+    var durations = a.segments.some(function (seg) { return seg[1] !== null; });
+    var current = a.current.text.charAt(0).toUpperCase() + a.current.text.slice(1);
+    var stats = durations ?
+      esc(a.what) + " " + a.count + "× in " + days + " days · " + duration(a.total) + " in total · longest " + duration(a.longest) :
+      a.count + (a.count === 1 ? " time" : " times") + " in " + days + " days";
+    // a button has no state, only its last press
+    var day = dayIso(new Date(a.current.since * 1000));
+    var now = durations ? "<b>" + esc(current) + "</b> " + esc(sinceText(a.current.since)) :
+      "last <b>" + esc(current) + "</b> " + (day === dayIso(new Date()) ? "at " : shortDay(day) + " ") + clock(a.current.since);
+    return '<div class="ftaBlock"><div class="ftaHead">' + (a.name ? '<span class="ftaName">' + esc(readingName(a)) + " ·</span> " : "") +
+      now + "</div>" +
+      '<div class="ftaStats">' + stats + "</div>" + activityRows(a, data, days, color) + "</div>";
   }
 
   function deviceChartModel(t, data, days) {
@@ -596,6 +672,7 @@
       html += '<div class="ftlDevChart"><div class="ftcLegend">' + legendHtml(readingName(t), t.unit, t.points, t.target, info.color) +
         onChangeOnce(t, shown) + "</div>" + '<div class="ftcChart ftcSmall" data-chart="' + i + '"></div></div>';
     });
+    (data.activity || []).forEach(function (a) { html += activityHtml(a, data, days); });
     if (same.length) {
       html += '<div class="ftlSection">Values without change</div><div class="ftlValues">';
       same.forEach(function (t) {
@@ -1158,9 +1235,18 @@
     $(document).on("click", "svg[data-curve]", curveClick);
     $(document).on("mouseleave", "svg[data-tip]", hideTip);
     $(document).on("mousemove touchstart touchmove", ".ftcChart", chartHover);
+    $(document).on("mouseenter touchstart", ".ftaSeg", function () {
+      var rect = this.getBoundingClientRect();
+      var tip = $("#fhempyTimelineTip");
+      if (!tip.length) tip = $('<div id="fhempyTimelineTip"></div>').appendTo("body");
+      tip.text($(this).attr("data-text")).show();
+      var left = Math.max(4, Math.min(rect.left + rect.width / 2 - tip.outerWidth() / 2, $(window).width() - tip.outerWidth() - 4));
+      tip.css({ left: left, top: Math.max(4, rect.top - tip.outerHeight() - 6) });
+    });
+    $(document).on("mouseleave", ".ftaSeg", hideTip);
     $(document).on("mouseleave", ".ftcChart", chartLeave);
     $(document).on("touchstart", function (e) {
-      if (!$(e.target).closest("svg[data-tip]").length) hideTip();
+      if (!$(e.target).closest("svg[data-tip], .ftaSeg").length) hideTip();
     });
     document.addEventListener("scroll", hideTip, true);
   }

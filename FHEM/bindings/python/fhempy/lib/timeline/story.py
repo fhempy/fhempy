@@ -216,6 +216,7 @@ def _continue_entry(previous, ts, value):
         closes = was_active and previous["end"] is None and lower in INACTIVE_VALUES
         if closes:
             previous["end"] = ts
+            previous["end_value"] = value
             previous["last"] = ts
         return closes
     if was_active and lower in ACTIVE_VALUES:
@@ -224,6 +225,7 @@ def _continue_entry(previous, ts, value):
         previous["end"] = None
     elif was_active and lower in INACTIVE_VALUES:
         previous["end"] = ts
+        previous["end_value"] = value
     elif lower == previous["value"].lower():
         previous["count"] += 1
     else:
@@ -447,6 +449,64 @@ def _pair_day(trends, held, start, now):
                 ]
             _attach_target(readings[measured], target, points, points)
         result.extend(readings.values())
+    return result
+
+
+def _activity_current(reading, last, now):
+    """state of a reading now: "Closed" since the end of its last entry"""
+    active = last["value"].lower() in ACTIVE_VALUES
+    if active and last["end"] is not None and last["end"] < now:
+        value = last.get("end_value") or (
+            "closed" if "open" in last["value"] else "off"
+        )
+        return {"text": value_text(reading, value), "since": last["end"]}
+    since = last["ts"] if active else (last["end"] or last["ts"])
+    return {"text": value_text(reading, last["value"]), "since": since}
+
+
+def build_activity(entries, infos, now):
+    """entries of one device (oldest first) -> per reading of the story:
+    when it was on/open (segments) or what happened (moments), how often,
+    how long in total, its state now. Numbers are in the curves."""
+    by_reading = collections.defaultdict(list)
+    for entry in entries:
+        if entry.get("children") or classify.number(entry["value"]) is not None:
+            continue
+        by_reading[entry["reading"]].append(entry)
+    result = []
+    for reading, items in by_reading.items():
+        info = infos.get(items[0]["device"], {})
+        segments, total, longest, count = [], 0, 0, 0
+        active_value = None
+        for entry in items:
+            count += entry["count"]
+            active = entry["value"].lower() in ACTIVE_VALUES
+            end = entry["end"] or (now if entry["running"] else None)
+            what = describe(info, reading, entry["value"])[0]
+            what = what[:1].upper() + what[1:]
+            if active and end is not None:
+                segments.append([entry["ts"], end, what])
+                total += end - entry["ts"]
+                longest = max(longest, end - entry["ts"])
+            else:
+                # a moment: button press or a value without end
+                segments.append([entry["ts"], None, what])
+            if active:
+                active_value = entry["value"]
+        text, nameless = describe(info, reading, active_value or items[-1]["value"])
+        result.append(
+            {
+                "reading": reading,
+                "name": "" if nameless else reading_label(reading),
+                "what": text[:1].upper() + text[1:],
+                "category": items[-1]["category"],
+                "count": count,
+                "total": round(total),
+                "longest": round(longest),
+                "segments": segments,
+                "current": _activity_current(reading, items[-1], now),
+            }
+        )
     return result
 
 

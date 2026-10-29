@@ -621,6 +621,7 @@ class timeline(generic.FhemModule):
             row for row in data["story"] if not matches(self._hidden_rules, *row[1:3])
         ]
         entries = story.build_entries(rows, self.infos, data["absences"], now)
+        activity = story.build_activity(entries, self.infos, now)
         entries.reverse()
         info = self.infos[device]
         return json.dumps(
@@ -632,6 +633,7 @@ class timeline(generic.FhemModule):
                 "from": start,
                 "to": end,
                 "entries": entries,
+                "activity": activity,
                 "trends": story.build_device_trends(
                     data["hourly"], self.infos, data["carry"], start, end, now
                 ),
