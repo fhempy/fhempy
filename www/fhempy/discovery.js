@@ -124,8 +124,8 @@
       /* in FHEM already: link to the device, MQTT devices can be set up again */
       html += '<div class="fdDone">✓ ' + (st.recreated ? "set up again" : "in FHEM") + (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
       if (d.can_recreate && d.device) {
-        html += '<div class="fdBtns"><span class="fdBtn fdGrey fdRecreate" title="Readings, commands and state like a new device. ' +
-          'Icon like a new device. The name and the other attributes (room, alias...) stay.">' +
+        html += '<div class="fdBtns"><span class="fdBtn fdGrey fdRecreate" title="Readings, commands, state, alias and icon like a new device. ' +
+          'The name and the other attributes (room, group...) stay.">' +
           (st.busy ? '<span class="fdSpin"></span>' : "") + "Set up again</span></div>" +
           (st.error ? '<div class="fdErr">' + esc(st.error) + "</div>" : "");
       }

@@ -1461,7 +1461,7 @@ async def reset_device_attributes(hash, fhem_device_name, entities):
     """Sets up an existing device again like a new one: the generated
     attributes replace the old ones completely, also lines written by the
     user or by an attrTemplate. The name and all other attributes (room,
-    alias...) are kept.
+    group...) are kept.
 
     entities: list of (component, object_id, payload_json)
     """

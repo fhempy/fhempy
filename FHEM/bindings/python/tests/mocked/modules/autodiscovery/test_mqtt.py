@@ -205,15 +205,21 @@ async def test_existing_device_set_up_again_keeps_its_name(engine, fhem_calls):
 
     engine.mqtt._clients[BROKER] = Client()
     assert await engine.recreate(candidate["id"]) == ""
-    # nothing defined, the name stays, room and alias of the user are kept,
-    # the icon like for a new device
+    # nothing defined, the name stays, room is kept, alias (friendly name),
+    # icon and model readings like for a new device
     assert mock_fhem.command_define == []
     assert mock_fhem.command_attr == [
         f"{name} readingList zigbee2mqtt/wohnzimmer_temp:.* "
         "{ json2nameValue($EVENT) }",
         f"{name} stateFormat temperature",
+        f"{name} alias Wohnzimmer Temp",
         f"{name} icon temp_temperature",
         f"{name} event-on-change-reading .*",
+    ]
+    setreadings = [c for c in fhem_calls["commands"] if "CommandSetReading" in c]
+    assert setreadings == [
+        f"CommandSetReading(undef, '{name} model WSDCGQ11LM')",
+        f"CommandSetReading(undef, '{name} manufacturer Xiaomi')",
     ]
     deleted = [c for c in fhem_calls["commands"] if "CommandDeleteAttr" in c]
     assert deleted == [
