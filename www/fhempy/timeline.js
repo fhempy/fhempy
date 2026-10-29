@@ -44,6 +44,9 @@
       "#fhempyTimeline{max-width:900px;margin:0 0 20px;font-family:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;line-height:1.4}" +
       "#fhempyTimeline .ftlBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}" +
       "#fhempyTimeline .ftlTitle{font-size:18px;font-weight:600;margin-right:auto}" +
+      "#fhempyTimeline a.ftlTitle{color:inherit;text-decoration:none}" +
+      "#fhempyTimeline .ftlSettings{font-size:13px;font-weight:400;opacity:0.65;margin-left:6px}" +
+      "#fhempyTimeline a.ftlTitle:hover .ftlSettings{opacity:1;text-decoration:underline}" +
       "#fhempyTimeline .ftlChip{border:1px solid rgba(128,128,128,0.4);border-radius:14px;padding:2px 11px;cursor:pointer;font-size:13px;white-space:nowrap;user-select:none}" +
       "#fhempyTimeline .ftlChip.ftlOn{border-color:transparent;background:rgba(75,139,190,0.18)}" +
       "#fhempyTimeline .ftlChip .ftlDot{margin-right:5px}" +
@@ -377,7 +380,12 @@
   }
 
   function barHtml() {
-    var html = '<div class="ftlBar"><span class="ftlTitle">Timeline</span>' +
+    // in the room the way to the settings of the timeline device
+    var title = $("#fhempyTimeline").hasClass("ftlRoom") ?
+      '<a class="ftlTitle" href="' + esc(FW_root + "?detail=" + encodeURIComponent(device)) +
+        '" title="Settings of ' + esc(device) + '">Timeline <span class="ftlSettings">&#9881; Settings</span></a>' :
+      '<span class="ftlTitle">Timeline</span>';
+    var html = '<div class="ftlBar">' + title +
       '<span class="ftlChip ftlRange" data-days="1">Today</span>' +
       '<span class="ftlChip ftlRange" data-days="7">7 days</span>';
     periods.slice(0, 4).forEach(function (p) {
