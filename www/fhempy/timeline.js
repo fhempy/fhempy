@@ -423,7 +423,7 @@
       }
     }
     line += pts.length > 1 ? '<polyline fill="none" stroke="' + info.color + '" stroke-width="1.5" vector-effect="non-scaling-stroke" points="' + pts.join(" ") + '"/>' : "";
-    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none"' + tipAttr(tips) + ' data-unit="' + esc(trend.unit || "") + '"' +
+    return '<svg viewBox="0 0 100 26" preserveAspectRatio="none" style="' + svgSize("26px") + '"' + tipAttr(tips) + ' data-unit="' + esc(trend.unit || "") + '"' +
       curveAttr(trend, dayIso(new Date(dayStart * 1000)), 1) + ">" + line + "</svg>";
   }
 
@@ -874,6 +874,12 @@
     return value;
   }
 
+  // FHEMWEB styles (e.g. for phones) size every svg like an icon, the
+  // charts always take the full width
+  function svgSize(height) {
+    return "display:block;width:100% !important;height:" + height + " !important;max-width:none !important;max-height:none !important";
+  }
+
   // chart with axes into container, model: from, to, day, days, span,
   // color, unit, points [[hour, avg, min, max]], target [[hour, value]]
   function drawChart(container, m, height) {
@@ -891,7 +897,7 @@
     var low = ticks[0], span = ticks[ticks.length - 1] - low || 1;
     var x = function (ts) { return left + (ts - m.from) * w / (m.to - m.from); };
     var y = function (v) { return top + h - (v - low) * h / span; };
-    var svg = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '"' +
+    var svg = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '" style="' + svgSize(height + "px") + '"' +
       (m.curve ? ' data-curve="' + esc(m.curve) + '" data-day="' + m.day + '" data-days="' + m.days + '"' : "") + ">";
     ticks.forEach(function (t) {
       svg += '<line x1="' + left + '" x2="' + (left + w) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
