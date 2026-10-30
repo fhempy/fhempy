@@ -459,36 +459,74 @@
   }
 
   function dayTrends(day, changed) {
-    return day.trends.filter(function (t) { return visible(t) && !t.changed === !changed; });
+    return (day.trends || []).filter(function (t) { return visible(t) && !t.changed === !changed; });
   }
 
   // the curves are only drawn when they are opened and scrolled into view,
-  // hundreds of hidden charts made loading the timeline slow
+  // hundreds of hidden charts made loading the timeline slow. Their values are
+  // loaded per day (get trends) at that moment, not with the story.
   function trendsHtml(day) {
+    var html = '<div class="ftlCurves" data-curves="' + day.day + '">';
+    if (!day.trends) {
+      return html + '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves</span></div>' +
+        '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends" data-trends="' + day.day + '" data-changed="1"></div></div></div>';
+    }
     var changed = dayTrends(day, true).length, same = dayTrends(day, false).length;
     if (!changed && !same) return "";
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed + " changed" +
+    html += '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed + " changed" +
       (same ? ", " + same + " unchanged" : "") + ")</span></div>" +
       '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends" data-trends="' + day.day + '" data-changed="1"></div>';
     if (same) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '" data-count="' + same + '">Show ' + same +
         " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none" data-trends="' + day.day + '"></div>';
     }
-    return html + "</div>";
+    return html + "</div></div>";
+  }
+
+  var trendsLoading = {};
+
+  function loadTrends(day) {
+    if (trendsLoading[day.day]) return;
+    trendsLoading[day.day] = true;
+    cmd("get " + device + " trends " + day.day, function (r) {
+      delete trendsLoading[day.day];
+      var data;
+      try {
+        data = JSON.parse(r);
+      } catch (e) {
+        data = { error: r };
+      }
+      var block = $('#fhempyTimeline [data-curves="' + day.day + '"]');
+      if (data.error) {
+        block.find("[data-changed]").html('<div class="ftlEmpty">The curves could not be loaded: ' + esc(data.error) + "</div>");
+        return;
+      }
+      day.trends = data.trends || [];
+      var nodes = $($.parseHTML(trendsHtml(day)));
+      block.replaceWith(nodes);
+      restoreExpanded(nodes);
+    });
   }
 
   function fillTrends(box) {
     var key = box.attr("data-trends");
     if (!key) return;
-    box.removeAttr("data-trends");
     var day = days.filter(function (d) { return d.day === key; })[0];
+    if (day && !day.trends) {
+      box.html('<div class="ftlEmpty">Loading curves…</div>');
+      loadTrends(day);
+      return;
+    }
+    box.removeAttr("data-trends");
     if (day) box.html(trendGroupsHtml(dayTrends(day, box.attr("data-changed")), dayDate(day.day).getTime() / 1000));
   }
 
   var trendObserver = null;
-  // days drawn right away, the others when they are scrolled near
-  var LAZY_AFTER = 2;
-  var lazyDays = 0;
+  // entries drawn right away, the others in chunks when they are scrolled near:
+  // a busy day has thousands of entries
+  var EAGER_ENTRIES = 80;
+  var CHUNK = 100;
+  var eagerLeft = 0;
 
   // fill opened curve boxes once they come near the visible part of the list
   function showTrends(box) {
@@ -527,8 +565,13 @@
     // newest first, like the days; on wide screens the curves are shown next to the story;
     // the entries of a day are drawn when it comes near the visible part
     html += '<div class="ftlDayMain">';
-    if (lazyDays-- > 0) html += entriesHtml(entries);
-    else html += '<div class="ftlLazy" data-entries="' + day.day + '" style="min-height:' + Math.min(entries.length * 40, 4000) + 'px"></div>';
+    var i = Math.min(eagerLeft, entries.length);
+    html += entriesHtml(entries, 0, i);
+    eagerLeft -= i;
+    for (; i < entries.length; i += CHUNK) {
+      var to = Math.min(i + CHUNK, entries.length);
+      html += '<div class="ftlLazy" data-entries="' + day.day + '" data-from="' + i + '" data-to="' + to + '" style="min-height:' + (to - i) * 40 + 'px"></div>';
+    }
     if (day.hidden) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlDetails" data-day="' + day.day + '">+ ' +
         day.hidden.toLocaleString() + " technical events and measurements</span></div>";
@@ -536,16 +579,18 @@
     return html + '</div><div class="ftlDaySide">' + trendsHtml(day) + "</div></div>";
   }
 
-  function entriesHtml(entries) {
+  // newest first: from and to count from the newest entry
+  function entriesHtml(entries, from, to) {
     var html = "";
-    entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
+    for (var i = entries.length - 1 - from; i >= entries.length - to; i--) html += entryHtml(entries[i]);
     return html;
   }
 
   function fillEntries(box) {
     var key = box.attr("data-entries");
     var day = days.filter(function (d) { return d.day === key; })[0];
-    var nodes = $($.parseHTML(day ? entriesHtml(day.entries.filter(visible)) : ""));
+    var html = day ? entriesHtml(day.entries.filter(visible), +box.attr("data-from"), +box.attr("data-to")) : "";
+    var nodes = $($.parseHTML(html));
     box.replaceWith(nodes);
     restoreExpanded(nodes);
   }
@@ -609,7 +654,7 @@
     }
     var quiet = [];
     // without IntersectionObserver everything is drawn at once
-    lazyDays = window.IntersectionObserver ? LAZY_AFTER : days.length;
+    eagerLeft = window.IntersectionObserver ? EAGER_ENTRIES : Infinity;
     days.forEach(function (day) {
       if (day.entries.filter(visible).length === 0) {
         quiet.push(day);
@@ -626,6 +671,14 @@
     var search = root.find(".ftlSearch");
     var focused = search.is(":focus");
     root.html(html);
+    // placeholders as high as the entries drawn, on phones the buttons are below the text
+    var drawn = root.find(".ftlEntry");
+    if (drawn.length) {
+      var height = drawn.toArray().reduce(function (sum, el) { return sum + el.offsetHeight; }, 0) / drawn.length;
+      root.find(".ftlLazy").each(function () {
+        this.style.minHeight = Math.round((this.getAttribute("data-to") - this.getAttribute("data-from")) * height) + "px";
+      });
+    }
     observeTrends(root.find(".ftlScroll"));
     root.find("[data-entries]").each(function () { trendObserver.observe(this); });
     restoreExpanded(root);
@@ -1224,7 +1277,7 @@
         return;
       }
       days.forEach(function (day) {
-        day.trends.concat(day.entries).forEach(function (t) {
+        (day.trends || []).concat(day.entries).forEach(function (t) {
           if (t.device + ":" + t.reading === target) t.on_change = true;
         });
       });
@@ -1433,6 +1486,7 @@
     bind();
     bindTips();
     var today = dayIso(new Date());
-    load(addDays(today, -6), today, false);
+    // today and yesterday first, older days follow when scrolling down
+    load(addDays(today, -1), today, false);
   };
 })();

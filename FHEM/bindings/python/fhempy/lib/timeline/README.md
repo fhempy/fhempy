@@ -82,5 +82,5 @@ DbLog needed. The story and the daily curves are kept for 2 years (`keep_days`),
 - `last_story`: text of the last story event, e.g. for a notify
 - `database_size`
 
-`get timeline entries [YYYY-MM-DD] [YYYY-MM-DD]` returns the timeline as JSON, `get timeline details YYYY-MM-DD`
-the hidden events of a day.
+`get timeline entries [YYYY-MM-DD] [YYYY-MM-DD]` returns the timeline as JSON, `get timeline trends YYYY-MM-DD`
+the curves of a day, `get timeline details YYYY-MM-DD` the hidden events of a day.

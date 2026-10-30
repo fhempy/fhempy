@@ -179,6 +179,11 @@ class timeline(generic.FhemModule):
                     "help": "Timeline as JSON, from/to as YYYY-MM-DD "
                     "(default: last 7 days). Used by the detail page.",
                 },
+                "trends": {
+                    "args": ["day"],
+                    "help": "Curves of a day (YYYY-MM-DD) as JSON. Used by the "
+                    "detail page when the curves of a day are shown.",
+                },
                 "device": {
                     "args": ["device", "days"],
                     "params": {"days": {"optional": True}},
@@ -655,29 +660,57 @@ class timeline(generic.FhemModule):
 
     def query_days(self, start, end, first, last, now):
         data = self.query(start, end, first, last)
+        # the curves are loaded with get trends when a day shows them: hourly
+        # values of hundreds of readings were most of the time and the size
         days = story.build(
             first.isoformat(),
             last.isoformat(),
             data["story"],
-            data["hourly"],
+            [],
             data["hidden"],
             data["absences"],
             self.infos,
             now,
-            data["carry"],
         )
+        for day in days:
+            del day["trends"]
         return data, days
 
     def query(self, start, end, first, last):
         return {
             "story": visible_rows(self._hidden_rules, self.store.story(start, end)),
-            "hourly": self.store.hourly(start, end),
-            "carry": self.store.values_before(start),
             "hidden": self.store.hidden(first.isoformat(), last.isoformat()),
             "absences": self.store.absences(start - 86400, end),
             "periods": self.store.long_absences(PERIOD_MIN_SECONDS),
             "first": self.store.first_ts(),
         }
+
+    async def get_trends(self, hash, params):
+        if self.store is None:
+            return json.dumps({"error": "The timeline is starting"})
+        try:
+            day = self.parse_day(params.get("day"), None)
+        except ValueError:
+            day = None
+        if day is None:
+            return json.dumps({"error": "Use YYYY-MM-DD"})
+        await self.flush()
+        start = day_start(day.isoformat())
+        end = day_start((day + datetime.timedelta(days=1)).isoformat())
+        trends = await utils.run_blocking(
+            functools.partial(self.query_trends, start, end, time.time())
+        )
+        return json.dumps(
+            {"day": day.isoformat(), "trends": trends.get(day.isoformat(), [])},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+
+    def query_trends(self, start, end, now):
+        rows = self.store.hourly(start, end)
+        # the value before the day of the readings drawn, not of all readings
+        carry = self.store.values_before(start, {row[1] for row in rows})
+        return story.build_trends(rows, self.infos, carry, now)
 
     async def get_device(self, hash, params):
         if self.store is None:
