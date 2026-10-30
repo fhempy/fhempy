@@ -6,6 +6,7 @@ object per line with it, see bridge.mjs.
 
 import asyncio
 import functools
+import html
 import json
 import signal
 
@@ -96,11 +97,21 @@ ROOM_HELP = (
 ADD_HELP = (
     "Make a FHEM device available in your Matter apps (Apple Home, Google "
     "Home, Alexa...). It is put into the room of attribute bridge_room and "
-    "shows up in the apps after a few seconds.<br>"
+    "shows up in the apps after a few seconds. Several devices: separate "
+    "them by comma, device:type sets the type of the device too.<br>"
     "The type (light, plug, blind, thermostat, sensor...) is detected "
     "automatically. If it is wrong, set the attribute matterType of the "
     "device. The name in the app is the alias of the device, or attribute "
     "matterName."
+)
+ADD_TYPE_HELP = (
+    "Make all FHEM devices of one module available in your Matter apps, "
+    "e.g. EnOcean. Devices of this module which you create later are "
+    "added automatically (adds TYPE=&lt;module&gt; to attribute devices)."
+)
+CHOOSE_HELP = (
+    "Opens a dialog in FHEMWEB to search your FHEM devices and add or "
+    "remove many of them at once. Same as the button Choose devices."
 )
 PAIRING_MODE_HELP = (
     "Allow pairing with one more app (e.g. Apple Home and Google Home at "
@@ -187,13 +198,16 @@ class matter_bridge(generic.FhemModule):
         self.create_async_task(self.run())
         self.create_async_task(self.update_candidates_loop())
 
-    def set_config(self, candidates=None, exposed=None):
+    def set_config(self, candidates=None, exposed=None, types=None):
         config = {
             "add": {"args": ["device"], "help": ADD_HELP},
+            "add_type": {"args": ["type"], "help": ADD_TYPE_HELP},
             "remove": {
                 "args": ["device"],
-                "help": "Remove a FHEM device from your Matter apps.",
+                "help": "Remove FHEM devices from your Matter apps, several "
+                "devices separated by comma.",
             },
+            "choose_devices": {"help": CHOOSE_HELP},
             "pairing_mode": {"help": PAIRING_MODE_HELP},
             "refresh": {
                 "help": "Read all devices from FHEM again (normally automatic)."
@@ -205,6 +219,8 @@ class matter_bridge(generic.FhemModule):
             config["add"]["options"] = ",".join(candidates)
         if exposed:
             config["remove"]["options"] = ",".join(exposed)
+        if types:
+            config["add_type"]["options"] = ",".join(types)
         return config
 
     # FHEM FUNCTION
@@ -216,7 +232,27 @@ class matter_bridge(generic.FhemModule):
 
     async def FW_detailFn(self, hash, args, argsh):
         detail = await super().FW_detailFn(hash, args, argsh)
-        return self.pairing_html() + str(detail)
+        return self.choose_button_html() + self.pairing_html() + str(detail)
+
+    def choose_button_html(self):
+        js = html.escape(self._dialog_javascript("fhempyMatterBridgeLoad"))
+        return (
+            f'<a href="#" onclick="{js};return false;" style="display:inline-block;'
+            "margin:0 10px 10px 0;padding:4px 14px;border-radius:14px;"
+            'background:#278727;text-decoration:none;white-space:nowrap">'
+            '<span style="color:#fff;font-weight:600">&#128269; Choose devices'
+            "</span></a>"
+        )
+
+    def _dialog_javascript(self, function, *args):
+        params = ",".join(
+            json.dumps(arg).replace("<", generic._JS_ESCAPED_LT)
+            for arg in (self.hash["NAME"], *args)
+        )
+        return (
+            'jQuery.getScript(FW_root+"/fhempy/matter_bridge.js",'
+            f"function(){{{function}({params})}})"
+        )
 
     def pairing_html(self):
         qr = self.status.get("qr")
@@ -506,19 +542,25 @@ class matter_bridge(generic.FhemModule):
         result = await fhem.sendCommandHash(self.hash, cmd)
         return [name for name in str(result or "").split(",") if name]
 
-    async def fetch_infos(self, names):
+    async def fetch_infos(self, names, add_attrs=True):
+        """add_attrs: offer the attributes matterType... in the device"""
         if not names:
             return {}
         names_perl = ",".join(fhem.perlString(name) for name in names)
         attrs_perl = ",".join(fhem.perlString(attr) for attr in INFO_ATTRS)
+        add_attr_list = (
+            f" addToDevAttrList($d, {fhem.perlString(DEVICE_ATTR_LIST)});"
+            if add_attrs
+            else ""
+        )
         cmd = (
             "my %r; foreach my $d (" + names_perl + ") {"
             " next if(!defined($defs{$d})); my $h = $defs{$d};"
-            f" addToDevAttrList($d, {fhem.perlString(DEVICE_ATTR_LIST)});"
-            " my %rd; foreach my $k (keys %{$h->{READINGS}}) {"
+            + add_attr_list
+            + " my %rd; foreach my $k (keys %{$h->{READINGS}}) {"
             " $rd{$k} = $h->{READINGS}{$k}{VAL} }"
             " $r{$d} = {NAME => $d, TYPE => $h->{TYPE},"
-            " alias => AttrVal($d, 'alias', ''),"
+            " alias => AttrVal($d, 'alias', ''), room => AttrVal($d, 'room', ''),"
             " sets => (getAllSets($d) // ''), readings => \\%rd,"
             " attrs => { map { $_ => AttrVal($d, $_, '') } (" + attrs_perl + ") } } }"
             " to_json(\\%r)"
@@ -668,6 +710,11 @@ class matter_bridge(generic.FhemModule):
             await asyncio.sleep(CANDIDATES_INTERVAL)
 
     async def candidates(self):
+        exposed = set(self.infos)
+        return [n for n in await self.all_candidates() if n not in exposed]
+
+    async def all_candidates(self):
+        """all FHEM devices which could be shown in Matter apps"""
         excluded = "|".join(EXCLUDED_TYPES)
         cmd = (
             "join(',', grep { my $h = $defs{$_};"
@@ -678,16 +725,93 @@ class matter_bridge(generic.FhemModule):
             " } sort keys %defs)"
         )
         result = await fhem.sendCommandHash(self.hash, cmd)
-        exposed = set(self.infos)
-        return [n for n in str(result or "").split(",") if n and n not in exposed]
+        return [n for n in str(result or "").split(",") if n]
+
+    async def candidate_types(self):
+        names = await self.all_candidates()
+        if not names:
+            return []
+        names_perl = ",".join(fhem.perlString(name) for name in names)
+        cmd = (
+            "my %t; foreach my $d (" + names_perl + ") {"
+            " $t{$defs{$d}{TYPE}} = 1 if (defined($defs{$d})) }"
+            " join(',', sort keys %t)"
+        )
+        result = await fhem.sendCommandHash(self.hash, cmd)
+        return [t for t in str(result or "").split(",") if t]
 
     async def update_set_config(self):
         candidates = await self.candidates()
-        await self.set_set_config(self.set_config(candidates, sorted(self.infos)))
+        types = await self.candidate_types()
+        await self.set_set_config(
+            self.set_config(candidates, sorted(self.infos), types)
+        )
+
+    async def set_choose_devices(self, hash, params):
+        self.create_async_task(self.show_choose_dialog())
+
+    async def show_choose_dialog(self):
+        javascript = self._dialog_javascript(
+            "fhempyMatterBridgeDevices", await self.choose_list()
+        )
+        await fhem.FW_runJavascript(self.hash, javascript, self.hash["NAME"])
+
+    async def choose_list(self):
+        """all candidates for the device dialog"""
+        names = await self.all_candidates()
+        infos = await self.fetch_infos(names, add_attrs=False)
+        room = self._attr_bridge_room
+        listed = set(self._device_list())
+        result = []
+        for name in names:
+            info = infos.get(name)
+            if info is None:
+                continue
+            rooms = [r for r in str(info.get("room") or "").split(",") if r]
+            if name in self.infos:
+                if room and room in rooms:
+                    via = "room"
+                elif name in listed:
+                    via = "list"
+                else:
+                    via = "rule"
+            else:
+                via = ""
+            result.append(
+                {
+                    "name": name,
+                    "alias": info.get("alias") or "",
+                    "module": info.get("TYPE") or "",
+                    "rooms": [r for r in rooms if r != room],
+                    "type": bridge_devices.detect_type(info) or "",
+                    "via": via,
+                }
+            )
+        return {
+            "devices": result,
+            "types": list(bridge_devices.TYPES),
+            "rules": [n for n in self._device_list() if "=" in n],
+        }
 
     async def set_add(self, hash, params):
-        name = params["device"]
+        errors = []
+        for entry in params["device"].split(","):
+            name, _, wanted = entry.partition(":")
+            if not name:
+                continue
+            error = await self.add_device(name, wanted)
+            if error:
+                errors.append(error)
+        return "\n".join(errors) or None
+
+    async def add_device(self, name, wanted=""):
+        """wanted: matterType for the device, empty: keep it"""
         infos = await self.fetch_infos([name])
+        if name in infos and wanted:
+            if wanted not in bridge_devices.TYPES:
+                return f"Unknown type {wanted} for {name}"
+            await fhem.CommandAttr(self.hash, f"{name} matterType {wanted}")
+            infos[name].setdefault("attrs", {})["matterType"] = wanted
         if name not in infos:
             return f"Unknown FHEM device {name}"
         if not bridge_devices.endpoints(infos[name]):
@@ -714,8 +838,29 @@ class matter_bridge(generic.FhemModule):
         rooms = await fhem.AttrVal(name, "room", "")
         return [r for r in str(rooms or "").split(",") if r]
 
+    async def set_add_type(self, hash, params):
+        module = params["type"]
+        if not module or not module.replace("_", "").isalnum():
+            return f"Unknown module {module}"
+        rule = f"TYPE={module}"
+        names = self._device_list()
+        if rule not in names:
+            names.append(rule)
+            await fhem.CommandAttr(
+                self.hash, f"{self.hash['NAME']} devices {','.join(names)}"
+            )
+        return None
+
     async def set_remove(self, hash, params):
-        name = params["device"]
+        errors = []
+        for name in params["device"].split(","):
+            if name:
+                error = await self.remove_device(name)
+                if error:
+                    errors.append(error)
+        return "\n".join(errors) or None
+
+    async def remove_device(self, name):
         removed = False
         room = self._attr_bridge_room
         if room:

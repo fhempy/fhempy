@@ -177,7 +177,15 @@ class FakeFhem:
         if "to_json" in cmd:
             names = re.findall(r"foreach my \$d \(([^)]*)\)", cmd)[0]
             names = [n.strip("'") for n in names.split(",")]
-            return json.dumps({n: self.infos[n] for n in names if n in self.infos})
+            return json.dumps(
+                {
+                    n: {**self.infos[n], "room": self.rooms.get(n, "")}
+                    for n in names
+                    if n in self.infos
+                }
+            )
+        if "my %t;" in cmd:
+            return ",".join(sorted({i["TYPE"] for i in self.infos.values()}))
         if "sort keys %defs" in cmd:
             return ",".join(sorted(self.infos))
         return ""
@@ -290,6 +298,31 @@ async def test_bridge_module(mocker, tmp_path):
 
         # set add only offers devices which aren't used yet
         assert bridge._conf_set["add"]["options"] == "Fan,Logfile"
+        assert bridge._conf_set["add_type"]["options"] == "dummy"
+
+        # device dialog: all candidates with detected type and source
+        choose = await bridge.choose_list()
+        by_name = {d["name"]: d for d in choose["devices"]}
+        assert by_name["Lamp"]["via"] == "room" and by_name["Lamp"]["type"] == "dimmer"
+        assert by_name["Plug"]["via"] == "list"
+        assert by_name["Fan"]["via"] == "" and by_name["Fan"]["type"] == "switch"
+        assert by_name["Logfile"]["type"] == ""
+        assert "light" in choose["types"]
+
+        # several devices at once, device:type sets matterType
+        mock_fhem.command_attr.clear()
+        assert await bridge.set_add(hash, {"device": "Logfile:outlet,Fan"}) is None
+        assert "Logfile matterType outlet" in mock_fhem.command_attr
+        assert "Logfile room MatterBridge" in mock_fhem.command_attr
+        assert "Fan room Kitchen,MatterBridge" in mock_fhem.command_attr
+        assert "Unknown type" in await bridge.set_add(hash, {"device": "Fan:fridge"})
+        assert await bridge.set_add_type(hash, {"type": "EnOcean"}) is None
+        assert "bridge devices Plug,TYPE=EnOcean" in mock_fhem.command_attr
+        assert "Unknown module" in await bridge.set_add_type(hash, {"type": "a;b"})
+        await bridge.show_choose_dialog()
+        detail, js = mock_fhem.javascript[-1]
+        assert detail == "bridge" and "fhempyMatterBridgeDevices" in js
+        assert "Choose devices" in bridge.choose_button_html()
         assert "Can't detect" in await bridge.set_add(hash, {"device": "Logfile"})
         # set add puts the device into the room of the bridge
         assert await bridge.set_add(hash, {"device": "Fan"}) is None

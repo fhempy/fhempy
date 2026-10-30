@@ -40,6 +40,16 @@ set matterbridge add Plug_TV
 ```
 
 `set add` offers a list of your FHEM devices, `set remove` takes a device out of the room again.
+
+**Many devices at once**: click **Choose devices** at the top of the bridge's page. Search for a
+name, room or module (e.g. `enocean`), filter by module or room, click **Select all** and
+**Save**. Devices which are in your apps already are ticked, untick them to remove them. If the
+kind of a device isn't detected, choose it in the list. With a module filter you can also tick
+*Add all ... devices, also new ones automatically later*.
+
+On the command line `set matterbridge add Lamp1,Plug2,Fan:outlet` adds several devices (`:type`
+sets `matterType`), and `set matterbridge add_type EnOcean` adds all devices of a module,
+including the ones you create later.
 The device shows up in your apps after a few seconds. The kind of device is detected
 automatically:
 
@@ -98,8 +108,10 @@ voice assistant, e.g. *"Hey Google, turn on the living room light"*.
 
 | Command | Description |
 |---------|-------------|
-| `add <device>` | Make a FHEM device available in your apps (puts it into the room MatterBridge) |
-| `remove <device>` | Remove a FHEM device from your apps (takes it out of the room) |
+| `add <device>` | Make FHEM devices available in your apps (puts them into the room MatterBridge). Several devices separated by comma, `device:type` sets the type too. |
+| `add_type <module>` | All devices of a module, e.g. `EnOcean`, also new ones later (adds `TYPE=EnOcean` to attribute `devices`) |
+| `choose_devices` | Opens the dialog to search and select many devices at once (button **Choose devices**) |
+| `remove <device>` | Remove FHEM devices from your apps (takes them out of the room), several separated by comma |
 | `pairing_mode` | Allow pairing with one more app for 15 minutes |
 | `refresh` | Read all devices from FHEM again (normally automatic) |
 | `restart` | Restart the bridge |
