@@ -398,12 +398,22 @@ def _hour_value(reading, total, count, last):
     return last if classify.is_setpoint(reading) else round(total / count, 2)
 
 
+def changed(low, high):
+    """a curve changed when the difference can be read: the values are shown
+    with one decimal (whole numbers from 100), up to 1% of the value. GPS
+    coordinates or a counter only moving in the 4th decimal stay unchanged."""
+    if low is None or high is None:
+        return False
+    middle = abs(low + high) / 2
+    return high > low and high - low >= min(1 if middle >= 100 else 0.1, middle / 100)
+
+
 def _range(trend, values):
     values = [v for v in values if v is not None]
     if values:
         trend["min"] = min(values)
         trend["max"] = max(values)
-    trend["changed"] = trend["min"] != trend["max"]
+    trend["changed"] = changed(trend["min"], trend["max"])
 
 
 def _carry(carry):
@@ -438,7 +448,7 @@ def _attach_target(trend, setpoint, points, values):
         "max": max(values),
         "on_change": setpoint.get("on_change", False),
     }
-    trend["changed"] = trend["changed"] or min(values) != max(values)
+    trend["changed"] = trend["changed"] or changed(min(values), max(values))
 
 
 def _pair_day(trends, held, start, now):
