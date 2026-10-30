@@ -60,7 +60,7 @@ exclude = [ "tests*",]
 
 [tool.poetry.group.all.dependencies]
 GitPython = "==3.2.1"
-PyGObject = "<=3.50.0"
+PyGObject = "<=3.58.1"
 aioblescan = "==0.2.14"
 aiohomekit = "==4.0.1"
 aionefit = "==0.14"
