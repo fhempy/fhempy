@@ -748,7 +748,7 @@ class matter_bridge(generic.FhemModule):
         )
 
     async def set_choose_devices(self, hash, params):
-        self.create_async_task(self.show_choose_dialog())
+        await self.show_choose_dialog()
 
     async def show_choose_dialog(self):
         javascript = self._dialog_javascript(
