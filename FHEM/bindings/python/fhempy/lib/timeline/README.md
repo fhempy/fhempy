@@ -63,7 +63,8 @@ If something is wrong:
 
 Everything is stored in `.fhempy/timeline/<device name>.db` (SQLite) in the FHEM directory, no database server or
 DbLog needed. The story and the daily curves are kept for 2 years (`keep_days`), hidden events for 14 days
-(`keep_details_days`). Writes are collected for 5 seconds to protect the SD card.
+(`keep_details_days`). Writes are collected for 60 seconds to protect the SD card; opening the timeline,
+a device history or stopping fhempy writes them right away.
 
 ## Attributes
 

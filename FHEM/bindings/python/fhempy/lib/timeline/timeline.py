@@ -20,7 +20,7 @@ from ..core import fhemweb
 from . import classify, story
 from .store import Store, day_of, day_start
 
-FLUSH_INTERVAL = 5
+FLUSH_INTERVAL = 60
 READINGS_INTERVAL = 60
 CLEANUP_INTERVAL = 6 * 3600
 INFO_RELOAD_DELAY = 5
