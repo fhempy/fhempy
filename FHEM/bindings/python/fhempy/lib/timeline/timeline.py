@@ -731,7 +731,7 @@ class timeline(generic.FhemModule):
             functools.partial(self.query_device, device, start, end)
         )
         entries = story.build_entries(data["story"], self.infos, data["absences"], now)
-        activity = story.build_activity(entries, self.infos, now)
+        activity = story.build_activity(data["story"], self.infos, now)
         entries.reverse()
         info = self.infos[device]
         return json.dumps(
