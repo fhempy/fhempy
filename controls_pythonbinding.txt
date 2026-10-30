@@ -25,6 +25,7 @@ UPD 2026-10-22_23:42:33 8593 www/fhempy/huawei_modbus.png
 UPD 2026-10-22_23:42:33 5775 www/fhempy/kia_hyundai.png
 UPD 2026-10-25_18:53:55 11544 www/fhempy/mantra.png
 UPD 2026-10-22_23:42:33 4646 www/fhempy/matter.png
+UPD 2026-10-30_13:50:12 13232 www/fhempy/matter_bridge.js
 UPD 2026-10-22_23:42:33 1882 www/fhempy/mcp_server.png
 UPD 2026-10-22_23:42:33 1869 www/fhempy/meross.png
 UPD 2026-10-22_23:42:33 3849 www/fhempy/miio.png
