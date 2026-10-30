@@ -534,6 +534,18 @@ def _kind_activity(info, reading, kind, events, now):
     item = _activity_item(info, reading, first[1], first[2])
     if not inactive:
         return _rings(item, reading, active, events)
+    start, last = _walk_segments(item, reading, active, inactive, events)
+    if start is not None:
+        # still open, unless the closing event got lost a day ago
+        _add_segment(item, start, now if now - last <= 86400 else last)
+    item["total"] = round(item["total"])
+    item["longest"] = round(item["longest"])
+    return item
+
+
+def _walk_segments(item, reading, active, inactive, events):
+    """adds the closed segments to item -> start and last event of the one
+    still open (start None if none)"""
     start = last = None
     for ts, value, _ in events:
         lower = value.lower()
@@ -549,12 +561,7 @@ def _kind_activity(info, reading, kind, events, now):
                 start = None
             item["current"] = {"text": value_text(reading, value), "since": ts}
             last = ts
-    if start is not None:
-        # still open, unless the closing event got lost a day ago
-        _add_segment(item, start, now if now - last <= 86400 else last)
-    item["total"] = round(item["total"])
-    item["longest"] = round(item["longest"])
-    return item
+    return start, last
 
 
 def _rings(item, reading, active, events):
