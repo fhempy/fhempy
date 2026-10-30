@@ -458,25 +458,58 @@
     return html;
   }
 
+  function dayTrends(day, changed) {
+    return day.trends.filter(function (t) { return visible(t) && !t.changed === !changed; });
+  }
+
+  // the curves are only drawn when they are opened and scrolled into view,
+  // hundreds of hidden charts made loading the timeline slow
   function trendsHtml(day) {
-    var trends = day.trends.filter(function (t) { return visible(t); });
-    if (!trends.length) return "";
-    // curves which stayed the same all day only on demand
-    var changed = trends.filter(function (t) { return t.changed; });
-    var same = trends.filter(function (t) { return !t.changed; });
-    var dayStart = dayDate(day.day).getTime() / 1000;
-    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed.length + " changed" +
-      (same.length ? ", " + same.length + " unchanged" : "") + ")</span></div>" +
-      '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends">';
-    html += trendGroupsHtml(changed, dayStart);
-    html += "</div>";
-    if (same.length) {
-      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '">Show ' + same.length +
-        " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none">';
-      html += trendGroupsHtml(same, dayStart);
-      html += "</div>";
+    var changed = dayTrends(day, true).length, same = dayTrends(day, false).length;
+    if (!changed && !same) return "";
+    var html = '<div class="ftlHiddenRow"><span class="ftlLink ftlTrendToggle" data-key="t' + day.day + '">Curves (' + changed + " changed" +
+      (same ? ", " + same + " unchanged" : "") + ")</span></div>" +
+      '<div class="ftlTrendBox" style="display:none"><div class="ftlTrends" data-trends="' + day.day + '" data-changed="1"></div>';
+    if (same) {
+      html += '<div class="ftlHiddenRow"><span class="ftlLink ftlSameToggle" data-key="s' + day.day + '" data-count="' + same + '">Show ' + same +
+        " unchanged curves</span></div>" + '<div class="ftlTrends ftlSame" style="display:none" data-trends="' + day.day + '"></div>';
     }
     return html + "</div>";
+  }
+
+  function fillTrends(box) {
+    var key = box.attr("data-trends");
+    if (!key) return;
+    box.removeAttr("data-trends");
+    var day = days.filter(function (d) { return d.day === key; })[0];
+    if (day) box.html(trendGroupsHtml(dayTrends(day, box.attr("data-changed")), dayDate(day.day).getTime() / 1000));
+  }
+
+  var trendObserver = null;
+  // days drawn right away, the others when they are scrolled near
+  var LAZY_AFTER = 2;
+  var lazyDays = 0;
+
+  // fill opened curve boxes once they come near the visible part of the list
+  function showTrends(box) {
+    if (!box.attr("data-trends")) return;
+    if (trendObserver) trendObserver.observe(box[0]);
+    else fillTrends(box);
+  }
+
+  function observeTrends(list) {
+    if (trendObserver) trendObserver.disconnect();
+    trendObserver = null;
+    if (!window.IntersectionObserver || !list.length) return;
+    var observer = new IntersectionObserver(function (seen) {
+      seen.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        observer.unobserve(e.target);
+        if (e.target.hasAttribute("data-entries")) fillEntries($(e.target));
+        else fillTrends($(e.target));
+      });
+    }, { root: list[0], rootMargin: "600px 0px" });
+    trendObserver = observer;
   }
 
   function fmt(v) {
@@ -491,14 +524,30 @@
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(dayTitle(day.day)) + "</span>" +
       (day.absent ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + info.join(" · ") + "</span></div>";
-    // newest first, like the days; on wide screens the curves are shown next to the story
+    // newest first, like the days; on wide screens the curves are shown next to the story;
+    // the entries of a day are drawn when it comes near the visible part
     html += '<div class="ftlDayMain">';
-    entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
+    if (lazyDays-- > 0) html += entriesHtml(entries);
+    else html += '<div class="ftlLazy" data-entries="' + day.day + '" style="min-height:' + Math.min(entries.length * 40, 4000) + 'px"></div>';
     if (day.hidden) {
       html += '<div class="ftlHiddenRow"><span class="ftlLink ftlDetails" data-day="' + day.day + '">+ ' +
         day.hidden.toLocaleString() + " technical events and measurements</span></div>";
     }
     return html + '</div><div class="ftlDaySide">' + trendsHtml(day) + "</div></div>";
+  }
+
+  function entriesHtml(entries) {
+    var html = "";
+    entries.slice().reverse().forEach(function (entry) { html += entryHtml(entry); });
+    return html;
+  }
+
+  function fillEntries(box) {
+    var key = box.attr("data-entries");
+    var day = days.filter(function (d) { return d.day === key; })[0];
+    var nodes = $($.parseHTML(day ? entriesHtml(day.entries.filter(visible)) : ""));
+    box.replaceWith(nodes);
+    restoreExpanded(nodes);
   }
 
   function quietHtml(group) {
@@ -559,6 +608,8 @@
       html += '<div class="ftlEmpty">Nothing recorded yet. The timeline fills up as soon as something happens at home.</div>';
     }
     var quiet = [];
+    // without IntersectionObserver everything is drawn at once
+    lazyDays = window.IntersectionObserver ? LAZY_AFTER : days.length;
     days.forEach(function (day) {
       if (day.entries.filter(visible).length === 0) {
         quiet.push(day);
@@ -575,6 +626,8 @@
     var search = root.find(".ftlSearch");
     var focused = search.is(":focus");
     root.html(html);
+    observeTrends(root.find(".ftlScroll"));
+    root.find("[data-entries]").each(function () { trendObserver.observe(this); });
     restoreExpanded(root);
     fitScroll();
     var list = root.find(".ftlScroll");
@@ -1185,18 +1238,20 @@
       children.toggle(open);
       toggle.text(open ? "Hide devices" : "Show " + children.children().length + " devices");
     } else if (toggle.hasClass("ftlTrendToggle")) {
-      toggle.parent().next(".ftlTrendBox").toggle(open);
+      var box = toggle.parent().next(".ftlTrendBox").toggle(open);
+      if (open) showTrends(box.children(".ftlTrends").first());
     } else {
       var same = toggle.parent().next(".ftlSame");
       same.css("display", open ? "grid" : "none");
-      toggle.text(open ? "Hide unchanged curves" : "Show " + same.children().length + " unchanged curves");
+      if (open) showTrends(same);
+      toggle.text(open ? "Hide unchanged curves" : "Show " + toggle.attr("data-count") + " unchanged curves");
     }
   }
 
   // what the user opened stays open when the timeline is drawn again,
   // e.g. after "Hide from story" or a filter
   function restoreExpanded(root) {
-    root.find("[data-key]").each(function () {
+    root.find("[data-key]").addBack("[data-key]").each(function () {
       if (isOpen($(this).attr("data-key"))) setExpanded($(this), true);
     });
   }

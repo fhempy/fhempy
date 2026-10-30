@@ -6,6 +6,7 @@ tech   - signal strength, last seen, versions... stored but hidden
 
 Pure functions, no FHEM access."""
 
+import functools
 import re
 
 from ..matter_bridge.devices import GENERIC_DEVICE_TYPES, LIGHT_WORDS
@@ -236,18 +237,22 @@ def on_change(info, reading):
     return False
 
 
+@functools.lru_cache(maxsize=4096)
 def is_tech_reading(reading):
     return bool(_TECH_RE.match(reading))
 
 
+@functools.lru_cache(maxsize=4096)
 def is_setpoint(reading):
     return bool(_SETPOINT_RE.match(reading))
 
 
+@functools.lru_cache(maxsize=4096)
 def is_temperature(reading):
     return bool(_TEMPERATURE_RE.match(reading))
 
 
+@functools.lru_cache(maxsize=4096)
 def is_window(reading):
     return bool(_WINDOW_RE.match(reading))
 

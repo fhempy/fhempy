@@ -649,6 +649,8 @@ class timeline(generic.FhemModule):
                 "categories": list(classify.CATEGORIES),
             },
             ensure_ascii=False,
+            # several hundred kB a week, every byte goes through FHEM
+            separators=(",", ":"),
         )
 
     def query_days(self, start, end, first, last, now):

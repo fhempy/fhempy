@@ -6,6 +6,7 @@ Pure functions, no FHEM access."""
 
 import collections
 import datetime
+import functools
 import re
 import time
 
@@ -96,6 +97,7 @@ def label(infos, device):
     return info.get("alias") or device
 
 
+@functools.lru_cache(maxsize=4096)
 def reading_label(reading):
     """readable name of a reading: "target temperature" for desired-temp,
     "boost heating countdown" for boost_heating_countdown"""
@@ -107,6 +109,7 @@ def reading_label(reading):
     return re.sub(r"[_\-]+", " ", text).strip().lower() or reading
 
 
+@functools.lru_cache(maxsize=4096)
 def unit(reading):
     """unit of a numeric reading if it's obvious from its name"""
     name = reading.lower()
@@ -529,19 +532,24 @@ def build_trends(rows, infos, carry=(), now=None):
     -> day -> list of trends with 24 hourly values"""
     now = now or time.time()
     days = {}
+    # day and hour of each start of an hour, the same for all readings
+    moments = {}
     for hour, device, reading, category, _, _, total, count, last in rows:
         if category not in (classify.CLIMATE, classify.ENERGY) or not count:
             continue
-        moment = datetime.datetime.fromtimestamp(hour)
-        trends = days.setdefault(moment.strftime("%Y-%m-%d"), {})
+        moment = moments.get(hour)
+        if moment is None:
+            local = datetime.datetime.fromtimestamp(hour)
+            moment = moments[hour] = (local.strftime("%Y-%m-%d"), local.hour)
+        trends = days.setdefault(moment[0], {})
         trend = trends.get((device, reading))
         if trend is None:
             trend = _new_trend(infos, device, reading, category)
             trend["points"] = [None] * 24
             trend["lasts"] = [None] * 24
             trends[(device, reading)] = trend
-        trend["points"][moment.hour] = _hour_value(reading, total, count, last)
-        trend["lasts"][moment.hour] = last
+        trend["points"][moment[1]] = _hour_value(reading, total, count, last)
+        trend["lasts"][moment[1]] = last
     held = _carry(row for row in carry if row[3] in (classify.CLIMATE, classify.ENERGY))
     result = {}
     for day in sorted(days):
