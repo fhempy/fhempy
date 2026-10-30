@@ -164,17 +164,15 @@ class mantra_ble(generic.FhemModule):
         }
         await self.set_get_config(get_config)
 
-        # Apply UI defaults if not yet configured by the user
-        current_webcmd = await fhem.AttrVal(device_name, "webCmd", "")
-        if not current_webcmd:
-            await fhem.CommandAttr(self.hash, f"{device_name} webCmd fan:fan_speed")
-
-        current_widgetoverride = await fhem.AttrVal(device_name, "widgetOverride", "")
-        if not current_widgetoverride:
-            await fhem.CommandAttr(
-                self.hash,
-                f"{device_name} widgetOverride fan:iconSwitch,on,vent_ventilation,off,vent_ventilation_level_3@orange"
-            )
+        # UI defaults, set once: the user may change or delete them later
+        await fhem.setDefaultAttrs(
+            self.hash,
+            {
+                "webCmd": "fan:fan_speed",
+                "widgetOverride": "fan:iconSwitch,on,vent_ventilation,off,"
+                "vent_ventilation_level_3@orange",
+            },
+        )
 
         # Initialize readings atomically
         await fhem.readingsBeginUpdate(hash)

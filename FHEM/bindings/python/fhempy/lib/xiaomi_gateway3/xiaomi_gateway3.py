@@ -68,8 +68,7 @@ class xiaomi_gateway3(generic.FhemModule):
         if len(args) < 5:
             return "Usage: define devname fhempy xiaomi_gateway3 <IP> <TOKEN>"
 
-        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon mqtt")
+        await fhem.setDefaultAttrs(self.hash, {"icon": "mqtt"})
         await fhem.readingsSingleUpdateIfChanged(hash, "state", "disconnected", 1)
 
         logging.getLogger("fhempy.lib.xiaomi_gateway3.core.gateway3").setLevel(

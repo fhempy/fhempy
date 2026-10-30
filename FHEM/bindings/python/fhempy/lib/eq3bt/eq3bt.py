@@ -112,11 +112,7 @@ class eq3bt(generic.FhemModule):
             self._pin = args[4]
         self.logger.info(f"Define: eq3bt {self._mac}")
 
-        icon = await fhem.AttrVal(self.hash["NAME"], "icon", "noicon")
-        if icon == "noicon":
-            await fhem.CommandAttr(
-                self.hash, self.hash["NAME"] + " icon sani_heating_temp"
-            )
+        await fhem.setDefaultAttrs(self.hash, {"icon": "sani_heating_temp"})
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "connecting", 1)
 
         self.thermostat = FhemThermostat(

@@ -131,8 +131,7 @@ class remote_access(generic.FhemModule):
                 },
             }
         )
-        if await fhem.AttrVal(hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(hash, f"{hash['NAME']} icon {ICON}")
+        await fhem.setDefaultAttrs(hash, {"icon": ICON})
         self._unique_id = await fhem.getUniqueId(hash)
         await self.load_password()
         self._run_task = self.create_async_task(self.run())

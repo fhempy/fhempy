@@ -71,7 +71,9 @@ def device_setup(monkeypatch):
             r"readings(?:Single|Bulk)Update\(\$defs\{'presence_test'\},"
             r"'([^']+)','([^']*)'", text
         ):
-            readings[reading] = value
+            # hidden readings like .defaultAttrs aren't part of these tests
+            if not reading.startswith("."):
+                readings[reading] = value
         return ""
 
     async def info(name, attrs, *args):

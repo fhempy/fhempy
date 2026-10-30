@@ -45,9 +45,8 @@ class FhemModule:
         self._conf_get = get_config
 
     async def set_icon(self, icon_name):
-        curr_icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
-        if curr_icon == "":
-            await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} icon {icon_name}")
+        """Default icon, set once: the user may change or delete it later."""
+        await fhem.setDefaultAttrs(self.hash, {"icon": icon_name})
 
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):

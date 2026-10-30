@@ -38,21 +38,16 @@ class warema(FhemModule):
         if len(args) < 5:
             return "Usage: define warema_fhempy fhempy warema <IP> <channel>"
 
-        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon fts_window_1w")
-        if await fhem.AttrVal(self.hash["NAME"], "devStateIcon", "") == "":
-            devStateIcon = "0:fts_shutter_10\\@green 100:fts_shutter_100\\@green s/[0-9]|1\\d.*:fts_shutter_90 s/[0-9]|2\\d.*:fts_shutter_80 s/[0-9]|3\\d.*:fts_shutter_70 s/[0-9]|4\\d.*:fts_shutter_60 s/[0-9]|5\\d.*:fts_shutter_50 s/[0-9]|6\\d.*:fts_shutter_40 s/[0-9]|7\\d.*:fts_shutter_30 s/[0-9]|8\\d.*:fts_shutter_20 s/[0-9]|9\\d.*:fts_shutter_10 s/[0-9]|99\\d.*:fts_shutter_10"
-            await fhem.CommandAttr(
-                self.hash, self.hash["NAME"] + " devStateIcon " + devStateIcon
-            )
-        if await fhem.AttrVal(self.hash["NAME"], "webCmd", "") == "":
-            await fhem.CommandAttr(
-                self.hash, self.hash["NAME"] + " webCmd up:down:status"
-            )
-        if await fhem.AttrVal(self.hash["NAME"], "stateFormat", "") == "":
-            await fhem.CommandAttr(
-                self.hash, self.hash["NAME"] + " stateFormat position"
-            )
+        devStateIcon = "0:fts_shutter_10\\@green 100:fts_shutter_100\\@green s/[0-9]|1\\d.*:fts_shutter_90 s/[0-9]|2\\d.*:fts_shutter_80 s/[0-9]|3\\d.*:fts_shutter_70 s/[0-9]|4\\d.*:fts_shutter_60 s/[0-9]|5\\d.*:fts_shutter_50 s/[0-9]|6\\d.*:fts_shutter_40 s/[0-9]|7\\d.*:fts_shutter_30 s/[0-9]|8\\d.*:fts_shutter_20 s/[0-9]|9\\d.*:fts_shutter_10 s/[0-9]|99\\d.*:fts_shutter_10"
+        await fhem.setDefaultAttrs(
+            self.hash,
+            {
+                "icon": "fts_window_1w",
+                "devStateIcon": devStateIcon,
+                "webCmd": "up:down:status",
+                "stateFormat": "position",
+            },
+        )
         # if await fhem.AttrVal(self.hash["NAME"], "verbose", "") == "":
         #     await fhem.CommandAttr(self.hash, self.hash["NAME"] + " verbose 5")
 

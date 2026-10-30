@@ -187,25 +187,14 @@ sub BindingsIo_Define {
     InternalTimer(gettimeofday()+2, 'BindingsIo_installing', $hash, 0);
   }
 
-  if ($init_done)
-  {
-    # put in fhempy room
-    if (AttrVal($name, q[room], q[]) eq q[]) {
-      CommandAttr(undef, qq[$name room fhempy]);
-    }
-    # set icon
-    if (AttrVal($name, q[icon], q[]) eq q[]) {
-      CommandAttr(undef, qq[$name icon file_json-ld2]);
-    }
-    # set group
-    if (AttrVal($name, q[group], q[]) eq q[]) {
-      CommandAttr(undef, qq[$name group fhempy]);
-    }
-  }
-
-  # the devStateIcon is set once for new devices, users may change or delete it later
-  if ($init_done && !defined($hash->{OLDDEF}) && AttrVal($name, q[devStateIcon], q[]) eq q[]) {
-    BindingsIo_setDefaultDevStateIcon($hash);
+  # defaults only for a new device, the user may change or delete them later
+  # (also with defmod/modify). While FHEM starts, Define runs before the attr
+  # lines of fhem.cfg.
+  if ($init_done && !defined($hash->{OLDDEF})) {
+    CommandAttr(undef, qq[$name room fhempy]) if (AttrVal($name, q[room], q[]) eq q[]);
+    CommandAttr(undef, qq[$name icon file_json-ld2]) if (AttrVal($name, q[icon], q[]) eq q[]);
+    CommandAttr(undef, qq[$name group fhempy]) if (AttrVal($name, q[group], q[]) eq q[]);
+    BindingsIo_setDefaultDevStateIcon($hash) if (AttrVal($name, q[devStateIcon], q[]) eq q[]);
   }
 
   return undef;
