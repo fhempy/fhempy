@@ -329,7 +329,7 @@
     } else if (entry.count > 1) {
       parts.push(entry.count + "×");
     } else if (entry.end && entry.end - entry.ts >= 5) {
-      // shorter: a pulse like the relay of a garage door, "0 s" says nothing
+      // shorter: a pulse like a relay switching for a second, "0 s" says nothing
       parts.push(duration(entry.end - entry.ts));
     } else if (entry.running) {
       // still on: how long so far

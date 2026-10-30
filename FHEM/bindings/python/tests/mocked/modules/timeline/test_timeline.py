@@ -225,18 +225,18 @@ def test_device_activity():
 
 
 def test_device_activity_mixed_state():
-    # Tuya garage door: relay pulses (on/off) and the contact (open/closed)
+    # a gate opener: relay pulses (on/off) and the contact (open/closed)
     # both as state, "ready" in between
     rows = [
-        (at(0), "garage", "state", "on", "security"),
-        (at(1), "garage", "state", "off", "security"),
-        (at(20), "garage", "state", "open", "security"),
-        (at(25), "garage", "state", "ready", "security"),
-        (at(600), "garage", "state", "on", "security"),
-        (at(601), "garage", "state", "off", "security"),
-        (at(620), "garage", "state", "closed", "security"),
-        (at(700), "garage", "state", "closed", "security"),
-        (at(3000), "garage", "state", "open", "security"),
+        (at(0), "gate", "state", "on", "security"),
+        (at(1), "gate", "state", "off", "security"),
+        (at(20), "gate", "state", "open", "security"),
+        (at(25), "gate", "state", "ready", "security"),
+        (at(600), "gate", "state", "on", "security"),
+        (at(601), "gate", "state", "off", "security"),
+        (at(620), "gate", "state", "closed", "security"),
+        (at(700), "gate", "state", "closed", "security"),
+        (at(3000), "gate", "state", "open", "security"),
     ]
     opened, relay = story.build_activity(rows, INFOS, at(3600))
     assert opened["what"] == "Open"
@@ -253,16 +253,16 @@ def test_device_activity_mixed_state():
     assert relay["current"] == {"text": "off", "since": at(601)}
     # a command "close" ends "open", a closing event lost a day ago ends at it
     rows = [
-        (at(0), "garage", "door_control_1", "open", "security"),
-        (at(100), "garage", "door_control_1", "close", "security"),
-        (at(200), "garage", "door_control_1", "open", "security"),
+        (at(0), "gate", "control", "open", "security"),
+        (at(100), "gate", "control", "close", "security"),
+        (at(200), "gate", "control", "open", "security"),
     ]
     (control,) = story.build_activity(rows, INFOS, at(200 + 2 * 86400))
     assert control["count"] == 2
     # the name of the reading is shown in front, "close" reads "closed"
-    assert control["name"] == "door control 1" and control["what"] == "Open"
+    assert control["name"] == "control" and control["what"] == "Open"
     assert control["current"]["text"] == "open"
-    assert story.value_text("door_control_1", "close") == "closed"
+    assert story.value_text("control", "close") == "closed"
     # a doorbell only rings
     rows = [
         (at(0), "bell", "state", "ring", "security"),

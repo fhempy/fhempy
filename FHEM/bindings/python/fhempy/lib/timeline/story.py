@@ -71,7 +71,7 @@ VALUE_TEXTS = {
     "no_motion": "no motion",
     "motion": "motion",
     "noalarm": "no alarm",
-    # command of a garage door, the door is closed afterwards
+    # a command like open/close, closed afterwards
     "close": "closed",
 }
 RESIDENTS_TEXTS = {
@@ -481,9 +481,9 @@ def _pair_day(trends, held, start, now):
 
 
 # what a device can be for a while and what ends it, in the order the
-# history of a device shows them. A reading can mix them: a Tuya garage door
+# history of a device shows them. A reading can mix them: a gate opener
 # sends the relay (on/off) and the contact (open/closed) as state, an "off" of
-# the relay doesn't close the door.
+# the relay doesn't close the gate.
 ACTIVITY_KINDS = (
     ({"open", "opened", "tilted"}, {"closed", "close"}),
     ({"unlocked"}, {"locked"}),
@@ -496,7 +496,7 @@ ACTIVITY_KINDS = (
     ({"true"}, {"false"}),
     ({"ring", "ringing"}, set()),
 )
-# shorter is a moment, e.g. the relay of a garage door pulsing for a second
+# shorter is a moment, e.g. a relay pulsing for a second
 MOMENT_SECONDS = 5
 
 
