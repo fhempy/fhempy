@@ -101,6 +101,13 @@ def test_state():
     assert devices.state("contact", info(readings={"contact": "closed"})) == {
         "closed": True
     }
+    # zigbee2mqtt: contact true = closed, false = open
+    assert devices.state("contact", info(readings={"contact": "false"})) == {
+        "closed": False
+    }
+    assert devices.state("contact", info(readings={"contact": "true"})) == {
+        "closed": True
+    }
     assert devices.state("motion", info(readings={"motion": "noMotion"})) == {
         "occupied": False
     }
