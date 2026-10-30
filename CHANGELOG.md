@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.13.4 (2026-10-30)
+
+### Features
+
+- **matter_bridge**: Choose many devices at once ([#834](https://github.com/fhempy/fhempy/pull/834),
+  [`a911f75`](https://github.com/fhempy/fhempy/commit/a911f756b9e6ec5167adb4b40d426ed86b94981e))
+
+
 ## v2.13.3 (2026-10-30)
 
 ### Bug Fixes
