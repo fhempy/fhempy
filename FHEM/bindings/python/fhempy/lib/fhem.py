@@ -405,6 +405,36 @@ async def CommandAttr(hash, attrdef):
     return await sendCommandHash(hash, cmd)
 
 
+# names of the default attributes fhempy already handled for a device
+DEFAULT_ATTRS_READING = ".defaultAttrs"
+
+
+async def setDefaultAttrs(hash, attrs, name=None):
+    """Sets each default attribute once per device, if it is empty.
+
+    Afterwards the attribute belongs to the user: a changed or deleted value
+    is kept, also after restarts and updates. The handled attributes are
+    stored in the hidden reading .defaultAttrs of the device.
+
+    attrs: {attribute: value}, name: device, default is the device of hash
+    """
+    name = name or hash["NAME"]
+    marker = await ReadingsVal(name, DEFAULT_ATTRS_READING, "")
+    done = set(filter(None, marker.split(",")))
+    handled = False
+    for attr, value in attrs.items():
+        if attr in done or value is None or value == "":
+            continue
+        done.add(attr)
+        handled = True
+        if await AttrVal(name, attr, "") == "":
+            await CommandAttr(hash, f"{name} {attr} {value}")
+    if handled:
+        await readingsSingleUpdate(
+            {"NAME": name}, DEFAULT_ATTRS_READING, ",".join(sorted(done)), 0
+        )
+
+
 async def CommandDeleteAttr(hash, deldef):
     cmd = f"CommandDeleteAttr(undef, {perlString(deldef)})"
     return await sendCommandHash(hash, cmd)

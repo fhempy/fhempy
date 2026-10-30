@@ -891,18 +891,12 @@ class googlecast(generic.FhemModule):
         await fhem.readingsBulkUpdateIfChanged(hash, "ignore_cec", self.cast.ignore_cec)
         await fhem.readingsEndUpdate(hash, 1)
 
-        if await fhem.AttrVal(hash["NAME"], "icon", "") == "":
-            if await fhem.ReadingsVal(hash["NAME"], "cast_type", "cast") == "cast":
-                await fhem.CommandAttr(
-                    self.hash, self.hash["NAME"] + " icon scene_scene"
-                )
-            else:
-                await fhem.CommandAttr(
-                    self.hash, self.hash["NAME"] + " icon gassistant"
-                )
-            await fhem.CommandAttr(
-                hash, self.hash["NAME"] + " cmdIcon pause:rc_PAUSE play:rc_PLAY"
-            )
-            await fhem.CommandAttr(
-                hash, self.hash["NAME"] + " webCmd volume:play:pause"
-            )
+        icon = "scene_scene" if self.cast.cast_type == "cast" else "gassistant"
+        await fhem.setDefaultAttrs(
+            hash,
+            {
+                "icon": icon,
+                "cmdIcon": "pause:rc_PAUSE play:rc_PLAY",
+                "webCmd": "volume:play:pause",
+            },
+        )

@@ -40,6 +40,7 @@ async def test_legacy_state_format_is_replaced(mocker):
     """stateFormat of older versions showed battery, voltage and linkquality"""
     mock_fhem.mock_module(mocker)
     mock_fhem.command_attr.clear()
+    mock_fhem.readings.pop("MQTT2_Contact", None)
     scenario = next(s for s in SCENARIOS if s["name"] == "z2m_contact")
     name = "MQTT2_Contact"
     attrs = scenario["attributes"]
@@ -57,6 +58,11 @@ async def test_legacy_state_format_is_replaced(mocker):
     mock_fhem.command_attr.clear()
     mock_fhem.attributes[name]["stateFormat"] = "contact"
     mock_fhem.attributes[name]["devStateIcon"] = "true:fts_door"
+    await mqtt_ha.set_device_attributes({"NAME": "x"}, name, entities(scenario))
+    assert mock_fhem.command_attr == []
+
+    # deleted attributes stay deleted on the next discovery messages
+    del mock_fhem.attributes[name]["devStateIcon"]
     await mqtt_ha.set_device_attributes({"NAME": "x"}, name, entities(scenario))
     assert mock_fhem.command_attr == []
 

@@ -151,8 +151,7 @@ class dlna_dmr(FhemModule):
         if len(args) < 4:
             return "Usage: define device fhempy dlna_dmr <UUID>"
 
-        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon scene_scene")
+        await fhem.setDefaultAttrs(self.hash, {"icon": "scene_scene"})
 
         await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
         udn = args[3]

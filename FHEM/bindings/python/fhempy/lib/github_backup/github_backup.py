@@ -155,14 +155,13 @@ class github_backup(generic.FhemModule):
         self.gh_repo = self.url.split("/")[-1]
         self.directory = args[4]
 
-        icon = await fhem.AttrVal(self.hash["NAME"], "icon", "")
-        if icon == "":
-            await fhem.CommandAttr(self.hash, f"{self.hash['NAME']} icon system_backup")
-            await fhem.CommandAttr(
-                self.hash,
-                f"{self.hash['NAME']} devStateIcon "
-                + "failed:message_attention ok:message_ok",
-            )
+        await fhem.setDefaultAttrs(
+            self.hash,
+            {
+                "icon": "system_backup",
+                "devStateIcon": "failed:message_attention ok:message_ok",
+            },
+        )
 
         # do this to check if gh token is set
         await self.set_attr_github_token(hash)

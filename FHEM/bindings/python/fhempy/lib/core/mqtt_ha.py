@@ -1439,15 +1439,24 @@ async def set_device_attributes(hash, fhem_device_name, entities):
         new = merge(current, attrs[attr])
         if new != current:
             await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {new}")
-    legacy = dev.legacy_state_format_text()
-    for attr in ("webCmd", "stateFormat", "devStateIcon"):
-        if attr not in attrs:
-            continue
-        current = await fhem.AttrVal(fhem_device_name, attr, "")
-        # stateFormat of older versions (battery, voltage, linkquality)
-        if not current or (attr == "stateFormat" and current == legacy):
-            if current != attrs[attr]:
-                await fhem.CommandAttr(hash, f"{fhem_device_name} {attr} {attrs[attr]}")
+    # stateFormat of older versions (battery, voltage, linkquality)
+    if attrs.get("stateFormat"):
+        current = await fhem.AttrVal(fhem_device_name, "stateFormat", "")
+        legacy = dev.legacy_state_format_text()
+        if current and current == legacy and current != attrs["stateFormat"]:
+            await fhem.CommandAttr(
+                hash, f"{fhem_device_name} stateFormat {attrs['stateFormat']}"
+            )
+    # set once, the user may change or delete them later
+    await fhem.setDefaultAttrs(
+        hash,
+        {
+            attr: attrs[attr]
+            for attr in ("webCmd", "stateFormat", "devStateIcon")
+            if attrs.get(attr)
+        },
+        fhem_device_name,
+    )
 
 
 # attributes with the readings, commands and state of the device

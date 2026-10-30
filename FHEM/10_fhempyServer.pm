@@ -144,42 +144,42 @@ sub fhempyServer_Define($$$)
     CoProcess::start($hash);
   }
 
-  # put in fhempy room
-  if (AttrVal($name, "room", "") eq "") {
-    CommandAttr(undef, "$name room fhempy") if( !AttrVal($name, 'room', undef ) );
-  }
-  if (AttrVal($name, "nrarchive", "") eq "") {
-    CommandAttr(undef, "$name nrarchive 10") if( !AttrVal($name, 'nrarchive', undef ) );
-  }
-  # set icon
-  if (AttrVal($name, "icon", "") eq "") {
-    CommandAttr(undef, "$name icon python");
-  }
-  # set group
-  if (AttrVal($name, "group", "") eq "") {
-    CommandAttr(undef, "$name group fhempy");
-  }
-  # set devStateIcon
-  if (AttrVal($name, "devStateIcon", "") eq "") {
-    my $devstate_cmd = '{
-      my $status_img = "10px-kreis-gruen";;
-      my $status_txt = "running";;
-      if (substr(ReadingsVal($name, "fhempy", "running"),0,7) ne "running") {
-        $status_img = "10px-kreis-rot";;
-        $status_txt = "stopped";;
-      }
-      "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Kill and restart\">".FW_makeImage("audio_repeat")."</a></div>"
-      }';
-    $devstate_cmd =~ tr/\n//d;
-    CommandAttr(undef, "$name devStateIcon $devstate_cmd");
-  }
+  # defaults only for a new device, the user may change or delete them later.
+  # While FHEM starts, Define runs before the attr lines of fhem.cfg.
+  fhempyServer_setDefaultAttrs($hash) if ($init_done && !defined($hash->{OLDDEF}));
 
-  if( $attr{global}{logdir} ) {
-    CommandAttr(undef, "$name logfile %L/fhempy-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
-  } else {
-    CommandAttr(undef, "$name logfile ./log/fhempy-%Y-%m-%d.log") if( !AttrVal($name, 'logfile', undef ) );
-  }
+  return undef;
+}
 
+sub fhempyServer_setDefaultAttrs($)
+{
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+
+  my $devstate_cmd = '{
+    my $status_img = "10px-kreis-gruen";;
+    my $status_txt = "running";;
+    if (substr(ReadingsVal($name, "fhempy", "running"),0,7) ne "running") {
+      $status_img = "10px-kreis-rot";;
+      $status_txt = "stopped";;
+    }
+    "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Kill and restart\">".FW_makeImage("audio_repeat")."</a></div>"
+    }';
+  $devstate_cmd =~ tr/\n//d;
+  my $logdir = $attr{global}{logdir} ? "%L" : "./log";
+
+  my @defaults = (
+    [room => "fhempy"],
+    [nrarchive => "10"],
+    [icon => "python"],
+    [group => "fhempy"],
+    [devStateIcon => $devstate_cmd],
+    [logfile => "$logdir/fhempy-%Y-%m-%d.log"],
+  );
+  foreach my $default (@defaults) {
+    my ($attrName, $value) = @$default;
+    CommandAttr(undef, "$name $attrName $value") if (AttrVal($name, $attrName, "") eq "");
+  }
   return undef;
 }
 

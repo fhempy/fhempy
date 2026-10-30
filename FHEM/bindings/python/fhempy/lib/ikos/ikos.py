@@ -90,8 +90,7 @@ class ikos(generic.FhemModule):
         self.date_from = args[3]
         self.date_to = args[4]
 
-        if await fhem.AttrVal(self.hash["NAME"], "icon", "") == "":
-            await fhem.CommandAttr(self.hash, self.hash["NAME"] + " icon weather_sun")
+        await fhem.setDefaultAttrs(self.hash, {"icon": "weather_sun"})
 
         self.create_async_task(self.update_loop())
 
