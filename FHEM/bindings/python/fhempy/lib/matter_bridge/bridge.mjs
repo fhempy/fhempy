@@ -66,7 +66,12 @@ function send(message) {
 }
 
 const devices = new Map(); // id -> {type, name, parts, endpoint, state, pending, timer}
-const deviceId = endpoint => endpoint.id;
+// a device with parts gets its own endpoint id ("-" is not allowed in FHEM
+// names): until v2.13.4 such a device was a bridged node with an endpoint per
+// sensor, controllers (Google Home) showed them offline when the same
+// endpoint became the device itself
+const PARTS_SUFFIX = "-sensors";
+const deviceId = endpoint => endpoint.id.replace(/-sensors$/, "");
 
 function emitCommand(id, command) {
     const device = devices.get(id);
@@ -271,7 +276,7 @@ function listen(id, type, endpoint) {
 let server;
 let aggregator;
 
-function basicInformation(id, name) {
+function basicInformation(id, name, uniqueSuffix = "") {
     const label = name.slice(0, 32);
     return {
         nodeLabel: label,
@@ -279,7 +284,7 @@ function basicInformation(id, name) {
         productLabel: label,
         vendorName: "FHEM",
         serialNumber: id.slice(0, 32),
-        uniqueId: `fhem-${id}`.slice(0, 32),
+        uniqueId: `fhem-${id}`.slice(0, 32 - uniqueSuffix.length) + uniqueSuffix,
         reachable: true,
     };
 }
@@ -306,7 +311,9 @@ async function addDevice({ id, type, name, state, parts }) {
     // one endpoint with the clusters of all parts: an endpoint per sensor
     // (below a bridged node) is shown as separate devices by the apps
     const types = [type, ...parts];
-    let options = { id, bridgedDeviceBasicInformation: basicInformation(id, name) };
+    let options = parts.length
+        ? { id: id + PARTS_SUFFIX, bridgedDeviceBasicInformation: basicInformation(id, name, "-s") }
+        : { id, bridgedDeviceBasicInformation: basicInformation(id, name) };
     for (const part of types) options = mergeState(options, typeOptions(part, state));
     if (parts.length) options.descriptor = { deviceTypeList: deviceTypeList(types) };
     const endpointType = TYPES[type].device.with(

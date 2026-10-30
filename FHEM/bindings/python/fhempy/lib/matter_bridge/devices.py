@@ -276,7 +276,14 @@ def _lock_state(info):
     return {"locked": _choice(value, LOCKED_VALUES, UNLOCKED_VALUES)}
 
 
+# zigbee2mqtt: contact true = the magnet touches = closed
+CONTACT_CLOSED = {"true": True, "false": False}
+
+
 def _contact_state(info):
+    contact = _word(_reading(info, "contact"))
+    if contact in CONTACT_CLOSED:
+        return {"closed": CONTACT_CLOSED[contact]}
     value = _reading(info, "contact", "state")
     is_open = _choice(value, OPEN_VALUES, CLOSED_VALUES)
     return {"closed": None if is_open is None else not is_open}
