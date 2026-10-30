@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v2.13.5 (2026-10-30)
+
+### Bug Fixes
+
+- Default icons and attributes are set only once per device
+  ([#836](https://github.com/fhempy/fhempy/pull/836),
+  [`6f02a4b`](https://github.com/fhempy/fhempy/commit/6f02a4b9d673efe8cf183a13d1910c0b20324b26))
+
+- **matter_bridge**: Show extra sensors of a FHEM device in one Matter device
+  ([#837](https://github.com/fhempy/fhempy/pull/837),
+  [`ce93347`](https://github.com/fhempy/fhempy/commit/ce93347fe319dd78ffe9fe56c022ce53549d466e))
+
+- **timeline**: Device history shows how often and how long a door was open
+  ([#840](https://github.com/fhempy/fhempy/pull/840),
+  [`b894e28`](https://github.com/fhempy/fhempy/commit/b894e28bd12e9bdf92b1a03226f7c2f6b14ae4de))
+
+- **timeline**: Tiny changes like GPS jitter no longer look like jumps in curves
+  ([#838](https://github.com/fhempy/fhempy/pull/838),
+  [`e45a12c`](https://github.com/fhempy/fhempy/commit/e45a12c4d1a87e79175ec8c2c55c5c6987a55a26))
+
+- **timeline**: Write events to the database only every 60 seconds
+  ([#832](https://github.com/fhempy/fhempy/pull/832),
+  [`5826a8c`](https://github.com/fhempy/fhempy/commit/5826a8c194b851d21df29d068acf8ab61e10e147))
+
+### Performance Improvements
+
+- **timeline**: Load curves per day when shown, start with two days
+  ([#839](https://github.com/fhempy/fhempy/pull/839),
+  [`ce0abb3`](https://github.com/fhempy/fhempy/commit/ce0abb3742b2946e6444f16e4d55fdaf412bcb86))
+
+
 ## v2.13.4 (2026-10-30)
 
 ### Features
