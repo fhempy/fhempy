@@ -328,7 +328,8 @@
       parts.push(entry.count + "× until " + clock(entry.end));
     } else if (entry.count > 1) {
       parts.push(entry.count + "×");
-    } else if (entry.end) {
+    } else if (entry.end && entry.end - entry.ts >= 5) {
+      // shorter: a pulse like a relay switching for a second, "0 s" says nothing
       parts.push(duration(entry.end - entry.ts));
     } else if (entry.running) {
       // still on: how long so far
@@ -339,7 +340,7 @@
 
   function durationBar(entry) {
     var end = entry.end || (entry.running ? Date.now() / 1000 : null);
-    if (!end || entry.count > 1) return "";
+    if (!end || entry.count > 1 || end - entry.ts < 5) return "";
     var pct = Math.min(100, Math.max(2, (end - entry.ts) / 864));
     var info = categoryInfo[entry.category] || categoryInfo.devices;
     return '<div class="ftlBarLine" style="width:' + pct.toFixed(1) + "%;background:" + info.color + '"></div>';
@@ -800,21 +801,25 @@
     return html + '<div class="ftaRow ftaAxis"><span></span><div><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div>';
   }
 
-  // door, light, motion...: state now, how often and how long, when
+  // door, light, motion...: how often and how long it was open/on, then its state now
   function activityHtml(a, data, days) {
     var color = (categoryInfo[a.category] || categoryInfo.devices).color;
     var durations = a.segments.some(function (seg) { return seg[1] !== null; });
-    var current = a.current.text.charAt(0).toUpperCase() + a.current.text.slice(1);
-    var stats = durations ?
-      esc(a.what) + " " + a.count + "× in " + days + " days · " + duration(a.total) + " in total · longest " + duration(a.longest) :
-      a.count + (a.count === 1 ? " time" : " times") + " in " + days + " days";
-    // a button has no state, only its last press
-    var day = dayIso(new Date(a.current.since * 1000));
-    var now = durations ? "<b>" + esc(current) + "</b> " + esc(sinceText(a.current.since)) :
-      "last <b>" + esc(current) + "</b> " + (day === dayIso(new Date()) ? "at " : shortDay(day) + " ") + clock(a.current.since);
-    return '<div class="ftaBlock"><div class="ftaHead">' + (a.name ? '<span class="ftaName">' + esc(readingName(a)) + " ·</span> " : "") +
-      now + "</div>" +
-      '<div class="ftaStats">' + stats + "</div>" + activityRows(a, data, days, color) + "</div>";
+    var current = esc(a.current.text);
+    var name = a.name ? '<span class="ftaName">' + esc(readingName(a)) + " ·</span> " : "";
+    var head, stats = [];
+    var lastDay = dayIso(new Date(a.current.since * 1000));
+    if (a.moments) {
+      // a button has no state, only its last press
+      head = "<b>" + a.count + (a.count === 1 ? " time" : " times") + "</b> in " + days + " days";
+      stats.push("last " + current + " " + (lastDay === dayIso(new Date()) ? "at " : shortDay(lastDay) + " ") + clock(a.current.since));
+    } else {
+      head = "<b>" + esc(a.what) + " " + a.count + "×</b> in " + days + " days";
+      if (durations) stats.push(duration(a.total) + " in total", "longest " + duration(a.longest));
+      stats.push("now " + current + " " + esc(sinceText(a.current.since)));
+    }
+    return '<div class="ftaBlock"><div class="ftaHead">' + name + head + "</div>" +
+      '<div class="ftaStats">' + stats.join(" · ") + "</div>" + activityRows(a, data, days, color) + "</div>";
   }
 
   function deviceChartModel(t, data, days) {

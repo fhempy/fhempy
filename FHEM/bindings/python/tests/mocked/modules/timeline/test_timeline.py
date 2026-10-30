@@ -200,34 +200,78 @@ def test_thermostat_story():
 
 
 def test_device_activity():
-    entries = build(
-        [
-            (0, "door", "state", "open", "security"),
-            (300, "door", "state", "closed", "security"),
-            (5000, "door", "state", "open", "security"),
-            (5060, "door", "state", "closed", "security"),
-            (6000, "hall", "action", "single", "devices"),
-            (7000, "hall", "action", "double", "devices"),
-        ],
-        now=at(9000),
-    )
-    door = story.build_activity(
-        [e for e in entries if e["device"] == "door"], INFOS, at(9000)
-    )
-    (state,) = door
+    rows = [
+        (at(0), "door", "state", "open", "security"),
+        (at(300), "door", "state", "closed", "security"),
+        (at(5000), "door", "state", "open", "security"),
+        (at(5060), "door", "state", "closed", "security"),
+    ]
+    (state,) = story.build_activity(rows, INFOS, at(9000))
     assert state["name"] == "" and state["what"] == "Open"
     assert state["count"] == 2 and state["total"] == 360 and state["longest"] == 300
     assert state["segments"][0] == [at(0), at(300), "Open"]
     assert state["current"] == {"text": "closed", "since": at(5060)}
-    (action,) = story.build_activity(
-        [e for e in entries if e["device"] == "hall"], INFOS, at(9000)
-    )
+    rows = [
+        (at(6000), "hall", "action", "single", "devices"),
+        (at(7000), "hall", "action", "double", "devices"),
+    ]
+    (action,) = story.build_activity(rows, INFOS, at(9000))
     assert action["name"] == "action" and action["count"] == 2
     assert [s[1:] for s in action["segments"]] == [
         [None, "Action single"],
         [None, "Action double"],
     ]
     assert action["current"] == {"text": "double", "since": at(7000)}
+
+
+def test_device_activity_mixed_state():
+    # a gate opener: relay pulses (on/off) and the contact (open/closed)
+    # both as state, "ready" in between
+    rows = [
+        (at(0), "gate", "state", "on", "security"),
+        (at(1), "gate", "state", "off", "security"),
+        (at(20), "gate", "state", "open", "security"),
+        (at(25), "gate", "state", "ready", "security"),
+        (at(600), "gate", "state", "on", "security"),
+        (at(601), "gate", "state", "off", "security"),
+        (at(620), "gate", "state", "closed", "security"),
+        (at(700), "gate", "state", "closed", "security"),
+        (at(3000), "gate", "state", "open", "security"),
+    ]
+    opened, relay = story.build_activity(rows, INFOS, at(3600))
+    assert opened["what"] == "Open"
+    # how often and how long the door was open, not the relay
+    assert opened["count"] == 2 and opened["total"] == 600 + 600
+    assert opened["segments"] == [
+        [at(20), at(620), "Open"],
+        [at(3000), at(3600), "Open"],
+    ]
+    assert opened["current"] == {"text": "open", "since": at(3000)}
+    # one second relay pulses are moments
+    assert relay["what"] == "On" and relay["count"] == 2 and relay["total"] == 0
+    assert [s[1] for s in relay["segments"]] == [None, None]
+    assert relay["current"] == {"text": "off", "since": at(601)}
+    # a command "close" ends "open", a closing event lost a day ago ends at it
+    rows = [
+        (at(0), "gate", "control", "open", "security"),
+        (at(100), "gate", "control", "close", "security"),
+        (at(200), "gate", "control", "open", "security"),
+    ]
+    (control,) = story.build_activity(rows, INFOS, at(200 + 2 * 86400))
+    assert control["count"] == 2
+    # the name of the reading is shown in front, "close" reads "closed"
+    assert control["name"] == "control" and control["what"] == "Open"
+    assert control["current"]["text"] == "open"
+    assert story.value_text("control", "close") == "closed"
+    # a doorbell only rings
+    rows = [
+        (at(0), "bell", "state", "ring", "security"),
+        (at(60), "bell", "state", "ring", "security"),
+    ]
+    (bell,) = story.build_activity(rows, INFOS, at(100))
+    assert bell["count"] == 2 and [s[1] for s in bell["segments"]] == [None, None]
+    assert control["segments"][0][:2] == [at(0), at(100)]
+    assert control["segments"][1][:2] == [at(200), None]
 
 
 def test_thermostat_trends():

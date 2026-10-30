@@ -71,6 +71,8 @@ VALUE_TEXTS = {
     "no_motion": "no motion",
     "motion": "motion",
     "noalarm": "no alarm",
+    # a command like open/close, closed afterwards
+    "close": "closed",
 }
 RESIDENTS_TEXTS = {
     "home": "Somebody is at home",
@@ -478,61 +480,146 @@ def _pair_day(trends, held, start, now):
     return result
 
 
-def _activity_current(reading, last, now):
-    """state of a reading now: "Closed" since the end of its last entry"""
-    active = last["value"].lower() in ACTIVE_VALUES
-    if active and last["end"] is not None and last["end"] < now:
-        value = last.get("end_value") or (
-            "closed" if "open" in last["value"] else "off"
-        )
-        return {"text": value_text(reading, value), "since": last["end"]}
-    since = last["ts"] if active else (last["end"] or last["ts"])
-    return {"text": value_text(reading, last["value"]), "since": since}
+# what a device can be for a while and what ends it, in the order the
+# history of a device shows them. A reading can mix them: a gate opener
+# sends the relay (on/off) and the contact (open/closed) as state, an "off" of
+# the relay doesn't close the gate.
+ACTIVITY_KINDS = (
+    ({"open", "opened", "tilted"}, {"closed", "close"}),
+    ({"unlocked"}, {"locked"}),
+    ({"motion", "detected"}, {"nomotion", "no_motion", "clear"}),
+    ({"present"}, {"absent"}),
+    ({"occupied"}, {"unoccupied", "clear"}),
+    ({"wet", "leak"}, {"dry"}),
+    ({"alarm", "smoke"}, {"noalarm", "no_alarm", "clear"}),
+    ({"on"}, {"off"}),
+    ({"true"}, {"false"}),
+    ({"ring", "ringing"}, set()),
+)
+# shorter is a moment, e.g. a relay pulsing for a second
+MOMENT_SECONDS = 5
 
 
-def build_activity(entries, infos, now):
-    """entries of one device (oldest first) -> per reading of the story:
-    when it was on/open (segments) or what happened (moments), how often,
-    how long in total, its state now. Numbers are in the curves."""
+def _activity_kind(value):
+    for index, (active, _) in enumerate(ACTIVITY_KINDS):
+        if value in active:
+            return index
+    return None
+
+
+def _activity_item(info, reading, value, category):
+    text, nameless = describe(info, reading, value)
+    if not nameless:
+        # the name of the reading is shown in front of it
+        text = value_text(reading, value)
+    return {
+        "reading": reading,
+        "name": "" if nameless else reading_label(reading),
+        "what": text[:1].upper() + text[1:],
+        "category": category,
+        "count": 0,
+        "total": 0,
+        "longest": 0,
+        "segments": [],
+        "current": None,
+    }
+
+
+def _kind_activity(info, reading, kind, events, now):
+    """events of one reading -> how often and how long it was e.g. open"""
+    active, inactive = ACTIVITY_KINDS[kind]
+    first = next((e for e in events if e[1].lower() in active), None)
+    if first is None:
+        return None
+    item = _activity_item(info, reading, first[1], first[2])
+    if not inactive:
+        return _rings(item, reading, active, events)
+    start, last = _walk_segments(item, reading, active, inactive, events)
+    if start is not None:
+        # still open, unless the closing event got lost a day ago
+        _add_segment(item, start, now if now - last <= 86400 else last)
+    item["total"] = round(item["total"])
+    item["longest"] = round(item["longest"])
+    return item
+
+
+def _walk_segments(item, reading, active, inactive, events):
+    """adds the closed segments to item -> start and last event of the one
+    still open (start None if none)"""
+    start = last = None
+    for ts, value, _ in events:
+        lower = value.lower()
+        if lower in active:
+            if start is None:
+                start = ts
+                item["count"] += 1
+            last = ts
+            item["current"] = {"text": value_text(reading, value), "since": start}
+        elif lower in inactive and last is not None:
+            if start is not None:
+                _add_segment(item, start, ts)
+                start = None
+            item["current"] = {"text": value_text(reading, value), "since": ts}
+            last = ts
+    return start, last
+
+
+def _rings(item, reading, active, events):
+    """a doorbell rings, it isn't ringing for a while"""
+    for ts, value, _ in events:
+        if value.lower() in active:
+            item["segments"].append([ts, None, item["what"]])
+            item["count"] += 1
+            item["current"] = {"text": value_text(reading, value), "since": ts}
+    return item
+
+
+def _add_segment(item, start, end):
+    if end - start < MOMENT_SECONDS:
+        item["segments"].append([start, None, item["what"]])
+        return
+    item["segments"].append([start, end, item["what"]])
+    item["total"] += end - start
+    item["longest"] = max(item["longest"], end - start)
+
+
+def _moments(info, reading, events):
+    """values without a duration, e.g. button presses"""
+    item = _activity_item(info, reading, events[-1][1], events[-1][2])
+    for ts, value, _ in events:
+        what = describe(info, reading, value)[0]
+        item["segments"].append([ts, None, what[:1].upper() + what[1:]])
+    item["count"] = len(events)
+    item["moments"] = True
+    item["current"] = {
+        "text": value_text(reading, events[-1][1]),
+        "since": events[-1][0],
+    }
+    return item
+
+
+def build_activity(rows, infos, now):
+    """story rows (ts, device, reading, value, category) of one device ->
+    per reading and kind: when it was open/on/... (segments), how often, how
+    long in total, its state now; values without a duration (button presses)
+    as moments. Numbers are in the curves."""
     by_reading = collections.defaultdict(list)
-    for entry in entries:
-        if entry.get("children") or classify.number(entry["value"]) is not None:
-            continue
-        by_reading[entry["reading"]].append(entry)
+    for ts, _, reading, value, category in rows:
+        if classify.number(value) is None:
+            by_reading[reading].append((ts, value, category))
     result = []
-    for reading, items in by_reading.items():
-        info = infos.get(items[0]["device"], {})
-        segments, total, longest, count = [], 0, 0, 0
-        active_value = None
-        for entry in items:
-            count += entry["count"]
-            active = entry["value"].lower() in ACTIVE_VALUES
-            end = entry["end"] or (now if entry["running"] else None)
-            what = describe(info, reading, entry["value"])[0]
-            what = what[:1].upper() + what[1:]
-            if active and end is not None:
-                segments.append([entry["ts"], end, what])
-                total += end - entry["ts"]
-                longest = max(longest, end - entry["ts"])
-            else:
-                # a moment: button press or a value without end
-                segments.append([entry["ts"], None, what])
-            if active:
-                active_value = entry["value"]
-        text, nameless = describe(info, reading, active_value or items[-1]["value"])
-        result.append(
-            {
-                "reading": reading,
-                "name": "" if nameless else reading_label(reading),
-                "what": text[:1].upper() + text[1:],
-                "category": items[-1]["category"],
-                "count": count,
-                "total": round(total),
-                "longest": round(longest),
-                "segments": segments,
-                "current": _activity_current(reading, items[-1], now),
-            }
-        )
+    for reading, events in by_reading.items():
+        info = infos.get(rows[0][1], {})
+        kinds = sorted({_activity_kind(event[1].lower()) for event in events} - {None})
+        items = [_kind_activity(info, reading, k, events, now) for k in kinds]
+        items = [item for item in items if item is not None]
+        if not items:
+            others = [
+                e for e in events if e[1].lower() not in INACTIVE_VALUES | {"absent"}
+            ]
+            if others:
+                items = [_moments(info, reading, others)]
+        result.extend(items)
     return result
 
 
