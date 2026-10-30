@@ -808,11 +808,11 @@
     var current = esc(a.current.text);
     var name = a.name ? '<span class="ftaName">' + esc(readingName(a)) + " ·</span> " : "";
     var head, stats = [];
+    var lastDay = dayIso(new Date(a.current.since * 1000));
     if (a.moments) {
       // a button has no state, only its last press
-      var day = dayIso(new Date(a.current.since * 1000));
       head = "<b>" + a.count + (a.count === 1 ? " time" : " times") + "</b> in " + days + " days";
-      stats.push("last " + current + " " + (day === dayIso(new Date()) ? "at " : shortDay(day) + " ") + clock(a.current.since));
+      stats.push("last " + current + " " + (lastDay === dayIso(new Date()) ? "at " : shortDay(lastDay) + " ") + clock(a.current.since));
     } else {
       head = "<b>" + esc(a.what) + " " + a.count + "×</b> in " + days + " days";
       if (durations) stats.push(duration(a.total) + " in total", "longest " + duration(a.longest));

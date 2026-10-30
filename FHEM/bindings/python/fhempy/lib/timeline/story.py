@@ -603,9 +603,7 @@ def build_activity(rows, infos, now):
     result = []
     for reading, events in by_reading.items():
         info = infos.get(rows[0][1], {})
-        kinds = sorted(
-            {_activity_kind(v.lower()) for _, v, _ in events} - {None},
-        )
+        kinds = sorted({_activity_kind(event[1].lower()) for event in events} - {None})
         items = [_kind_activity(info, reading, k, events, now) for k in kinds]
         items = [item for item in items if item is not None]
         if not items:
