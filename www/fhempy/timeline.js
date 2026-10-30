@@ -393,11 +393,24 @@
 
   var TARGET_COLOR = "#d0662a";
 
+  // like changed() in story.py: differences below what can be read (one decimal,
+  // whole numbers from 100, at most 1% of the value) stay a flat line, otherwise
+  // e.g. GPS coordinates moving in the 4th decimal look like big jumps
+  function minSpan(low, high) {
+    var middle = Math.abs(low + high) / 2;
+    var span = Math.min(middle >= 100 ? 1 : 0.1, middle / 100) || 1;
+    if (high - low >= span) return [low, high];
+    var center = (low + high) / 2;
+    return [center - span / 2, center + span / 2];
+  }
+
   function sparkline(trend, dayStart) {
     var pts = [], tips = [], target = trend.target ? trend.target.points : [];
     var low = trend.min, high = trend.max;
     if (trend.target) { low = Math.min(low, trend.target.min); high = Math.max(high, trend.target.max); }
-    var span = high - low || 1;
+    var range = minSpan(low, high);
+    low = range[0];
+    var span = range[1] - low;
     var y = function (v) { return (24 - (v - low) / span * 20).toFixed(1); };
     trend.points.forEach(function (v, i) {
       if (v === null) return;
@@ -510,6 +523,13 @@
       });
     }, { root: list[0], rootMargin: "600px 0px" });
     trendObserver = observer;
+  }
+
+  // axis labels with as many decimals as the step needs, so no two look the same
+  function tickText(v, ticks) {
+    var step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+    var decimals = Math.min(6, ((+step.toFixed(10)).toString().split(".")[1] || "").length);
+    return decimals ? v.toFixed(decimals) : fmt(v);
   }
 
   function fmt(v) {
@@ -806,6 +826,9 @@
 
   function niceTicks(low, high) {
     if (high - low < 1e-9) { low -= Math.max(Math.abs(low) * 0.05, 0.5); high += Math.max(Math.abs(high) * 0.05, 0.5); }
+    var range = minSpan(low, high);
+    low = range[0];
+    high = range[1];
     var raw = (high - low) / 4;
     var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
     var step = [1, 2, 2.5, 5, 10].map(function (f) { return f * mag; }).filter(function (f) { return f >= raw; })[0];
@@ -955,7 +978,7 @@
     ticks.forEach(function (t) {
       svg += '<line x1="' + left + '" x2="' + (left + w) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) +
         '" stroke="currentColor" stroke-opacity="0.12"/>' +
-        '<text x="' + (left - 6) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end">' + fmt(t) + "</text>";
+        '<text x="' + (left - 6) + '" y="' + (y(t) + 4).toFixed(1) + '" text-anchor="end">' + tickText(t, ticks) + "</text>";
     });
     svg += timeAxis(m, x, top, h, height);
     if (m.target && m.target.length) svg += targetLine(m, x, y);

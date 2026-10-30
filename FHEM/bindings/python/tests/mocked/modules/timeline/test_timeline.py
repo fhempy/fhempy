@@ -125,6 +125,19 @@ def build(rows, absences=(), now=None):
     )
 
 
+def test_curve_changed():
+    # GPS coordinates moving in the 4th decimal, a reading staying the same
+    assert not story.changed(47.5012, 47.5018)
+    assert not story.changed(21.0, 21.0)
+    assert not story.changed(1013.2, 1013.6)
+    assert story.changed(20.4, 20.6)
+    assert story.changed(1013, 1015)
+    # small values still count
+    assert story.changed(0.012, 0.018)
+    assert story.changed(-0.5, 0.5)
+    assert not story.changed(None, None)
+
+
 def test_story_durations_and_bundling():
     entries = build(
         [
