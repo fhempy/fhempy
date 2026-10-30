@@ -8,7 +8,8 @@
 // fhempy -> bridge
 //   {"cmd": "devices", "devices": [{"id", "type", "name", "state", "parts"}]}
 //     parts: additional sensors of the same FHEM device, e.g. ["humidity"],
-//     the apps show them in one device
+//     their clusters are added to the endpoint of the device, so the apps
+//     show one device and not one per sensor
 //   {"cmd": "state", "id", "state": {...}}
 //   {"cmd": "reachable", "id", "reachable": true|false}
 //   {"cmd": "pairing_mode"}  (allows pairing with one more app for 15 min)
@@ -26,7 +27,10 @@
 //   temperature: temperature (°C); humidity: humidity (%)
 
 import { Endpoint, ServerNode, VendorId } from "@matter/main";
+import { BooleanStateServer } from "@matter/main/behaviors/boolean-state";
 import { BridgedDeviceBasicInformationServer } from "@matter/main/behaviors/bridged-device-basic-information";
+import { RelativeHumidityMeasurementServer } from "@matter/main/behaviors/relative-humidity-measurement";
+import { TemperatureMeasurementServer } from "@matter/main/behaviors/temperature-measurement";
 import { WindowCoveringServer } from "@matter/main/behaviors/window-covering";
 import { OccupancySensingServer } from "@matter/main/behaviors/occupancy-sensing";
 import { ThermostatServer } from "@matter/main/behaviors/thermostat";
@@ -41,7 +45,6 @@ import { TemperatureSensorDevice } from "@matter/main/devices/temperature-sensor
 import { ThermostatDevice } from "@matter/main/devices/thermostat";
 import { WindowCoveringDevice } from "@matter/main/devices/window-covering";
 import { AggregatorEndpoint } from "@matter/main/endpoints/aggregator";
-import { BridgedNodeEndpoint } from "@matter/main/endpoints/bridged-node";
 import { DoorLock, OccupancySensing, Thermostat, WindowCovering } from "@matter/main/clusters";
 import { DeviceCommissioner } from "@matter/main/protocol";
 import { createInterface } from "node:readline";
@@ -63,9 +66,7 @@ function send(message) {
 }
 
 const devices = new Map(); // id -> {type, name, parts, endpoint, state, pending, timer}
-// Matter endpoint -> id of the FHEM device (endpoints of parts have own ids)
-const deviceIds = new WeakMap();
-const deviceId = endpoint => deviceIds.get(endpoint) ?? endpoint.id;
+const deviceId = endpoint => endpoint.id;
 
 function emitCommand(id, command) {
     const device = devices.get(id);
@@ -114,6 +115,9 @@ class FhemWindowCoveringServer extends WindowCoveringServer.with(
 
 const FhemThermostatServer = ThermostatServer.with(Thermostat.Feature.Heating);
 
+const FhemOccupancySensingServer = OccupancySensingServer.with(OccupancySensing.Feature.PassiveInfrared);
+
+// sensor: cluster added to the endpoint of another device type for parts
 const TYPES = {
     switch: { device: OnOffPlugInUnitDevice },
     outlet: { device: OnOffPlugInUnitDevice },
@@ -122,14 +126,13 @@ const TYPES = {
     blind: { device: WindowCoveringDevice.with(FhemWindowCoveringServer) },
     thermostat: { device: ThermostatDevice.with(FhemThermostatServer) },
     lock: { device: DoorLockDevice },
-    contact: { device: ContactSensorDevice },
+    contact: { device: ContactSensorDevice, sensor: BooleanStateServer },
     motion: {
-        device: OccupancySensorDevice.with(
-            OccupancySensingServer.with(OccupancySensing.Feature.PassiveInfrared),
-        ),
+        device: OccupancySensorDevice.with(FhemOccupancySensingServer),
+        sensor: FhemOccupancySensingServer,
     },
-    temperature: { device: TemperatureSensorDevice },
-    humidity: { device: HumiditySensorDevice },
+    temperature: { device: TemperatureSensorDevice, sensor: TemperatureMeasurementServer },
+    humidity: { device: HumiditySensorDevice, sensor: RelativeHumidityMeasurementServer },
 };
 
 function initialState(type) {
@@ -281,8 +284,13 @@ function basicInformation(id, name) {
     };
 }
 
-function deviceEndpoint(type, options) {
-    return new Endpoint(TYPES[type].device, options);
+// all device types of the endpoint, controllers like Apple Home use them to
+// show the sensors of the parts
+function deviceTypeList(types) {
+    return types.map(type => ({
+        deviceType: TYPES[type].device.deviceType,
+        revision: TYPES[type].device.deviceRevision,
+    }));
 }
 
 function typeOptions(type, state) {
@@ -290,46 +298,25 @@ function typeOptions(type, state) {
 }
 
 async function addDevice({ id, type, name, state, parts }) {
-    if (TYPES[type] === undefined || (parts ?? []).some(part => TYPES[part] === undefined)) {
-        send({ event: "error", id, message: `unknown type ${[type, ...(parts ?? [])].join(", ")}` });
+    parts = parts ?? [];
+    if (TYPES[type] === undefined || parts.some(part => TYPES[part]?.sensor === undefined)) {
+        send({ event: "error", id, message: `unknown type ${[type, ...parts].join(", ")}` });
         return;
     }
-    let endpoint;
-    let main;
-    const partEndpoints = new Map();
-    if (!parts?.length) {
-        endpoint = main = new Endpoint(TYPES[type].device.with(BridgedDeviceBasicInformationServer), {
-            id,
-            bridgedDeviceBasicInformation: basicInformation(id, name),
-            ...typeOptions(type, state),
-        });
-    } else {
-        // one bridged device with an endpoint per function, the apps show
-        // it as one device like in FHEM
-        for (const part of [type, ...parts]) {
-            const partEndpoint = deviceEndpoint(part, { id: part, ...typeOptions(part, state) });
-            deviceIds.set(partEndpoint, id);
-            partEndpoints.set(part, partEndpoint);
-        }
-        main = partEndpoints.get(type);
-        endpoint = new Endpoint(BridgedNodeEndpoint, {
-            id,
-            bridgedDeviceBasicInformation: basicInformation(id, name),
-            parts: [...partEndpoints.values()],
-        });
-    }
-    deviceIds.set(endpoint, id);
+    // one endpoint with the clusters of all parts: an endpoint per sensor
+    // (below a bridged node) is shown as separate devices by the apps
+    const types = [type, ...parts];
+    let options = { id, bridgedDeviceBasicInformation: basicInformation(id, name) };
+    for (const part of types) options = mergeState(options, typeOptions(part, state));
+    if (parts.length) options.descriptor = { deviceTypeList: deviceTypeList(types) };
+    const endpointType = TYPES[type].device.with(
+        BridgedDeviceBasicInformationServer,
+        ...parts.map(part => TYPES[part].sensor),
+    );
+    const endpoint = new Endpoint(endpointType, options);
     await aggregator.add(endpoint);
-    devices.set(id, {
-        type,
-        name,
-        parts: parts ?? [],
-        endpoint,
-        partEndpoints,
-        state: { ...state },
-        pending: {},
-    });
-    listen(id, type, main);
+    devices.set(id, { type, name, parts, endpoint, state: { ...state }, pending: {} });
+    listen(id, type, endpoint);
 }
 
 function mergeState(a, b) {
@@ -373,14 +360,8 @@ async function setState(id, state) {
     const device = devices.get(id);
     if (device === undefined) return;
     Object.assign(device.state, state);
-    if (device.partEndpoints.size) {
-        for (const [part, endpoint] of device.partEndpoints) {
-            const values = matterState(part, state);
-            if (Object.keys(values).length) await endpoint.set(values);
-        }
-        return;
-    }
-    const values = matterState(device.type, state);
+    let values = {};
+    for (const type of [device.type, ...device.parts]) values = mergeState(values, matterState(type, state));
     if (Object.keys(values).length) await device.endpoint.set(values);
 }
 
