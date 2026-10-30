@@ -263,6 +263,13 @@ def test_device_activity_mixed_state():
     assert control["name"] == "door control 1" and control["what"] == "Open"
     assert control["current"]["text"] == "open"
     assert story.value_text("door_control_1", "close") == "closed"
+    # a doorbell only rings
+    rows = [
+        (at(0), "bell", "state", "ring", "security"),
+        (at(60), "bell", "state", "ring", "security"),
+    ]
+    (bell,) = story.build_activity(rows, INFOS, at(100))
+    assert bell["count"] == 2 and [s[1] for s in bell["segments"]] == [None, None]
     assert control["segments"][0][:2] == [at(0), at(100)]
     assert control["segments"][1][:2] == [at(200), None]
 

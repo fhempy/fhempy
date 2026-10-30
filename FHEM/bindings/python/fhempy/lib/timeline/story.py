@@ -528,37 +528,42 @@ def _activity_item(info, reading, value, category):
 def _kind_activity(info, reading, kind, events, now):
     """events of one reading -> how often and how long it was e.g. open"""
     active, inactive = ACTIVITY_KINDS[kind]
-    item = None
+    first = next((e for e in events if e[1].lower() in active), None)
+    if first is None:
+        return None
+    item = _activity_item(info, reading, first[1], first[2])
+    if not inactive:
+        return _rings(item, reading, active, events)
     start = last = None
-    for ts, value, category in events:
+    for ts, value, _ in events:
         lower = value.lower()
         if lower in active:
-            if item is None:
-                item = _activity_item(info, reading, value, category)
-            if not inactive:
-                # a doorbell rings, it isn't ringing for a while
-                item["segments"].append([ts, None, item["what"]])
-                item["count"] += 1
-                item["current"] = {"text": value_text(reading, value), "since": ts}
-                continue
             if start is None:
                 start = ts
                 item["count"] += 1
             last = ts
             item["current"] = {"text": value_text(reading, value), "since": start}
-        elif lower in inactive and item is not None:
+        elif lower in inactive and last is not None:
             if start is not None:
                 _add_segment(item, start, ts)
                 start = None
             item["current"] = {"text": value_text(reading, value), "since": ts}
             last = ts
-    if item is None:
-        return None
     if start is not None:
         # still open, unless the closing event got lost a day ago
         _add_segment(item, start, now if now - last <= 86400 else last)
     item["total"] = round(item["total"])
     item["longest"] = round(item["longest"])
+    return item
+
+
+def _rings(item, reading, active, events):
+    """a doorbell rings, it isn't ringing for a while"""
+    for ts, value, _ in events:
+        if value.lower() in active:
+            item["segments"].append([ts, None, item["what"]])
+            item["count"] += 1
+            item["current"] = {"text": value_text(reading, value), "since": ts}
     return item
 
 
