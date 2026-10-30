@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v2.13.3 (2026-10-30)
+
+### Bug Fixes
+
+- **timeline**: Charts fill the width on phones ([#830](https://github.com/fhempy/fhempy/pull/830),
+  [`f68957d`](https://github.com/fhempy/fhempy/commit/f68957d1dd169b8b0794023092ca09be2d48b35f))
+
+### Performance Improvements
+
+- **timeline**: Draw days and curves only when they come into view
+  ([#831](https://github.com/fhempy/fhempy/pull/831),
+  [`a8d9456`](https://github.com/fhempy/fhempy/commit/a8d945670473fbe1a930fe7bdb85bb72523b99ab))
+
+
 ## v2.13.2 (2026-10-29)
 
 ### Bug Fixes
