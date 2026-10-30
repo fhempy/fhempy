@@ -35,6 +35,8 @@ HOURLY_COLUMNS = (
     "hour, device, reading, category, min, max, sum, n, COALESCE(last, sum / n)"
 )
 CARRY_DAYS = 31
+# layers of events, see classify
+LAYERS = ("story", "trend", "tech")
 
 
 def day_of(ts):
@@ -126,21 +128,50 @@ class Store:
                 (device, int(start), int(end)),
             ).fetchall()
 
-    def values_before(self, start, device=None):
+    def values_before(self, start, devices=None):
         """last hourly row of each reading in the 31 days before start: the
-        value a reading still had at start if FHEM only sends changes"""
-        where = "hour < ? AND hour >= ?"
-        args = [int(start), int(start) - CARRY_DAYS * 86400]
-        if device is not None:
-            where += " AND device = ?"
-            args.append(device)
+        value a reading still had at start if FHEM only sends changes.
+        devices: name or names of the devices, None for all"""
+        if devices is None:
+            with self._lock:
+                rows = self._db.execute(
+                    f"SELECT {HOURLY_COLUMNS}, MAX(hour) FROM hourly"
+                    " WHERE hour < ? AND hour >= ? GROUP BY device, reading",
+                    (int(start), int(start) - CARRY_DAYS * 86400),
+                ).fetchall()
+            return [row[:-1] for row in rows]
+        if isinstance(devices, str):
+            devices = [devices]
+        result = []
         with self._lock:
-            rows = self._db.execute(
-                f"SELECT {HOURLY_COLUMNS}, MAX(hour) FROM hourly WHERE {where}"
-                " GROUP BY device, reading",
-                args,
-            ).fetchall()
-        return [row[:-1] for row in rows]
+            db = self._db
+            for device in sorted(devices):
+                # readings one after the other along the primary key: a few
+                # lookups per reading instead of reading 31 days of all
+                reading = ""
+                while True:
+                    row = db.execute(
+                        "SELECT reading FROM hourly WHERE device = ? AND reading > ?"
+                        " ORDER BY reading LIMIT 1",
+                        (device, reading),
+                    ).fetchone()
+                    if row is None:
+                        break
+                    reading = row[0]
+                    last = db.execute(
+                        f"SELECT {HOURLY_COLUMNS} FROM hourly WHERE device = ?"
+                        " AND reading = ? AND hour < ? AND hour >= ?"
+                        " ORDER BY hour DESC LIMIT 1",
+                        (
+                            device,
+                            reading,
+                            int(start),
+                            int(start) - CARRY_DAYS * 86400,
+                        ),
+                    ).fetchone()
+                    if last is not None:
+                        result.append(last)
+        return result
 
     def prune(self, skip):
         """delete events and hourly values matching the regexp skip of
@@ -257,9 +288,16 @@ class Store:
             self._db.commit()
 
     def first_ts(self):
+        # per layer along the index instead of reading all events
         with self._lock:
-            row = self._db.execute("SELECT MIN(ts) FROM events").fetchone()
-            return row[0] if row else None
+            values = [
+                self._db.execute(
+                    "SELECT MIN(ts) FROM events WHERE layer = ?", (layer,)
+                ).fetchone()[0]
+                for layer in LAYERS
+            ]
+        values = [v for v in values if v is not None]
+        return min(values) if values else None
 
     def cleanup(self, details_days, story_days):
         now = time.time()

@@ -343,6 +343,22 @@ def test_store(tmp_path):
     # the value a reading still has after its last event
     assert store.values_before(hour + 7200) == store.hourly(hour, hour + 1)
     assert store.values_before(hour + 7200, "door") == []
+    # looked up per device and reading: the same rows as for all devices
+    store.add(
+        [],
+        {
+            (hour - 3600, "hall", "humidity"): ["climate", 50.0, 50.0, 50.0, 1, 50.0],
+            (hour - 7200, "hall", "humidity"): ["climate", 40.0, 40.0, 40.0, 1, 40.0],
+            (hour - 10800, "cellar", "temperature"): ["climate", 9.0, 9.0, 9.0, 1, 9.0],
+        },
+        {},
+    )
+    assert sorted(store.values_before(hour + 7200, {"hall", "cellar"})) == sorted(
+        store.values_before(hour + 7200)
+    )
+    assert [row[2] for row in store.values_before(hour, {"hall"})] == ["humidity"]
+    assert store.values_before(hour - 7200, {"hall"}) == []
+    assert store.first_ts() == now - 30 * 86400
     assert store.hidden(day_of(now), day_of(now)) == {day_of(now): 5}
     store.absence_changed(now - 100_000, True)
     store.absence_changed(now - 100_000 + 50, True)
@@ -424,8 +440,13 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     assert len(module.store.absences(now - 100, now)) == 1
     # temperature, action and the 7 events FHEM only counted
     assert today["hidden"] == 9
-    assert today["trends"][0]["text"] == "Hallway: temperature"
-    assert today["trends"][0]["label"] == "Hallway"
+    # the curves are loaded separately per day
+    assert "trends" not in today
+    curves = json.loads(await module.Get(hash, ["tl", "trends", data["today"]], {}))
+    assert curves["day"] == data["today"]
+    assert curves["trends"][0]["text"] == "Hallway: temperature"
+    assert curves["trends"][0]["label"] == "Hallway"
+    assert "error" in json.loads(await module.Get(hash, ["tl", "trends", "x"], {}))
 
     details = json.loads(await module.Get(hash, ["tl", "details", data["today"]], {}))
     assert [d["text"] for d in details] == [
@@ -513,13 +534,16 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     assert curve["target"]["points"][-1][1] == 21
 
     # events only on change, curves which changed
-    trend = data["days"][0]["trends"][0]
+    trend = json.loads(await module.Get(hash, ["tl", "trends", data["today"]], {}))[
+        "trends"
+    ][0]
     assert trend["changed"] is False and trend["on_change"] is False
     mock_fhem.attributes["hall"] = {"event-on-change-reading": "battery"}
     assert await module.Set(hash, ["tl", "on_change", "hall:temperature"], {}) is None
     assert "hall event-on-change-reading battery,temperature" in mock_fhem.command_attr
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
-    assert data["days"][0]["trends"][0]["on_change"] is True
+    curves = json.loads(await module.Get(hash, ["tl", "trends", data["today"]], {}))
+    assert curves["trends"][0]["on_change"] is True
     assert data["days"][0]["entries"][0]["on_change"] is False
     assert await module.Set(hash, ["tl", "on_change", "hall:action"], {}) is None
     data = json.loads(await module.Get(hash, ["tl", "entries"], {}))
