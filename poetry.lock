@@ -7008,19 +7008,19 @@ files = [
 
 [[package]]
 name = "volvocarsapi"
-version = "0.4.4"
+version = "0.4.5"
 description = "Python client for the Volvo Cars API."
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "volvocarsapi-0.4.4-py3-none-any.whl", hash = "sha256:f1eb97ee3728d4d811dc592e4625d588768622c68c8629706239a12c141044b9"},
-    {file = "volvocarsapi-0.4.4.tar.gz", hash = "sha256:bcd6341cf68d2f82fe669e2106d81129c329a222ce9b84663414cc7130cc08de"},
+    {file = "volvocarsapi-0.4.5-py3-none-any.whl", hash = "sha256:439f6727878df514bdfaa1302e39f456ba951875ee47fda81b7c3c5dc94d39d3"},
+    {file = "volvocarsapi-0.4.5.tar.gz", hash = "sha256:f8fbb734aa031520702a1ee7d9c8029741874cc30697d61701e3415fc4c7c1ab"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.11.16"
-yarl = ">=1.18.3"
+aiohttp = ">=3.14.4"
+yarl = ">=1.25.1"
 
 [[package]]
 name = "warema-wms-controller"
@@ -7861,4 +7861,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "2dd22fb24580f28ec20176131408e3ec62eaadf54c9a0728a52079201c852c96"
+content-hash = "2fce647bcdbed417b9face95eafd0b2a8cc0db4d95f4941e78d74c5af8f87f57"
