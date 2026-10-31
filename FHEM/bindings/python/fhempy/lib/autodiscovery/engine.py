@@ -383,6 +383,7 @@ class Engine:
         logo="",
         check=None,
         recreate=None,
+        details=None,
     ):
         """Devices found by other parts, e.g. MQTT discovery (mqtt.py).
         create: coroutine function called on a click on Create, returns an
@@ -410,6 +411,9 @@ class Engine:
         }
         if check is not None:
             candidate["check"] = check
+        if details is not None:
+            # function: what the device can do and its current values
+            candidate["details"] = details
         if recreate is not None:
             candidate["recreate"] = recreate
             candidate["can_recreate"] = True

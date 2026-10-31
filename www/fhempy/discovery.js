@@ -10,6 +10,9 @@
  * fhempyDiscovery.tag(dev): adds a Bluetooth tag held next to the Raspberry Pi
  *
  * The device is created with set <dev> create <id> [name=...] [p0=...].
+ * MQTT devices show what they can do and their current values (details of
+ * the candidate): up to 4 chips on the tile, all values below "Details",
+ * refreshed every 10 seconds while the dialog is open.
  * The list has a search, devices in FHEM and ignored devices are collapsed
  * below the new ones. Devices deleted in FHEM are new again.
  */
@@ -78,9 +81,117 @@
       ".fhempyDiscovery .fdChoice{display:flex;gap:8px;align-items:center;padding:7px 9px;border:1px solid rgba(128,128,128,0.35);border-radius:10px;margin:6px 0;cursor:pointer}" +
       ".fhempyDiscovery .fdChoice input{margin:0}" +
       ".fhempyDiscovery .fdStep{font-weight:600;font-size:15px;margin:4px 0 8px}" +
+      ".fhempyDiscovery .fdTile.fdWide{grid-column:1/-1}" +
+      ".fhempyDiscovery .fdTop{display:flex;align-items:baseline;gap:8px}" +
+      ".fhempyDiscovery .fdTop .fdTitle{flex:1;min-width:0;white-space:nowrap}" +
+      ".fhempyDiscovery .fdHealth{flex:none;font-size:11.5px;opacity:0.65;display:inline-flex;gap:8px;white-space:nowrap}" +
+      ".fhempyDiscovery svg.fdIc{width:13px;height:13px;vertical-align:-2px;margin-right:2px;flex:none}" +
+      ".fhempyDiscovery .fdChips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}" +
+      ".fhempyDiscovery .fdChip{display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:2px 8px 2px 6px;border-radius:10px;background:rgba(75,139,190,0.13);white-space:nowrap}" +
+      ".fhempyDiscovery .fdChip svg.fdIc{color:#4B8BBE}" +
+      ".fhempyDiscovery .fdChip.fdMoreChip{background:none;border:1px dashed rgba(128,128,128,0.5);padding:1px 7px;opacity:0.75}" +
+      ".fhempyDiscovery .fdToggle{font-size:12.5px;color:#4B8BBE;margin-left:auto;cursor:pointer;white-space:nowrap}" +
+      ".fhempyDiscovery .fdDet{margin-top:10px;border-top:1px solid rgba(128,128,128,0.25);padding-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 18px}" +
+      ".fhempyDiscovery .fdGrp h4{margin:0 0 5px;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;opacity:0.55}" +
+      ".fhempyDiscovery .fdRow{display:flex;gap:7px;align-items:baseline;font-size:13px;padding:2px 0}" +
+      ".fhempyDiscovery .fdRow svg.fdIc{width:14px;height:14px;color:#4B8BBE;align-self:center}" +
+      ".fhempyDiscovery .fdRow .fdK{flex:1;min-width:0}" +
+      ".fhempyDiscovery .fdRow .fdV{font-weight:600;white-space:nowrap}" +
+      ".fhempyDiscovery .fdRow .fdR{font-size:11.5px;opacity:0.6;text-align:right}" +
+      ".fhempyDiscovery .fdSmall{font-size:12px;opacity:0.75}" +
+      ".fhempyDiscovery .fdFhem{grid-column:1/-1;background:rgba(63,163,77,0.1);border-radius:8px;padding:7px 10px;font-size:12.5px}" +
+      ".fhempyDiscovery .fdFhem b{color:#3fa34d}" +
       "@keyframes fdSpin{to{transform:rotate(360deg)}}" +
       ".fhempyDiscovery .fdSpin{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid #4B8BBE;border-top-color:transparent;animation:fdSpin 1s linear infinite;vertical-align:-2px;margin-right:6px}" +
       "</style>");
+  }
+
+  /* --- what a MQTT device can do (details) --- */
+
+  var ICONS = {
+    power: '<path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    ctemp: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>',
+    palette: '<path d="M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-2a2 2 0 0 0-1.4 3.4A1.7 1.7 0 0 1 12 22z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7" r="1"/><circle cx="16" cy="8.5" r="1"/>',
+    spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+    therm: '<path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z"/>',
+    drop: '<path d="M12 2.7l5.7 5.6a8 8 0 1 1-11.4 0z"/>',
+    gauge: '<path d="M12 14l4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/>',
+    batt: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M5 10v4M8 10v4M11 10v4"/>',
+    plug: '<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+    sig: '<path d="M4 20v-3M9 20v-7M14 20v-11M19 20V4"/>',
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    walk: '<circle cx="13" cy="4" r="2"/><path d="M8 22l3-7 3 3v4M7 12l3-4 4 1 3 4M11 15l-1-5"/>',
+    door: '<path d="M5 22V3h11v19M3 22h18M13 12h.01"/>',
+    alarm: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+    air: '<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    cover: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M4 8h16M4 12h16M4 16h16"/>',
+    fan: '<circle cx="12" cy="12" r="2"/><path d="M12 10c-1-4 0-7 3-7 2 0 2 3-3 7zM14 12c4-1 7 0 7 3 0 2-3 2-7-3zM12 14c1 4 0 7-3 7-2 0-2-3 3-7zM10 12c-4 1-7 0-7-3 0-2 3-2 7 3z"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    push: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    slider: '<path d="M4 12h16"/><circle cx="14" cy="12" r="3"/>',
+    dot: '<circle cx="12" cy="12" r="3"/>'
+  };
+
+  function icon(name) {
+    return '<svg class="fdIc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      (ICONS[name] || ICONS.dot) + "</svg>";
+  }
+
+  /* battery or mains and signal next to the title */
+  function health(x) {
+    if (!x) return "";
+    var h = (x.battery ? "<span>" + icon("batt") + esc(x.battery) + "</span>" : "") +
+      (x.power ? "<span>" + icon("plug") + esc(x.power) + "</span>" : "") +
+      (x.signal ? '<span title="Signal">' + icon("sig") + esc(x.signal) + "</span>" : "");
+    return h ? '<span class="fdHealth">' + h + "</span>" : "";
+  }
+
+  function chips(x) {
+    if (!x || !(x.chips || []).length) return "";
+    return '<div class="fdChips">' + x.chips.map(function (c) {
+      /* the value if known, otherwise what it can do */
+      var text = !c.value ? esc(c.label) : (c.icon == "power" ? esc(c.value) : '<b style="font-weight:600">' + esc(c.value) + "</b>");
+      return '<span class="fdChip" title="' + esc(c.label + (c.range ? " (" + c.range + ")" : "")) + '">' + icon(c.icon) + text + "</span>";
+    }).join("") + (x.more ? '<span class="fdChip fdMoreChip">+' + x.more + "</span>" : "") + "</div>";
+  }
+
+  function ago(t) {
+    var s = Math.max(0, Math.round(Date.now() / 1000 - t));
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.round(s / 60) + " min ago";
+    return Math.round(s / 3600) + " h ago";
+  }
+
+  function detailsHtml(x) {
+    var html = (x.groups || []).map(function (g) {
+      return '<div class="fdGrp"><h4>' + esc(g.title) + "</h4>" + g.items.map(function (i) {
+        return '<div class="fdRow">' + icon(i.icon) + '<span class="fdK">' + esc(i.label) + "</span>" +
+          (i.range ? '<span class="fdR">' + esc(i.range) + "</span>" : "") +
+          (i.value ? '<span class="fdV">' + esc(i.value) + "</span>" : "") + "</div>";
+      }).join("") + (g.title == "Status" && x.last_message ?
+        '<div class="fdRow">' + icon("clock") + '<span class="fdK">Last message</span><span class="fdV">' + ago(x.last_message) + "</span></div>" : "") +
+        "</div>";
+    }).join("");
+    var dv = x.device || {};
+    /* the description is in the model line already */
+    var lines = [[dv.manufacturer, dv.model].filter(Boolean).join(" · "),
+      [dv.via ? "via " + dv.via : "", dv.firmware ? "Firmware " + dv.firmware : ""].filter(Boolean).join(" · ")].filter(Boolean);
+    if (lines.length) html += '<div class="fdGrp"><h4>Device</h4><div class="fdSmall">' + lines.map(esc).join("<br>") + "</div></div>";
+    var cmds = x.commands || [];
+    html += '<div class="fdFhem"><b>In FHEM:</b> MQTT2_DEVICE ' + (cmds.length ? "with the commands " + esc(cmds.join(", ")) :
+      "that only reports values, no commands") + ". Values appear as readings as soon as the device sends them.</div>";
+    return '<div class="fdDet">' + html + "</div>";
+  }
+
+  /* model line: manufacturer and description of Zigbee2MQTT if known */
+  function infoLine(d) {
+    var dv = (d.details || {}).device || {};
+    if (dv.description) return [dv.manufacturer, dv.description].filter(Boolean).join(" ");
+    var info = [d.kind, d.model, d.ip].filter(function (x) { return x && x != d.title; });
+    return info.join(" · ");
   }
 
   function logo(d) {
@@ -116,10 +227,11 @@
 
   function tile(d, i) {
     var st = state[d.id] || {};
-    var info = [d.kind, d.model, d.ip].filter(function (x) { return x && x != d.title; });
-    var html = '<div class="fdTile' + (d.status == "ignored" ? " fdOff" : "") + '" data-i="' + i + '">' +
-      logo(d) + '<div style="min-width:0;flex:1"><div class="fdTitle">' + esc(d.title) + "</div>" +
-      '<div class="fdInfo">' + esc(info.join(" · ")) + "</div>";
+    /* current values only for devices which aren't in FHEM yet */
+    var x = d.status == "new" && !st.created && d.details && (d.details.groups || []).length ? d.details : null;
+    var html = '<div class="fdTile' + (d.status == "ignored" ? " fdOff" : "") + (x && st.open ? " fdWide" : "") + '" data-i="' + i + '">' +
+      logo(d) + '<div style="min-width:0;flex:1"><div class="fdTop"><span class="fdTitle">' + esc(d.title) + "</span>" + health(x) + "</div>" +
+      '<div class="fdInfo">' + esc(infoLine(d)) + "</div>" + chips(x) + (x && st.open ? detailsHtml(x) : "");
     if (!st.created && (d.status == "exists" || d.status == "created")) {
       /* in FHEM already: link to the device, MQTT devices can be set up again */
       html += '<div class="fdDone">✓ ' + (st.recreated ? "set up again" : "in FHEM") + (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
@@ -132,7 +244,7 @@
       return html + "</div></div>";
     }
     html += (d.deleted && !st.created ? '<div class="fdHint">Deleted in FHEM, Create sets it up again.</div>' : "") +
-      (d.hint ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
+      (d.hint && !x ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
     if (st.created) {
       /* a click on the link opens the new device */
       var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
@@ -153,14 +265,17 @@
     var label = d.action == "installer" ? "Set up..." : "Create";
     html += '<div class="fdBtns"><span class="fdBtn fdCreate">' +
       (st.busy ? '<span class="fdSpin" style="border-color:#fff;border-top-color:transparent"></span>' : "") + label +
-      '</span><span class="fdBtn fdGrey fdIgnore">Ignore</span></div>' +
+      '</span><span class="fdBtn fdGrey fdIgnore">Ignore</span>' +
+      (x ? '<span class="fdToggle">' + (st.open ? "Less ▴" : "Details ▾") + "</span>" : "") + "</div>" +
       (st.error ? '<div class="fdErr">' + esc(st.error) + "</div>" : "");
     return html + "</div></div>";
   }
 
   /* the device contains all words of the search */
   function matches(d) {
-    var text = [d.title, d.kind, d.model, d.ip, d.module, d.device].join(" ").toLowerCase();
+    var x = d.details || {}, dv = x.device || {};
+    var can = (x.groups || []).map(function (g) { return g.items.map(function (i) { return i.label; }).join(" "); });
+    var text = [d.title, d.kind, d.model, d.ip, d.module, d.device, dv.manufacturer, dv.description, dv.via].concat(can).join(" ").toLowerCase();
     return filter.toLowerCase().split(/\s+/).every(function (w) { return text.indexOf(w) >= 0; });
   }
 
@@ -213,6 +328,12 @@
     var html = count["new"] ? '<div class="fdList">' + groups["new"] + "</div>" :
       '<div class="fdEmpty">' + (filter ? "No device matches the search." : (empty || "No new devices found yet.")) + "</div>";
     results.html(html + more("fhem", "Already in FHEM") + more("ignored", "Ignored"));
+    results.find(".fdToggle").click(function () {
+      var d = devices[$(this).closest(".fdTile").data("i")];
+      var st = state[d.id] = state[d.id] || {};
+      st.open = !st.open;
+      render(container, empty);
+    });
     results.find(".fdCreate").click(function () { create(container, devices[$(this).closest(".fdTile").data("i")]); });
     results.find(".fdRecreate").click(function () { recreate(container, devices[$(this).closest(".fdTile").data("i")], empty); });
     results.find(".fdRecreateAll").click(function () {
@@ -311,6 +432,28 @@
     });
   }
 
+  /* current values of the MQTT devices while the dialog is open; the tiles
+     are rendered again only if nothing is typed into them */
+  function refreshDetails(d, container, empty) {
+    setTimeout(function () {
+      if (!document.body.contains(container[0])) return;
+      cmd("get " + dev + " candidates", function (r) {
+        var fresh;
+        try { fresh = JSON.parse(r || "[]"); } catch (e) { fresh = []; }
+        var byId = {}, changed = false;
+        fresh.forEach(function (f) { byId[f.id] = f; });
+        devices.forEach(function (x) {
+          var f = byId[x.id];
+          if (f && JSON.stringify(f.details) != JSON.stringify(x.details)) { x.details = f.details; changed = true; }
+        });
+        var typing = container.find(".fdParam").filter(function () { return $(this).val(); }).length ||
+          container.find(".fdSearch").is(":focus");
+        if (changed && !typing) render(container, empty);
+        refreshDetails(d, container, empty);
+      });
+    }, 10000);
+  }
+
   function showDevices(title, empty) {
     filter = "";
     var d = dialog("fhempyDiscoveryList", title);
@@ -318,6 +461,7 @@
     d.html('<div class="fdIntro">These devices were found in your network and via Bluetooth. ' +
       'A click on Create sets them up in FHEM.</div>').append(container);
     render(container, empty);
+    refreshDetails(d, container, empty);
     var list = [{ text: "Later", click: function () { $(this).dialog("close"); } }];
     var simple = devices.filter(function (x) { return x.status == "new" && !(x.params || []).length && x.action == "define"; });
     if (simple.length > 1) list.unshift({ text: "Create all", click: function () { createAll(container); } });
