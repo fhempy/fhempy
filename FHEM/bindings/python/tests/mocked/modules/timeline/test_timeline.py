@@ -179,6 +179,31 @@ def test_story_repeated_states():
     assert entries[1]["count"] == 1 and entries[2]["count"] == 1
 
 
+def test_story_off_again_is_no_change():
+    # off, a hidden or ignored "initializing" after a reconnect, off again
+    entries = build(
+        [
+            (0, "light1", "state", "Off", "light"),
+            (300, "light1", "state", "Off", "light"),
+            (4000, "light1", "state", "Off", "light"),
+            (90_000, "light1", "state", "off", "light"),
+        ],
+        now=at(100_000),
+    )
+    assert [(e["value"], e["count"], e["end"]) for e in entries] == [
+        ("Off", 1, None)
+    ]
+    # a button pressed twice still is pressed twice
+    entries = build(
+        [
+            (0, "hall", "action", "single", "devices"),
+            (4000, "hall", "action", "single", "devices"),
+        ],
+        now=at(5000),
+    )
+    assert len(entries) == 2
+
+
 def test_thermostat_story():
     entries = build(
         [

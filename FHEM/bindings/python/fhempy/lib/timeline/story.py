@@ -199,10 +199,16 @@ def _is_alert(entry, infos, absences, now):
 
 def _repeats_state(previous, ts, value):
     """True if the event only repeats what the previous entry already says:
-    the same number, on while still on, off while already off"""
+    the same number, on while still on, off while already off (also when the
+    previous entry is the off itself)"""
     lower = value.lower()
-    if lower == previous["value"].lower() and classify.number(value) is not None:
+    same = lower == previous["value"].lower()
+    if same and classify.number(value) is not None:
         # the same target temperature again is no decision
+        return True
+    if same and lower in INACTIVE_VALUES:
+        # off again, e.g. after a hidden or ignored "initializing" on
+        # reconnect: nothing changed
         return True
     if previous["value"].lower() not in ACTIVE_VALUES:
         return False
