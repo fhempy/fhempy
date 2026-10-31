@@ -13,6 +13,7 @@ import ifaddr
 
 from .. import fhem, utils
 from ..core import mqtt_ha
+from . import details as details_module
 
 MDNS_TYPE = "_mqtt._tcp.local."
 LOCAL_HOST = "127.0.0.1"
@@ -22,6 +23,12 @@ RECONNECT_DELAY = 60
 # devices republish their discovery messages when Home Assistant starts
 BIRTH_TOPIC = "homeassistant/status"
 LOGO = "mqtt_ha_discovery.png"
+# Zigbee2MQTT publishes its devices (description, power source) retained here
+BRIDGE_DEVICES_TOPIC = "+/bridge/devices"
+# new devices offered within this time share one request for their states
+STATES_DELAY = 5
+# candidate status of a device not in FHEM (engine.STATUS_NEW)
+STATUS_NEW = "new"
 
 
 def local_addresses():
@@ -58,6 +65,12 @@ class MqttDiscovery:
         self._clients = {}
         # device_id -> name, fhem_name, entities, broker, created/exists
         self.devices = {}
+        # state topic -> device_ids of offered devices (current values)
+        self._topics = {}
+        # ieee address -> Zigbee2MQTT description and power source
+        self.bridge = {}
+        self._states_task = None
+        self._watch_tasks = set()
         self.mode = "auto"
         self.username = ""
         self.password = ""
@@ -101,6 +114,10 @@ class MqttDiscovery:
             task.cancel()
         self._brokers = {}
         self._clients = {}
+        self._topics = {}
+        if self._states_task is not None:
+            self._states_task.cancel()
+            self._states_task = None
 
     async def _local_loop(self):
         """A broker on this computer, e.g. Mosquitto or MQTT2_SERVER"""
@@ -162,9 +179,13 @@ class MqttDiscovery:
                 ) as client:
                     async with client.messages() as messages:
                         await client.subscribe(mqtt_ha.DISCOVERY_TOPIC)
+                        await client.subscribe(BRIDGE_DEVICES_TOPIC)
                         # ESPHome, Zigbee2MQTT... send their discovery again
                         await client.publish(BIRTH_TOPIC, "online")
                         self._clients[key] = client
+                        # after a reconnect: values of the offered devices
+                        for topic in self._topics:
+                            await client.subscribe(topic)
                         self._errors.success(f"{host}:{port}")
                         async for message in messages:
                             try:
@@ -191,6 +212,15 @@ class MqttDiscovery:
     # --- discovery messages ---
 
     async def handle_message(self, broker, topic, payload):
+        if topic in self._topics:
+            self.handle_state(topic, payload)
+        if topic.endswith("/bridge/devices"):
+            self.bridge.update(details_module.bridge_devices(payload))
+            return
+        if topic.startswith("homeassistant/"):
+            await self._handle_discovery(broker, topic, payload)
+
+    async def _handle_discovery(self, broker, topic, payload):
         try:
             entities = mqtt_ha.parse_discovery(topic, payload)
         except ValueError:
@@ -205,6 +235,8 @@ class MqttDiscovery:
             device = self.devices.get(device_id)
             if device is not None:
                 device["entities"][(component, object_id)] = payload_json
+                if self._watched(device_id):
+                    await self.watch(device_id)
                 if device.get("created"):
                     await mqtt_ha.set_device_attributes(
                         self.engine.hash, device["created"], entity_list(device)
@@ -215,6 +247,7 @@ class MqttDiscovery:
                 "fhem_name": mqtt_ha.fhem_device_name(device_name, device_id),
                 "broker": broker,
                 "entities": {(component, object_id): payload_json},
+                "details": details_module.DeviceDetails(),
             }
             self.devices[device_id] = device
             try:
@@ -242,6 +275,9 @@ class MqttDiscovery:
         async def recreate(name):
             return await self.recreate(device_id, name)
 
+        def details():
+            return self.details(device_id)
+
         await self.engine.report(
             "mqtt",
             device_id,
@@ -250,11 +286,85 @@ class MqttDiscovery:
             create,
             check=check,
             recreate=recreate,
+            details=details,
             model=mqtt_ha.device_model(payload_json),
             hint="Found via Home Assistant MQTT discovery (e.g. ESPHome, "
             "Zigbee2MQTT, Tasmota), creates a MQTT2_DEVICE",
             logo=LOGO,
         )
+        candidate = self.engine.candidates.get(f"mqtt:{device_id}")
+        if candidate is not None and candidate.get("status") == STATUS_NEW:
+            await self.watch(device_id)
+
+    # --- current values of offered devices ---
+
+    def details(self, device_id):
+        """What the device can do and its current values for the tile"""
+        device = self.devices.get(device_id)
+        if device is None:
+            return {}
+        candidate = self.engine.candidates.get(f"mqtt:{device_id}") or {}
+        if candidate.get("status") == STATUS_NEW and not self._watched(device_id):
+            # e.g. deleted in FHEM and offered again
+            task = asyncio.create_task(self.watch(device_id))
+            self._watch_tasks.add(task)
+            task.add_done_callback(self._watch_tasks.discard)
+        bridge = self.bridge.get(details_module.ieee_of(device_id), {})
+        return device["details"].summary(entity_list(device), device_id, bridge)
+
+    def _watched(self, device_id):
+        return any(device_id in ids for ids in self._topics.values())
+
+    async def watch(self, device_id):
+        """Subscribes the state topics of the offered device, its current
+        values are shown before it is created"""
+        device = self.devices[device_id]
+        new = False
+        for topic in device["details"].state_topics(entity_list(device)):
+            if topic not in self._topics:
+                self._topics[topic] = set()
+                new = True
+                client = self._clients.get(tuple(device["broker"]))
+                if client is not None:
+                    try:
+                        await client.subscribe(topic)
+                    except Exception as exc:
+                        self.logger.debug(f"Failed to subscribe {topic}: {exc}")
+            self._topics[topic].add(device_id)
+        if new and self._states_task is None:
+            self._states_task = asyncio.create_task(
+                self._request_states_later(device["broker"])
+            )
+
+    async def unwatch(self, device_id):
+        """The device is in FHEM: no more values for the tile"""
+        for topic, ids in list(self._topics.items()):
+            ids.discard(device_id)
+            if ids:
+                continue
+            del self._topics[topic]
+            for client in self._clients.values():
+                try:
+                    await client.unsubscribe(topic)
+                except Exception as exc:
+                    self.logger.debug(f"Failed to unsubscribe {topic}: {exc}")
+
+    async def _request_states_later(self, broker):
+        """Zigbee2MQTT... send their states after the birth message, one
+        request for all devices found in the meantime"""
+        try:
+            await asyncio.sleep(STATES_DELAY)
+            await self.request_states(broker)
+        finally:
+            self._states_task = None
+
+    def handle_state(self, topic, payload):
+        changed = False
+        for device_id in self._topics.get(topic, ()):
+            device = self.devices.get(device_id)
+            if device is not None and device["details"].message(topic, payload):
+                changed = True
+        return changed
 
     async def create(self, device_id):
         """Defines the MQTT2_DEVICE, returns an error text or ''."""
@@ -270,6 +380,7 @@ class MqttDiscovery:
         if ret:
             return str(ret)
         device["created"] = name
+        await self.unwatch(device_id)
         candidate = self.engine.candidates.get(f"mqtt:{device_id}")
         if candidate is not None:
             candidate["device"] = name

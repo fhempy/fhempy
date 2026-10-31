@@ -1,5 +1,6 @@
 import html
 import json
+import logging
 
 from .. import fhem, generic
 from . import residents
@@ -468,4 +469,21 @@ def public(candidates):
         "deleted",
         "can_recreate",
     )
-    return [{k: c[k] for k in keys if k in c} for c in candidates]
+    result = []
+    for c in candidates:
+        values = {k: c[k] for k in keys if k in c}
+        if callable(c.get("details")):
+            values["details"] = _details(c)
+        result.append(values)
+    return result
+
+
+def _details(candidate):
+    """The device itself is offered even if its details fail"""
+    try:
+        return candidate["details"]()
+    except Exception:
+        logging.getLogger(__name__).exception(
+            f"Failed to get the details of {candidate.get('id')}"
+        )
+        return {}
