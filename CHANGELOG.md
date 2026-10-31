@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.13.8 (2026-10-31)
+
+### Bug Fixes
+
+- **timeline**: Off again is no new entry ([#845](https://github.com/fhempy/fhempy/pull/845),
+  [`706bdb4`](https://github.com/fhempy/fhempy/commit/706bdb4aec21a16d365830ca63b4e2ba6e5393bb))
+
+
 ## v2.13.7 (2026-10-31)
 
 ### Bug Fixes
