@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.13.7 (2026-10-31)
+
+### Bug Fixes
+
+- **matter_bridge**: Devices with extra sensors no longer offline in Google Home
+  ([#841](https://github.com/fhempy/fhempy/pull/841),
+  [`1fa1ff6`](https://github.com/fhempy/fhempy/commit/1fa1ff6a1d2d6a7c8ea0e67f327af9a214fceb18))
+
+### Features
+
+- **autodiscovery**: Show what found MQTT devices can do
+  ([#844](https://github.com/fhempy/fhempy/pull/844),
+  [`80bccd0`](https://github.com/fhempy/fhempy/commit/80bccd0be01bb2758f0c991e5ac36189e0026215))
+
+
 ## v2.13.6 (2026-10-30)
 
 
