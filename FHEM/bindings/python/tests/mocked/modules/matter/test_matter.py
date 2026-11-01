@@ -2,16 +2,21 @@ import asyncio
 import json
 import logging
 import os
+import struct
 
 import aiohttp
 import pytest
 from aiohttp import web
 from tests.utils import mock_fhem
 
-from fhempy.lib.matter import clusters, server
+from fhempy.lib.matter import clusters, server, system_check
 from fhempy.lib.matter.matter import matter
 from fhempy.lib.matter.client import MatterServerError
-from fhempy.lib.matter.controller import matter_controller, pairing_error
+from fhempy.lib.matter.controller import (
+    matter_controller,
+    normalize_code,
+    pairing_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -465,3 +470,208 @@ def test_pairing_error_tells_how_to_pair_test_certificates():
         'To commission it, enable the "Test DCL" option in the settings',
     )
     assert "attr test_dcl 1" in pairing_error(exc)
+
+
+def _write(root, path, text):
+    path = root / path.lstrip("/")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def _caps(*caps, effective=True):
+    bits = 0
+    for cap in caps:
+        bits |= 1 << cap
+    magic = 0x02000000 | (1 if effective else 0)
+    return struct.pack("<IIIII", magic, bits, 0, 0, 0)
+
+
+def test_bluetooth_check_finds_rfkill_adapter_and_node_rights(tmp_path):
+    _write(tmp_path, "/sys/class/rfkill/rfkill0/type", "bluetooth\n")
+    _write(tmp_path, "/sys/class/rfkill/rfkill0/soft", "1\n")
+    _write(tmp_path, "/sys/class/rfkill/rfkill0/hard", "0\n")
+    _write(tmp_path, "/sys/class/rfkill/rfkill1/type", "wlan\n")
+    _write(tmp_path, "/sys/class/rfkill/rfkill1/soft", "1\n")
+    (tmp_path / "sys/class/bluetooth/hci0").mkdir(parents=True)
+
+    problems = system_check.bluetooth_problems(
+        0,
+        "/usr/bin/node",
+        root=str(tmp_path),
+        euid=1000,
+        read_capabilities=lambda p: b"",
+    )
+    assert [p.fix for p in problems] == [
+        "sudo rfkill unblock bluetooth",
+        "sudo setcap cap_net_raw,cap_net_admin+eip "
+        + os.path.realpath("/usr/bin/node"),
+    ]
+
+    # adapter 1 doesn't exist, rights ok, not blocked anymore
+    _write(tmp_path, "/sys/class/rfkill/rfkill0/soft", "0\n")
+    problems = system_check.bluetooth_problems(
+        1,
+        "/usr/bin/node",
+        root=str(tmp_path),
+        euid=1000,
+        read_capabilities=lambda p: _caps(
+            system_check.CAP_NET_RAW, system_check.CAP_NET_ADMIN
+        ),
+    )
+    assert len(problems) == 1
+    assert "hci1 not found" in problems[0].text
+    assert "one of: 0" in problems[0].fix
+
+    # capabilities without the effective flag don't work, root needs none
+    assert system_check.node_capability_problems(
+        "/usr/bin/node",
+        euid=1000,
+        read_capabilities=lambda p: _caps(
+            system_check.CAP_NET_RAW, system_check.CAP_NET_ADMIN, effective=False
+        ),
+    )
+    assert not system_check.node_capability_problems("/usr/bin/node", euid=0)
+    # file system without extended attributes: can't tell, no false alarm
+    assert not system_check.node_capability_problems(
+        "/usr/bin/node", euid=1000, read_capabilities=lambda p: None
+    )
+    # no adapter configured: nothing to check
+    assert system_check.bluetooth_problems(None, "/usr/bin/node") == []
+
+
+IPV6_ROUTE_LAN = (
+    "fe800000000000000000000000000000 40 00000000000000000000000000000000 00 "
+    "00000000000000000000000000000000 00000100 00000001 00000000 00000001 eth0\n"
+)
+IPV6_ROUTE_THREAD = (
+    "fd123456789a00010000000000000000 40 00000000000000000000000000000000 00 "
+    "fe800000000000001234567890abcdef 00000400 00000001 00000000 00000003 eth0\n"
+)
+
+
+def test_thread_route_check(tmp_path):
+    root = str(tmp_path)
+    # IPv6 disabled: the server start already reports that
+    assert system_check.thread_route_problems(root=root) == []
+
+    _write(tmp_path, "/proc/net/route", "Iface\tDestination\nwlan0\t00000000\n")
+    _write(tmp_path, "/proc/net/ipv6_route", IPV6_ROUTE_LAN)
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/wlan0/accept_ra", "1\n")
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/wlan0/forwarding", "0\n")
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen", "0\n")
+    (problem,) = system_check.thread_route_problems(root=root)
+    assert "no route to a Thread network" in problem.text
+    assert "net.ipv6.conf.wlan0.accept_ra_rt_info_max_plen=64" in problem.fix
+    assert "accept_ra=" not in problem.fix
+
+    # Docker etc. enable forwarding, then accept_ra must be 2
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/eth1/forwarding", "1\n")
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/eth1/accept_ra", "1\n")
+    (problem,) = system_check.thread_route_problems("eth1", root=root)
+    assert "net.ipv6.conf.eth1.accept_ra=2" in problem.fix
+
+    # Linux accepts the route, but no border router announces it here
+    _write(tmp_path, "/proc/sys/net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen", "64")
+    (problem,) = system_check.thread_route_problems(root=root)
+    assert "same network segment" in problem.fix
+
+    _write(tmp_path, "/proc/net/ipv6_route", IPV6_ROUTE_LAN + IPV6_ROUTE_THREAD)
+    assert system_check.thread_route_problems(root=root) == []
+
+
+def test_pairing_code_is_normalized():
+    assert normalize_code(' "MT:M7GA1S0.03.B8Z5Z910" ') == "MT:M7GA1S0.03.B8Z5Z910"
+    assert normalize_code("mt:Y.K9042C00KA0648G00") == "MT:Y.K9042C00KA0648G00"
+    assert normalize_code("„3497-011-2332“") == "34970112332"
+    assert normalize_code("3497 011 2332") == "34970112332"
+
+
+@pytest.mark.asyncio
+async def test_failed_pairing_explains_bluetooth_and_thread_route(mocker):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop("testmatter", None)
+    ble = system_check.Problem(
+        "Bluetooth is blocked (rfkill).", "sudo rfkill unblock bluetooth"
+    )
+    route = system_check.Problem("no route to a Thread network.", "sysctl ...")
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[ble])
+    mocker.patch.object(system_check, "thread_route_problems", return_value=[route])
+
+    fhemdev = mocker.Mock(
+        _attr_bluetooth_adapter="0", _attr_primary_interface="", _attr_port=5580
+    )
+    controller = matter_controller(logger, fhemdev)
+    controller.hash = {"NAME": "testmatter"}
+    controller.run_command = mocker.AsyncMock(
+        side_effect=MatterServerError(1, "Commissioning failed")
+    )
+    await controller.commission('"MT:ABC"', network_only=False)
+    readings = mock_fhem.readings["testmatter"]
+    assert readings["bluetooth_check"].startswith("Bluetooth is blocked")
+    assert "rfkill unblock bluetooth" in readings["pairing"]
+    assert "no route to a Thread network" in readings["pairing"]
+    assert controller.run_command.call_args.kwargs["code"] == "MT:ABC"
+
+    # pairing via network: Bluetooth doesn't matter
+    await controller.commission("3497-011-2332", network_only=True)
+    assert "rfkill" not in readings["pairing"]
+    assert "Thread network" in readings["pairing"]
+
+    # next_step tells how to fix Bluetooth
+    await controller.update_nodes_reading()
+    assert readings["state"] == "connected, Bluetooth pairing not possible"
+    assert "sudo rfkill unblock bluetooth" in readings["next_step"]
+
+
+@pytest.mark.asyncio
+async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop("testmatter", None)
+    mock_fhem.command_attr.clear()
+    mocker.patch.object(system_check, "bluetooth_adapters", return_value=[])
+
+    fhemdev = mocker.Mock(
+        _attr_bluetooth_adapter="",
+        _attr_primary_interface="",
+        _attr_port=5580,
+        _attr_test_dcl=0,
+    )
+    controller = matter_controller(logger, fhemdev)
+    controller.hash = {"NAME": "testmatter"}
+    controller.run_command = mocker.AsyncMock(return_value={"node_id": 3})
+    readings = mock_fhem.readings
+
+    # no adapter: clear message, nothing is paired
+    await controller.commission("MT:ABC", network_only=False)
+    assert "no Bluetooth adapter found" in readings["testmatter"]["pairing"]
+    controller.run_command.assert_not_called()
+
+    # adapter found but Node.js lacks rights: attribute set, fix shown
+    mocker.patch.object(system_check, "bluetooth_adapters", return_value=[1, 2])
+    lacking = system_check.Problem("Node.js has no rights.", "sudo setcap ...")
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[lacking])
+    await controller.commission("MT:ABC", network_only=False)
+    assert mock_fhem.command_attr == ["testmatter bluetooth_adapter 1"]
+    assert "sudo setcap" in readings["testmatter"]["pairing"]
+    controller.run_command.assert_not_called()
+
+    # all fine: waits for the restarted server, then pairs
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[])
+    mocker.patch.object(controller, "create_devices_for_node", mocker.AsyncMock())
+
+    async def restarted(hash, attrdef):
+        mock_fhem.command_attr.append(attrdef)
+        fhemdev._attr_bluetooth_adapter = attrdef.split()[-1]
+        controller._started_with = controller.server_settings()
+        controller.client = mocker.Mock(connected=True)
+
+    mocker.patch("fhempy.lib.fhem.CommandAttr", restarted)
+    fhemdev._attr_bluetooth_adapter = ""
+    await controller.commission("MT:ABC", network_only=False)
+    assert readings["testmatter"]["pairing"] == "successful, node 3"
+    assert controller.run_command.call_args.kwargs["network_only"] is False
+
+    # attribute set: no detection anymore
+    detect = mocker.patch.object(system_check, "bluetooth_adapters")
+    await controller.commission("MT:ABC", network_only=False)
+    detect.assert_not_called()
