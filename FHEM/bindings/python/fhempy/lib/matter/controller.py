@@ -671,7 +671,7 @@ class matter_controller:
                 1,
             )
             return False
-        if await self.wait_for_server(BLUETOOTH_RESTART_TIMEOUT):
+        if await self.wait_for_server():
             return True
         await fhem.readingsSingleUpdate(
             self.hash,
@@ -682,11 +682,11 @@ class matter_controller:
         )
         return False
 
-    async def wait_for_server(self, timeout):
+    async def wait_for_server(self):
         """Waits until the server runs with the current attributes and is
         connected"""
         loop = asyncio.get_running_loop()
-        end = loop.time() + timeout
+        end = loop.time() + BLUETOOTH_RESTART_TIMEOUT
         while loop.time() < end:
             if (
                 self._started_with == self.server_settings()
