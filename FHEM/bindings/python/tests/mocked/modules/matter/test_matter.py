@@ -621,3 +621,57 @@ async def test_failed_pairing_explains_bluetooth_and_thread_route(mocker):
     await controller.update_nodes_reading()
     assert readings["state"] == "connected, Bluetooth pairing not possible"
     assert "sudo rfkill unblock bluetooth" in readings["next_step"]
+
+
+@pytest.mark.asyncio
+async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop("testmatter", None)
+    mock_fhem.command_attr.clear()
+    mocker.patch.object(system_check, "bluetooth_adapters", return_value=[])
+
+    fhemdev = mocker.Mock(
+        _attr_bluetooth_adapter="",
+        _attr_primary_interface="",
+        _attr_port=5580,
+        _attr_test_dcl=0,
+    )
+    controller = matter_controller(logger, fhemdev)
+    controller.hash = {"NAME": "testmatter"}
+    controller.run_command = mocker.AsyncMock(return_value={"node_id": 3})
+    readings = mock_fhem.readings
+
+    # no adapter: clear message, nothing is paired
+    await controller.commission("MT:ABC", network_only=False)
+    assert "no Bluetooth adapter found" in readings["testmatter"]["pairing"]
+    controller.run_command.assert_not_called()
+
+    # adapter found but Node.js lacks rights: attribute set, fix shown
+    mocker.patch.object(system_check, "bluetooth_adapters", return_value=[1, 2])
+    lacking = system_check.Problem("Node.js has no rights.", "sudo setcap ...")
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[lacking])
+    await controller.commission("MT:ABC", network_only=False)
+    assert mock_fhem.command_attr == ["testmatter bluetooth_adapter 1"]
+    assert "sudo setcap" in readings["testmatter"]["pairing"]
+    controller.run_command.assert_not_called()
+
+    # all fine: waits for the restarted server, then pairs
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[])
+    mocker.patch.object(controller, "create_devices_for_node", mocker.AsyncMock())
+
+    async def restarted(hash, attrdef):
+        mock_fhem.command_attr.append(attrdef)
+        fhemdev._attr_bluetooth_adapter = attrdef.split()[-1]
+        controller._started_with = controller.server_settings()
+        controller.client = mocker.Mock(connected=True)
+
+    mocker.patch("fhempy.lib.fhem.CommandAttr", restarted)
+    fhemdev._attr_bluetooth_adapter = ""
+    await controller.commission("MT:ABC", network_only=False)
+    assert readings["testmatter"]["pairing"] == "successful, node 3"
+    assert controller.run_command.call_args.kwargs["network_only"] is False
+
+    # attribute set: no detection anymore
+    detect = mocker.patch.object(system_check, "bluetooth_adapters")
+    await controller.commission("MT:ABC", network_only=False)
+    detect.assert_not_called()

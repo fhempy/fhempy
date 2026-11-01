@@ -15,6 +15,8 @@ MATTER_ROOM = "Matter"
 ROOM_ICON = "it_net"
 CONTROLLER_ICON = "control_building_control"
 RECONNECT_DELAY = 10
+# restart of the Matter server after attr bluetooth_adapter was set
+BLUETOOTH_RESTART_TIMEOUT = 180
 
 PAIR_HELP = (
     "Pair a Matter device with FHEM.<br>"
@@ -33,7 +35,8 @@ PAIR_HELP = (
 PAIR_NEW_HELP = (
     "Pair a brand-new Matter device which isn't in your network yet, via "
     "Bluetooth.<br>"
-    "Needs: attribute bluetooth_adapter (e.g. 0), and for WiFi devices "
+    "Uses the Bluetooth adapter of this computer (attribute "
+    "bluetooth_adapter is set automatically). Needs for WiFi devices "
     "'set wifi_credentials' or for Thread devices 'set thread_dataset' "
     "first. The reading bluetooth_check shows if Bluetooth is ready.<br>"
     "Code: the text of the QR code (MT:...) or the 11 digit number, "
@@ -128,8 +131,8 @@ class matter_controller:
             "bluetooth_adapter": {
                 "default": "",
                 "help": "Number of the Bluetooth adapter (0 for hci0) to pair "
-                "brand-new devices via Bluetooth. Leave empty if you pair "
-                "devices with a code from another app. fhempy checks "
+                "brand-new devices via Bluetooth. Set automatically to the "
+                "first adapter on the first 'set pair_new_device'. fhempy checks "
                 "Bluetooth when the Matter server starts, see reading "
                 "bluetooth_check.",
             },
@@ -593,6 +596,8 @@ class matter_controller:
     async def commission(self, code, network_only):
         code = normalize_code(code)
         if not network_only:
+            if not await self.enable_bluetooth():
+                return
             # rfkill or a Node.js update might have changed since the start
             await self.check_bluetooth()
         await fhem.readingsSingleUpdate(
@@ -619,6 +624,78 @@ class matter_controller:
         self.nodes[node["node_id"]] = node
         await self.update_nodes_reading()
         await self.create_devices_for_node(node)
+
+    async def enable_bluetooth(self):
+        """Sets attr bluetooth_adapter to the adapter of this computer if it
+        isn't set yet and waits until the Matter server runs with it.
+        Bluetooth stays off until it is needed: the server takes over the
+        adapter and needs extra rights for it."""
+        if self.external_url is not None or self.bluetooth_adapter() is not None:
+            return True
+        adapters = await utils.run_blocking(
+            functools.partial(system_check.bluetooth_adapters)
+        )
+        if not adapters:
+            await fhem.readingsSingleUpdate(
+                self.hash,
+                "pairing",
+                "failed: no Bluetooth adapter found on this computer, "
+                "pair_new_device needs one. Alternative: add the device with "
+                "the app of your phone and use 'set pair' with a code from "
+                "'Connect to other apps'.",
+                1,
+            )
+            return False
+        adapter = adapters[0]
+        self.logger.info(f"Using Bluetooth adapter hci{adapter} for pairing")
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            "pairing",
+            f"enabling Bluetooth adapter hci{adapter}, restarting Matter server",
+            1,
+        )
+        problems = await utils.run_blocking(
+            functools.partial(system_check.bluetooth_problems, adapter, self.node)
+        )
+        await fhem.CommandAttr(
+            self.hash, f"{self.hash['NAME']} bluetooth_adapter {adapter}"
+        )
+        if problems:
+            # the attribute stays set, after the fix only a restart is needed
+            await fhem.readingsSingleUpdate(
+                self.hash,
+                "pairing",
+                "failed: Bluetooth isn't ready. "
+                + " ".join(str(p) for p in problems)
+                + f" Then 'set {self.hash['NAME']} restart' and pair again.",
+                1,
+            )
+            return False
+        if await self.wait_for_server(BLUETOOTH_RESTART_TIMEOUT):
+            return True
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            "pairing",
+            "failed: Matter server didn't start with Bluetooth, see state and "
+            "reading bluetooth_check",
+            1,
+        )
+        return False
+
+    async def wait_for_server(self, timeout):
+        """Waits until the server runs with the current attributes and is
+        connected"""
+        loop = asyncio.get_running_loop()
+        end = loop.time() + timeout
+        while loop.time() < end:
+            if (
+                self._started_with == self.server_settings()
+                and self.client is not None
+                and self.client.connected
+            ):
+                return True
+            await asyncio.sleep(1)
+        return False
 
     async def pairing_hints(self, network_only):
         """Problems of this computer which explain a failed pairing"""

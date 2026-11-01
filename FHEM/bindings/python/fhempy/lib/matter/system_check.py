@@ -70,6 +70,14 @@ def rfkill_problems(root="/"):
     return list(dict.fromkeys(problems))
 
 
+def bluetooth_adapters(root="/"):
+    """Numbers of the Bluetooth adapters (hciN) of this computer"""
+    names = _listdir(root, "/sys/class/bluetooth") or []
+    return sorted(
+        int(name[3:]) for name in names if name.startswith("hci") and name[3:].isdigit()
+    )
+
+
 def adapter_problems(adapter, root="/"):
     adapters = _listdir(root, "/sys/class/bluetooth")
     if adapters is None:

@@ -38,8 +38,9 @@ Pairing takes up to a few minutes, the result is shown in the reading `pairing`.
 | Device behind a Matter bridge (Philips Hue, IKEA Dirigera, Aqara hub, SwitchBot...) | Enable Matter in the app of the bridge and use the code shown there. Every device of the bridge gets its own FHEM device. |
 
 **Pair a brand-new device via Bluetooth (for advanced users)**
-1. Set the attribute `bluetooth_adapter` to the number of your Bluetooth adapter (`0` for hci0).
-   fhempy then checks Bluetooth and shows the result in the reading `bluetooth_check`. If something
+1. Bluetooth adapter: on the first `set matter pair_new_device` fhempy sets the attribute
+   `bluetooth_adapter` to the first adapter of the computer (e.g. `0` for hci0) and restarts the Matter
+   server with Bluetooth. Set it yourself to use another adapter. fhempy then checks Bluetooth and shows the result in the reading `bluetooth_check`. If something
    is missing, the reading `next_step` shows the command which fixes it, usually one of these:
    - Bluetooth is blocked: `sudo rfkill unblock bluetooth`
    - Node.js needs the rights for Bluetooth:
@@ -109,7 +110,7 @@ the readings so the device can be supported.
 | Attribute | Description |
 |-----------|-------------|
 | `port` | Port of the Matter server, default 5580. Only reachable from this computer. |
-| `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0` |
+| `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0`. Set automatically on the first `pair_new_device` |
 | `primary_interface` | Network interface for IPv6 (e.g. `eth0`), only if pairing fails on computers with several interfaces |
 | `test_dcl` | `1`: also pair devices with a test/development certificate (beta firmware). Only if you trust the vendor. Default `0` |
 | `autocreate` | `1` (default): create FHEM devices automatically |
