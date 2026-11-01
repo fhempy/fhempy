@@ -8,6 +8,9 @@ minute on the tablet itself.
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
 - the header shows weather, who is at home, open windows (by name when only a few are open) and empty batteries
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
+- temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
+  arrow, in the tiles and on the room cards (curves need a timeline device)
+- *Home* warns when a room is heated while its window is open, room cards suggest airing at high humidity
 - tap switches, long press opens the details: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
 - *History* shows the [timeline](../timeline/README.md) of every day, if a timeline device exists
 - push messages of the [push](../push/README.md) module are shown on the tablets as well

@@ -851,6 +851,15 @@ class dashboard(generic.FhemModule):
             "trends": trends.get("trends", []),
         }
 
+    async def timeline_sparks(self, devices):
+        """temperature and humidity of today per device for the tiles"""
+        instance = self.timeline_device()
+        if instance is None or not devices:
+            return {}
+        day = datetime.date.today().isoformat()
+        trends = json.loads(await instance.get_trends(instance.hash, {"day": day}))
+        return model.sparks(trends.get("trends", []), devices)
+
     async def timeline_device_history(self, device):
         instance = self.timeline_device()
         if instance is None:
@@ -882,6 +891,7 @@ class dashboard(generic.FhemModule):
         app.router.add_post("/api/pair", self.handle_pair)
         app.router.add_get("/api/timeline", self.handle_timeline)
         app.router.add_get("/api/history", self.handle_history)
+        app.router.add_get("/api/sparks", self.handle_sparks)
         app.router.add_post("/api/webrtc", self.handle_webrtc)
         app.router.add_get("/api/snapshot", self.handle_snapshot)
         app.router.add_get("/fhempy-ca.crt", self.handle_ca)
@@ -1089,6 +1099,17 @@ class dashboard(generic.FhemModule):
         if item is None or not self.allowed_tile(tablet, item):
             raise web.HTTPNotFound()
         return web.json_response(await self.timeline_device_history(item["id"]))
+
+    async def handle_sparks(self, request):
+        from aiohttp import web
+
+        tablet = self._checked(request)
+        devices = {
+            item["id"]
+            for item in self.data["tiles"].values()
+            if item["kind"] in model.CLIMATE_KINDS and self.allowed_tile(tablet, item)
+        }
+        return web.json_response(await self.timeline_sparks(devices))
 
     def _stream(self, request):
         from aiohttp import web

@@ -83,6 +83,26 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .tile .edit svg { width: 16px; height: 16px; }
 .tile .tsteps { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); display: flex; gap: 12px; }
 .tile .tsteps .round { width: 56px; height: 56px; font-size: 26px; }
+.tile.climate { justify-content: flex-start; gap: 10px; padding-top: 18px; }
+.tile.climate .ctop { display: flex; align-items: center; gap: 10px; position: relative; min-width: 0; }
+.tile.climate .ctop .ic { width: 34px; height: 34px; border-radius: 11px; }
+.tile.climate .ctop .ic svg { width: 18px; height: 18px; }
+.tile.climate .ctop .n { font-size: 16px; -webkit-line-clamp: 1; flex: 1; min-width: 0; }
+.tile.climate .cside { flex: none; display: flex; align-items: center; gap: 3px; font-size: 13px; color: var(--mu); }
+.tile.climate .cval { position: relative; display: flex; align-items: baseline; gap: 6px; }
+.tile.climate .big { font-size: 40px; line-height: 1; font-weight: 600; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.tile.climate .big small { font-size: 22px; font-weight: 500; margin-left: 1px; }
+.tile.climate .arrow, .roomcard .arrow { font-size: 18px; color: var(--mu); font-weight: 600; }
+.tile.climate .tgt { display: none; font-size: 13px; color: var(--mu); }
+.tile.climate .tsteps { top: 50%; transform: translateY(-50%); align-items: center; gap: 10px; }
+.tile .tsteps .tval { min-width: 64px; text-align: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tile .tsteps .tval small { display: block; font-size: 12px; font-weight: 500; color: var(--mu); }
+.spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 36%; pointer-events: none; }
+.roomcard .spark { height: 42%; }
+.roomcard .rtemp { position: absolute; right: 18px; top: 14px; font-size: 26px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.roomcard .rtemp .rhum { display: block; font-size: 13px; font-weight: 500; color: var(--mu); letter-spacing: 0; }
+.roomcard .n, .roomcard .facts { position: relative; }
+.roomcard .n { padding-right: 84px; }
 .thermo .big { font-size: 30px; line-height: 1.1; font-weight: 600; letter-spacing: -1px; }
 .roomcard .n { font-size: 18px; }
 .roomcard .facts { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -253,6 +273,9 @@ body.light .banner.push { background: #fff; color: #151922; }
   .chips .chip .sub { display: none; }
   .tile.wide { grid-column: span 1; }
   .tile .tsteps { display: none; }
+  .tile.climate .tgt { display: inline; }
+  .tile.climate.wide .cside { display: none; }
+  .tile.climate .big { font-size: 34px; }
 }
 
 /* no movement for people who asked their system for less motion */

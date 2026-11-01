@@ -25,7 +25,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Fertig", noRoom: "Kein Raum",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
-    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
+    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
     happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
@@ -62,7 +62,7 @@
     roomOfTablet: "Room of this tablet:", next: "Done", noRoom: "No room",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
-    lock: "Lock", unlock: "Unlock", today: "Today", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
+    lock: "Lock", unlock: "Unlock", today: "Today", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
     happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
@@ -163,7 +163,7 @@
     token: null, tablet: null, rooms: [], tiles: {}, scenes: [], header: {},
     tab: null, sheet: null, edit: false, ws: null, connected: false, retry: 0,
     lastTouch: Date.now(), saver: false, ring: null, pending: {}, timeline: {},
-    history: null, historyDay: null, usage: {}, banner: null, now: new Date()
+    history: null, historyDay: null, usage: {}, banner: null, now: new Date(), sparks: {}, sparksAt: 0
   };
   try { S.usage = JSON.parse(store("dashUsage") || "{}") || {}; } catch (e) { S.usage = {}; }
   var app = document.getElementById("app");
@@ -206,7 +206,7 @@
       S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {};
       S.pending = {};
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); }
-      render(); return;
+      render(); loadSparks(true); return;
     }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
@@ -287,6 +287,10 @@
     return GERMAN ? T.weekdays[d.getDay()] + ", " + d.getDate() + ". " + T.months[d.getMonth()]
       : T.weekdays[d.getDay()] + ", " + T.months[d.getMonth()] + " " + d.getDate();
   }
+  function greeting(d) {
+    var h = d.getHours();
+    return t(h >= 5 && h < 11 ? "morning" : h < 17 && h >= 11 ? "day" : h >= 17 && h < 22 ? "evening" : "night");
+  }
   function isNight() {
     var h = new Date().getHours();
     return h >= 22 || h < 6;
@@ -300,6 +304,62 @@
   // ---------- tiles ----------
   var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop" };
   var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1 };
+
+  // temperature and humidity of today in the tiles, from the timeline
+  function loadSparks(force) {
+    if (!S.header.timeline || !S.token || (!force && Date.now() - S.sparksAt < 10 * 60000)) { return; }
+    S.sparksAt = Date.now();
+    api("api/sparks").then(function (data) {
+      if (JSON.stringify(data) === JSON.stringify(S.sparks)) { return; }
+      S.sparks = data || {};
+      if (S.tab !== "history") { renderContent(); }
+    }).catch(function () { /* no timeline */ });
+  }
+  function climateOf(tile) {
+    var st = tile.state || {};
+    var temp = tile.kind === "thermostat" ? st.current : st.temperature;
+    return { temp: temp === null ? undefined : temp, humidity: st.humidity === null ? undefined : st.humidity };
+  }
+  function sparkOf(id, key) { var sp = S.sparks[id]; return sp && sp[key]; }
+  // comfort colour: cold blue, pleasant teal, warm amber
+  function tempColor(v) { return v === undefined ? "var(--mu)" : v < 18 ? "#5AA9FF" : v <= 23.5 ? "#3DDBB8" : "#FF8A3D"; }
+  // rising or falling over the last two hours, with the current value as end
+  function tempArrow(points, now) {
+    var known = (points || []).map(function (v, i) { return [i, v]; }).filter(function (p) { return p[1] !== null && p[1] !== undefined; });
+    if (!known.length || now === undefined) { return ""; }
+    var hour = new Date().getHours(), before = null;
+    known.forEach(function (p) { if (p[0] <= hour - 2) { before = p[1]; } });
+    if (before === null) { return ""; }
+    var diff = now - before;
+    return diff >= 0.4 ? "↑" : diff <= -0.4 ? "↓" : "";
+  }
+  function sparkSvg(points, color, current) {
+    var pts = (points || []).map(function (v, i) { return [i, v]; }).filter(function (p) { return p[1] !== null && p[1] !== undefined; });
+    if (current !== undefined && pts.length) { pts.push([Math.min(23, new Date().getHours() + new Date().getMinutes() / 60), current]); }
+    if (pts.length < 2) { return ""; }
+    var vals = pts.map(function (p) { return p[1]; });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), pad = Math.max(0.6, (hi - lo) * 0.2);
+    lo -= pad; hi += pad;
+    var w = 200, h = 60, line = "";
+    pts.forEach(function (p, i) { line += (i ? "L" : "M") + (p[0] / 23 * w).toFixed(1) + "," + (h - (p[1] - lo) / (hi - lo) * h).toFixed(1); });
+    var end = pts[pts.length - 1], area = line + "L" + (end[0] / 23 * w).toFixed(1) + "," + h + "L" + (pts[0][0] / 23 * w).toFixed(1) + "," + h + "Z";
+    var id = "s" + Math.random().toString(36).slice(2, 8);
+    return '<svg class="spark" viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + color + '" stop-opacity=".32"/><stop offset="1" stop-color="' + color + '" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + area + '" fill="url(#' + id + ')"/><path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + (end[0] / 23 * w).toFixed(1) + '" cy="' + (h - (end[1] - lo) / (hi - lo) * h).toFixed(1) + '" r="3" fill="' + color + '" vector-effect="non-scaling-stroke"/></svg>';
+  }
+  function climateTileBody(id, tile, look, editState) {
+    var c = climateOf(tile), st = tile.state, humidOnly = c.temp === undefined;
+    var main = humidOnly ? (c.humidity === undefined ? "–" : Math.round(c.humidity) + "<small>%</small>") : num(c.temp) + "<small>°</small>";
+    var key = humidOnly ? "h" : "t", pts = sparkOf(id, key), now = humidOnly ? c.humidity : c.temp;
+    var color = humidOnly ? "#5AA9FF" : tile.kind === "thermostat" && look.cls === "heat" ? "#FF8A3D" : tempColor(c.temp);
+    var arrow = humidOnly ? "" : tempArrow(pts, now), thermostat = tile.kind === "thermostat" && st.target !== undefined;
+    var side = !humidOnly && c.humidity !== undefined ? I("drop", 14) + Math.round(c.humidity) + " %" : "";
+    var steps = thermostat && !editState ? '<div class="tsteps"><span class="round" data-step="-1" data-sid="' + esc(id) + '">−</span><span class="tval">' + num(st.target) + "°<small>" + esc(t("target")) + '</small></span><span class="round" data-step="1" data-sid="' + esc(id) + '">+</span></div>' : "";
+    return sparkSvg(pts, color, now) + '<div class="ctop"><div class="n">' + esc(tile.name) + "</div>" + (side ? '<span class="cside">' + side + "</span>" : "") + "</div>" +
+      '<div class="cval"><span class="big" style="color:' + (humidOnly ? "var(--tx)" : color) + '">' + main + "</span>" + (arrow ? '<span class="arrow">' + arrow + "</span>" : "") +
+      (thermostat ? '<span class="tgt">' + esc(t("target") + " " + num(st.target) + "°") + "</span>" : "") + "</div>" + steps;
+  }
 
   function tileLook(tile) {
     var st = tile.state || {}, k = tile.kind, cls = "", sub = "", icon = KIND_ICON[k] || "power", bar = null;
@@ -334,11 +394,9 @@
   function tileHtml(id, editState) {
     var tile = S.tiles[id]; if (!tile) { return ""; }
     var look = tileLook(tile), wide = tile.kind === "thermostat";
-    var body;
-    if (tile.kind === "thermostat") {
-      body = '<div class="ic">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="thermo"><span class="big">' + num(tile.state.target) + '°</span></div><div class="s">' +
-        (tile.state.current !== undefined ? num(tile.state.current) + "°" : "") + (tile.state.humidity !== undefined ? " · " + Math.round(tile.state.humidity) + " %" : "") + "</div></div>" +
-        (editState ? "" : '<div class="tsteps"><span class="round" data-step="-1" data-sid="' + esc(id) + '">−</span><span class="round" data-step="1" data-sid="' + esc(id) + '">+</span></div>');
+    var body, climate = tile.kind === "thermostat" || tile.kind === "temperature" || tile.kind === "humidity";
+    if (climate) {
+      body = climateTileBody(id, tile, look, editState);
     } else {
       body = '<div class="ic">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
@@ -348,7 +406,7 @@
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
     }
-    return '<button class="tile ' + look.cls + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
@@ -382,6 +440,7 @@
 
   function tap(id) {
     var tile = S.tiles[id]; if (!tile) { return; }
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
     if (!TAP_TOGGLES[tile.kind]) { openSheet(id); return; }
     var st = tile.state;
     if (tile.kind === "blind") {
@@ -426,7 +485,7 @@
     if (warn) { chips += '<button class="chip warn" data-go="home">' + I("win") + " " + esc(warn) + "</button>"; }
     if ((h.battery || []).length) { chips += '<button class="chip warn" data-batteries="1" aria-label="' + esc(t("batteriesTitle")) + '">' + I("battery") + " " + h.battery.length + "</button>"; }
     chips += '<button class="iconbtn" data-settings="1">' + I("gear") + "</button>";
-    el.innerHTML = '<div class="top"><div><div class="clock">' + clockText(now) + '</div><div class="date">' + esc(dateText(now)) + '</div></div><div class="chips">' + chips + "</div></div>";
+    el.innerHTML = '<div class="top"><div><div class="clock">' + clockText(now) + '</div><div class="date">' + esc(greeting(now) + " · " + dateText(now)) + '</div></div><div class="chips">' + chips + "</div></div>";
   }
   function warningText() {
     var open = (S.header && S.header.open) || [];
@@ -474,6 +533,10 @@
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
     });
+    var wasted = heatingOpenRooms();
+    if (wasted.length) {
+      rows += '<div class="row"><div class="ic" style="background:rgba(255,90,95,.16);color:var(--red)">' + I("thermo") + '</div><div class="t"><b>' + esc(t("heatingOpen")) + "</b><span>" + esc(wasted.join(", ")) + "</span></div></div>";
+    }
     var lights = running.filter(function (r) { return r.kind === "light" || r.kind === "dimmer"; });
     if (lights.length) {
       var rooms = []; lights.forEach(function (l) { if (l.room && rooms.indexOf(l.room) < 0) { rooms.push(l.room); } });
@@ -494,6 +557,17 @@
       (count ? '<div class="actions"><button class="pill primary" data-alloff="">' + I("power", 20) + " " + esc(t("allOffN", { n: count })) + "</button></div>" : "") + "</div>";
   }
 
+  // rooms where a thermostat heats while a window is open
+  function heatingOpenRooms() {
+    var openRooms = (S.header.open || []).map(function (o) { return o.room; }), result = [];
+    S.rooms.forEach(function (r) {
+      if (openRooms.indexOf(r.name) < 0) { return; }
+      var heats = r.tiles.some(function (id) { var tl = S.tiles[id]; return tl && tl.kind === "thermostat" && tl.state.target > tl.state.current + 0.3; });
+      if (heats && result.indexOf(r.name) < 0) { result.push(r.name); }
+    });
+    return result;
+  }
+
   function energyHtml() {
     var e = S.header.energy; if (!e) { return ""; }
     var parts = [];
@@ -508,20 +582,27 @@
   }
 
   function roomCardHtml(room) {
-    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0;
+    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null;
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
+      if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
+      if (humid === null && st.humidity !== undefined && st.humidity !== null) { humid = st.humidity; }
       if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on) { other++; }
       if (temp === null && tile.kind === "thermostat" && st.current !== undefined) { temp = st.current; }
       if (temp === null && tile.kind === "temperature" && st.temperature !== undefined) { temp = st.temperature; }
       if (tile.kind === "contact" && st.closed === false) { open++; }
     });
-    var facts = "";
-    if (temp !== null) { facts += '<span class="fact">' + num(temp) + "°</span>"; }
+    var facts = "", climate = "";
+    if (temp !== null) {
+      var pts = tempId && sparkOf(tempId, "t"), arrow = tempArrow(pts, temp), color = tempColor(temp);
+      climate = (pts ? sparkSvg(pts, color, temp) : "") + '<div class="rtemp" style="color:' + color + '">' + num(temp) + "°" + (arrow ? '<span class="arrow">' + arrow + "</span>" : "") +
+        (humid !== null ? '<span class="rhum">' + Math.round(humid) + " %</span>" : "") + "</div>";
+    }
+    if (humid !== null && humid >= 65 && !open) { facts += '<span class="fact warn">' + esc(t("airOut")) + "</span>"; }
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
-    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-tab="room:' + esc(room.name) + '"><div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
+    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-tab="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
   }
 
   function homeHtml() {
@@ -1098,7 +1179,7 @@
   // ---------- start ----------
   function tick() {
     S.now = new Date();
-    renderHeader(); idleCheck();
+    renderHeader(); idleCheck(); loadSparks();
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }

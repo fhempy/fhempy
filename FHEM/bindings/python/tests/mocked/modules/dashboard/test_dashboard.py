@@ -378,3 +378,15 @@ async def test_reload_sends_model_only_on_changes(module, mocker):
     await module.reload()
     assert send.await_args.args[1]["type"] == "model"
     connected.return_value = []
+
+
+def test_sparks_temperature_and_humidity_per_device():
+    trends = [
+        {"device": "wz_Heizung", "reading": "desired-temp", "points": [20, 21]},
+        {"device": "wz_Heizung", "reading": "measured-temp", "points": [20.5, None, 21]},
+        {"device": "wz_Heizung", "reading": "humidity", "points": [[0, 48], [3600, 50]]},
+        {"device": "kue_Klima", "reading": "temperature", "points": [22, None]},
+        {"device": "other", "reading": "temperature", "points": [1, 2]},
+    ]
+    result = model.sparks(trends, {"wz_Heizung", "kue_Klima"})
+    assert result == {"wz_Heizung": {"t": [20.5, None, 21], "h": [48, 50]}}

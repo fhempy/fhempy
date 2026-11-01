@@ -654,3 +654,35 @@ def filter_rooms(data, allowed):
         "tiles": {k: v for k, v in data["tiles"].items() if k in ids},
         "scenes": [s for s in data["scenes"] if s["room"] in allowed],
     }
+
+
+CLIMATE_KINDS = ("thermostat", "temperature", "humidity")
+_SETPOINT_RE = re.compile(r"(desired|target|set|soll|comfort|eco)", re.IGNORECASE)
+
+
+def _spark_key(reading):
+    name = reading.lower()
+    if "humid" in name:
+        return "h"
+    if "temp" in name and not _SETPOINT_RE.search(name):
+        return "t"
+    return None
+
+
+def sparks(trends, devices):
+    """timeline trends of a day -> device -> {"t": temperatures, "h": humidity}
+    with 24 hourly values (None where nothing is known yet), the first
+    matching reading of a device wins"""
+    result = {}
+    for trend in trends:
+        device = trend.get("device")
+        key = _spark_key(str(trend.get("reading", "")))
+        if device not in devices or key is None:
+            continue
+        points = [
+            p[1] if isinstance(p, list) else p for p in trend.get("points") or []
+        ]
+        if sum(p is not None for p in points) < 2:
+            continue
+        result.setdefault(device, {}).setdefault(key, points)
+    return result
