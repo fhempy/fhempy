@@ -27,6 +27,7 @@
   <a href="#-ai">AI</a> ·
   <a href="#-remote-access">Remote access</a> ·
   <a href="#-timeline">Timeline</a> ·
+  <a href="#-tablet-dashboard">Tablets</a> ·
   <a href="#-modules">Modules</a> ·
   <a href="#-troubleshooting">Troubleshooting</a> ·
   <a href="#fhempy-peers-eg-extend-bluetooth-range">Remote peers</a> ·
@@ -37,6 +38,7 @@
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
 - **What happened at home?** The timeline shows all events as a readable story per day, e.g. of your holidays, without technical noise. See [Timeline](#-timeline).
+- **A modern dashboard for your tablets**: on the wall, next to the couch or at the front door, set up in a minute on the tablet itself, with doorbell camera and door opener. See [Tablet dashboard](#-tablet-dashboard).
 - **FHEM on your phone, from anywhere**: one `define` gives you a fixed https address with password, no VPN app and no port forwarding. See [Remote access](#-remote-access).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
 - **No Python fiddling**: fhempy sets up its own Python environment (even a newer Python if your system's is too old) and every module installs its libraries automatically the first time you use it.
@@ -85,6 +87,13 @@ See what happened at home, e.g. during your holidays:
 define timeline fhempy timeline
 ```
 fhempy records the events of all FHEM devices and shows them on the device page as a story per day: doors, lights, motion, who came home. Signal strength, last seen and similar technical events are hidden automatically, temperatures and power become small daily curves, and everything unusual while nobody was at home is highlighted. The [timeline README](FHEM/bindings/python/fhempy/lib/timeline/README.md) explains every step.
+
+## 📱 Tablet dashboard
+A modern dashboard for the tablets at home, in its own look and without configuration in FHEM:
+```
+define tablets fhempy dashboard
+```
+Open the device, scan the QR code with the tablet and choose where it is: on the wall, at the couch or at the door. Rooms and tiles come from your FHEM rooms, open windows are shown by name, and when somebody rings the door tablet shows the camera live, lets you talk and opens the door. Every tablet keeps its own layout. The [dashboard README](FHEM/bindings/python/fhempy/lib/dashboard/README.md) explains every step.
 
 ## 🚀 Quick start
 
@@ -226,6 +235,7 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 ### 🧰 Information & tools
 |Module | Description|
 |-------|------------|
+|[dashboard](FHEM/bindings/python/fhempy/lib/dashboard/README.md)|Modern dashboard for wall, couch and door tablets: set up on the tablet in a minute, doorbell with live video, talking and door opener|
 |[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for the free ddnss.de service|
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
