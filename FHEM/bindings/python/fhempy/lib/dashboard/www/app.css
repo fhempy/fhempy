@@ -99,6 +99,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .row .t { flex: 1; min-width: 0; }
 .row .t b { display: block; font-size: 17px; font-weight: 600; }
 .row .t span { font-size: 14px; color: var(--mu); }
+.blist { margin-top: 14px; }
+.row.tap { cursor: pointer; }
+.row.tap > svg.i { color: var(--mu); }
 .pill { height: 44px; padding: 0 18px; border-radius: 22px; background: rgba(255,255,255,.08); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 500; white-space: nowrap; }
 .pill.on, .pill.primary { background: var(--tx); color: #0B0E13; font-weight: 600; }
 .pill.danger { background: #371C21; color: #ffb3b5; }

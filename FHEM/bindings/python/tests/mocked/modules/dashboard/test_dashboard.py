@@ -13,6 +13,7 @@ from fhempy.lib.dashboard import go2rtc, model
 from fhempy.lib.dashboard.dashboard import clean_layout, dashboard, parse_opener
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 
+from . import fake_home
 from .fake_home import FakeFhem, set_default_attrs, set_event_devices
 
 logger = logging.getLogger(__name__)
@@ -111,6 +112,28 @@ def test_header():
     assert head["energy"] == {"solar": 3400, "load": 1200, "battery": 82}
     assert {r["id"] for r in head["running"]} >= {"wz_Deckenlicht", "ku_Kaffeemaschine"}
     assert head["battery"][0]["id"] == "bad_Heizung"
+
+
+def test_low_batteries_also_without_tile():
+    devices = dict(fake_home.DEVICES)
+    devices["fl_Rauchmelder"] = fake_home.device(
+        "dummy", "Flur", "", {"batteryLevel": "12"}, alias="Rauchmelder"
+    )
+    fake = FakeFhem(devices)
+    infos = fake.infos(fake.devices)
+    data = model.build(infos)
+    assert "fl_Rauchmelder" not in data["tiles"]
+    low = model.header(infos, data["tiles"])["battery"]
+    # sorted by room
+    assert [b["id"] for b in low] == ["bad_Heizung", "fl_Rauchmelder"]
+    assert low[1] == {
+        "id": "fl_Rauchmelder",
+        "name": "Rauchmelder",
+        "room": "Flur",
+        "level": 12,
+        "since": fake_home.ts(90),
+    }
+    assert low[0]["level"] is None
 
 
 def test_commands():
@@ -341,3 +364,17 @@ async def test_detail_page_while_starting(mocker):
     page = await mod.FW_detailFn({"NAME": NAME}, [], {})
     assert "starting" in page
     assert mod.url().endswith(f":{dash_module.DEFAULT_PORT}/")
+
+
+@pytest.mark.asyncio
+async def test_reload_sends_model_only_on_changes(module, mocker):
+    # helper devices come and go in FHEM, the tablets must not redraw for them
+    module.tablets["t1"] = {"id": "t1", "name": "Wall"}
+    connected = mocker.patch.object(module, "connected", return_value=[("ws", "t1")])
+    send = mocker.patch.object(module, "send", mocker.AsyncMock())
+    await module.reload()
+    send.assert_not_called()
+    module.fake.devices["ku_Licht"]["readings"]["state"] = "off"
+    await module.reload()
+    assert send.await_args.args[1]["type"] == "model"
+    connected.return_value = []

@@ -11,7 +11,7 @@
     locked: "Verriegelt", unlocked: "Entriegelt", motion: "Bewegung", nomotion: "Ruhig",
     target: "Ziel", heating: "Heizt", sinceMin: "seit {n} min", sinceH: "seit {n} h",
     sinceD: "seit {n} Tagen", openNames: "Offen: {names}", openCount: "{n} Fenster offen",
-    doorsOpen: "{n} offen", battery: "Batterie leer", allOff: "Alles aus",
+    doorsOpen: "{n} offen", battery: "Batterie leer", batteriesTitle: "Batterien tauschen", batteriesLead: "Diese Geräte melden eine schwache Batterie.", batteriesOk: "Alle Batterien sind in Ordnung.", batteryLow: "schwach", allOff: "Alles aus",
     allOffN: "Alles aus ({n})", beforeLeave: "Bevor du gehst", stillOpen: "Das ist noch offen oder an.",
     allClosed: "Alles zu, alles aus.", nowOn: "Gerade offen und an", lightsOn: "{n} Lichter an",
     lightOn: "1 Licht an", deviceOn: "1 Gerät an", devicesOn: "{n} Geräte an", humidity: "Luftfeuchte", atHome: "{n} zu Hause", nobody: "Niemand zu Hause",
@@ -48,7 +48,7 @@
     locked: "Locked", unlocked: "Unlocked", motion: "Motion", nomotion: "Clear",
     target: "Target", heating: "Heating", sinceMin: "for {n} min", sinceH: "for {n} h",
     sinceD: "for {n} days", openNames: "Open: {names}", openCount: "{n} windows open",
-    doorsOpen: "{n} open", battery: "Battery low", allOff: "All off",
+    doorsOpen: "{n} open", battery: "Battery low", batteriesTitle: "Replace batteries", batteriesLead: "These devices report a weak battery.", batteriesOk: "All batteries are fine.", batteryLow: "weak", allOff: "All off",
     allOffN: "All off ({n})", beforeLeave: "Before you leave", stillOpen: "Still open or on.",
     allClosed: "Everything closed and off.", nowOn: "Open and on right now", lightsOn: "{n} lights on", deviceOn: "1 device on", devicesOn: "{n} devices on", humidity: "Humidity", temperature: "Temperature",
     lightOn: "1 light on", atHome: "{n} at home", nobody: "Nobody at home",
@@ -115,6 +115,7 @@
     unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
+    chev: '<path d="M9 6l6 6-6 6"/>',
     battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
@@ -213,7 +214,7 @@
       updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && S.sheet.batteries) { renderBatteries(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -398,9 +399,12 @@
     if (!S.tablet) { app.innerHTML = '<div class="ob"><div class="empty">' + (S.connected ? "" : t("connLost")) + "</div></div>"; return; }
     if (!S.tablet.place) { renderSetup(); return; }
     if (!S.tab || (S.tab.indexOf("room:") === 0 && !roomByName(S.tab.slice(5)))) { S.tab = startTab(); }
+    // drawing everything again must not jump back to the top
+    var old = document.getElementById("content"), top = old ? old.scrollTop : 0, shownTab = S.shownTab;
     app.innerHTML = '<div id="hdr"></div><div id="tabs" class="tabs"></div><div id="content" class="content"></div>' +
       (S.connected ? "" : '<div class="banner">' + esc(t("connLost")) + "</div>");
     renderHeader(); renderTabs(); renderContent();
+    if (shownTab === S.tab) { document.getElementById("content").scrollTop = top; }
     if (S.sheet) { renderSheet(); }
     if (S.saver) { renderSaver(); }
     if (S.ring) { renderRing(); }
@@ -420,7 +424,7 @@
     }
     var warn = warningText();
     if (warn) { chips += '<button class="chip warn" data-go="home">' + I("win") + " " + esc(warn) + "</button>"; }
-    if ((h.battery || []).length) { chips += '<div class="chip warn">' + I("battery") + " " + h.battery.length + "</div>"; }
+    if ((h.battery || []).length) { chips += '<button class="chip warn" data-batteries="1" aria-label="' + esc(t("batteriesTitle")) + '">' + I("battery") + " " + h.battery.length + "</button>"; }
     chips += '<button class="iconbtn" data-settings="1">' + I("gear") + "</button>";
     el.innerHTML = '<div class="top"><div><div class="clock">' + clockText(now) + '</div><div class="date">' + esc(dateText(now)) + '</div></div><div class="chips">' + chips + "</div></div>";
   }
@@ -461,6 +465,7 @@
     var top = el.scrollTop;
     if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
     el.scrollTop = top;
+    S.shownTab = S.tab;
   }
 
   function leaveHtml() {
@@ -632,12 +637,16 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.batteries]);
     d.innerHTML = '<div class="sheet ' + (cls || "") + '">' + inner + "</div>";
+    if (d.getAttribute("data-key") === key) { d.firstChild.scrollTop = top; }
+    d.setAttribute("data-key", key);
     return d;
   }
   function renderSheet() {
     if (!S.sheet) { return; }
     if (S.sheet.settings) { renderSettings(); return; }
+    if (S.sheet.batteries) { renderBatteries(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
     var head = '<div class="head"><div><h1>' + esc(tile.name) + '</h1><div class="subtitle">' + esc([tile.rooms[0], look.sub].filter(Boolean).join(" · ")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>";
@@ -693,6 +702,18 @@
   }
 
   // ---------- settings ----------
+  function openBatteries() { S.sheet = { batteries: true }; renderBatteries(); }
+  function renderBatteries() {
+    var list = (S.header && S.header.battery) || [];
+    var rows = list.map(function (b) {
+      var level = b.level !== null && b.level !== undefined && b.level > 1 ? Math.round(b.level) + " %" : t("batteryLow");
+      var tile = S.tiles[b.id];
+      return '<div class="row' + (tile ? " tap" : "") + '"' + (tile ? ' data-batt="' + esc(b.id) + '"' : "") + '><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I("battery") + '</div><div class="t"><b>' + esc(b.name) + "</b><span>" +
+        esc([b.room, level, since(b.since)].filter(Boolean).join(" · ")) + "</span></div>" + (tile ? I("chev") : "") + "</div>";
+    }).join("");
+    sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
+  }
   function openSettings() { S.sheet = { settings: true }; renderSettings(); }
   function renderSettings() {
     var tb = S.tablet, lay = layout(), hidden = lay.hidden_rooms || [];
@@ -996,6 +1017,8 @@
       return;
     }
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
+    if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {

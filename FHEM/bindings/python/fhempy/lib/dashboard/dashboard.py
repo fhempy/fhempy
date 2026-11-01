@@ -617,10 +617,15 @@ class dashboard(generic.FhemModule):
     async def reload(self):
         names = await self.resolve_devices()
         self.infos = await self.fetch_infos(names)
+        before = (self.data, self.head)
         self.data = model.build(self.infos)
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
+        # FHEM defines and deletes helper devices (at, notify) all the time,
+        # the tablets only draw everything again when something they show
+        # changed
+        changed = (self.data, self.head) != before
         await self.register_events(list(self.infos))
         await fhem.readingsBeginUpdate(self.hash)
         await fhem.readingsBulkUpdateIfChanged(
@@ -635,6 +640,8 @@ class dashboard(generic.FhemModule):
             ",".join(b["id"] for b in self.doorbells) or "none",
         )
         await fhem.readingsEndUpdate(self.hash, 1)
+        if not changed:
+            return
         for ws, tablet_id in self.connected():
             tablet = self.tablets.get(tablet_id)
             if tablet is not None:

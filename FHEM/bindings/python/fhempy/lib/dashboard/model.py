@@ -255,14 +255,15 @@ def tile_state(kind, info):
     return state
 
 
-def battery_low(info):
+def _low_battery_reading(info):
+    """name of the reading which says the battery is low, None if it is fine"""
     for name in BATTERY_READINGS:
         value = _reading(info, name)
         if value is None:
             continue
         word = str(value).strip().lower()
         if word in LOW_BATTERY:
-            return True
+            return name
         number = kinds.number(word)
         if (
             number is not None
@@ -271,8 +272,34 @@ def battery_low(info):
             and number <= LOW_BATTERY_PERCENT
             and word not in ("1", "0")
         ):
-            return True
-    return False
+            return name
+    return None
+
+
+def battery_low(info):
+    return _low_battery_reading(info) is not None
+
+
+def low_batteries(infos):
+    """all devices which need a new battery, also those without a tile.
+    level: percent if the device reports one, since: last change"""
+    result = []
+    for name, info in infos.items():
+        reading = _low_battery_reading(info)
+        if reading is None:
+            continue
+        rooms = rooms_of(info)
+        result.append(
+            {
+                "id": name,
+                "name": display_name(info),
+                "room": rooms[0] if rooms else "",
+                "level": kinds.number(_reading(info, reading)),
+                "since": _reading_time(info, reading),
+            }
+        )
+    result.sort(key=lambda b: (b["room"].lower(), b["name"].lower()))
+    return result
 
 
 def tile(info, room=None):
@@ -459,21 +486,13 @@ def running(tiles):
 
 
 def header(infos, tiles):
-    low = sorted(
-        (
-            {"id": t["id"], "name": t["name"], "room": (t["rooms"] or [""])[0]}
-            for t in tiles.values()
-            if t["state"].get("battery_low")
-        ),
-        key=lambda b: b["name"].lower(),
-    )
     return {
         "weather": weather(infos),
         "energy": energy(infos),
         "presence": presence(infos),
         "open": open_contacts(tiles),
         "running": running(tiles),
-        "battery": low,
+        "battery": low_batteries(infos),
     }
 
 
