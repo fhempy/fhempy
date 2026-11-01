@@ -25,7 +25,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Fertig", noRoom: "Kein Raum",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
-    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", times: "{n}× an", total: "zusammen {t}",
+    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
     happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
@@ -62,7 +62,7 @@
     roomOfTablet: "Room of this tablet:", next: "Done", noRoom: "No room",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
-    lock: "Lock", unlock: "Unlock", today: "Today", times: "{n}× on", total: "{t} in total",
+    lock: "Lock", unlock: "Unlock", today: "Today", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
     happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
@@ -668,7 +668,7 @@
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
-    body += sheetHistoryHtml();
+    body += sheetTrendsHtml() + sheetHistoryHtml();
     var cols = !!left;
     sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" : "");
   }
@@ -682,6 +682,47 @@
     });
     return '<div class="group"><div class="label" style="display:flex;justify-content:space-between"><span>' + esc(t("today")) + '</span><span style="text-transform:none;letter-spacing:0">' + esc(act.text || "") + "</span></div>" +
       '<div style="position:relative;height:34px;border-radius:8px;background:rgba(255,255,255,.05);overflow:hidden">' + bars + '</div><div style="display:flex;justify-content:space-between;color:var(--mu2);font-size:12px;margin-top:6px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div>';
+  }
+
+  // temperature and humidity of today in the details of a device
+  function sheetTrendsHtml() {
+    var hist = S.sheet && S.sheet.history; if (!hist || !hist.trends || !hist.to) { return ""; }
+    return hist.trends.filter(function (tr) { return /temp|humid|dewpoint/i.test(tr.reading || ""); }).slice(0, 2)
+      .map(function (tr) { return sheetTrendHtml(tr, hist.to - 86400); }).join("");
+  }
+  function trendValues(points) {
+    return (points || []).filter(function (p) { return p && p[1] !== null && !isNaN(p[1]); });
+  }
+  function sheetTrendHtml(tr, start) {
+    var pts = trendValues(tr.points), target = tr.target ? trendValues(tr.target.points) : [];
+    if (pts.length < 2) { return ""; }
+    var all = pts.concat(target).map(function (p) { return p[1]; });
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all), pad = Math.max(0.5, (hi - lo) * 0.15);
+    lo -= pad; hi += pad;
+    var w = 480, h = 120;
+    function x(ts) { return (Math.max(0, Math.min(1, (ts + 1800 - start) / 86400)) * w).toFixed(1); }
+    function y(v) { return (h - (v - lo) / (hi - lo) * h).toFixed(1); }
+    function line(list, step) {
+      return list.map(function (p, i) {
+        var xy = x(p[0]) + "," + y(p[1]);
+        return i === 0 ? "M" + xy : (step ? "H" + x(p[0]) + "V" + y(p[1]) : "L" + xy);
+      }).join("");
+    }
+    var humid = /humid/i.test(tr.reading), col = humid ? "#5AC8FA" : "#FF8A3D", gid = "g" + String(tr.reading).replace(/\W/g, "");
+    var path = line(pts), area = path + "L" + x(pts[pts.length - 1][0]) + "," + h + "L" + x(pts[0][0]) + "," + h + "Z";
+    var fmt = humid ? Math.round : num;
+    var vals = pts.map(function (p) { return p[1]; }), last = vals[vals.length - 1], unit = tr.unit || (humid ? "%" : "");
+    var info = esc(t("min") + " " + fmt(Math.min.apply(null, vals)) + " · " + t("max") + " " + fmt(Math.max.apply(null, vals)));
+    var svg = '<svg viewBox="0 0 ' + w + " " + (h + 2) + '" style="width:100%;height:120px;display:block" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".35"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + area + '" fill="url(#' + gid + ')"/>' +
+      (target.length ? '<path d="' + line(target, true) + '" fill="none" stroke="var(--mu)" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>' : "") +
+      '<path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+    if (target.length) { info += " · - - " + esc(t("targetTemp")); }
+    return '<div class="group"><div class="label" style="display:flex;justify-content:space-between"><span>' + esc(tr.name || tr.reading) + " · " + esc(t("today")) +
+      '</span><span style="text-transform:none;letter-spacing:0;color:var(--tx)">' + esc(fmt(last) + (unit ? " " + unit : "")) + "</span></div>" + svg +
+      '<div style="display:flex;justify-content:space-between;color:var(--mu2);font-size:12px;margin-top:6px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>' +
+      '<div class="hint" style="text-align:left;margin-top:4px">' + info + "</div></div>";
   }
 
   // dragging the big slider of dimmers and blinds

@@ -8,7 +8,7 @@ minute on the tablet itself.
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
 - the header shows weather, who is at home, open windows (by name when only a few are open) and empty batteries
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
-- tap switches, long press opens the details: dimming by dragging, target temperature, blinds, history of the day
+- tap switches, long press opens the details: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
 - *History* shows the [timeline](../timeline/README.md) of every day, if a timeline device exists
 - push messages of the [push](../push/README.md) module are shown on the tablets as well
 - doorbell: the tablets show the camera live (WebRTC), you can talk to the visitor and open the door by sliding
