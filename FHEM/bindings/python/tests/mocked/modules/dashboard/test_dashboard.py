@@ -11,6 +11,7 @@ from tests.utils import mock_fhem
 from fhempy.lib.dashboard import dashboard as dash_module
 from fhempy.lib.dashboard import go2rtc, model
 from fhempy.lib.dashboard.dashboard import clean_layout, dashboard, parse_opener
+from fhempy.lib.pkg_installer import check_and_install_dependencies
 
 from .fake_home import FakeFhem, set_default_attrs, set_event_devices
 
@@ -321,6 +322,8 @@ async def test_static_and_api_auth(module):
 
 @pytest.mark.asyncio
 async def test_detail_page(module):
+    # segno for the QR code
+    await check_and_install_dependencies("dashboard")
     page = module.setup_html()
     assert "data:image/png;base64" in page
     assert str(module._attr_port) in page
