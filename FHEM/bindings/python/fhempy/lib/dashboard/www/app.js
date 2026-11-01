@@ -25,7 +25,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Fertig", noRoom: "Kein Raum",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
-    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
+    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", arrange: "Räume ordnen", arrangeLead: "Tippe ein Gerät an, um es in einen Raum zu verschieben. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
     happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
@@ -62,7 +62,7 @@
     roomOfTablet: "Room of this tablet:", next: "Done", noRoom: "No room",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
-    lock: "Lock", unlock: "Unlock", today: "Today", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
+    lock: "Lock", unlock: "Unlock", today: "Today", arrange: "Arrange rooms", arrangeLead: "Tap a device to move it to a room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
     happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
@@ -120,6 +120,7 @@
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
+    pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12l5 5 9-10"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
   };
@@ -208,6 +209,7 @@
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); }
       render(); loadSparks(true); return;
     }
+    if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && S.sheet.arrange) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
@@ -522,7 +524,7 @@
   function renderContent() {
     var el = document.getElementById("content"); if (!el) { return; }
     var top = el.scrollTop;
-    if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
+    if (S.arrange) { el.innerHTML = arrangeHtml(); } else if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
     el.scrollTop = top;
     S.shownTab = S.tab;
   }
@@ -718,7 +720,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.batteries]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename]);
     d.innerHTML = '<div class="sheet ' + (cls || "") + '">' + inner + "</div>";
     if (d.getAttribute("data-key") === key) { d.firstChild.scrollTop = top; }
     d.setAttribute("data-key", key);
@@ -728,6 +730,8 @@
     if (!S.sheet) { return; }
     if (S.sheet.settings) { renderSettings(); return; }
     if (S.sheet.batteries) { renderBatteries(); return; }
+    if (S.sheet.arrange) { renderPick(); return; }
+    if (S.sheet.rename) { renderRename(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
     var head = '<div class="head"><div><h1>' + esc(tile.name) + '</h1><div class="subtitle">' + esc([tile.rooms[0], look.sub].filter(Boolean).join(" · ")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>";
@@ -854,7 +858,8 @@
       '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom">' + roomOpts + "</select></div>" +
       '<div class="group"><div class="label">' + esc(t("theme")) + '</div><div class="seg">' + themes + "</div></div>" +
       '<div class="group"><div class="label">' + esc(t("rooms")) + '</div><div class="list">' + roomList + "</div></div>" +
-      '<div class="group actions"><button class="pill primary" data-edit="1">' + esc(t("editTiles")) + '</button><button class="pill" data-resetlayout="1">' + esc(t("reset")) + "</button></div>" + https);
+      '<div class="group actions"><button class="pill primary" data-edit="1">' + esc(t("editTiles")) + '</button><button class="pill" data-resetlayout="1">' + esc(t("reset")) + "</button></div>" +
+      (tb.arrange ? '<div class="group actions"><button class="pill" data-arrange="1">' + I("home", 20) + " " + esc(t("arrange")) + "</button></div>" : "") + https);
   }
   function allRoomsOrdered() {
     var order = layout().room_order || [];
@@ -872,6 +877,99 @@
     if (S.sheet && S.sheet.settings) { renderSettings(); }
   }
   function copyLayout() { return JSON.parse(JSON.stringify(layout())); }
+
+  // ---------- arranging rooms (FHEM attribute room, for all tablets) ----------
+  function startArrange() {
+    closeSheet(); S.edit = false; S.arrange = { data: null };
+    send({ type: "rooms_setup" }); renderTabs(); renderContent();
+    document.getElementById("content").scrollTop = 0;
+  }
+  function arrangeHtml() {
+    var d = S.arrange.data;
+    var html = '<div class="arrhead"><div><h2>' + esc(t("arrange")) + '</h2><div class="lead">' + esc(t("arrangeLead")) + '</div></div><button class="pill primary" data-arrangedone="1">' + I("check", 20) + " " + esc(t("arrangeDone")) + "</button></div>";
+    if (!d) { return html + '<div class="empty">…</div>'; }
+    var free = d.unassigned || [], sug = free.filter(function (x) { return x.suggestion; });
+    if (free.length) {
+      html += '<div class="leave arrfree"><div class="section" style="margin:0 0 6px"><span>' + esc(t("unassigned")) + " · " + free.length + "</span>" +
+        (sug.length > 1 ? '<button class="pill" data-applyall="1">' + esc(t("applyAll", { n: sug.length })) + "</button>" : "") + "</div>" +
+        free.map(function (x) {
+          return '<div class="row"><div class="ic">' + I(KIND_ICON[x.kind] || "power") + '</div><div class="t"><b>' + esc(x.name) + "</b><span>" + esc(x.id) + "</span></div>" +
+            (x.suggestion ? '<button class="pill sug" data-moveid="' + esc(x.id) + '" data-movefrom="" data-moveto="' + esc(x.suggestion) + '">' + I("right", 18) + " " + esc(x.suggestion) + "</button>" : "") +
+            '<button class="pill" data-pick="' + esc(x.id) + '" data-from="">' + esc(t("chooseRoom")) + "</button></div>";
+        }).join("") + "</div>";
+    } else {
+      html += '<div class="leave"><div class="allclear">' + I("check", 26) + " " + esc(t("allSorted")) + "</div></div>";
+    }
+    html += '<div class="arrgrid">' + (d.rooms || []).map(function (r) {
+      return '<div class="leave arrroom"><div class="arrtitle"><b>' + esc(r.name) + "</b><span>" + r.devices.length + '</span><button class="mini" data-renameroom="' + esc(r.name) + '" aria-label="' + esc(t("renameRoom")) + '">' + I("pencil", 18) + "</button></div>" +
+        '<div class="dchips">' + r.devices.map(function (x) {
+          var other = x.rooms.filter(function (n) { return n !== r.name; });
+          return '<button class="dchip" data-pick="' + esc(x.id) + '" data-from="' + esc(r.name) + '">' + I(KIND_ICON[x.kind] || "power", 16) + " " + esc(x.name) +
+            (other.length ? "<small>" + esc(t("alsoIn", { rooms: other.join(", ") })) + "</small>" : "") + "</button>";
+        }).join("") + "</div></div>";
+    }).join("") + "</div>";
+    return html;
+  }
+  function arrangeDevice(id) {
+    var d = S.arrange && S.arrange.data; if (!d) { return null; }
+    var all = (d.unassigned || []).concat.apply(d.unassigned || [], (d.rooms || []).map(function (r) { return r.devices; }));
+    return all.filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function renderPick() {
+    var pick = S.sheet.arrange, dev = arrangeDevice(pick.id); if (!dev) { closeSheet(); return; }
+    var rooms = (S.arrange.data.rooms || []).map(function (r) { return r.name; });
+    var pills = rooms.map(function (n) {
+      return '<button class="pill' + (n === pick.from ? " on" : "") + '" data-moveid="' + esc(dev.id) + '" data-movefrom="' + esc(pick.from) + '" data-moveto="' + esc(n) + '">' + esc(n) + "</button>";
+    }).join("");
+    sheetShell('<div class="head"><div><h1>' + esc(dev.name) + '</h1><div class="subtitle">' + esc(t("nowIn", { room: pick.from || t("unassigned") })) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="group"><div class="label">' + esc(t("moveTo")) + '</div><div class="roompills">' + pills + "</div></div>" +
+      '<div class="group"><div class="label">' + esc(t("newRoom")) + '</div><div class="inrow"><input id="newroom" maxlength="40" placeholder="' + esc(t("newRoom")) + '"><button class="pill primary" data-newroom="1">' + esc(t("create")) + "</button></div></div>" +
+      (pick.from ? '<div class="group actions"><button class="pill danger" data-moveid="' + esc(dev.id) + '" data-movefrom="' + esc(pick.from) + '" data-moveto="">' + esc(t("removeFrom", { room: pick.from })) + "</button></div>" : ""));
+  }
+  function renderRename() {
+    var room = S.sheet.rename;
+    sheetShell('<div class="head"><div><h1>' + esc(t("renameRoom")) + '</h1><div class="subtitle">' + esc(room) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="group"><div class="inrow"><input id="renameroom" maxlength="40" value="' + esc(room) + '"><button class="pill primary" data-renamesave="1">' + esc(t("save")) + "</button></div></div>");
+  }
+  function validRoom(name) {
+    name = String(name || "").trim();
+    if (!name || /[,;|"\\]/.test(name)) { showBanner(t("badRoom"), 4000); return ""; }
+    return name;
+  }
+  function moveDevice(id, from, to) {
+    send({ type: "move_device", id: id, from: from, to: to });
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+  }
+  function arrangeClick(target) {
+    var el;
+    if ((el = closest(target, "data-arrange"))) { startArrange(); return true; }
+    if (!S.arrange) { return false; }
+    if ((el = closest(target, "data-arrangedone"))) { S.arrange = null; renderTabs(); renderContent(); return true; }
+    if ((el = closest(target, "data-applyall"))) {
+      (S.arrange.data.unassigned || []).filter(function (x) { return x.suggestion; }).forEach(function (x) { moveDevice(x.id, "", x.suggestion); });
+      return true;
+    }
+    if ((el = closest(target, "data-moveto"))) {
+      moveDevice(el.getAttribute("data-moveid"), el.getAttribute("data-movefrom"), el.getAttribute("data-moveto"));
+      closeSheet(); return true;
+    }
+    if ((el = closest(target, "data-pick"))) { S.sheet = { arrange: { id: el.getAttribute("data-pick"), from: el.getAttribute("data-from") } }; renderSheet(); return true; }
+    if ((el = closest(target, "data-renameroom"))) { S.sheet = { rename: el.getAttribute("data-renameroom") }; renderSheet(); return true; }
+    return arrangeSheetClick(target);
+  }
+  function arrangeSheetClick(target) {
+    if (closest(target, "data-newroom")) {
+      var room = validRoom(document.getElementById("newroom").value), pick = S.sheet && S.sheet.arrange;
+      if (room && pick) { moveDevice(pick.id, pick.from, room); closeSheet(); }
+      return true;
+    }
+    if (closest(target, "data-renamesave")) {
+      var to = validRoom(document.getElementById("renameroom").value), from = S.sheet && S.sheet.rename;
+      if (to && from && to !== from) { send({ type: "rename_room", from: from, to: to }); }
+      closeSheet(); return true;
+    }
+    return false;
+  }
 
   // ---------- pairing and setup ----------
   function renderPair(error) {
@@ -1102,6 +1200,7 @@
   document.addEventListener("click", function (ev) {
     if (press && press.saver) { var fresh = Date.now() - press.saver < 800; press = null; if (fresh) { return; } }
     var target = ev.target, el;
+    if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-tile")) && !closest(target, "data-edit") && !closest(target, "data-step")) {
       var id = el.getAttribute("data-tile");
       if (S.edit) { return; }
@@ -1118,7 +1217,7 @@
       S.edit = true; closeSheet(); if (S.tab === "home" || S.tab === "history") { var first = visibleRooms()[0]; if (first) { S.tab = "room:" + first.name; } } renderTabs(); renderContent(); return;
     }
     if ((el = closest(target, "data-editdone"))) { S.edit = false; renderContent(); return; }
-    if ((el = closest(target, "data-tab"))) { S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
+    if ((el = closest(target, "data-tab"))) { S.arrange = null; S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
     if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }

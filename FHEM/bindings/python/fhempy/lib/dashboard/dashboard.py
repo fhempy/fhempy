@@ -76,6 +76,7 @@ EXCLUDED_TYPES = (
     "MQTT2_SERVER",
     "MQTT2_CLIENT",
 )
+ARRANGE_MESSAGES = ("rooms_setup", "move_device", "rename_room")
 RELOAD_ATTRS = ("room", "alias", "genericDeviceType", "matterType", "disable")
 LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
 SETTINGS_ATTRS = (
@@ -177,6 +178,7 @@ class dashboard(generic.FhemModule):
         self._server_lock = asyncio.Lock()
         self.ip = "127.0.0.1"
         self.infos = {}
+        self._arrange_infos = {}
         self.data = {"rooms": [], "tiles": {}, "scenes": []}
         self.head = {}
         self.tablets = {}
@@ -374,6 +376,7 @@ class dashboard(generic.FhemModule):
             for k in ("id", "name", "place", "room", "layout", "rooms", "readonly")
         }
         result["https"] = self.https_url() if self.https_ready else ""
+        result["arrange"] = self.can_arrange(tablet)
         return result
 
     # --- set commands ---
@@ -491,7 +494,7 @@ class dashboard(generic.FhemModule):
 
     # --- FHEM devices ---
 
-    async def resolve_devices(self):
+    async def resolve_devices(self, any_room=False):
         spec = (self._attr_devices or "").strip()
         hidden = (self._attr_hidden_devices or "").strip()
         bell = self.doorbell_spec()[0]
@@ -516,11 +519,17 @@ class dashboard(generic.FhemModule):
             " && !defined($d->{SNIPPET})"
             f" && $d->{{TYPE}} !~ /^(?:{excluded})$/"
             " && AttrVal($_, 'disable', '0') ne '1'"
-            " && ($b{$_} || AttrVal($_, 'room', '') ne ''"
-            f" || $d->{{TYPE}} =~ /^(?:{special_types})$/"
-            " || (defined($d->{FHEMPYTYPE})"
-            f" && $d->{{FHEMPYTYPE}} =~ /^(?:{special_fhempy})$/))"
-            " } @n)"
+            + (
+                # arranging rooms: also the devices without a room, but not
+                # the ones hidden on purpose
+                " && AttrVal($_, 'room', '') !~ /(?:^|,)hidden(?:,|$)/i"
+                if any_room
+                else " && ($b{$_} || AttrVal($_, 'room', '') ne ''"
+                f" || $d->{{TYPE}} =~ /^(?:{special_types})$/"
+                " || (defined($d->{FHEMPYTYPE})"
+                f" && $d->{{FHEMPYTYPE}} =~ /^(?:{special_fhempy})$/))"
+            )
+            + " } @n)"
         )
         result = await fhem.sendCommandHash(self.hash, cmd)
         if not isinstance(result, str) or result.startswith("Exception"):
@@ -750,6 +759,73 @@ class dashboard(generic.FhemModule):
             tablet = self.tablets.get(tablet_id)
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
+
+    # --- arranging rooms ---
+
+    def can_arrange(self, tablet):
+        """only tablets which may see and switch everything change rooms"""
+        return not tablet.get("readonly") and not tablet.get("rooms")
+
+    async def arrange(self, tablet, message, ws):
+        if not self.can_arrange(tablet):
+            return
+        kind = message.get("type")
+        if kind == "move_device":
+            await self.arrange_move(tablet, message)
+        elif kind == "rename_room":
+            await self.arrange_rename(tablet, message)
+        if kind != "rooms_setup":
+            # FHEM sends ATTR events as well, this is for safety
+            self.schedule_reload()
+        if ws is not None:
+            infos = await self.fetch_infos(await self.resolve_devices(any_room=True))
+            self._arrange_infos = infos
+            await self.send(ws, {"type": "rooms_setup", **model.arrangement(infos)})
+
+    async def arrange_move(self, tablet, message):
+        name = str(message.get("id", ""))
+        info = self._arrange_infos.get(name) or self.infos.get(name)
+        source = model.clean_room(message.get("from"), allow_empty=True)
+        target = model.clean_room(message.get("to"), allow_empty=True)
+        if info is None or source is None or target is None:
+            return
+        value = model.moved_rooms(info.get("room", ""), source, target)
+        self.logger.info(f"{tablet['name']}: attr {name} room {value}")
+        if value:
+            command = f"CommandAttr(undef, {fhem.perlString(f'{name} room {value}')})"
+        else:
+            command = f"CommandDeleteAttr(undef, {fhem.perlString(f'{name} room')})"
+        result = await fhem.sendCommandHash(self.hash, command)
+        if result:
+            self.logger.error(f"attr {name} room failed: {result}")
+            return
+        info["room"] = value
+
+    async def arrange_rename(self, tablet, message):
+        source = model.clean_room(message.get("from"))
+        target = model.clean_room(message.get("to"))
+        if not source or not target or source == target:
+            return
+        self.logger.info(f"{tablet['name']}: rename room {source} to {target}")
+        await fhem.sendCommandHash(
+            self.hash,
+            f"my ($f, $t) = ({fhem.perlString(source)}, {fhem.perlString(target)});"
+            " foreach my $d (sort keys %defs) {"
+            " my @r = map { s/^\\s+|\\s+$//gr } split(',', AttrVal($d, 'room', ''));"
+            " next if (!grep { $_ eq $f } @r); my %s;"
+            " @r = grep { !$s{$_}++ } map { $_ eq $f ? $t : $_ } @r;"
+            " CommandAttr(undef, \"$d room \" . join(',', @r)) } ''",
+        )
+        # the tablets keep their order, hidden rooms and their own room
+        for other in self.tablets.values():
+            other["layout"] = model.renamed_layout(other.get("layout"), source, target)
+            if other.get("room") == source:
+                other["room"] = target
+            if source in (other.get("rooms") or []):
+                other["rooms"] = [target if r == source else r for r in other["rooms"]]
+        await self.save_tablets()
+        for other in self.tablets.values():
+            await self.send_tablet(other)
 
     # --- actions of the tablets ---
 
@@ -1168,7 +1244,7 @@ class dashboard(generic.FhemModule):
                     continue
                 if tablet["id"] not in self.tablets:
                     break
-                await self.handle_message(tablet, message)
+                await self.handle_message(tablet, message, ws)
         finally:
             self.clients.pop(ws, None)
         return ws
@@ -1190,9 +1266,11 @@ class dashboard(generic.FhemModule):
         )
         return tablet
 
-    async def handle_message(self, tablet, message):
+    async def handle_message(self, tablet, message, ws=None):
         kind = message.get("type")
-        if kind == "action":
+        if kind in ARRANGE_MESSAGES:
+            await self.arrange(tablet, message, ws)
+        elif kind == "action":
             await self.run_action(tablet, message)
         elif kind == "setup":
             place = message.get("place")

@@ -72,6 +72,14 @@ tablet, then tap *Switch to https* in the settings of the dashboard (port 8096).
 
 ![Somebody rings: live picture, talking and slide to open](screenshot-doorbell.png)
 
+## Arranging rooms
+
+Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
+without a room (with a suggestion from the device name, e.g. `wz_Lamp` goes to *Wohnzimmer*) and every room with its
+devices. Tap a device to move it to another room or to a new one, tap the pencil to rename a room. This changes the
+FHEM attribute `room`, so FHEMWEB and the other modules see the same rooms, and applies to all tablets. Other rooms of
+a device stay. Only tablets without restrictions (all rooms, not read only) can arrange rooms.
+
 ## Restricted tablets
 
 A tablet in the kids' room or at the guest bed may only see some rooms or only show:

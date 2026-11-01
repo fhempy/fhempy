@@ -686,3 +686,140 @@ def sparks(trends, devices):
             continue
         result.setdefault(device, {}).setdefault(key, points)
     return result
+
+
+# --- arranging rooms on a tablet ---
+
+ROOM_ABBREVIATIONS = {
+    "wz": "Wohnzimmer",
+    "sz": "Schlafzimmer",
+    "kz": "Kinderzimmer",
+    "az": "Arbeitszimmer",
+    "ez": "Esszimmer",
+    "gz": "Gästezimmer",
+    "bz": "Badezimmer",
+    "ku": "Küche",
+    "kue": "Küche",
+    "fl": "Flur",
+    "wc": "WC",
+}
+_INVALID_ROOM_RE = re.compile(r'[,;|"\\\n\r\t]')
+
+
+def clean_room(value, allow_empty=False):
+    """a room name sent by a tablet -> the name, "" or None when not usable"""
+    room = str(value or "").strip()
+    if not room:
+        return "" if allow_empty else None
+    if len(room) > 40 or _INVALID_ROOM_RE.search(room):
+        return None
+    if room.lower() in HIDDEN_ROOMS:
+        return None
+    return room
+
+
+def _plain(text):
+    text = str(text).lower()
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        text = text.replace(a, b)
+    return re.sub(r"[^a-z0-9]", "", text)
+
+
+def _initials(room):
+    words = [w for w in re.split(r"[\s_\-]+", room) if w]
+    if len(words) > 1:
+        return "".join(_plain(w)[:1] for w in words)
+    plain = _plain(room)
+    if plain.endswith("zimmer") and len(plain) > 6:
+        return plain[0] + "z"
+    return None
+
+
+def _matches(word, room):
+    plain = _plain(room)
+    if not word or not plain:
+        return False
+    if word == plain or word == _initials(room):
+        return True
+    return len(word) >= 3 and len(plain) >= 3 and (
+        plain.startswith(word) or word.startswith(plain)
+    )
+
+
+def suggest_room(info, rooms):
+    """room for a device from its name or alias: wz_Lampe -> Wohnzimmer,
+    existing rooms first"""
+    words = _split_words(str(info.get("NAME", ""))) + _split_words(
+        str(info.get("alias") or "")
+    )
+    words = [_plain(w) for w in words]
+    for room in rooms:
+        if any(_matches(word, room) for word in words):
+            return room
+    for word in words:
+        if word in ROOM_ABBREVIATIONS:
+            return ROOM_ABBREVIATIONS[word]
+    return ""
+
+
+def arrangement(infos):
+    """rooms with their devices and the devices without a room, for
+    arranging the rooms on a tablet"""
+    rooms, unassigned = {}, []
+    for name in sorted(infos):
+        info = infos[name]
+        if info.get("TYPE") in SCENE_TYPES:
+            continue
+        kind = kind_of(info)
+        if kind is None:
+            continue
+        visible = rooms_of(info)
+        item = {"id": name, "name": display_name(info), "kind": kind, "rooms": visible}
+        if not visible:
+            unassigned.append(item)
+        for room in visible:
+            rooms.setdefault(room, []).append(item)
+    names = sorted(rooms, key=str.lower)
+    for item in unassigned:
+        item["suggestion"] = suggest_room(infos[item["id"]], names)
+    return {
+        "rooms": [
+            {
+                "name": room,
+                "devices": sorted(rooms[room], key=lambda i: i["name"].lower()),
+            }
+            for room in names
+        ],
+        "unassigned": sorted(unassigned, key=lambda i: i["name"].lower()),
+    }
+
+
+def moved_rooms(value, source, target):
+    """attribute room of a device moved from room source ("" when it had none)
+    to room target ("" removes it from source), the other rooms stay"""
+    rooms = []
+    for room in str(value or "").split(","):
+        room = room.strip()
+        if room and room not in rooms:
+            rooms.append(room)
+    index = 0
+    if source in rooms:
+        index = rooms.index(source)
+        rooms.remove(source)
+    if target and target not in rooms:
+        rooms.insert(index, target)
+    return ",".join(rooms)
+
+
+def renamed_layout(layout, source, target):
+    """layout of a tablet after renaming a room"""
+    result = dict(layout or {})
+    for key in ("room_order", "hidden_rooms"):
+        if isinstance(result.get(key), list):
+            result[key] = [target if r == source else r for r in result[key]]
+    order = result.get("tile_order")
+    if isinstance(order, dict) and source in order:
+        order = dict(order)
+        order[target] = order.pop(source)
+        result["tile_order"] = order
+    return result

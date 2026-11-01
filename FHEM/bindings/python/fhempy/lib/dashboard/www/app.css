@@ -97,6 +97,30 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .tile.climate .tsteps { top: 50%; transform: translateY(-50%); align-items: center; gap: 10px; }
 .tile .tsteps .tval { min-width: 64px; text-align: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .tile .tsteps .tval small { display: block; font-size: 12px; font-weight: 500; color: var(--mu); }
+.arrhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
+.arrhead h2 { font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+.arrhead .lead { color: var(--mu); font-size: 15px; max-width: 640px; }
+.arrhead .pill { flex: none; }
+.arrfree { margin-bottom: 16px; }
+.arrfree .section { display: flex; align-items: center; justify-content: space-between; }
+.arrfree .section .pill { text-transform: none; letter-spacing: 0; }
+.arrfree .row .pill { flex: none; height: 40px; }
+.pill.sug { background: rgba(61,219,184,.16); color: var(--teal); }
+.arrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.arrfree .row .t { min-width: 0; flex: 1; }
+.arrroom { padding: 16px 18px; }
+.arrtitle { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.arrtitle b { font-size: 18px; font-weight: 600; }
+.arrtitle span { color: var(--mu); font-size: 14px; flex: 1; }
+.arrtitle .mini { width: 36px; height: 36px; border-radius: 12px; background: var(--card2); display: grid; place-items: center; color: var(--mu); }
+.dchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.dchip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); font-size: 14px; text-align: left; }
+.dchip svg { color: var(--mu); flex: none; }
+.dchip small { color: var(--amber2); font-size: 12px; margin-left: 4px; }
+.roompills { display: flex; flex-wrap: wrap; gap: 8px; }
+.roompills .pill.on { background: var(--tx); color: #0B0E13; font-weight: 600; }
+.inrow { display: flex; gap: 10px; }
+.inrow input { flex: 1; min-width: 0; }
 .spark { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 36%; pointer-events: none; }
 .roomcard .spark { height: 42%; }
 .roomcard .rtemp { position: absolute; right: 18px; top: 14px; font-size: 26px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; text-align: right; }
@@ -274,6 +298,9 @@ body.light .banner.push { background: #fff; color: #151922; }
   .tile.wide { grid-column: span 1; }
   .tile .tsteps { display: none; }
   .tile.climate .tgt { display: inline; }
+  .arrhead { flex-direction: column; }
+  .arrfree .row { flex-wrap: wrap; }
+  .arrgrid { grid-template-columns: 1fr; }
   .tile.climate.wide .cside { display: none; }
   .tile.climate .big { font-size: 34px; }
 }

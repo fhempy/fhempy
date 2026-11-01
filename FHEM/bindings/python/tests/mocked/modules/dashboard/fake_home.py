@@ -166,7 +166,26 @@ class FakeFhem:
             names = re.findall(r"'([^']+)'", code.split("foreach my $d (", 1)[1])
             return json.dumps(self.infos(names))
         if "devspec2array" in code:
-            return ",".join(sorted(self.devices))
+            names = sorted(self.devices)
+            if "(?:^|,)hidden" in code:
+                names = [n for n in names if "hidden" not in self.devices[n]["room"]]
+            return ",".join(names)
+        match = re.search(r"CommandAttr\(undef, '(\S+) room ([^']+)'\)", code)
+        if match:
+            self.devices[match.group(1)]["room"] = match.group(2)
+            return ""
+        match = re.search(r"CommandDeleteAttr\(undef, '(\S+) room'\)", code)
+        if match:
+            self.devices[match.group(1)]["room"] = ""
+            return ""
+        match = re.search(r"my \(\$f, \$t\) = \('([^']+)', '([^']+)'\)", code)
+        if match:
+            source, target = match.groups()
+            for d in self.devices.values():
+                rooms = [r.strip() for r in d["room"].split(",")]
+                if source in rooms:
+                    d["room"] = ",".join(target if r == source else r for r in rooms)
+            return ""
         if "sunrise_abs" in code:
             return "07:02:00,16:45:00"
         match = re.search(r"CommandSet\(undef, '([^']+)'\)", code)

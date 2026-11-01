@@ -390,3 +390,83 @@ def test_sparks_temperature_and_humidity_per_device():
     ]
     result = model.sparks(trends, {"wz_Heizung", "kue_Klima"})
     assert result == {"wz_Heizung": {"t": [20.5, None, 21], "h": [48, 50]}}
+
+
+def test_room_suggestions_and_moves():
+    rooms = ["Bad", "Wohnzimmer"]
+    assert model.suggest_room({"NAME": "wz_Lampe"}, rooms) == "Wohnzimmer"
+    assert model.suggest_room({"NAME": "Licht_Badezimmer"}, rooms) == "Bad"
+    assert model.suggest_room({"NAME": "x", "alias": "Lampe Bad"}, rooms) == "Bad"
+    assert model.suggest_room({"NAME": "ku_Licht"}, rooms) == "Küche"
+    assert model.suggest_room({"NAME": "Steckdose"}, rooms) == ""
+    assert model.moved_rooms("Licht,Wohnzimmer,fhempy", "Licht", "Küche") == (
+        "Küche,Wohnzimmer,fhempy"
+    )
+    assert model.moved_rooms("fhempy", "", "Bad") == "Bad,fhempy"
+    assert model.moved_rooms("Bad", "Bad", "") == ""
+    assert model.moved_rooms("Bad,Flur", "Bad", "Flur") == "Flur"
+    assert model.clean_room(" Gäste WC ") == "Gäste WC"
+    assert model.clean_room("Bad,Flur") is None
+    assert model.clean_room("Bad; delete x") is None
+    assert model.clean_room("hidden") is None
+    assert model.clean_room("", allow_empty=True) == ""
+    layout = {"room_order": ["Bad", "Flur"], "tile_order": {"Bad": ["a"]}}
+    assert model.renamed_layout(layout, "Bad", "Badezimmer") == {
+        "room_order": ["Badezimmer", "Flur"],
+        "tile_order": {"Badezimmer": ["a"]},
+    }
+
+
+@pytest.mark.asyncio
+async def test_arrange_rooms(module):
+    module.fake.devices["wz_Stehlampe2"] = fake_home.device(
+        "dummy", "fhempy", "on off", {"state": "off"}
+    )
+    module.fake.devices["Lampe_versteckt"] = fake_home.device(
+        "dummy", "hidden", "on off", {"state": "off"}
+    )
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["tablet"]["arrange"] is True
+        await ws.send_json({"type": "rooms_setup"})
+        setup = await next_of(ws, "rooms_setup")
+        unassigned = {d["id"]: d for d in setup["unassigned"]}
+        assert unassigned["wz_Stehlampe2"]["suggestion"] == "Wohnzimmer"
+        assert "Lampe_versteckt" not in unassigned
+        assert "Bad" in [r["name"] for r in setup["rooms"]]
+
+        move = {"type": "move_device", "id": "wz_Stehlampe2", "from": ""}
+        await ws.send_json({**move, "to": "Wohnzimmer"})
+        setup = await next_of(ws, "rooms_setup")
+        assert module.fake.devices["wz_Stehlampe2"]["room"] == "Wohnzimmer,fhempy"
+        assert "wz_Stehlampe2" not in [d["id"] for d in setup["unassigned"]]
+
+        # FHEM commands can't be smuggled in with a room name
+        move = {"type": "move_device", "id": "bad_Fenster", "from": "Bad"}
+        await ws.send_json({**move, "to": "x;shutdown"})
+        await next_of(ws, "rooms_setup")
+        assert module.fake.devices["bad_Fenster"]["room"] == "Bad"
+
+        module.tablets[welcome["tablet"]["id"]]["layout"] = {"room_order": ["Bad"]}
+        await ws.send_json({"type": "rename_room", "from": "Bad", "to": "Badezimmer"})
+        setup = await next_of(ws, "rooms_setup")
+        assert module.fake.devices["bad_Fenster"]["room"] == "Badezimmer"
+        assert "Badezimmer" in [r["name"] for r in setup["rooms"]]
+        tablet = module.tablets[welcome["tablet"]["id"]]
+        assert tablet["layout"]["room_order"] == ["Badezimmer"]
+        await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_restricted_tablet_cannot_arrange_rooms(module):
+    _, answer = await pair(module)
+    await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Bad"})
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["tablet"]["arrange"] is False
+        await ws.send_json({"type": "rename_room", "from": "Bad", "to": "Badezimmer"})
+        await ws.send_json({"type": "rooms_setup"})
+        await asyncio.sleep(0.2)
+        assert module.fake.devices["bad_Fenster"]["room"] == "Bad"
+        await ws.close()
