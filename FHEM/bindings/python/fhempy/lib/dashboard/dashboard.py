@@ -32,6 +32,15 @@ RELOAD_DELAY = 2
 RING_REPEAT = 20
 MAX_MESSAGE_SIZE = 64 * 1024
 MAX_SDP_SIZE = 32 * 1024
+ATTRS_TEXT = (
+    "devices",
+    "hidden_devices",
+    "doorbell",
+    "cameras",
+    "go2rtc",
+    "door_camera",
+    "door_opener",
+)
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
 WWW_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "www")
@@ -184,6 +193,13 @@ class dashboard(generic.FhemModule):
         self.doorbells = []
         self.sun = None
         self.ca_pem = ""
+        # until Define has read the attributes, e.g. when FHEMWEB shows the
+        # device page right after define
+        self.ready = False
+        self._attr_port = DEFAULT_PORT
+        self._attr_https_port = DEFAULT_HTTPS_PORT
+        for name in ATTRS_TEXT:
+            setattr(self, "_attr_" + name, "")
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -246,6 +262,7 @@ class dashboard(generic.FhemModule):
         self.ip = await utils.run_blocking(functools.partial(utils.get_local_ip))
         await self.reload()
         await self.start_server()
+        self.ready = True
         self.create_async_task(self.start_cameras())
 
     # FHEM FUNCTION
@@ -261,6 +278,12 @@ class dashboard(generic.FhemModule):
     # FHEM FUNCTION
     async def FW_detailFn(self, hash, args, argsh):
         detail = await super().FW_detailFn(hash, args, argsh)
+        if not self.ready:
+            return (
+                '<div class="makeTable wide"><span class="mkTitle">Tablets</span>'
+                "<table class=\"block wide\"><tr><td>The dashboard is starting, "
+                "reload this page in a moment.</td></tr></table></div>" + str(detail)
+            )
         return self.setup_html() + str(detail)
 
     # --- tablets ---

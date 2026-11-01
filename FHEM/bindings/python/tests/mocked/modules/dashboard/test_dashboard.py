@@ -327,3 +327,17 @@ async def test_detail_page(module):
     page = module.setup_html()
     assert "data:image/png;base64" in page
     assert str(module._attr_port) in page
+
+
+@pytest.mark.asyncio
+async def test_detail_page_while_starting(mocker):
+    # FHEMWEB can ask for the device page before Define is done
+    mock_fhem.mock_module(mocker)
+    mod = dashboard(logging.getLogger(__name__))
+    mod.hash = {"NAME": NAME}
+    mocker.patch(
+        "fhempy.lib.generic.FhemModule.FW_detailFn", return_value=""
+    )
+    page = await mod.FW_detailFn({"NAME": NAME}, [], {})
+    assert "starting" in page
+    assert mod.url().endswith(f":{dash_module.DEFAULT_PORT}/")
