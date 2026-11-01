@@ -6,7 +6,7 @@ import signal
 
 from .. import fhem, utils
 from ..core import child_process, fhemweb, pending_restore
-from . import clusters, server
+from . import clusters, server, system_check
 from .client import MatterClient, MatterServerError
 
 COMMISSION_TIMEOUT = 600
@@ -35,7 +35,9 @@ PAIR_NEW_HELP = (
     "Bluetooth.<br>"
     "Needs: attribute bluetooth_adapter (e.g. 0), and for WiFi devices "
     "'set wifi_credentials' or for Thread devices 'set thread_dataset' "
-    "first.<br>"
+    "first. The reading bluetooth_check shows if Bluetooth is ready.<br>"
+    "Code: the text of the QR code (MT:...) or the 11 digit number, "
+    "without quotes.<br>"
     "Easier alternative: add the device with the app of your phone "
     "(Apple Home, Google Home...) and then use 'set pair' with a code "
     "from 'Connect to other apps'."
@@ -60,6 +62,8 @@ class matter_controller:
         self._started_with = None
         self._stopping = False
         self._log_offset = 0
+        # reasons why Bluetooth pairing won't work, see system_check
+        self._ble_problems = []
 
     async def Define(self, hash, args, argsh):
         self.hash = hash
@@ -125,7 +129,9 @@ class matter_controller:
                 "default": "",
                 "help": "Number of the Bluetooth adapter (0 for hci0) to pair "
                 "brand-new devices via Bluetooth. Leave empty if you pair "
-                "devices with a code from another app.",
+                "devices with a code from another app. fhempy checks "
+                "Bluetooth when the Matter server starts, see reading "
+                "bluetooth_check.",
             },
             "primary_interface": {
                 "default": "",
@@ -244,19 +250,20 @@ class matter_controller:
             return await self.install_server() and await self.start_server()
         await self.apply_restored_backup()
         settings = self.server_settings()
-        port, adapter, interface, test_dcl = settings
+        port, _, interface, test_dcl = settings
         if test_dcl == 1:
             self.logger.warning(
                 "Matter server accepts devices with test certificates "
                 "(attr test_dcl 1), only use this if you trust the vendor"
             )
         self._log_offset = await utils.run_blocking(functools.partial(server.log_size))
+        await self.check_bluetooth()
         try:
             self.proc = server.start(
                 self.node,
                 self.node_env,
                 port,
-                bluetooth_adapter=int(adapter) if str(adapter).isdigit() else None,
+                bluetooth_adapter=self.bluetooth_adapter(),
                 primary_interface=interface or None,
                 test_dcl=test_dcl == 1,
                 logger=self.logger,
@@ -289,6 +296,34 @@ class matter_controller:
             await fhem.readingsSingleUpdate(
                 self.hash, "restore", f"backup applied ({len(applied)} files)", 1
             )
+
+    def bluetooth_adapter(self):
+        adapter = str(self.fhemdev._attr_bluetooth_adapter).strip()
+        return int(adapter) if adapter.isdigit() else None
+
+    async def check_bluetooth(self):
+        """Looks for the usual reasons why pairing via Bluetooth fails
+        (rfkill, missing adapter, no rights for Node.js), result in reading
+        bluetooth_check and next_step"""
+        adapter = self.bluetooth_adapter()
+        if adapter is None or self.external_url is not None:
+            self._ble_problems = []
+            await fhem.CommandDeleteReading(
+                self.hash, self.hash["NAME"] + " bluetooth_check"
+            )
+            return []
+        self._ble_problems = await utils.run_blocking(
+            functools.partial(system_check.bluetooth_problems, adapter, self.node)
+        )
+        for problem in self._ble_problems:
+            self.logger.warning(f"Bluetooth pairing won't work: {problem}")
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash,
+            "bluetooth_check",
+            " ".join(str(p) for p in self._ble_problems) or "ok",
+            1,
+        )
+        return self._ble_problems
 
     def server_settings(self):
         return (
@@ -421,7 +456,14 @@ class matter_controller:
 
     async def update_nodes_reading(self):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "nodes", len(self.nodes), 1)
-        if self.nodes:
+        if self._ble_problems:
+            await self.update_state(
+                "connected, Bluetooth pairing not possible",
+                "Bluetooth pairing (pair_new_device) won't work: "
+                + " ".join(str(p) for p in self._ble_problems)
+                + f" Then 'set {self.hash['NAME']} restart'.",
+            )
+        elif self.nodes:
             await self.update_state(
                 "connected",
                 f"Ready. Pair more devices with 'set {self.hash['NAME']} pair "
@@ -549,9 +591,10 @@ class matter_controller:
         self.fhemdev.create_async_task(self.commission(params["code"], False))
 
     async def commission(self, code, network_only):
-        code = code.strip()
-        if not code.upper().startswith("MT:"):
-            code = code.replace("-", "").replace(" ", "")
+        code = normalize_code(code)
+        if not network_only:
+            # rfkill or a Node.js update might have changed since the start
+            await self.check_bluetooth()
         await fhem.readingsSingleUpdate(
             self.hash, "pairing", "running, this can take a few minutes", 1
         )
@@ -564,9 +607,11 @@ class matter_controller:
             )
         except Exception as exc:
             self.logger.warning(f"Pairing failed: {exc}")
-            await fhem.readingsSingleUpdate(
-                self.hash, "pairing", f"failed: {pairing_error(exc)}", 1
-            )
+            hints = await self.pairing_hints(network_only)
+            text = f"failed: {pairing_error(exc)}"
+            if hints:
+                text += " Possible cause: " + " ".join(str(h) for h in hints)
+            await fhem.readingsSingleUpdate(self.hash, "pairing", text, 1)
             return
         await fhem.readingsSingleUpdate(
             self.hash, "pairing", f"successful, node {node['node_id']}", 1
@@ -574,6 +619,23 @@ class matter_controller:
         self.nodes[node["node_id"]] = node
         await self.update_nodes_reading()
         await self.create_devices_for_node(node)
+
+    async def pairing_hints(self, network_only):
+        """Problems of this computer which explain a failed pairing"""
+        if self.external_url is not None:
+            # the server runs elsewhere, this computer's settings don't matter
+            return []
+        hints = [] if network_only else list(self._ble_problems)
+        try:
+            hints += await utils.run_blocking(
+                functools.partial(
+                    system_check.thread_route_problems,
+                    self.fhemdev._attr_primary_interface or None,
+                )
+            )
+        except Exception:
+            self.logger.exception("Failed to check the Thread route")
+        return hints
 
     async def set_wifi_credentials(self, hash, params):
         await self.run_command(
@@ -667,6 +729,15 @@ def default_webcmd(attributes, endpoint):
     if "desired-temp" in model.sets:
         return "desired-temp"
     return None
+
+
+def normalize_code(code):
+    """Pairing code as the Matter server expects it: QR code text (MT:...)
+    or the 11/21 digit number without dashes, spaces and quotes"""
+    code = code.strip().strip("\"'“”„").strip()
+    if code.upper().startswith("MT:"):
+        return "MT:" + code[3:]
+    return code.replace("-", "").replace(" ", "").replace(".", "")
 
 
 def describe_commissionable(entry):

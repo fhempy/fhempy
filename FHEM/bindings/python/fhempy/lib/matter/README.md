@@ -39,9 +39,19 @@ Pairing takes up to a few minutes, the result is shown in the reading `pairing`.
 
 **Pair a brand-new device via Bluetooth (for advanced users)**
 1. Set the attribute `bluetooth_adapter` to the number of your Bluetooth adapter (`0` for hci0).
+   fhempy then checks Bluetooth and shows the result in the reading `bluetooth_check`. If something
+   is missing, the reading `next_step` shows the command which fixes it, usually one of these:
+   - Bluetooth is blocked: `sudo rfkill unblock bluetooth`
+   - Node.js needs the rights for Bluetooth:
+     `sudo setcap cap_net_raw,cap_net_admin+eip $(readlink -f $(which node))`.
+     These rights are lost after every Node.js update, run the command again then.
+
+   Afterwards `set matter restart`.
 2. WiFi devices: `set matter wifi_credentials <WiFi name> <WiFi password>`.<br>
-   Thread devices: `set matter thread_dataset <dataset>` (active dataset as hex string from your Thread border router).
-3. `set matter pair_new_device <code from the device>`
+   Thread devices: `set matter thread_dataset <dataset>` (active dataset as hex string, the TLVs
+   from your Thread border router).
+3. `set matter pair_new_device <code from the device>`. The code is the text of the QR code
+   (`MT:...`, e.g. read with a QR scanner app or a webcam) or the 11 digit number, without quotes.
 
 ## 3. Use your devices
 
@@ -117,9 +127,25 @@ The devices are shared with Home Assistant then.
 
 - **Pairing fails / timeout**: codes from other apps are only valid for a few minutes, create a new one.
   Make sure the device and FHEM are in the same network and IPv6 is enabled in your router.
-  Thread devices need a Thread border router.
+  Thread devices need a Thread border router. If fhempy finds a reason on this computer, the reading
+  `pairing` names it after "Possible cause".
+- **Thread devices can't be reached**: the FHEM computer needs a route to the Thread network, which
+  the border router announces. Check with `ip -6 route | grep ^fd`, there must be a line like
+  `fdxx:xxxx:xxxx:xxxx::/64 via fe80::... dev eth0`. If it is missing, Linux ignores the
+  announcement (replace eth0 with your interface):
+  ```
+  echo 'net.ipv6.conf.eth0.accept_ra_rt_info_max_plen=64' | sudo tee /etc/sysctl.d/90-fhempy-thread.conf
+  sudo sysctl --system
+  ```
+  With Docker or IP forwarding enabled, also add `net.ipv6.conf.eth0.accept_ra=2`. The border router
+  must be in the same network segment as FHEM, router announcements don't pass most WiFi repeaters.
 - **state "Node.js 22.13 or newer needed"**: install Node.js (see requirements) and restart fhempy.
 - **Logs**: fhempy log and `.fhempy/matter_server/matter_server.log` in your FHEM directory.
 - **Backup**: `.fhempy/matter_server/data` contains the keys of your Matter network. If it is lost,
   all devices have to be reset and paired again. Include it in your backup! github_backup backs it up
-  by default, github_restore applies it before the Matter server starts.
+  by default (keep the backup repository private), github_restore applies it before the Matter server
+  starts.
+- **Restore by hand**: FHEM doesn't need to be stopped. Copy the content of your saved `data`
+  directory to `.fhempy/matter_server_restore/` and run `set matter restart`. fhempy replaces the
+  storage right before the Matter server starts (a running server would overwrite it), the previous
+  storage is kept in `.fhempy/matter_server/data.before_restore`.
