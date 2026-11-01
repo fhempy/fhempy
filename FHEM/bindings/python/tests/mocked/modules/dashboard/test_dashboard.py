@@ -143,10 +143,10 @@ def test_doorbell_and_energy_helpers():
     assert model.is_doorbell({"NAME": "fl_Klingel"})
     assert model.is_doorbell({"NAME": "x", "FHEMPYTYPE": "ring"})
     assert not model.is_doorbell({"NAME": "Licht"})
-    assert model.rings({}, "state", "ding")
-    assert model.rings({}, "action", "single")
-    assert not model.rings({}, "battery", "on")
-    assert not model.rings({}, "state", "idle")
+    assert model.rings("state", "ding")
+    assert model.rings("action", "single")
+    assert not model.rings("battery", "on")
+    assert not model.rings("state", "idle")
     assert model.watts("3.4") == 3400
     assert model.watts("1200 W") == 1200
     assert model.watts("1.5 kW") == 1500

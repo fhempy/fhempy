@@ -311,6 +311,31 @@ def scenes_of(info):
     return []
 
 
+def _scene_items(name, info):
+    return [
+        {"id": f"{name}:{scene}", "device": name, "scene": scene, "name": scene,
+         "room": room}
+        for room in rooms_of(info)
+        for scene in scenes_of(info)
+    ]
+
+
+def _sorted_rooms(rooms, order):
+    order = list(order or [])
+
+    def room_key(room):
+        if room["name"] in order:
+            return (0, order.index(room["name"]), "")
+        return (1, -len(room["tiles"]), room["name"].lower())
+
+    room_list = []
+    for room, items in rooms.items():
+        items.sort(key=_tile_sort_key)
+        room_list.append({"name": room, "tiles": [t["id"] for t in items]})
+    room_list.sort(key=room_key)
+    return room_list
+
+
 def build(infos, order=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)"""
@@ -320,35 +345,16 @@ def build(infos, order=None):
     for name in sorted(infos):
         info = infos[name]
         if info.get("TYPE") in SCENE_TYPES:
-            for room in rooms_of(info):
-                for scene in scenes_of(info):
-                    scenes.append(
-                        {"id": f"{name}:{scene}", "device": name, "scene": scene,
-                         "name": scene, "room": room}
-                    )
+            scenes.extend(_scene_items(name, info))
             continue
         device_rooms = rooms_of(info)
-        if not device_rooms:
-            continue
-        item = tile(info, device_rooms[0])
+        item = tile(info, device_rooms[0]) if device_rooms else None
         if item is None:
             continue
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
-    room_list = []
-    for room, items in rooms.items():
-        items.sort(key=_tile_sort_key)
-        room_list.append({"name": room, "tiles": [t["id"] for t in items]})
-    order = [r for r in (order or [])]
-
-    def room_key(room):
-        if room["name"] in order:
-            return (0, order.index(room["name"]), "")
-        return (1, -len(room["tiles"]), room["name"].lower())
-
-    room_list.sort(key=room_key)
-    return {"rooms": room_list, "tiles": tiles, "scenes": scenes}
+    return {"rooms": _sorted_rooms(rooms, order), "tiles": tiles, "scenes": scenes}
 
 
 # --- header ---
@@ -474,39 +480,46 @@ def header(infos, tiles):
 # --- commands of the tablets ---
 
 
+def _toggle(kind, state):
+    if kind in SWITCHABLE:
+        return {"on": not state.get("on")}
+    if kind == "lock":
+        return {"locked": not state.get("locked")}
+    if kind == "blind":
+        return {"position": 0 if (state.get("position") or 0) > 0 else 100}
+    return None
+
+
+def _level(value):
+    level = _clamp(value, 0, 100)
+    return {"on": False} if level == 0 else {"level": level}
+
+
+# action -> wanted state, value is the number sent by the tablet
+ACTIONS = {
+    "on": lambda value: {"on": True},
+    "off": lambda value: {"on": False},
+    "level": _level,
+    "position": lambda value: {"position": _clamp(value, 0, 100)},
+    "stop": lambda value: {"stop": True},
+    "target": lambda value: {"target": _clamp(value, 4.5, 30, 1)},
+    "lock": lambda value: {"locked": True},
+    "unlock": lambda value: {"locked": False},
+}
+
+
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
-    kind = item["kind"]
-    state = item["state"]
     if action == "toggle":
-        if kind in SWITCHABLE:
-            wanted = {"on": not state.get("on")}
-        elif kind == "lock":
-            wanted = {"locked": not state.get("locked")}
-        elif kind == "blind":
-            wanted = {"position": 0 if (state.get("position") or 0) > 0 else 100}
-        else:
-            return []
-    elif action == "on":
-        wanted = {"on": True}
-    elif action == "off":
-        wanted = {"on": False}
-    elif action == "level":
-        wanted = {"level": _clamp(value, 0, 100)}
-        if wanted["level"] == 0:
-            wanted = {"on": False}
-    elif action == "position":
-        wanted = {"position": _clamp(value, 0, 100)}
-    elif action == "stop":
-        wanted = {"stop": True}
-    elif action == "target":
-        wanted = {"target": _clamp(value, 4.5, 30, 1)}
-    elif action in ("lock", "unlock"):
-        wanted = {"locked": action == "lock"}
+        wanted = _toggle(item["kind"], item["state"])
+    elif action in ACTIONS:
+        wanted = ACTIONS[action](value)
     else:
+        wanted = None
+    if wanted is None:
         return []
-    return kinds.fhem_commands(kind, info, wanted)
+    return kinds.fhem_commands(item["kind"], info, wanted)
 
 
 def _clamp(value, low, high, digits=0):
@@ -551,6 +564,12 @@ def watts(value):
     return round(number)
 
 
+def _energy_value(key, value):
+    if key in ("battery", "price"):
+        return kinds.number(value)
+    return watts(value)
+
+
 def energy(infos):
     """solar, grid, load in W, battery in %, price; None without such devices"""
     result = {}
@@ -558,17 +577,9 @@ def energy(infos):
         if not is_energy(info):
             continue
         for key, names in ENERGY_READINGS.items():
-            if key in result:
-                continue
             value = _reading(info, *names)
-            if value is None:
-                continue
-            if key in ("battery",):
-                result[key] = kinds.number(value)
-            elif key == "price":
-                result[key] = kinds.number(value)
-            else:
-                result[key] = watts(value)
+            if key not in result and value is not None:
+                result[key] = _energy_value(key, value)
     result = {k: v for k, v in result.items() if v is not None}
     if not result:
         return None
@@ -587,7 +598,7 @@ def is_doorbell(info):
     return any(word in text for word in DOORBELL_WORDS)
 
 
-def rings(info, reading, value):
+def rings(reading, value):
     """True if this event of a doorbell means somebody rings"""
     if reading not in DOORBELL_READINGS:
         return False

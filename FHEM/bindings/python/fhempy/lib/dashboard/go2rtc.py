@@ -107,10 +107,12 @@ async def install(logger):
     url = DOWNLOAD_URL.format(VERSION, architecture())
     logger.info(f"Downloading go2rtc {VERSION}")
     timeout = aiohttp.ClientTimeout(total=600, sock_read=60)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
-        async with session.get(url) as resp:
-            resp.raise_for_status()
-            data = await resp.read()
+    async with (
+        aiohttp.ClientSession(timeout=timeout) as session,
+        session.get(url) as resp,
+    ):
+        resp.raise_for_status()
+        data = await resp.read()
     await utils.run_blocking(functools.partial(_write_binary, data))
 
 
@@ -153,10 +155,12 @@ class Go2rtc:
         if not self.url:
             raise RuntimeError("no camera configured")
         timeout = aiohttp.ClientTimeout(total=15)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.request(method, self.url + path, **kwargs) as resp:
-                body = await resp.read()
-                return resp.status, resp.headers.get("Content-Type", ""), body
+        async with (
+            aiohttp.ClientSession(timeout=timeout) as session,
+            session.request(method, self.url + path, **kwargs) as resp,
+        ):
+            body = await resp.read()
+            return resp.status, resp.headers.get("Content-Type", ""), body
 
     async def streams(self):
         try:

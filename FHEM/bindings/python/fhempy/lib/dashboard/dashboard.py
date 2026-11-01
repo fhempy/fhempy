@@ -127,6 +127,22 @@ def qr_image(text):
 
 
 
+def parse_message(msg, text_type):
+    """JSON object of a WebSocket text message, None for anything else"""
+    if msg.type != text_type:
+        return None
+    try:
+        message = json.loads(msg.data)
+    except ValueError:
+        return None
+    return message if isinstance(message, dict) else None
+
+
+def read_static(path):
+    with open(path, "rb") as file:
+        return file.read()
+
+
 def server_ssl_context(ca_key, ca_cert, ip):
     """certificate for all local names of this host, signed by the own CA"""
     from ..push import certs
@@ -395,7 +411,7 @@ class dashboard(generic.FhemModule):
         tablet = self._tablet_by_name(params["tablet"])
         self.tablets.pop(tablet["id"], None)
         await self.save_tablets()
-        for ws, tablet_id in list(self.clients.items()):
+        for ws, tablet_id in self.connected():
             if tablet_id == tablet["id"]:
                 await ws.close()
 
@@ -424,30 +440,30 @@ class dashboard(generic.FhemModule):
         await self.send_tablet(tablet)
 
     async def set_attr_port(self, hash):
-        self.create_async_task(self.start_server())
+        await self.start_server()
 
     async def set_attr_https_port(self, hash):
-        self.create_async_task(self.start_server())
+        await self.start_server()
 
-    async def set_attr_cameras(self, hash):
+    def set_attr_cameras(self, hash):
         self.create_async_task(self.start_cameras())
 
-    async def set_attr_go2rtc(self, hash):
+    def set_attr_go2rtc(self, hash):
         self.create_async_task(self.start_cameras())
 
-    async def set_attr_devices(self, hash):
+    def set_attr_devices(self, hash):
         self.schedule_reload()
 
-    async def set_attr_hidden_devices(self, hash):
+    def set_attr_hidden_devices(self, hash):
         self.schedule_reload()
 
-    async def set_attr_doorbell(self, hash):
+    def set_attr_doorbell(self, hash):
         self.schedule_reload()
 
-    async def set_attr_door_camera(self, hash):
+    def set_attr_door_camera(self, hash):
         self.schedule_reload()
 
-    async def set_attr_door_opener(self, hash):
+    def set_attr_door_opener(self, hash):
         self.schedule_reload()
 
     # --- FHEM devices ---
@@ -596,7 +612,7 @@ class dashboard(generic.FhemModule):
             ",".join(b["id"] for b in self.doorbells) or "none",
         )
         await fhem.readingsEndUpdate(self.hash, 1)
-        for ws, tablet_id in list(self.clients.items()):
+        for ws, tablet_id in self.connected():
             tablet = self.tablets.get(tablet_id)
             if tablet is not None:
                 await self.send(ws, {"type": "model", **self.model_message(tablet)})
@@ -654,7 +670,7 @@ class dashboard(generic.FhemModule):
                 continue
             wanted = bell.get("reading")
             if (wanted and reading == wanted) or (
-                not wanted and model.rings(info, reading, value)
+                not wanted and model.rings(reading, value)
             ):
                 await self.ring(bell)
 
@@ -676,7 +692,7 @@ class dashboard(generic.FhemModule):
             }
         )
 
-    async def handle_global_event(self, device, reading, value):
+    def handle_global_event(self, device, reading, value):
         words = str(value).split(" ")
         if len(words) < 2:
             return
@@ -700,7 +716,7 @@ class dashboard(generic.FhemModule):
         return not allowed or any(r in allowed for r in item["rooms"])
 
     async def send_tile(self, item):
-        for ws, tablet_id in list(self.clients.items()):
+        for ws, tablet_id in self.connected():
             tablet = self.tablets.get(tablet_id)
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
@@ -711,28 +727,40 @@ class dashboard(generic.FhemModule):
         if tablet.get("readonly"):
             return
         action = str(message.get("action", ""))
+        special = {
+            "all_off": self.action_all_off,
+            "open_door": self.action_open_door,
+            "scene": self.action_scene,
+        }.get(action)
+        if special is not None:
+            await special(tablet, message)
+        else:
+            await self.action_tile(tablet, action, message)
+
+    async def action_all_off(self, tablet, message):
         allowed = tablet.get("rooms") or []
-        if action == "all_off":
-            room = message.get("room") or None
-            if allowed and room not in allowed:
-                return
-            for name in model.all_off(self.data["tiles"], room):
-                await self.fhem_set(tablet, name, "off")
+        room = message.get("room") or None
+        if allowed and room not in allowed:
             return
-        if action == "open_door":
-            opener = parse_opener(self._attr_door_opener)
-            if opener is not None and (
-                tablet.get("place") == "door" or message.get("ringing")
-            ):
-                await self.fhem_set(tablet, opener[0], opener[1])
+        for name in model.all_off(self.data["tiles"], room):
+            await self.fhem_set(tablet, name, "off")
+
+    async def action_open_door(self, tablet, message):
+        opener = parse_opener(self._attr_door_opener)
+        if opener is None:
             return
-        if action == "scene":
-            scene = next(
-                (s for s in self.data["scenes"] if s["id"] == message.get("id")), None
-            )
-            if scene is not None and (not allowed or scene["room"] in allowed):
-                await self.fhem_set(tablet, scene["device"], f"scene {scene['scene']}")
-            return
+        if tablet.get("place") == "door" or message.get("ringing"):
+            await self.fhem_set(tablet, opener[0], opener[1])
+
+    async def action_scene(self, tablet, message):
+        allowed = tablet.get("rooms") or []
+        scene = next(
+            (s for s in self.data["scenes"] if s["id"] == message.get("id")), None
+        )
+        if scene is not None and (not allowed or scene["room"] in allowed):
+            await self.fhem_set(tablet, scene["device"], f"scene {scene['scene']}")
+
+    async def action_tile(self, tablet, action, message):
         item = self.data["tiles"].get(str(message.get("id", "")))
         if item is None or not self.allowed_tile(tablet, item):
             return
@@ -904,7 +932,7 @@ class dashboard(generic.FhemModule):
         )
 
     async def stop_server(self):
-        for ws in list(self.clients):
+        for ws, _ in self.connected():
             await ws.close()
         self.clients = {}
         runners, self.runners = self.runners, []
@@ -961,9 +989,11 @@ class dashboard(generic.FhemModule):
         name = request.match_info.get("file", "index.html")
         if name not in STATIC_FILES:
             raise web.HTTPNotFound()
-        path = os.path.join(WWW_DIR, name)
-        return web.FileResponse(
-            path,
+        body = await utils.run_blocking(
+            functools.partial(read_static, os.path.join(WWW_DIR, name))
+        )
+        return web.Response(
+            body=body,
             headers={
                 "Content-Type": STATIC_FILES[name],
                 "Cache-Control": "no-cache",
@@ -974,11 +1004,12 @@ class dashboard(generic.FhemModule):
     async def handle_ca(self, request):
         from aiohttp import web
 
-        pem = self.ca_pem
-        if not pem:
+        # the CA of the https address, as stored in FHEM
+        pem = await fhem.ReadingsVal(self.hash["NAME"], ".ca_cert", "")
+        if not self.ca_pem or not pem:
             raise web.HTTPNotFound()
         return web.Response(
-            body=pem.encode(),
+            body=pem.replace("\\n", "\n").encode(),
             headers={
                 "Content-Type": "application/x-x509-ca-cert",
                 "Content-Disposition": 'attachment; filename="fhempy-ca.crt"',
@@ -1076,28 +1107,13 @@ class dashboard(generic.FhemModule):
         tablet = None
         try:
             async for msg in ws:
-                if msg.type != WSMsgType.TEXT:
-                    continue
-                try:
-                    message = json.loads(msg.data)
-                except ValueError:
-                    continue
-                if not isinstance(message, dict):
+                message = parse_message(msg, WSMsgType.TEXT)
+                if message is None:
                     continue
                 if tablet is None:
-                    tablet = self.tablet_by_token(message.get("token"))
-                    if message.get("type") != "hello" or tablet is None:
-                        await ws.send_json({"type": "unknown"})
+                    tablet = await self.greet(ws, message)
+                    if tablet is None:
                         break
-                    self.clients[ws] = tablet["id"]
-                    tablet["seen"] = now_text()
-                    await ws.send_json(
-                        {
-                            "type": "welcome",
-                            "tablet": self.public_tablet(tablet),
-                            **self.model_message(tablet),
-                        }
-                    )
                     continue
                 if tablet["id"] not in self.tablets:
                     break
@@ -1105,6 +1121,23 @@ class dashboard(generic.FhemModule):
         finally:
             self.clients.pop(ws, None)
         return ws
+
+    async def greet(self, ws, message):
+        """first message of a tablet: hello with its token"""
+        tablet = self.tablet_by_token(message.get("token"))
+        if message.get("type") != "hello" or tablet is None:
+            await ws.send_json({"type": "unknown"})
+            return None
+        self.clients[ws] = tablet["id"]
+        tablet["seen"] = now_text()
+        await ws.send_json(
+            {
+                "type": "welcome",
+                "tablet": self.public_tablet(tablet),
+                **self.model_message(tablet),
+            }
+        )
+        return tablet
 
     async def handle_message(self, tablet, message):
         kind = message.get("type")
@@ -1126,7 +1159,7 @@ class dashboard(generic.FhemModule):
             await self.send_tablet(tablet)
 
     async def send_tablet(self, tablet, with_model=False):
-        for ws, tablet_id in list(self.clients.items()):
+        for ws, tablet_id in self.connected():
             if tablet_id != tablet["id"]:
                 continue
             await self.send(ws, {"type": "tablet", "tablet": self.public_tablet(tablet)})
@@ -1139,8 +1172,13 @@ class dashboard(generic.FhemModule):
         except (ConnectionError, RuntimeError):
             self.clients.pop(ws, None)
 
+    def connected(self):
+        """(websocket, tablet id) of the connected tablets, as a copy: sending
+        can end connections, which removes them from self.clients"""
+        return list(self.clients.items())
+
     async def broadcast(self, message):
-        for ws in list(self.clients):
+        for ws, _ in self.connected():
             await self.send(ws, message)
 
     # --- FHEMWEB page ---
