@@ -526,7 +526,7 @@
       var openHere = (S.header.open || []).some(function (o) { return o.room === r.name; });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
-    if (S.header.timeline) { tabs.push({ id: "history", name: t("history") }); }
+    if (seesTimeline()) { tabs.push({ id: "history", name: t("history") }); } else if (S.tab === "history") { S.tab = "home"; }
     el.innerHTML = tabs.map(function (tb) {
       return '<button class="tab' + (tb.id === S.tab ? " on" : "") + '" data-tab="' + esc(tb.id) + '">' + esc(tb.name) + (tb.dot ? '<span class="dot"></span>' : "") + "</button>";
     }).join("");
@@ -674,8 +674,10 @@
   function entryColor(e) {
     return { security: "#FF8A3D", alert: "#FF5A5F", presence: "#34D399", light: "#FFB547", climate: "#5AA9FF", energy: "#9B8CFF", device: "#9B8CFF" }[e.category] || "#8C95A5";
   }
+  // a timeline device exists and FHEM allows this tablet to see it (set tablet_timeline)
+  function seesTimeline() { return !!S.header.timeline && !(S.tablet && S.tablet.timeline === false); }
   function happenedHtml(roomName) {
-    if (!S.header.timeline) { return ""; }
+    if (!seesTimeline()) { return ""; }
     var day = today(); loadDay(day);
     var data = S.timeline[day] && S.timeline[day].data; if (!data || !data.entries) { return ""; }
     var list = data.entries.filter(function (e) { return ("," + (e.room || "") + ",").indexOf("," + roomName + ",") >= 0; }).slice(-6).reverse();
@@ -687,7 +689,7 @@
 
   // the last events of the whole home, today and if it was quiet also yesterday
   function latelyHtml() {
-    if (!S.header.timeline) { return ""; }
+    if (!seesTimeline()) { return ""; }
     var day = today(), d = new Date(), y = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
     var yday = y.getFullYear() + "-" + two(y.getMonth() + 1) + "-" + two(y.getDate());
     loadDay(day);
@@ -706,7 +708,7 @@
   }
 
   function historyHtml() {
-    if (!S.header.timeline) { return '<div class="empty">' + esc(t("noTimeline")) + "</div>"; }
+    if (!seesTimeline()) { return '<div class="empty">' + esc(t("noTimeline")) + "</div>"; }
     var day = S.historyDay || today(); loadDay(day);
     var chips = "", d = new Date();
     for (var i = 6; i >= 0; i--) {

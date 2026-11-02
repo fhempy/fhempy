@@ -100,12 +100,16 @@ a device stay. Only tablets without restrictions (all rooms, not read only) can 
 
 ## Restricted tablets
 
-A tablet in the kids' room or at the guest bed may only see some rooms or only show:
+A tablet in the kids' room or at the guest bed may only see some rooms, only show, or not see the timeline (what
+happened at home and the history of devices; temperature curves stay):
 
 ```
 set tablets tablet_rooms Kids Kids_room,Bathroom
-set tablets tablet_readonly Guests on
+set tablets tablet_readonly Guests 1
+set tablets tablet_timeline Guests 0
 ```
+
+A tablet for some rooms only sees the timeline entries of these rooms.
 
 `set tablets remove_tablet <name>` disconnects a tablet (lost or sold), it has to be paired again then.
 
@@ -140,7 +144,8 @@ and `hidden_devices` to leave devices out, e.g. `Alarm_system,TYPE=CUL_HM`. Room
 | remove_tablet | Disconnect a tablet |
 | rename_tablet | Rename a tablet |
 | tablet_rooms | Rooms a tablet may see, empty: all |
-| tablet_readonly | on: the tablet may only show |
+| tablet_readonly | 1: the tablet may only show |
+| tablet_timeline | 0: the tablet doesn't show the timeline, 1: it does (default) |
 
 ## Security
 

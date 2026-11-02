@@ -571,3 +571,58 @@ def test_presence_people_with_arrival_and_departure():
         ("Anna", True, "2026-11-02 18:42:00"),
         ("Lea", False, "2026-11-01 07:10:00"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_tablet_without_timeline(module):
+    async def day(d):
+        return {
+            "day": d,
+            "periods": [{"start": "2026-10-01", "end": "2026-10-05"}],
+            "entries": [
+                {"ts": 1, "text": "Light on", "room": "Wohnzimmer"},
+                {"ts": 2, "text": "Door open", "room": "Flur,Haus"},
+            ],
+            "trends": [],
+        }
+
+    async def history(device):
+        return {"activity": [{"segments": []}], "trends": [], "to": 10}
+
+    module.timeline_day = day
+    module.timeline_device_history = history
+    _, answer = await pair(module)
+    auth = {"Authorization": "Bearer " + answer["token"]}
+    tile = next(iter(module.data["tiles"]))
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "api/timeline", headers=auth) as resp:
+            assert resp.status == 200
+            assert len((await resp.json())["entries"]) == 2
+        # a tablet for some rooms only sees what happened there
+        await module.set_tablet_rooms(
+            module.hash, {"tablet": "Tablet1", "rooms": "Wohnzimmer"}
+        )
+        async with session.get(base(module) + "api/timeline", headers=auth) as resp:
+            data = await resp.json()
+            assert [e["text"] for e in data["entries"]] == ["Light on"]
+            assert data["periods"] == []
+        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "all"})
+        await module.set_tablet_timeline(
+            module.hash, {"tablet": "Tablet1", "timeline": "0"}
+        )
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["tablet"]["timeline"] is False
+        await ws.close()
+        async with session.get(base(module) + "api/timeline", headers=auth) as resp:
+            assert resp.status == 403
+        async with session.get(
+            base(module) + "api/history?id=" + tile, headers=auth
+        ) as resp:
+            data = await resp.json()
+            assert "activity" not in data and data["to"] == 10
+        assert "(no timeline)" in module.setup_html()
+        await module.set_tablet_timeline(
+            module.hash, {"tablet": "Tablet1", "timeline": "1"}
+        )
+        async with session.get(base(module) + "api/timeline", headers=auth) as resp:
+            assert resp.status == 200

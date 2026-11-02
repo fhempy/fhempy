@@ -391,7 +391,13 @@ class dashboard(generic.FhemModule):
         }
         result["https"] = self.https_url() if self.https_ready else ""
         result["arrange"] = self.can_arrange(tablet)
+        result["timeline"] = self.sees_timeline(tablet)
         return result
+
+    @staticmethod
+    def sees_timeline(tablet):
+        """set tablet_timeline <tablet> 0 hides what happened at home"""
+        return tablet.get("timeline", True) is not False
 
     # --- set commands ---
 
@@ -423,6 +429,12 @@ class dashboard(generic.FhemModule):
                 "args": ["tablet", "readonly"],
                 "options": "0,1",
                 "help": "1: the tablet only shows, it can't switch anything.",
+            }
+            config["tablet_timeline"] = {
+                "args": ["tablet", "timeline"],
+                "options": "0,1",
+                "help": "0: the tablet doesn't show the timeline (what happened "
+                "at home, history of devices), 1: it does (default).",
             }
         return config
 
@@ -476,6 +488,12 @@ class dashboard(generic.FhemModule):
     async def set_tablet_readonly(self, hash, params):
         tablet = self._tablet_by_name(params["tablet"])
         tablet["readonly"] = str(params["readonly"]) == "1"
+        await self.save_tablets()
+        await self.send_tablet(tablet)
+
+    async def set_tablet_timeline(self, hash, params):
+        tablet = self._tablet_by_name(params["tablet"])
+        tablet["timeline"] = str(params["timeline"]) != "0"
         await self.save_tablets()
         await self.send_tablet(tablet)
 
@@ -1228,13 +1246,33 @@ class dashboard(generic.FhemModule):
     async def handle_timeline(self, request):
         from aiohttp import web
 
-        self._checked(request)
+        tablet = self._checked(request)
+        if not self.sees_timeline(tablet):
+            raise web.HTTPForbidden()
         day = request.query.get("day") or datetime.date.today().isoformat()
         try:
             day = datetime.date.fromisoformat(day).isoformat()
         except ValueError:
             raise web.HTTPBadRequest()
-        return web.json_response(await self.timeline_day(day))
+        data = await self.timeline_day(day)
+        allowed = tablet.get("rooms") or []
+        if allowed and "entries" in data:
+            # tablets for some rooms only see what happened there
+            data["entries"] = [
+                e
+                for e in data["entries"]
+                if any(r in allowed for r in str(e.get("room") or "").split(","))
+            ]
+            devices = {
+                item["id"]
+                for item in self.data["tiles"].values()
+                if self.allowed_tile(tablet, item)
+            }
+            data["trends"] = [
+                tr for tr in data.get("trends", []) if tr.get("device") in devices
+            ]
+            data["periods"] = []
+        return web.json_response(data)
 
     async def handle_history(self, request):
         from aiohttp import web
@@ -1243,7 +1281,11 @@ class dashboard(generic.FhemModule):
         item = self.data["tiles"].get(request.query.get("id", ""))
         if item is None or not self.allowed_tile(tablet, item):
             raise web.HTTPNotFound()
-        return web.json_response(await self.timeline_device_history(item["id"]))
+        data = await self.timeline_device_history(item["id"])
+        if not self.sees_timeline(tablet) and isinstance(data, dict):
+            # the curves stay, what happened when not
+            data = {k: v for k, v in data.items() if k in ("trends", "from", "to")}
+        return web.json_response(data)
 
     async def handle_sparks(self, request):
         from aiohttp import web
@@ -1397,7 +1439,8 @@ class dashboard(generic.FhemModule):
             f"<td>{html.escape(PLACE_NAMES.get(t.get('place'), '-'))}</td>"
             f"<td>{html.escape(t.get('room') or '-')}</td>"
             f"<td>{html.escape(', '.join(t.get('rooms') or []) or 'all')}"
-            f"{' (read only)' if t.get('readonly') else ''}</td>"
+            f"{' (read only)' if t.get('readonly') else ''}"
+            f"{' (no timeline)' if not self.sees_timeline(t) else ''}</td>"
             f"<td>{html.escape(t.get('seen') or t.get('created') or '')}</td></tr>"
             for t in self.tablets.values()
         )
