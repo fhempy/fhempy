@@ -15,6 +15,36 @@ SWITCH_EVENTS = {
     4: "long_release",
 }
 
+# OTA Software Update Requestor cluster on endpoint 0 of a node
+OTA_REQUESTOR = 42
+UPDATE_STATE = 2
+UPDATE_PROGRESS = 3
+UPDATE_STATES = {
+    2: "checking",
+    3: "waiting for the update server",
+    4: "downloading",
+    5: "installing",
+    6: "waiting to install",
+    7: "rolling back",
+    8: "waiting for confirmation on the device",
+}
+# software version (number) in the Basic Information cluster
+SOFTWARE_VERSION_PATH = f"0/{clusters.BASIC_INFORMATION}/9"
+FIRMWARE_CHECK_INTERVAL = 24 * 3600
+FIRMWARE_CHECK_DELAY = 300
+
+CHECK_FIRMWARE_HELP = (
+    "Asks the Matter server whether the manufacturer published a newer "
+    "firmware (Matter DCL), result in reading firmware_update. fhempy also "
+    "checks once a day."
+)
+UPDATE_FIRMWARE_HELP = (
+    "Installs the newer firmware shown in reading firmware_update. The "
+    "device downloads it over the network, this can take a long time "
+    "(Thread devices up to an hour), progress in reading firmware_update. "
+    "Don't unplug the device meanwhile."
+)
+
 SHARE_HELP = (
     "Shows a pairing code (reading share_code) for 3 minutes to add this "
     "device to another app as well, e.g. Apple Home, Google Home or Alexa. "
@@ -33,6 +63,9 @@ class matter_device:
         self.endpoint = None
         self.model = None
         self.values = {}
+        self.available_firmware = None
+        self._updating = False
+        self._firmware_task = None
 
     async def Define(self, hash, args, argsh):
         self.hash = hash
@@ -72,6 +105,9 @@ class matter_device:
         self.fhemdev.create_async_task(self.connect_controller())
 
     async def Undefine(self, hash):
+        if self._firmware_task is not None:
+            self._firmware_task.cancel()
+            self._firmware_task = None
         if self.controller is not None:
             self.controller.unregister_device(self)
 
@@ -83,6 +119,10 @@ class matter_device:
                 self.controller = controller
                 controller.register_device(self)
                 await self.node_updated()
+                if self._firmware_task is None:
+                    self._firmware_task = self.fhemdev.create_async_task(
+                        self.check_firmware_regularly()
+                    )
                 return
             await asyncio.sleep(2)
 
@@ -129,6 +169,12 @@ class matter_device:
         endpoint, cluster, attribute = clusters.parse_path(path)
         if endpoint not in self.model.endpoints:
             return False
+        if (
+            endpoint == 0
+            and cluster == OTA_REQUESTOR
+            and self.supports_firmware_update()
+        ):
+            await self._bulk_update_state()
         converted = self.model.convert(path, value)
         if converted is not None:
             name, reading_value = converted
@@ -188,6 +234,132 @@ class matter_device:
             return "offline"
         return self.model.state(self.values)
 
+    # --- firmware update (OTA) ---
+
+    def supports_firmware_update(self):
+        """Only the FHEM device of the node itself (not bridged devices) and
+        only if the node can be updated over Matter"""
+        node = self.node
+        if self.endpoint is not None or node is None:
+            return False
+        return f"0/{OTA_REQUESTOR}/{UPDATE_STATE}" in node.get("attributes", {})
+
+    def _node_attribute(self, path):
+        node = self.node
+        if node is None:
+            return None
+        return node.get("attributes", {}).get(path)
+
+    def update_state_text(self):
+        """None if no update is running"""
+        state = self._node_attribute(f"0/{OTA_REQUESTOR}/{UPDATE_STATE}")
+        if state not in UPDATE_STATES:
+            return None
+        text = UPDATE_STATES[state]
+        progress = self._node_attribute(f"0/{OTA_REQUESTOR}/{UPDATE_PROGRESS}")
+        if isinstance(progress, int) and state in (4, 5):
+            text += f" {progress}%"
+        return text
+
+    def available_text(self):
+        update = self.available_firmware
+        if update is None:
+            return "up to date"
+        version = update.get("software_version_string") or str(
+            update.get("software_version")
+        )
+        return f"{version} available"
+
+    async def _bulk_update_state(self):
+        text = self.update_state_text()
+        if text is not None:
+            self._updating = True
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "firmware_update", text)
+            return
+        if self._updating:
+            # back to idle: the update finished (or failed), check again
+            self._updating = False
+            self.fhemdev.create_async_task(self.check_firmware())
+
+    def _newer(self, update):
+        if not update or update.get("software_version") is None:
+            return None
+        current = self._node_attribute(SOFTWARE_VERSION_PATH)
+        if isinstance(current, int) and update["software_version"] <= current:
+            # the server caches the answer of the last check
+            return None
+        return update
+
+    async def check_firmware(self):
+        """Asks the Matter server for a newer firmware, returns an error
+        text or None"""
+        if not self.supports_firmware_update():
+            return "This device can't be updated via Matter"
+        try:
+            result = await self._require_controller().run_command(
+                "check_node_update", node_id=self.node_id, timeout=120
+            )
+        except Exception as exc:
+            self.logger.warning(f"Firmware check failed: {exc}")
+            await fhem.readingsSingleUpdate(
+                self.hash, "firmware_update", f"check failed: {exc}", 1
+            )
+            return str(exc)
+        self.available_firmware = self._newer(result)
+        if self.update_state_text() is None:
+            await fhem.readingsSingleUpdateIfChanged(
+                self.hash, "firmware_update", self.available_text(), 1
+            )
+        return None
+
+    async def check_firmware_regularly(self):
+        await asyncio.sleep(FIRMWARE_CHECK_DELAY)
+        while True:
+            controller = self.controller
+            if (
+                self.supports_firmware_update()
+                and controller is not None
+                and controller.client is not None
+                and controller.client.connected
+            ):
+                await self.check_firmware()
+            await asyncio.sleep(FIRMWARE_CHECK_INTERVAL)
+
+    async def set_check_firmware_update(self, hash, params):
+        self.fhemdev.create_async_task(self.check_firmware())
+
+    async def set_update_firmware(self, hash, params):
+        if not self.supports_firmware_update():
+            return "This device can't be updated via Matter"
+        self.fhemdev.create_async_task(self.update_firmware())
+
+    async def update_firmware(self):
+        if self.available_firmware is None:
+            if await self.check_firmware() is not None:
+                return
+            if self.available_firmware is None:
+                return
+        version = self.available_firmware["software_version"]
+        self.logger.info(f"Starting firmware update to {self.available_text()}")
+        await fhem.readingsSingleUpdate(
+            self.hash, "firmware_update", "update requested", 1
+        )
+        try:
+            await self._require_controller().run_command(
+                "update_node",
+                node_id=self.node_id,
+                software_version=version,
+                timeout=300,
+            )
+        except Exception as exc:
+            self.logger.warning(f"Firmware update failed: {exc}")
+            await fhem.readingsSingleUpdate(
+                self.hash, "firmware_update", f"update failed: {exc}", 1
+            )
+            return
+        # the device reports progress via the OTA requestor cluster
+        self._updating = True
+
     # --- set commands ---
 
     async def update_set_config(self):
@@ -206,6 +378,15 @@ class matter_device:
             "(e.g. after a firmware update).",
             "function": "set_matter_refresh",
         }
+        if self.supports_firmware_update():
+            set_config["check_firmware_update"] = {
+                "help": CHECK_FIRMWARE_HELP,
+                "function": "set_check_firmware_update",
+            }
+            set_config["update_firmware"] = {
+                "help": UPDATE_FIRMWARE_HELP,
+                "function": "set_update_firmware",
+            }
         set_config["command"] = {
             "args": ["endpoint", "cluster", "command", "payload"],
             "params": {"payload": {"default": "{}"}},

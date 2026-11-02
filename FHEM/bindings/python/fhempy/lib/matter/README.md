@@ -83,6 +83,14 @@ Every device also has:
 - `refresh`: reads all information of the device again.
 - readings `vendor`, `model`, `firmware`; `state` shows `offline` if the device isn't reachable.
 
+Devices which support firmware updates via Matter (not bridged devices, they are updated by their bridge) also have:
+- reading `firmware_update`: `up to date`, `<version> available` or the progress of a running update (e.g. `downloading 40%`). fhempy checks once a day.
+- `check_firmware_update`: check now whether the manufacturer published a newer firmware.
+- `update_firmware`: install it. Thread devices can take up to an hour, don't unplug the device meanwhile.
+
+Firmware updates come from the Matter DCL (the official register of the Connectivity Standards Alliance).
+Only firmware the manufacturer published there is found; otherwise the manufacturer's app is needed.
+
 If a device has several outlets/lights, the second one gets commands and readings with the
 endpoint number, e.g. `on_2`, `onoff_2`.
 
