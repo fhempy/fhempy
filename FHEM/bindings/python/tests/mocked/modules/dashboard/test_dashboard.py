@@ -507,16 +507,51 @@ async def test_keep_on_from_tablet(module):
         await ws.close()
 
 
-def test_arrangement_offers_automations_for_tech():
+
+def test_arrangement_only_offers_devices_shown_on_tablets():
     infos = {
         "di_Licht": {"NAME": "di_Licht", "TYPE": "DOIF", "room": "", "sets": ""},
-        "nf_Log": {"NAME": "nf_Log", "TYPE": "notify", "room": "", "sets": ""},
-        "at_Abend": {"NAME": "at_Abend", "TYPE": "at", "room": "Tech", "sets": ""},
-        "FileLog_x": {"NAME": "FileLog_x", "TYPE": "FileLog", "room": "", "sets": ""},
+        "at_Abend": {"NAME": "at_Abend", "TYPE": "at", "room": "", "sets": ""},
+        "Lampe": {"NAME": "Lampe", "TYPE": "dummy", "room": "", "sets": "on off"},
     }
     data = model.arrangement(infos)
-    assert [(d["id"], d["kind"], d["suggestion"]) for d in data["unassigned"]] == [
-        ("di_Licht", "automation", "Tech")
-    ]
-    assert data["rooms"][0]["name"] == "Tech"
-    assert data["rooms"][0]["devices"][0]["id"] == "at_Abend"
+    assert [d["id"] for d in data["unassigned"]] == ["Lampe"]
+
+def test_idle_devices_when_arranging():
+    now = model.datetime.datetime(2026, 11, 2, 12, 0, 0)
+    infos = {
+        "old": {"NAME": "old", "TYPE": "dummy", "room": "Bad", "sets": "on off",
+                "readings": {"state": "off"}, "last": "2026-09-01 10:00:00"},
+        "new": {"NAME": "new", "TYPE": "dummy", "room": "Bad", "sets": "on off",
+                "readings": {"state": "off"}, "last": "2026-10-30 10:00:00"},
+        "none": {"NAME": "none", "TYPE": "dummy", "room": "", "sets": "on off"},
+    }
+    data = model.arrangement(infos, now)
+    devices = {d["id"]: d for d in data["rooms"][0]["devices"]}
+    assert devices["old"]["idle"] == 62
+    assert "idle" not in devices["new"]
+    assert "idle" not in data["unassigned"][0]
+
+
+@pytest.mark.asyncio
+async def test_delete_idle_device(module):
+    module.fake.devices["alt_Lampe"] = fake_home.device(
+        "dummy", "Bad", "on off", {"state": "off"}
+    )
+    module.fake.devices["alt_Lampe"]["idle_minutes"] = 60 * 24 * 90
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "rooms_setup"})
+        setup = await next_of(ws, "rooms_setup")
+        bad = next(r for r in setup["rooms"] if r["name"] == "Bad")
+        assert next(d for d in bad["devices"] if d["id"] == "alt_Lampe")["idle"] >= 89
+        # only devices offered there can be deleted, never the dashboard
+        await ws.send_json({"type": "delete_device", "id": NAME})
+        await next_of(ws, "rooms_setup")
+        await ws.send_json({"type": "delete_device", "id": "alt_Lampe"})
+        setup = await next_of(ws, "rooms_setup")
+        assert "alt_Lampe" not in module.fake.devices
+        bad = next(r for r in setup["rooms"] if r["name"] == "Bad")
+        assert "alt_Lampe" not in [d["id"] for d in bad["devices"]]
+        await ws.close()

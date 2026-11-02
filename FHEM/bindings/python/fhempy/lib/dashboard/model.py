@@ -7,6 +7,7 @@ NAME, TYPE, FHEMPYTYPE, alias, room, sets, readings (dict), times (dict),
 attrs (dict)
 """
 
+import datetime
 import re
 
 from ..matter_bridge import devices as kinds
@@ -742,22 +743,6 @@ ROOM_ABBREVIATIONS = {
     "fl": "Flur",
     "wc": "WC",
 }
-# automations and helpers without anything to switch, offered for a room
-# like "Tech" when arranging rooms
-AUTOMATION_TYPES = (
-    "DOIF",
-    "at",
-    "watchdog",
-    "sequence",
-    "THRESHOLD",
-    "WeekdayTimer",
-    "Heating_Control",
-    "MSwitch",
-    "AutoShuttersControl",
-    "DOIFtools",
-    "structure",
-)
-TECH_ROOM = "Tech"
 _INVALID_ROOM_RE = re.compile(r'[,;|"\\\n\r\t]')
 
 
@@ -817,31 +802,44 @@ def suggest_room(info, rooms):
     return ""
 
 
-def arrangement(infos):
+IDLE_DAYS = 30
+
+
+def idle_days(info, now=None):
+    """days since the newest reading of the device changed, None: unknown"""
+    last = str(info.get("last") or "")
+    try:
+        then = datetime.datetime.strptime(last[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+    now = now or datetime.datetime.now()
+    return max(0, (now - then).days)
+
+
+def arrangement(infos, now=None):
     """rooms with their devices and the devices without a room, for
-    arranging the rooms on a tablet"""
+    arranging the rooms on a tablet. idle: days without any new reading when
+    more than IDLE_DAYS"""
     rooms, unassigned = {}, []
     for name in sorted(infos):
         info = infos[name]
         if info.get("TYPE") in SCENE_TYPES:
             continue
         kind = kind_of(info)
-        if kind is None and info.get("TYPE") in AUTOMATION_TYPES:
-            kind = "automation"
         if kind is None:
             continue
         visible = rooms_of(info)
         item = {"id": name, "name": display_name(info), "kind": kind, "rooms": visible}
+        days = idle_days(info, now)
+        if days is not None and days > IDLE_DAYS:
+            item["idle"] = days
         if not visible:
             unassigned.append(item)
         for room in visible:
             rooms.setdefault(room, []).append(item)
     names = sorted(rooms, key=str.lower)
     for item in unassigned:
-        if item["kind"] == "automation":
-            item["suggestion"] = TECH_ROOM
-        else:
-            item["suggestion"] = suggest_room(infos[item["id"]], names)
+        item["suggestion"] = suggest_room(infos[item["id"]], names)
     return {
         "rooms": [
             {

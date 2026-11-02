@@ -158,6 +158,7 @@ class FakeFhem:
                 "readings": dict(d["readings"]),
                 "times": {r: ts(age) for r in d["readings"]},
                 "attrs": dict(d["attrs"]),
+                "last": ts(d.get("idle_minutes", age)) if d["readings"] else "",
             }
         return result
 
@@ -173,6 +174,10 @@ class FakeFhem:
         match = re.search(r"CommandAttr\(undef, '(\S+) room ([^']+)'\)", code)
         if match:
             self.devices[match.group(1)]["room"] = match.group(2)
+            return ""
+        match = re.search(r"CommandDelete\(undef, '([^' ]+)'\)", code)
+        if match:
+            self.devices.pop(match.group(1), None)
             return ""
         match = re.search(r"CommandDeleteAttr\(undef, '(\S+) room'\)", code)
         if match:

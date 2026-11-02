@@ -77,7 +77,13 @@ EXCLUDED_TYPES = (
     "MQTT2_SERVER",
     "MQTT2_CLIENT",
 )
-ARRANGE_MESSAGES = ("rooms_setup", "move_device", "rename_room", "keep_on")
+ARRANGE_MESSAGES = (
+    "rooms_setup",
+    "move_device",
+    "rename_room",
+    "keep_on",
+    "delete_device",
+)
 RELOAD_ATTRS = ("room", "alias", "genericDeviceType", "matterType", "disable")
 LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
 SETTINGS_ATTRS = (
@@ -509,11 +515,7 @@ class dashboard(generic.FhemModule):
         spec = (self._attr_devices or "").strip()
         hidden = (self._attr_hidden_devices or "").strip()
         bell = self.doorbell_spec()[0]
-        # arranging rooms also offers automations (DOIF, notify, ...) for a
-        # room like "Tech"
-        excluded = "|".join(
-            t for t in EXCLUDED_TYPES if not (any_room and t in model.AUTOMATION_TYPES)
-        )
+        excluded = "|".join(EXCLUDED_TYPES)
         special_types = "|".join(
             model.PRESENCE_TYPES
             + model.PRESENCE_DEVICE_TYPES
@@ -561,12 +563,16 @@ class dashboard(generic.FhemModule):
             "my %w = map { $_ => 1 } (" + wanted + "); my %r;"
             " foreach my $d (" + names_perl + ") {"
             " next if (!defined($defs{$d})); my $h = $defs{$d}; my (%rd, %tm);"
-            " foreach my $k (keys %{$h->{READINGS}}) { next if (!$w{$k});"
+            " my $last = '';"
+            " foreach my $k (keys %{$h->{READINGS}}) {"
+            " my $t = $h->{READINGS}{$k}{TIME} // ''; $last = $t if ($t gt $last);"
+            " next if (!$w{$k});"
             " $rd{$k} = $h->{READINGS}{$k}{VAL}; $tm{$k} = $h->{READINGS}{$k}{TIME} }"
             " $r{$d} = {NAME => $d, TYPE => $h->{TYPE},"
             " FHEMPYTYPE => ($h->{FHEMPYTYPE} // ''),"
             " alias => AttrVal($d, 'alias', ''), room => AttrVal($d, 'room', ''),"
             " sets => (getAllSets($d) // ''), readings => \\%rd, times => \\%tm,"
+            " last => $last,"
             " attrs => { map { $_ => AttrVal($d, $_, '') }"
             " ('genericDeviceType', 'matterType', 'matterInvert') } } }"
             " to_json(\\%r)"
@@ -820,6 +826,8 @@ class dashboard(generic.FhemModule):
             await self.arrange_move(tablet, message)
         elif kind == "rename_room":
             await self.arrange_rename(tablet, message)
+        elif kind == "delete_device":
+            await self.arrange_delete(tablet, message)
         if kind != "rooms_setup":
             # FHEM sends ATTR events as well, this is for safety
             self.schedule_reload()
@@ -846,6 +854,21 @@ class dashboard(generic.FhemModule):
             self.logger.error(f"attr {name} room failed: {result}")
             return
         info["room"] = value
+
+    async def arrange_delete(self, tablet, message):
+        """delete a device which isn't used anymore, only devices offered
+        when arranging rooms"""
+        name = str(message.get("id", ""))
+        if name not in self._arrange_infos or name == self.hash["NAME"]:
+            return
+        self.logger.info(f"{tablet['name']}: delete {name}")
+        result = await fhem.sendCommandHash(
+            self.hash, f"CommandDelete(undef, {fhem.perlString(name)})"
+        )
+        if result:
+            self.logger.error(f"delete {name} failed: {result}")
+            return
+        self._arrange_infos.pop(name, None)
 
     async def arrange_rename(self, tablet, message):
         source = model.clean_room(message.get("from"))

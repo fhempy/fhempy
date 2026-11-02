@@ -125,6 +125,11 @@ body.dragging, body.dragging * { user-select: none; -webkit-user-select: none; c
 .row.addrow .t { flex: 1; min-width: 0; }
 .row.addrow > svg { color: var(--teal); flex: none; }
 .row.addrow.here { opacity: .5; }
+.arridle { margin-bottom: 16px; border-color: rgba(255,138,61,.35); }
+.arridle .lead { color: var(--mu); font-size: 14px; margin-bottom: 4px; }
+.arridle .row .pill { flex: none; height: 40px; }
+.idletag { display: inline-flex; align-items: center; gap: 3px; font-style: normal; font-size: 12px; color: var(--amber2); margin-left: 6px; }
+.dchip.idle { border-color: rgba(255,138,61,.45); }
 .pill.sug { background: rgba(61,219,184,.16); color: var(--teal); }
 .arrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .arrfree .row .t { min-width: 0; flex: 1; }

@@ -85,9 +85,9 @@ Devices in the wrong room or in no room at all? Tap the gear button and *Arrange
 without a room (with a suggestion from the device name, e.g. `wz_Lamp` goes to *Wohnzimmer*) and every room with its
 devices. Drag a device to another room (on tablets: hold it briefly, then drag) or tap it to choose a room or create a new
 one, × takes it out of a room (without any room left it is listed under *Without room* again). Devices without a room
-also offer the three rooms chosen last on this tablet, automations like DOIF, at or watchdog are suggested for a room
-*Tech*. *+ Device* in a room searches all devices while typing and moves the chosen ones into the room. Tap the pencil
-to rename a room. This changes the
+also offer the three rooms chosen last on this tablet. Only devices shown on the tablets are listed. *+ Device* in a room searches all devices while typing and moves the chosen ones into the room. Tap the pencil
+to rename a room. Devices without any new value for more than a month are marked and listed under *Not used
+for long*, where they can be deleted with two taps (gone for good with `save`). This changes the
 FHEM attribute `room`, so FHEMWEB and the other modules see the same rooms, and applies to all tablets. Other rooms of
 a device stay. Only tablets without restrictions (all rooms, not read only) can arrange rooms.
 
