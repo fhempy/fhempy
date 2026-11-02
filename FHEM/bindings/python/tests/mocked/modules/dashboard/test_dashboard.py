@@ -510,7 +510,8 @@ async def test_keep_on_from_tablet(module):
 def test_arrangement_offers_automations_for_tech():
     infos = {
         "di_Licht": {"NAME": "di_Licht", "TYPE": "DOIF", "room": "", "sets": ""},
-        "nf_Log": {"NAME": "nf_Log", "TYPE": "notify", "room": "Tech", "sets": ""},
+        "nf_Log": {"NAME": "nf_Log", "TYPE": "notify", "room": "", "sets": ""},
+        "at_Abend": {"NAME": "at_Abend", "TYPE": "at", "room": "Tech", "sets": ""},
         "FileLog_x": {"NAME": "FileLog_x", "TYPE": "FileLog", "room": "", "sets": ""},
     }
     data = model.arrangement(infos)
@@ -518,4 +519,4 @@ def test_arrangement_offers_automations_for_tech():
         ("di_Licht", "automation", "Tech")
     ]
     assert data["rooms"][0]["name"] == "Tech"
-    assert data["rooms"][0]["devices"][0]["id"] == "nf_Log"
+    assert data["rooms"][0]["devices"][0]["id"] == "at_Abend"

@@ -119,6 +119,12 @@ body.dragging, body.dragging * { user-select: none; -webkit-user-select: none; c
 .dchip .dx { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: -4px -6px -4px 2px; border-radius: 50%; color: var(--mu); }
 .dchip .dx:hover { background: rgba(255,255,255,.1); color: var(--tx); }
 .dragghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 14px; background: var(--tx); color: #0B0E13; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.dchip.add { background: transparent; border-style: dashed; color: var(--mu); }
+.row.addrow { width: 100%; text-align: left; }
+.row.addrow .ic { flex: none; width: 36px; height: 36px; border-radius: 12px; background: var(--card2); display: grid; place-items: center; color: var(--mu); }
+.row.addrow .t { flex: 1; min-width: 0; }
+.row.addrow > svg { color: var(--teal); flex: none; }
+.row.addrow.here { opacity: .5; }
 .pill.sug { background: rgba(61,219,184,.16); color: var(--teal); }
 .arrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .arrfree .row .t { min-width: 0; flex: 1; }

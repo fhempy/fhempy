@@ -746,7 +746,6 @@ ROOM_ABBREVIATIONS = {
 # like "Tech" when arranging rooms
 AUTOMATION_TYPES = (
     "DOIF",
-    "notify",
     "at",
     "watchdog",
     "sequence",
