@@ -105,6 +105,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .arrfree .section { display: flex; align-items: center; justify-content: space-between; }
 .arrfree .section .pill { text-transform: none; letter-spacing: 0; }
 .arrfree .row .pill { flex: none; height: 40px; }
+.pill.keep { height: 40px; color: var(--mu); }
+.pill.keep.kept { background: rgba(52,211,153,.14); color: var(--green); }
+.leave .row .pill { flex: none; }
 .pill.sug { background: rgba(61,219,184,.16); color: var(--teal); }
 .arrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .arrfree .row .t { min-width: 0; flex: 1; }

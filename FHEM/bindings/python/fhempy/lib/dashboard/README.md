@@ -72,6 +72,13 @@ tablet, then tap *Switch to https* in the settings of the dashboard (port 8096).
 
 ![Somebody rings: live picture, talking and slide to open](screenshot-doorbell.png)
 
+## All off
+
+*All off* switches off lights, switches and plugs, never thermostats. Plugs of heating, heat pumps, fridges, routers
+and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschrank*, *Router*). Anything else is one tap
+away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
+in the settings. This is stored in attribute `keep_on` and applies to all tablets.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
@@ -111,6 +118,7 @@ and `hidden_devices` to leave devices out, e.g. `Alarm_system,TYPE=CUL_HM`. Room
 | go2rtc | Address of an existing go2rtc |
 | door_camera | Camera shown when somebody rings |
 | door_opener | Command of the door opener without `set` |
+| keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
 
 ## Set commands
 

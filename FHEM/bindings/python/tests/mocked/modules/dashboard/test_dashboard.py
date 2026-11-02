@@ -470,3 +470,38 @@ async def test_restricted_tablet_cannot_arrange_rooms(module):
         await asyncio.sleep(0.2)
         assert module.fake.devices["bad_Fenster"]["room"] == "Bad"
         await ws.close()
+
+
+def test_all_off_leaves_heating_on():
+    infos = {
+        "Heizstab": {"NAME": "Heizstab", "TYPE": "dummy", "room": "Keller",
+                     "sets": "on off", "readings": {"state": "on"}},
+        "Plug_TV": {"NAME": "Plug_TV", "TYPE": "dummy", "room": "Keller",
+                    "sets": "on off", "readings": {"state": "on"}},
+        "sw1": {"NAME": "sw1", "TYPE": "dummy", "room": "Keller",
+                   "alias": "FRITZ!Box", "sets": "on off", "readings": {"state": "on"}},
+        "Heimtheater": {"NAME": "Heimtheater", "TYPE": "dummy", "room": "Keller",
+                        "sets": "on off", "readings": {"state": "on"}},
+    }
+    tiles = model.build(infos)["tiles"]
+    assert sorted(model.all_off(tiles)) == ["Heimtheater", "Plug_TV"]
+    kept = {r["id"]: r["keep_on"] for r in model.running(tiles)}
+    assert kept["Heizstab"] is True and kept["Plug_TV"] is False
+    # chosen on a tablet: only these stay on
+    tiles = model.build(infos, keep_on={"Plug_TV"})["tiles"]
+    assert sorted(model.all_off(tiles)) == ["Heimtheater", "Heizstab", "sw1"]
+
+
+@pytest.mark.asyncio
+async def test_keep_on_from_tablet(module):
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "keep_on", "id": "ku_Kaffeemaschine", "keep": True})
+        model_msg = await next_of(ws, "model")
+        assert model_msg["tiles"]["ku_Kaffeemaschine"]["keep_on"] is True
+        assert "ku_Kaffeemaschine" in module._attr_keep_on
+        await ws.send_json({"type": "action", "action": "all_off", "room": None})
+        await asyncio.sleep(0.2)
+        assert not any(s.startswith("ku_Kaffeemaschine") for s in module.fake.sets)
+        await ws.close()

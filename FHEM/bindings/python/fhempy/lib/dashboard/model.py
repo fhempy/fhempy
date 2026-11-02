@@ -363,9 +363,42 @@ def _sorted_rooms(rooms, order):
     return room_list
 
 
-def build(infos, order=None):
+# switches 'All off' leaves on unless set otherwise: heating, cooling, network
+KEEP_ON_PARTS = (
+    "heiz",
+    "heatpump",
+    "wärmepumpe",
+    "waermepumpe",
+    "umwälz",
+    "umwaelz",
+    "boiler",
+    "kühl",
+    "kuehl",
+    "gefrier",
+    "fridge",
+    "freezer",
+    "router",
+    "fritz",
+    "aquarium",
+    "lüftung",
+    "lueftung",
+    "ventilation",
+)
+KEEP_ON_WORDS = ("nas", "server", "wlan", "wifi", "dect", "heater", "heating")
+
+
+def keeps_on(info):
+    """found by name or alias: a heating plug stays on with 'All off'"""
+    text = f"{info.get('NAME', '')} {info.get('alias') or ''}"
+    if any(part in text.lower() for part in KEEP_ON_PARTS):
+        return True
+    return any(w.lower() in KEEP_ON_WORDS for w in _split_words(text))
+
+
+def build(infos, order=None, keep_on=None):
     """rooms and tiles of all devices.
-    order: names of rooms in the wanted order (others follow sorted)"""
+    order: names of rooms in the wanted order (others follow sorted)
+    keep_on: devices 'All off' leaves on, None: found by their names"""
     tiles = {}
     rooms = {}
     scenes = []
@@ -378,6 +411,10 @@ def build(infos, order=None):
         item = tile(info, device_rooms[0]) if device_rooms else None
         if item is None:
             continue
+        if item["kind"] in SWITCHABLE:
+            item["keep_on"] = (
+                keeps_on(info) if keep_on is None else name in keep_on
+            )
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -479,6 +516,7 @@ def running(tiles):
                     "kind": item["kind"],
                     "room": (item["rooms"] or [""])[0],
                     "power": item["state"].get("power"),
+                    "keep_on": bool(item.get("keep_on")),
                 }
             )
     result.sort(key=lambda r: (r["kind"] not in LIGHTS, r["room"], r["name"].lower()))
@@ -558,6 +596,7 @@ def all_off(tiles, room=None):
         for t in tiles.values()
         if t["kind"] in SWITCHABLE
         and t["state"].get("on")
+        and not t.get("keep_on")
         and (room is None or room in t["rooms"])
     ]
 

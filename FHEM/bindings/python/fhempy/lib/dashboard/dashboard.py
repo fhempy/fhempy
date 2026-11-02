@@ -40,6 +40,7 @@ ATTRS_TEXT = (
     "go2rtc",
     "door_camera",
     "door_opener",
+    "keep_on",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -76,7 +77,7 @@ EXCLUDED_TYPES = (
     "MQTT2_SERVER",
     "MQTT2_CLIENT",
 )
-ARRANGE_MESSAGES = ("rooms_setup", "move_device", "rename_room")
+ARRANGE_MESSAGES = ("rooms_setup", "move_device", "rename_room", "keep_on")
 RELOAD_ATTRS = ("room", "alias", "genericDeviceType", "matterType", "disable")
 LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
 SETTINGS_ATTRS = (
@@ -254,6 +255,13 @@ class dashboard(generic.FhemModule):
                 "default": "",
                 "help": "Command of the door opener without set, e.g. "
                 "Door_opener on. The tablet at the door shows 'Slide to open'.",
+            },
+            "keep_on": {
+                "default": "",
+                "help": "Devices which 'All off' leaves on, e.g. heating, heat "
+                "pump or fridge plugs, separated by commas. none: all are "
+                "switched off. Empty: found by their name. Also set on the "
+                "tablets in the details of a device.",
             },
         }
         await self.set_attr_config(attr_config)
@@ -480,6 +488,9 @@ class dashboard(generic.FhemModule):
     def set_attr_devices(self, hash):
         self.schedule_reload()
 
+    def set_attr_keep_on(self, hash):
+        self.schedule_reload()
+
     def set_attr_hidden_devices(self, hash):
         self.schedule_reload()
 
@@ -627,7 +638,7 @@ class dashboard(generic.FhemModule):
         names = await self.resolve_devices()
         self.infos = await self.fetch_infos(names)
         before = (self.data, self.head)
-        self.data = model.build(self.infos)
+        self.data = model.build(self.infos, keep_on=self.keep_on_names())
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
@@ -760,6 +771,34 @@ class dashboard(generic.FhemModule):
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
 
+    # --- devices which 'All off' leaves on ---
+
+    def keep_on_names(self):
+        """None: found by their names"""
+        value = (self._attr_keep_on or "").strip()
+        if not value:
+            return None
+        return {n.strip() for n in value.split(",") if n.strip() and n != "none"}
+
+    async def set_keep_on(self, tablet, message):
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] not in model.SWITCHABLE:
+            return
+        keep = {i for i, t in self.data["tiles"].items() if t.get("keep_on")}
+        if message.get("keep"):
+            keep.add(item["id"])
+        else:
+            keep.discard(item["id"])
+        value = ",".join(sorted(keep)) or "none"
+        self.logger.info(f"{tablet['name']}: attr keep_on {value}")
+        await fhem.sendCommandHash(
+            self.hash,
+            "CommandAttr(undef, "
+            f"{fhem.perlString(self.hash['NAME'] + ' keep_on ' + value)})",
+        )
+        self._attr_keep_on = value
+        await self.reload()
+
     # --- arranging rooms ---
 
     def can_arrange(self, tablet):
@@ -770,6 +809,9 @@ class dashboard(generic.FhemModule):
         if not self.can_arrange(tablet):
             return
         kind = message.get("type")
+        if kind == "keep_on":
+            await self.set_keep_on(tablet, message)
+            return
         if kind == "move_device":
             await self.arrange_move(tablet, message)
         elif kind == "rename_room":
