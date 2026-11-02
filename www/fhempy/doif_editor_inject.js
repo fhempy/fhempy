@@ -1,4 +1,4 @@
-/* Regeln (fhempy doif_editor): box "Who controls this?" on every device page
+/* Automations (fhempy doif_editor): box "Who controls this?" on every device page
    and the button "Edit visually" on DOIF pages. FHEMWEB loads this script on
    every page as extension, the editor device is given in the script url. */
 /* global FW_cmd, FW_root, $ */

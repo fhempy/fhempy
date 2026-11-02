@@ -1,4 +1,4 @@
-# Rules (visual DOIF editor)
+# Automations (visual DOIF editor)
 
 Create and change DOIF rules as sentences instead of brackets, and keep the overview when you have many of them.
 Existing DOIFs open as they are: everything the editor understands is shown as building blocks, the rest stays as
@@ -17,10 +17,10 @@ code block in between, unchanged parts are written back exactly as they were.
 ## Set up
 
 ```
-define regeln fhempy doif_editor
+define automations fhempy doif_editor
 ```
 
-Or use the *Rules* tile in *Install modules* of the fhempy device. The device is put into the room *Regeln*.
+Or use the *Automations* tile in *Install modules* of the fhempy device. The device is put into the room *Automations*.
 
 ## Computed values
 
@@ -41,10 +41,10 @@ values. fhempy computes the values and writes them as readings of this device, e
 hours also `Duration_s` in seconds. Rules use them like any reading:
 
 ```
-attr di_irrigation wait 0,[regeln:Duration_s]
+attr di_irrigation wait 0,[automations:Duration_s]
 ```
 
-Inputs are readings which you set yourself, e.g. `set regeln input Guests 4`.
+Inputs are readings which you set yourself, e.g. `set automations input Guests 4`.
 
 ## Overview of all automations
 
@@ -65,10 +65,10 @@ Every device page gets a box *Who controls this?* and DOIF pages a button *Edit 
 
 | Command | |
 |---|---|
-| `set regeln input <name> <value>` | value of an input |
-| `set regeln enable/disable <rule>` | switch a rule on or off |
-| `set regeln run <rule> <case>` | execute a case now |
-| `set regeln restore <rule> <version>` | restore a version |
-| `set regeln recompute` | compute all values again |
+| `set automations input <name> <value>` | value of an input |
+| `set automations enable/disable <rule>` | switch a rule on or off |
+| `set automations run <rule> <case>` | execute a case now |
+| `set automations restore <rule> <version>` | restore a version |
+| `set automations recompute` | compute all values again |
 
 The other set and get commands are used by the page and take base64 encoded JSON.

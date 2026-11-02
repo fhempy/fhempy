@@ -16,7 +16,7 @@ mapping = {"mode": "direct"} | {"mode": "per", "v": 0.2}
 
 Factors ("mul") are written in percent. fhempy computes the values and
 writes them as readings of the editor device, rules use them like any
-reading, e.g. [regeln:Kochzeit_s] in wait.
+reading, e.g. [automations:Kochzeit_s] in wait.
 """
 
 import math

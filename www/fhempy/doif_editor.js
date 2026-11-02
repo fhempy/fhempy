@@ -1,11 +1,11 @@
-/* Regeln: visual editor for DOIF and overview of all automations (fhempy doif_editor) */
+/* Automations: visual editor for DOIF and overview of all automations (fhempy doif_editor) */
 /* global FW_cmd, FW_root, $ */
 (function () {
   "use strict";
 
   var T = {
     DE: {
-      title: "Regeln", rules: "Regeln", values: "Werte", map: "Zusammenhänge", plan: "Tagesplan", changes: "Änderungen",
+      title: "Automations", rules: "Automations", values: "Werte", map: "Zusammenhänge", plan: "Tagesplan", changes: "Änderungen",
       newRule: "Neue Regel", search: "Suchen…", edit: "Bearbeiten", back: "Zurück", save: "Speichern", saved: "Gespeichert",
       cancel: "Abbrechen", ok: "Übernehmen", del: "Löschen", code: "Code", visual: "Ansicht", test: "Testen",
       when: "WENN", and: "UND", or: "ODER", then: "DANN", elseif: "SONST WENN", else: "SONST", oneOf: "eine davon",
@@ -80,7 +80,7 @@
       noRoom: "Ohne Raum"
     },
     EN: {
-      title: "Rules", rules: "Rules", values: "Values", map: "Relations", plan: "Day plan", changes: "Changes",
+      title: "Automations", rules: "Automations", values: "Values", map: "Relations", plan: "Day plan", changes: "Changes",
       newRule: "New rule", search: "Search…", edit: "Edit", back: "Back", save: "Save", saved: "Saved",
       cancel: "Cancel", ok: "Apply", del: "Delete", code: "Code", visual: "Visual", test: "Test",
       when: "WHEN", and: "AND", or: "OR", then: "THEN", elseif: "ELSE IF", else: "ELSE", oneOf: "one of",
@@ -891,7 +891,7 @@
     rules.forEach(function (r) {
       var text = (r.name + " " + r.alias + " " + r.comment + " " + r.room + " " + r.reads.join(" ") + " " + r.writes.join(" ")).toLowerCase();
       if (q && text.indexOf(q) < 0) return;
-      var room = (r.room || "").split(",").filter(function (x) { return x && x !== "Regeln" && x !== "fhempy"; })[0] || t("noRoom");
+      var room = (r.room || "").split(",").filter(function (x) { return x && x !== "Automations" && x !== "Regeln" && x !== "fhempy"; })[0] || t("noRoom");
       (groups[room] = groups[room] || []).push(r);
     });
     Object.keys(groups).sort().forEach(function (room) {
