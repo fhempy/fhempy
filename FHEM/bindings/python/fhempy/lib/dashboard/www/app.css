@@ -176,6 +176,15 @@ body.dragging .tile.dragtile { opacity: .85; transform: scale(1.04); outline: 2p
 /* before you leave */
 .leave { border-radius: 24px; background: var(--card); border: 1px solid var(--line); padding: 22px 24px; }
 .leave h2 { font-size: 26px; font-weight: 600; letter-spacing: -.5px; }
+.lately { padding: 16px 22px 10px; }
+.lately .section { margin: 0 0 4px; display: flex; align-items: center; justify-content: space-between; }
+.lately .linkbtn { text-decoration: none; color: var(--amber); display: inline-flex; align-items: center; gap: 2px; text-transform: none; letter-spacing: 0; font-size: 14px; padding: 4px 0; }
+.lrow { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.lrow:first-of-type { border-top: 0; }
+.lrow .lt { color: var(--mu); min-width: 46px; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 14px; }
+.lrow .ld { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.lrow .lx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lrow .fact { flex: none; }
 .leave .lead { color: var(--mu); font-size: 15px; margin: 4px 0 6px; }
 .row { display: flex; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); }
 .row .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; flex: none; }
@@ -371,4 +380,13 @@ body.light .banner.push { background: #fff; color: #151922; }
 /* no movement for people who asked their system for less motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+.roomcard .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) {
+  .roomcard .rtemp { right: auto; left: 18px; top: 40px; font-size: 22px; text-align: left; }
+  .roomcard .rtemp .rhum { display: inline; margin-left: 6px; }
+  .roomcard .n { padding-right: 0; font-size: 16px; }
+  .lrow { align-items: flex-start; }
+  .lrow .lx { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .lrow .ld { margin-top: 6px; }
 }

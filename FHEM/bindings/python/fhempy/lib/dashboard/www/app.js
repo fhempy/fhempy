@@ -30,7 +30,7 @@
     lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", peopleTitle: "Wer ist zu Hause?", peopleHome: "Zu Hause", peopleAway: "Unterwegs", arrived: "angekommen {t}", left: "weg seit {t}", atTime: "{t}", yesterdayAt: "gestern {t}", dayAt: "{d}, {t}", setTablet: "Dieses Tablet", setHome: "Ganzes Zuhause · alle Tablets", setNamePlace: "Name, Standort und Raum", setRooms: "Räume anzeigen und sortieren", setRoomsValue: "{n} von {m} sichtbar", setKeepValue: "{n} Geräte", setKeepNone: "keine", setArrangeValue: "Geräte den Räumen zuordnen", resetView: "Ansicht dieses Tablets zurücksetzen", back: "Einstellungen", setTalk: "Sprechen an der Tür", editHint: "Kacheln ziehen zum Verschieben (am Tablet kurz halten), × blendet sie aus.", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
-    happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
+    happened: "Gerade passiert", lately: "Zuletzt passiert", showAll: "Alles", yesterday: "gestern", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
@@ -69,7 +69,7 @@
     lock: "Lock", unlock: "Unlock", today: "Today", peopleTitle: "Who is at home?", peopleHome: "At home", peopleAway: "Away", arrived: "arrived {t}", left: "away since {t}", atTime: "{t}", yesterdayAt: "yesterday {t}", dayAt: "{d}, {t}", setTablet: "This tablet", setHome: "Whole home · all tablets", setNamePlace: "Name, place and room", setRooms: "Show and order rooms", setRoomsValue: "{n} of {m} shown", setKeepValue: "{n} devices", setKeepNone: "none", setArrangeValue: "Assign devices to rooms", resetView: "Reset the view of this tablet", back: "Settings", setTalk: "Talking at the door", editHint: "Drag tiles to move them (on tablets hold briefly), × hides them.", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
-    happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
+    happened: "Just happened", lately: "Lately at home", showAll: "All", yesterday: "yesterday", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
@@ -624,7 +624,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = leaveHtml() + energyHtml();
+    var left = leaveHtml() + energyHtml() + latelyHtml();
     var right = '<div class="grid">' + rooms.map(roomCardHtml).join("") + "</div>";
     return '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
   }
@@ -667,7 +667,7 @@
     S.timeline[day] = { loading: true, at: Date.now(), data: cached && cached.data };
     api("api/timeline?day=" + day).then(function (data) {
       S.timeline[day] = { at: Date.now(), data: data };
-      if (S.tab === "history" || S.tab.indexOf("room:") === 0) { renderContent(); }
+      if (S.tab === "home" || S.tab === "history" || S.tab.indexOf("room:") === 0) { renderContent(); }
     }).catch(function () { S.timeline[day] = { at: Date.now(), data: null }; });
   }
   function entryTime(e) { var d = new Date(e.ts * 1000); return clockText(d); }
@@ -682,6 +682,26 @@
     if (!list.length) { return ""; }
     return '<div class="section">' + esc(t("happened")) + '</div><div class="leave" style="padding:10px 22px">' + list.map(function (e) {
       return '<div class="row" style="padding:10px 0"><span style="color:var(--mu);width:46px;font-variant-numeric:tabular-nums">' + entryTime(e) + '</span><span style="width:9px;height:9px;border-radius:50%;background:' + entryColor(e) + '"></span><div class="t"><span style="color:var(--tx);font-size:15px">' + esc(e.text) + "</span></div></div>";
+    }).join("") + "</div>";
+  }
+
+  // the last events of the whole home, today and if it was quiet also yesterday
+  function latelyHtml() {
+    if (!S.header.timeline) { return ""; }
+    var day = today(), d = new Date(), y = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    var yday = y.getFullYear() + "-" + two(y.getMonth() + 1) + "-" + two(y.getDate());
+    loadDay(day);
+    var data = S.timeline[day] && S.timeline[day].data; if (!data || !data.entries) { return ""; }
+    var list = data.entries.slice(-6).reverse().map(function (e) { return [e, false]; });
+    if (list.length < 6) {
+      loadDay(yday);
+      var old = S.timeline[yday] && S.timeline[yday].data;
+      if (old && old.entries) { list = list.concat(old.entries.slice(-(6 - list.length)).reverse().map(function (e) { return [e, true]; })); }
+    }
+    if (!list.length) { return ""; }
+    return '<div class="leave lately"><div class="section"><span>' + esc(t("lately")) + '</span><button class="linkbtn" data-tab="history">' + esc(t("showAll")) + " " + I("chev", 14) + "</button></div>" + list.map(function (x) {
+      var e = x[0], room = e.room ? String(e.room).split(",")[0] : "";
+      return '<div class="lrow"><span class="lt">' + (x[1] ? esc(t("yesterday")) + " " : "") + entryTime(e) + '</span><span class="ld" style="background:' + entryColor(e) + '"></span><span class="lx">' + esc(e.text) + (e.count > 1 ? " · " + e.count + "×" : "") + "</span>" + (room ? '<span class="fact">' + esc(room) + "</span>" : "") + "</div>";
     }).join("") + "</div>";
   }
 
