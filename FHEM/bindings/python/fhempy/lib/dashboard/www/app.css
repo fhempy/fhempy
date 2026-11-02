@@ -253,6 +253,27 @@ input:focus, select:focus { outline: 2px solid var(--amber); }
 .code { display: flex; gap: 10px; margin-top: 28px; }
 .code input { width: 260px; height: 64px; font-size: 32px; letter-spacing: 10px; text-align: center; border-radius: 20px; }
 .err { color: #ffb3b5; margin-top: 14px; font-size: 15px; }
+.steps { display: flex; gap: 8px; margin: -24px 0 22px; }
+.steps span { width: 28px; height: 6px; border-radius: 3px; background: var(--line); }
+.steps span.on { background: var(--amber); width: 44px; }
+.steps span.done { background: rgba(255,181,71,.45); }
+.rpicks { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-top: 28px; }
+.rpick { position: relative; min-height: 150px; border-radius: 24px; background: var(--card); border: 2px solid var(--line); padding: 18px; text-align: left; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; transition: transform .12s ease, background .2s ease, border-color .2s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.rpick:active { transform: scale(.97); }
+.rpick .ri { position: absolute; left: 18px; top: 18px; width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--card2); color: var(--mu); }
+.rpick b { font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rpick > span:last-child { color: var(--mu); font-size: 14px; }
+.rpick .ck { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); color: transparent; }
+.rpick.on { border-color: var(--amber); background: linear-gradient(160deg, rgba(255,181,71,.18), rgba(255,181,71,.04)); }
+.rpick.on .ri { background: var(--amber); color: #3a2300; }
+.rpick.on .ck { background: var(--amber); border-color: var(--amber); color: #3a2300; }
+.rpick:not(.on) b { color: var(--mu); }
+.pickbar { position: sticky; bottom: 12px; z-index: 2; background: var(--bg); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.pickbar .pill.primary { min-width: 120px; justify-content: center; }
+.pickbar .cnt { margin-left: auto; color: var(--mu); }
+.pickbar .pill { margin-left: 0; }
+.pickbar .pill[disabled] { opacity: .4; }
+@media (max-width: 600px) { .rpicks { grid-template-columns: repeat(2, 1fr); gap: 10px; } .rpick { min-height: 130px; padding: 14px; } .rpick .ri { left: 14px; top: 14px; width: 52px; height: 52px; } .pickbar { gap: 8px; padding: 12px; } .pickbar .cnt { width: 100%; margin-left: 0; order: -1; text-align: center; } .pickbar .pill.primary { flex: 1; } }
 
 /* screensaver */
 .ss { position: fixed; inset: 0; background: #000; z-index: 20; color: #e9edf3; animation: fade .6s ease; }

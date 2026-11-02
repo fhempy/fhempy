@@ -40,6 +40,11 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 
 ![Setting up a tablet: choose wall, couch or door and its room](screenshot-setup.png)
 
+Then it asks which rooms this tablet shows: every room is a big tile with an icon and its number of devices, tap to
+select or deselect, *All*/*None* for everything at once. This can be changed later in the settings.
+
+![Setting up a tablet: tap the rooms this tablet shows](screenshot-setup-rooms.png)
+
 That's it. Add the page to the home screen (Android: menu, *Add to home screen*; iPad: share, *Add to Home Screen*) to
 get it in full screen without browser bar. Every further tablet is added the same way, the code is valid for 10
 minutes and once.
