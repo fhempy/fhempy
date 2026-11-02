@@ -150,6 +150,15 @@ class matter_controller:
                 "certificate (e.g. beta firmware). Only enable this if you "
                 "trust the vendor.",
             },
+            "time_sync": {
+                "default": "1",
+                "options": "0,1",
+                "format": "int",
+                "help": "1 (default): the Matter server sets the time of "
+                "devices with a clock (Time Synchronization cluster), e.g. "
+                "displays that show the time. Needs a correct system time "
+                "(NTP). 0: devices keep their own time.",
+            },
             "autocreate": {
                 "default": "1",
                 "options": "0,1",
@@ -253,7 +262,7 @@ class matter_controller:
             return await self.install_server() and await self.start_server()
         await self.apply_restored_backup()
         settings = self.server_settings()
-        port, _, interface, test_dcl = settings
+        port, _, interface, test_dcl, time_sync = settings
         if test_dcl == 1:
             self.logger.warning(
                 "Matter server accepts devices with test certificates "
@@ -269,6 +278,7 @@ class matter_controller:
                 bluetooth_adapter=self.bluetooth_adapter(),
                 primary_interface=interface or None,
                 test_dcl=test_dcl == 1,
+                time_sync=time_sync != 0,
                 logger=self.logger,
             )
             self._started_with = settings
@@ -334,6 +344,7 @@ class matter_controller:
             self.fhemdev._attr_bluetooth_adapter,
             self.fhemdev._attr_primary_interface,
             self.fhemdev._attr_test_dcl,
+            self.fhemdev._attr_time_sync,
         )
 
     async def _settings_changed(self, hash):
@@ -348,6 +359,7 @@ class matter_controller:
     set_attr_bluetooth_adapter = _settings_changed
     set_attr_primary_interface = _settings_changed
     set_attr_test_dcl = _settings_changed
+    set_attr_time_sync = _settings_changed
 
     async def stop_server(self):
         if self.proc is None:

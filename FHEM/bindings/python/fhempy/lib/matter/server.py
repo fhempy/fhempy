@@ -204,8 +204,14 @@ def start(
     bluetooth_adapter=None,
     primary_interface=None,
     test_dcl=False,
+    time_sync=True,
     logger=None,
 ):
+    env = dict(env)
+    # devices with a clock (Time Synchronization cluster) get the time of
+    # this computer, matter-server only does this if enabled. The variable
+    # instead of --enable-time-sync also works with older servers.
+    env["ENABLE_TIME_SYNC"] = "true" if time_sync else "false"
     args = [
         node,
         server_script(),

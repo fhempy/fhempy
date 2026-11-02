@@ -463,6 +463,17 @@ def test_server_accepts_test_certificates_only_with_test_dcl(mocker):
     assert args[args.index("--enable-test-net-dcl") + 1] == "true"
 
 
+def test_server_sets_time_of_devices_by_default(mocker):
+    start = mocker.patch.object(server.child_process, "start")
+    env = {"PATH": "/usr/bin"}
+    server.start("/usr/bin/node", env, 5580)
+    assert start.call_args[1]["env"]["ENABLE_TIME_SYNC"] == "true"
+    assert "ENABLE_TIME_SYNC" not in env
+
+    server.start("/usr/bin/node", env, 5580, time_sync=False)
+    assert start.call_args[1]["env"]["ENABLE_TIME_SYNC"] == "false"
+
+
 def test_pairing_error_tells_how_to_pair_test_certificates():
     exc = MatterServerError(
         1,
@@ -635,6 +646,7 @@ async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
         _attr_primary_interface="",
         _attr_port=5580,
         _attr_test_dcl=0,
+        _attr_time_sync=1,
     )
     controller = matter_controller(logger, fhemdev)
     controller.hash = {"NAME": "testmatter"}
