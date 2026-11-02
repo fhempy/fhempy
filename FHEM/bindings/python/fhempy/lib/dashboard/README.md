@@ -83,7 +83,10 @@ in the settings. This is stored in attribute `keep_on` and applies to all tablet
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
 without a room (with a suggestion from the device name, e.g. `wz_Lamp` goes to *Wohnzimmer*) and every room with its
-devices. Tap a device to move it to another room or to a new one, tap the pencil to rename a room. This changes the
+devices. Drag a device to another room (on tablets: hold it briefly, then drag) or tap it to choose a room or create a new
+one, × takes it out of a room (without any room left it is listed under *Without room* again). Devices without a room
+also offer the three rooms chosen last on this tablet, automations like DOIF, notify or at are suggested for a room
+*Tech*. Tap the pencil to rename a room. This changes the
 FHEM attribute `room`, so FHEMWEB and the other modules see the same rooms, and applies to all tablets. Other rooms of
 a device stay. Only tablets without restrictions (all rooms, not read only) can arrange rooms.
 

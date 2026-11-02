@@ -505,3 +505,17 @@ async def test_keep_on_from_tablet(module):
         await asyncio.sleep(0.2)
         assert not any(s.startswith("ku_Kaffeemaschine") for s in module.fake.sets)
         await ws.close()
+
+
+def test_arrangement_offers_automations_for_tech():
+    infos = {
+        "di_Licht": {"NAME": "di_Licht", "TYPE": "DOIF", "room": "", "sets": ""},
+        "nf_Log": {"NAME": "nf_Log", "TYPE": "notify", "room": "Tech", "sets": ""},
+        "FileLog_x": {"NAME": "FileLog_x", "TYPE": "FileLog", "room": "", "sets": ""},
+    }
+    data = model.arrangement(infos)
+    assert [(d["id"], d["kind"], d["suggestion"]) for d in data["unassigned"]] == [
+        ("di_Licht", "automation", "Tech")
+    ]
+    assert data["rooms"][0]["name"] == "Tech"
+    assert data["rooms"][0]["devices"][0]["id"] == "nf_Log"

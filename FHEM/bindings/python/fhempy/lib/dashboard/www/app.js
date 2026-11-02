@@ -25,7 +25,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Fertig", noRoom: "Kein Raum",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
-    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Tippe ein Gerät an, um es in einen Raum zu verschieben. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
+    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
     happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
@@ -62,7 +62,7 @@
     roomOfTablet: "Room of this tablet:", next: "Done", noRoom: "No room",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
-    lock: "Lock", unlock: "Unlock", today: "Today", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Tap a device to move it to a room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
+    lock: "Lock", unlock: "Unlock", today: "Today", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
     happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
@@ -304,7 +304,7 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop" };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", automation: "gear" };
   var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1 };
 
   // temperature and humidity of today in the tiles, from the timeline
@@ -907,22 +907,26 @@
     if (!d) { return html + '<div class="empty">…</div>'; }
     var free = d.unassigned || [], sug = free.filter(function (x) { return x.suggestion; });
     if (free.length) {
-      html += '<div class="leave arrfree"><div class="section" style="margin:0 0 6px"><span>' + esc(t("unassigned")) + " · " + free.length + "</span>" +
+      html += '<div class="leave arrfree" data-droproom=""><div class="section" style="margin:0 0 6px"><span>' + esc(t("unassigned")) + " · " + free.length + "</span>" +
         (sug.length > 1 ? '<button class="pill" data-applyall="1">' + esc(t("applyAll", { n: sug.length })) + "</button>" : "") + "</div>" +
         free.map(function (x) {
-          return '<div class="row"><div class="ic">' + I(KIND_ICON[x.kind] || "power") + '</div><div class="t"><b>' + esc(x.name) + "</b><span>" + esc(x.id) + "</span></div>" +
-            (x.suggestion ? '<button class="pill sug" data-moveid="' + esc(x.id) + '" data-movefrom="" data-moveto="' + esc(x.suggestion) + '">' + I("right", 18) + " " + esc(x.suggestion) + "</button>" : "") +
-            '<button class="pill" data-pick="' + esc(x.id) + '" data-from="">' + esc(t("chooseRoom")) + "</button></div>";
+          var quick = recentRooms().filter(function (r) { return r !== x.suggestion; }).slice(0, 3).map(function (r) {
+            return '<button class="pill quick" data-moveid="' + esc(x.id) + '" data-movefrom="" data-moveto="' + esc(r) + '">' + esc(r) + "</button>";
+          }).join("");
+          return '<div class="row" ' + dragAttrs(x, "") + '><div class="ic">' + I(KIND_ICON[x.kind] || "power") + '</div><div class="t"><b>' + esc(x.name) + "</b><span>" + esc(x.id) + "</span></div>" +
+            '<div class="qbtns">' + (x.suggestion ? '<button class="pill sug" data-moveid="' + esc(x.id) + '" data-movefrom="" data-moveto="' + esc(x.suggestion) + '">' + I("right", 18) + " " + esc(x.suggestion) + "</button>" : "") + quick +
+            '<button class="pill" data-pick="' + esc(x.id) + '" data-from="">' + esc(t("chooseRoom")) + "</button></div></div>";
         }).join("") + "</div>";
     } else {
-      html += '<div class="leave"><div class="allclear">' + I("check", 26) + " " + esc(t("allSorted")) + "</div></div>";
+      html += '<div class="leave arrfree" data-droproom=""><div class="allclear">' + I("check", 26) + " " + esc(t("allSorted")) + '</div><div class="drophint">' + esc(t("dropHere")) + "</div></div>";
     }
     html += '<div class="arrgrid">' + (d.rooms || []).map(function (r) {
-      return '<div class="leave arrroom"><div class="arrtitle"><b>' + esc(r.name) + "</b><span>" + r.devices.length + '</span><button class="mini" data-renameroom="' + esc(r.name) + '" aria-label="' + esc(t("renameRoom")) + '">' + I("pencil", 18) + "</button></div>" +
+      return '<div class="leave arrroom" data-droproom="' + esc(r.name) + '"><div class="arrtitle"><b>' + esc(r.name) + "</b><span>" + r.devices.length + '</span><button class="mini" data-renameroom="' + esc(r.name) + '" aria-label="' + esc(t("renameRoom")) + '">' + I("pencil", 18) + "</button></div>" +
         '<div class="dchips">' + r.devices.map(function (x) {
           var other = x.rooms.filter(function (n) { return n !== r.name; });
-          return '<button class="dchip" data-pick="' + esc(x.id) + '" data-from="' + esc(r.name) + '">' + I(KIND_ICON[x.kind] || "power", 16) + " " + esc(x.name) +
-            (other.length ? "<small>" + esc(t("alsoIn", { rooms: other.join(", ") })) + "</small>" : "") + "</button>";
+          return '<button class="dchip" data-pick="' + esc(x.id) + '" data-from="' + esc(r.name) + '" ' + dragAttrs(x, r.name) + ">" + I(KIND_ICON[x.kind] || "power", 16) + " " + esc(x.name) +
+            (other.length ? "<small>" + esc(t("alsoIn", { rooms: other.join(", ") })) + "</small>" : "") +
+            '<span class="dx" role="button" aria-label="' + esc(t("removeFrom", { room: r.name })) + '" data-moveid="' + esc(x.id) + '" data-movefrom="' + esc(r.name) + '" data-moveto="">' + I("x", 14) + "</span></button>";
         }).join("") + "</div></div>";
     }).join("") + "</div>";
     return html;
@@ -953,10 +957,71 @@
     if (!name || /[,;|"\\]/.test(name)) { showBanner(t("badRoom"), 4000); return ""; }
     return name;
   }
+  function dragAttrs(x, from) {
+    return 'data-dragid="' + esc(x.id) + '" data-dragfrom="' + esc(from) + '" data-dragname="' + esc(x.name) + '" data-dragkind="' + esc(x.kind) + '"';
+  }
+  // the last rooms chosen on this tablet, offered for devices without a room
+  function recentRooms() {
+    try { var list = JSON.parse(store("dashRecentRooms") || "[]"); return Array.isArray(list) ? list : []; } catch (e) { return []; }
+  }
+  function rememberRoom(room) {
+    var list = [room].concat(recentRooms().filter(function (r) { return r !== room; })).slice(0, 6);
+    store("dashRecentRooms", JSON.stringify(list));
+  }
   function moveDevice(id, from, to) {
+    if (!id || from === to) { return; }
+    if (to) { rememberRoom(to); }
     send({ type: "move_device", id: id, from: from, to: to });
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
   }
+  // dragging devices between rooms: mouse at once, touch after holding
+  var drag = null, dragEnded = 0;
+  function dragStart(ev) {
+    var src = S.arrange && !closest(ev.target, "data-moveto") ? closest(ev.target, "data-dragid") : null;
+    if (!src) { return false; }
+    drag = { id: src.getAttribute("data-dragid"), from: src.getAttribute("data-dragfrom"), name: src.getAttribute("data-dragname"), kind: src.getAttribute("data-dragkind"), x: ev.clientX, y: ev.clientY, mouse: ev.pointerType === "mouse", active: false };
+    if (!drag.mouse) { drag.timer = setTimeout(function () { if (drag && !drag.active) { dragActivate(drag.x, drag.y); } }, 280); }
+    return true;
+  }
+  function dragActivate(x, y) {
+    drag.active = true;
+    if (navigator.vibrate) { try { navigator.vibrate(10); } catch (e) { /* not allowed */ } }
+    var g = document.createElement("div"); g.className = "dragghost"; g.innerHTML = I(KIND_ICON[drag.kind] || "power", 16) + " " + esc(drag.name);
+    document.body.appendChild(g); drag.ghost = g; document.body.classList.add("dragging"); dragMove(x, y);
+  }
+  function dragTarget(x, y) {
+    var el = document.elementFromPoint(x, y);
+    return el ? closest(el, "data-droproom") : null;
+  }
+  function dragMove(x, y) {
+    drag.ghost.style.transform = "translate(" + (x + 12) + "px," + (y + 12) + "px)";
+    var over = dragTarget(x, y);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-droproom].over"), function (el) { if (el !== over) { el.classList.remove("over"); } });
+    if (over) { over.classList.add("over"); }
+  }
+  function dragEnd(x, y, cancel) {
+    if (!drag) { return; }
+    clearTimeout(drag.timer);
+    if (drag.active) {
+      var over = cancel ? null : dragTarget(x, y);
+      if (over) { moveDevice(drag.id, drag.from, over.getAttribute("data-droproom")); }
+      drag.ghost.parentNode.removeChild(drag.ghost); document.body.classList.remove("dragging");
+      Array.prototype.forEach.call(document.querySelectorAll("[data-droproom].over"), function (el) { el.classList.remove("over"); });
+      dragEnded = Date.now();
+    }
+    drag = null;
+  }
+  document.addEventListener("pointermove", function (ev) {
+    if (!drag) { return; }
+    if (drag.active) { dragMove(ev.clientX, ev.clientY); ev.preventDefault(); return; }
+    if (Math.abs(ev.clientX - drag.x) + Math.abs(ev.clientY - drag.y) > 8) {
+      if (drag.mouse) { dragActivate(ev.clientX, ev.clientY); } else { clearTimeout(drag.timer); drag = null; }
+    }
+  });
+  document.addEventListener("pointerup", function (ev) { dragEnd(ev.clientX, ev.clientY, false); });
+  document.addEventListener("pointercancel", function () { dragEnd(0, 0, true); });
+  document.addEventListener("touchmove", function (ev) { if (drag && drag.active) { ev.preventDefault(); } }, { passive: false });
+
   function arrangeClick(target) {
     var el;
     if ((el = closest(target, "data-arrange"))) { startArrange(); return true; }
@@ -1200,6 +1265,7 @@
     if (S.audio && S.audio.state === "suspended") { S.audio.resume(); }
     var wasSaver = S.saver; wake();
     if (wasSaver) { press = { saver: Date.now() }; ev.preventDefault(); return; }
+    if (dragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
     var tile = closest(ev.target, "data-tile");
@@ -1217,6 +1283,7 @@
   document.addEventListener("click", function (ev) {
     if (press && press.saver) { var fresh = Date.now() - press.saver < 800; press = null; if (fresh) { return; } }
     var target = ev.target, el;
+    if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-keepon"))) {
       var kid = el.getAttribute("data-keepon"), kt = S.tiles[kid];

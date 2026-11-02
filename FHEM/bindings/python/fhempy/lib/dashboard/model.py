@@ -742,6 +742,23 @@ ROOM_ABBREVIATIONS = {
     "fl": "Flur",
     "wc": "WC",
 }
+# automations and helpers without anything to switch, offered for a room
+# like "Tech" when arranging rooms
+AUTOMATION_TYPES = (
+    "DOIF",
+    "notify",
+    "at",
+    "watchdog",
+    "sequence",
+    "THRESHOLD",
+    "WeekdayTimer",
+    "Heating_Control",
+    "MSwitch",
+    "AutoShuttersControl",
+    "DOIFtools",
+    "structure",
+)
+TECH_ROOM = "Tech"
 _INVALID_ROOM_RE = re.compile(r'[,;|"\\\n\r\t]')
 
 
@@ -810,6 +827,8 @@ def arrangement(infos):
         if info.get("TYPE") in SCENE_TYPES:
             continue
         kind = kind_of(info)
+        if kind is None and info.get("TYPE") in AUTOMATION_TYPES:
+            kind = "automation"
         if kind is None:
             continue
         visible = rooms_of(info)
@@ -820,7 +839,10 @@ def arrangement(infos):
             rooms.setdefault(room, []).append(item)
     names = sorted(rooms, key=str.lower)
     for item in unassigned:
-        item["suggestion"] = suggest_room(infos[item["id"]], names)
+        if item["kind"] == "automation":
+            item["suggestion"] = TECH_ROOM
+        else:
+            item["suggestion"] = suggest_room(infos[item["id"]], names)
     return {
         "rooms": [
             {

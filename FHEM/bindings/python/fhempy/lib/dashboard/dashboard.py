@@ -509,7 +509,11 @@ class dashboard(generic.FhemModule):
         spec = (self._attr_devices or "").strip()
         hidden = (self._attr_hidden_devices or "").strip()
         bell = self.doorbell_spec()[0]
-        excluded = "|".join(EXCLUDED_TYPES)
+        # arranging rooms also offers automations (DOIF, notify, ...) for a
+        # room like "Tech"
+        excluded = "|".join(
+            t for t in EXCLUDED_TYPES if not (any_room and t in model.AUTOMATION_TYPES)
+        )
         special_types = "|".join(
             model.PRESENCE_TYPES
             + model.PRESENCE_DEVICE_TYPES
