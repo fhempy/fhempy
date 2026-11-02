@@ -325,10 +325,10 @@ class matter_device:
                 await self.check_firmware()
             await asyncio.sleep(FIRMWARE_CHECK_INTERVAL)
 
-    async def set_check_firmware_update(self, hash, params):
+    def set_check_firmware_update(self, hash, params):
         self.fhemdev.create_async_task(self.check_firmware())
 
-    async def set_update_firmware(self, hash, params):
+    def set_update_firmware(self, hash, params):
         if not self.supports_firmware_update():
             return "This device can't be updated via Matter"
         self.fhemdev.create_async_task(self.update_firmware())
