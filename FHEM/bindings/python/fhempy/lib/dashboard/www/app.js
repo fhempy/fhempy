@@ -25,7 +25,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Fertig", noRoom: "Kein Raum",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
-    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
+    lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", peopleTitle: "Wer ist zu Hause?", peopleHome: "Zu Hause", peopleAway: "Unterwegs", arrived: "angekommen {t}", left: "weg seit {t}", atTime: "{t}", yesterdayAt: "gestern {t}", dayAt: "{d}, {t}", setTablet: "Dieses Tablet", setHome: "Ganzes Zuhause · alle Tablets", setNamePlace: "Name, Standort und Raum", setRooms: "Räume anzeigen und sortieren", setRoomsValue: "{n} von {m} sichtbar", setKeepValue: "{n} Geräte", setKeepNone: "keine", setArrangeValue: "Geräte den Räumen zuordnen", resetView: "Ansicht dieses Tablets zurücksetzen", back: "Einstellungen", setTalk: "Sprechen an der Tür", editHint: "Kacheln ziehen zum Verschieben (am Tablet kurz halten), × blendet sie aus.", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
     noDevices: "Hier ist noch nichts. Gib deinen Geräten in FHEM einen Raum (Attribut room).",
     happened: "Gerade passiert", ringing: "Es klingelt", ringingAt: "Es klingelt: {name}",
@@ -62,7 +62,7 @@
     roomOfTablet: "Room of this tablet:", next: "Done", noRoom: "No room",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
-    lock: "Lock", unlock: "Unlock", today: "Today", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
+    lock: "Lock", unlock: "Unlock", today: "Today", peopleTitle: "Who is at home?", peopleHome: "At home", peopleAway: "Away", arrived: "arrived {t}", left: "away since {t}", atTime: "{t}", yesterdayAt: "yesterday {t}", dayAt: "{d}, {t}", setTablet: "This tablet", setHome: "Whole home · all tablets", setNamePlace: "Name, place and room", setRooms: "Show and order rooms", setRoomsValue: "{n} of {m} shown", setKeepValue: "{n} devices", setKeepNone: "none", setArrangeValue: "Assign devices to rooms", resetView: "Reset the view of this tablet", back: "Settings", setTalk: "Talking at the door", editHint: "Drag tiles to move them (on tablets hold briefly), × hides them.", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
     noDevices: "Nothing here yet. Give your devices a room in FHEM (attribute room).",
     happened: "Just happened", ringing: "Somebody rings", ringingAt: "Somebody rings: {name}",
@@ -216,7 +216,7 @@
       updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && S.sheet.batteries) { renderBatteries(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -481,7 +481,7 @@
     if (h.presence) {
       var home = h.presence.home || [];
       var avs = home.slice(0, 4).map(function (p, i) { return '<div class="av" style="background:' + ["#FFB547", "#5AA9FF", "#3DDBB8", "#9B8CFF"][i % 4] + '">' + esc(p.initial) + "</div>"; }).join("");
-      chips += '<div class="chip">' + (avs ? '<div class="avs">' + avs + "</div>" : I("home")) + ' <span class="lbl">' + esc(home.length ? t("atHome", { n: home.length }) : t("nobody")) + "</span></div>";
+      chips += '<button class="chip" data-people="1">' + (avs ? '<div class="avs">' + avs + "</div>" : I("home")) + ' <span class="lbl">' + esc(home.length ? t("atHome", { n: home.length }) : t("nobody")) + "</span></button>";
     }
     var warn = warningText();
     if (warn) { chips += '<button class="chip warn" data-go="home">' + I("win") + " " + esc(warn) + "</button>"; }
@@ -633,6 +633,7 @@
       var hidden = layout().hidden_tiles || [];
       var shown = ids.filter(function (id) { return hidden.indexOf(id) < 0; });
       var gone = ids.filter(function (id) { return hidden.indexOf(id) >= 0; });
+      html += '<div class="edithint">' + esc(t("editHint")) + "</div>";
       html += '<div class="grid">' + shown.map(function (id) { return tileHtml(id, "shown"); }).join("") + "</div>";
       if (gone.length) { html += '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (id) { return tileHtml(id, "hidden"); }).join("") + "</div>"; }
       html += '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
@@ -722,7 +723,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people]);
     d.innerHTML = '<div class="sheet ' + (cls || "") + '">' + inner + "</div>";
     if (d.getAttribute("data-key") === key) { d.firstChild.scrollTop = top; }
     d.setAttribute("data-key", key);
@@ -734,6 +735,7 @@
     if (S.sheet.batteries) { renderBatteries(); return; }
     if (S.sheet.arrange) { renderPick(); return; }
     if (S.sheet.rename) { renderRename(); return; }
+    if (S.sheet.people) { renderPeople(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -858,26 +860,54 @@
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
   function openSettings() { S.sheet = { settings: true }; renderSettings(); }
+  function settingsRow(attr, icon, label, value, extra) {
+    return '<button class="mrow" ' + attr + '><span class="mic">' + I(icon, 20) + '</span><span class="ml"><b>' + esc(label) + "</b>" + (value ? "<span>" + esc(value) + "</span>" : "") + "</span>" + (extra || I("chev", 18)) + "</button>";
+  }
+  function settingsHead(title, sub, page) {
+    return '<div class="head">' + (page ? '<button class="iconbtn" data-setpage="" aria-label="' + esc(t("back")) + '">' + I("left") + "</button>" : "") +
+      "<div><h1>" + esc(title) + '</h1><div class="subtitle">' + esc(sub) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>";
+  }
   function renderSettings() {
-    var tb = S.tablet, lay = layout(), hidden = lay.hidden_rooms || [];
-    var places = ["wall", "couch", "door"].map(function (p) { return '<button class="' + (tb.place === p ? "on" : "") + '" data-place="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
+    var tb = S.tablet, lay = layout(), page = S.sheet.page || "";
+    if (page === "tablet") { renderSettingsTablet(); return; }
+    if (page === "rooms") { renderSettingsRooms(); return; }
+    if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
+    var hidden = lay.hidden_rooms || [], shown = S.rooms.filter(function (r) { return hidden.indexOf(r.name) < 0; }).length;
+    var kept = Object.keys(S.tiles).filter(function (id) { return S.tiles[id].keep_on; }).length;
+    var html = settingsHead(t("settings"), tb.name + (tb.readonly ? " · " + t("readonly") : ""), false) +
+      '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
+      settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
+      '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
+      settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
+    if (tb.arrange) {
+      html += '<div class="group"><div class="label">' + esc(t("setHome")) + '</div><div class="menu">' +
+        settingsRow('data-arrange="1"', "home", t("arrange"), t("setArrangeValue")) +
+        settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) + "</div></div>";
+    }
+    if (tb.https && location.protocol !== "https:") {
+      html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
+    }
+    html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
+    sheetShell(html);
+  }
+  function renderSettingsTablet() {
+    var tb = S.tablet;
+    var places = ["wall", "couch", "door"].map(function (p) { return '<button class="' + (tb.place === p ? "on" : "") + '" data-place="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var roomOpts = '<option value="">' + esc(t("noRoom")) + "</option>" + S.rooms.map(function (r) { return '<option' + (r.name === tb.room ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
-    var order = allRoomsOrdered();
-    var roomList = order.map(function (r, i) {
+    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) +
+      '<div class="group"><div class="label">' + esc(t("name")) + '</div><input id="tabname" value="' + esc(tb.name) + '" maxlength="40" style="width:100%"></div>' +
+      '<div class="group"><div class="label">' + esc(t("place")) + '</div><div class="seg">' + places + "</div></div>" +
+      '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom" style="width:100%">' + roomOpts + "</select></div>");
+  }
+  function renderSettingsRooms() {
+    var hidden = layout().hidden_rooms || [];
+    var roomList = allRoomsOrdered().map(function (r, i) {
       var on = hidden.indexOf(r.name) < 0;
       return '<div class="item"><span class="grow">' + esc(r.name) + '</span><button class="mini" data-roomup="' + i + '">' + I("left", 18).replace("<svg", '<svg style="transform:rotate(90deg)"') + '</button><button class="mini" data-roomdown="' + i + '">' + I("left", 18).replace("<svg", '<svg style="transform:rotate(-90deg)"') + '</button><button class="tg' + (on ? "" : " off") + '" data-roomtoggle="' + esc(r.name) + '"></button></div>';
     }).join("");
-    var https = tb.https && location.protocol !== "https:" ? '<div class="group"><a class="pill" style="text-decoration:none" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '">' + esc(t("switchHttps")) + "</a></div>" : "";
-    sheetShell('<div class="head"><div><h1>' + esc(t("settings")) + '</h1><div class="subtitle">' + esc(tb.name) + (tb.readonly ? " · " + esc(t("readonly")) : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
-      '<div class="group"><div class="label">' + esc(t("name")) + '</div><input id="tabname" value="' + esc(tb.name) + '" maxlength="40"></div>' +
-      '<div class="group"><div class="label">' + esc(t("place")) + '</div><div class="seg">' + places + "</div></div>" +
-      '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom">' + roomOpts + "</select></div>" +
-      '<div class="group"><div class="label">' + esc(t("theme")) + '</div><div class="seg">' + themes + "</div></div>" +
-      '<div class="group"><div class="label">' + esc(t("rooms")) + '</div><div class="list">' + roomList + "</div></div>" +
-      '<div class="group actions"><button class="pill primary" data-edit="1">' + esc(t("editTiles")) + '</button><button class="pill" data-resetlayout="1">' + esc(t("reset")) + "</button></div>" +
-      (tb.arrange ? keepOnListHtml() : "") +
-      (tb.arrange ? '<div class="group actions"><button class="pill" data-arrange="1">' + I("home", 20) + " " + esc(t("arrange")) + "</button></div>" : "") + https);
+    sheetShell(settingsHead(t("setRooms"), S.tablet.name, true) + '<div class="group"><div class="list">' + roomList + "</div></div>");
   }
   function allRoomsOrdered() {
     var order = layout().room_order || [];
@@ -1009,6 +1039,27 @@
     });
     setTimeout(function () { el.focus(); }, 50);
   }
+  // who is at home since when, who is away since when
+  function whenText(text) {
+    var d = parseTime(text); if (!d) { return ""; }
+    var now = new Date(), y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1), clock = clockText(d);
+    if (d.toDateString() === now.toDateString()) { return clock; }
+    if (d.toDateString() === y.toDateString()) { return t("yesterdayAt", { t: clock }); }
+    return t("dayAt", { d: T.weekdays[d.getDay()].slice(0, 2) + " " + d.getDate() + "." + (d.getMonth() + 1) + ".", t: clock });
+  }
+  function renderPeople() {
+    var people = (S.header.presence && S.header.presence.people) || [], colors = ["#FFB547", "#5AA9FF", "#3DDBB8", "#9B8CFF"];
+    function rows(list, home) {
+      return list.map(function (p, i) {
+        var when = p.since ? t(home ? "arrived" : "left", { t: whenText(p.since) }) + " · " + since(p.since) : "";
+        return '<div class="row"><div class="av big" style="background:' + (home ? colors[i % 4] : "var(--card2)") + ";color:" + (home ? "#0B0E13" : "var(--mu)") + '">' + esc(p.initial) + '</div><div class="t"><b>' + esc(p.name) + "</b><span>" + esc(when) + "</span></div></div>";
+      }).join("");
+    }
+    var home = people.filter(function (p) { return p.home; }), away = people.filter(function (p) { return !p.home; });
+    sheetShell('<div class="head"><div><h1>' + esc(t("peopleTitle")) + '</h1><div class="subtitle">' + esc(home.length ? t("atHome", { n: home.length }) : t("nobody")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      (home.length ? '<div class="group"><div class="label">' + esc(t("peopleHome")) + '</div><div class="list">' + rows(home, true) + "</div></div>" : "") +
+      (away.length ? '<div class="group"><div class="label">' + esc(t("peopleAway")) + '</div><div class="list">' + rows(away, false) + "</div></div>" : ""));
+  }
   function renderRename() {
     var room = S.sheet.rename;
     sheetShell('<div class="head"><div><h1>' + esc(t("renameRoom")) + '</h1><div class="subtitle">' + esc(room) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
@@ -1083,6 +1134,50 @@
   document.addEventListener("pointerup", function (ev) { dragEnd(ev.clientX, ev.clientY, false); });
   document.addEventListener("pointercancel", function () { dragEnd(0, 0, true); });
   document.addEventListener("touchmove", function (ev) { if (drag && drag.active) { ev.preventDefault(); } }, { passive: false });
+
+  // edit mode: drag tiles to a new place in the room (order per tablet)
+  var tdrag = null;
+  function tileDragStart(ev) {
+    var el = S.edit && !closest(ev.target, "data-edit") ? closest(ev.target, "data-tile") : null;
+    if (!el || el.classList.contains("hiddenTile")) { return false; }
+    tdrag = { el: el, x: ev.clientX, y: ev.clientY, mouse: ev.pointerType === "mouse", active: false };
+    if (!tdrag.mouse) { tdrag.timer = setTimeout(function () { if (tdrag && !tdrag.active) { tileDragActivate(); } }, 250); }
+    return true;
+  }
+  function tileDragActivate() {
+    tdrag.active = true; tdrag.el.classList.add("dragtile"); document.body.classList.add("dragging");
+    if (navigator.vibrate) { try { navigator.vibrate(10); } catch (e) { /* not allowed */ } }
+  }
+  function tileDragMove(x, y) {
+    var over = document.elementFromPoint(x, y), target = over ? closest(over, "data-tile") : null;
+    if (!target || target === tdrag.el || target.parentNode !== tdrag.el.parentNode || target.classList.contains("hiddenTile")) { return; }
+    var r = target.getBoundingClientRect(), after = y > r.bottom || (y >= r.top && x > r.left + r.width / 2);
+    target.parentNode.insertBefore(tdrag.el, after ? target.nextSibling : target);
+  }
+  function tileDragEnd() {
+    if (!tdrag) { return; }
+    clearTimeout(tdrag.timer);
+    if (tdrag.active) {
+      var grid = tdrag.el.parentNode, room = roomByName(S.tab.slice(5));
+      tdrag.el.classList.remove("dragtile"); document.body.classList.remove("dragging");
+      if (room) {
+        var ids = Array.prototype.map.call(grid.querySelectorAll("[data-tile]"), function (el) { return el.getAttribute("data-tile"); });
+        var lay = copyLayout(); lay.tile_order = lay.tile_order || {}; lay.tile_order[room.name] = ids; saveLayout(lay);
+      }
+      dragEnded = Date.now();
+    }
+    tdrag = null;
+  }
+  document.addEventListener("pointermove", function (ev) {
+    if (!tdrag) { return; }
+    if (tdrag.active) { tileDragMove(ev.clientX, ev.clientY); ev.preventDefault(); return; }
+    if (Math.abs(ev.clientX - tdrag.x) + Math.abs(ev.clientY - tdrag.y) > 8) {
+      if (tdrag.mouse) { tileDragActivate(); } else { clearTimeout(tdrag.timer); tdrag = null; }
+    }
+  });
+  document.addEventListener("pointerup", tileDragEnd);
+  document.addEventListener("pointercancel", tileDragEnd);
+  document.addEventListener("touchmove", function (ev) { if (tdrag && tdrag.active) { ev.preventDefault(); } }, { passive: false });
 
   function arrangeClick(target) {
     var el;
@@ -1336,7 +1431,7 @@
     if (S.audio && S.audio.state === "suspended") { S.audio.resume(); }
     var wasSaver = S.saver; wake();
     if (wasSaver) { press = { saver: Date.now() }; ev.preventDefault(); return; }
-    if (dragStart(ev)) { return; }
+    if (dragStart(ev) || tileDragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
     var tile = closest(ev.target, "data-tile");
@@ -1402,7 +1497,9 @@
       return;
     }
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
+    if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }

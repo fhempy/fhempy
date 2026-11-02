@@ -55,6 +55,8 @@ LOW_BATTERY_PERCENT = 15
 # readings the tablets need, everything else isn't sent by FHEM
 READINGS = (
     "state",
+    "lastArrival",
+    "lastDeparture",
     "pct",
     "dim",
     "brightness",
@@ -444,12 +446,25 @@ def presence(infos):
         ]
     if not residents:
         return None
-    home = []
+    home, people = [], []
     for info in sorted(residents, key=lambda i: i["NAME"].lower()):
         state = str(_reading(info, "state") or "").strip().lower()
-        if state in PRESENT_STATES:
-            home.append(_person(info))
-    return {"home": home, "total": len(residents)}
+        person = _person(info)
+        present = state in PRESENT_STATES
+        if present:
+            home.append(person)
+        people.append({**person, "home": present, "since": _presence_since(info, present)})
+    people.sort(key=lambda p: (not p["home"], p["name"].lower()))
+    return {"home": home, "total": len(residents), "people": people}
+
+
+def _presence_since(info, present):
+    """arrival or departure time: ROOMMATE/GUEST lastArrival/lastDeparture,
+    otherwise the time of the state"""
+    value = str(_reading(info, "lastArrival" if present else "lastDeparture") or "")
+    if re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", value):
+        return value[:19]
+    return _reading_time(info, "state")
 
 
 def weather(infos):

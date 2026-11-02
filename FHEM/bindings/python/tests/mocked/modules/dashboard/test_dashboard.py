@@ -555,3 +555,19 @@ async def test_delete_idle_device(module):
         bad = next(r for r in setup["rooms"] if r["name"] == "Bad")
         assert "alt_Lampe" not in [d["id"] for d in bad["devices"]]
         await ws.close()
+
+
+def test_presence_people_with_arrival_and_departure():
+    infos = {
+        "rr_A": {"NAME": "rr_A", "TYPE": "ROOMMATE", "alias": "Anna",
+                 "readings": {"state": "awoken", "lastArrival": "2026-11-02 18:42:00"},
+                 "times": {"state": "2026-11-02 20:00:00"}},
+        "rr_L": {"NAME": "rr_L", "TYPE": "ROOMMATE", "alias": "Lea",
+                 "readings": {"state": "absent"},
+                 "times": {"state": "2026-11-01 07:10:00"}},
+    }
+    people = model.presence(infos)["people"]
+    assert [(p["name"], p["home"], p["since"]) for p in people] == [
+        ("Anna", True, "2026-11-02 18:42:00"),
+        ("Lea", False, "2026-11-01 07:10:00"),
+    ]

@@ -6,7 +6,8 @@ minute on the tablet itself.
 
 - rooms and tiles are built automatically from the FHEM rooms and devices: lights, dimmers, switches, plugs, blinds,
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
-- the header shows weather, who is at home, open windows (by name when only a few are open) and empty batteries
+- the header shows weather, who is at home (tap it: who arrived when, who is away since when), open windows (by name
+  when only a few are open) and empty batteries
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
@@ -43,8 +44,9 @@ That's it. Add the page to the home screen (Android: menu, *Add to home screen*;
 get it in full screen without browser bar. Every further tablet is added the same way, the code is valid for 10
 minutes and once.
 
-Everything else is changed on the tablet with the gear button: name, place, room, theme, order and visibility of
-rooms, and *Edit tiles* to hide or move tiles. These settings belong to this tablet only.
+Everything else is changed on the tablet with the gear button. *This tablet*: name, place and room, theme, order and
+visibility of rooms, and *Edit tiles* to hide tiles or drag them to another place; these settings belong to this
+tablet only. *Whole home* (all tablets): arranging rooms and the devices *All off* leaves on.
 
 | Light theme at the couch | On a phone |
 |---|---|

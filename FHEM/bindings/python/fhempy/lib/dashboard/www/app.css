@@ -130,6 +130,20 @@ body.dragging, body.dragging * { user-select: none; -webkit-user-select: none; c
 .arridle .row .pill { flex: none; height: 40px; }
 .idletag { display: inline-flex; align-items: center; gap: 3px; font-style: normal; font-size: 12px; color: var(--amber2); margin-left: 6px; }
 .dchip.idle { border-color: rgba(255,138,61,.45); }
+.menu { border-radius: 18px; background: var(--card2); overflow: hidden; }
+.mrow { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line); color: var(--tx); text-decoration: none; }
+.mrow:last-child { border-bottom: 0; }
+.mrow .mic { flex: none; width: 36px; height: 36px; border-radius: 11px; background: var(--card); display: grid; place-items: center; color: var(--mu); }
+.mrow .ml { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mrow .ml b { font-size: 16px; font-weight: 500; }
+.mrow .ml span { font-size: 13px; color: var(--mu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow > svg { flex: none; color: var(--mu2); }
+.mrow .seg { flex: none; }
+.linkbtn { color: var(--mu); font-size: 14px; text-decoration: underline; padding: 6px 0; }
+.sheet .head .iconbtn[data-setpage] { margin-left: 0; }
+.edithint { color: var(--mu); font-size: 14px; margin: 0 0 12px; }
+body.dragging .tile.dragtile { opacity: .85; transform: scale(1.04); outline: 2px solid var(--amber); z-index: 5; box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.av.big { margin: 0; border: 0; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 18px; flex: none; }
 .pill.sug { background: rgba(61,219,184,.16); color: var(--teal); }
 .arrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .arrfree .row .t { min-width: 0; flex: 1; }
@@ -324,6 +338,9 @@ body.light .banner.push { background: #fff; color: #151922; }
   .tile .tsteps { display: none; }
   .tile.climate .tgt { display: inline; }
   .arrhead { flex-direction: column; }
+  .mrow { flex-wrap: wrap; }
+  .mrow .seg { width: 100%; display: flex; }
+  .mrow .seg button { flex: 1; padding: 0 8px; }
   .arrfree .row { flex-wrap: wrap; }
   .arrgrid { grid-template-columns: 1fr; }
   .tile.climate.wide .cside { display: none; }
