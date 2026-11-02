@@ -279,18 +279,32 @@ sub fhempyServer_Attr($$$)
   my $hash = $defs{$name};
 
   if( $attrName eq 'logfile' ) {
-    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' && $init_done ) {
-      fhem( "defmod fhempy_log FileLog $attrVal Logfile" ) if( !exists($defs{"fhempy_log"}) );
-      CommandAttr( undef, 'fhempy_log room hidden' ) if( !AttrVal($name, 'room', undef ) );
-      CommandAttr( undef, 'fhempy_log group fhempy' ) if( !AttrVal($name, 'group', undef ) );
-      CommandAttr( undef, 'fhempy_log icon file_unknown' ) if( !AttrVal($name, 'icon', undef ) );
-      CommandAttr( undef, 'fhempy_log nrarchive 10' ) if( !AttrVal($name, 'nrarchive', undef ) );
+    # fhem.cfg sets attributes before init_done, the logfile must be taken
+    # over there as well, otherwise the default of Define stays active
+    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' ) {
       $hash->{logfile} = $attrVal;
+    } elsif( $cmd eq "del" ) {
+      $hash->{logfile} = "./log/fhempy-%Y-%m-%d.log";
+    }
+
+    if( $cmd eq "set" && $attrVal && $attrVal ne 'FHEM' && $init_done ) {
+      if( !exists($defs{"fhempy_log"}) ) {
+        fhem( "defmod fhempy_log FileLog $attrVal Logfile" );
+        CommandAttr( undef, 'fhempy_log room hidden' ) if( !AttrVal($name, 'room', undef ) );
+        CommandAttr( undef, 'fhempy_log group fhempy' ) if( !AttrVal($name, 'group', undef ) );
+        CommandAttr( undef, 'fhempy_log icon file_unknown' ) if( !AttrVal($name, 'icon', undef ) );
+        CommandAttr( undef, 'fhempy_log nrarchive 10' ) if( !AttrVal($name, 'nrarchive', undef ) );
+      } elsif( ($defs{"fhempy_log"}{TYPE} // "") eq "FileLog" && ($defs{"fhempy_log"}{logfile} // "") ne $attrVal ) {
+        # the logfile viewer must show the new file
+        my $regexp = $defs{"fhempy_log"}{REGEXP} // "Logfile";
+        fhem( "modify fhempy_log $attrVal $regexp" );
+      }
     }
 
     $attr{$name}{$attrName} = $attrVal;
 
-    if (fhempyServer_checkPythonVersion($hash)) {
+    # while FHEM starts, fhempy is started on INITIALIZED (Notify)
+    if ($init_done && fhempyServer_checkPythonVersion($hash)) {
       CoProcess::start($hash);
     }
   }
