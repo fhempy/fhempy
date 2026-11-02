@@ -113,6 +113,7 @@ the readings so the device can be supported.
 | `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0`. Set automatically on the first `pair_new_device` |
 | `primary_interface` | Network interface for IPv6 (e.g. `eth0`), only if pairing fails on computers with several interfaces |
 | `test_dcl` | `1`: also pair devices with a test/development certificate (beta firmware). Only if you trust the vendor. Default `0` |
+| `time_sync` | `1` (default): set the time of devices with a clock (e.g. displays showing the time) from this computer, needs NTP. `0`: off |
 | `autocreate` | `1` (default): create FHEM devices automatically |
 
 ## Use an existing Matter server
