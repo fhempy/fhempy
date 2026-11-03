@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.14.2 (2026-11-03)
+
+### Features
+
+- **dashboard**: DOIF inputs (readingList/setList) on the tablets
+  ([#861](https://github.com/fhempy/fhempy/pull/861),
+  [`483688f`](https://github.com/fhempy/fhempy/commit/483688fd4c0e3f598b87cf20c95f8675c3afc3ce))
+
+- **dashboard**: Fan tile and fan control of ceiling fans with light
+  ([#860](https://github.com/fhempy/fhempy/pull/860),
+  [`dbd6a81`](https://github.com/fhempy/fhempy/commit/dbd6a8193c89a7f742eb3e4f334488c3631de7e7))
+
+
 ## v2.14.1 (2026-11-03)
 
 ### Bug Fixes
