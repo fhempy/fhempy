@@ -626,3 +626,25 @@ async def test_tablet_without_timeline(module):
         )
         async with session.get(base(module) + "api/timeline", headers=auth) as resp:
             assert resp.status == 200
+
+
+@pytest.mark.asyncio
+async def test_event_filter_and_global_events(module):
+    import re
+
+    flt = re.compile(module.event_filter())
+    assert flt.search("wz_Deckenlicht:state: on")
+    assert flt.search("global:DEFINED at_1")
+    assert not flt.search("wz_Deckenlicht:linkquality: 120")
+    assert not flt.search("wz_Deckenlicht:state_x: 1")
+
+    reloads = []
+    module.schedule_reload = lambda: reloads.append(1)
+    # helper devices FHEM defines and deletes all the time: no reading again
+    await module.handle_global_event("global", "state", "DEFINED at_123")
+    await module.handle_global_event("global", "state", "DELETED at_123")
+    await module.handle_global_event("global", "state", "MODIFIED at_7")
+    assert reloads == []
+    await module.handle_global_event("global", "state", "DELETED wz_Deckenlicht")
+    await module.handle_global_event("global", "state", "ATTR wz_Deckenlicht room Bad")
+    assert len(reloads) == 2
