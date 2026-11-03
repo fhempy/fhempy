@@ -31,7 +31,7 @@ def has_inputs(info):
 
 
 def _widget(name, spec):
-    parts = [p for p in spec.split(",")]
+    parts = spec.split(",")
     kind = parts[0].lower() if parts else ""
     if kind in ("slider", "knob"):
         numbers = [kinds.number(p) for p in parts[1:4]]
@@ -44,14 +44,14 @@ def _widget(name, spec):
         return {"name": name, "type": "time"}
     if kind in ("noarg", ""):
         return {"name": name, "type": "button"}
-    if kind.startswith("textfield") or kind in ("colorpicker",):
+    if kind.startswith("textfield") or kind == "colorpicker":
         return {"name": name, "type": "text"}
     if kind in ("select", "multiple", "multiple-strict"):
         parts = parts[1:]
     options = [p for p in parts if p]
     if not options:
         return {"name": name, "type": "text"}
-    if set(o.lower() for o in options) <= {"on", "off"}:
+    if {o.lower() for o in options} <= {"on", "off"}:
         return {"name": name, "type": "switch", "options": options}
     return {"name": name, "type": "select", "options": options}
 
@@ -86,32 +86,48 @@ def state(info):
     return {"values": values, "state": readings.get("state")}
 
 
-def _check(item, value):
-    """the value as FHEM gets it, ValueError if it doesn't fit the input"""
-    kind = item["type"]
-    if kind == "button":
-        return None
-    text = str("" if value is None else value).strip()
-    if kind == "slider":
-        number = kinds.number(text)
-        if number is None:
-            raise ValueError(f"not a number: {value}")
-        number = max(item["min"], min(item["max"], number))
-        number = round(number / item["step"]) * item["step"]
-        number = round(number, 6)
-        return str(int(number)) if float(number).is_integer() else str(number)
-    if kind in ("select", "switch"):
-        if text not in item["options"]:
-            raise ValueError(f"not an option: {value}")
-        return text
-    if kind == "time":
-        match = _TIME.match(text)
-        if match is None:
-            raise ValueError(f"no time: {value}")
-        return text
+def _slider_value(item, text):
+    number = kinds.number(text)
+    if number is None:
+        raise ValueError(f"not a number: {text}")
+    number = max(item["min"], min(item["max"], number))
+    number = round(round(number / item["step"]) * item["step"], 6)
+    return str(int(number)) if float(number).is_integer() else str(number)
+
+
+def _option_value(item, text):
+    if text not in item["options"]:
+        raise ValueError(f"not an option: {text}")
+    return text
+
+
+def _time_value(item, text):
+    if not _TIME.match(text):
+        raise ValueError(f"no time: {text}")
+    return text
+
+
+def _text_value(item, text):
     if "\n" in text or "\r" in text or len(text) > MAX_TEXT:
         raise ValueError("text too long")
     return text
+
+
+CHECKS = {
+    "slider": _slider_value,
+    "select": _option_value,
+    "switch": _option_value,
+    "time": _time_value,
+    "text": _text_value,
+}
+
+
+def _check(item, value):
+    """the value as FHEM gets it, ValueError if it doesn't fit the input"""
+    if item["type"] == "button":
+        return None
+    text = str("" if value is None else value).strip()
+    return CHECKS.get(item["type"], _text_value)(item, text)
 
 
 def command(info, name, value):
