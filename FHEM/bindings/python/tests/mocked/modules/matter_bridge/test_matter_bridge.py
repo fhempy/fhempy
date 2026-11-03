@@ -362,3 +362,92 @@ def test_on_state_words():
     assert devices._is_on("online") is None
     assert devices._is_on("off") is False
     assert devices._is_on("offline") is False
+
+
+CEILING_FAN_SETS = (
+    "on off light:on,off brightness:slider,0,1,100 fan:on,off"
+    " fan_speed:slider,0,1,31 fan_pct:slider,0,1,100 fan_mode:off,low,medium,high"
+)
+
+
+def test_fan_detect_type():
+    assert devices.detect_type(info(sets="on off fan_pct")) == "fan"
+    assert devices.detect_type(info(sets="fan_mode:off,low,medium,high")) == "fan"
+    assert (
+        devices.detect_type(info(sets="on off", attrs={"matterType": "fan"})) == "fan"
+    )
+    generic = {"genericDeviceType": "fan"}
+    assert devices.detect_type(info(sets="on off pct", attrs=generic)) == "fan"
+    # light with fan: the light is the main endpoint
+    assert devices.detect_type(info(sets=CEILING_FAN_SETS)) == "dimmer"
+    assert devices.detect_type(info(sets="on off fan_pct", alias="Lamp")) == "light"
+
+
+def test_fan_endpoints():
+    ceiling = info(name="Bedroom.Fan", sets=CEILING_FAN_SETS, alias="Bedroom")
+    assert devices.endpoints(ceiling) == [
+        {"id": "Bedroom_Fan", "type": "dimmer", "name": "Bedroom", "parts": []},
+        {"id": "Bedroom_Fan-fan", "type": "fan", "name": "Bedroom fan", "parts": []},
+    ]
+    only_fan = info(sets="on off fan fan_pct fan_mode")
+    assert [ep["type"] for ep in devices.endpoints(only_fan)] == ["fan"]
+    only_light = info(sets="on off brightness")
+    assert [ep["type"] for ep in devices.endpoints(only_light)] == ["dimmer"]
+
+
+def test_fan_state():
+    ceiling = info(
+        sets=CEILING_FAN_SETS,
+        readings={
+            "state": "on",
+            "brightness": "40",
+            "fan": "on",
+            "fan_pct": "52",
+            "fan_mode": "medium",
+        },
+    )
+    assert devices.state("dimmer", ceiling) == {"on": True, "level": 40}
+    assert devices.state("fan", ceiling) == {"mode": "medium", "percent": 52}
+    ceiling["readings"]["fan"] = "off"
+    assert devices.state("fan", ceiling) == {"mode": "off", "percent": 0}
+    # only percent or only mode
+    assert devices.state("fan", info(sets="fan_pct", readings={"fan_pct": "20"})) == {
+        "mode": "low",
+        "percent": 20,
+    }
+    assert devices.state(
+        "fan", info(sets="fan_mode", readings={"fan_mode": "high"})
+    ) == {"mode": "high", "percent": 100}
+    # a fan with pct and state on/off
+    generic = info(
+        sets="on off pct",
+        attrs={"genericDeviceType": "fan"},
+        readings={"state": "off", "pct": "70"},
+    )
+    assert devices.state("fan", generic) == {"mode": "off", "percent": 0}
+    assert devices.state("fan", info()) == {"mode": None, "percent": None}
+
+
+def test_fan_commands():
+    ceiling = info(sets=CEILING_FAN_SETS)
+    assert devices.fhem_commands("fan", ceiling, {"percent": 50}) == ["fan_pct 50"]
+    assert devices.fhem_commands("fan", ceiling, {"mode": "low"}) == ["fan_mode low"]
+    assert devices.fhem_commands("fan", ceiling, {"mode": "on"}) == ["fan_mode high"]
+    assert devices.fhem_commands("fan", ceiling, {"mode": "off"}) == ["fan_mode off"]
+    assert devices.fhem_commands("fan", ceiling, {"mode": "auto"}) == []
+    # the brightness is not touched by the fan
+    assert devices.fhem_commands("dimmer", ceiling, {"level": 30}) == ["brightness 30"]
+    modes = info(sets="fan_mode:off,low,medium,high")
+    assert devices.fhem_commands("fan", modes, {"percent": 80}) == ["fan_mode high"]
+    assert devices.fhem_commands("fan", modes, {"percent": 0}) == ["fan_mode off"]
+    percent = info(sets="on off pct", attrs={"matterType": "fan"})
+    assert devices.fhem_commands("fan", percent, {"mode": "medium"}) == ["pct 66"]
+    onoff = info(sets="on off", attrs={"matterType": "fan"})
+    assert devices.fhem_commands("fan", onoff, {"percent": 10}) == ["on"]
+    assert devices.fhem_commands("fan", onoff, {"mode": "off"}) == ["off"]
+
+
+def test_bridge_knows_fan():
+    script = open(runtime.SCRIPT, encoding="utf-8").read()
+    assert "fan: { device: FanDevice }" in script
+    assert "fan" in devices.TYPES

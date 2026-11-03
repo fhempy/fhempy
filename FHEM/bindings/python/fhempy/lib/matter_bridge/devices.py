@@ -11,6 +11,7 @@ TYPES = (
     "blind",
     "thermostat",
     "lock",
+    "fan",
     "contact",
     "motion",
     "temperature",
@@ -25,6 +26,7 @@ TYPE_HELP = {
     "blind": "blind/shutter (position, stop)",
     "thermostat": "thermostat (temperature, desired temperature)",
     "lock": "door lock (lock/unlock)",
+    "fan": "fan (off/low/medium/high, speed in %)",
     "contact": "door/window contact",
     "motion": "motion sensor",
     "temperature": "temperature sensor",
@@ -41,6 +43,7 @@ GENERIC_DEVICE_TYPES = {
     "window": "blind",
     "thermostat": "thermostat",
     "lock": "lock",
+    "fan": "fan",
     "contact": "contact",
     "door": "contact",
     "garage": "contact",
@@ -51,6 +54,11 @@ GENERIC_DEVICE_TYPES = {
 }
 
 LEVEL_SETS = ("pct", "dim", "brightness", "level")
+# a fan, also the fan of a ceiling fan with light
+FAN_SETS = ("fan_pct", "fan_mode")
+FAN_MODES = ("off", "low", "medium", "high")
+# speed in % of the modes, "on" is high in Matter
+FAN_MODE_PERCENT = {"off": 0, "low": 33, "medium": 66, "high": 100, "on": 100}
 POSITION_SETS = ("pct", "position")
 TARGET_SETS = ("desired-temp", "desiredTemperature", "desired", "setpoint")
 CURRENT_READINGS = (
@@ -110,6 +118,17 @@ def _word(value):
     return str(value or "").strip().split(" ")[0].lower()
 
 
+def _is_light(info):
+    text = " ".join(
+        (info.get("TYPE", ""), info.get("NAME", ""), info.get("alias", ""))
+    ).lower()
+    return any(word in text for word in LIGHT_WORDS)
+
+
+def _has_fan(sets):
+    return _first(FAN_SETS, sets) is not None
+
+
 def _detect_actuator(info, sets, dimmable):
     if _first(TARGET_SETS, sets):
         return "thermostat"
@@ -118,13 +137,14 @@ def _detect_actuator(info, sets, dimmable):
     moves = sets & {"up", "down", "open", "close", "closes", "opens", "stop"}
     if _first(POSITION_SETS, sets) and moves:
         return "blind"
+    # a fan with a dimmable light or with light in its name is a light with
+    # the fan as second endpoint, see endpoints()
+    if _has_fan(sets) and not dimmable and not _is_light(info):
+        return "fan"
     if "on" in sets and "off" in sets:
         if dimmable:
             return "dimmer"
-        text = " ".join(
-            (info.get("TYPE", ""), info.get("NAME", ""), info.get("alias", ""))
-        ).lower()
-        if any(word in text for word in LIGHT_WORDS):
+        if _is_light(info):
             return "light"
         return "switch"
     return None
@@ -174,7 +194,7 @@ def endpoints(info):
         return []
     attrs = info.get("attrs", {})
     label = attrs.get("matterName") or info.get("alias") or info["NAME"]
-    return [
+    result = [
         {
             "id": endpoint_id(info["NAME"]),
             "type": device_type,
@@ -182,6 +202,26 @@ def endpoints(info):
             "parts": extra_sensors(device_type, info),
         }
     ]
+    if has_fan_endpoint(device_type, info):
+        # own endpoint: a fan and a light both use on/off, the apps show two
+        # devices (FHEM names never contain "-")
+        result.append(
+            {
+                "id": endpoint_id(info["NAME"]) + FAN_SUFFIX,
+                "type": "fan",
+                "name": f"{label} fan",
+                "parts": [],
+            }
+        )
+    return result
+
+
+FAN_SUFFIX = "-fan"
+
+
+def has_fan_endpoint(device_type, info):
+    """a ceiling fan with light: the fan in addition to the light"""
+    return device_type in ("light", "dimmer") and _has_fan(set_names(info.get("sets")))
 
 
 SENSOR_TYPES = ("contact", "motion", "temperature", "humidity")
@@ -269,6 +309,37 @@ def _blind_state(info):
     return {"position": position}
 
 
+def _fan_percent_readings(info):
+    # pct of a fan which is also a light is the brightness
+    if detect_type(info) == "fan":
+        return ("fan_pct", "pct")
+    return ("fan_pct",)
+
+
+def _fan_mode_of(percent):
+    if percent <= 0:
+        return "off"
+    if percent <= FAN_MODE_PERCENT["low"]:
+        return "low"
+    if percent <= FAN_MODE_PERCENT["medium"]:
+        return "medium"
+    return "high"
+
+
+def _fan_state(info):
+    percent = _percent(_reading(info, *_fan_percent_readings(info)))
+    mode = _word(_reading(info, "fan_mode"))
+    mode = mode if mode in FAN_MODES else None
+    if mode is None and percent is not None:
+        mode = _fan_mode_of(percent)
+    if percent is None and mode is not None:
+        percent = FAN_MODE_PERCENT[mode]
+    names = ("fan",) if detect_type(info) != "fan" else ("fan", "state")
+    if _is_on(_reading(info, *names)) is False or mode == "off":
+        mode, percent = "off", 0
+    return {"mode": mode, "percent": percent}
+
+
 def _thermostat_state(info):
     return {
         "current": number(_reading(info, *CURRENT_READINGS)),
@@ -315,6 +386,7 @@ STATES = {
     "blind": _blind_state,
     "thermostat": _thermostat_state,
     "lock": _lock_state,
+    "fan": _fan_state,
     "contact": _contact_state,
     "motion": _motion_state,
     "temperature": _temperature_state,
@@ -383,6 +455,32 @@ def _lock_commands(info, sets, command):
     return []
 
 
+def _fan_commands(info, sets, command):
+    percent_set = _first(_fan_percent_readings(info), sets)
+    mode_set = "fan_mode" if "fan_mode" in sets else None
+    if "mode" in command:
+        mode = command["mode"]
+        if mode not in FAN_MODE_PERCENT:
+            return []
+        if mode_set is not None:
+            return [f"fan_mode {'high' if mode == 'on' else mode}"]
+        percent = FAN_MODE_PERCENT[mode]
+    elif "percent" in command:
+        percent = max(0, min(100, round(command["percent"])))
+    else:
+        return []
+    if percent_set is not None:
+        return [f"{percent_set} {percent}"]
+    if mode_set is not None:
+        return [f"fan_mode {_fan_mode_of(percent)}"]
+    switch = "fan" if "fan" in sets else None
+    if switch is not None:
+        return [f"fan {'on' if percent > 0 else 'off'}"]
+    if "on" in sets and "off" in sets:
+        return ["on" if percent > 0 else "off"]
+    return []
+
+
 COMMANDS = {
     "switch": _onoff_commands,
     "outlet": _onoff_commands,
@@ -391,6 +489,7 @@ COMMANDS = {
     "blind": _blind_commands,
     "thermostat": _thermostat_commands,
     "lock": _lock_commands,
+    "fan": _fan_commands,
 }
 
 

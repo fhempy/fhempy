@@ -156,6 +156,8 @@ _STORY_READINGS = (
         re.compile(r"^(battery|battery_low|batteryState|status|error|program)$", re.I),
         DEVICES,
     ),
+    # fan of a ceiling fan with light (state is the light)
+    (re.compile(r"^(fan|fan_state)$", re.IGNORECASE), DEVICES),
 )
 
 # numeric reading name -> category

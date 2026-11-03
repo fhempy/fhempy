@@ -5,12 +5,23 @@ from .. import fhem, generic
 from .mantra import CODECS
 from .models import BleAdvConfig, BleAdvEncCmd
 
-USAGE = "Usage: define <name> fhempy mantra_ble <HEX_ID> (e.g. 1F42)"
+USAGE = (
+    "Usage: define <name> fhempy mantra_ble <HEX_ID> [only-fan|only-light]"
+    " (e.g. 1F42)"
+)
+# only-fan/only-light: the device is only the fan or only the light of the
+# ceiling fan, e.g. to have two devices in Matter or Google apps
+ONLY_FAN = "only-fan"
+ONLY_LIGHT = "only-light"
+MODES = (ONLY_FAN, ONLY_LIGHT)
 LIGHT_STATES = ("on", "off")
 FAN_STATES = ("on", "off")
 FAN_PRESETS = ("summer", "winter", "breeze", "sleep")
 MIN_FAN_SPEED = 0
 MAX_FAN_SPEED = 31
+# fan_mode like Matter fans, in % of the max speed
+FAN_MODES = ("off", "low", "medium", "high")
+FAN_MODE_PERCENT = {"off": 0, "low": 33, "medium": 66, "high": 100}
 MIN_BRIGHTNESS = 0
 MAX_BRIGHTNESS = 100
 MIN_CT = 2700
@@ -53,6 +64,43 @@ def _fan_speed(value):
     return number
 
 
+def _fan_pct(value):
+    try:
+        number = int(value)
+    except (ValueError, TypeError, OverflowError):
+        raise ValueError("expected a whole number") from None
+    if not 0 <= number <= 100:
+        raise ValueError("expected 0 to 100")
+    return number
+
+
+def _fan_mode(value):
+    val = str(value).lower()
+    if val not in FAN_MODES:
+        raise ValueError(CHOOSE_PREFIX + " or ".join(FAN_MODES))
+    return val
+
+
+def speed_to_pct(speed):
+    return round(speed * 100 / MAX_FAN_SPEED)
+
+
+def pct_to_speed(pct):
+    if pct <= 0:
+        return 0
+    return max(1, round(pct * MAX_FAN_SPEED / 100))
+
+
+def pct_to_mode(pct):
+    if pct <= 0:
+        return "off"
+    if pct <= FAN_MODE_PERCENT["low"]:
+        return "low"
+    if pct <= FAN_MODE_PERCENT["medium"]:
+        return "medium"
+    return "high"
+
+
 def _fan_preset(value):
     val = str(value).lower()
     if val not in FAN_PRESETS:
@@ -87,13 +135,17 @@ class mantra_ble(generic.FhemModule):
         self.codec = CODECS[0]
         self.conf = BleAdvConfig()
         self._tx_lock = asyncio.Lock()
+        self.mode = None
 
     @staticmethod
     def validate_define(args, argsh):
         """Check arguments without I/O, before a running device is undefined."""
-        # Expected: ['DeviceName', 'fhempy', 'mantra_ble', '1F42'] -> len(args) == 4
-        if len(args) != 4 or argsh:
+        # Expected: ['DeviceName', 'fhempy', 'mantra_ble', '1F42'] plus an
+        # optional only-fan/only-light
+        if len(args) not in (4, 5) or argsh:
             return USAGE
+        if len(args) == 5 and args[4].lower() not in MODES:
+            return f"{USAGE}\nError: choose " + " or ".join(MODES)
         try:
             _hex_id(args[3])
         except ValueError as err:
@@ -109,15 +161,21 @@ class mantra_ble(generic.FhemModule):
 
         self.lamp_id = _hex_id(args[3])
         self.conf.id = self.lamp_id
+        self.mode = args[4].lower() if len(args) == 5 else None
         device_name = hash["NAME"]
+        has_light = self.mode != ONLY_FAN
+        has_fan = self.mode != ONLY_LIGHT
+        switches = "fan" if self.mode == ONLY_FAN else "light"
 
         set_config = {
             "on": {
-                "help": "<b>on</b><br>Switch light on.",
+                "help": f"<b>on</b><br>Switch {switches} on.",
             },
             "off": {
-                "help": "<b>off</b><br>Switch light off.",
+                "help": f"<b>off</b><br>Switch {switches} off.",
             },
+        }
+        light_config = {
             "light": {
                 "args": ["state"],
                 "params": {"state": {"format": _light_state}},
@@ -136,6 +194,8 @@ class mantra_ble(generic.FhemModule):
                 "options": f"colorpicker,CT,{MIN_CT},100,{MAX_CT}",
                 "help": f"<b>ct [{MIN_CT}-{MAX_CT}]</b><br>Set color temperature in Kelvin ({MIN_CT}K warm to {MAX_CT}K cold).",
             },
+        }
+        fan_config = {
             "fan": {
                 "args": ["state"],
                 "params": {"state": {"format": _fan_state}},
@@ -148,6 +208,18 @@ class mantra_ble(generic.FhemModule):
                 "options": f"slider,{MIN_FAN_SPEED},1,{MAX_FAN_SPEED}",
                 "help": f"<b>fan_speed [0-{MAX_FAN_SPEED}]</b><br>Set fan speed.",
             },
+            "fan_pct": {
+                "args": ["pct"],
+                "params": {"pct": {"format": _fan_pct}},
+                "options": "slider,0,1,100",
+                "help": "<b>fan_pct [0-100]</b><br>Set fan speed in percent (0 turns the fan off).",
+            },
+            "fan_mode": {
+                "args": ["mode"],
+                "params": {"mode": {"format": _fan_mode}},
+                "options": ",".join(FAN_MODES),
+                "help": "<b>fan_mode [" + "|".join(FAN_MODES) + "]</b><br>Set fan speed in steps.",
+            },
             "fan_preset": {
                 "args": ["preset"],
                 "params": {"preset": {"format": _fan_preset}},
@@ -155,6 +227,10 @@ class mantra_ble(generic.FhemModule):
                 "help": "<b>fan_preset [preset]</b><br>Select " + ", ".join(FAN_PRESETS) + ".",
             },
         }
+        if has_light:
+            set_config.update(light_config)
+        if has_fan:
+            set_config.update(fan_config)
         await self.set_set_config(set_config)
 
         get_config = {
@@ -165,25 +241,30 @@ class mantra_ble(generic.FhemModule):
         await self.set_get_config(get_config)
 
         # UI defaults, set once: the user may change or delete them later
-        await fhem.setDefaultAttrs(
-            self.hash,
-            {
+        if has_fan:
+            defaults = {
                 "webCmd": "fan:fan_speed",
                 "widgetOverride": "fan:iconSwitch,on,vent_ventilation,off,"
                 "vent_ventilation_level_3@orange",
-            },
-        )
+            }
+        else:
+            defaults = {"webCmd": "light:brightness"}
+        await fhem.setDefaultAttrs(self.hash, defaults)
 
         # Initialize readings atomically
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "state", "off")
-        await fhem.readingsBulkUpdateIfChanged(hash, "light", "off")
-        await fhem.readingsBulkUpdateIfChanged(hash, "fan", "off")
-        # Keep the last brightness/color temperature across restarts
-        if await fhem.ReadingsVal(device_name, "brightness", "") == "":
-            await fhem.readingsBulkUpdateIfChanged(hash, "brightness", 100)
-        if await fhem.ReadingsVal(device_name, "ct", "") == "":
-            await fhem.readingsBulkUpdateIfChanged(hash, "ct", 4000)
+        if has_light:
+            await fhem.readingsBulkUpdateIfChanged(hash, "light", "off")
+            # Keep the last brightness/color temperature across restarts
+            if await fhem.ReadingsVal(device_name, "brightness", "") == "":
+                await fhem.readingsBulkUpdateIfChanged(hash, "brightness", 100)
+            if await fhem.ReadingsVal(device_name, "ct", "") == "":
+                await fhem.readingsBulkUpdateIfChanged(hash, "ct", 4000)
+        if has_fan:
+            await fhem.readingsBulkUpdateIfChanged(hash, "fan", "off")
+            await fhem.readingsBulkUpdateIfChanged(hash, "fan_pct", 0)
+            await fhem.readingsBulkUpdateIfChanged(hash, "fan_mode", "off")
         await fhem.readingsEndUpdate(hash, 1)
 
     # -------------------------------------------------------------------------
@@ -191,10 +272,16 @@ class mantra_ble(generic.FhemModule):
     # -------------------------------------------------------------------------
 
     async def set_on(self, hash, params):
-        await self.set_light(hash, {"state": "on"})
+        if self.mode == ONLY_FAN:
+            await self.set_fan(hash, {"state": "on"})
+        else:
+            await self.set_light(hash, {"state": "on"})
 
     async def set_off(self, hash, params):
-        await self.set_light(hash, {"state": "off"})
+        if self.mode == ONLY_FAN:
+            await self.set_fan(hash, {"state": "off"})
+        else:
+            await self.set_light(hash, {"state": "off"})
 
     async def set_light(self, hash, params):
         state = params["state"]
@@ -251,21 +338,54 @@ class mantra_ble(generic.FhemModule):
             enc_cmd = BleAdvEncCmd(0x01, 0x08, 0, 0, 0, 0, 0)
             await self._transmit_ble(enc_cmd, duration=0.35)
 
+        pct = 0
+        if state == "on":
+            # the fan continues with its last speed
+            pct = await self._last_fan_pct(hash)
+        await self._update_fan_readings(hash, state, pct)
+
+    async def _update_fan_readings(self, hash, state, pct, speed=None):
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "fan", state)
+        if speed is not None:
+            await fhem.readingsBulkUpdateIfChanged(hash, "fan_speed", speed)
+        await fhem.readingsBulkUpdateIfChanged(hash, "fan_pct", pct)
+        await fhem.readingsBulkUpdateIfChanged(hash, "fan_mode", pct_to_mode(pct))
+        if self.mode == ONLY_FAN:
+            await fhem.readingsBulkUpdateIfChanged(hash, "state", state)
         await fhem.readingsEndUpdate(hash, 1)
 
+    async def _last_fan_pct(self, hash):
+        value = await fhem.ReadingsVal(hash["NAME"], "fan_speed", "")
+        try:
+            speed = int(value)
+        except (ValueError, TypeError):
+            speed = 0
+        if speed <= 0:
+            # speed unknown, show the fan as running
+            return FAN_MODE_PERCENT["medium"]
+        return speed_to_pct(min(speed, MAX_FAN_SPEED))
+
     async def set_fan_speed(self, hash, params):
-        speed = params["speed"]
+        await self._apply_fan_speed(hash, params["speed"])
+
+    async def _apply_fan_speed(self, hash, speed, pct=None):
         if speed == 0:
             await self.set_fan(hash, {"state": "off"})
-        else:
-            enc_cmd = BleAdvEncCmd(0x03, 0x01, speed, 0, 0, 0, 0)
-            await self._transmit_ble(enc_cmd, duration=0.9)
-            await fhem.readingsBeginUpdate(hash)
-            await fhem.readingsBulkUpdateIfChanged(hash, "fan", "on")
-            await fhem.readingsBulkUpdateIfChanged(hash, "fan_speed", speed)
-            await fhem.readingsEndUpdate(hash, 1)
+            return
+        enc_cmd = BleAdvEncCmd(0x03, 0x01, speed, 0, 0, 0, 0)
+        await self._transmit_ble(enc_cmd, duration=0.9)
+        # the requested percent, not the rounded speed: apps show what was set
+        pct = speed_to_pct(speed) if pct is None else pct
+        await self._update_fan_readings(hash, "on", pct, speed)
+
+    async def set_fan_pct(self, hash, params):
+        pct = params["pct"]
+        await self._apply_fan_speed(hash, pct_to_speed(pct), pct)
+
+    async def set_fan_mode(self, hash, params):
+        pct = FAN_MODE_PERCENT[params["mode"]]
+        await self._apply_fan_speed(hash, pct_to_speed(pct), pct)
 
     async def set_fan_preset(self, hash, params):
         preset = params["preset"]
