@@ -14,6 +14,7 @@ import hmac
 import html
 import json
 import os
+import re
 import secrets
 import ssl
 import tempfile
@@ -715,6 +716,23 @@ class dashboard(generic.FhemModule):
                 "FHEM update needed: run 'update all' and restart FHEM, "
                 "otherwise the tablets don't show changes"
             )
+            return
+        # only the readings the tablets use, collected by FHEM
+        await fhem.setEventFilter(self.hash, self.event_filter())
+
+    def event_filter(self):
+        """regexp for "device:reading: value" of the events the dashboard
+        needs: every event of global, doorbells and push devices, of the
+        others only the readings the tiles and the header use"""
+        everything = ["global"] + [b["id"] for b in self.doorbells]
+        everything += [
+            name
+            for name, info in self.infos.items()
+            if info.get("FHEMPYTYPE") == model.PUSH_TYPE
+        ]
+        devices = "|".join(re.escape(n) for n in sorted(set(everything)))
+        readings = "|".join(re.escape(r) for r in sorted(set(model.READINGS)))
+        return f"^(?:(?:{devices}):|[^:]+:(?:{readings}): )"
 
     async def handle_event(self, device, reading, value):
         info = self.infos.get(device)
@@ -770,15 +788,38 @@ class dashboard(generic.FhemModule):
             }
         )
 
-    def handle_global_event(self, device, reading, value):
-        words = str(value).split(" ")
+    async def handle_global_event(self, device, reading, value):
+        # global events have no reading, the whole text is the value
+        words = (str(value) if reading == "state" else f"{reading}: {value}").split(" ")
         if len(words) < 2:
             return
+        name = words[1]
         if words[0] in ("ATTR", "DELETEATTR") and len(words) > 2:
             if words[2] in RELOAD_ATTRS:
                 self.schedule_reload()
-        elif words[0] in ("DELETED", "RENAMED", "DEFINED", "MODIFIED"):
-            self.schedule_reload()
+        elif words[0] in ("DELETED", "MODIFIED"):
+            # FHEM defines, modifies and deletes helper devices (at, DOIF
+            # timers) all the time, reading all devices again is expensive
+            if name in self.infos:
+                self.schedule_reload()
+        elif words[0] in ("RENAMED", "DEFINED"):
+            if words[0] == "RENAMED" and name in self.infos:
+                self.schedule_reload()
+            elif await self.may_show(words[-1]):
+                self.schedule_reload()
+
+    async def may_show(self, name):
+        """a new device: could it be shown at all (not temporary, no helper)"""
+        if self._reload_task is not None and not self._reload_task.done():
+            return False
+        excluded = "|".join(EXCLUDED_TYPES)
+        result = await fhem.sendCommandHash(
+            self.hash,
+            f"my $d = $defs{{{fhem.perlString(name)}}};"
+            " (defined($d) && !$d->{TEMPORARY} && !defined($d->{SNIPPET})"
+            f" && $d->{{TYPE}} !~ /^(?:{excluded})$/) ? 1 : 0",
+        )
+        return str(result).strip() == "1"
 
     def model_message(self, tablet):
         data = model.filter_rooms(self.data, tablet.get("rooms") or [])

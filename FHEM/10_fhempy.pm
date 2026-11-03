@@ -216,6 +216,67 @@ fhempy_setEventDevices($$)
   return undef;
 }
 
+# Called by Python modules after fhempy_setEventDevices: only events matching
+# the regexp $filter ("device:reading: value") are sent, collected for a short
+# time and only the newest value of each device:reading. This keeps FHEM free
+# from sending every event of frequently changing readings (e.g. power).
+# An empty $filter sends every event at once again.
+sub
+fhempy_setEventFilter($$)
+{
+  my ($name, $filter) = @_;
+  my $hash = $defs{$name};
+  return "Unknown device $name" if (!defined($hash));
+
+  RemoveInternalTimer($hash, "fhempy_sendFilteredEvents");
+  delete $hash->{".filterTimer"};
+  delete $hash->{".filteredEvents"};
+  if (!defined($filter) || $filter eq "") {
+    delete $hash->{".eventFilter"};
+    return undef;
+  }
+  my $re = eval { qr/$filter/ };
+  return "Invalid regexp $filter: $@" if (!defined($re));
+  $hash->{".eventFilter"} = $re;
+  return undef;
+}
+
+sub
+fhempy_filterEvents($$$)
+{
+  my ($hash, $dev, $events) = @_;
+  my $devName = $dev->{NAME};
+  my $re = $hash->{".eventFilter"};
+  my $queue = $hash->{".filteredEvents"} //= { order => [], events => {} };
+  foreach my $event (@{$events}) {
+    next if (!defined($event) || "$devName:$event" !~ $re);
+    my ($reading) = split(/: /, $event, 2);
+    my $key = "$devName:$reading";
+    push(@{$queue->{order}}, $key) if (!exists($queue->{events}{$key}));
+    $queue->{events}{$key} = [$devName, $event];
+  }
+  if (@{$queue->{order}} && !$hash->{".filterTimer"}) {
+    $hash->{".filterTimer"} = 1;
+    InternalTimer(gettimeofday() + 0.3, "fhempy_sendFilteredEvents", $hash, 0);
+  }
+  return undef;
+}
+
+sub
+fhempy_sendFilteredEvents($)
+{
+  my ($hash) = @_;
+  delete $hash->{".filterTimer"};
+  my $queue = delete $hash->{".filteredEvents"};
+  return undef if (!defined($queue) || !@{$queue->{order}});
+
+  my $iohash = $hash->{IODev};
+  return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
+  my @events = map { $queue->{events}{$_} } @{$queue->{order}};
+  IOWrite($hash, $hash, "eventlist", [\@events], {});
+  return undef;
+}
+
 # Called by Python modules (e.g. timeline) to receive the events of all FHEM
 # devices. They are collected and sent once per second as one message, events
 # matching $skip ("device:reading: value") are only counted per device.
@@ -303,6 +364,7 @@ fhempy_Notify($$)
   my $events = deviceEvents($dev, 1);
   return undef if (!$events);
   return fhempy_recordEvents($hash, $dev, $events) if ($hash->{".eventRecorder"});
+  return fhempy_filterEvents($hash, $dev, $events) if ($hash->{".eventFilter"});
 
   my $iohash = $hash->{IODev};
   return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));

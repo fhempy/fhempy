@@ -399,6 +399,11 @@ class fhempy:
                 await self.handle_function(hash, msg)
             elif hash["msgtype"] == "event":
                 await self.handle_event(hash, msg)
+            elif hash["msgtype"] == "eventlist":
+                # filtered events of several devices: [[device, event], ...]
+                id_received_timestamp.pop(hash.get("id"), None)
+                for device, event in hash["args"][0]:
+                    await fhem.dispatch_event(device, f"{event}")
             elif hash["msgtype"] == "events":
                 id_received_timestamp.pop(hash.get("id"), None)
                 await fhem.dispatch_recorded_events(hash["NAME"], hash["args"])
