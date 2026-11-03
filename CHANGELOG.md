@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v2.14.1 (2026-11-03)
+
+### Bug Fixes
+
+- Dashboard no longer keeps FHEM busy ([#855](https://github.com/fhempy/fhempy/pull/855),
+  [`f16a12c`](https://github.com/fhempy/fhempy/commit/f16a12c40951d81246e935dba0269b90b70a135b))
+
+- Dashboard shows open and running devices only of the rooms the tablet shows
+  ([#857](https://github.com/fhempy/fhempy/pull/857),
+  [`844bd53`](https://github.com/fhempy/fhempy/commit/844bd53b425f670ac98f51851451eb70f993327e))
+
+### Features
+
+- Ceiling fans with light in Matter apps, mantra_ble fan_pct/fan_mode
+  ([#858](https://github.com/fhempy/fhempy/pull/858),
+  [`442ed44`](https://github.com/fhempy/fhempy/commit/442ed443ba0f0a826e828345334a7c814df66da5))
+
+- **dashboard**: Music players with cover, play/pause, next/previous, volume and presets
+  ([#859](https://github.com/fhempy/fhempy/pull/859),
+  [`ae4f82f`](https://github.com/fhempy/fhempy/commit/ae4f82fb5504cf0003cfdb010e96a67776f71764))
+
+
 ## v2.14.0 (2026-11-03)
 
 ### Bug Fixes
