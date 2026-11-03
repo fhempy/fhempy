@@ -464,3 +464,14 @@ body.light .banner.push { background: #fff; color: #151922; }
 .fanseg { display: flex; width: 100%; }
 .fanseg button { flex: 1; height: 48px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* DOIF inputs */
+.inputs { display: flex; flex-direction: column; gap: 10px; }
+.inrow { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); flex-wrap: wrap; }
+.inname { flex: 0 0 140px; font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; }
+.inctl { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.inctl input[type=range] { flex: 1; height: 44px; padding: 0; background: none; border: 0; accent-color: var(--teal); }
+.inctl input[type=text] { flex: 1; min-width: 120px; }
+.inctl .inval { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+.inctl .seg button { height: 40px; }
+@media (max-width: 560px) { .inname { flex-basis: 100%; } .inctl { min-width: 0; width: 100%; } }

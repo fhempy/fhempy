@@ -88,7 +88,14 @@ ARRANGE_MESSAGES = (
     "keep_on",
     "delete_device",
 )
-RELOAD_ATTRS = ("room", "alias", "genericDeviceType", "matterType", "disable")
+RELOAD_ATTRS = (
+    "room",
+    "alias",
+    "genericDeviceType",
+    "matterType",
+    "disable",
+    "setList",
+)
 LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
 SETTINGS_ATTRS = (
     "devices",
@@ -577,7 +584,9 @@ class dashboard(generic.FhemModule):
             " my %seen; join(',', sort grep { my $d = $defs{$_};"
             " !$seen{$_}++ && defined($d) && !$h{$_} && !$d->{TEMPORARY}"
             " && !defined($d->{SNIPPET})"
-            f" && $d->{{TYPE}} !~ /^(?:{excluded})$/"
+            f" && ($d->{{TYPE}} !~ /^(?:{excluded})$/"
+            # DOIFs with inputs (setList) are shown
+            " || ($d->{TYPE} eq 'DOIF' && AttrVal($_, 'setList', '') ne ''))"
             " && AttrVal($_, 'disable', '0') ne '1'"
             + (
                 # arranging rooms: also the devices without a room, but not
@@ -605,11 +614,15 @@ class dashboard(generic.FhemModule):
         cmd = (
             "my %w = map { $_ => 1 } (" + wanted + "); my %r;"
             " foreach my $d (" + names_perl + ") {"
-            " next if (!defined($defs{$d})); my $h = $defs{$d}; my (%rd, %tm);"
+            " next if (!defined($defs{$d})); my $h = $defs{$d}; my (%rd, %tm, %x);"
+            # the inputs of a DOIF are readings with the names of its setList
+            " if ($h->{TYPE} eq 'DOIF') { foreach (split(/\\s+/,"
+            " AttrVal($d, 'setList', ''))) { my ($n) = split(/:/, $_); $x{$n} = 1"
+            " if (defined($n) && $n ne '') } }"
             " my $last = '';"
             " foreach my $k (keys %{$h->{READINGS}}) {"
             " my $t = $h->{READINGS}{$k}{TIME} // ''; $last = $t if ($t gt $last);"
-            " next if (!$w{$k});"
+            " next if (!$w{$k} && !$x{$k});"
             " $rd{$k} = $h->{READINGS}{$k}{VAL}; $tm{$k} = $h->{READINGS}{$k}{TIME} }"
             " $r{$d} = {NAME => $d, TYPE => $h->{TYPE},"
             " FHEMPYTYPE => ($h->{FHEMPYTYPE} // ''),"
@@ -617,7 +630,7 @@ class dashboard(generic.FhemModule):
             " sets => (getAllSets($d) // ''), readings => \\%rd, times => \\%tm,"
             " last => $last,"
             " attrs => { map { $_ => AttrVal($d, $_, '') }"
-            " ('genericDeviceType', 'matterType', 'matterInvert') } } }"
+            " ('genericDeviceType', 'matterType', 'matterInvert', 'setList') } } }"
             " to_json(\\%r)"
         )
         result = await fhem.sendCommandHash(self.hash, cmd)
@@ -756,6 +769,8 @@ class dashboard(generic.FhemModule):
             name
             for name, info in self.infos.items()
             if info.get("FHEMPYTYPE") == model.PUSH_TYPE
+            # inputs of DOIFs have their own reading names
+            or model.inputs.has_inputs(info)
         ]
         devices = "|".join(re.escape(n) for n in sorted(set(everything)))
         readings = "|".join(re.escape(r) for r in sorted(set(model.READINGS)))
@@ -766,7 +781,7 @@ class dashboard(generic.FhemModule):
         if info is None:
             return
         await self.check_special_event(info, device, reading, value)
-        if reading not in model.READINGS:
+        if reading not in model.device_readings(info):
             return
         info.setdefault("readings", {})[reading] = value
         info.setdefault("times", {})[reading] = now_text()

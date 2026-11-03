@@ -11,7 +11,7 @@ import datetime
 import re
 
 from ..matter_bridge import devices as kinds
-from . import media
+from . import inputs, media
 
 # FHEMWEB rooms which are no rooms of the home
 HIDDEN_ROOMS = {
@@ -38,6 +38,7 @@ KIND_ORDER = (
     "outlet",
     "fan",
     "media",
+    "inputs",
     "lock",
     "contact",
     "temperature",
@@ -226,6 +227,8 @@ CONTACT_STATES = ("open", "opened", "closed", "tilted", "offen", "geschlossen", 
 
 
 def kind_of(info):
+    if inputs.has_inputs(info):
+        return "inputs"
     if media.is_media(info):
         return "media"
     kind = kinds.detect_type(info)
@@ -246,6 +249,8 @@ def is_door(info):
 
 def tile_state(kind, info):
     """state of a tile, keys depend on kind"""
+    if kind == "inputs":
+        return inputs.state(info)
     if kind == "media":
         state = {k: v for k, v in media.state(info).items() if v is not None}
         state["presets"] = media.presets(info)
@@ -340,9 +345,19 @@ def tile(info, room=None):
         result["step"] = 0.5
     if kind == "media":
         result["media"] = media.features(info)
+    if kind == "inputs":
+        result["inputs"] = inputs.parse(info)
     if kind == "fan" or kinds.has_fan_endpoint(kind, info):
         result["fan"] = True
     return result
+
+
+def device_readings(info):
+    """readings of a device the tablets need: the common ones and the
+    inputs of a DOIF"""
+    if info.get("TYPE") in inputs.INPUT_TYPES:
+        return set(READINGS) | set(inputs.reading_names(info))
+    return set(READINGS)
 
 
 def _tile_sort_key(item):
@@ -627,6 +642,10 @@ def command(item, info, action, value=None):
     Only what the kind of the tile allows, never free commands."""
     if item["kind"] == "media":
         return media.command(info, action, value)
+    if item["kind"] == "inputs":
+        if action != "input" or not isinstance(value, dict):
+            return []
+        return inputs.command(info, str(value.get("name", "")), value.get("value"))
     if item.get("fan") and action in FAN_ACTIONS:
         return kinds.fhem_commands("fan", info, FAN_ACTIONS[action](value))
     if item["kind"] == "fan":
