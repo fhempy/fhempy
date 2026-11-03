@@ -101,33 +101,31 @@ def _option_value(item, text):
     return text
 
 
-def _time_value(item, text):
+def _time_value(text):
     if not _TIME.match(text):
         raise ValueError(f"no time: {text}")
     return text
 
 
-def _text_value(item, text):
+def _text_value(text):
     if "\n" in text or "\r" in text or len(text) > MAX_TEXT:
         raise ValueError("text too long")
     return text
 
 
-CHECKS = {
-    "slider": _slider_value,
-    "select": _option_value,
-    "switch": _option_value,
-    "time": _time_value,
-    "text": _text_value,
-}
-
-
 def _check(item, value):
     """the value as FHEM gets it, ValueError if it doesn't fit the input"""
-    if item["type"] == "button":
+    kind = item["type"]
+    if kind == "button":
         return None
     text = str("" if value is None else value).strip()
-    return CHECKS.get(item["type"], _text_value)(item, text)
+    if kind == "slider":
+        return _slider_value(item, text)
+    if kind in ("select", "switch"):
+        return _option_value(item, text)
+    if kind == "time":
+        return _time_value(text)
+    return _text_value(text)
 
 
 def command(info, name, value):
