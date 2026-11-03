@@ -226,7 +226,7 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
     if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
@@ -743,9 +743,56 @@
     var w = 360, h = 80, path = "", n = pts.length;
     pts.forEach(function (v, i) { if (v === null) { return; } path += (path ? "L" : "M") + (i / (n - 1) * w).toFixed(1) + "," + (h - (v - lo) / (hi - lo) * h).toFixed(1); });
     var col = tr.category === "energy" ? "#9B8CFF" : "#FF8A3D", last = vals[vals.length - 1];
+    var marks = [];
+    (tr.points || []).forEach(function (p, i) {
+      var v = pts[i]; if (v === null || isNaN(v)) { return; }
+      var ts = p && typeof p === "object" ? p[0] : null;
+      marks.push({ fx: i / (n - 1), fy: (h - (v - lo) / (hi - lo) * h) / (h + 4), label: ts ? clockText(new Date(ts * 1000)) : two(Math.round(i * 24 / n)) + ":00", text: num(v) + (tr.unit ? " " + tr.unit : "") });
+    });
     return '<div class="leave" style="padding:16px 20px"><div class="section" style="margin:0 0 10px"><span>' + esc(tr.text) + '</span><span style="text-transform:none;letter-spacing:0;color:var(--tx)">' + esc(num(last) + (tr.unit ? " " + tr.unit : "")) + "</span></div>" +
-      '<svg viewBox="0 0 ' + w + " " + (h + 4) + '" style="width:100%;height:84px" preserveAspectRatio="none"><path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg></div>';
+      chartWrap("trend:" + (tr.device || "") + ":" + (tr.reading || tr.text), marks, col, '<svg viewBox="0 0 ' + w + " " + (h + 4) + '" style="width:100%;height:84px;display:block" preserveAspectRatio="none"><path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>') + "</div>";
   }
+
+  // charts: touch or hover shows the value at that time
+  var charts = {};
+  function chartWrap(key, marks, color, svg) {
+    charts[key] = { marks: marks, color: color };
+    return '<div class="chart" data-chart="' + esc(key) + '">' + svg + '<div class="cline"></div><div class="cdot" style="background:' + color + '"></div><div class="ctip"></div></div>';
+  }
+  function chartShow(el, clientX) {
+    var c = charts[el.getAttribute("data-chart")]; if (!c || !c.marks.length) { return; }
+    var r = el.getBoundingClientRect(), fx = (clientX - r.left) / r.width, best = c.marks[0];
+    c.marks.forEach(function (m) { if (Math.abs(m.fx - fx) < Math.abs(best.fx - fx)) { best = m; } });
+    var svg = el.querySelector("svg"), sh = svg ? svg.getBoundingClientRect().height : r.height;
+    var px = best.fx * r.width, py = best.fy * sh;
+    el.classList.add("on");
+    el.querySelector(".cline").style.left = px + "px";
+    var dot = el.querySelector(".cdot"); dot.style.left = px + "px"; dot.style.top = py + "px";
+    var tip = el.querySelector(".ctip"); tip.innerHTML = "<b>" + esc(best.text) + "</b><span>" + esc(best.label) + "</span>";
+    var tw = tip.offsetWidth || 120;
+    tip.style.left = Math.max(0, Math.min(r.width - tw, px - tw / 2)) + "px";
+    clearTimeout(el._hide);
+  }
+  function chartHide(el, later) {
+    clearTimeout(el._hide);
+    el._hide = setTimeout(function () { el.classList.remove("on"); }, later ? 2500 : 0);
+  }
+  var chartActive = null;
+  document.addEventListener("pointerdown", function (ev) {
+    var el = closest(ev.target, "data-chart"); if (!el) { return; }
+    chartActive = el; chartShow(el, ev.clientX);
+  });
+  document.addEventListener("pointermove", function (ev) {
+    if (chartActive) { chartShow(chartActive, ev.clientX); return; }
+    if (ev.pointerType === "mouse") {
+      var el = closest(ev.target, "data-chart");
+      if (el) { chartShow(el, ev.clientX); }
+      document.querySelectorAll(".chart.on").forEach(function (c) { if (c !== el) { chartHide(c); } });
+    }
+  });
+  function chartEnd() { if (chartActive) { chartHide(chartActive, true); chartActive = null; } }
+  document.addEventListener("pointerup", chartEnd);
+  document.addEventListener("pointercancel", chartEnd);
 
   // ---------- details sheet ----------
   function openSheet(id) { S.sheet = { id: id }; renderSheet(); loadHistory(id); }
@@ -831,7 +878,10 @@
   // temperature and humidity of today in the details of a device
   function sheetTrendsHtml() {
     var hist = S.sheet && S.sheet.history; if (!hist || !hist.trends || !hist.to) { return ""; }
-    return hist.trends.filter(function (tr) { return /temp|humid|dewpoint/i.test(tr.reading || ""); }).slice(0, 2)
+    // temperature always on top, then humidity
+    function rank(tr) { var r = String(tr.reading || ""); return /humid/i.test(r) ? 1 : /dewpoint/i.test(r) ? 2 : 0; }
+    return hist.trends.filter(function (tr) { return /temp|humid|dewpoint/i.test(tr.reading || ""); })
+      .map(function (tr, i) { return [rank(tr), i, tr]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).map(function (x) { return x[2]; }).slice(0, 2)
       .map(function (tr) { return sheetTrendHtml(tr, hist.to - 86400); }).join("");
   }
   function trendValues(points) {
@@ -863,6 +913,12 @@
       (target.length ? '<path d="' + line(target, true) + '" fill="none" stroke="var(--mu)" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>' : "") +
       '<path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
     if (target.length) { info += " · - - " + esc(t("targetTemp")); }
+    var u = unit === "%" ? " %" : unit ? (unit.charAt(0) === "°" ? unit : " " + unit) : "";
+    var marks = pts.map(function (p) {
+      var tv = null; target.forEach(function (q) { if (q[0] <= p[0]) { tv = q[1]; } });
+      return { fx: Number(x(p[0])) / w, fy: Number(y(p[1])) / h, label: clockText(new Date(p[0] * 1000)), text: fmt(p[1]) + u + (tv !== null ? " · " + t("targetTemp") + " " + fmt(tv) + u : "") };
+    });
+    svg = chartWrap("sheet:" + tr.reading, marks, col, svg);
     return '<div class="group"><div class="label" style="display:flex;justify-content:space-between"><span>' + esc(tr.name || tr.reading) + " · " + esc(t("today")) +
       '</span><span style="text-transform:none;letter-spacing:0;color:var(--tx)">' + esc(fmt(last) + (unit ? " " + unit : "")) + "</span></div>" + svg +
       '<div style="display:flex;justify-content:space-between;color:var(--mu2);font-size:12px;margin-top:6px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>' +

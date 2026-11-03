@@ -399,3 +399,13 @@ body.light .banner.push { background: #fff; color: #151922; }
   .lrow .lx { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .lrow .ld { margin-top: 6px; }
 }
+
+/* charts with the value at a time on touch or hover */
+.chart { position: relative; touch-action: pan-y; cursor: crosshair; -webkit-user-select: none; user-select: none; }
+.chart .cline, .chart .cdot, .chart .ctip { position: absolute; opacity: 0; pointer-events: none; transition: opacity .15s; }
+.chart.on .cline, .chart.on .cdot, .chart.on .ctip { opacity: 1; }
+.chart .cline { top: 0; bottom: 0; width: 1px; background: var(--mu); }
+.chart .cdot { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid var(--sheet, #fff); }
+.chart .ctip { top: -6px; transform: translateY(-100%); padding: 6px 10px; border-radius: 10px; background: var(--tx); color: var(--bg); font-size: 13px; white-space: nowrap; display: flex; gap: 8px; align-items: baseline; z-index: 3; }
+.chart .ctip b { font-size: 15px; font-weight: 700; }
+.chart .ctip span { opacity: .7; }
