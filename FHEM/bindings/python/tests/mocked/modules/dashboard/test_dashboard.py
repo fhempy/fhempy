@@ -861,3 +861,86 @@ def test_fans():
     plain = model.tile(fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer")
     assert "fan" not in plain
     assert model.command(plain, {"sets": "on off pct"}, "fan_mode", "high") == []
+
+
+def doif_with_inputs():
+    doif = fake_home.device(
+        "DOIF",
+        "Garten",
+        "Dauer Modus Start Notiz Los disable enable checkall cmd_1",
+        {"state": "cmd_1", "Dauer": "15", "Modus": "auto", "Start": "06:30"},
+        attrs={
+            "readingList": "Dauer Modus Start Notiz",
+            "setList": "Dauer:slider,5,5,60 Modus:auto,an,aus Start:time"
+            " Notiz:textField Los:noArg disable:noArg Licht:on,off",
+        },
+    )
+    doif["NAME"] = "di_Garten"
+    return doif
+
+
+def test_doif_inputs():
+    from fhempy.lib.dashboard import inputs
+
+    doif = doif_with_inputs()
+    item = model.tile(doif, "Garten")
+    assert item["kind"] == "inputs"
+    assert [(i["name"], i["type"]) for i in item["inputs"]] == [
+        ("Dauer", "slider"),
+        ("Modus", "select"),
+        ("Start", "time"),
+        ("Notiz", "text"),
+        ("Los", "button"),
+        ("Licht", "switch"),
+    ]
+    assert item["state"]["values"] == {"Dauer": "15", "Modus": "auto", "Start": "06:30"}
+    assert {"Dauer", "Modus", "Notiz"} <= model.device_readings(doif)
+
+    def run(name, value):
+        return model.command(item, doif, "input", {"name": name, "value": value})
+
+    assert run("Dauer", 33) == ["Dauer 35"]
+    assert run("Dauer", 500) == ["Dauer 60"]
+    assert run("Modus", "an") == ["Modus an"]
+    assert run("Start", "7:05") == ["Start 7:05"]
+    assert run("Notiz", "Tomaten") == ["Notiz Tomaten"]
+    assert run("Los", None) == ["Los"]
+    for name, value in (
+        ("Modus", "kaputt"),
+        ("Start", "25:00"),
+        ("Dauer", "viel"),
+        ("Notiz", "a\nb"),
+    ):
+        with pytest.raises(ValueError):
+            run(name, value)
+    # only the inputs, no DOIF commands or other actions
+    assert run("disable", None) == []
+    assert run("cmd_1", None) == []
+    assert model.command(item, doif, "toggle") == []
+    # a DOIF without setList is no tile
+    plain = dict(doif, attrs={})
+    assert not inputs.has_inputs(plain)
+
+
+@pytest.mark.asyncio
+async def test_doif_inputs_live(module):
+    module.fake.devices["di_Garten"] = doif_with_inputs()
+    await module.reload()
+    assert module.data["tiles"]["di_Garten"]["kind"] == "inputs"
+    assert "di_Garten" in module.event_filter()
+    await module.handle_event("di_Garten", "Dauer", "40")
+    assert module.data["tiles"]["di_Garten"]["state"]["values"]["Dauer"] == "40"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json(
+            {
+                "type": "action",
+                "action": "input",
+                "id": "di_Garten",
+                "value": {"name": "Modus", "value": "aus"},
+            }
+        )
+        await asyncio.sleep(0.2)
+        assert module.fake.sets[-1] == "di_Garten Modus aus"
+        await ws.close()

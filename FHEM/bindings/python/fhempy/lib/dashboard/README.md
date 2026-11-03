@@ -120,6 +120,19 @@ All devices with a room and a known type. The type is detected like for [matter_
 and `hidden_devices` to leave devices out, e.g. `Alarm_system,TYPE=CUL_HM`. Rooms like *hidden*, *Unsorted*, *fhempy* or
 *Timeline* are left out.
 
+## DOIF inputs
+
+A DOIF with attribute `setList` (and `readingList`) gets a tile with its values, a tap opens the inputs: sliders
+(`slider,min,step,max`), choices (`auto,on,off`), time (`time`), text (`textField`) and buttons (`noArg`). Example:
+
+```
+attr di_Watering readingList Duration Mode Start
+attr di_Watering setList Duration:slider,5,5,60 Mode:auto,on,off Start:time
+```
+
+Tablets can only set these inputs, values are checked against the setList (range, options, time format), DOIF commands
+like disable or cmd_1 are not offered.
+
 ## Fans
 
 Fans (set commands `fan_pct`/`fan_mode`, `genericDeviceType fan` or `matterType fan`) get a fan tile: tap switches

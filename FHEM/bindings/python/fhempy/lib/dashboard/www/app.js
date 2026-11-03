@@ -26,6 +26,7 @@
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
+    inputsHint: "Werte dieser Automatik", inputSet: "Übernehmen", inputRun: "Ausführen",
     fan: "Ventilator", fanOff: "Aus", fanLow: "Niedrig", fanMedium: "Mittel", fanHigh: "Hoch", pullToFan: "Ziehen für die Stufe",
     playing: "Spielt", paused: "Pausiert", idle: "Bereit", nothingPlays: "Gerade läuft nichts", volume: "Lautstärke", presets: "Senderspeicher", prevTrack: "Zurück", nextTrack: "Weiter", playPause: "Abspielen oder Pause",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
@@ -67,6 +68,7 @@
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
+    inputsHint: "Values of this automation", inputSet: "Apply", inputRun: "Run",
     fan: "Fan", fanOff: "Off", fanLow: "Low", fanMedium: "Medium", fanHigh: "High", pullToFan: "Drag to set the speed",
     playing: "Playing", paused: "Paused", idle: "Ready", nothingPlays: "Nothing is playing", volume: "Volume", presets: "Presets", prevTrack: "Previous", nextTrack: "Next", playPause: "Play or pause",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
@@ -97,6 +99,7 @@
 
   // ---------- icons ----------
   var P = {
+    sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
     fan: '<circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7s3 4-2 7M14 12c4 0 7 1 7 4s-4 3-7-2M12 14c0 4-1 7-4 7s-3-4 2-7M10 12c-4 0-7-1-7-4s4-3 7 2"/>',
     music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
@@ -328,7 +331,7 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan" };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan", inputs: "sliders" };
   var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1, fan: 1 };
   var FAN_MODES = ["off", "low", "medium", "high"];
   function fanText(f) { return f && f.mode ? t("fan" + f.mode.charAt(0).toUpperCase() + f.mode.slice(1)) + (f.percent && f.mode !== "off" ? " · " + f.percent + " %" : "") : "–"; }
@@ -392,6 +395,38 @@
     return sparkSvg(pts, color, now) + '<div class="ctop"><div class="n">' + esc(tile.name) + "</div>" + (side ? '<span class="cside">' + side + "</span>" : "") + "</div>" +
       '<div class="cval"><span class="big" style="color:' + (humidOnly ? "var(--tx)" : color) + '">' + main + "</span>" + (arrow ? '<span class="arrow">' + arrow + "</span>" : "") +
       (thermostat ? '<span class="tgt">' + esc(t("target") + " " + num(st.target) + "°") + "</span>" : "") + "</div>" + steps;
+  }
+
+  // ---------- DOIF inputs (readingList/setList) ----------
+  function inputsLine(tile) {
+    var vals = (tile.state && tile.state.values) || {};
+    return (tile.inputs || []).filter(function (i) { return vals[i.name] !== undefined && vals[i.name] !== ""; }).slice(0, 3)
+      .map(function (i) { return i.name + " " + vals[i.name]; }).join(" · ");
+  }
+  function inputsHtml(tile) {
+    var vals = (tile.state && tile.state.values) || {}, id = tile.id;
+    return '<div class="group"><div class="label">' + esc(t("inputsHint")) + '</div><div class="inputs">' + (tile.inputs || []).map(function (i, n) {
+      var v = vals[i.name] === undefined ? "" : String(vals[i.name]), ctl = "", key = esc(i.name);
+      if (i.type === "slider") {
+        var num = isNaN(parseFloat(v)) ? i.min : parseFloat(v);
+        ctl = '<input type="range" data-inslider="' + key + '" min="' + i.min + '" max="' + i.max + '" step="' + i.step + '" value="' + num + '"><span class="inval" id="inval' + n + '">' + esc(String(num)) + "</span>";
+      } else if (i.type === "select" || i.type === "switch") {
+        ctl = '<div class="seg">' + i.options.map(function (o) { return '<button class="' + (o === v ? "on" : "") + '" data-inopt="' + key + '" data-val="' + esc(o) + '">' + esc(o) + "</button>"; }).join("") + "</div>";
+      } else if (i.type === "time") {
+        ctl = '<input type="time" data-intime="' + key + '" value="' + esc(v.slice(0, 5)) + '">';
+      } else if (i.type === "button") {
+        ctl = '<button class="pill" data-inbtn="' + key + '">' + esc(t("inputRun")) + "</button>";
+      } else {
+        ctl = '<input type="text" maxlength="100" data-intext="' + key + '" value="' + esc(v) + '"><button class="pill" data-intextset="' + key + '">' + esc(t("inputSet")) + "</button>";
+      }
+      return '<div class="inrow"><div class="inname">' + esc(i.name) + '</div><div class="inctl" data-inidx="' + n + '">' + ctl + "</div></div>";
+    }).join("") + "</div></div>";
+  }
+  function setInput(name, value) {
+    var tile = S.tiles[S.sheet && S.sheet.id]; if (!tile) { return; }
+    var values = JSON.parse(JSON.stringify(tile.state.values || {}));
+    values[name] = value;
+    act(tile.id, "input", { name: name, value: value }, { values: values });
   }
 
   // ---------- music players ----------
@@ -481,6 +516,8 @@
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
       sub = Math.round(st.humidity) + " %";
+    } else if (k === "inputs") {
+      sub = inputsLine(tile) || st.state || "";
     } else if (k === "fan") {
       icon = "fan"; if (st.on) { cls = "fanon"; } sub = st.on ? fanText(st) : t("off");
     } else if (k === "media") {
@@ -922,7 +959,7 @@
 
   // ---------- details sheet ----------
   function openSheet(id) { S.sheet = { id: id }; renderSheet(); loadHistory(id); }
-  function closeSheet() { S.sheet = null; var d = document.getElementById("sheet"); if (d) { d.parentNode.removeChild(d); } }
+  function closeSheet() { S.sheet = null; S.sliding = false; var d = document.getElementById("sheet"); if (d) { d.parentNode.removeChild(d); } }
   function loadHistory(id) {
     if (!S.header.timeline) { return; }
     api("api/history?id=" + encodeURIComponent(id)).then(function (data) {
@@ -959,6 +996,7 @@
       left = '<div><div class="vs' + (k === "blind" || k === "fan" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : k === "fan" ? "fan" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : k === "fan" ? t("pullToFan") : t("pullToMove")) + "</div></div>";
     }
     if (k === "fan") { body += fanHtml(st); }
+    if (k === "inputs") { body += inputsHtml(tile); }
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
@@ -1803,6 +1841,12 @@
       if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
       renderSheet(); return;
     }
+    if ((el = closest(target, "data-inopt")) && S.sheet) { setInput(el.getAttribute("data-inopt"), el.getAttribute("data-val")); renderSheet(); return; }
+    if ((el = closest(target, "data-inbtn")) && S.sheet) { act(S.sheet.id, "input", { name: el.getAttribute("data-inbtn"), value: null }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
+    if ((el = closest(target, "data-intextset")) && S.sheet) {
+      var tn = el.getAttribute("data-intextset"), tf = document.querySelector('#sheet [data-intext="' + cssEsc(tn) + '"]');
+      if (tf) { S.sliding = false; setInput(tn, tf.value.trim()); renderSheet(); } return;
+    }
     if ((el = closest(target, "data-fanmode")) && S.sheet) {
       var fm = el.getAttribute("data-fanmode"), ft = S.tiles[S.sheet.id], fp = { off: 0, low: 33, medium: 66, high: 100 }[fm];
       if (ft) {
@@ -1889,9 +1933,18 @@
     if (ev.target.id === "tabroom") { send({ type: "setup", room: ev.target.value }); S.tablet.room = ev.target.value; }
     if (ev.target.id === "tabname" && ev.target.value.trim()) { send({ type: "setup", name: ev.target.value.trim() }); }
     if (ev.target.id === "setuproom") { S.setupRoom = ev.target.value; }
+    if (ev.target.getAttribute && S.sheet) {
+      var ins = ev.target.getAttribute("data-inslider"), itm = ev.target.getAttribute("data-intime");
+      if (ins) { S.sliding = false; setInput(ins, ev.target.value); }
+      if (itm && ev.target.value) { S.sliding = false; setInput(itm, ev.target.value); }
+    }
     if (ev.target.id === "mvol" && S.sheet) { S.sliding = false; var vv = Number(ev.target.value); act(S.sheet.id, "volume", vv, { volume: vv }); }
   });
   document.addEventListener("input", function (ev) {
+    if (ev.target.getAttribute && ev.target.getAttribute("data-inslider")) {
+      S.sliding = true; var row = ev.target.parentNode, lab = row && row.querySelector(".inval"); if (lab) { lab.textContent = ev.target.value; }
+    }
+    if (ev.target.getAttribute && ev.target.getAttribute("data-intext")) { S.sliding = true; }
     if (ev.target.id === "mvol") { S.sliding = true; var vt = document.getElementById("mvoltxt"); if (vt) { vt.textContent = ev.target.value; } }
   });
   document.addEventListener("keydown", function (ev) { if (ev.key === "Enter" && ev.target.id === "code") { pair(ev.target.value); } });
