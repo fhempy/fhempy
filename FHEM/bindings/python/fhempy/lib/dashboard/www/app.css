@@ -409,3 +409,4 @@ body.light .banner.push { background: #fff; color: #151922; }
 .chart .ctip { top: -6px; transform: translateY(-100%); padding: 6px 10px; border-radius: 10px; background: var(--tx); color: var(--bg); font-size: 13px; white-space: nowrap; display: flex; gap: 8px; align-items: baseline; z-index: 3; }
 .chart .ctip b { font-size: 15px; font-weight: 700; }
 .chart .ctip span { opacity: .7; }
+.roomcard .edit { top: auto; bottom: 10px; z-index: 2; }

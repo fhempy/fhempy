@@ -229,7 +229,7 @@
       updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -433,7 +433,7 @@
       div.innerHTML = tileHtml(id, S.edit ? editStateOf(id) : null);
       if (div.firstChild) { el.parentNode.replaceChild(div.firstChild, el); }
     }
-    if (S.tab === "home") { renderContent(); }
+    if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); }
   }
   function cssEsc(s) { return String(s).replace(/["\\]/g, "\\$&"); }
   function editStateOf(id) { return (layout().hidden_tiles || []).indexOf(id) >= 0 ? "hidden" : "shown"; }
@@ -599,7 +599,21 @@
       '</div><div class="facts2">' + parts.map(function (p) { return '<div class="fact2"><b>' + esc(p[0]) + "</b><span>" + esc(p[1]) + "</span></div>"; }).join("") + "</div></div>";
   }
 
-  function roomCardHtml(room) {
+  // room cards of the home page: own order and hidden cards, independent of the room order (layout key HOME)
+  var HOME = "__home__";
+  function homeRooms(withHidden) {
+    var lay = layout(), hidden = lay.hidden_tiles || [], manual = (lay.tile_order || {})[HOME] || [];
+    var rooms = visibleRooms().filter(function (r) { return withHidden || hidden.indexOf("room:" + r.name) < 0; });
+    if (manual.length) {
+      var base = rooms.slice();
+      rooms.sort(function (a, b) {
+        var ia = manual.indexOf("room:" + a.name), ib = manual.indexOf("room:" + b.name);
+        return (ia < 0 ? 1000 + base.indexOf(a) : ia) - (ib < 0 ? 1000 + base.indexOf(b) : ib);
+      });
+    }
+    return rooms;
+  }
+  function roomCardHtml(room, editState) {
     var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null;
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
@@ -620,6 +634,10 @@
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
+    if (editState) {
+      return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
+        '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
+    }
     return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-tab="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
   }
 
@@ -627,7 +645,16 @@
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
     var left = leaveHtml() + energyHtml() + latelyHtml();
-    var right = '<div class="grid">' + rooms.map(roomCardHtml).join("") + "</div>";
+    var right;
+    if (S.edit) {
+      var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
+      var shown = all.filter(function (r) { return hiddenT.indexOf("room:" + r.name) < 0; }), gone = all.filter(function (r) { return hiddenT.indexOf("room:" + r.name) >= 0; });
+      right = '<div class="edithint">' + esc(t("editHint")) + '</div><div class="grid">' + shown.map(function (r) { return roomCardHtml(r, "shown"); }).join("") + "</div>" +
+        (gone.length ? '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (r) { return roomCardHtml(r, "hidden"); }).join("") + "</div>" : "") +
+        '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
+    } else {
+      right = '<div class="grid">' + homeRooms(false).map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
+    }
     return '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
   }
 
@@ -1256,11 +1283,11 @@
     if (!tdrag) { return; }
     clearTimeout(tdrag.timer);
     if (tdrag.active) {
-      var grid = tdrag.el.parentNode, room = roomByName(S.tab.slice(5));
+      var grid = tdrag.el.parentNode, room = roomByName(S.tab.slice(5)), key = S.tab === "home" ? HOME : room && room.name;
       tdrag.el.classList.remove("dragtile"); document.body.classList.remove("dragging");
-      if (room) {
+      if (key) {
         var ids = Array.prototype.map.call(grid.querySelectorAll("[data-tile]"), function (el) { return el.getAttribute("data-tile"); });
-        var lay = copyLayout(); lay.tile_order = lay.tile_order || {}; lay.tile_order[room.name] = ids; saveLayout(lay);
+        var lay = copyLayout(); lay.tile_order = lay.tile_order || {}; lay.tile_order[key] = ids; saveLayout(lay);
       }
       dragEnded = Date.now();
     }
@@ -1674,7 +1701,7 @@
         if (el.getAttribute("data-edit") === "hide") { if (hidden.indexOf(tid) < 0) { hidden.push(tid); } } else { hidden = hidden.filter(function (x) { return x !== tid; }); }
         lay.hidden_tiles = hidden; saveLayout(lay); return;
       }
-      S.edit = true; closeSheet(); if (S.tab === "home" || S.tab === "history") { var first = visibleRooms()[0]; if (first) { S.tab = "room:" + first.name; } } renderTabs(); renderContent(); return;
+      S.edit = true; closeSheet(); if (S.tab === "history") { var first = visibleRooms()[0]; if (first) { S.tab = "room:" + first.name; } } renderTabs(); renderContent(); return;
     }
     if ((el = closest(target, "data-editdone"))) { S.edit = false; renderContent(); return; }
     if ((el = closest(target, "data-tab"))) { S.arrange = null; S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
