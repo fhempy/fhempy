@@ -2,7 +2,7 @@ UPD 2026-10-30_20:41:33 46219 FHEM/10_BindingsIo.pm
 UPD 2022-08-12_18:31:17 4663 FHEM/10_PythonBinding.pm
 UPD 2022-08-12_18:30:57 3253 FHEM/10_PythonModule.pm
 UPD 2026-10-29_22:01:04 11123 FHEM/10_fhempy.pm
-UPD 2026-10-30_20:41:33 9560 FHEM/10_fhempyServer.pm
+UPD 2026-11-02_23:09:53 10252 FHEM/10_fhempyServer.pm
 UPD 2026-10-29_14:18:38 8200 FHEM/bindings/python/bin/fhempy
 UPD 2026-10-22_23:02:38 6741 FHEM/bindings/python/bin/start_fhempy.py
 UPD 2026-10-22_23:42:33 3137 www/fhempy/alphaesscloud.png
@@ -30,7 +30,7 @@ UPD 2026-10-22_23:42:33 1882 www/fhempy/mcp_server.png
 UPD 2026-10-22_23:42:33 1869 www/fhempy/meross.png
 UPD 2026-10-22_23:42:33 3849 www/fhempy/miio.png
 UPD 2026-10-25_19:03:41 18083 www/fhempy/modules.js
-UPD 2026-10-29_21:37:30 27982 www/fhempy/modules.json
+UPD 2026-11-03_18:29:30 28254 www/fhempy/modules.json
 UPD 2026-10-22_23:42:33 6803 www/fhempy/mqtt_ha_discovery.png
 UPD 2026-10-22_23:42:33 3910 www/fhempy/nefit.png
 UPD 2026-10-22_23:42:33 1628 www/fhempy/nespresso_ble.png
