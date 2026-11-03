@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v2.14.0 (2026-11-03)
+
+### Bug Fixes
+
+- **fhempyServer**: Logfile attribute is used after FHEM restarts
+  ([#852](https://github.com/fhempy/fhempy/pull/852),
+  [`d895d5c`](https://github.com/fhempy/fhempy/commit/d895d5c590c80c1755ad959f51053e137987d06c))
+
+- **matter**: Set the time of devices with a clock
+  ([#853](https://github.com/fhempy/fhempy/pull/853),
+  [`dea749b`](https://github.com/fhempy/fhempy/commit/dea749b3818e78614ebea4309e92233e7338d3bb))
+
+### Features
+
+- Tablet dashboard for wall, couch and door tablets
+  ([#846](https://github.com/fhempy/fhempy/pull/846),
+  [`fb81740`](https://github.com/fhempy/fhempy/commit/fb81740e6187105dee3e9e724678e97126d0fcb6))
+
+- **matter**: Explain Bluetooth and Thread route pitfalls when pairing
+  ([#847](https://github.com/fhempy/fhempy/pull/847),
+  [`4df14ee`](https://github.com/fhempy/fhempy/commit/4df14ee675b16db4c777193970c19a18fef420ee))
+
+- **matter**: Firmware updates for Matter devices
+  ([#854](https://github.com/fhempy/fhempy/pull/854),
+  [`966d2a1`](https://github.com/fhempy/fhempy/commit/966d2a1a6df983de0b0c70ad6b38e0db02bcb631))
+
+
 ## v2.13.8 (2026-10-31)
 
 ### Bug Fixes
