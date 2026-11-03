@@ -503,8 +503,19 @@
     chips += '<button class="iconbtn" data-settings="1">' + I("gear") + "</button>";
     el.innerHTML = '<div class="top"><div><div class="clock">' + clockText(now) + '</div><div class="date">' + esc(greeting(now) + " · " + dateText(now)) + '</div></div><div class="chips">' + chips + "</div></div>";
   }
+  // open windows and running devices only of the rooms this tablet shows
+  function shownIds() {
+    if (!(layout().hidden_rooms || []).length) { return null; }
+    var ids = {};
+    visibleRooms().forEach(function (r) { r.tiles.forEach(function (id) { ids[id] = 1; }); });
+    return ids;
+  }
+  function shownList(list) {
+    var ids = shownIds();
+    return (list || []).filter(function (x) { return !ids || ids[x.id]; });
+  }
   function warningText() {
-    var open = (S.header && S.header.open) || [];
+    var open = shownList(S.header && S.header.open);
     if (!open.length) { return ""; }
     if (open.length <= 3) { return t("openNames", { names: open.map(function (o) { return shortName(o.name); }).join(", ") }); }
     return t("openCount", { n: open.length });
@@ -544,7 +555,7 @@
   }
 
   function leaveHtml() {
-    var h = S.header, open = h.open || [], running = h.running || [], rows = "";
+    var h = S.header, open = shownList(h.open), running = shownList(h.running), rows = "";
     open.forEach(function (o) {
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
@@ -572,13 +583,13 @@
     }
     var count = running.filter(function (r) { return !r.keep_on; }).length;
     return '<div class="leave"><h2>' + esc(title) + "</h2>" + (door ? '<div class="lead">' + esc(t("stillOpen")) + "</div>" : "") + rows +
-      (count ? '<div class="actions"><button class="pill primary" data-alloff="">' + I("power", 20) + " " + esc(t("allOffN", { n: count })) + "</button></div>" : "") + "</div>";
+      (count ? '<div class="actions"><button class="pill primary" data-alloff="" data-ids="' + esc(running.filter(function (r) { return !r.keep_on; }).map(function (r) { return r.id; }).join("\n")) + '">' + I("power", 20) + " " + esc(t("allOffN", { n: count })) + "</button></div>" : "") + "</div>";
   }
 
   // rooms where a thermostat heats while a window is open
   function heatingOpenRooms() {
-    var openRooms = (S.header.open || []).map(function (o) { return o.room; }), result = [];
-    S.rooms.forEach(function (r) {
+    var openRooms = shownList(S.header.open).map(function (o) { return o.room; }), result = [];
+    visibleRooms().forEach(function (r) {
       if (openRooms.indexOf(r.name) < 0) { return; }
       var heats = r.tiles.some(function (id) { var tl = S.tiles[id]; return tl && tl.kind === "thermostat" && tl.state.target > tl.state.current + 0.3; });
       if (heats && result.indexOf(r.name) < 0) { result.push(r.name); }
@@ -1463,7 +1474,7 @@
     var now = new Date(), h = S.header || {}, w = h.weather, items = "";
     if (h.presence) { items += '<div class="x">' + I("home", 20) + " " + esc((h.presence.home || []).length ? t("atHome", { n: h.presence.home.length }) : t("nobody")) + "</div>"; }
     var inside = insideTemp(); if (inside !== null) { items += '<div class="x">' + I("thermo", 20) + " " + num(inside) + "°</div>"; }
-    var open = h.open || [];
+    var open = shownList(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
@@ -1708,7 +1719,7 @@
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
     if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
-    if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null }); return; }
+    if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } var ids = el.getAttribute("data-ids"); send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null, ids: ids ? ids.split("\n") : null }); return; }
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }
     if (target.id === "sheet") { closeSheet(); return; }

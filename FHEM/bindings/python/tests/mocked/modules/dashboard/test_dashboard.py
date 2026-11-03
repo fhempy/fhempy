@@ -648,3 +648,19 @@ async def test_event_filter_and_global_events(module):
     await module.handle_global_event("global", "state", "DELETED wz_Deckenlicht")
     await module.handle_global_event("global", "state", "ATTR wz_Deckenlicht room Bad")
     assert len(reloads) == 2
+
+
+@pytest.mark.asyncio
+async def test_all_off_only_devices_the_tablet_shows(module):
+    _, answer = await pair(module)
+    on = model.all_off(module.data["tiles"])
+    assert len(on) >= 2
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json(
+            {"type": "action", "action": "all_off", "room": None, "ids": on[:1]}
+        )
+        await asyncio.sleep(0.2)
+        switched = [s.split(" ")[0] for s in module.fake.sets]
+        assert switched == on[:1]
+        await ws.close()

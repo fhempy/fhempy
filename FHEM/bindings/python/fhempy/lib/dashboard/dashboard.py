@@ -976,8 +976,12 @@ class dashboard(generic.FhemModule):
         room = message.get("room") or None
         if allowed and room not in allowed:
             return
+        # the tablet sends the devices it shows (rooms hidden on it stay on)
+        ids = message.get("ids")
+        wanted = set(str(i) for i in ids) if isinstance(ids, list) else None
         for name in model.all_off(self.data["tiles"], room):
-            await self.fhem_set(tablet, name, "off")
+            if wanted is None or name in wanted:
+                await self.fhem_set(tablet, name, "off")
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
