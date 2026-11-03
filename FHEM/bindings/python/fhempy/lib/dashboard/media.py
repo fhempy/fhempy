@@ -189,40 +189,48 @@ def _first(names, sets):
     return next((name for name in names if name in sets), None)
 
 
+# action -> set commands to try, the first one the device has is sent
+SIMPLE_ACTIONS = {
+    "play": ("play", "playpause"),
+    "pause": ("pause", "playpause", "stop"),
+    "next": NEXT_SETS,
+    "prev": PREV_SETS,
+    "on": ("on",),
+    "off": ("off",),
+}
+
+
+def _volume_command(sets, value):
+    number = kinds.number(value)
+    if number is None or "volume" not in sets:
+        return []
+    return [f"volume {int(max(0, min(100, round(number))))}"]
+
+
+def _preset_command(info, sets, value):
+    number = kinds.number(value)
+    if number is None or not 1 <= number <= PRESETS:
+        return []
+    n = int(number)
+    if "channel" in sets and any(p["n"] == n for p in presets(info)):
+        return [f"channel {n}"]
+    if "playFavorite" in sets:
+        return [f"playFavorite {n}"]
+    return []
+
+
 def command(info, action, value=None):
     """FHEM set arguments for a tablet action on a music player"""
     sets = kinds.set_names(info.get("sets"))
     if action == "toggle":
         action = "pause" if _playing(info) else "play"
-    if action == "play":
-        if _off(info) and "on" in sets:
-            return ["on"]
-        name = _first(("play", "playpause"), sets)
-    elif action == "pause":
-        name = _first(("pause", "playpause", "stop"), sets)
-    elif action == "next":
-        name = _first(NEXT_SETS, sets)
-    elif action == "prev":
-        name = _first(PREV_SETS, sets)
-    elif action in ("on", "off"):
-        name = action if action in sets else None
-    elif action == "volume":
-        number = kinds.number(value)
-        if number is None or "volume" not in sets:
-            return []
-        return [f"volume {int(max(0, min(100, round(number))))}"]
-    elif action == "preset":
-        number = kinds.number(value)
-        if number is None or not 1 <= number <= PRESETS:
-            return []
-        n = int(number)
-        if "channel" in sets and any(p["n"] == n for p in presets(info)):
-            return [f"channel {n}"]
-        if "playFavorite" in sets:
-            return [f"playFavorite {n}"]
-        return []
-    else:
-        name = None
+    if action == "play" and _off(info) and "on" in sets:
+        return ["on"]
+    if action == "volume":
+        return _volume_command(sets, value)
+    if action == "preset":
+        return _preset_command(info, sets, value)
+    name = _first(SIMPLE_ACTIONS.get(action, ()), sets)
     return [name] if name else []
 
 
