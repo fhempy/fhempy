@@ -225,7 +225,7 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding) { renderSheet(); }
       return;
     }
     if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home") { renderContent(); } if (S.saver) { renderSaver(); } return; }
@@ -420,11 +420,12 @@
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "dimmer" || tile.kind === "blind" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
   function updateTile(id) {
+    if (S.sliding && press && press.id === id) { return; }
     var el = app.querySelector('[data-tile="' + cssEsc(id) + '"]');
     if (el) {
       var div = document.createElement("div");
@@ -758,8 +759,12 @@
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
     var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people]);
-    d.innerHTML = '<div class="sheet ' + (cls || "") + '">' + inner + "</div>";
-    if (d.getAttribute("data-key") === key) { d.firstChild.scrollTop = top; }
+    if (d.getAttribute("data-key") === key && old) {
+      // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
+      old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
+    } else {
+      d.innerHTML = '<div class="sheet ' + (cls || "") + '">' + inner + "</div>";
+    }
     d.setAttribute("data-key", key);
     return d;
   }
@@ -866,6 +871,7 @@
   // dragging the big slider of dimmers and blinds
   function sliderDrag(el, ev) {
     var kind = el.getAttribute("data-slider"), id = S.sheet.id, value = 0;
+    S.sliding = true;
     function move(e) {
       var r = el.getBoundingClientRect(), y = (e.touches ? e.touches[0].clientY : e.clientY);
       value = Math.round(Math.max(0, Math.min(100, (r.bottom - y) / r.height * 100)));
@@ -874,6 +880,7 @@
     }
     function up() {
       document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false;
       if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else { act(id, "position", value, { position: value }); }
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
@@ -1509,14 +1516,50 @@
     var tile = closest(ev.target, "data-tile");
     if (tile && !S.edit) {
       var id = tile.getAttribute("data-tile");
-      press = { id: id, x: ev.clientX, y: ev.clientY, long: false };
+      var pk = S.tiles[id] && S.tiles[id].kind;
+      press = { id: id, x: ev.clientX, y: ev.clientY, long: false, dim: pk === "dimmer" || pk === "blind", el: tile };
       press.timer = setTimeout(function () { if (press && press.id === id) { press.long = true; if (navigator.vibrate) { navigator.vibrate(10); } openSheet(id); } }, 480);
     }
   }, { passive: false });
   document.addEventListener("pointermove", function (ev) {
-    if (press && press.id && (Math.abs(ev.clientX - press.x) > 10 || Math.abs(ev.clientY - press.y) > 10)) { clearTimeout(press.timer); press = null; }
+    if (press && press.sliding) { tileSlideMove(ev); return; }
+    var dx = press ? Math.abs(ev.clientX - press.x) : 0, dy = press ? Math.abs(ev.clientY - press.y) : 0;
+    if (press && press.id && press.dim && !press.long && dx > 12 && dx > dy * 1.5) { clearTimeout(press.timer); tileSlideStart(ev); return; }
+    if (press && press.id && (dx > 10 || dy > 10)) { clearTimeout(press.timer); press = null; }
   });
-  document.addEventListener("pointerup", function () { if (press && press.timer) { clearTimeout(press.timer); } });
+  document.addEventListener("pointerup", function () {
+    if (press && press.timer) { clearTimeout(press.timer); }
+    if (press && press.sliding) { tileSlideEnd(); }
+  });
+  document.addEventListener("pointercancel", function () { if (press && press.sliding) { tileSlideEnd(); } });
+
+  // dimmers and blinds: swipe sideways on the tile, like a slider over the whole tile
+  function tileValue(tile) { return tile.kind === "dimmer" ? (tile.state.on ? (tile.state.level || 0) : 0) : (tile.state.position || 0); }
+  function tileSlideStart(ev) {
+    var tile = S.tiles[press.id]; if (!tile || !press.el) { press = null; return; }
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); press = null; return; }
+    press.sliding = true; press.start = tileValue(tile); press.value = press.start; press.x = ev.clientX;
+    press.width = press.el.getBoundingClientRect().width || 200;
+    press.el.classList.add("sliding");
+    if (!press.el.querySelector(".slidefill")) { var f = document.createElement("div"); f.className = "slidefill" + (tile.kind === "blind" ? " teal" : ""); press.el.insertBefore(f, press.el.firstChild); }
+    S.sliding = true;
+    if (navigator.vibrate) { try { navigator.vibrate(6); } catch (e) { /* not allowed */ } }
+    tileSlideMove(ev);
+  }
+  function tileSlideMove(ev) {
+    // the whole tile width is 100 %, starting from the current value
+    var v = Math.round(Math.max(0, Math.min(100, press.start + (ev.clientX - press.x) / press.width * 100)));
+    press.value = v;
+    var f = press.el.querySelector(".slidefill"); if (f) { f.style.width = v + "%"; }
+    var sub = press.el.querySelector(".s"); if (sub) { sub.textContent = v + " %"; }
+    if (ev.cancelable) { ev.preventDefault(); }
+  }
+  function tileSlideEnd() {
+    var id = press.id, v = press.value, tile = S.tiles[id];
+    press = null; S.sliding = false; dragEnded = Date.now();
+    if (!tile) { return; }
+    if (tile.kind === "dimmer") { act(id, "level", v, v > 0 ? { on: true, level: v } : { on: false }); } else { act(id, "position", v, { position: v }); }
+  }
 
   document.addEventListener("click", function (ev) {
     if (press && press.saver) { var fresh = Date.now() - press.saver < 800; press = null; if (fresh) { return; } }

@@ -215,9 +215,14 @@ def _position_inverted(info):
     return info.get("TYPE") in INVERTED_POSITION_TYPES
 
 
+_ON_PREFIX = re.compile(r"(on|dim)(?![a-z])")
+
+
 def _is_on(value, level=None):
     word = _word(value)
-    if word in ON_VALUES or word.startswith("on") or word.startswith("dim"):
+    # on-for-timer, on-till, dim50% are on, but online is not (e.g. a speaker
+    # which is reachable and switched off)
+    if word in ON_VALUES or _ON_PREFIX.match(word):
         return True
     if word in OFF_VALUES or word.startswith("off"):
         return False
