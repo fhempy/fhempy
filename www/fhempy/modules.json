@@ -27,6 +27,15 @@
   "icon": "🔔"
  },
  {
+  "id": "dashboard",
+  "title": "Tablet dashboard",
+  "description": "A modern dashboard for wall, couch and door tablets: set up in one minute on the tablet, doorbell with live video",
+  "category": "tools",
+  "name": "tablets",
+  "single": true,
+  "icon": "📱"
+ },
+ {
   "id": "timeline",
   "title": "Timeline",
   "description": "See what happened at home, e.g. during your holidays, without technical noise",

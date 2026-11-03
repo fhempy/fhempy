@@ -249,7 +249,10 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
         fct_name = attr_list[attr_name]["function"]
     try:
         fct_call = getattr(obj, fct_name)
-        ret = await fct_call(hash)
+        ret = fct_call(hash)
+        # plain functions are fine for hooks without anything to await
+        if inspect.isawaitable(ret):
+            ret = await ret
     except AttributeError:
         pass
 

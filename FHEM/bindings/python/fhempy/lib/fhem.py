@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import itertools
 import logging
 import os
@@ -472,7 +473,8 @@ async def setEventDevices(hash, devices):
 
 
 def register_event_listener(device, callback):
-    """callback(device, reading, value) is awaited for every event of device,
+    """callback(device, reading, value) is called (and awaited if it is a
+    coroutine function) for every event of device,
     events without reading name (e.g. "on") are passed as reading state.
     Keep it short, it runs in the loop which receives the messages from FHEM."""
     event_listeners.setdefault(device, []).append(callback)
@@ -494,7 +496,10 @@ async def dispatch_event(device, event):
         reading, value = "state", parts[0]
     for callback in list(event_listeners.get(device, [])):
         try:
-            await callback(device, reading, value)
+            result = callback(device, reading, value)
+            # plain functions are fine for listeners without anything to await
+            if inspect.isawaitable(result):
+                await result
         except Exception:
             logger.exception(f"Failed to handle event of {device}: {event}")
 

@@ -1,0 +1,14 @@
+{
+  "requirements": [
+    "segno==1.6.6"
+  ],
+  "installer": {
+    "title": "Tablet dashboard",
+    "description": "A modern dashboard for wall, couch and door tablets: set up in one minute on the tablet, doorbell with live video",
+    "category": "tools",
+    "order": 7,
+    "name": "tablets",
+    "single": true,
+    "icon": "📱"
+  }
+}

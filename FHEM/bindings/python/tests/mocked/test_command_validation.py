@@ -107,3 +107,30 @@ async def test_unexpected_converter_errors_are_not_hidden():
     with pytest.raises(RuntimeError, match="implementation bug"):
         await utils.handle_set(config, obj, {"NAME": "dev"}, ["dev", "probe", "3"], {})
     obj.handle.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_plain_function_attribute_callback():
+    calls = []
+    obj = SimpleNamespace(_attr_count=1, set_attr_count=calls.append)
+    config = {"count": {"format": "int", "default": "3"}}
+    assert await utils.handle_attr(config, obj, {}, ["set", "dev", "count", "5"], {}) is None
+    assert obj._attr_count == 5
+    assert calls == [{}]
+
+
+@pytest.mark.asyncio
+async def test_plain_function_event_listener():
+    from fhempy.lib import fhem
+
+    events = []
+
+    def listener(device, reading, value):
+        events.append((device, reading, value))
+
+    fhem.register_event_listener("plain_dev", listener)
+    try:
+        await fhem.dispatch_event("plain_dev", "temperature: 21")
+    finally:
+        fhem.unregister_event_listener("plain_dev", listener)
+    assert events == [("plain_dev", "temperature", "21")]

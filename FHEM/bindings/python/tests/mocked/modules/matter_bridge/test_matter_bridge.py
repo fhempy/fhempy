@@ -351,3 +351,14 @@ async def test_bridge_module(mocker, tmp_path):
     finally:
         await bridge.Undefine(hash)
     assert "Lamp" not in fhem.event_listeners
+
+
+def test_on_state_words():
+    # on-for-timer and dim values are on, online (a reachable, switched off
+    # speaker) is not
+    assert devices._is_on("on") is True
+    assert devices._is_on("on-for-timer 60") is True
+    assert devices._is_on("dim50%") is True
+    assert devices._is_on("online") is None
+    assert devices._is_on("off") is False
+    assert devices._is_on("offline") is False
