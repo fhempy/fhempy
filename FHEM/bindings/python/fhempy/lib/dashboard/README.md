@@ -120,6 +120,12 @@ All devices with a room and a known type. The type is detected like for [matter_
 and `hidden_devices` to leave devices out, e.g. `Alarm_system,TYPE=CUL_HM`. Rooms like *hidden*, *Unsorted*, *fhempy* or
 *Timeline* are left out.
 
+## Fans
+
+Fans (set commands `fan_pct`/`fan_mode`, `genericDeviceType fan` or `matterType fan`) get a fan tile: tap switches
+off/on (medium), swiping sideways sets the speed, the details have off/low/medium/high. A ceiling fan with light (e.g.
+mantra_ble) stays a light tile, its fan is controlled in the details of the light.
+
 ## Music players
 
 fhempy googlecast and dlna_dmr devices, FHEM modules like BOSEST or SONOSPLAYER and every device with

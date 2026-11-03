@@ -36,6 +36,7 @@ KIND_ORDER = (
     "thermostat",
     "switch",
     "outlet",
+    "fan",
     "media",
     "lock",
     "contact",
@@ -146,6 +147,7 @@ DOORBELL_VALUES = (
 )
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
+READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
 WEATHER_TYPES = ("Weather",)
 WEATHER_FHEMPY_TYPES = ("openmeteo_weather",)
 SCENE_TYPES = ("LightScene",)
@@ -258,6 +260,10 @@ def tile_state(kind, info):
         humidity = kinds.number(_reading(info, "humidity"))
         if humidity is not None:
             state["humidity"] = humidity
+    if kind == "fan":
+        state["on"] = bool(state.get("percent"))
+    elif kinds.has_fan_endpoint(kind, info):
+        state["fan"] = kinds.state("fan", info)
     if kind in ("switch", "outlet"):
         power = kinds.number(_reading(info, "power"))
         if power is not None:
@@ -334,6 +340,8 @@ def tile(info, room=None):
         result["step"] = 0.5
     if kind == "media":
         result["media"] = media.features(info)
+    if kind == "fan" or kinds.has_fan_endpoint(kind, info):
+        result["fan"] = True
     return result
 
 
@@ -592,11 +600,37 @@ ACTIONS = {
 }
 
 
+def _fan_mode(value):
+    mode = str(value or "").strip().lower()
+    if mode not in kinds.FAN_MODES:
+        raise ValueError(f"no fan mode: {value}")
+    return {"mode": mode}
+
+
+FAN_ACTIONS = {
+    "fan_mode": _fan_mode,
+    "fan_percent": lambda value: {"percent": _clamp(value, 0, 100)},
+}
+
+
+def _fan_toggle(item, info, action):
+    if action == "toggle":
+        action = "off" if item["state"].get("on") else "on"
+    if action not in ("on", "off"):
+        return []
+    mode = "medium" if action == "on" else "off"
+    return kinds.fhem_commands("fan", info, {"mode": mode})
+
+
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
     if item["kind"] == "media":
         return media.command(info, action, value)
+    if item.get("fan") and action in FAN_ACTIONS:
+        return kinds.fhem_commands("fan", info, FAN_ACTIONS[action](value))
+    if item["kind"] == "fan":
+        return _fan_toggle(item, info, action)
     if action == "toggle":
         wanted = _toggle(item["kind"], item["state"])
     elif action in ACTIONS:
