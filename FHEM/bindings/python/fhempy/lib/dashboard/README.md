@@ -12,11 +12,11 @@ minute on the tablet itself.
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
 - *Home* warns when a room is heated while its window is open, room cards suggest airing at high humidity
-- tap switches, long press opens the details: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
+- tap switches, swiping sideways over a dimmer or blind tile dims or moves it, long press opens the details: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
 - *History* shows the [timeline](../timeline/README.md) of every day, if a timeline device exists; *Home* shows what happened last in the whole home (today, after a quiet day also yesterday)
 - push messages of the [push](../push/README.md) module are shown on the tablets as well
 - doorbell: the tablets show the camera live (WebRTC), you can talk to the visitor and open the door by sliding
-- every tablet keeps its own place, room, layout (order of rooms and tiles, hidden tiles) and theme
+- every tablet keeps its own place, room, layout (order of rooms and tiles by dragging, hidden tiles) and theme
 
 ![Dashboard on a wall tablet: open windows by name in the header, what is still on, energy and the rooms](screenshot.png)
 

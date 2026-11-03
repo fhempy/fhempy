@@ -24,7 +24,7 @@
     doorList: ["Klingel übernimmt den Bildschirm", "Kamera, Sprechen, Tür öffnen", "Beim Gehen: was noch offen ist", "Alles aus mit einem Tipp"],
     roomOfTablet: "Raum für dieses Tablet:", next: "Weiter", noRoom: "Kein Raum",
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
-    pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück",
+    pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
     lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", peopleTitle: "Wer ist zu Hause?", peopleHome: "Zu Hause", peopleAway: "Unterwegs", arrived: "angekommen {t}", left: "weg seit {t}", atTime: "{t}", yesterdayAt: "gestern {t}", dayAt: "{d}, {t}", setTablet: "Dieses Tablet", setHome: "Ganzes Zuhause · alle Tablets", setNamePlace: "Name, Standort und Raum", setRooms: "Räume anzeigen und sortieren", setRoomsValue: "{n} von {m} sichtbar", setKeepValue: "{n} Geräte", setKeepNone: "keine", setArrangeValue: "Geräte den Räumen zuordnen", resetView: "Ansicht dieses Tablets zurücksetzen", back: "Einstellungen", setTalk: "Sprechen an der Tür", editHint: "Kacheln ziehen zum Verschieben (am Tablet kurz halten), × blendet sie aus.", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
@@ -63,7 +63,7 @@
     doorList: ["Doorbell takes over the screen", "Camera, talk, open the door", "When leaving: what is still open", "All off with one tap"],
     roomOfTablet: "Room of this tablet:", next: "Next", noRoom: "No room",
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
-    pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back",
+    pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
     lock: "Lock", unlock: "Unlock", today: "Today", peopleTitle: "Who is at home?", peopleHome: "At home", peopleAway: "Away", arrived: "arrived {t}", left: "away since {t}", atTime: "{t}", yesterdayAt: "yesterday {t}", dayAt: "{d}, {t}", setTablet: "This tablet", setHome: "Whole home · all tablets", setNamePlace: "Name, place and room", setRooms: "Show and order rooms", setRoomsValue: "{n} of {m} shown", setKeepValue: "{n} devices", setKeepNone: "none", setArrangeValue: "Assign devices to rooms", resetView: "Reset the view of this tablet", back: "Settings", setTalk: "Talking at the door", editHint: "Drag tiles to move them (on tablets hold briefly), × hides them.", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
@@ -126,6 +126,7 @@
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12l5 5 9-10"/>',
+    grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3.2"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     bed: '<path d="M3 18v-8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12.5a1.5 1.5 0 1 0 0-.01"/>',
     bath: '<path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/>',
@@ -946,9 +947,9 @@
     var hidden = layout().hidden_rooms || [];
     var roomList = allRoomsOrdered().map(function (r, i) {
       var on = hidden.indexOf(r.name) < 0;
-      return '<div class="item"><span class="grow">' + esc(r.name) + '</span><button class="mini" data-roomup="' + i + '">' + I("left", 18).replace("<svg", '<svg style="transform:rotate(90deg)"') + '</button><button class="mini" data-roomdown="' + i + '">' + I("left", 18).replace("<svg", '<svg style="transform:rotate(-90deg)"') + '</button><button class="tg' + (on ? "" : " off") + '" data-roomtoggle="' + esc(r.name) + '"></button></div>';
+      return '<div class="item roomitem" data-roomitem="' + esc(r.name) + '"><span class="grip" data-roomgrip="1">' + I("grip", 22) + '</span><span class="grow">' + esc(r.name) + '</span><button class="tg' + (on ? "" : " off") + '" data-roomtoggle="' + esc(r.name) + '"></button></div>';
     }).join("");
-    sheetShell(settingsHead(t("setRooms"), S.tablet.name, true) + '<div class="group"><div class="list">' + roomList + "</div></div>");
+    sheetShell(settingsHead(t("setRooms"), S.tablet.name, true) + '<div class="group"><div class="hint" style="text-align:left;margin-bottom:6px">' + esc(t("roomsDragHint")) + '</div><div class="list">' + roomList + "</div></div>");
   }
   function allRoomsOrdered() {
     var order = layout().room_order || [];
@@ -1217,6 +1218,35 @@
     }
   });
   document.addEventListener("pointerup", tileDragEnd);
+
+  // order of the rooms in the settings: drag the handle of a row
+  var rdrag = null;
+  function roomDragStart(ev) {
+    var grip = closest(ev.target, "data-roomgrip"); if (!grip) { return false; }
+    var row = closest(grip, "data-roomitem"); if (!row) { return false; }
+    rdrag = { el: row }; row.classList.add("dragrow"); document.body.classList.add("dragging");
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+    ev.preventDefault();
+    return true;
+  }
+  document.addEventListener("pointermove", function (ev) {
+    if (!rdrag) { return; }
+    ev.preventDefault();
+    var over = document.elementFromPoint(ev.clientX, ev.clientY), target = over ? closest(over, "data-roomitem") : null;
+    if (!target || target === rdrag.el || target.parentNode !== rdrag.el.parentNode) { return; }
+    var r = target.getBoundingClientRect();
+    target.parentNode.insertBefore(rdrag.el, ev.clientY > r.top + r.height / 2 ? target.nextSibling : target);
+  });
+  function roomDragEnd() {
+    if (!rdrag) { return; }
+    var list = rdrag.el.parentNode;
+    rdrag.el.classList.remove("dragrow"); document.body.classList.remove("dragging"); rdrag = null; dragEnded = Date.now();
+    var names = Array.prototype.map.call(list.querySelectorAll("[data-roomitem]"), function (el) { return el.getAttribute("data-roomitem"); });
+    var lay = copyLayout(); lay.room_order = names; saveLayout(lay);
+  }
+  document.addEventListener("pointerup", roomDragEnd);
+  document.addEventListener("pointercancel", roomDragEnd);
+  document.addEventListener("touchmove", function (ev) { if (rdrag) { ev.preventDefault(); } }, { passive: false });
   document.addEventListener("pointercancel", tileDragEnd);
   document.addEventListener("touchmove", function (ev) { if (tdrag && tdrag.active) { ev.preventDefault(); } }, { passive: false });
 
@@ -1510,7 +1540,7 @@
     if (S.audio && S.audio.state === "suspended") { S.audio.resume(); }
     var wasSaver = S.saver; wake();
     if (wasSaver) { press = { saver: Date.now() }; ev.preventDefault(); return; }
-    if (dragStart(ev) || tileDragStart(ev)) { return; }
+    if (dragStart(ev) || tileDragStart(ev) || roomDragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
     var tile = closest(ev.target, "data-tile");
@@ -1621,13 +1651,6 @@
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");
       l2.hidden_rooms = hr.indexOf(name) >= 0 ? hr.filter(function (x) { return x !== name; }) : hr.concat([name]); saveLayout(l2); return;
-    }
-    if ((el = closest(target, "data-roomup")) || (el = closest(target, "data-roomdown"))) {
-      var up = el.getAttribute("data-roomup") !== null, i = Number(el.getAttribute(up ? "data-roomup" : "data-roomdown"));
-      var names = allRoomsOrdered().map(function (r) { return r.name; }), j = up ? i - 1 : i + 1;
-      if (j < 0 || j >= names.length) { return; }
-      var tmp = names[i]; names[i] = names[j]; names[j] = tmp;
-      var l3 = copyLayout(); l3.room_order = names; saveLayout(l3); return;
     }
     if ((el = closest(target, "data-resetlayout"))) { var l4 = { theme: layout().theme }; S.usage = {}; store("dashUsage", "{}"); saveLayout(l4); return; }
     if ((el = closest(target, "data-pair"))) { pair(document.getElementById("code").value); return; }

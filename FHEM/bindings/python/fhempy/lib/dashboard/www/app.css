@@ -236,6 +236,9 @@ body.dragging .tile.dragtile { opacity: .85; transform: scale(1.04); outline: 2p
 /* settings */
 .list .item { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 16px; }
 .list .item .grow { flex: 1; }
+.list .item .grip { width: 44px; height: 44px; margin: -8px 0 -8px -8px; display: grid; place-items: center; color: var(--mu); cursor: grab; touch-action: none; flex: none; }
+.list .item.dragrow { background: var(--card2); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.35); position: relative; z-index: 2; }
+.list .item.dragrow .grip { cursor: grabbing; color: var(--amber); }
 .list .item .mini { width: 36px; height: 36px; border-radius: 12px; background: var(--card2); display: grid; place-items: center; color: var(--mu); }
 .tg { width: 50px; height: 30px; border-radius: 15px; background: var(--green); position: relative; flex: none; }
 .tg:after { content: ""; position: absolute; right: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: right .2s; }
