@@ -26,6 +26,7 @@
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
+    fan: "Ventilator", fanOff: "Aus", fanLow: "Niedrig", fanMedium: "Mittel", fanHigh: "Hoch", pullToFan: "Ziehen für die Stufe",
     playing: "Spielt", paused: "Pausiert", idle: "Bereit", nothingPlays: "Gerade läuft nichts", volume: "Lautstärke", presets: "Senderspeicher", prevTrack: "Zurück", nextTrack: "Weiter", playPause: "Abspielen oder Pause",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
     lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", peopleTitle: "Wer ist zu Hause?", peopleHome: "Zu Hause", peopleAway: "Unterwegs", arrived: "angekommen {t}", left: "weg seit {t}", atTime: "{t}", yesterdayAt: "gestern {t}", dayAt: "{d}, {t}", setTablet: "Dieses Tablet", setHome: "Ganzes Zuhause · alle Tablets", setNamePlace: "Name, Standort und Raum", setRooms: "Räume anzeigen und sortieren", setRoomsValue: "{n} von {m} sichtbar", setKeepValue: "{n} Geräte", setKeepNone: "keine", setArrangeValue: "Geräte den Räumen zuordnen", resetView: "Ansicht dieses Tablets zurücksetzen", back: "Einstellungen", setTalk: "Sprechen an der Tür", editHint: "Kacheln ziehen zum Verschieben (am Tablet kurz halten), × blendet sie aus.", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
@@ -66,6 +67,7 @@
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
+    fan: "Fan", fanOff: "Off", fanLow: "Low", fanMedium: "Medium", fanHigh: "High", pullToFan: "Drag to set the speed",
     playing: "Playing", paused: "Paused", idle: "Ready", nothingPlays: "Nothing is playing", volume: "Volume", presets: "Presets", prevTrack: "Previous", nextTrack: "Next", playPause: "Play or pause",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
     lock: "Lock", unlock: "Unlock", today: "Today", peopleTitle: "Who is at home?", peopleHome: "At home", peopleAway: "Away", arrived: "arrived {t}", left: "away since {t}", atTime: "{t}", yesterdayAt: "yesterday {t}", dayAt: "{d}, {t}", setTablet: "This tablet", setHome: "Whole home · all tablets", setNamePlace: "Name, place and room", setRooms: "Show and order rooms", setRoomsValue: "{n} of {m} shown", setKeepValue: "{n} devices", setKeepNone: "none", setArrangeValue: "Assign devices to rooms", resetView: "Reset the view of this tablet", back: "Settings", setTalk: "Talking at the door", editHint: "Drag tiles to move them (on tablets hold briefly), × hides them.", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
@@ -95,6 +97,7 @@
 
   // ---------- icons ----------
   var P = {
+    fan: '<circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7s3 4-2 7M14 12c4 0 7 1 7 4s-4 3-7-2M12 14c0 4-1 7-4 7s-3-4 2-7M10 12c-4 0-7-1-7-4s4-3 7 2"/>',
     music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
     pause: '<path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor"/>',
@@ -325,8 +328,15 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music" };
-  var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1 };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan" };
+  var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1, fan: 1 };
+  var FAN_MODES = ["off", "low", "medium", "high"];
+  function fanText(f) { return f && f.mode ? t("fan" + f.mode.charAt(0).toUpperCase() + f.mode.slice(1)) + (f.percent && f.mode !== "off" ? " · " + f.percent + " %" : "") : "–"; }
+  function fanHtml(f) {
+    return '<div class="group"><div class="label">' + esc(t("fan")) + '</div><div class="seg fanseg">' + FAN_MODES.map(function (m) {
+      return '<button class="' + ((f && f.mode) === m ? "on" : "") + '" data-fanmode="' + m + '">' + esc(t("fan" + m.charAt(0).toUpperCase() + m.slice(1))) + "</button>";
+    }).join("") + "</div></div>";
+  }
 
   // temperature and humidity of today in the tiles, from the timeline
   function loadSparks(force) {
@@ -448,6 +458,7 @@
     var st = tile.state || {}, k = tile.kind, cls = "", sub = "", icon = KIND_ICON[k] || "power", bar = null;
     if (k === "light" || k === "dimmer") {
       if (st.on) { cls = "light"; sub = t("on") + (st.level !== undefined && k === "dimmer" ? " · " + st.level + " %" : ""); bar = k === "dimmer" ? st.level : null; } else { sub = t("off"); }
+      if (st.fan && st.fan.mode && st.fan.mode !== "off") { sub += " · " + t("fan") + " " + fanText({ mode: st.fan.mode }); }
     } else if (k === "switch" || k === "outlet") {
       if (st.on) { cls = "power"; sub = t("on") + (st.power ? " · " + watt(st.power) : ""); } else { sub = t("off"); }
     } else if (k === "blind") {
@@ -470,6 +481,8 @@
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
       sub = Math.round(st.humidity) + " %";
+    } else if (k === "fan") {
+      icon = "fan"; if (st.on) { cls = "fanon"; } sub = st.on ? fanText(st) : t("off");
     } else if (k === "media") {
       if (st.playing) { cls = "playing"; sub = mediaLine(st) || t("playing"); } else { sub = st.paused ? [t("paused"), mediaLine(st)].filter(Boolean).join(" · ") : st.on ? t("idle") : t("off"); }
     }
@@ -489,11 +502,12 @@
     }
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
+    if (tile.state.fan && tile.state.fan.mode && tile.state.fan.mode !== "off" && !editState) { extra += '<div class="fanbadge">' + I("fan", 18) + "</div>"; }
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
@@ -531,7 +545,9 @@
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
     if (!TAP_TOGGLES[tile.kind]) { openSheet(id); return; }
     var st = tile.state;
-    if (tile.kind === "blind") {
+    if (tile.kind === "fan") {
+      act(id, "toggle", null, st.on ? { on: false, mode: "off", percent: 0 } : { on: true, mode: "medium", percent: 66 });
+    } else if (tile.kind === "blind") {
       var target = (st.position || 0) > 0 ? 0 : 100;
       act(id, "position", target, { position: target });
     } else {
@@ -938,10 +954,11 @@
     var st = tile.state, k = tile.kind, look = tileLook(tile);
     var head = '<div class="head"><div><h1>' + esc(tile.name) + '</h1><div class="subtitle">' + esc([tile.rooms[0], look.sub].filter(Boolean).join(" · ")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>";
     var left = "", body = "";
-    if (k === "dimmer" || k === "blind") {
-      var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : (st.position || 0);
-      left = '<div><div class="vs' + (k === "blind" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : t("pullToMove")) + "</div></div>";
+    if (k === "dimmer" || k === "blind" || k === "fan") {
+      var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : k === "fan" ? (st.percent || 0) : (st.position || 0);
+      left = '<div><div class="vs' + (k === "blind" || k === "fan" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : k === "fan" ? "fan" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : k === "fan" ? t("pullToFan") : t("pullToMove")) + "</div></div>";
     }
+    if (k === "fan") { body += fanHtml(st); }
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
@@ -958,6 +975,7 @@
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
+    if (tile.fan && k !== "fan") { body += fanHtml(st.fan); }
     body += sheetTrendsHtml() + sheetHistoryHtml();
     var cols = !!left;
     sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" + (k === "media" ? " msheet" : "") : "");
@@ -1050,7 +1068,7 @@
     function up() {
       document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
       S.sliding = false;
-      if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else { act(id, "position", value, { position: value }); }
+      if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else if (kind === "fan") { act(id, "fan_percent", value, { percent: value, on: value > 0, mode: fanModeOf(value) }); } else { act(id, "position", value, { position: value }); }
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
     move(ev);
@@ -1715,7 +1733,7 @@
     if (tile && !S.edit) {
       var id = tile.getAttribute("data-tile");
       var pk = S.tiles[id] && S.tiles[id].kind;
-      press = { id: id, x: ev.clientX, y: ev.clientY, long: false, dim: pk === "dimmer" || pk === "blind", el: tile };
+      press = { id: id, x: ev.clientX, y: ev.clientY, long: false, dim: pk === "dimmer" || pk === "blind" || pk === "fan", el: tile };
       press.timer = setTimeout(function () { if (press && press.id === id) { press.long = true; if (navigator.vibrate) { navigator.vibrate(10); } openSheet(id); } }, 480);
     }
   }, { passive: false });
@@ -1732,14 +1750,15 @@
   document.addEventListener("pointercancel", function () { if (press && press.sliding) { tileSlideEnd(); } });
 
   // dimmers and blinds: swipe sideways on the tile, like a slider over the whole tile
-  function tileValue(tile) { return tile.kind === "dimmer" ? (tile.state.on ? (tile.state.level || 0) : 0) : (tile.state.position || 0); }
+  function tileValue(tile) { return tile.kind === "dimmer" ? (tile.state.on ? (tile.state.level || 0) : 0) : tile.kind === "fan" ? (tile.state.percent || 0) : (tile.state.position || 0); }
+  function fanModeOf(v) { return v <= 0 ? "off" : v <= 33 ? "low" : v <= 66 ? "medium" : "high"; }
   function tileSlideStart(ev) {
     var tile = S.tiles[press.id]; if (!tile || !press.el) { press = null; return; }
     if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); press = null; return; }
     press.sliding = true; press.start = tileValue(tile); press.value = press.start; press.x = ev.clientX;
     press.width = press.el.getBoundingClientRect().width || 200;
     press.el.classList.add("sliding");
-    if (!press.el.querySelector(".slidefill")) { var f = document.createElement("div"); f.className = "slidefill" + (tile.kind === "blind" ? " teal" : ""); press.el.insertBefore(f, press.el.firstChild); }
+    if (!press.el.querySelector(".slidefill")) { var f = document.createElement("div"); f.className = "slidefill" + (tile.kind === "blind" || tile.kind === "fan" ? " teal" : ""); press.el.insertBefore(f, press.el.firstChild); }
     S.sliding = true;
     if (navigator.vibrate) { try { navigator.vibrate(6); } catch (e) { /* not allowed */ } }
     tileSlideMove(ev);
@@ -1756,7 +1775,7 @@
     var id = press.id, v = press.value, tile = S.tiles[id];
     press = null; S.sliding = false; dragEnded = Date.now();
     if (!tile) { return; }
-    if (tile.kind === "dimmer") { act(id, "level", v, v > 0 ? { on: true, level: v } : { on: false }); } else { act(id, "position", v, { position: v }); }
+    if (tile.kind === "dimmer") { act(id, "level", v, v > 0 ? { on: true, level: v } : { on: false }); } else if (tile.kind === "fan") { act(id, "fan_percent", v, { percent: v, on: v > 0, mode: fanModeOf(v) }); } else { act(id, "position", v, { position: v }); }
   }
 
   document.addEventListener("click", function (ev) {
@@ -1782,6 +1801,13 @@
       var mw = el.getAttribute("data-media"), ms2 = S.tiles[S.sheet.id];
       act(S.sheet.id, mw, null, mw === "toggle" && ms2 ? { playing: !ms2.state.playing } : null);
       if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+      renderSheet(); return;
+    }
+    if ((el = closest(target, "data-fanmode")) && S.sheet) {
+      var fm = el.getAttribute("data-fanmode"), ft = S.tiles[S.sheet.id], fp = { off: 0, low: 33, medium: 66, high: 100 }[fm];
+      if (ft) {
+        if (ft.kind === "fan") { act(ft.id, "fan_mode", fm, { mode: fm, percent: fp, on: fp > 0 }); } else { act(ft.id, "fan_mode", fm, { fan: { mode: fm, percent: fp } }); }
+      }
       renderSheet(); return;
     }
     if ((el = closest(target, "data-preset"))) {

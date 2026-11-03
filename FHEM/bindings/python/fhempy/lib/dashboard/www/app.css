@@ -454,3 +454,13 @@ body.light .banner.push { background: #fff; color: #151922; }
 .preset .pn small { color: var(--mu2); margin-right: 6px; font-weight: 600; }
 @media (max-width: 860px) { .sheet.msheet { grid-template-columns: 1fr; } .mart { max-width: 320px; width: 100%; margin: 0 auto; } }
 @media (max-width: 560px) { .presets { grid-template-columns: repeat(3, 1fr); gap: 8px; } .preset { padding: 6px; } .tile.media .mplay { width: 44px; height: 44px; } .tile.media.hascover { padding-right: 18px; } .tile.media .mthumb { bottom: auto; height: 46px; right: auto; left: 14px; top: 14px; border-radius: 12px; } .tile.media.hascover .mplay, .tile.media .mplay { position: absolute; right: 14px; top: 14px; bottom: auto; } .tile.media .mtext { padding-right: 0; } }
+
+/* fans */
+.tile.fanon { background: linear-gradient(145deg, rgba(61,219,184,.22), rgba(61,219,184,.06)); border-color: rgba(61,219,184,.32); }
+.tile.fanon .ic { background: var(--teal); color: #05302a; }
+.tile.fanon .ic svg, .tile .fanbadge svg { animation: spin 1.6s linear infinite; }
+.tile.fanon .s { color: #bdf3e6; }
+.tile .fanbadge { position: absolute; right: 14px; top: 14px; color: var(--teal); }
+.fanseg { display: flex; width: 100%; }
+.fanseg button { flex: 1; height: 48px; }
+@keyframes spin { to { transform: rotate(360deg); } }

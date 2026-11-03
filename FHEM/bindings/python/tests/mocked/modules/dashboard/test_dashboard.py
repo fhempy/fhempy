@@ -816,3 +816,48 @@ async def test_media_cover_through_fhempy(module):
         "http://speaker.local/art/station.png",
         "http://speaker.local/art/one.png",
     ]
+
+
+FAN_SETS = "fan_pct:slider,0,1,100 fan_mode:off,low,medium,high"
+
+
+def test_fans():
+    fan = fake_home.device(
+        "dummy",
+        "Schlafzimmer",
+        "on off " + FAN_SETS,
+        {"state": "on", "fan_pct": "66", "fan_mode": "medium"},
+        attrs={"genericDeviceType": "fan"},
+    )
+    fan["NAME"] = "fan"
+    item = model.tile(fan, "Schlafzimmer")
+    assert item["kind"] == "fan" and item["fan"] is True
+    assert item["state"]["on"] and item["state"]["mode"] == "medium"
+    assert model.command(item, fan, "toggle") == ["fan_mode off"]
+    assert model.command(item, fan, "fan_percent", 120) == ["fan_pct 100"]
+    assert model.command(item, fan, "fan_mode", "low") == ["fan_mode low"]
+    with pytest.raises(ValueError):
+        model.command(item, fan, "fan_mode", "turbo; shutdown")
+    off = dict(fan, readings={"state": "off", "fan_pct": "0", "fan_mode": "off"})
+    off_item = model.tile(off, "Schlafzimmer")
+    assert not off_item["state"]["on"]
+    assert model.command(off_item, off, "toggle") == ["fan_mode medium"]
+    assert "fan_pct" in model.READINGS and "fan_mode" in model.READINGS
+
+    # a ceiling fan with light stays a light, the fan is a part of it
+    ceiling = fake_home.device(
+        "mantra_ble",
+        "Wohnzimmer",
+        "on off pct:slider,0,1,100 " + FAN_SETS,
+        {"state": "on", "pct": "40", "fan_pct": "33", "fan_mode": "low"},
+    )
+    ceiling["NAME"] = "ceiling"
+    light = model.tile(ceiling, "Wohnzimmer")
+    assert light["kind"] == "dimmer" and light["fan"] is True
+    assert light["state"]["fan"]["mode"] == "low"
+    assert model.command(light, ceiling, "fan_mode", "high") == ["fan_mode high"]
+    assert model.command(light, ceiling, "level", 60) == ["pct 60"]
+    # lights without fan know no fan commands
+    plain = model.tile(fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer")
+    assert "fan" not in plain
+    assert model.command(plain, {"sets": "on off pct"}, "fan_mode", "high") == []
