@@ -687,3 +687,57 @@ async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
     detect = mocker.patch.object(system_check, "bluetooth_adapters")
     await controller.commission("MT:ABC", network_only=False)
     detect.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_firmware_update(mocker):
+    mock_fhem.mock_module(mocker)
+    from fhempy.lib.matter.device import matter_device
+
+    node = light_node(node_id=6)
+    node["attributes"].update({"0/40/9": 15, "0/42/2": 1, "0/42/3": None})
+    controller = mocker.Mock()
+    controller.nodes = {6: node}
+    update = {"software_version": 26, "software_version_string": "1.0.26"}
+    controller.run_command = mocker.AsyncMock(return_value=update)
+    fhemdev = mocker.Mock()
+    fhemdev._attr_rawReadings = 0
+    fhemdev._conf_set = {}
+    fhemdev.set_set_config = mocker.AsyncMock()
+    tasks = []
+    fhemdev.create_async_task = lambda coro: tasks.append(asyncio.ensure_future(coro))
+    device = matter_device(logger, fhemdev)
+    device.hash = {"NAME": "testota"}
+    device.node_id = 6
+    device.controller = controller
+    mock_fhem.readings.pop("testota", None)
+    await device.node_updated()
+    sets = fhemdev.set_set_config.call_args[0][0]
+    assert "update_firmware" in sets and "check_firmware_update" in sets
+
+    await device.check_firmware()
+    controller.run_command.assert_called_with(
+        "check_node_update", node_id=6, timeout=120
+    )
+    assert mock_fhem.readings["testota"]["firmware_update"] == "1.0.26 available"
+
+    await device.update_firmware()
+    controller.run_command.assert_called_with(
+        "update_node", node_id=6, software_version=26, timeout=300
+    )
+    node["attributes"]["0/42/2"] = 4
+    node["attributes"]["0/42/3"] = 40
+    await device.attribute_updated("0/42/3", 40)
+    assert mock_fhem.readings["testota"]["firmware_update"] == "downloading 40%"
+
+    # finished: new version, the server still answers with the cached update
+    node["attributes"]["0/40/9"] = 26
+    node["attributes"]["0/42/2"] = 1
+    await device.attribute_updated("0/42/2", 1)
+    await asyncio.gather(*tasks)
+    assert mock_fhem.readings["testota"]["firmware_update"] == "up to date"
+    assert device.available_firmware is None
+
+    # bridged devices are updated by their bridge
+    device.endpoint = 1
+    assert not device.supports_firmware_update()
