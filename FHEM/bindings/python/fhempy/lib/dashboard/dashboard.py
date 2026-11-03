@@ -21,7 +21,7 @@ import tempfile
 import time
 
 from .. import fhem, generic, utils
-from . import go2rtc, model
+from . import go2rtc, media, model
 
 DEFAULT_PORT = 8095
 DEFAULT_HTTPS_PORT = 8096
@@ -33,6 +33,9 @@ RELOAD_DELAY = 2
 RING_REPEAT = 20
 MAX_MESSAGE_SIZE = 64 * 1024
 MAX_SDP_SIZE = 32 * 1024
+MAX_IMAGE_SIZE = 3 * 1024 * 1024
+IMAGE_CACHE = 40
+PRESET_LEARN_SECONDS = 30
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -203,6 +206,10 @@ class dashboard(generic.FhemModule):
         self.doorbells = []
         self.sun = None
         self.ca_pem = ""
+        # covers of the presets of music players, learned while they play
+        self.preset_art = {}
+        self._channel_seen = {}
+        self._images = {}
         # until Define has read the attributes, e.g. when FHEMWEB shows the
         # device page right after define
         self.ready = False
@@ -275,6 +282,7 @@ class dashboard(generic.FhemModule):
         await self.set_icon("it_television")
         self._unique_id = await fhem.getUniqueId(hash)
         await self.load_tablets()
+        await self.load_preset_art()
         await self.update_set_config()
         self.ip = await utils.run_blocking(functools.partial(utils.get_local_ip))
         await self.reload()
@@ -327,6 +335,22 @@ class dashboard(generic.FhemModule):
         await fhem.readingsEndUpdate(self.hash, 1)
         await self.update_set_config()
         await self.update_state()
+
+    async def load_preset_art(self):
+        raw = await fhem.ReadingsVal(self.hash["NAME"], ".preset_art", "")
+        try:
+            known = json.loads(raw) if raw else {}
+        except ValueError:
+            known = {}
+        self.preset_art = known if isinstance(known, dict) else {}
+
+    async def save_preset_art(self):
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            ".preset_art",
+            json.dumps(self.preset_art, ensure_ascii=False),
+            0,
+        )
 
     def new_pair_code(self):
         now = time.time()
@@ -666,6 +690,9 @@ class dashboard(generic.FhemModule):
     async def reload(self):
         names = await self.resolve_devices()
         self.infos = await self.fetch_infos(names)
+        for name, info in self.infos.items():
+            if media.is_media(info):
+                info["preset_art"] = self.preset_art.setdefault(name, {})
         before = (self.data, self.head)
         self.data = model.build(self.infos, keep_on=self.keep_on_names())
         self.doorbells = self.find_doorbells()
@@ -744,6 +771,8 @@ class dashboard(generic.FhemModule):
         info.setdefault("readings", {})[reading] = value
         info.setdefault("times", {})[reading] = now_text()
         item = self.data["tiles"].get(device)
+        if item is not None and item["kind"] == "media":
+            await self.learn_preset_art(device, info)
         if item is not None:
             state = model.tile_state(item["kind"], info)
             if state != item["state"]:
@@ -756,6 +785,18 @@ class dashboard(generic.FhemModule):
         if head != self.head:
             self.head = head
             await self.broadcast({"type": "header", "header": head})
+
+    async def learn_preset_art(self, device, info):
+        now = time.monotonic()
+        current = media.channel(info)
+        seen = self._channel_seen.get(device)
+        if seen is None or seen[0] != current:
+            self._channel_seen[device] = seen = (current, now)
+        known = self.preset_art.setdefault(device, {})
+        info["preset_art"] = known
+        recent = now - seen[1] < PRESET_LEARN_SECONDS
+        if media.learn_preset_art(known, info, recent):
+            await self.save_preset_art()
 
     async def check_special_event(self, info, device, reading, value):
         if info.get("FHEMPYTYPE") == model.PUSH_TYPE and reading == "message":
@@ -1102,6 +1143,7 @@ class dashboard(generic.FhemModule):
         app.router.add_get("/api/sparks", self.handle_sparks)
         app.router.add_post("/api/webrtc", self.handle_webrtc)
         app.router.add_get("/api/snapshot", self.handle_snapshot)
+        app.router.add_get("/api/image", self.handle_image)
         app.router.add_get("/fhempy-ca.crt", self.handle_ca)
         app.router.add_get("/{file}", self.handle_static)
         return app
@@ -1378,6 +1420,65 @@ class dashboard(generic.FhemModule):
         return web.Response(
             body=body,
             headers={"Content-Type": content_type, "Cache-Control": "no-store"},
+        )
+
+    def image_url(self, tablet, request):
+        """URL of a cover the tablet may see: only URLs from the readings of
+        music players it shows, never URLs sent by the tablet"""
+        item = self.data["tiles"].get(request.query.get("id", ""))
+        if item is None or item["kind"] != "media":
+            return None
+        if not self.allowed_tile(tablet, item):
+            return None
+        info = self.infos.get(item["id"], {})
+        preset = request.query.get("preset")
+        if preset:
+            return (info.get("preset_art") or {}).get(str(preset)[:2])
+        return media.art_url(info)
+
+    async def fetch_image(self, url):
+        import aiohttp
+
+        cached = self._images.get(url)
+        if cached is not None:
+            return cached
+        timeout = aiohttp.ClientTimeout(total=8)
+        async with (
+            aiohttp.ClientSession(timeout=timeout) as session,
+            session.get(url) as resp,
+        ):
+            resp.raise_for_status()
+            content_type = resp.headers.get("Content-Type", "").split(";")[0]
+            if not content_type.startswith("image/"):
+                raise ValueError(f"no image: {content_type}")
+            body = await resp.content.read(MAX_IMAGE_SIZE + 1)
+            if len(body) > MAX_IMAGE_SIZE:
+                raise ValueError("image too big")
+        while len(self._images) >= IMAGE_CACHE:
+            self._images.pop(next(iter(self._images)))
+        self._images[url] = (content_type, body)
+        return content_type, body
+
+    async def handle_image(self, request):
+        """covers of music players through fhempy: the tablets may use https
+        while the players only offer http, and need no access to them"""
+        from aiohttp import web
+
+        tablet = self._checked(request)
+        url = self.image_url(tablet, request)
+        if not url:
+            raise web.HTTPNotFound()
+        try:
+            content_type, body = await self.fetch_image(url)
+        except Exception as err:
+            self.logger.debug(f"Failed to load cover {url}: {err}")
+            raise web.HTTPNotFound()
+        return web.Response(
+            body=body,
+            headers={
+                "Content-Type": content_type,
+                "Cache-Control": "private, max-age=86400",
+            },
         )
 
     async def handle_ws(self, request):

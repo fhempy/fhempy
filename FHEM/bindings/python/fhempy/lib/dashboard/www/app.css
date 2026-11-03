@@ -410,3 +410,47 @@ body.light .banner.push { background: #fff; color: #151922; }
 .chart .ctip b { font-size: 15px; font-weight: 700; }
 .chart .ctip span { opacity: .7; }
 .roomcard .edit { top: auto; bottom: 10px; z-index: 2; }
+
+/* music players: cover as background, play/pause on the tile */
+.tile.media { flex-direction: row; align-items: flex-end; gap: 12px; justify-content: flex-start; }
+.tile.media .mtext { flex: 1; min-width: 0; position: relative; }
+.tile.media > .ic { position: absolute; left: 18px; top: 16px; }
+.tile.media .mcover { position: absolute; inset: -30px; width: calc(100% + 60px); height: calc(100% + 60px); object-fit: cover; filter: blur(22px) saturate(1.3); opacity: 0; transition: opacity .4s; pointer-events: none; }
+.tile.media .mcover.ok { opacity: .85; }
+.tile.media .mthumb { position: absolute; right: 16px; top: 16px; bottom: 16px; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: rgba(0,0,0,.3); display: grid; place-items: center; color: rgba(255,255,255,.6); z-index: 2; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.tile.media .mthumb .mimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s; }
+.tile.media .mthumb .mimg.ok { opacity: 1; }
+.tile.media.hascover { padding-right: 150px; }
+.tile.media.hascover .mplay { position: absolute; left: auto; right: 130px; bottom: 16px; }
+.tile.media.hascover::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.6), rgba(0,0,0,.15)); z-index: 1; pointer-events: none; }
+.tile.media.hascover .mtext, .tile.media.hascover .mplay { z-index: 3; }
+.tile.media.hascover .n, .tile.media.hascover .s { color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.tile.media.playing:not(.hascover) { background: linear-gradient(145deg, rgba(90,169,255,.24), rgba(155,140,255,.08)); border-color: rgba(90,169,255,.35); }
+.tile.media.playing > .ic { background: var(--blue); color: #061a33; }
+.tile.media .mplay { position: relative; flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--tx); color: var(--bg); box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.tile.media .mplay:active { transform: scale(.92); }
+.sheet.msheet { grid-template-columns: 300px 1fr; }
+.mart { aspect-ratio: 1; border-radius: 24px; overflow: hidden; background: var(--card2); position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.mart .bigcover { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .4s; }
+.mart .bigcover.ok { opacity: 1; }
+.mart .noart { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mu2); }
+.mnow { display: flex; flex-direction: column; gap: 4px; }
+.mnow b { font-size: 22px; font-weight: 600; line-height: 1.25; }
+.mnow span { font-size: 16px; color: var(--tx); }
+.mnow .mu { color: var(--mu); font-size: 14px; }
+.mctl { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.mctl .round.big { width: 88px; height: 88px; background: var(--tx); color: var(--bg); }
+.mvol { display: flex; align-items: center; gap: 14px; color: var(--mu); }
+.mvol input { flex: 1; height: 44px; accent-color: var(--blue); }
+.mvol span { width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: var(--tx); }
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.preset { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); text-align: left; min-width: 0; }
+.preset.on { border-color: var(--blue); background: rgba(90,169,255,.14); }
+.preset .plg { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: var(--card2); display: grid; place-items: center; }
+.preset .pini { font-size: 22px; font-weight: 700; color: var(--mu); letter-spacing: .5px; }
+.preset .plogo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.preset .plogo.ok { opacity: 1; }
+.preset .pn { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preset .pn small { color: var(--mu2); margin-right: 6px; font-weight: 600; }
+@media (max-width: 860px) { .sheet.msheet { grid-template-columns: 1fr; } .mart { max-width: 320px; width: 100%; margin: 0 auto; } }
+@media (max-width: 560px) { .presets { grid-template-columns: repeat(3, 1fr); gap: 8px; } .preset { padding: 6px; } .tile.media .mplay { width: 44px; height: 44px; } .tile.media.hascover { padding-right: 18px; } .tile.media .mthumb { bottom: auto; height: 46px; right: auto; left: 14px; top: 14px; border-radius: 12px; } .tile.media.hascover .mplay, .tile.media .mplay { position: absolute; right: 14px; top: 14px; bottom: auto; } .tile.media .mtext { padding-right: 0; } }

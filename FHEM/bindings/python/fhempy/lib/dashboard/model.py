@@ -11,6 +11,7 @@ import datetime
 import re
 
 from ..matter_bridge import devices as kinds
+from . import media
 
 # FHEMWEB rooms which are no rooms of the home
 HIDDEN_ROOMS = {
@@ -35,6 +36,7 @@ KIND_ORDER = (
     "thermostat",
     "switch",
     "outlet",
+    "media",
     "lock",
     "contact",
     "temperature",
@@ -143,6 +145,7 @@ DOORBELL_VALUES = (
     "klingel",
 )
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
+READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
 WEATHER_TYPES = ("Weather",)
 WEATHER_FHEMPY_TYPES = ("openmeteo_weather",)
 SCENE_TYPES = ("LightScene",)
@@ -221,6 +224,8 @@ CONTACT_STATES = ("open", "opened", "closed", "tilted", "offen", "geschlossen", 
 
 
 def kind_of(info):
+    if media.is_media(info):
+        return "media"
     kind = kinds.detect_type(info)
     if kind is not None:
         return kind
@@ -239,6 +244,10 @@ def is_door(info):
 
 def tile_state(kind, info):
     """state of a tile, keys depend on kind"""
+    if kind == "media":
+        state = {k: v for k, v in media.state(info).items() if v is not None}
+        state["presets"] = media.presets(info)
+        return state
     state = {k: v for k, v in kinds.state(kind, info).items() if v is not None}
     if kind == "contact":
         raw = str(_reading(info, "contact", "state") or "").lower()
@@ -323,6 +332,8 @@ def tile(info, room=None):
         result["stop"] = "stop" in sets
     if kind == "thermostat":
         result["step"] = 0.5
+    if kind == "media":
+        result["media"] = media.features(info)
     return result
 
 
@@ -584,6 +595,8 @@ ACTIONS = {
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
+    if item["kind"] == "media":
+        return media.command(info, action, value)
     if action == "toggle":
         wanted = _toggle(item["kind"], item["state"])
     elif action in ACTIONS:

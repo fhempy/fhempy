@@ -120,6 +120,18 @@ All devices with a room and a known type. The type is detected like for [matter_
 and `hidden_devices` to leave devices out, e.g. `Alarm_system,TYPE=CUL_HM`. Rooms like *hidden*, *Unsorted*, *fhempy* or
 *Timeline* are left out.
 
+## Music players
+
+fhempy googlecast and dlna_dmr devices, FHEM modules like BOSEST or SONOSPLAYER and every device with
+`genericDeviceType speaker` (or set commands play, pause and next) get a music tile: cover, title and play/pause on the
+tile, a tap opens previous/next, volume and the presets. The commands are taken from the set list of the device
+(e.g. `nextTrack` or `next`), nothing has to be configured.
+
+* BOSEST shows its 6 presets (`channel_01` to `channel_06`, empty ones are left out). BOSEST doesn't report logos of the
+  presets, so the dashboard remembers the cover it sees after a preset was chosen. Until a preset played once, its
+  initials are shown.
+* Covers are loaded through fhempy, so the tablets need no access to the players and https works too.
+
 ## Attributes
 
 | Attribute | Meaning |

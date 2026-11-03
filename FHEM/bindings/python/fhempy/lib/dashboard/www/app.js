@@ -26,6 +26,7 @@
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
+    playing: "Spielt", paused: "Pausiert", idle: "Bereit", nothingPlays: "Gerade läuft nichts", volume: "Lautstärke", presets: "Senderspeicher", prevTrack: "Zurück", nextTrack: "Weiter", playPause: "Abspielen oder Pause",
     pullToDim: "Ziehen zum Dimmen", pullToMove: "Ziehen zum Bewegen", up: "Auf", down: "Zu", stop: "Stopp",
     lock: "Verriegeln", unlock: "Entriegeln", today: "Heute", peopleTitle: "Wer ist zu Hause?", peopleHome: "Zu Hause", peopleAway: "Unterwegs", arrived: "angekommen {t}", left: "weg seit {t}", atTime: "{t}", yesterdayAt: "gestern {t}", dayAt: "{d}, {t}", setTablet: "Dieses Tablet", setHome: "Ganzes Zuhause · alle Tablets", setNamePlace: "Name, Standort und Raum", setRooms: "Räume anzeigen und sortieren", setRoomsValue: "{n} von {m} sichtbar", setKeepValue: "{n} Geräte", setKeepNone: "keine", setArrangeValue: "Geräte den Räumen zuordnen", resetView: "Ansicht dieses Tablets zurücksetzen", back: "Einstellungen", setTalk: "Sprechen an der Tür", editHint: "Kacheln ziehen zum Verschieben (am Tablet kurz halten), × blendet sie aus.", keepOn: "Bei „Alles aus“ anlassen", keepOnHint: "Für Heizung, Wärmepumpe, Kühlschrank oder Router. Gilt für alle Tablets.", keepOnList: "Bei „Alles aus“ anlassen", staysOn: "bleibt an", keepBtn: "Anlassen", arrange: "Räume ordnen", arrangeLead: "Ziehe ein Gerät in einen Raum oder tippe es an. × nimmt es aus dem Raum. Die Räume gelten in FHEM und auf allen Tablets.", arrangeDone: "Fertig", unassigned: "Ohne Raum", applyAll: "Alle Vorschläge übernehmen ({n})", chooseRoom: "Raum wählen", moveTo: "In Raum verschieben", newRoom: "Neuer Raum", create: "Anlegen", removeFrom: "Aus {room} entfernen", dropHere: "Hierher ziehen: ohne Raum", addDevice: "Gerät", idleTitle: "Lange nicht benutzt", idleLead: "Seit über einem Monat keine neue Meldung. Vielleicht kaputt, Batterie leer oder nicht mehr vorhanden.", idleFor: "seit {t}", idleDays: "{n} Tagen", idleMonths: "{n} Monaten", idleDaysShort: "{n} T.", idleMonthsShort: "{n} Mon.", deleteDevice: "Löschen", deleteSure: "Wirklich löschen?", deleteHint: "Löscht das Gerät in FHEM. Endgültig wird es mit save, bis dahin bringt ein Neustart von FHEM es zurück.", addTo: "Gerät zu {room}", searchDevice: "Name eingeben …", noMatch: "Kein passendes Gerät", fromRoom: "aus {room}", alreadyHere: "schon hier", renameRoom: "Raum umbenennen", save: "Speichern", nowIn: "Jetzt: {room}", alsoIn: "auch {rooms}", allSorted: "Alle Geräte haben einen Raum.", badRoom: "Bitte ohne Komma, Semikolon und Anführungszeichen", morning: "Guten Morgen", day: "Hallo", evening: "Guten Abend", night: "Gute Nacht", airOut: "Lüften", heatingOpen: "Heizung läuft, Fenster offen", heatingOpenSub: "{rooms}", min: "min.", max: "max.", targetTemp: "Soll", times: "{n}× an", total: "zusammen {t}",
     noTimeline: "Lege ein Timeline-Gerät an (Install modules), dann siehst du hier, was passiert ist.",
@@ -65,6 +66,7 @@
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
+    playing: "Playing", paused: "Paused", idle: "Ready", nothingPlays: "Nothing is playing", volume: "Volume", presets: "Presets", prevTrack: "Previous", nextTrack: "Next", playPause: "Play or pause",
     pullToDim: "Drag to dim", pullToMove: "Drag to move", up: "Up", down: "Down", stop: "Stop",
     lock: "Lock", unlock: "Unlock", today: "Today", peopleTitle: "Who is at home?", peopleHome: "At home", peopleAway: "Away", arrived: "arrived {t}", left: "away since {t}", atTime: "{t}", yesterdayAt: "yesterday {t}", dayAt: "{d}, {t}", setTablet: "This tablet", setHome: "Whole home · all tablets", setNamePlace: "Name, place and room", setRooms: "Show and order rooms", setRoomsValue: "{n} of {m} shown", setKeepValue: "{n} devices", setKeepNone: "none", setArrangeValue: "Assign devices to rooms", resetView: "Reset the view of this tablet", back: "Settings", setTalk: "Talking at the door", editHint: "Drag tiles to move them (on tablets hold briefly), × hides them.", keepOn: "Leave on with “All off”", keepOnHint: "For heating, heat pump, fridge or router. Applies to all tablets.", keepOnList: "Leave on with “All off”", staysOn: "stays on", keepBtn: "Leave on", arrange: "Arrange rooms", arrangeLead: "Drag a device to a room or tap it. × takes it out of the room. Rooms apply in FHEM and on all tablets.", arrangeDone: "Done", unassigned: "Without room", applyAll: "Apply all suggestions ({n})", chooseRoom: "Choose room", moveTo: "Move to room", newRoom: "New room", create: "Create", removeFrom: "Remove from {room}", dropHere: "Drop here: without room", addDevice: "Device", idleTitle: "Not used for long", idleLead: "No new value for more than a month. Maybe broken, battery empty or gone.", idleFor: "for {t}", idleDays: "{n} days", idleMonths: "{n} months", idleDaysShort: "{n} d", idleMonthsShort: "{n} mo", deleteDevice: "Delete", deleteSure: "Really delete?", deleteHint: "Deletes the device in FHEM. It is gone for good with save, until then a restart of FHEM brings it back.", addTo: "Device to {room}", searchDevice: "Type a name …", noMatch: "No matching device", fromRoom: "from {room}", alreadyHere: "already here", renameRoom: "Rename room", save: "Save", nowIn: "Now: {room}", alsoIn: "also {rooms}", allSorted: "Every device has a room.", badRoom: "Please without comma, semicolon and quotes", morning: "Good morning", day: "Hello", evening: "Good evening", night: "Good night", airOut: "Air out", heatingOpen: "Heating with the window open", heatingOpenSub: "{rooms}", min: "min", max: "max", targetTemp: "target", times: "{n}× on", total: "{t} in total",
     noTimeline: "Create a timeline device (Install modules) to see what happened here.",
@@ -93,6 +95,12 @@
 
   // ---------- icons ----------
   var P = {
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    play: '<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
+    pause: '<path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor"/>',
+    skipnext: '<path d="M5 5v14l10-7zM18 5v14" fill="currentColor"/>',
+    skipprev: '<path d="M19 5v14L9 12zM6 5v14" fill="currentColor"/>',
+    vol: '<path d="M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
     bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
     plug: '<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/>',
     blind: '<path d="M4 3h16M5 3v11M19 3v11M5 7h14M5 11h14M5 14h14M12 14v4"/><circle cx="12" cy="19.5" r="1.5"/>',
@@ -317,7 +325,7 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop" };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music" };
   var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1 };
 
   // temperature and humidity of today in the tiles, from the timeline
@@ -376,6 +384,66 @@
       (thermostat ? '<span class="tgt">' + esc(t("target") + " " + num(st.target) + "°") + "</span>" : "") + "</div>" + steps;
   }
 
+  // ---------- music players ----------
+  // covers come through fhempy (api/image), the tablet needs the token for it
+  var images = {};
+  function mediaLine(st) { return [st.title, st.artist || st.station].filter(Boolean).join(" · "); }
+  function imageUrl(id, key, preset) {
+    if (!key) { return ""; }
+    var cached = images[key];
+    if (cached && cached !== "loading" && cached !== "failed") { return cached; }
+    if (!cached) {
+      images[key] = "loading";
+      fetch("api/image?id=" + encodeURIComponent(id) + "&v=" + key + (preset ? "&preset=" + preset : ""), { headers: { Authorization: "Bearer " + S.token } })
+        .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); })
+        .then(function (b) {
+          images[key] = URL.createObjectURL(b);
+          Array.prototype.forEach.call(document.querySelectorAll('[data-img="' + key + '"]'), function (el) { el.src = images[key]; el.classList.add("ok"); });
+        })
+        .catch(function () { images[key] = "failed"; });
+    }
+    return "";
+  }
+  function coverImg(id, key, cls, preset) {
+    if (!key) { return ""; }
+    var src = imageUrl(id, key, preset);
+    return '<img class="' + cls + (src ? " ok" : "") + '" data-img="' + key + '" alt=""' + (src ? ' src="' + src + '"' : "") + ">";
+  }
+  function initials(name) {
+    var words = String(name || "").replace(/[^\w\u00C0-\u024F ]+/g, " ").trim().split(/\s+/);
+    return (words.length > 1 ? words[0].charAt(0) + words[1].charAt(0) : String(name || "").slice(0, 2)).toUpperCase();
+  }
+  function mediaTileBody(id, tile, look, editState) {
+    var st = tile.state, playBtn = editState ? "" : '<span class="mplay" data-mplay="' + esc(id) + '" aria-label="' + esc(t("playPause")) + '">' + I(st.playing ? "pause" : "play", 26) + "</span>";
+    var thumb = st.art ? '<div class="mthumb">' + I("music") + coverImg(id, st.art, "mimg") + "</div>" : '<div class="ic">' + I("music") + "</div>";
+    return coverImg(id, st.art, "mcover") + thumb + '<div class="mtext"><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>" + playBtn;
+  }
+  function mediaSheet(tile) {
+    var st = tile.state, f = tile.media || {}, id = tile.id;
+    var art = st.art ? coverImg(id, st.art, "bigcover") : "";
+    var left = '<div class="mart">' + (art || '<div class="noart">' + I("music", 64) + "</div>") + "</div>";
+    var body = '<div class="group mnow"><b>' + esc(st.title || (st.on ? t("nothingPlays") : t("off"))) + "</b>" +
+      (st.artist ? "<span>" + esc(st.artist) + "</span>" : "") + (st.album || st.station ? '<span class="mu">' + esc(st.album || st.station) + "</span>" : "") + "</div>";
+    body += '<div class="group mctl">' + (f.prev ? '<button class="round" data-media="prev" aria-label="' + esc(t("prevTrack")) + '">' + I("skipprev", 28) + "</button>" : "") +
+      '<button class="round big' + (st.playing ? " on" : "") + '" data-media="toggle" aria-label="' + esc(t("playPause")) + '">' + I(st.playing ? "pause" : "play", 34) + "</button>" +
+      (f.next ? '<button class="round" data-media="next" aria-label="' + esc(t("nextTrack")) + '">' + I("skipnext", 28) + "</button>" : "") + "</div>";
+    if (f.volume) {
+      var v = Math.round(st.volume || 0);
+      body += '<div class="group mvol">' + I("vol", 22) + '<input type="range" id="mvol" min="0" max="100" step="1" value="' + v + '" aria-label="' + esc(t("volume")) + '"><span id="mvoltxt">' + v + "</span></div>";
+    }
+    var presets = st.presets || [];
+    if (presets.length) {
+      body += '<div class="group"><div class="label">' + esc(t("presets")) + '</div><div class="presets">' + presets.map(function (p) {
+        var logo = p.art ? coverImg(id, p.art, "plogo", p.n) : "";
+        return '<button class="preset' + (st.channel === p.n && st.on ? " on" : "") + '" data-preset="' + p.n + '"><span class="plg"><span class="pini">' + esc(initials(p.name)) + "</span>" + logo + '</span><span class="pn"><small>' + p.n + "</small>" + esc(p.name) + "</span></button>";
+      }).join("") + "</div></div>";
+    }
+    if (f.power) {
+      body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
+    }
+    return { left: left, body: body };
+  }
+
   function tileLook(tile) {
     var st = tile.state || {}, k = tile.kind, cls = "", sub = "", icon = KIND_ICON[k] || "power", bar = null;
     if (k === "light" || k === "dimmer") {
@@ -402,16 +470,20 @@
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
       sub = Math.round(st.humidity) + " %";
+    } else if (k === "media") {
+      if (st.playing) { cls = "playing"; sub = mediaLine(st) || t("playing"); } else { sub = st.paused ? [t("paused"), mediaLine(st)].filter(Boolean).join(" · ") : st.on ? t("idle") : t("off"); }
     }
     return { cls: cls, sub: sub, icon: icon, bar: bar };
   }
 
   function tileHtml(id, editState) {
     var tile = S.tiles[id]; if (!tile) { return ""; }
-    var look = tileLook(tile), wide = tile.kind === "thermostat";
+    var look = tileLook(tile), wide = tile.kind === "thermostat" || tile.kind === "media";
     var body, climate = tile.kind === "thermostat" || tile.kind === "temperature" || tile.kind === "humidity";
     if (climate) {
       body = climateTileBody(id, tile, look, editState);
+    } else if (tile.kind === "media") {
+      body = mediaTileBody(id, tile, look, editState);
     } else {
       body = '<div class="ic">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
@@ -421,7 +493,7 @@
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "dimmer" || tile.kind === "blind" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
@@ -870,7 +942,9 @@
       var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : (st.position || 0);
       left = '<div><div class="vs' + (k === "blind" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : t("pullToMove")) + "</div></div>";
     }
-    if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
+    if (k === "media") {
+      var ms = mediaSheet(tile); left = ms.left; body += ms.body;
+    } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
       if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
@@ -886,7 +960,7 @@
     }
     body += sheetTrendsHtml() + sheetHistoryHtml();
     var cols = !!left;
-    sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" : "");
+    sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" + (k === "media" ? " msheet" : "") : "");
   }
   function keepOnHtml(tile) {
     return '<div class="group"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("keepOn")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("keepOnHint")) + "</div></div>" +
@@ -1699,6 +1773,21 @@
       }
       return;
     }
+    if ((el = closest(target, "data-mplay")) && !S.edit) {
+      var mid = el.getAttribute("data-mplay"), mt = S.tiles[mid];
+      if (mt) { act(mid, "toggle", null, { playing: !mt.state.playing }); }
+      press = null; return;
+    }
+    if ((el = closest(target, "data-media"))) {
+      var mw = el.getAttribute("data-media"), ms2 = S.tiles[S.sheet.id];
+      act(S.sheet.id, mw, null, mw === "toggle" && ms2 ? { playing: !ms2.state.playing } : null);
+      if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+      renderSheet(); return;
+    }
+    if ((el = closest(target, "data-preset"))) {
+      var pn = Number(el.getAttribute("data-preset"));
+      act(S.sheet.id, "preset", pn, { channel: pn, on: true }); renderSheet(); return;
+    }
     if ((el = closest(target, "data-tile")) && !closest(target, "data-edit") && !closest(target, "data-step")) {
       var id = el.getAttribute("data-tile");
       if (S.edit) { return; }
@@ -1774,6 +1863,10 @@
     if (ev.target.id === "tabroom") { send({ type: "setup", room: ev.target.value }); S.tablet.room = ev.target.value; }
     if (ev.target.id === "tabname" && ev.target.value.trim()) { send({ type: "setup", name: ev.target.value.trim() }); }
     if (ev.target.id === "setuproom") { S.setupRoom = ev.target.value; }
+    if (ev.target.id === "mvol" && S.sheet) { S.sliding = false; var vv = Number(ev.target.value); act(S.sheet.id, "volume", vv, { volume: vv }); }
+  });
+  document.addEventListener("input", function (ev) {
+    if (ev.target.id === "mvol") { S.sliding = true; var vt = document.getElementById("mvoltxt"); if (vt) { vt.textContent = ev.target.value; } }
   });
   document.addEventListener("keydown", function (ev) { if (ev.key === "Enter" && ev.target.id === "code") { pair(ev.target.value); } });
 
