@@ -1,0 +1,12 @@
+{
+  "requirements": [],
+  "installer": {
+    "title": "Automations",
+    "description": "Create and change DOIF rules visually as sentences and keep the overview of all automations",
+    "category": "tools",
+    "order": 9,
+    "name": "automations",
+    "single": true,
+    "icon": "🧩"
+  }
+}
