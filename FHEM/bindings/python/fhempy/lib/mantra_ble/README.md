@@ -14,6 +14,14 @@ Get your 4-digit hex ID by sharing the lamp via QR code in the official "mAntra 
 define BedroomFan fhempy mantra_ble 1F42
 ```
 
+By default one FHEM device controls light and fan. Add `only-fan` or `only-light` to get a
+device for only one of them, e.g. two devices for the same ceiling fan:
+```
+define BedroomFan fhempy mantra_ble 1F42 only-fan
+define BedroomLight fhempy mantra_ble 1F42 only-light
+```
+With `only-fan`, `on`/`off` and `state` belong to the fan.
+
 ## Usage
 Control light and fan via standard commands (examples for light on/off, brightness, color temperature, and fan settings):
 ```
@@ -23,6 +31,8 @@ set BedroomFan brightness 0..100
 set BedroomFan ct 2700..6500
 set BedroomFan fan on|off
 set BedroomFan fan_speed 0..31
+set BedroomFan fan_pct 0..100
+set BedroomFan fan_mode off|low|medium|high
 set BedroomFan fan_preset summer|winter|sleep|breeze
 ```
 Fan preset "sleep" sets the silent night mode of the fan, preset "winter" reverses the fan rotation, and preset "breeze" ramps speed up and down repeatedly, as the original presets on the remote control.
@@ -30,7 +40,17 @@ Fan preset "sleep" sets the silent night mode of the fan, preset "winter" revers
 ## Notes
 Communication is unidirectional (BLE broadcast), so FHEM acts as the state master.
 
-## Integration with Google Home
+`fan_pct` and `fan_mode` are the fan speed in percent and in the steps Matter uses (low = up to
+33 %, medium = up to 66 %, high). The readings `fan_pct` and `fan_mode` follow every change of the
+fan.
+
+## Integration with Matter (Apple Home, Google Home, Alexa)
+Add the device to the `matter_bridge` module. A device with light and fan becomes a dimmable
+light plus a fan ("BedroomFan fan") in your apps, no mapping needed. `only-fan` and `only-light`
+devices become a single fan or light; if a fan isn't detected as fan (e.g. "lamp" in its name),
+set `attr BedroomFan matterType fan`.
+
+## Integration with Google Home (gassistant-fhem)
 If you use `gassistant-fhem` to integrate into your Google Home, you'll have to manually set the homebridgeMapping attribute of your fhempy mantra_ble device, as fan speeds currently cannot be auto-discovered by `gassistant-fhem`.
 To do so, and also support the lamp brightness and color temperature settings, add the following attribute by using the following command (replace `BedroomFan` with your actual device name):
 ```

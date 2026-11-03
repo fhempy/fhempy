@@ -23,6 +23,7 @@
 //   switch/outlet/light: on (bool); dimmer: on, level (0-100)
 //   blind: position (0-100, 100 = open), command also stop (true)
 //   thermostat: current, target (°C); lock: locked (bool)
+//   fan: mode (off|low|medium|high, command also on), percent (0-100)
 //   contact: closed (bool); motion: occupied (bool)
 //   temperature: temperature (°C); humidity: humidity (%)
 
@@ -37,6 +38,7 @@ import { ThermostatServer } from "@matter/main/behaviors/thermostat";
 import { ContactSensorDevice } from "@matter/main/devices/contact-sensor";
 import { DimmableLightDevice } from "@matter/main/devices/dimmable-light";
 import { DoorLockDevice } from "@matter/main/devices/door-lock";
+import { FanDevice } from "@matter/main/devices/fan";
 import { HumiditySensorDevice } from "@matter/main/devices/humidity-sensor";
 import { OccupancySensorDevice } from "@matter/main/devices/occupancy-sensor";
 import { OnOffLightDevice } from "@matter/main/devices/on-off-light";
@@ -45,7 +47,7 @@ import { TemperatureSensorDevice } from "@matter/main/devices/temperature-sensor
 import { ThermostatDevice } from "@matter/main/devices/thermostat";
 import { WindowCoveringDevice } from "@matter/main/devices/window-covering";
 import { AggregatorEndpoint } from "@matter/main/endpoints/aggregator";
-import { DoorLock, OccupancySensing, Thermostat, WindowCovering } from "@matter/main/clusters";
+import { DoorLock, FanControl, OccupancySensing, Thermostat, WindowCovering } from "@matter/main/clusters";
 import { DeviceCommissioner } from "@matter/main/protocol";
 import { createInterface } from "node:readline";
 
@@ -79,6 +81,9 @@ function emitCommand(id, command) {
     // the last of stop and position wins
     if ("stop" in command) delete device.pending.position;
     if ("position" in command) delete device.pending.stop;
+    // the last of fan mode and speed wins
+    if ("mode" in command) delete device.pending.percent;
+    if ("percent" in command) delete device.pending.mode;
     device.pending = { ...device.pending, ...command };
     clearTimeout(device.timer);
     device.timer = setTimeout(() => {
@@ -100,6 +105,16 @@ const pctToLevel = pct => Math.min(254, Math.max(1, Math.round((pct / 100) * 254
 const positionToMatter = position => Math.round((100 - position) * 100);
 const matterToPosition = value => (value === null ? null : 100 - Math.round(value / 100));
 const toHundredths = value => Math.round(value * 100);
+const FAN_MODES = {
+    off: FanControl.FanMode.Off,
+    low: FanControl.FanMode.Low,
+    medium: FanControl.FanMode.Medium,
+    high: FanControl.FanMode.High,
+};
+const fanModeName = value =>
+    value === FanControl.FanMode.On
+        ? "on"
+        : Object.keys(FAN_MODES).find(name => FAN_MODES[name] === value);
 
 class FhemWindowCoveringServer extends WindowCoveringServer.with(
     WindowCovering.Feature.Lift,
@@ -131,6 +146,7 @@ const TYPES = {
     blind: { device: WindowCoveringDevice.with(FhemWindowCoveringServer) },
     thermostat: { device: ThermostatDevice.with(FhemThermostatServer) },
     lock: { device: DoorLockDevice },
+    fan: { device: FanDevice },
     contact: { device: ContactSensorDevice, sensor: BooleanStateServer },
     motion: {
         device: OccupancySensorDevice.with(FhemOccupancySensingServer),
@@ -180,6 +196,15 @@ function initialState(type) {
                     userCodeTemporaryDisableTime: 10,
                 },
             };
+        case "fan":
+            return {
+                fanControl: {
+                    fanModeSequence: FanControl.FanModeSequence.OffLowMedHigh,
+                    fanMode: FanControl.FanMode.Off,
+                    percentSetting: 0,
+                    percentCurrent: 0,
+                },
+            };
         case "motion":
             return {
                 occupancySensing: {
@@ -227,6 +252,14 @@ function matterState(type, state) {
                 result.doorLock = { lockState: state.locked ? DoorLock.LockState.Locked : DoorLock.LockState.Unlocked };
             }
             break;
+        case "fan":
+            result.fanControl = {};
+            if (has("mode")) result.fanControl.fanMode = FAN_MODES[state.mode];
+            if (has("percent")) {
+                result.fanControl.percentSetting = state.percent;
+                result.fanControl.percentCurrent = state.percent;
+            }
+            break;
         case "contact":
             if (has("closed")) result.booleanState = { stateValue: state.closed };
             break;
@@ -263,6 +296,15 @@ function listen(id, type, endpoint) {
         events.thermostat.occupiedHeatingSetpoint$Changed.on(value => {
             const target = value / 100;
             if (changedByController(id, "target", target)) emitCommand(id, { target });
+        });
+    }
+    if (type === "fan") {
+        events.fanControl.fanMode$Changed.on(value => {
+            const mode = fanModeName(value);
+            if (mode !== undefined && changedByController(id, "mode", mode)) emitCommand(id, { mode });
+        });
+        events.fanControl.percentSetting$Changed.on(value => {
+            if (value !== null && changedByController(id, "percent", value)) emitCommand(id, { percent: value });
         });
     }
     if (type === "lock") {

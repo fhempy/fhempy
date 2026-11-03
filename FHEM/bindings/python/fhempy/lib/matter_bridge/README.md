@@ -60,6 +60,7 @@ automatically:
 | `pct`/`position` and `up`/`down`/`open`/`close` | blind/shutter | `pct`, `position` | `pct 30`, `stop` |
 | `desired-temp` (or `desiredTemperature`) | thermostat | `measured-temp`, `temperature`, `desired-temp` | `desired-temp 21.5` |
 | `lock`/`unlock` | door lock | `lock`, `state` | `lock`, `unlock` |
+| `fan_pct` or `fan_mode` (or `genericDeviceType fan`) | fan (off/low/medium/high, speed in %) | `fan_pct`, `fan_mode`, `fan` | `fan_pct 50`, `fan_mode low` |
 | reading `contact` | door/window contact | `contact` (open/closed) | |
 | reading `motion` | motion sensor | `motion` | |
 | reading `temperature` | temperature sensor | `temperature` | |
@@ -69,6 +70,10 @@ One FHEM device is always one device in your apps. Additional readings `contact`
 `temperature` and `humidity` are shown in the same device, e.g. a temperature sensor with
 humidity or a plug which also measures the temperature.
 
+A ceiling fan with light (a dimmable light or a light by name, with `fan_pct` or `fan_mode`)
+becomes a light and a fan in your apps, named like the device and "<name> fan". The fan
+reacts to the `fan` reading (on/off), so switching the light doesn't switch the fan.
+
 If you already use homebridge, alexa-fhem or gassistant-fhem, the attribute `genericDeviceType`
 of your devices is used as well.
 
@@ -76,7 +81,7 @@ of your devices is used as well.
 
 | Attribute | Description |
 |-----------|-------------|
-| `matterType` | Kind of device if it isn't detected correctly: `switch`, `outlet`, `light`, `dimmer`, `blind`, `thermostat`, `lock`, `contact`, `motion`, `temperature`, `humidity` |
+| `matterType` | Kind of device if it isn't detected correctly: `switch`, `outlet`, `light`, `dimmer`, `blind`, `thermostat`, `lock`, `fan`, `contact`, `motion`, `temperature`, `humidity` |
 | `matterName` | Name in the app (default: alias, otherwise the device name). Most apps let you rename devices as well. |
 | `matterInvert` | `1` if the position of your blind is reversed (FHEM 0 = open). Set automatically for ROLLO devices. |
 

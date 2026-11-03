@@ -58,6 +58,9 @@ def test_classify():
     assert c(hall, "state", "set_on") == ("tech", "devices")
     assert c(INFOS["light1"], "state", "on") == ("story", "light")
     assert c(INFOS["rgr"], "state", "absent") == ("story", "presence")
+    # the fan of a ceiling fan with light, its speed is a curve
+    assert c(hall, "fan", "on") == ("story", "devices")
+    assert c(hall, "fan_pct", "40") == ("trend", "devices")
     assert c({"TYPE": "notify", "room": "x"}, "state", "active")[0] == "tech"
     # helper dummies without room and devices in room hidden
     assert c({"TYPE": "dummy"}, "state", "on")[0] == "tech"
