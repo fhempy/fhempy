@@ -664,3 +664,155 @@ async def test_all_off_only_devices_the_tablet_shows(module):
         switched = [s.split(" ")[0] for s in module.fake.sets]
         assert switched == on[:1]
         await ws.close()
+
+
+BOSE_SETS = (
+    "on off play pause stop playpause nextTrack prevTrack channel:1,2,3,4,5,6"
+    " volume:slider,0,1,100 mute:on,off"
+)
+
+
+def bose(**readings):
+    values = {
+        "state": "playing",
+        "playStatus": "PLAY_STATE",
+        "artStatus": "IMAGE_PRESENT",
+        "art": "http://speaker.local/art/station.png",
+        "artist": "Artist",
+        "track": "Track",
+        "stationName": "Station Two",
+        "channel": "2",
+        "volume": "24",
+        "channel_01": "Station One",
+        "channel_02": "Station Two",
+        "channel_03": "-",
+    }
+    values.update(readings)
+    return fake_home.device("BOSEST", "Wohnzimmer", BOSE_SETS, values)
+
+
+def test_media_players():
+    from fhempy.lib.dashboard import media
+
+    cast = fake_home.device(
+        "fhempy",
+        "Küche",
+        "play pause stop next prev volume:slider,0,1,100 playFavorite:1,2,3",
+        {
+            "state": "paused",
+            "mediaTitle": "Song",
+            "mediaArtist": "Band",
+            "mediaImageUrl": "https://img.example/cover.jpg",
+        },
+        fhempytype="googlecast",
+    )
+    cast["NAME"] = "cast"
+    speaker = bose()
+    speaker["NAME"] = "speaker"
+    assert model.kind_of(cast) == "media" and model.kind_of(speaker) == "media"
+    # a plain switch with on/off stays a switch
+    assert model.kind_of({"NAME": "x", "sets": "on off", "readings": {}}) == "switch"
+    # play and pause plus next is enough without a known type
+    assert media.is_media({"TYPE": "dummy", "sets": "play pause next", "attrs": {}})
+
+    state = model.tile_state("media", speaker)
+    assert state["playing"] and state["on"] and state["channel"] == 2
+    assert state["title"] == "Track" and state["station"] == "Station Two"
+    assert [p["n"] for p in state["presets"]] == [1, 2]
+    assert state["art"] == media.art_key("http://speaker.local/art/station.png")
+    # BOSEST: 'online' is switched off
+    off = bose(state="online", playStatus="STANDBY")
+    off["NAME"] = "speaker"
+    assert model.tile_state("media", off)["on"] is False
+    assert media.command(off, "toggle") == ["on"]
+
+    cast_state = model.tile_state("media", cast)
+    assert cast_state["paused"] and not cast_state["playing"]
+    assert cast_state["title"] == "Song" and cast_state["artist"] == "Band"
+
+    item = model.tile(speaker, "Wohnzimmer")
+    assert item["media"] == {"next": True, "prev": True, "volume": True, "power": True}
+    assert model.command(item, speaker, "toggle") == ["pause"]
+    assert model.command(item, speaker, "next") == ["nextTrack"]
+    assert model.command(item, speaker, "prev") == ["prevTrack"]
+    assert model.command(item, speaker, "volume", 130) == ["volume 100"]
+    assert model.command(item, speaker, "preset", 1) == ["channel 1"]
+    # empty presets and free commands are not allowed
+    assert model.command(item, speaker, "preset", 3) == []
+    assert model.command(item, speaker, "preset", "1; shutdown") == ["channel 1"]
+    assert model.command(item, speaker, "shutdown") == []
+    cast_item = model.tile(cast, "Küche")
+    assert model.command(cast_item, cast, "toggle") == ["play"]
+    assert model.command(cast_item, cast, "next") == ["next"]
+    assert model.command(cast_item, cast, "preset", 2) == ["playFavorite 2"]
+
+    # only http(s) covers
+    bad = bose(art="javascript:alert(1)")
+    assert media.art_url(bad) is None
+    assert media.art_url(bose(artStatus="SHOW_DEFAULT_IMAGE")) is None
+
+
+def test_learn_preset_art():
+    from fhempy.lib.dashboard import media
+
+    known = {}
+    info = bose()
+    assert media.learn_preset_art(known, info, True)
+    assert known == {"2": "http://speaker.local/art/station.png"}
+    # later covers of a playlist on the preset don't replace the logo
+    info = bose(art="http://speaker.local/art/song.png")
+    assert not media.learn_preset_art(known, info, False)
+    assert media.learn_preset_art(known, info, True)
+    info["preset_art"] = known
+    presets = media.presets(info)
+    assert presets[1]["art"] == media.art_key("http://speaker.local/art/song.png")
+    assert "art" not in presets[0]
+    # paused or no preset: nothing is learned
+    assert not media.learn_preset_art({}, bose(playStatus="PAUSE_STATE", state="paused"), True)
+    assert not media.learn_preset_art({}, bose(channel=""), True)
+
+
+@pytest.mark.asyncio
+async def test_media_cover_through_fhempy(module):
+    module.fake.devices["wz_Radio"] = bose()
+    await module.reload()
+    assert module.data["tiles"]["wz_Radio"]["kind"] == "media"
+    loaded = []
+
+    async def fetch(url):
+        loaded.append(url)
+        return "image/png", b"png"
+
+    module.fetch_image = fetch
+    _, answer = await pair(module)
+    auth = {"Authorization": "Bearer " + answer["token"]}
+    async with aiohttp.ClientSession() as session:
+        url = base(module) + "api/image?id=wz_Radio"
+        async with session.get(url) as resp:
+            assert resp.status == 401
+        async with session.get(url, headers=auth) as resp:
+            assert resp.status == 200 and await resp.read() == b"png"
+        # no covers of other devices, no URLs from the tablet
+        async with session.get(
+            base(module) + "api/image?id=wz_Deckenlicht", headers=auth
+        ) as resp:
+            assert resp.status == 404
+        async with session.get(url + "&preset=1", headers=auth) as resp:
+            assert resp.status == 404
+        # the cover of a preset is learned while it plays
+        await module.handle_event("wz_Radio", "channel", "1")
+        await module.handle_event("wz_Radio", "art", "http://speaker.local/art/one.png")
+        assert module.preset_art["wz_Radio"]["1"] == "http://speaker.local/art/one.png"
+        assert "wz_Radio" in mock_fhem.readings[NAME][".preset_art"]
+        async with session.get(url + "&preset=1", headers=auth) as resp:
+            assert resp.status == 200
+        presets = module.data["tiles"]["wz_Radio"]["state"]["presets"]
+        assert "art" in presets[0]
+        # a tablet for other rooms gets nothing
+        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Küche"})
+        async with session.get(url, headers=auth) as resp:
+            assert resp.status == 404
+    assert loaded == [
+        "http://speaker.local/art/station.png",
+        "http://speaker.local/art/one.png",
+    ]
