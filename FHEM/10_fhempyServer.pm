@@ -157,11 +157,11 @@ sub fhempyServer_setDefaultAttrs($)
   my $name = $hash->{NAME};
 
   my $devstate_cmd = '{
-    my $status_img = "10px-kreis-gruen";;
-    my $status_txt = "running";;
+    my $status_img = "10px-kreis-gruen";
+    my $status_txt = "running";
     if (substr(ReadingsVal($name, "fhempy", "running"),0,7) ne "running") {
-      $status_img = "10px-kreis-rot";;
-      $status_txt = "stopped";;
+      $status_img = "10px-kreis-rot";
+      $status_txt = "stopped";
     }
     "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Kill and restart\">".FW_makeImage("audio_repeat")."</a></div>"
     }';

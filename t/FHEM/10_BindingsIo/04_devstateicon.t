@@ -6,7 +6,7 @@ use Test2::Tools::Compare qw{is like unlike};
 our %defs;
 
 InternalTimer(time()+0.5, sub {
-	plan(6);
+	plan(7);
 
 	# devStateIcon is a FHEMWEB attribute
 	LoadModule(q[FHEMWEB]);
@@ -17,17 +17,24 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'define sets the current devStateIcon' => sub {
 		plan(1);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[devStateIcon is current]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.1"/, q[devStateIcon is current]);
+	};
+
+	subtest 'the default has no doubled semicolons' => sub {
+		plan(2);
+		unlike (BindingsIo_defaultDevStateIcon(), qr/;;/, q[single semicolons only]);
+		unlike (AttrVal($deviceName, q[devStateIcon], q[]), qr/;;/, q[attribute has single semicolons]);
 	};
 
 	subtest 'an older default devStateIcon is upgraded' => sub {
 		plan(2);
 		my $old = BindingsIo_defaultDevStateIcon();
-		$old =~ s/1\.6\.0/1.5.0/;
+		$old =~ s/1\.6\.1/1.6.0/;
+		$old =~ s/;/;;/g;
 		CommandAttr(undef, qq[$deviceName devStateIcon $old]);
 		readingsSingleUpdate($hash, q[.devStateIconDefault], BindingsIo_devStateIconChecksum($old), 0);
 		BindingsIo_upgradeDevStateIcon($hash);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[default upgraded]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.1"/, q[default upgraded]);
 		ok (BindingsIo_devStateIconChecksum(qq[{ my \$a = 1;;\n 2 }]) eq BindingsIo_devStateIconChecksum(q[{my $a = 1; 2}]), q[checksum ignores fhem.cfg escaping]);
 	};
 
@@ -57,7 +64,7 @@ InternalTimer(time()+0.5, sub {
 		plan(2);
 		CommandAttr(undef, qq[$deviceName devStateIcon connected:on]);
 		ok (!CommandSet(undef, qq[$deviceName defaultDevStateIcon]), q[set accepted]);
-		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.0"/, q[default restored]);
+		like (AttrVal($deviceName, q[devStateIcon], q[]), qr/attr_ver = "1\.6\.1"/, q[default restored]);
 	};
 
 	RemoveInternalTimer($hash);
