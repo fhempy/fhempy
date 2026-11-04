@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v2.14.3 (2026-11-04)
+
+### Bug Fixes
+
+- Dashboard CPU load from events (header rebuilt for every event)
+  ([#864](https://github.com/fhempy/fhempy/pull/864),
+  [`7072018`](https://github.com/fhempy/fhempy/commit/7072018e29e96e0451c448da5577e6559d8e468a))
+
+- Eq3bt sends far fewer commands to FHEM (CPU load)
+  ([#867](https://github.com/fhempy/fhempy/pull/867),
+  [`1db16db`](https://github.com/fhempy/fhempy/commit/1db16dbe5367b9c58714274de275d64a5309dc87))
+
+- Import aiohttp in a thread at startup ([#866](https://github.com/fhempy/fhempy/pull/866),
+  [`80e7d0a`](https://github.com/fhempy/fhempy/commit/80e7d0a291685040c7c4c6d9a46f0383068ba850))
+
+- Single semicolons in default devStateIcon ([#865](https://github.com/fhempy/fhempy/pull/865),
+  [`c47a021`](https://github.com/fhempy/fhempy/commit/c47a02112e30f482ceea823334a092a4b550daed))
+
+
 ## v2.14.2 (2026-11-03)
 
 ### Features
