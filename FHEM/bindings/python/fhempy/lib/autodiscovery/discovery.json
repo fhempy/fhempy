@@ -226,11 +226,14 @@
    {
     "mdns": [
      {
-      "type": "_matterc._udp.local."
+      "type": "_matterc._udp.local.",
+      "txt": {
+       "CM": "[12]"
+      }
      }
     ],
     "title": "{txt.DN}",
-    "unique": "{name}",
+    "unique": "{txt.VP}-{txt.D}",
     "exists": false,
     "action": "set",
     "set": {
