@@ -11,6 +11,8 @@ from packaging.utils import (
 )
 from packaging.version import Version
 
+from . import utils
+
 INDEX_URL = "https://pypi.org/simple/fhempy/"
 CHECK_INTERVAL = 12 * 3600
 
@@ -45,8 +47,8 @@ def available_versions(files, installed):
 
 
 async def get_versions(installed):
-    # Keep aiohttp's import out of the binding's startup path.
-    import aiohttp
+    # imported in a thread, the import blocks the event loop for seconds on a Pi
+    aiohttp = await utils.import_module("aiohttp")
 
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
         async with session.get(
