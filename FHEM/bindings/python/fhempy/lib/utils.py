@@ -1,6 +1,7 @@
 import asyncio
 import binascii
 import concurrent.futures
+import importlib
 import inspect
 import os
 import socket
@@ -92,6 +93,17 @@ def shutdown_blocking_executor(wait=False):
     if _blocking_executor is not None:
         _blocking_executor.shutdown(wait=wait)
         _blocking_executor = None
+
+
+async def import_module(name):
+    """Import a module in a worker thread.
+
+    The first import of a large package (e.g. aiohttp) takes seconds on a
+    Raspberry Pi, the event loop and FHEM would wait meanwhile."""
+    module = sys.modules.get(name)
+    if module is not None:
+        return module
+    return await asyncio.to_thread(importlib.import_module, name)
 
 
 async def run_blocking(function):

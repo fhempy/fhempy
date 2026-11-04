@@ -12,7 +12,7 @@ import logging
 
 from packaging.version import InvalidVersion, Version
 
-from . import fhem
+from . import fhem, utils
 from .version import __version__
 
 logger = logging.getLogger(__name__)
@@ -79,8 +79,8 @@ def needs_install(installed, running):
 async def download(version, only=None):
     """Files of the controls file at the tag of version, only=paths limits it to
     these files (without the controls file)."""
-    # Keep aiohttp's import out of the binding's startup path.
-    import aiohttp
+    # imported in a thread, the import blocks the event loop for seconds on a Pi
+    aiohttp = await utils.import_module("aiohttp")
 
     files = {}
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:

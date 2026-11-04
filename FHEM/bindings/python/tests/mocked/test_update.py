@@ -250,3 +250,27 @@ def test_uv_to_pip_fallback_preserves_exact_version(monkeypatch):
     assert all("fhempy==2.1.5" in args for args in calls)
     assert calls[0][calls[0].index("--upgrade-package") + 1] == "fhempy"
     assert "--upgrade" in calls[1]
+
+
+@pytest.mark.asyncio
+async def test_index_fetch_imports_aiohttp_outside_the_event_loop(monkeypatch):
+    # the first import of aiohttp blocks for seconds on a Raspberry Pi
+    import importlib
+    import sys
+    import threading
+
+    import aiohttp
+
+    from fhempy.lib import utils
+
+    loop_thread = threading.get_ident()
+    threads = []
+
+    def fake_import(name):
+        threads.append(threading.get_ident())
+        return aiohttp
+
+    monkeypatch.delitem(sys.modules, "aiohttp")
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    assert await utils.import_module("aiohttp") is aiohttp
+    assert threads and loop_thread not in threads
