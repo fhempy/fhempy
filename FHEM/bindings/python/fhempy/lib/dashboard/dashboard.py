@@ -36,6 +36,8 @@ MAX_SDP_SIZE = 32 * 1024
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
 PRESET_LEARN_SECONDS = 30
+# the header (warnings, running devices, energy) is built at most this often
+HEADER_DELAY = 0.5
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -199,6 +201,9 @@ class dashboard(generic.FhemModule):
         self._arrange_infos = {}
         self.data = {"rooms": [], "tiles": {}, "scenes": []}
         self.head = {}
+        # devices the header is built from, see model.in_header
+        self._head_infos = {}
+        self._header_task = None
         self.tablets = {}
         self.codes = {}
         self.pair_fails = []
@@ -706,6 +711,7 @@ class dashboard(generic.FhemModule):
         for name, info in self.infos.items():
             if media.is_media(info):
                 info["preset_art"] = self.preset_art.setdefault(name, {})
+        self._head_infos = {n: i for n, i in self.infos.items() if model.in_header(i)}
         before = (self.data, self.head)
         self.data = model.build(self.infos, keep_on=self.keep_on_names())
         self.doorbells = self.find_doorbells()
@@ -737,7 +743,7 @@ class dashboard(generic.FhemModule):
                 await self.send(ws, {"type": "model", **self.model_message(tablet)})
 
     def make_header(self):
-        head = model.header(self.infos, self.data["tiles"])
+        head = model.header(self._head_infos, self.data["tiles"])
         head["sun"] = self.sun
         head["door"] = self.door()
         head["timeline"] = self.timeline_device() is not None
@@ -785,6 +791,8 @@ class dashboard(generic.FhemModule):
             return
         info.setdefault("readings", {})[reading] = value
         info.setdefault("times", {})[reading] = now_text()
+        if reading in model.BATTERY_READINGS:
+            self._head_infos[device] = info
         item = self.data["tiles"].get(device)
         if item is not None and item["kind"] == "media":
             await self.learn_preset_art(device, info)
@@ -796,6 +804,21 @@ class dashboard(generic.FhemModule):
                 rooms = model.motion_rooms(item)
                 if rooms:
                     await self.broadcast({"type": "motion", "rooms": rooms})
+        self.schedule_header()
+
+    def schedule_header(self):
+        """build the header again soon: busy homes send hundreds of events per
+        second, building it for every event costs a lot of CPU"""
+        if self._header_task is not None and not self._header_task.done():
+            return
+
+        async def later():
+            await asyncio.sleep(HEADER_DELAY)
+            await self.update_header()
+
+        self._header_task = self.create_async_task(later())
+
+    async def update_header(self):
         head = self.make_header()
         if head != self.head:
             self.head = head

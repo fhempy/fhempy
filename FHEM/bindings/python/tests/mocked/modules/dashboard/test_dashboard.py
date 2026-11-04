@@ -944,3 +944,29 @@ async def test_doif_inputs_live(module):
         await asyncio.sleep(0.2)
         assert module.fake.sets[-1] == "di_Garten Modus aus"
         await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_header_built_once_for_many_events(module, mocker):
+    built = []
+    make = module.make_header
+
+    def counting():
+        built.append(1)
+        return make()
+
+    module.make_header = counting
+    mocker.patch.object(dash_module, "HEADER_DELAY", 0.05)
+    # only devices for weather, energy, people and batteries, not all
+    assert len(module._head_infos) < len(module.infos)
+    for value in range(50):
+        await module.handle_event("wz_Fernseher", "power", str(value))
+    await module.handle_event("wz_Fenster", "contact", "open")
+    assert built == []
+    await asyncio.sleep(0.2)
+    assert len(built) == 1
+    assert "wz_Fenster" in [c["id"] for c in module.head["open"]]
+    # a battery which becomes low is in the header too
+    await module.handle_event("wz_Deckenlicht", "battery", "low")
+    await asyncio.sleep(0.2)
+    assert "wz_Deckenlicht" in [b["id"] for b in module.head["battery"]]
