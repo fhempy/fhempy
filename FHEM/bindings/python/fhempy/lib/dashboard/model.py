@@ -149,6 +149,7 @@ DOORBELL_VALUES = (
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
 READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
+READING_SET = frozenset(READINGS)
 WEATHER_TYPES = ("Weather",)
 WEATHER_FHEMPY_TYPES = ("openmeteo_weather",)
 SCENE_TYPES = ("LightScene",)
@@ -356,8 +357,8 @@ def device_readings(info):
     """readings of a device the tablets need: the common ones and the
     inputs of a DOIF"""
     if info.get("TYPE") in inputs.INPUT_TYPES:
-        return set(READINGS) | set(inputs.reading_names(info))
-    return set(READINGS)
+        return READING_SET | set(inputs.reading_names(info))
+    return READING_SET
 
 
 def _tile_sort_key(item):
@@ -571,6 +572,19 @@ def running(tiles):
             )
     result.sort(key=lambda r: (r["kind"] not in LIGHTS, r["room"], r["name"].lower()))
     return result
+
+
+def in_header(info):
+    """devices the header needs: weather, energy, people and batteries.
+    The header is built from these only, not from all devices."""
+    if is_weather(info) or is_energy(info):
+        return True
+    if info.get("TYPE") in PRESENCE_TYPES + PRESENCE_DEVICE_TYPES:
+        return True
+    if info.get("FHEMPYTYPE") in PRESENCE_FHEMPY_TYPES:
+        return True
+    readings = info.get("readings") or {}
+    return any(r in readings for r in BATTERY_READINGS)
 
 
 def header(infos, tiles):
