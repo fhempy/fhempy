@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.14.4 (2026-11-04)
+
+### Bug Fixes
+
+- No Perl warning when BindingsIo messages are processed recursively
+  ([#871](https://github.com/fhempy/fhempy/pull/871),
+  [`ffa2f64`](https://github.com/fhempy/fhempy/commit/ffa2f649ea444228d2e53c5a10ecdf826627581f))
+
+- **autodiscovery**: Paired Matter devices not offered again after a restart
+  ([#869](https://github.com/fhempy/fhempy/pull/869),
+  [`c0dab8f`](https://github.com/fhempy/fhempy/commit/c0dab8f271e1edc600a31e957a1e4552be51c60b))
+
+
 ## v2.14.3 (2026-11-04)
 
 ### Bug Fixes
