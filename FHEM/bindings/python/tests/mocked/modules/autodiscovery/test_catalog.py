@@ -145,6 +145,30 @@ def test_ble_rssi_and_names():
     assert found["set"]["command"] == "pair_new_device"
 
 
+def test_mdns_matter_only_in_pairing_mode():
+    entries = catalog.load()
+
+    def values(cm, name):
+        txt = {"CM": cm, "D": "3840", "VP": "4476+32768", "DN": "Sensor"}
+        return {"name": name, "type": "_matterc._udp.local.", "txt": txt}
+
+    # already paired devices keep announcing _matterc after a restart (CM=0)
+    for cm in ("0", ""):
+        assert not list(
+            catalog.match_mdns(entries, "_matterc._udp.local.", values(cm, "A1"))
+        )
+    found = []
+    for cm, name in (("1", "A1"), ("2", "B2")):
+        matches = list(
+            catalog.match_mdns(entries, "_matterc._udp.local.", values(cm, name))
+        )
+        assert [e["module"] for e, _ in matches] == ["matter"]
+        found.append(catalog.candidate(*matches[0], values(cm, name), "mdns"))
+    # the random instance name changes on every restart, the id does not
+    assert found[0]["id"] == found[1]["id"] == "matter:4476+32768-3840"
+    assert found[0]["set"]["command"] == "pair"
+
+
 # Apple data of an unpaired HomeKit device: type 0x06, length, status flags
 # (bit 0: not paired), device id, category, state number, config, version
 HOMEKIT_UNPAIRED = bytes.fromhex("063101" "0e4582435390" "0a00" "0100" "0202")
