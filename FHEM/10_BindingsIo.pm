@@ -69,7 +69,7 @@ my $alive_check_timeout = 5;
 # function timeout while an alive check is running
 my $suspect_timeout = 500;
 
-my $BindingsIo_devStateIconVersion = "1.6.0";
+my $BindingsIo_devStateIconVersion = "1.6.1";
 # default devStateIcon 1.3.0 of fhempy 2.x, set before the default was remembered
 my $BindingsIo_legacyDevStateIconChecksum = "574c39f1d7ab6776eeab79bb53d6e853";
 
@@ -203,38 +203,38 @@ sub BindingsIo_Define {
 sub
 BindingsIo_defaultDevStateIcon() {
   my $devstate_cmd = '{
-    my $attr_ver = "'.$BindingsIo_devStateIconVersion.'";;
-    my $state = ReadingsVal($name, "state", "");;
+    my $attr_ver = "'.$BindingsIo_devStateIconVersion.'";
+    my $state = ReadingsVal($name, "state", "");
     if ($state =~ m/^Installing/) {
-      my $img = ($state =~ m/failed/) ? "10px-kreis-rot" : "10px-kreis-gelb";;
-      return "<div><a>".FW_makeImage($img, "installing")."</a><a> ".$state." </a></div>";;
+      my $img = ($state =~ m/failed/) ? "10px-kreis-rot" : "10px-kreis-gelb";
+      return "<div><a>".FW_makeImage($img, "installing")."</a><a> ".$state." </a></div>";
     }
-    my $status_img = "10px-kreis-gruen";;
-    my $status_txt = "connected";;
-    my $ver = ReadingsVal($name, "version", "-");;
-    my $ver_available = ReadingsVal($name, "version_available", $ver);;
-    my $update_status = ReadingsVal($name, "update_status", "");;
-    my $refresh_img = "refresh";;
-    my $refresh_txt = "Update fhempy";;
-    my $status_line = "";;
+    my $status_img = "10px-kreis-gruen";
+    my $status_txt = "connected";
+    my $ver = ReadingsVal($name, "version", "-");
+    my $ver_available = ReadingsVal($name, "version_available", $ver);
+    my $update_status = ReadingsVal($name, "update_status", "");
+    my $refresh_img = "refresh";
+    my $refresh_txt = "Update fhempy";
+    my $status_line = "";
     if ($ver_available ne $ver) {
-      $refresh_img = "refresh\@orange";;
-      $refresh_txt = "Version ".$ver_available." available for update";;
+      $refresh_img = "refresh\@orange";
+      $refresh_txt = "Version ".$ver_available." available for update";
     }
     if (ReadingsVal($name, "state", "disconnected") eq "disconnected") {
-      $status_img = "10px-kreis-rot";;
-      $status_txt = "disconnected";;
+      $status_img = "10px-kreis-rot";
+      $status_txt = "disconnected";
     }
-    my $refresh_icon = FW_makeImage($refresh_img, $refresh_txt);;
+    my $refresh_icon = FW_makeImage($refresh_img, $refresh_txt);
     if ($update_status =~ /^(starting|installing)/) {
-      $refresh_icon = "<style>\@keyframes fhempy_spin{to{transform:rotate(360deg)}}</style><span style=\"display:inline-block;;animation:fhempy_spin 1.5s linear infinite\">".FW_makeImage("refresh\@orange", $update_status)."</span>";;
-      $status_line = "<a> ".$update_status." </a>";;
+      $refresh_icon = "<style>\@keyframes fhempy_spin{to{transform:rotate(360deg)}}</style><span style=\"display:inline-block;animation:fhempy_spin 1.5s linear infinite\">".FW_makeImage("refresh\@orange", $update_status)."</span>";
+      $status_line = "<a> ".$update_status." </a>";
     }
-    my $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".$refresh_icon."</a>";;
-    my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";;
-    my $modules_button = "";;
+    my $update_icon = "<a  href=\"/fhem?cmd.dummy=set $name update&XHR=1\" title=\"Start ".$ver_available." update\">".$refresh_icon."</a>";
+    my $restart_icon = "<a  href=\"/fhem?cmd.dummy=set $name restart&XHR=1\" title=\"Restart fhempy\">".FW_makeImage("control_reboot")."</a>";
+    my $modules_button = "";
     if (InternalVal($name, "localBinding", 0)) {
-      $modules_button = "<a href=\"#\" onclick=\"jQuery.getScript(FW_root+&quot;/fhempy/modules.js&quot;,function(){fhempyModules()});;return false;;\" title=\"Install fhempy modules: Matter, Zigbee2MQTT, Tuya, weather, cars...\" style=\"display:inline-block;;margin-left:10px;;padding:2px 12px;;border-radius:12px;;background:#4B8BBE;;text-decoration:none;;white-space:nowrap\"><span style=\"color:#fff;;font-weight:600\">&#43; Install modules</span></a>";;
+      $modules_button = "<a href=\"#\" onclick=\"jQuery.getScript(FW_root+&quot;/fhempy/modules.js&quot;,function(){fhempyModules()});return false;\" title=\"Install fhempy modules: Matter, Zigbee2MQTT, Tuya, weather, cars...\" style=\"display:inline-block;margin-left:10px;padding:2px 12px;border-radius:12px;background:#4B8BBE;text-decoration:none;white-space:nowrap\"><span style=\"color:#fff;font-weight:600\">&#43; Install modules</span></a>";
     }
     "<div><a>".FW_makeImage($status_img, $status_txt)."</a><a> ".$ver." </a>".$update_icon.$restart_icon.$modules_button.$status_line."</div>"
   }';
