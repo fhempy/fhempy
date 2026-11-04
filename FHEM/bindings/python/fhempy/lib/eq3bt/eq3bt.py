@@ -8,6 +8,9 @@ from .. import fhem, generic
 from . import eq3btsmart as eq3
 from .structures import HOUR_24_PLACEHOLDER as END_OF_DAY, NAME_TO_DAY as DAY_MAP
 
+# notifications within this time are written to FHEM together
+NOTIFY_DELAY = 1
+
 
 class Mode(IntEnum):
     """Thermostat modes."""
@@ -30,6 +33,11 @@ class eq3bt(generic.FhemModule):
         self.thermostat = None
         self._offline = False
         self.notification_lock = asyncio.Lock()
+        self._notify_task = None
+        # readings as written last time, per group (status, id, schedule)
+        self._written = {}
+        # valve position and consumption, read from FHEM once
+        self._consumption = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -144,27 +152,32 @@ class eq3bt(generic.FhemModule):
         """Rotate consumption readings at midnight."""
         while True:
             await asyncio.sleep(self.seconds_till_midnight())
-            consumption = await self.reading_float("consumptionToday")
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, "consumptionYesterday", consumption, 1
-            )
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, "consumptionToday", "0", 1
-            )
+            async with self.notification_lock:
+                consumption = await self.reading_float("consumptionToday")
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "consumptionYesterday", consumption, 1
+                )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "consumptionToday", "0", 1
+                )
+                self.consumption_changed()
 
     async def set_resetConsumption(self, hash, params):
         """Reset consumption readings."""
         cons_var = params["cons_var"]
         if cons_var == "all":
-            await fhem.readingsSingleUpdateIfChanged(self.hash, "consumption", 0, 1)
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, "consumptionYesterday", 0, 1
-            )
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, "consumptionToday", 0, 1
-            )
+            readings = ("consumption", "consumptionYesterday", "consumptionToday")
         else:
-            await fhem.readingsSingleUpdateIfChanged(self.hash, cons_var, 0, 1)
+            readings = (cons_var,)
+        async with self.notification_lock:
+            for reading in readings:
+                await fhem.readingsSingleUpdateIfChanged(self.hash, reading, 0, 1)
+            self.consumption_changed()
+
+    def consumption_changed(self):
+        """consumption readings were changed outside of update_readings"""
+        self._consumption = None
+        self._written.pop("status", None)
 
     async def set_attr_keep_connected(self, hash):
         self.thermostat.set_keep_connected(self._attr_keep_connected == "on")
@@ -182,6 +195,7 @@ class eq3bt(generic.FhemModule):
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "state", "update", 1
                     )
+                    self._written.pop("status", None)
                 await self.update_all()
                 if self._offline:
                     self._offline = False
@@ -197,7 +211,19 @@ class eq3bt(generic.FhemModule):
             await asyncio.sleep(waittime)
 
     async def notification_received(self):
-        """Handle notification from thermostat."""
+        """Handle notification from thermostat.
+
+        The thermostat answers every query with a notification, one update
+        alone brings nine of them. The readings are written once for all
+        notifications that arrive within NOTIFY_DELAY."""
+        if self._notify_task is not None and not self._notify_task.done():
+            return
+        self._notify_task = self.create_async_task(self._update_after_notify())
+
+    async def _update_after_notify(self):
+        await asyncio.sleep(NOTIFY_DELAY)
+        # notifications from now on need another update
+        self._notify_task = None
         async with self.notification_lock:
             await self.update_all_readings()
 
@@ -220,116 +246,105 @@ class eq3bt(generic.FhemModule):
         await self.update_id_readings()
         await self.update_schedule_readings()
 
-    async def update_readings(self):
-        """Update readings."""
-        old_valve_pos = await self.reading_float("valvePosition")
-        old_consumption = await self.reading_float("consumption")
-        old_consumption_today = await self.reading_float("consumptionToday")
+    async def _write_readings(self, group, pairs):
+        """write a group of readings in one FHEM command, nothing if the
+        values didn't change since they were written the last time"""
+        if self._written.get(group) == pairs:
+            return
         await fhem.readingsBeginUpdate(self.hash)
         try:
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "battery", self.thermostat.battery
+            for reading, value in pairs:
+                await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
+        self._written[group] = pairs
+
+    async def _consumption_values(self):
+        """valve position and consumption of the last update, read from FHEM
+        only once and then kept here (every FHEM request costs CPU there)"""
+        if self._consumption is None:
+            self._consumption = {
+                reading: await self.reading_float(reading)
+                for reading in ("valvePosition", "consumption", "consumptionToday")
+            }
+        return self._consumption
+
+    async def update_readings(self):
+        """Update readings."""
+        old = await self._consumption_values()
+        thermostat = self.thermostat
+        pairs = [
+            ("battery", thermostat.battery),
+            ("boost", thermostat.boost),
+            ("childlock", thermostat.locked),
+            ("desiredTemperature", thermostat.target_temperature),
+            ("ecoTemperature", thermostat.eco_temperature),
+            ("temperatureOffset", thermostat.temperature_offset),
+            ("comfortTemperature", thermostat.comfort_temperature),
+            ("mode", thermostat.fhem_mode),
+            ("state", thermostat.state),
+            ("completeState", thermostat.mode_readable),
+            ("valvePosition", thermostat.valve_state),
+            ("awayEnd", thermostat.away_end),
+            ("windowOpen", thermostat.window_open),
+            ("windowOpenTemperature", thermostat.window_open_temperature),
+            ("windowOpenTime", thermostat.window_open_time),
+        ]
+        valve_pos = thermostat.valve_state
+        now = time.time()
+        if valve_pos is not None and (now - self._last_update) < 400:
+            consumption_diff = (
+                (old["valvePosition"] + valve_pos)
+                / 2
+                / 100
+                * (now - self._last_update)
+                / 60
             )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "boost", self.thermostat.boost
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "childlock", self.thermostat.locked
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "desiredTemperature", self.thermostat.target_temperature
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "ecoTemperature", self.thermostat.eco_temperature
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "temperatureOffset", self.thermostat.temperature_offset
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "comfortTemperature", self.thermostat.comfort_temperature
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "mode", self.thermostat.fhem_mode
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "state", self.thermostat.state
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "completeState", self.thermostat.mode_readable
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "valvePosition", self.thermostat.valve_state
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "awayEnd", self.thermostat.away_end
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "windowOpen", self.thermostat.window_open
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                "windowOpenTemperature",
-                self.thermostat.window_open_temperature,
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "windowOpenTime", self.thermostat.window_open_time
-            )
-            valve_pos = self.thermostat.valve_state
-            if valve_pos is not None and (time.time() - self._last_update) < 400:
-                consumption_diff = (
-                    (old_valve_pos + valve_pos)
-                    / 2
-                    / 100
-                    * (time.time() - self._last_update)
-                    / 60
-                )
-            else:
-                consumption_diff = 0
-            new_consumption = round(old_consumption + consumption_diff, 2)
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash, "consumption", new_consumption
-            )
-            await fhem.readingsBulkUpdateIfChanged(
-                self.hash,
-                "consumptionToday",
-                round(old_consumption_today + consumption_diff, 2),
-            )
+        else:
+            consumption_diff = 0
+        consumption = round(old["consumption"] + consumption_diff, 2)
+        consumption_today = round(old["consumptionToday"] + consumption_diff, 2)
+        pairs += [("consumption", consumption), ("consumptionToday", consumption_today)]
+        try:
+            await self._write_readings("status", pairs)
         except Exception:
             self.logger.exception("Failed to update_readings")
             raise
-        finally:
-            await fhem.readingsEndUpdate(self.hash, 1)
-        self._last_update = time.time()
+        if valve_pos is not None:
+            old["valvePosition"] = float(valve_pos)
+        old["consumption"] = consumption
+        old["consumptionToday"] = consumption_today
+        self._last_update = now
 
     async def update_id_readings(self):
-        await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "firmware", self.thermostat.firmware_version
+        await self._write_readings(
+            "id",
+            [
+                ("firmware", self.thermostat.firmware_version),
+                ("serialNumber", self.thermostat.device_serial),
+            ],
         )
-        await fhem.readingsBulkUpdateIfChanged(
-            self.hash, "serialNumber", self.thermostat.device_serial
-        )
-        await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_schedule_readings(self):
-        await fhem.readingsBeginUpdate(self.hash)
+        pairs = []
+
+        def put(reading, value):
+            pairs.append((reading, value))
+
         for day in list(self.thermostat.schedule.keys()):
             reading = f"schedule_{day}_1"
             if self.thermostat.schedule[day].base_temp == 0:
-                await fhem.readingsBulkUpdateIfChanged(self.hash, reading, "-")
+                put(reading, "-")
                 last_change = "00:00"
                 last_schedule = True
             elif self.thermostat.schedule[day].next_change_at == END_OF_DAY:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash,
-                    reading,
-                    f"00:00 - 24:00: {self.thermostat.schedule[day].base_temp}",
+                put(
+                    reading, f"00:00 - 24:00: {self.thermostat.schedule[day].base_temp}"
                 )
                 last_change = "00:00"
                 last_schedule = True
             else:
-                await fhem.readingsBulkUpdateIfChanged(
-                    self.hash,
+                put(
                     reading,
                     f"00:00 - {self.thermostat.schedule[day].next_change_at.strftime('%H:%M')}: {self.thermostat.schedule[day].base_temp}",
                 )
@@ -339,19 +354,17 @@ class eq3bt(generic.FhemModule):
                 last_schedule = False
 
             for h in range(0, 6):
-                reading = f"schedule_{day}_{h+2}"
+                reading = f"schedule_{day}_{h + 2}"
                 if (
                     h == 6
                     or last_schedule
                     or self.thermostat.schedule[day].hours[h].target_temp == 0
                 ):
                     if last_schedule:
-                        await fhem.readingsBulkUpdateIfChanged(self.hash, reading, "-")
+                        put(reading, "-")
                     else:
                         value = f"{last_change} - 24:00: {self.thermostat.schedule[day].base_temp}"
-                        await fhem.readingsBulkUpdateIfChanged(
-                            self.hash, reading, value
-                        )
+                        put(reading, value)
                     last_schedule = True
                 else:
                     if (
@@ -369,11 +382,12 @@ class eq3bt(generic.FhemModule):
 
                     value = f"{last_change} - {next_change}: {self.thermostat.schedule[day].hours[h].target_temp}"
                     last_change = next_change
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
-        await fhem.readingsEndUpdate(self.hash, 1)
+                    put(reading, value)
+        await self._write_readings("schedule", pairs)
 
     async def _set_offline(self):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
+        self._written.pop("status", None)
         if not self._offline:
             # log only once until the thermostat is reachable again
             self._offline = True
@@ -386,7 +400,8 @@ class eq3bt(generic.FhemModule):
             await self._set_offline()
             self.logger.error("Thermostat not reachable, command not executed")
             return
-        await self.update_readings()
+        async with self.notification_lock:
+            await self.update_readings()
 
     def string_to_seconds(self, timestr):
         ftr = [3600, 60, 1]
