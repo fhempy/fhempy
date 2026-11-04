@@ -966,7 +966,9 @@ sub BindingsIo_checkResponseByName($$) {
     if (defined($msg->{NAME}) && $msg->{NAME} eq $devname) {
       $hash->{messages_count}{$devname}--;
       BindingsIo_processCommand($hash, $msg);
-      if ($hash->{messages_count}{$devname} <= 0) {
+      # processCommand can trigger notifies which call BindingsIo again,
+      # the nested call may already have processed or reset the counter
+      if (!$hash->{messages_count}{$devname} || $hash->{messages_count}{$devname} <= 0) {
         delete $hash->{messages_count}{$devname};
         last;
       }
