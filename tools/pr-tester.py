@@ -19,8 +19,10 @@ Usage (as a user with sudo rights, the script switches to the fhempy user):
   python3 pr-tester.py --pr master  # test the master branch
   python3 pr-tester.py --restore    # start the normal fhempy again (e.g. after a crash)
   python3 pr-tester.py --clean      # remove the test installation
+  python3 pr-tester.py --pr 123 -y  # copy changed FHEM modules without asking
 
-The script updates itself from master on every start (skip with --no-update).
+The script updates itself to the latest master version on every start (skip with
+--no-update).
 
 Run it within tmux or screen if you are connected via SSH. If the SSH connection
 drops, the script still tries to start the normal fhempy again.
@@ -51,7 +53,8 @@ import urllib.request
 
 REPO = "fhempy/fhempy"
 API_URL = "https://api.github.com/repos/" + REPO
-SCRIPT_URL = f"https://raw.githubusercontent.com/{REPO}/master/tools/pr-tester.py"
+RAW_URL = "https://raw.githubusercontent.com/" + REPO + "/{ref}/tools/pr-tester.py"
+SCRIPT_URL = RAW_URL.format(ref="master")
 UPDATED_ENV = "FHEMPY_PR_TESTER_UPDATED"
 DEFAULT_PORT = 15733
 DEFAULT_FHEM_DIRS = ["/opt/fhem"]
@@ -500,7 +503,7 @@ def detect(args):
 def forwarded_args(args, target):
     """Command line for the re-executed script, built from validated values only."""
     result = [] if target is None else ["--pr", str(target)]
-    for flag in ("debug", "fresh", "restore", "clean"):
+    for flag in ("debug", "fresh", "restore", "clean", "yes"):
         if getattr(args, flag):
             result.append("--" + flag)
     if args.mode:
@@ -511,18 +514,34 @@ def forwarded_args(args, target):
     return result
 
 
+def latest_script_url():
+    """URL of the script at the newest master commit.
+
+    raw.githubusercontent.com caches branch URLs for a few minutes, a commit URL
+    is never stale.
+    """
+    try:
+        sha = checked_sha(github_get("/commits/master")["sha"])
+    except (TestError, KeyError, TypeError):
+        return SCRIPT_URL
+    return RAW_URL.format(ref=sha)
+
+
 def self_update(args, target):
     """Replaces this script with the master version and restarts it if changed."""
     # the re-executed script (fhempy user) runs from a string and has no file
     path = os.path.abspath(globals().get("__file__") or "")
     if args.no_update or os.environ.get(UPDATED_ENV) or not os.path.isfile(path):
         return
-    req = urllib.request.Request(SCRIPT_URL, headers={"User-Agent": "fhempy-pr-tester"})
+    req = urllib.request.Request(
+        latest_script_url(), headers={"User-Agent": "fhempy-pr-tester"}
+    )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             new = resp.read()
         with open(path, "rb") as f:
             if f.read() == new:
+                info("pr-tester.py is up to date")
                 return
         # never replace the script with a broken download
         compile(new, path, "exec")
@@ -829,6 +848,9 @@ class Runner:
         if self.ctx["mode"] != "local":
             warn("FHEM doesn't run on this machine, test them on the FHEM machine")
             return [], []
+        if self.args.yes:
+            info("Copying them into FHEM (--yes), they are restored after the test")
+            return modules, www
         if ask("Copy them into FHEM? They are restored after the test."):
             return modules, www
         return [], []
@@ -1120,6 +1142,12 @@ def parse_args():
     )
     parser.add_argument(
         "--clean", action="store_true", help="remove the test installation"
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="copy changed FHEM modules and FHEMWEB files without asking",
     )
     parser.add_argument(
         "--no-update", action="store_true", help="don't update this script"
