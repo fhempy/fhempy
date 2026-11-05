@@ -338,6 +338,10 @@ fhempy_recordEvents($$$)
   return undef;
 }
 
+# events per message, encoding thousands of events at once (e.g. many MQTT
+# messages after a restart of zigbee2mqtt) blocked FHEM for >250ms on a Pi
+my $fhempy_recordChunk = 500;
+
 sub
 fhempy_sendRecordedEvents($)
 {
@@ -350,6 +354,12 @@ fhempy_sendRecordedEvents($)
   my $iohash = $hash->{IODev};
   # fhempy is offline, the events are lost
   return undef if (!defined($iohash) || !DevIo_IsOpen($iohash));
+  if (@{$events} > $fhempy_recordChunk) {
+    # the rest follows right after FHEM handled other devices meanwhile
+    $hash->{".recordedEvents"} = [splice(@{$events}, $fhempy_recordChunk)];
+    $hash->{".recordTimer"} = 1;
+    InternalTimer(gettimeofday(), "fhempy_sendRecordedEvents", $hash, 0);
+  }
   IOWrite($hash, $hash, "events", [$events, $skipped], {});
   return undef;
 }
