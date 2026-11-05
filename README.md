@@ -173,7 +173,8 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 |[bmw](FHEM/bindings/python/fhempy/lib/bmw/README.md)|BMW and MINI (e.g. iX3) via official BMW CarData: battery, range, charging, doors, position, live values|
 |[kia_hyundai](FHEM/bindings/python/fhempy/lib/kia_hyundai/README.md)|Kia/Hyundai/Genesis car, official Pleos API (EU) or app interface|
 |[seatconnect](FHEM/bindings/python/fhempy/lib/seatconnect/README.md)|Control your Seat/Cupra car|
-|[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your Skoda car|
+|[skoda_api](FHEM/bindings/python/fhempy/lib/skoda_api/README.md)|Skoda car via the official MyŠkoda Public API|
+|[skodaconnect](FHEM/bindings/python/fhempy/lib/skodaconnect/README.md)|Control your Skoda car (old, unofficial Skoda Connect login)|
 |[volvo](FHEM/bindings/python/fhempy/lib/volvo/)|Retrieve infos from your Volvo car (only new API)|
 |[volvo_software_update](FHEM/bindings/python/fhempy/lib/volvo_software_update/README.md)|Get notified about Volvo software updates|
 

@@ -1,0 +1,28 @@
+{
+  "requirements": [],
+  "installer": {
+    "title": "Skoda",
+    "description": "Your Skoda car via the official MyŠkoda API (API key)",
+    "category": "cars",
+    "order": 60,
+    "name": "my_skoda",
+    "logo": "skodaconnect.png",
+    "params": [
+      {
+        "label": "API key",
+        "secret": true,
+        "help": "MyŠkoda Public API key"
+      },
+      {
+        "label": "VIN",
+        "placeholder": "TMBJJ7NX0R1234567"
+      },
+      {
+        "label": "S-PIN",
+        "secret": true,
+        "optional": true,
+        "help": "Only needed for the auxiliary heating"
+      }
+    ]
+  }
+}
