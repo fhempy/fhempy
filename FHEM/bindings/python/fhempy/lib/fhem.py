@@ -33,14 +33,40 @@ event_listeners = {}
 recorder_listeners = {}
 # ids to match FHEM replies to commands sent by fhempy
 await_ids = itertools.count(1)
+# BindingsIo updates readings from a list, no Perl code has to be compiled
+# with eval for each update. Detected after the connection, older BindingsIo
+# versions get Perl code.
+structured_readings = False
+CAPABILITIES_NAME = "fhempy_capabilities"
+CAPABILITIES_CMD = "defined(&BindingsIo_readings) ? 1 : 0"
+
+
+class _Readings(list):
+    """readings of readingsBeginUpdate: [reading, value, changed, ifchanged]"""
 
 # TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
 # this would make all functions threadsafe
 
 
 def updateConnection(ws):
-    global wsconnection
+    global wsconnection, structured_readings
     wsconnection = ws
+    # FHEM might have been updated or downgraded meanwhile
+    structured_readings = False
+
+
+async def detect_capabilities():
+    """Ask BindingsIo which messages it supports, once after connecting."""
+    global structured_readings
+    ret = await sendCommandName(CAPABILITIES_NAME, CAPABILITIES_CMD)
+    structured_readings = str(ret) == "1"
+    logger.debug(f"BindingsIo supports structured readings: {structured_readings}")
+
+
+async def _send_readings(hash, readings, do_trigger):
+    return await sendCommandName(
+        hash["NAME"], None, fields={"readings": readings, "trigger": do_trigger}
+    )
 
 
 def fhempy_stopping():
@@ -250,6 +276,9 @@ async def readingsBeginUpdate(hash):
             + " caused by readingsBeginUpdate without End or Single update inbetween"
         )
     update_lock_owners[hash["NAME"]] = asyncio.current_task()
+    if structured_readings:
+        bulk_updates[hash["NAME"]] = _Readings()
+        return
     bulk_updates[hash["NAME"]] = [
         "readingsBeginUpdate($defs{'" + escapeValue(hash["NAME"]) + "'});;"
     ]
@@ -258,6 +287,10 @@ async def readingsBeginUpdate(hash):
 async def readingsBulkUpdateIfChanged(hash, reading, value):
     try:
         value = convertValue(value)
+        entry = bulk_updates.get(hash["NAME"])
+        if isinstance(entry, _Readings):
+            entry.append([reading, value, None, 1])
+            return
         cmd = (
             "readingsBulkUpdateIfChanged($defs{'"
             + escapeValue(hash["NAME"])
@@ -281,6 +314,10 @@ async def readingsBulkUpdateIfChanged(hash, reading, value):
 async def readingsBulkUpdate(hash, reading, value, changed=None):
     try:
         value = convertValue(value)
+        entry = bulk_updates.get(hash["NAME"])
+        if isinstance(entry, _Readings):
+            entry.append([reading, value, changed, 0])
+            return
         if changed is None:
             cmd = (
                 "readingsBulkUpdate($defs{'"
@@ -319,6 +356,14 @@ async def readingsEndUpdate(hash, do_trigger):
         logger.error(f"{hash['NAME']}: readingsEndUpdate without readingsBeginUpdate")
         return None
     cmds = bulk_updates.pop(hash["NAME"])
+    if isinstance(cmds, _Readings):
+        try:
+            return await _send_readings(hash, cmds, do_trigger)
+        finally:
+            update_lock_owners.pop(hash["NAME"], None)
+            lock = update_locks.get(hash["NAME"])
+            if lock is not None and lock.locked():
+                lock.release()
     cmds.append(
         "readingsEndUpdate($defs{'"
         + escapeValue(hash["NAME"])
@@ -338,6 +383,8 @@ async def readingsEndUpdate(hash, do_trigger):
 async def readingsSingleUpdate(hash, reading, value, do_trigger):
     async with _get_update_lock(hash["NAME"]):
         value = convertValue(value)
+        if structured_readings:
+            return await _send_readings(hash, [[reading, value, None, 0]], do_trigger)
         cmd = (
             "readingsSingleUpdate($defs{'"
             + escapeValue(hash["NAME"])
@@ -355,6 +402,8 @@ async def readingsSingleUpdate(hash, reading, value, do_trigger):
 async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
     async with _get_update_lock(hash["NAME"]):
         value = convertValue(value)
+        if structured_readings:
+            return await _send_readings(hash, [[reading, value, None, 1]], do_trigger)
         cmd = (
             "readingsBeginUpdate($defs{'"
             + escapeValue(hash["NAME"])
@@ -682,17 +731,23 @@ async def send_default_response(hash, set_default_response):
 def describeCommand(cmd):
     """Short command description for error logs, the full command can contain
     reading values like tokens and is only logged on debug level."""
+    if cmd is None:
+        return "readings update"
     return cmd.split("(", 1)[0].split(" ", 1)[0][:50]
 
 
-async def send_and_wait(name, cmd):
+async def send_and_wait(name, cmd, fields=None):
+    """cmd: Perl code, None if fields contains a structured command"""
     fut = asyncio.get_running_loop().create_future()
     msg = {
         "awaitId": next(await_ids),
         "NAME": name,
         "msgtype": "command",
-        "command": cmd,
     }
+    if cmd is not None:
+        msg["command"] = cmd
+    if fields:
+        msg.update(fields)
     sent_time = time.time()
 
     def listener(rmsg):
@@ -735,7 +790,7 @@ async def send_and_wait(name, cmd):
         connection.unregister_msg_listener(msg["awaitId"])
 
 
-async def sendCommandName(name, cmd, hash=None):
+async def sendCommandName(name, cmd, hash=None, fields=None):
     ret = ""
     timeout = 180
     try:
@@ -749,7 +804,10 @@ async def sendCommandName(name, cmd, hash=None):
                 + describeCommand(cmd)
             )
         # wait max 180s for reply from FHEM
-        jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
+        if fields is None:
+            jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd), timeout)
+        else:
+            jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd, fields), timeout)
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
         logger.error(
