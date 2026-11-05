@@ -92,9 +92,7 @@ def test_model_rooms_and_tiles():
 def test_display_name():
     assert model.display_name({"NAME": "wz_LampeDecke"}) == "Lampe Decke"
     assert model.display_name({"NAME": "TV_Licht_links"}) == "Licht Links"
-    assert (
-        model.display_name({"NAME": "Wohnzimmer_Lampe"}, "Wohnzimmer") == "Lampe"
-    )
+    assert model.display_name({"NAME": "Wohnzimmer_Lampe"}, "Wohnzimmer") == "Lampe"
     assert model.display_name({"NAME": "x", "alias": "Mein Licht"}) == "Mein Licht"
 
 
@@ -258,7 +256,9 @@ async def test_pair_and_websocket(module):
         assert tablet["place"] == "door" and tablet["name"] == "Flur Tür"
 
         # tap on the light: FHEM gets set, all tablets get the new state
-        await ws.send_json({"type": "action", "id": "wz_Deckenlicht", "action": "toggle"})
+        await ws.send_json(
+            {"type": "action", "id": "wz_Deckenlicht", "action": "toggle"}
+        )
         tile = (await next_of(ws, "tile"))["tile"]
         assert tile["id"] == "wz_Deckenlicht" and tile["state"]["on"] is False
         assert "wz_Deckenlicht off" in module.fake.sets
@@ -267,7 +267,9 @@ async def test_pair_and_websocket(module):
         await ws.send_json({"type": "action", "id": "global", "action": "toggle"})
         await ws.send_json({"type": "action", "id": "fl_Haustuer", "action": "delete"})
         await asyncio.sleep(0.1)
-        assert not any(s.startswith(("global", "fl_Haustuer")) for s in module.fake.sets)
+        assert not any(
+            s.startswith(("global", "fl_Haustuer")) for s in module.fake.sets
+        )
 
         # per tablet layout
         await ws.send_json({"type": "layout", "layout": {"hidden_rooms": ["Bad"]}})
@@ -286,7 +288,9 @@ async def test_restricted_tablet(module):
     _, answer = await pair(module)
     token = answer["token"]
     await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Bad"})
-    await module.set_tablet_readonly(module.hash, {"tablet": "Tablet1", "readonly": "1"})
+    await module.set_tablet_readonly(
+        module.hash, {"tablet": "Tablet1", "readonly": "1"}
+    )
     async with aiohttp.ClientSession() as session:
         ws, welcome = await connect(session, module, token)
         assert set(welcome["tiles"]) == {"bad_Fenster", "bad_Heizung"}
@@ -299,7 +303,9 @@ async def test_restricted_tablet(module):
             module.hash, {"tablet": "Tablet1", "readonly": "0"}
         )
         # other rooms stay forbidden
-        await ws.send_json({"type": "action", "id": "wz_Deckenlicht", "action": "toggle"})
+        await ws.send_json(
+            {"type": "action", "id": "wz_Deckenlicht", "action": "toggle"}
+        )
         await ws.send_json({"type": "action", "action": "all_off", "room": None})
         await asyncio.sleep(0.1)
         assert module.fake.sets == []
@@ -358,9 +364,7 @@ async def test_detail_page_while_starting(mocker):
     mock_fhem.mock_module(mocker)
     mod = dashboard(logging.getLogger(__name__))
     mod.hash = {"NAME": NAME}
-    mocker.patch(
-        "fhempy.lib.generic.FhemModule.FW_detailFn", return_value=""
-    )
+    mocker.patch("fhempy.lib.generic.FhemModule.FW_detailFn", return_value="")
     page = await mod.FW_detailFn({"NAME": NAME}, [], {})
     assert "starting" in page
     assert mod.url().endswith(f":{dash_module.DEFAULT_PORT}/")
@@ -383,8 +387,16 @@ async def test_reload_sends_model_only_on_changes(module, mocker):
 def test_sparks_temperature_and_humidity_per_device():
     trends = [
         {"device": "wz_Heizung", "reading": "desired-temp", "points": [20, 21]},
-        {"device": "wz_Heizung", "reading": "measured-temp", "points": [20.5, None, 21]},
-        {"device": "wz_Heizung", "reading": "humidity", "points": [[0, 48], [3600, 50]]},
+        {
+            "device": "wz_Heizung",
+            "reading": "measured-temp",
+            "points": [20.5, None, 21],
+        },
+        {
+            "device": "wz_Heizung",
+            "reading": "humidity",
+            "points": [[0, 48], [3600, 50]],
+        },
         {"device": "kue_Klima", "reading": "temperature", "points": [22, None]},
         {"device": "other", "reading": "temperature", "points": [1, 2]},
     ]
@@ -474,14 +486,35 @@ async def test_restricted_tablet_cannot_arrange_rooms(module):
 
 def test_all_off_leaves_heating_on():
     infos = {
-        "Heizstab": {"NAME": "Heizstab", "TYPE": "dummy", "room": "Keller",
-                     "sets": "on off", "readings": {"state": "on"}},
-        "Plug_TV": {"NAME": "Plug_TV", "TYPE": "dummy", "room": "Keller",
-                    "sets": "on off", "readings": {"state": "on"}},
-        "sw1": {"NAME": "sw1", "TYPE": "dummy", "room": "Keller",
-                   "alias": "FRITZ!Box", "sets": "on off", "readings": {"state": "on"}},
-        "Heimtheater": {"NAME": "Heimtheater", "TYPE": "dummy", "room": "Keller",
-                        "sets": "on off", "readings": {"state": "on"}},
+        "Heizstab": {
+            "NAME": "Heizstab",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "Plug_TV": {
+            "NAME": "Plug_TV",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "sw1": {
+            "NAME": "sw1",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "alias": "FRITZ!Box",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "Heimtheater": {
+            "NAME": "Heimtheater",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
     }
     tiles = model.build(infos)["tiles"]
     assert sorted(model.all_off(tiles)) == ["Heimtheater", "Plug_TV"]
@@ -507,7 +540,6 @@ async def test_keep_on_from_tablet(module):
         await ws.close()
 
 
-
 def test_arrangement_only_offers_devices_shown_on_tablets():
     infos = {
         "di_Licht": {"NAME": "di_Licht", "TYPE": "DOIF", "room": "", "sets": ""},
@@ -517,13 +549,26 @@ def test_arrangement_only_offers_devices_shown_on_tablets():
     data = model.arrangement(infos)
     assert [d["id"] for d in data["unassigned"]] == ["Lampe"]
 
+
 def test_idle_devices_when_arranging():
     now = model.datetime.datetime(2026, 11, 2, 12, 0, 0)
     infos = {
-        "old": {"NAME": "old", "TYPE": "dummy", "room": "Bad", "sets": "on off",
-                "readings": {"state": "off"}, "last": "2026-09-01 10:00:00"},
-        "new": {"NAME": "new", "TYPE": "dummy", "room": "Bad", "sets": "on off",
-                "readings": {"state": "off"}, "last": "2026-10-30 10:00:00"},
+        "old": {
+            "NAME": "old",
+            "TYPE": "dummy",
+            "room": "Bad",
+            "sets": "on off",
+            "readings": {"state": "off"},
+            "last": "2026-09-01 10:00:00",
+        },
+        "new": {
+            "NAME": "new",
+            "TYPE": "dummy",
+            "room": "Bad",
+            "sets": "on off",
+            "readings": {"state": "off"},
+            "last": "2026-10-30 10:00:00",
+        },
         "none": {"NAME": "none", "TYPE": "dummy", "room": "", "sets": "on off"},
     }
     data = model.arrangement(infos, now)
@@ -559,12 +604,20 @@ async def test_delete_idle_device(module):
 
 def test_presence_people_with_arrival_and_departure():
     infos = {
-        "rr_A": {"NAME": "rr_A", "TYPE": "ROOMMATE", "alias": "Anna",
-                 "readings": {"state": "awoken", "lastArrival": "2026-11-02 18:42:00"},
-                 "times": {"state": "2026-11-02 20:00:00"}},
-        "rr_L": {"NAME": "rr_L", "TYPE": "ROOMMATE", "alias": "Lea",
-                 "readings": {"state": "absent"},
-                 "times": {"state": "2026-11-01 07:10:00"}},
+        "rr_A": {
+            "NAME": "rr_A",
+            "TYPE": "ROOMMATE",
+            "alias": "Anna",
+            "readings": {"state": "awoken", "lastArrival": "2026-11-02 18:42:00"},
+            "times": {"state": "2026-11-02 20:00:00"},
+        },
+        "rr_L": {
+            "NAME": "rr_L",
+            "TYPE": "ROOMMATE",
+            "alias": "Lea",
+            "readings": {"state": "absent"},
+            "times": {"state": "2026-11-01 07:10:00"},
+        },
     }
     people = model.presence(infos)["people"]
     assert [(p["name"], p["home"], p["since"]) for p in people] == [
@@ -606,7 +659,9 @@ async def test_tablet_without_timeline(module):
             data = await resp.json()
             assert [e["text"] for e in data["entries"]] == ["Light on"]
             assert data["periods"] == []
-        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "all"})
+        await module.set_tablet_rooms(
+            module.hash, {"tablet": "Tablet1", "rooms": "all"}
+        )
         await module.set_tablet_timeline(
             module.hash, {"tablet": "Tablet1", "timeline": "0"}
         )
@@ -768,7 +823,9 @@ def test_learn_preset_art():
     assert presets[1]["art"] == media.art_key("http://speaker.local/art/song.png")
     assert "art" not in presets[0]
     # paused or no preset: nothing is learned
-    assert not media.learn_preset_art({}, bose(playStatus="PAUSE_STATE", state="paused"), True)
+    assert not media.learn_preset_art(
+        {}, bose(playStatus="PAUSE_STATE", state="paused"), True
+    )
     assert not media.learn_preset_art({}, bose(channel=""), True)
 
 
@@ -809,7 +866,9 @@ async def test_media_cover_through_fhempy(module):
         presets = module.data["tiles"]["wz_Radio"]["state"]["presets"]
         assert "art" in presets[0]
         # a tablet for other rooms gets nothing
-        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Küche"})
+        await module.set_tablet_rooms(
+            module.hash, {"tablet": "Tablet1", "rooms": "Küche"}
+        )
         async with session.get(url, headers=auth) as resp:
             assert resp.status == 404
     assert loaded == [
@@ -858,7 +917,9 @@ def test_fans():
     assert model.command(light, ceiling, "fan_mode", "high") == ["fan_mode high"]
     assert model.command(light, ceiling, "level", 60) == ["pct 60"]
     # lights without fan know no fan commands
-    plain = model.tile(fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer")
+    plain = model.tile(
+        fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer"
+    )
     assert "fan" not in plain
     assert model.command(plain, {"sets": "on off pct"}, "fan_mode", "high") == []
 
@@ -970,3 +1031,49 @@ async def test_header_built_once_for_many_events(module, mocker):
     await module.handle_event("wz_Deckenlicht", "battery", "low")
     await asyncio.sleep(0.2)
     assert "wz_Deckenlicht" in [b["id"] for b in module.head["battery"]]
+
+
+async def chunked_image_server(body, chunk=1000):
+    """serves body in small pieces with pauses, like a slow music player"""
+    from aiohttp import web
+
+    async def handler(request):
+        resp = web.StreamResponse(headers={"Content-Type": "image/jpeg"})
+        await resp.prepare(request)
+        for start in range(0, len(body), chunk):
+            await resp.write(body[start : start + chunk])
+            await asyncio.sleep(0.01)
+        await resp.write_eof()
+        return resp
+
+    app = web.Application()
+    app.router.add_get("/cover.jpg", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = free_port()
+    await web.TCPSite(runner, "127.0.0.1", port).start()
+    return runner, f"http://127.0.0.1:{port}/cover.jpg"
+
+
+@pytest.mark.asyncio
+async def test_cover_is_loaded_completely(module):
+    body = bytes(range(256)) * 200
+    runner, url = await chunked_image_server(body)
+    try:
+        content_type, loaded = await module.fetch_image(url)
+    finally:
+        await runner.cleanup()
+    assert content_type == "image/jpeg"
+    assert loaded == body
+
+
+@pytest.mark.asyncio
+async def test_too_big_cover_is_refused(module, mocker):
+    mocker.patch.object(dash_module, "MAX_IMAGE_SIZE", 5000)
+    runner, url = await chunked_image_server(b"x" * 6000)
+    try:
+        with pytest.raises(ValueError):
+            await module.fetch_image(url)
+    finally:
+        await runner.cleanup()
+    assert url not in module._images

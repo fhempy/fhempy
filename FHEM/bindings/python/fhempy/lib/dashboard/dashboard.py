@@ -144,6 +144,22 @@ def parse_opener(text):
     return device, args.strip()
 
 
+async def read_limited(stream, limit):
+    """whole body of a response, at most limit bytes: StreamReader.read(n)
+    returns only what has arrived so far, which cut covers off after the
+    first network chunk"""
+    chunks = []
+    size = 0
+    while True:
+        chunk = await stream.read(64 * 1024)
+        if not chunk:
+            return b"".join(chunks)
+        size += len(chunk)
+        if size > limit:
+            raise ValueError("image too big")
+        chunks.append(chunk)
+
+
 def qr_image(text):
     import segno
 
@@ -1493,9 +1509,7 @@ class dashboard(generic.FhemModule):
             content_type = resp.headers.get("Content-Type", "").split(";")[0]
             if not content_type.startswith("image/"):
                 raise ValueError(f"no image: {content_type}")
-            body = await resp.content.read(MAX_IMAGE_SIZE + 1)
-            if len(body) > MAX_IMAGE_SIZE:
-                raise ValueError("image too big")
+            body = await read_limited(resp.content, MAX_IMAGE_SIZE)
         while len(self._images) >= IMAGE_CACHE:
             self._images.pop(next(iter(self._images)))
         self._images[url] = (content_type, body)
