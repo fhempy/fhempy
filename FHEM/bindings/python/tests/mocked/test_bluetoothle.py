@@ -198,3 +198,18 @@ async def test_unexpected_disconnect_keeps_new_client(ble, mocker):
 
     old_client.disconnect.assert_awaited_once()
     assert ble._client is new_client
+
+
+@pytest.mark.asyncio
+async def test_connect_loop_imports_backend_in_thread(ble, mocker):
+    """the first BleakClient would import bleak's BlueZ backend (dbus_fast)
+    on the event loop"""
+    from fhempy.lib.core import ble_scanner
+
+    load = mocker.patch.object(ble_scanner, "load_backend", mocker.AsyncMock())
+    mocker.patch.object(ble, "pair", return_value=PairingState.SUCCESS)
+    connect_succeeds(ble, mocker)
+
+    await ble.connect_loop(30, 1)
+
+    load.assert_awaited_once()
