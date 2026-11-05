@@ -789,21 +789,66 @@ def test_media_players():
 def test_learn_preset_art():
     from fhempy.lib.dashboard import media
 
+    old = "http://speaker.local/art/old.png"
+    one = "http://speaker.local/art/one.png"
+    song = "http://speaker.local/art/song.png"
     known = {}
-    info = bose()
-    assert media.learn_preset_art(known, info, True)
-    assert known == {"2": "http://speaker.local/art/station.png"}
+    learner = media.PresetArtLearner()
+    # first event since the start: the cover may still be the old station's
+    assert not learner.update(known, bose(channel="1", art=old), 0)
+    assert learner.update(known, bose(channel="1", art=one), 1)
+    assert known == {"1": one}
     # later covers of a playlist on the preset don't replace the logo
-    info = bose(art="http://speaker.local/art/song.png")
-    assert not media.learn_preset_art(known, info, False)
-    assert media.learn_preset_art(known, info, True)
+    assert not learner.update(known, bose(channel="1", art=song), 100)
+    assert known == {"1": one}
+    # after a restart a known logo isn't replaced by the next song
+    learner = media.PresetArtLearner()
+    assert not learner.update(known, bose(channel="1", art=one), 200)
+    assert not learner.update(known, bose(channel="1", art=song), 210)
+    assert known == {"1": one}
+    info = bose(channel="1", art=one)
     info["preset_art"] = known
     presets = media.presets(info)
-    assert presets[1]["art"] == media.art_key("http://speaker.local/art/song.png")
-    assert "art" not in presets[0]
+    assert presets[0]["art"] == media.art_key(one)
+    assert "art" not in presets[1]
     # paused or no preset: nothing is learned
-    assert not media.learn_preset_art({}, bose(playStatus="PAUSE_STATE", state="paused"), True)
-    assert not media.learn_preset_art({}, bose(channel=""), True)
+    paused = bose(playStatus="PAUSE_STATE", state="paused")
+    assert not media.PresetArtLearner().update({}, paused, 0)
+    assert not media.PresetArtLearner().update({}, bose(channel=""), 0)
+
+
+def test_preset_art_not_taken_from_previous_station():
+    from fhempy.lib.dashboard import media
+
+    one = "http://speaker.local/art/one.png"
+    two = "http://speaker.local/art/two.png"
+    song = "http://speaker.local/art/song.png"
+    known = {"1": one}
+    learner = media.PresetArtLearner()
+    learner.update(known, bose(channel="1", art=one), 0)
+    # switch to preset 2: the channel comes first, the old cover is still there
+    assert not learner.update(known, bose(channel="2", art=one), 100)
+    assert "2" not in known
+    # then the logo of the new station: learned, a later song cover is not
+    assert learner.update(known, bose(channel="2", art=two), 101)
+    assert not learner.update(known, bose(channel="2", art=song), 110)
+    assert known == {"1": one, "2": two}
+
+    # cover first, channel a moment later: the new cover is still the logo
+    known = {}
+    learner = media.PresetArtLearner()
+    learner.update(known, bose(channel="1", art=one), 0)
+    learner.update(known, bose(channel="1", art=two), 100)
+    assert learner.update(known, bose(channel="2", art=two), 100.5)
+    assert known["2"] == two
+
+    # a wrong logo learned earlier is corrected when the preset is chosen again
+    known = {"1": one, "2": one}
+    learner = media.PresetArtLearner()
+    learner.update(known, bose(channel="1", art=one), 0)
+    assert not learner.update(known, bose(channel="2", art=one), 100)
+    assert learner.update(known, bose(channel="2", art=two), 102)
+    assert known["2"] == two
 
 
 @pytest.mark.asyncio
