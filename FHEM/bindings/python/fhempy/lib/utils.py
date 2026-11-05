@@ -230,8 +230,9 @@ class ErrorLogger:
     def is_failing(self, key=None):
         return (key or "default") in self._failing
 
-    def failed(self, msg, key=None, exc=None):
-        """Call within an except block or pass the exception."""
+    def failed(self, msg, key=None, exc=None, traceback=True):
+        """Call within an except block or pass the exception.
+        traceback=False: known errors are logged as error without traceback."""
         if exc is None:
             exc = sys.exc_info()[1]
         key = key or "default"
@@ -242,6 +243,8 @@ class ErrorLogger:
         self._failing[key] = msg
         if exc is None or is_connection_error(exc):
             self._logger.warning(detail)
+        elif not traceback:
+            self._logger.error(detail)
         else:
             self._logger.error(msg, exc_info=exc)
 
