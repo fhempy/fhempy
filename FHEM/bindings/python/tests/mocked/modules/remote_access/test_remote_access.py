@@ -564,3 +564,27 @@ def test_helpers():
         8443: ("http://10.0.0.2:8080", ["z2m_frontend", "b"]),
         10000: ("http://10.0.0.1:1", ["a"]),
     }
+
+
+@pytest.mark.asyncio
+async def test_logout_waits_for_running_check(module):
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    await define(module)
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+
+    stopped = []
+    original = module.ts.stop_funnel
+
+    async def stop_funnel():
+        stopped.append(True)
+        await original()
+
+    module.ts.stop_funnel = stop_funnel
+    # a check is running, e.g. it is about to start Funnel again
+    await module._check_lock.acquire()
+    task = asyncio.create_task(module.logout())
+    await asyncio.sleep(0.1)
+    assert stopped == []
+    module._check_lock.release()
+    await asyncio.wait_for(task, 5)
+    assert stopped == [True]

@@ -93,6 +93,9 @@ class remote_access(generic.FhemModule):
         self.problem = ""
         self._unique_id = None
         self._wakeup = asyncio.Event()
+        # a logout must not run in the middle of a check, the check could
+        # start Funnel again right after the logout stopped it
+        self._check_lock = asyncio.Lock()
         self._run_task = None
         self.sites = sites.Sites(self)
 
@@ -353,7 +356,8 @@ class remote_access(generic.FhemModule):
             # check wakes the next one instead of waiting ONLINE_INTERVAL
             self._wakeup.clear()
             try:
-                online = await self.step()
+                async with self._check_lock:
+                    online = await self.step()
             except asyncio.CancelledError:
                 raise
             except Exception as err:
@@ -478,9 +482,10 @@ class remote_access(generic.FhemModule):
         self._run_task = self.create_async_task(self.run())
 
     async def logout(self):
-        await self.sites.stop()
-        await self.ts.stop_funnel()
-        await self.ts.logout()
+        async with self._check_lock:
+            await self.sites.stop()
+            await self.ts.stop_funnel()
+            await self.ts.logout()
         self.url = ""
         await fhem.readingsSingleUpdate(self.hash, "url", "-", 1)
         self._wakeup.set()
