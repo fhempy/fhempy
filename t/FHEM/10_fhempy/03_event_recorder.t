@@ -7,7 +7,7 @@ our %defs;
 our %modules;
 
 InternalTimer(time()+0.5, sub {
-	plan(8);
+	plan(12);
 
 	CommandDefine(undef, q[fhempy_local BindingsIo 10.33.11.27:15733 fhempy]);
 	RemoveInternalTimer($defs{fhempy_local});
@@ -45,6 +45,18 @@ InternalTimer(time()+0.5, sub {
 	my @sent = grep { $_->[1] eq q[events] } @written;
 	is(scalar(@sent), 1, q[one message for all events]);
 	is($sent[0][3], {sensor => 2}, q[skipped events are counted]);
+
+	@written = ();
+	CommandSetReading(undef, qq[sensor temperature $_]) for (1..1200);
+	fhempy_sendRecordedEvents($hash);
+	@sent = grep { $_->[1] eq q[events] } @written;
+	is(scalar(@{$sent[0][2]}), 500, q[at most 500 events per message]);
+	is(scalar(@{$hash->{".recordedEvents"}}), 700, q[the rest waits]);
+	ok($hash->{".recordTimer"}, q[the rest is sent by a timer]);
+	fhempy_sendRecordedEvents($hash);
+	fhempy_sendRecordedEvents($hash);
+	@sent = grep { $_->[1] eq q[events] } @written;
+	is([map { scalar(@{$_->[2]}) } @sent], [500, 500, 200], q[all events are sent in order]);
 
 	fhempy_setEventRecorder(q[tl], 0);
 	@written = ();
