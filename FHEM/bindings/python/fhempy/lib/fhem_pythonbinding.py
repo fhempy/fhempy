@@ -58,6 +58,8 @@ ORPHAN_CHECK_DELAY = 300
 # FHEM is blocked until it gets the reply to a Set. Set handlers which wait
 # for a device or cloud keep running in the background after this time (s).
 SET_REPLY_TIMEOUT = 0.05
+# the read loop yields to other tasks after this many messages in a row
+YIELD_EVERY = 20
 
 
 def is_backgroundable_set(hash):
@@ -149,9 +151,15 @@ async def pybinding(websocket):
     modules_task = asyncio.create_task(fhem_modules.install())
     orphan_task = asyncio.create_task(stop_orphans())
     try:
+        handled = 0
         async for message in websocket:
-            pb.create_background_task(pb.onMessage(message))
-            await asyncio.sleep(0)
+            hash = pb.parse_message(message)
+            if hash is not None and not pb.dispatch_without_task(hash):
+                pb.create_background_task(pb.onMessage(message, hash))
+            handled += 1
+            if handled % YIELD_EVERY == 0:
+                # many queued messages, let their tasks run meanwhile
+                await asyncio.sleep(0)
     except asyncio.CancelledError:
         raise
     except websockets.exceptions.ConnectionClosedError:
@@ -273,7 +281,7 @@ class fhempy:
                 f"<<< {int(retHash['id']):08d} {duration:.2f}ms: "
                 f"{describe_hash(retHash)}"
             )
-        else:
+        elif logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"<<< {int(retHash['id']):08d} {duration:.2f}ms: {retHash}")
 
     async def updateHash(self, hash):
@@ -317,14 +325,8 @@ class fhempy:
                             )
                             del self.msg_received_time[id]
 
-    async def onMessage(self, payload):
-        try:
-            await self._onMessage(payload)
-        except Exception:
-            # don't log the payload, it contains the define arguments
-            logger.exception("Failed to handle message")
-
-    async def _onMessage(self, payload):
+    def parse_message(self, payload):
+        """The message as dict, None if it isn't valid"""
         if type(payload) is bytes:
             try:
                 payload = payload.decode("utf-8")
@@ -333,18 +335,52 @@ class fhempy:
                 # none utf-8 messages
                 # images in readings might cause too many error msgs
                 # therefore we just skip it at the moment
-                logger.debug(f"Skipped non-utf8 payload: {payload}")
-                return
-        msg = payload
-        hash = None
+                logger.debug("Skipped non-utf8 payload")
+                return None
         try:
-            hash = json_loads(msg)
-            # keep this for one year (written on 11.10.2021)
-            if "PYTHONTYPE" in hash:
-                hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
+            hash = json_loads(payload)
         except Exception:
             logger.error("Websocket JSON couldn't be decoded")
-            return
+            return None
+        if not isinstance(hash, dict):
+            logger.error("Websocket JSON couldn't be decoded")
+            return None
+        return hash
+
+    def dispatch_without_task(self, hash):
+        """Handles replies to fhempy's commands and events nobody listens to
+        right in the read loop. Most messages are such replies, a task per
+        message costs more CPU than handling them. True if handled."""
+        if "awaitId" in hash:
+            listener = self._msg_listeners.pop(hash["awaitId"], None)
+            if listener is None:
+                logger.debug("No listener waiting for reply %s", hash["awaitId"])
+                return True
+            try:
+                listener(hash)
+            except Exception:
+                logger.exception("Failed to handle reply")
+            return True
+        if hash.get("msgtype") == "event" and hash.get("NAME") not in fhem.event_listeners:
+            return True
+        return False
+
+    async def onMessage(self, payload, hash=None):
+        try:
+            await self._onMessage(payload, hash)
+        except Exception:
+            # don't log the payload, it contains the define arguments
+            logger.exception("Failed to handle message")
+
+    async def _onMessage(self, payload, hash=None):
+        msg = payload
+        if hash is None:
+            hash = self.parse_message(payload)
+            if hash is None:
+                return
+        # keep this for one year (written on 11.10.2021)
+        if "PYTHONTYPE" in hash:
+            hash["FHEMPYTYPE"] = hash["PYTHONTYPE"]
 
         global fct_timeout, connection_start
         if time.time() - connection_start > 120:
@@ -375,7 +411,8 @@ class fhempy:
                 await fhem.readingsSingleUpdate(hash, "peer_install", error, 1)
         else:
             id_received_timestamp[hash["id"]] = time.time()
-            logger.debug(f">>> {int(hash['id']):08d}: {hash}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f">>> {int(hash['id']):08d}: {hash}")
             if hash["msgtype"] == "update":
                 id_received_timestamp.pop(hash["id"], None)
                 await self.update_and_exit(hash)
@@ -546,9 +583,14 @@ class fhempy:
         if nmInstance is not None:
             try:
                 if not fhem_reply_done and is_backgroundable_set(hash):
-                    task = asyncio.create_task(self.execute_set(hash, nmInstance))
-                    done, _ = await asyncio.wait({task}, timeout=SET_REPLY_TIMEOUT)
-                    if not done:
+                    # eager: runs right now until it waits for the first time,
+                    # a Set without I/O is finished without a loop iteration
+                    task = asyncio.eager_task_factory(
+                        asyncio.get_running_loop(), self.execute_set(hash, nmInstance)
+                    )
+                    if not task.done():
+                        await asyncio.wait({task}, timeout=SET_REPLY_TIMEOUT)
+                    if not task.done():
                         # don't keep FHEM blocked while the device answers
                         await self.sendBackReturn(hash, "")
                         self.finish_set_in_background(hash, task, nmInstance)
