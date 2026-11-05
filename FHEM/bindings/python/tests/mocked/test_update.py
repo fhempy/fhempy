@@ -274,3 +274,34 @@ async def test_index_fetch_imports_aiohttp_outside_the_event_loop(monkeypatch):
     monkeypatch.setattr(importlib, "import_module", fake_import)
     assert await utils.import_module("aiohttp") is aiohttp
     assert threads and loop_thread not in threads
+
+
+@pytest.mark.asyncio
+async def test_import_module_waits_for_import_in_another_thread(monkeypatch):
+    # updates and FHEM modules download import aiohttp at the same time, the
+    # second caller must not get the partially initialized module
+    import importlib
+    import importlib.machinery
+    import sys
+    import types
+
+    from fhempy.lib import utils
+
+    partial = types.ModuleType("fhempy_partial_test")
+    partial.__spec__ = importlib.machinery.ModuleSpec("fhempy_partial_test", None)
+    partial.__spec__._initializing = True
+    complete = types.ModuleType("fhempy_partial_test")
+    calls = []
+
+    def fake_import(name):
+        calls.append(name)
+        return complete
+
+    monkeypatch.setitem(sys.modules, "fhempy_partial_test", partial)
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    assert await utils.import_module("fhempy_partial_test") is complete
+    assert calls == ["fhempy_partial_test"]
+
+    partial.__spec__._initializing = False
+    assert await utils.import_module("fhempy_partial_test") is partial
+    assert calls == ["fhempy_partial_test"]

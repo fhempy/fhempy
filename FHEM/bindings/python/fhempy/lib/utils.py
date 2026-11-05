@@ -101,7 +101,10 @@ async def import_module(name):
     The first import of a large package (e.g. aiohttp) takes seconds on a
     Raspberry Pi, the event loop and FHEM would wait meanwhile."""
     module = sys.modules.get(name)
-    if module is not None:
+    # a module which is still imported by another thread is already in
+    # sys.modules but only partially initialized, import_module waits for it
+    spec = getattr(module, "__spec__", None)
+    if module is not None and not getattr(spec, "_initializing", False):
         return module
     return await asyncio.to_thread(importlib.import_module, name)
 
