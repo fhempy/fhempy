@@ -280,3 +280,27 @@ def test_perl_unreadable_files_count_as_missing(tmp_path):
         check=True,
     )
     assert result.stdout == "www/fhempy/timeline.js"
+
+
+@pytest.mark.asyncio
+async def test_download_gets_controls_file_and_its_files(monkeypatch):
+    from fhempy.lib import utils
+
+    bodies = {
+        fhem_modules.CONTROLS_FILE: CONTROLS.encode(),
+    }
+    urls = []
+
+    async def http_get(url, timeout=15):
+        urls.append(url)
+        path = url.split("/v2.6.0/", 1)[1]
+        return bodies.get(path, b"content of " + path.encode())
+
+    monkeypatch.setattr(utils, "http_get", http_get)
+    files = await fhem_modules.download("2.6.0")
+    assert urls[0] == fhem_modules.RAW_URL.format(
+        version="2.6.0", path=fhem_modules.CONTROLS_FILE
+    )
+    assert list(files)[-1] == "FHEM/" + fhem_modules.CONTROLS_FILE
+    for path in fhem_modules.controls_files(CONTROLS):
+        assert files[path] == b"content of " + path.encode()

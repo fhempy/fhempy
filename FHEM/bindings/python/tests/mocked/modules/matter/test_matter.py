@@ -159,6 +159,55 @@ def test_conversions():
         model.command_args("mode", "dry")
 
 
+def test_thread_and_wifi_diagnostics():
+    parent = {"averageRssi": -62, "lastRssi": -60, "lqi": 3, "isChild": False}
+    # matter.js sends struct fields by id
+    router = {"5": 2, "6": None, "7": -75, "13": False}
+    child = {"averageRssi": -40, "lqi": 3, "isChild": True}
+    attrs = {
+        "0/53/0": 15,
+        "0/53/1": 2,
+        "0/53/2": "MyHome",
+        "0/53/7": [parent],
+        "1/6/0": True,
+    }
+    model = clusters.DeviceModel(attrs, clusters.device_endpoints(attrs))
+    values = dict(pair for p, v in attrs.items() for pair in model.convert_all(p, v))
+    assert values["thread_channel"] == 15
+    assert values["thread_network"] == "MyHome"
+    assert values["thread_role"] == "sleepy_end_device"
+    assert values["thread_device_type"] == "MTD"
+    assert values["rssi"] == -62
+    assert values["lqi"] == 3
+    assert values["thread_neighbors"] == 1
+
+    assert dict(model.convert_all("0/53/1", 5)) == {
+        "thread_role": "router",
+        "thread_device_type": "FTD",
+    }
+    end_device = dict(model.convert_all("0/53/1", 3))
+    assert end_device["thread_device_type"] == "MTD or FTD"
+    # router: best link to another router, children don't count
+    assert dict(model.convert_all("0/53/7", [router, child, parent])) == {
+        "thread_neighbors": 3,
+        "rssi": -62,
+        "lqi": 3,
+    }
+    assert dict(model.convert_all("0/53/7", [router])) == {
+        "thread_neighbors": 1,
+        "rssi": -75,
+        "lqi": 2,
+    }
+    assert dict(model.convert_all("0/53/7", [])) == {"thread_neighbors": 0}
+    assert model.convert_all("0/53/7", None) == []
+
+    wifi = {"0/54/4": -55, "1/6/0": True}
+    model = clusters.DeviceModel(wifi, clusters.device_endpoints(wifi))
+    assert model.convert_all("0/54/4", -55) == [("rssi", -55)]
+    assert model.convert_all("0/54/4", None) == []
+    assert model.convert_all("1/6/0", True) == [("onoff", "on")]
+
+
 def test_sensor_state():
     model = clusters.DeviceModel({}, [1])
     assert model.state({"temperature": 21.5, "humidity": 40.0}) == "T: 21.5 H: 40.0"

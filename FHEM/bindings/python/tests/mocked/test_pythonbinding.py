@@ -724,3 +724,32 @@ async def test_orphaned_tailscale_is_stopped_without_remote_access(monkeypatch):
     del fhem_pythonbinding.loadedModuleInstances["remote"]
     await fhem_pythonbinding.stop_orphans()
     stop_orphan.assert_called_once()
+
+
+def test_reply_is_handled_without_task():
+    # most messages are replies, a task per reply costs more CPU than the reply
+    pb = fhempy_instance()
+    received = []
+    pb.register_msg_listener(received.append, 4711)
+    reply = pb.parse_message(json.dumps({"awaitId": 4711, "result": "ok"}))
+    assert pb.dispatch_without_task(reply)
+    assert received == [{"awaitId": 4711, "result": "ok"}]
+    assert pb.dispatch_without_task({"awaitId": 4712, "result": ""})
+
+
+def test_event_without_listener_is_dropped(monkeypatch):
+    pb = fhempy_instance()
+    monkeypatch.setattr(fhem, "event_listeners", {"lamp": [print]})
+    event = {"msgtype": "event", "NAME": "other", "args": ["on"], "id": 1}
+    assert pb.dispatch_without_task(event)
+    event["NAME"] = "lamp"
+    assert not pb.dispatch_without_task(event)
+    assert not pb.dispatch_without_task({"msgtype": "function", "id": 2})
+
+
+def test_invalid_messages_are_ignored():
+    pb = fhempy_instance()
+    assert pb.parse_message(b"\xff\xfe") is None
+    assert pb.parse_message("no json") is None
+    assert pb.parse_message("[1, 2]") is None
+    assert pb.parse_message(b'{"a": 1}') == {"a": 1}

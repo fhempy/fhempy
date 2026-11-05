@@ -79,24 +79,21 @@ def needs_install(installed, running):
 async def download(version, only=None):
     """Files of the controls file at the tag of version, only=paths limits it to
     these files (without the controls file)."""
-    # imported in a thread, the import blocks the event loop for seconds on a Pi
-    aiohttp = await utils.import_module("aiohttp")
-
+    # urllib in a thread, aiohttp would cost ~16 MB RAM just for this download
     files = {}
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
 
-        async def get(path):
-            async with session.get(RAW_URL.format(version=version, path=path)) as resp:
-                resp.raise_for_status()
-                return await resp.read()
+    async def get(path):
+        return await utils.http_get(
+            RAW_URL.format(version=version, path=path), timeout=60
+        )
 
-        controls = await get(CONTROLS_FILE)
-        for path in controls_files(controls.decode("utf-8")):
-            if only is None or path in only:
-                files[path] = await get(path)
-        if only is None:
-            # write the controls file last, FHEM update relies on it
-            files["FHEM/" + CONTROLS_FILE] = controls
+    controls = await get(CONTROLS_FILE)
+    for path in controls_files(controls.decode("utf-8")):
+        if only is None or path in only:
+            files[path] = await get(path)
+    if only is None:
+        # write the controls file last, FHEM update relies on it
+        files["FHEM/" + CONTROLS_FILE] = controls
     return files
 
 

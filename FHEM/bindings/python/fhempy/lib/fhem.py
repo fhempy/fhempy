@@ -765,7 +765,8 @@ async def send_and_wait(name, cmd, fields=None):
                     + f"of {name}"
                 )
                 logger.debug(f"Slow command: {cmd}")
-            logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f">>> {rmsg['awaitId']:08d} {fhem_time:.2f}ms: {rmsg}")
             fut.set_result(rmsg)
         except Exception:
             logger.error(f"Failed to set result, received: {rmsg}")
@@ -774,7 +775,8 @@ async def send_and_wait(name, cmd, fields=None):
     if connection.is_closed():
         raise ConnectionError("FHEM connection closed")
     connection.register_msg_listener(listener, msg["awaitId"])
-    logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"<<< {msg['awaitId']:08d}: {msg}")
     try:
         try:
             await connection.send(json_dumps(msg))
