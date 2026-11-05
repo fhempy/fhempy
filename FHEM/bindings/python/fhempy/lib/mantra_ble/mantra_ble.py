@@ -287,10 +287,10 @@ class mantra_ble(generic.FhemModule):
         state = params["state"]
         if state == "on":
             enc_cmd = BleAdvEncCmd(0x01, 0x05, 0, 0, 0, 0, 0)
-            await self._transmit_ble(enc_cmd, duration=0.9)
+            await self._transmit_ble(enc_cmd, duration=1.5)
         else:
             enc_cmd = BleAdvEncCmd(0x01, 0x06, 0, 0, 0, 0, 0)
-            await self._transmit_ble(enc_cmd, duration=0.35)
+            await self._transmit_ble(enc_cmd, duration=1.0)
 
         await fhem.readingsBeginUpdate(hash)
         await fhem.readingsBulkUpdateIfChanged(hash, "light", state)
@@ -333,10 +333,10 @@ class mantra_ble(generic.FhemModule):
         state = params["state"]
         if state == "on":
             enc_cmd = BleAdvEncCmd(0x01, 0x07, 0, 0, 0, 0, 0)
-            await self._transmit_ble(enc_cmd, duration=0.9)
+            await self._transmit_ble(enc_cmd, duration=1.5)
         else:
             enc_cmd = BleAdvEncCmd(0x01, 0x08, 0, 0, 0, 0, 0)
-            await self._transmit_ble(enc_cmd, duration=0.35)
+            await self._transmit_ble(enc_cmd, duration=1.0)
 
         pct = 0
         if state == "on":
@@ -374,7 +374,7 @@ class mantra_ble(generic.FhemModule):
             await self.set_fan(hash, {"state": "off"})
             return
         enc_cmd = BleAdvEncCmd(0x03, 0x01, speed, 0, 0, 0, 0)
-        await self._transmit_ble(enc_cmd, duration=0.9)
+        await self._transmit_ble(enc_cmd, duration=1.5)
         # the requested percent, not the rounded speed: apps show what was set
         pct = speed_to_pct(speed) if pct is None else pct
         await self._update_fan_readings(hash, "on", pct, speed)
@@ -396,7 +396,7 @@ class mantra_ble(generic.FhemModule):
             "sleep": 0x0E,
         }
         enc_cmd = BleAdvEncCmd(0x01, preset_map[preset], 0, 0, 0, 0, 0)
-        await self._transmit_ble(enc_cmd, duration=0.9)
+        await self._transmit_ble(enc_cmd, duration=1.5)
         await fhem.readingsSingleUpdate(hash, "fan_preset", preset, 1)
 
     # -------------------------------------------------------------------------
@@ -430,10 +430,10 @@ class mantra_ble(generic.FhemModule):
 
         enc_cmd = BleAdvEncCmd(0x02, param, arg0, arg1, arg2, arg3, arg4)
         current_state = await fhem.ReadingsVal(self.hash["NAME"], "state", "off")
-        duration = 0.35 if current_state == "on" else 0.9
+        duration = 1.0 if current_state == "on" else 1.5
         await self._transmit_ble(enc_cmd, duration=duration)
 
-    async def _transmit_ble(self, enc_cmd, duration=0.35):
+    async def _transmit_ble(self, enc_cmd, duration=1.0):
         """Builds the BLE payload and executes hcitool asynchronously.
 
         Serialized by a lock, otherwise overlapping sends (e.g. slider moves)
