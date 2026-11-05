@@ -18,7 +18,7 @@ InternalTimer(time()+0.5, sub {
 	my @replies;
 	{
 		no warnings 'redefine';
-		*main::DevIo_SimpleWrite = sub { push @replies, $_[1] };
+		*main::DevIo_SimpleWrite = sub($$$;$) { push @replies, $_[1] };
 	}
 
 	subtest 'fhempy can detect structured readings' => sub {
@@ -28,7 +28,8 @@ InternalTimer(time()+0.5, sub {
 
 	subtest 'readings from a list without Perl code' => sub {
 		plan(5);
-		my $raw = Encode::encode("utf8", qq[{"msgtype":"command","awaitId":7,"NAME":"readings_dev","trigger":1,"readings":[["temperature","21.5",null,0],["city","M\xc3\xbcnchen",null,0],["quote","it's \\\\ \$x \@y",null,0]]}]);
+		# UTF-8 bytes as received from fhempy
+		my $raw = qq[{"msgtype":"command","awaitId":7,"NAME":"readings_dev","trigger":1,"readings":[["temperature","21.5",null,0],["city","M\xc3\xbcnchen",null,0],["quote","it's \\\\ \$x \@y",null,0]]}];
 		BindingsIo_processCommand($hash, BindingsIo_decodeJson($raw));
 		is (ReadingsVal("readings_dev", "temperature", ""), q[21.5], q[reading set]);
 		is (ReadingsVal("readings_dev", "city", ""), qq[M\xc3\xbcnchen], q[UTF-8 bytes unchanged]);
