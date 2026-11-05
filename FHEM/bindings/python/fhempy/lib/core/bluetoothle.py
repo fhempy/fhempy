@@ -253,6 +253,9 @@ class BluetoothLE:
             )
 
     async def connect_loop(self, timeout, max_retries):
+        # the first BleakScanner/BleakClient would import bleak's BlueZ
+        # backend on the event loop, more than a second on a Raspberry Pi
+        await ble_scanner.load_backend()
         not_found_count = 0
         while True:
             try:
