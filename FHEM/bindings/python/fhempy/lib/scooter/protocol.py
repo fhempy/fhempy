@@ -63,6 +63,10 @@ class PairingRequired(ScooterError):
     """The scooter doesn't know us, the power button has to be pressed."""
 
 
+# imported lazily (in a worker thread by the scooter module)
+CRYPTO_MODULES = ("miauth.mi.micrypto", "miauth.nb.nbcrypto")
+
+
 def is_scooter(name, manufacturer_data):
     if NINEBOT_MANUFACTURER_ID in (manufacturer_data or {}):
         return True

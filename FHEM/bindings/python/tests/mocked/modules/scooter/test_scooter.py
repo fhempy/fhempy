@@ -626,3 +626,30 @@ async def test_scan_busy_adapter_is_no_error(mocker):
     mocker.patch("bleak.BleakScanner", BusyScanner)
     module._address = ADDRESS
     assert await module._scan(0.1, lambda d, adv: True) == {}
+
+
+@pytest.mark.asyncio
+async def test_crypto_is_imported_in_thread_before_first_update(mocker):
+    env, hash, module = await define(mocker, FakeNinebot())
+    from fhempy.lib import utils
+
+    imported = []
+
+    async def import_module(name):
+        imported.append(name)
+
+    mocker.patch.object(utils, "import_module", import_module)
+
+    async def stop():
+        raise asyncio.CancelledError
+
+    mocker.patch.object(module, "_search", stop)
+    with pytest.raises(asyncio.CancelledError):
+        await module._run()
+    assert imported == list(scooter_protocol().CRYPTO_MODULES)
+
+
+def scooter_protocol():
+    from fhempy.lib.scooter import protocol
+
+    return protocol

@@ -148,6 +148,10 @@ class scooter(generic.FhemModule):
         self._wakeup.clear()
 
     async def _run(self):
+        # miauth imports cryptography, the first import blocked fhempy for
+        # more than a second on a Raspberry Pi
+        for name in protocol.CRYPTO_MODULES:
+            await utils.import_module(name)
         while True:
             try:
                 if not self._address:
