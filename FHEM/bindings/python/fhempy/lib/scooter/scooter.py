@@ -152,6 +152,7 @@ class scooter(generic.FhemModule):
         # more than a second on a Raspberry Pi
         for name in protocol.CRYPTO_MODULES:
             await utils.import_module(name)
+        await ble_scanner.load_backend()
         while True:
             try:
                 if not self._address:
