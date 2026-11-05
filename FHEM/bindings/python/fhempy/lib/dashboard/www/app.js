@@ -439,7 +439,8 @@
     if (cached && cached !== "loading" && cached !== "failed") { return cached; }
     if (!cached) {
       images[key] = "loading";
-      fetch("api/image?id=" + encodeURIComponent(id) + "&v=" + key + (preset ? "&preset=" + preset : ""), { headers: { Authorization: "Bearer " + S.token } })
+      // f=2: browsers cached covers cut off by older fhempy versions for a day
+      fetch("api/image?id=" + encodeURIComponent(id) + "&v=" + key + "&f=2" + (preset ? "&preset=" + preset : ""), { headers: { Authorization: "Bearer " + S.token } })
         .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); })
         .then(function (b) {
           images[key] = URL.createObjectURL(b);
