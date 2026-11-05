@@ -116,6 +116,36 @@ def art_url(info):
     return url if _URL.match(url) else None
 
 
+# radio services send the station logo and the cover of the current song in
+# the same reading, e.g. TuneIn cdn-profiles.tunein.com (station) and
+# cdn-albums.tunein.com (song)
+_LOGO_URL = re.compile(r"cdn-profiles\.|/profiles?/|logo", re.IGNORECASE)
+_COVER_URL = re.compile(r"cdn-albums\.|/albums?/|album|cover", re.IGNORECASE)
+
+
+def image_kind(url):
+    """"logo" for a station logo, "cover" for a song cover, None if unknown"""
+    if not url:
+        return None
+    if _COVER_URL.search(url):
+        return "cover"
+    if _LOGO_URL.search(url):
+        return "logo"
+    return None
+
+
+def logo_url(info):
+    """logo of the station that plays: seen while it played, else the logo
+    learned for the preset"""
+    if _off(info):
+        return None
+    logo = info.get("station_logo")
+    if logo:
+        return logo
+    n = channel(info)
+    return (info.get("preset_art") or {}).get(str(n)) if n else None
+
+
 def art_key(url):
     """short id of an image, so the tablets know when it changes"""
     if not url:
@@ -167,10 +197,13 @@ def state(info):
         "album": _reading(info, *ALBUM_READINGS),
         "station": station,
         "art": art_key(art_url(info)) if not _off(info) else None,
+        "logo": art_key(logo_url(info)),
         "volume": kinds.number(_reading(info, "volume")),
         "muted": str(_reading(info, "mute") or "").lower() in ("on", "1", "true"),
         "channel": channel(info),
     }
+    if result["logo"] == result["art"]:
+        result["logo"] = None
     return result
 
 
@@ -234,18 +267,73 @@ def command(info, action, value=None):
     return [name] if name else []
 
 
-def learn_preset_art(known, info, changed_recently):
-    """remember the cover of a preset while it plays (BOSEST has no preset
-    logos). known: {"1": url} of the device, changed in place.
-    changed_recently: the preset was just chosen, so the first cover is the
-    station logo, later covers of a playlist don't replace it.
-    Returns True if something changed."""
-    n = channel(info)
-    url = art_url(info)
-    if n is None or url is None or not _playing(info):
+# a preset was just chosen: the first new cover is the station logo
+PRESET_LEARN_SECONDS = 30
+# cover and channel of a preset switch arrive within this time, in any order
+SWITCH_SECONDS = 2
+
+
+class PresetArtLearner:
+    """remembers the logo of each preset of one device while it plays
+    (BOSEST has no preset logos).
+
+    When the preset changes, the channel and the cover readings change one
+    after the other, so for a moment the cover of the previous station is
+    shown with the new channel. Only a cover that differs from the one shown
+    before the switch is the logo of the new station, and only the first one:
+    later covers are the songs of a playlist.
+
+    Covers that are known to be song covers (see image_kind) are never
+    learned, known station logos always are."""
+
+    def __init__(self):
+        self.started = False
+        self.channel = None
+        self.url = None
+        self.url_since = 0.0
+        self.prev_url = None
+        self.stale = None
+        self.open_until = 0.0
+        self.only_unknown = False
+        self.logo = None
+
+    def update(self, known, info, now):
+        """known: {"1": url} of the device, changed in place.
+        Returns True if something changed."""
+        url = art_url(info)
+        if url != self.url:
+            self.prev_url, self.url, self.url_since = self.url, url, now
+        n = channel(info)
+        if not self.started:
+            # first event of the device since fhempy started, maybe the
+            # switch to another preset: the cover now may be the old one
+            self.started = True
+            self.channel = n
+            self.open_until = now + PRESET_LEARN_SECONDS
+            self.stale = url
+            self.only_unknown = True
+        elif n != self.channel:
+            self.channel = n
+            self.open_until = now + PRESET_LEARN_SECONDS
+            just_changed = now - self.url_since < SWITCH_SECONDS
+            self.stale = self.prev_url if just_changed else self.url
+            self.only_unknown = False
+            self.logo = None
+        if url is None or url == self.stale:
+            return False
+        kind = image_kind(url)
+        if kind == "logo":
+            self.logo = url
+        if n is None or kind == "cover" or not _playing(info):
+            return False
+        key = str(n)
+        if known.get(key) == url:
+            self.open_until = 0.0
+            return False
+        if kind == "logo" or (
+            now < self.open_until and not (self.only_unknown and key in known)
+        ):
+            known[key] = url
+            self.open_until = 0.0
+            return True
         return False
-    key = str(n)
-    if known.get(key) == url or (key in known and not changed_recently):
-        return False
-    known[key] = url
-    return True

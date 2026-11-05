@@ -433,6 +433,9 @@ body.light .banner.push { background: #fff; color: #151922; }
 .mart { aspect-ratio: 1; border-radius: 24px; overflow: hidden; background: var(--card2); position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .mart .bigcover { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .4s; }
 .mart .bigcover.ok { opacity: 1; }
+.mlogo { position: absolute; left: 8%; bottom: 8%; width: 26%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 18%; box-shadow: 0 4px 14px rgba(0,0,0,.4); opacity: 0; transition: opacity .4s; z-index: 1; }
+.mlogo.ok { opacity: 1; }
+.tile.media .mthumb .mlogo { left: auto; right: 6%; bottom: 6%; width: 38%; }
 .mart .noart { position: absolute; inset: 0; display: grid; place-items: center; color: var(--mu2); }
 .mnow { display: flex; flex-direction: column; gap: 4px; }
 .mnow b { font-size: 22px; font-weight: 600; line-height: 1.25; }

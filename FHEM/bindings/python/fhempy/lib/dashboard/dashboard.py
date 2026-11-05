@@ -35,7 +35,6 @@ MAX_MESSAGE_SIZE = 64 * 1024
 MAX_SDP_SIZE = 32 * 1024
 MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
-PRESET_LEARN_SECONDS = 30
 # the header (warnings, running devices, energy) is built at most this often
 HEADER_DELAY = 0.5
 ATTRS_TEXT = (
@@ -236,7 +235,7 @@ class dashboard(generic.FhemModule):
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
-        self._channel_seen = {}
+        self._preset_learners = {}
         self._images = {}
         # until Define has read the attributes, e.g. when FHEMWEB shows the
         # device page right after define
@@ -847,15 +846,14 @@ class dashboard(generic.FhemModule):
             await self.broadcast({"type": "header", "header": head})
 
     async def learn_preset_art(self, device, info):
-        now = time.monotonic()
-        current = media.channel(info)
-        seen = self._channel_seen.get(device)
-        if seen is None or seen[0] != current:
-            self._channel_seen[device] = seen = (current, now)
+        learner = self._preset_learners.get(device)
+        if learner is None:
+            learner = self._preset_learners[device] = media.PresetArtLearner()
         known = self.preset_art.setdefault(device, {})
         info["preset_art"] = known
-        recent = now - seen[1] < PRESET_LEARN_SECONDS
-        if media.learn_preset_art(known, info, recent):
+        changed = learner.update(known, info, time.monotonic())
+        info["station_logo"] = learner.logo
+        if changed:
             await self.save_preset_art()
 
     async def check_special_event(self, info, device, reading, value):
@@ -1496,6 +1494,8 @@ class dashboard(generic.FhemModule):
             return None
         info = self.infos.get(item["id"], {})
         preset = request.query.get("preset")
+        if preset == "logo":
+            return media.logo_url(info)
         if preset:
             return (info.get("preset_art") or {}).get(str(preset)[:2])
         return media.art_url(info)
