@@ -970,3 +970,49 @@ async def test_header_built_once_for_many_events(module, mocker):
     await module.handle_event("wz_Deckenlicht", "battery", "low")
     await asyncio.sleep(0.2)
     assert "wz_Deckenlicht" in [b["id"] for b in module.head["battery"]]
+
+
+async def chunked_image_server(body, chunk=1000):
+    """serves body in small pieces with pauses, like a slow music player"""
+    from aiohttp import web
+
+    async def handler(request):
+        resp = web.StreamResponse(headers={"Content-Type": "image/jpeg"})
+        await resp.prepare(request)
+        for start in range(0, len(body), chunk):
+            await resp.write(body[start : start + chunk])
+            await asyncio.sleep(0.01)
+        await resp.write_eof()
+        return resp
+
+    app = web.Application()
+    app.router.add_get("/cover.jpg", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = free_port()
+    await web.TCPSite(runner, "127.0.0.1", port).start()
+    return runner, f"http://127.0.0.1:{port}/cover.jpg"
+
+
+@pytest.mark.asyncio
+async def test_cover_is_loaded_completely(module):
+    body = bytes(range(256)) * 200
+    runner, url = await chunked_image_server(body)
+    try:
+        content_type, loaded = await module.fetch_image(url)
+    finally:
+        await runner.cleanup()
+    assert content_type == "image/jpeg"
+    assert loaded == body
+
+
+@pytest.mark.asyncio
+async def test_too_big_cover_is_refused(module, mocker):
+    mocker.patch.object(dash_module, "MAX_IMAGE_SIZE", 5000)
+    runner, url = await chunked_image_server(b"x" * 6000)
+    try:
+        with pytest.raises(ValueError):
+            await module.fetch_image(url)
+    finally:
+        await runner.cleanup()
+    assert url not in module._images
