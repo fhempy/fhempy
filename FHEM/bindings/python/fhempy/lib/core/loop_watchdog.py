@@ -16,7 +16,9 @@ import traceback
 logger = logging.getLogger(__name__)
 
 THRESHOLD = 0.5
-INTERVAL = 0.1
+INTERVAL = 1.0
+# check this often while the heartbeat is missing
+POLL = 0.1
 # log the stack of a blocked loop at most this often
 LOG_INTERVAL = 60
 STACK_LIMIT = 8
@@ -43,6 +45,8 @@ class LoopWatchdog:
         self._last_beat = time.monotonic()
         self._loop_thread_id = None
         self._stop = threading.Event()
+        # set by the loop when it answered the last heartbeat request
+        self._answered = threading.Event()
         self._thread = None
         self._blocked_since = None
         self._last_log = None
@@ -52,7 +56,6 @@ class LoopWatchdog:
     def start(self):
         self._loop_thread_id = threading.get_ident()
         self._last_beat = time.monotonic()
-        self._loop.call_soon(self._beat)
         self._thread = threading.Thread(
             target=self._watch, name="fhempy_loop_watchdog", daemon=True
         )
@@ -63,11 +66,33 @@ class LoopWatchdog:
 
     def _beat(self):
         self._last_beat = time.monotonic()
-        if not self._stop.is_set():
-            self._loop.call_later(self._interval, self._beat)
+        self._answered.set()
+
+    def _request_beat(self):
+        """False if the loop is closed."""
+        self._answered.clear()
+        # the loop answered the last request, the lag counts from now on
+        self._last_beat = time.monotonic()
+        try:
+            self._loop.call_soon_threadsafe(self._beat)
+        except RuntimeError:
+            return False
+        return True
 
     def _watch(self):
         while not self._stop.wait(self._interval):
+            if not self._request_beat():
+                return
+            # usually answered within microseconds
+            if self._answered.wait(self._threshold):
+                if self._blocked_since is not None:
+                    self.check(time.monotonic())
+                continue
+            while not self._stop.is_set():
+                self.check(time.monotonic())
+                if self._answered.wait(POLL):
+                    break
+            # logs the duration of the blockade
             self.check(time.monotonic())
 
     def check(self, now):

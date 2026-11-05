@@ -105,3 +105,24 @@ async def test_test_guard_does_not_count_imports(monkeypatch):
     monkeypatch.setattr(conftest, "_original_import", real_import)
     await asyncio.sleep(0)
     assert conftest._blocked == []
+
+
+@pytest.mark.asyncio
+async def test_idle_loop_is_woken_once_per_interval(monkeypatch):
+    # the former 10 heartbeats per second were fhempy's whole idle CPU usage
+    watchdog = LoopWatchdog(asyncio.get_running_loop(), threshold=0.2, interval=0.2)
+    beats = []
+    original = watchdog._beat
+
+    def beat():
+        beats.append(time.monotonic())
+        original()
+
+    monkeypatch.setattr(watchdog, "_beat", beat)
+    watchdog.start()
+    try:
+        await asyncio.sleep(1.1)
+    finally:
+        watchdog.stop()
+    assert 3 <= len(beats) <= 6
+    assert loop_watchdog.INTERVAL >= 1
