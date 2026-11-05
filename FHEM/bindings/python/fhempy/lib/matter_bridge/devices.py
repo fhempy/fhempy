@@ -260,6 +260,10 @@ _ON_PREFIX = re.compile(r"(on|dim)(?![a-z])")
 
 def _is_on(value, level=None):
     word = _word(value)
+    # MQTT2_DEVICE with setStateList: set_on/set_off until the device confirms
+    # the command, unknown until then (not on because of the brightness)
+    if word.startswith("set_"):
+        return None
     # on-for-timer, on-till, dim50% are on, but online is not (e.g. a speaker
     # which is reachable and switched off)
     if word in ON_VALUES or _ON_PREFIX.match(word):
@@ -297,8 +301,33 @@ def _onoff_state(info):
     return {"on": _is_on(_reading(info, "state"))}
 
 
+def _level_reading(info):
+    readings = info.get("readings", {})
+    return _first(LEVEL_SETS, readings)
+
+
+def level_max(info, name):
+    """highest value of the set name, e.g. 254 for brightness of zigbee2mqtt
+    lights ('brightness:slider,0,1,254' or 'brightness:colorpicker,BRI,0,1,254'),
+    100 if the set doesn't say"""
+    for entry in (info.get("sets") or "").split():
+        set_name, _, spec = entry.partition(":")
+        if set_name != name:
+            continue
+        numbers = [number(part) for part in spec.split(",")[1:]]
+        numbers = [n for n in numbers if n is not None]
+        if len(numbers) >= 3 and numbers[2] > 0:
+            return numbers[2]
+    return 100
+
+
 def _dimmer_state(info):
-    level = _percent(_reading(info, "pct", "dim", "brightness", "level"))
+    name = _level_reading(info)
+    level = None
+    if name is not None:
+        value = number(_reading(info, name))
+        if value is not None:
+            level = _percent(value * 100 / level_max(info, name))
     return {"on": _is_on(_reading(info, "state"), level), "level": level}
 
 
@@ -424,7 +453,12 @@ def _dimmer_commands(info, sets, command):
         return ["off"]
     level_set = _first(LEVEL_SETS, sets)
     if "level" in command and level_set is not None:
-        return [f"{level_set} {command['level']}"]
+        top = level_max(info, level_set)
+        level = command["level"]
+        if top != 100:
+            # at least 1, 1 % of 254 is still on
+            level = max(1, round(level * top / 100)) if level > 0 else 0
+        return [f"{level_set} {_format(level)}"]
     if command.get("on"):
         return ["on"]
     return []

@@ -785,7 +785,7 @@ class dashboard(generic.FhemModule):
     def event_filter(self):
         """regexp for "device:reading: value" of the events the dashboard
         needs: every event of global, doorbells and push devices, of the
-        others only the readings the tiles and the header use"""
+        others only the readings the tiles and the header use and state"""
         everything = ["global"] + [b["id"] for b in self.doorbells]
         everything += [
             name
@@ -796,7 +796,10 @@ class dashboard(generic.FhemModule):
         ]
         devices = "|".join(re.escape(n) for n in sorted(set(everything)))
         readings = "|".join(re.escape(r) for r in sorted(set(model.READINGS)))
-        return f"^(?:(?:{devices}):|[^:]+:(?:{readings}): )"
+        # events without "reading: " are state events, FHEM leaves out
+        # "state: " when the event isn't the current value of state (e.g.
+        # state changed twice in one update)
+        return f"^(?:(?:{devices}):|[^:]+:(?:{readings}): |[^:]+:(?!.*: ))"
 
     async def handle_event(self, device, reading, value):
         info = self.infos.get(device)
@@ -814,6 +817,9 @@ class dashboard(generic.FhemModule):
             await self.learn_preset_art(device, info)
         if item is not None:
             state = model.tile_state(item["kind"], info)
+            if "on" in item["state"] and "on" not in state:
+                # e.g. set_off until the device confirms: as before
+                state["on"] = item["state"]["on"]
             if state != item["state"]:
                 item["state"] = state
                 await self.send_tile(item)
