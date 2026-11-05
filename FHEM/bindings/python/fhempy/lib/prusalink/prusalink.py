@@ -43,7 +43,10 @@ class prusalink(generic.FhemModule):
         return data
 
     async def update_loop(self):
-        async with httpx.AsyncClient() as session:
+        # creating the client loads the CA certificates, which blocked fhempy
+        # for most of a second on a Raspberry Pi
+        session = await asyncio.to_thread(httpx.AsyncClient)
+        async with session:
             self.pl = pyprusalink.PrusaLink(
                 session, self.url, self.username, self.password
             )
