@@ -176,3 +176,42 @@ async def test_warning_and_passive_retry_after_bluez_fix(ble_scanner, mocker):
     await scanner._scan(active=False, duration=0)
     assert scanner.passive_problem == ""
     assert changes == ["experimental", ""]
+
+
+@pytest.mark.asyncio
+async def test_busy_adapter_logs_error_without_traceback(ble_scanner, mocker, caplog):
+    import asyncio
+
+    from bleak.exc import BleakDBusError
+
+    class BusyScanner:
+        def __init__(self, callback, scanning_mode="active", bluez=None):
+            pass
+
+        async def start(self):
+            raise BleakDBusError(
+                "org.bluez.Error.InProgress", ["Operation already in progress"]
+            )
+
+        async def stop(self):
+            return
+
+    mocker.patch.object(ble_scanner, "BleakScanner", BusyScanner)
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    scanner.set_mode(ble_scanner.MODE_INTERVAL)
+    waits = []
+
+    async def wait_changed(timeout):
+        waits.append(timeout)
+        if len(waits) == 2:
+            raise asyncio.CancelledError
+
+    mocker.patch.object(scanner, "_wait_changed", wait_changed)
+    with caplog.at_level(logging.DEBUG), pytest.raises(asyncio.CancelledError):
+        await scanner._run()
+    assert waits == [ble_scanner.BUSY_RETRY, ble_scanner.BUSY_RETRY]
+    errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(errors) == 1
+    assert errors[0].exc_info is None
+    assert "busy" in errors[0].getMessage()
+    assert scanner.scanning == "busy"
