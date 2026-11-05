@@ -18,6 +18,9 @@ CRYPTOGRAPHY_MODULES = (
     "cryptography.hazmat.primitives.asymmetric.ec",
     "cryptography.hazmat.primitives.hashes",
     "cryptography.hazmat.primitives.serialization",
+    # loaded on the first default_backend() call (py_vapid), the loop would
+    # wait for the import lock while another thread imports cryptography
+    "cryptography.hazmat.backends.openssl.backend",
 )
 
 
