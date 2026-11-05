@@ -58,45 +58,8 @@ class googlecast(generic.FhemModule):
         self.spotify_access_token = None
         self.tts_server = None
         self.connection_update_lock = threading.Lock()
-
-    # FHEM FUNCTION
-    async def Define(self, hash, args, argsh):
-        await super().Define(hash, args, argsh)
-        
-        attr_conf = {
-            "favorite_1": {"default": ""},
-            "favorite_2": {"default": ""},
-            "favorite_3": {"default": ""},
-            "favorite_4": {"default": ""},
-            "favorite_5": {"default": ""},
-            "speak_lang": {"default": "de", "options": "de,en,nl,fr,it,es"},
-            "speak_port": {
-                "default": 0,
-                "format": "int",
-                "help": "Port of the HTTP server which serves announcements to the"
-                + " cast device. 0 (default) chooses a free port.",
-            },
-            "spotify_sp_dc": {
-                "default": "",
-                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
-                + " and copy the content of sp_dc",
-                "function": "set_attr_spotify_cookie",
-            },
-            "spotify_sp_key": {
-                "default": "",
-                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
-                + " and copy the content of sp_key",
-                "function": "set_attr_spotify_cookie",
-            },
-            "player": {
-                "default": "DefaultMediaRenderer",
-                "help": "Play with BubbleUpnp player or"
-                + " Default Media Renderer cast app",
-                "options": "BubbleUpnp,DefaultMediaRenderer",
-            },
-        }
-        await self.set_attr_config(attr_conf)
-
+        # built here and not in Define: FHEM can send a Set while Define is
+        # still waiting for FHEM (e.g. attributes), Set needs it right away
         self._set_conf = {
             "authcode": {"args": ["code"]},
             "stop": {},
@@ -143,6 +106,45 @@ class googlecast(generic.FhemModule):
             "volUp": {},
             "volDown": {},
         }
+
+    # FHEM FUNCTION
+    async def Define(self, hash, args, argsh):
+        await super().Define(hash, args, argsh)
+        
+        attr_conf = {
+            "favorite_1": {"default": ""},
+            "favorite_2": {"default": ""},
+            "favorite_3": {"default": ""},
+            "favorite_4": {"default": ""},
+            "favorite_5": {"default": ""},
+            "speak_lang": {"default": "de", "options": "de,en,nl,fr,it,es"},
+            "speak_port": {
+                "default": 0,
+                "format": "int",
+                "help": "Port of the HTTP server which serves announcements to the"
+                + " cast device. 0 (default) chooses a free port.",
+            },
+            "spotify_sp_dc": {
+                "default": "",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
+                + " and copy the content of sp_dc",
+                "function": "set_attr_spotify_cookie",
+            },
+            "spotify_sp_key": {
+                "default": "",
+                "help": "Go to chrome://settings/cookies/detail?site=spotify.com"
+                + " and copy the content of sp_key",
+                "function": "set_attr_spotify_cookie",
+            },
+            "player": {
+                "default": "DefaultMediaRenderer",
+                "help": "Play with BubbleUpnp player or"
+                + " Default Media Renderer cast app",
+                "options": "BubbleUpnp,DefaultMediaRenderer",
+            },
+        }
+        await self.set_attr_config(attr_conf)
+
         await self.set_set_config(self._set_conf)
 
         if len(args) > 3:
