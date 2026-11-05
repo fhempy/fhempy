@@ -170,7 +170,9 @@ class remote_access(generic.FhemModule):
         stored = await fhem.ReadingsVal(self.hash["NAME"], ".password", "")
         if stored:
             try:
-                self.password = utils.decrypt_string(stored, self._unique_id)
+                self.password = await utils.async_decrypt_string(
+                    stored, self._unique_id
+                )
             except Exception:
                 self.password = ""
         if not self.password:
@@ -183,7 +185,7 @@ class remote_access(generic.FhemModule):
         await fhem.readingsSingleUpdate(
             self.hash,
             ".password",
-            utils.encrypt_string(password, self._unique_id),
+            await utils.async_encrypt_string(password, self._unique_id),
             0,
         )
 

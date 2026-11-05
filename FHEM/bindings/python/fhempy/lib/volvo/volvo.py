@@ -301,7 +301,9 @@ class volvo(generic.FhemModule):
             self.session = None
 
     async def _store_token(self, token):
-        encrypted = utils.encrypt_string(json.dumps(token), self._encryption_key)
+        encrypted = await utils.async_encrypt_string(
+            json.dumps(token), self._encryption_key
+        )
         await fhem.readingsSingleUpdate(self.hash, TOKEN_READING, encrypted, 1)
         valid_until = datetime.fromtimestamp(
             token["login_at"] + REFRESH_TOKEN_MAX_AGE
@@ -315,7 +317,9 @@ class volvo(generic.FhemModule):
         if encrypted == "":
             return None
         try:
-            return json.loads(utils.decrypt_string(encrypted, self._encryption_key))
+            return json.loads(
+                await utils.async_decrypt_string(encrypted, self._encryption_key)
+            )
         except Exception:
             self.logger.warning("Stored Volvo login can't be read, login again")
             return None

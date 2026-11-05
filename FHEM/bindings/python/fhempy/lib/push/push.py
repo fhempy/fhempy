@@ -202,7 +202,7 @@ class push(generic.FhemModule):
         stored = await fhem.ReadingsVal(self.hash["NAME"], ".vapid_key", "")
         if stored:
             try:
-                pem = utils.decrypt_string(stored, self._unique_id)
+                pem = await utils.async_decrypt_string(stored, self._unique_id)
                 self._vapid = Vapid.from_pem(pem.encode())
                 return
             except Exception:
@@ -214,7 +214,10 @@ class push(generic.FhemModule):
         vapid.generate_keys()
         pem = vapid.private_pem().decode()
         await fhem.readingsSingleUpdate(
-            self.hash, ".vapid_key", utils.encrypt_string(pem, self._unique_id), 0
+            self.hash,
+            ".vapid_key",
+            await utils.async_encrypt_string(pem, self._unique_id),
+            0,
         )
         self._vapid = vapid
         # old subscriptions belong to the old key
@@ -690,7 +693,7 @@ class LocalHttps:
         if key_text and cert_text:
             try:
                 key = certs.load_key(
-                    utils.decrypt_string(key_text, self.module._unique_id)
+                    await utils.async_decrypt_string(key_text, self.module._unique_id)
                 )
                 return key, certs.load_cert(cert_text.replace("\\n", "\n"))
             except Exception:
@@ -699,7 +702,9 @@ class LocalHttps:
         await fhem.readingsSingleUpdate(
             self.hash,
             ".ca_key",
-            utils.encrypt_string(certs.key_pem(key), self.module._unique_id),
+            await utils.async_encrypt_string(
+                certs.key_pem(key), self.module._unique_id
+            ),
             0,
         )
         await fhem.readingsSingleUpdate(

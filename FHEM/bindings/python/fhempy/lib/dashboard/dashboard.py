@@ -156,7 +156,6 @@ def qr_image(text):
     )
 
 
-
 def parse_message(msg, text_type):
     """JSON object of a WebSocket text message, None for anything else"""
     if msg.type != text_type:
@@ -190,6 +189,7 @@ def server_ssl_context(ca_key, ca_cert, ip):
             file.write(certs.key_pem(key))
         context.load_cert_chain(cert_file, key_file)
     return context
+
 
 class dashboard(generic.FhemModule):
     def __init__(self, logger):
@@ -318,7 +318,7 @@ class dashboard(generic.FhemModule):
         if not self.ready:
             return (
                 '<div class="makeTable wide"><span class="mkTitle">Tablets</span>'
-                "<table class=\"block wide\"><tr><td>The dashboard is starting, "
+                '<table class="block wide"><tr><td>The dashboard is starting, '
                 "reload this page in a moment.</td></tr></table></div>" + str(detail)
             )
         return self.setup_html() + str(detail)
@@ -1234,7 +1234,9 @@ class dashboard(generic.FhemModule):
         cert_text = await fhem.ReadingsVal(name, ".ca_cert", "")
         if key_text and cert_text:
             try:
-                key = certs.load_key(utils.decrypt_string(key_text, self._unique_id))
+                key = certs.load_key(
+                    await utils.async_decrypt_string(key_text, self._unique_id)
+                )
                 return key, certs.load_cert(cert_text.replace("\\n", "\n"))
             except Exception:
                 self.logger.exception("CA of the https address broken, new one")
@@ -1242,7 +1244,7 @@ class dashboard(generic.FhemModule):
         await fhem.readingsSingleUpdate(
             self.hash,
             ".ca_key",
-            utils.encrypt_string(certs.key_pem(key), self._unique_id),
+            await utils.async_encrypt_string(certs.key_pem(key), self._unique_id),
             0,
         )
         await fhem.readingsSingleUpdate(
@@ -1586,7 +1588,9 @@ class dashboard(generic.FhemModule):
         for ws, tablet_id in self.connected():
             if tablet_id != tablet["id"]:
                 continue
-            await self.send(ws, {"type": "tablet", "tablet": self.public_tablet(tablet)})
+            await self.send(
+                ws, {"type": "tablet", "tablet": self.public_tablet(tablet)}
+            )
             if with_model:
                 await self.send(ws, {"type": "model", **self.model_message(tablet)})
 

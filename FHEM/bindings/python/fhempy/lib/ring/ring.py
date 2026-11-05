@@ -43,7 +43,7 @@ class ring(FhemModule):
 
     async def token_updated(self, token):
         self._token = token
-        encrypted_token = utils.encrypt_string(
+        encrypted_token = await utils.async_encrypt_string(
             json.dumps(token), self._reading_encryption_key
         )
         await fhem.readingsSingleUpdate(self.hash, "token", encrypted_token, 1)
@@ -51,7 +51,7 @@ class ring(FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
-        
+
         self._attr_list = {
             "deviceUpdateInterval": {"default": 300, "format": "int"},
             "dingPollInterval": {"default": 2, "format": "int"},
@@ -62,7 +62,7 @@ class ring(FhemModule):
             "2fa_code": {"args": ["2facode"]},
         }
         await self.set_set_config(self.set_list_conf)
-        
+
         if len(args) < 5:
             return (
                 "Usage: define rrring fhempy ring <USERNAME>"
@@ -90,7 +90,7 @@ class ring(FhemModule):
             if self._token == "":
                 token_reading = await fhem.ReadingsVal(self.hash["NAME"], "token", "")
                 if token_reading != "":
-                    token_reading = utils.decrypt_string(
+                    token_reading = await utils.async_decrypt_string(
                         token_reading, self._reading_encryption_key
                     )
                     self._token = json.loads(token_reading)
@@ -99,7 +99,7 @@ class ring(FhemModule):
                     self.hash["NAME"], "password", ""
                 )
                 if self._password != "":
-                    self._password = utils.decrypt_string(
+                    self._password = await utils.async_decrypt_string(
                         self._password, self._reading_encryption_key
                     )
             try:
@@ -389,7 +389,7 @@ class ring(FhemModule):
 
     async def set_password(self, hash, params):
         self._password = params["password"]
-        encrypted_password = utils.encrypt_string(
+        encrypted_password = await utils.async_encrypt_string(
             self._password, self._reading_encryption_key
         )
         await fhem.readingsSingleUpdateIfChanged(
