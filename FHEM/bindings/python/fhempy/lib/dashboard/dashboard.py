@@ -851,7 +851,9 @@ class dashboard(generic.FhemModule):
             learner = self._preset_learners[device] = media.PresetArtLearner()
         known = self.preset_art.setdefault(device, {})
         info["preset_art"] = known
-        if learner.update(known, info, time.monotonic()):
+        changed = learner.update(known, info, time.monotonic())
+        info["station_logo"] = learner.logo
+        if changed:
             await self.save_preset_art()
 
     async def check_special_event(self, info, device, reading, value):
@@ -1492,6 +1494,8 @@ class dashboard(generic.FhemModule):
             return None
         info = self.infos.get(item["id"], {})
         preset = request.query.get("preset")
+        if preset == "logo":
+            return media.logo_url(info)
         if preset:
             return (info.get("preset_art") or {}).get(str(preset)[:2])
         return media.art_url(info)

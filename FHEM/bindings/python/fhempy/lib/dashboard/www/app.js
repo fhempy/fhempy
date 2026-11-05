@@ -460,12 +460,13 @@
   }
   function mediaTileBody(id, tile, look, editState) {
     var st = tile.state, playBtn = editState ? "" : '<span class="mplay" data-mplay="' + esc(id) + '" aria-label="' + esc(t("playPause")) + '">' + I(st.playing ? "pause" : "play", 26) + "</span>";
-    var thumb = st.art ? '<div class="mthumb">' + I("music") + coverImg(id, st.art, "mimg") + "</div>" : '<div class="ic">' + I("music") + "</div>";
+    var logo = st.logo ? coverImg(id, st.logo, "mlogo", "logo") : "";
+    var thumb = st.art ? '<div class="mthumb">' + I("music") + coverImg(id, st.art, "mimg") + logo + "</div>" : '<div class="ic">' + I("music") + "</div>";
     return coverImg(id, st.art, "mcover") + thumb + '<div class="mtext"><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>" + playBtn;
   }
   function mediaSheet(tile) {
     var st = tile.state, f = tile.media || {}, id = tile.id;
-    var art = st.art ? coverImg(id, st.art, "bigcover") : "";
+    var art = st.art ? coverImg(id, st.art, "bigcover") + (st.logo ? coverImg(id, st.logo, "mlogo", "logo") : "") : "";
     var left = '<div class="mart">' + (art || '<div class="noart">' + I("music", 64) + "</div>") + "</div>";
     var body = '<div class="group mnow"><b>' + esc(st.title || (st.on ? t("nothingPlays") : t("off"))) + "</b>" +
       (st.artist ? "<span>" + esc(st.artist) + "</span>" : "") + (st.album || st.station ? '<span class="mu">' + esc(st.album || st.station) + "</span>" : "") + "</div>";

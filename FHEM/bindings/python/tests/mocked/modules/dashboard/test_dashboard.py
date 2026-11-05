@@ -887,12 +887,19 @@ async def test_media_cover_through_fhempy(module):
             assert resp.status == 200
         presets = module.data["tiles"]["wz_Radio"]["state"]["presets"]
         assert "art" in presets[0]
+        # a song cover: the tile also gets the station logo, served as preset=logo
+        await module.handle_event("wz_Radio", "art", "http://speaker.local/album/song.jpg")
+        state = module.data["tiles"]["wz_Radio"]["state"]
+        assert state["logo"] == presets[0]["art"] != state["art"]
+        async with session.get(url + "&preset=logo", headers=auth) as resp:
+            assert resp.status == 200
         # a tablet for other rooms gets nothing
         await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Küche"})
         async with session.get(url, headers=auth) as resp:
             assert resp.status == 404
     assert loaded == [
         "http://speaker.local/art/station.png",
+        "http://speaker.local/art/one.png",
         "http://speaker.local/art/one.png",
     ]
 
@@ -1095,3 +1102,44 @@ async def test_too_big_cover_is_refused(module, mocker):
     finally:
         await runner.cleanup()
     assert url not in module._images
+
+
+def test_station_logo_and_song_cover():
+    from fhempy.lib.dashboard import media
+
+    logo = "http://cdn-profiles.example.com/s1/images/logog.png"
+    other = "http://cdn-profiles.example.com/s2/images/logog.png"
+    song = "http://cdn-albums.example.com/1234.jpg"
+    assert media.image_kind(logo) == "logo"
+    assert media.image_kind(song) == "cover"
+    assert media.image_kind("http://speaker.local/art/x.png") is None
+
+    known = {"2": song}
+    learner = media.PresetArtLearner()
+    learner.update(known, bose(channel="1", art=other), 0)
+    # switch to preset 2: the old logo and song covers are never learned
+    assert not learner.update(known, bose(channel="2", art=other), 100)
+    assert not learner.update(known, bose(channel="2", art=song), 101)
+    assert known["2"] == song
+    # the station logo is learned whenever it shows, also after 30 s
+    assert learner.update(known, bose(channel="2", art=logo), 200)
+    assert known["2"] == logo and learner.logo == logo
+    assert not learner.update(known, bose(channel="2", art=song), 210)
+    assert known["2"] == logo
+
+    # while a song plays, the tile shows its cover and the station logo
+    info = bose(channel="2", art=song)
+    info["preset_art"] = known
+    info["station_logo"] = learner.logo
+    state = media.state(info)
+    assert state["art"] == media.art_key(song)
+    assert state["logo"] == media.art_key(logo)
+    # no extra logo when the logo itself is the cover
+    info = bose(channel="2", art=logo)
+    info["preset_art"] = known
+    assert media.state(info)["logo"] is None
+    # without a logo seen since the switch: the one learned for the preset
+    info = bose(channel="2", art=song)
+    info["preset_art"] = known
+    assert media.logo_url(info) == logo
+    assert media.logo_url(bose(channel="", art=song)) is None

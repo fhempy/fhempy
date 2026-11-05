@@ -116,6 +116,36 @@ def art_url(info):
     return url if _URL.match(url) else None
 
 
+# radio services send the station logo and the cover of the current song in
+# the same reading, e.g. TuneIn cdn-profiles.tunein.com (station) and
+# cdn-albums.tunein.com (song)
+_LOGO_URL = re.compile(r"cdn-profiles\.|/profiles?/|logo", re.IGNORECASE)
+_COVER_URL = re.compile(r"cdn-albums\.|/albums?/|album|cover", re.IGNORECASE)
+
+
+def image_kind(url):
+    """"logo" for a station logo, "cover" for a song cover, None if unknown"""
+    if not url:
+        return None
+    if _COVER_URL.search(url):
+        return "cover"
+    if _LOGO_URL.search(url):
+        return "logo"
+    return None
+
+
+def logo_url(info):
+    """logo of the station that plays: seen while it played, else the logo
+    learned for the preset"""
+    if _off(info):
+        return None
+    logo = info.get("station_logo")
+    if logo:
+        return logo
+    n = channel(info)
+    return (info.get("preset_art") or {}).get(str(n)) if n else None
+
+
 def art_key(url):
     """short id of an image, so the tablets know when it changes"""
     if not url:
@@ -167,10 +197,13 @@ def state(info):
         "album": _reading(info, *ALBUM_READINGS),
         "station": station,
         "art": art_key(art_url(info)) if not _off(info) else None,
+        "logo": art_key(logo_url(info)),
         "volume": kinds.number(_reading(info, "volume")),
         "muted": str(_reading(info, "mute") or "").lower() in ("on", "1", "true"),
         "channel": channel(info),
     }
+    if result["logo"] == result["art"]:
+        result["logo"] = None
     return result
 
 
@@ -248,7 +281,10 @@ class PresetArtLearner:
     after the other, so for a moment the cover of the previous station is
     shown with the new channel. Only a cover that differs from the one shown
     before the switch is the logo of the new station, and only the first one:
-    later covers are the songs of a playlist."""
+    later covers are the songs of a playlist.
+
+    Covers that are known to be song covers (see image_kind) are never
+    learned, known station logos always are."""
 
     def __init__(self):
         self.started = False
@@ -259,6 +295,7 @@ class PresetArtLearner:
         self.stale = None
         self.open_until = 0.0
         self.only_unknown = False
+        self.logo = None
 
     def update(self, known, info, now):
         """known: {"1": url} of the device, changed in place.
@@ -281,13 +318,21 @@ class PresetArtLearner:
             just_changed = now - self.url_since < SWITCH_SECONDS
             self.stale = self.prev_url if just_changed else self.url
             self.only_unknown = False
-        if n is None or url is None or url == self.stale or not _playing(info):
+            self.logo = None
+        if url is None or url == self.stale:
+            return False
+        kind = image_kind(url)
+        if kind == "logo":
+            self.logo = url
+        if n is None or kind == "cover" or not _playing(info):
             return False
         key = str(n)
         if known.get(key) == url:
             self.open_until = 0.0
             return False
-        if now < self.open_until and not (self.only_unknown and key in known):
+        if kind == "logo" or (
+            now < self.open_until and not (self.only_unknown and key in known)
+        ):
             known[key] = url
             self.open_until = 0.0
             return True
