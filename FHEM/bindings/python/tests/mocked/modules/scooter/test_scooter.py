@@ -646,7 +646,12 @@ async def test_crypto_is_imported_in_thread_before_first_update(mocker):
     mocker.patch.object(module, "_search", stop)
     with pytest.raises(asyncio.CancelledError):
         await module._run()
-    assert imported == list(scooter_protocol().CRYPTO_MODULES)
+    from fhempy.lib.core import ble_scanner
+
+    backend = list(ble_scanner.BACKEND_MODULES)
+    if ble_scanner.platform.system() != "Linux":
+        backend = []
+    assert imported == list(scooter_protocol().CRYPTO_MODULES) + backend
 
 
 def scooter_protocol():
