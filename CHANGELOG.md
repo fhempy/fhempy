@@ -2,6 +2,116 @@
 
 <!-- version list -->
 
+## v2.14.6 (2026-11-05)
+
+### Bug Fixes
+
+- First encryption or decryption doesn't block fhempy for up to 2 seconds anymore
+  ([#882](https://github.com/fhempy/fhempy/pull/882),
+  [`dc76f1f`](https://github.com/fhempy/fhempy/commit/dc76f1f7aad5866b5a23ea92d1fac97b5150ffb3))
+
+- Idle fhempy uses ~80% less CPU, loop watchdog doesn't wake the loop anymore
+  ([#879](https://github.com/fhempy/fhempy/pull/879),
+  [`362adbd`](https://github.com/fhempy/fhempy/commit/362adbd2662ae74d395e14f116b99f8efa7f59d0))
+
+- Less CPU per FHEM message, replies are handled without a task
+  ([#880](https://github.com/fhempy/fhempy/pull/880),
+  [`b1f9907`](https://github.com/fhempy/fhempy/commit/b1f990791597b1e6e34e1a408a8bf101aec9dde4))
+
+- ~26% less RAM, no aiohttp for fhempy's own requests, freed memory is given back
+  ([#878](https://github.com/fhempy/fhempy/pull/878),
+  [`049c20a`](https://github.com/fhempy/fhempy/commit/049c20a33e498d95c2abb07fc5e47563dfd3cc9d))
+
+- **autodiscovery**: Busy Bluetooth adapter is one error line without traceback
+  ([#890](https://github.com/fhempy/fhempy/pull/890),
+  [`42b774c`](https://github.com/fhempy/fhempy/commit/42b774c4def09d33a675be41babe2bf2ea40622c))
+
+- **ble_monitor**: Scan restarts only once at startup, no 'Event loop stopped' error
+  ([#883](https://github.com/fhempy/fhempy/pull/883),
+  [`9726c2b`](https://github.com/fhempy/fhempy/commit/9726c2b79f5d01ef0e2fdc4ea49efd2e9995529f))
+
+- **dashboard**: Load music covers and station logos completely
+  ([#895](https://github.com/fhempy/fhempy/pull/895),
+  [`efed18b`](https://github.com/fhempy/fhempy/commit/efed18b36f0a88aae708b60cfc78aa40b71ad1cf))
+
+- **dashboard**: Reload covers the browser cached cut off
+  ([#898](https://github.com/fhempy/fhempy/pull/898),
+  [`d81903c`](https://github.com/fhempy/fhempy/commit/d81903c9fca5da4518c7246de5dd185e44f10267))
+
+- **dashboard**: Zigbee2mqtt dimmer shown on while off
+  ([#896](https://github.com/fhempy/fhempy/pull/896),
+  [`05c486c`](https://github.com/fhempy/fhempy/commit/05c486c8075f3cb20a9a98726ac62f849e32a895))
+
+- **dlna_dmr**: Port in use and closed session are one error line
+  ([#900](https://github.com/fhempy/fhempy/pull/900),
+  [`df4f2f4`](https://github.com/fhempy/fhempy/commit/df4f2f41f52628ce002d59b04a816a55b7e12f6d))
+
+- **eq3bt**: Import the BlueZ backend of bleak in a thread
+  ([#894](https://github.com/fhempy/fhempy/pull/894),
+  [`0a4877b`](https://github.com/fhempy/fhempy/commit/0a4877bcbce34036e1182fa0ac1d955f83bce6b9))
+
+- **googlecast**: Set no longer crashes while Define is still running
+  ([#897](https://github.com/fhempy/fhempy/pull/897),
+  [`3c86333`](https://github.com/fhempy/fhempy/commit/3c86333ec09982cf13fb19582abefedca99a4520))
+
+- **mantra_ble**: More reliable commands for lamps further away, longer BLE beacon durations
+  ([#875](https://github.com/fhempy/fhempy/pull/875),
+  [`2814bb5`](https://github.com/fhempy/fhempy/commit/2814bb5451425d1c89d08da606e9e02dde207f6b))
+
+- **prusalink**: Creating the HTTP client doesn't block fhempy anymore
+  ([#887](https://github.com/fhempy/fhempy/pull/887),
+  [`cd6ae5b`](https://github.com/fhempy/fhempy/commit/cd6ae5bb2fc34283346d7eb933dc207817e9e3b4))
+
+- **push**: Also load the OpenSSL backend of cryptography in the thread
+  ([#891](https://github.com/fhempy/fhempy/pull/891),
+  [`28a5643`](https://github.com/fhempy/fhempy/commit/28a56433c850deec2d0b3b9734b907eef6253387))
+
+- **push**: First start doesn't block fhempy while cryptography is imported
+  ([#886](https://github.com/fhempy/fhempy/pull/886),
+  [`691a1a7`](https://github.com/fhempy/fhempy/commit/691a1a7997c75f24605988792442d3283ec45abc))
+
+- **remote_access**: Import aiohttp in a thread ([#892](https://github.com/fhempy/fhempy/pull/892),
+  [`2620653`](https://github.com/fhempy/fhempy/commit/2620653d932e38e26b396fd6545628a07a891f21))
+
+- **remote_access**: Logout during a running check doesn't leave Funnel enabled
+  ([#889](https://github.com/fhempy/fhempy/pull/889),
+  [`257e34a`](https://github.com/fhempy/fhempy/commit/257e34a4c626a50c3dd68bb41f41b48a5394f62b))
+
+- **scooter**: Import the BlueZ backend of bleak in a thread
+  ([#893](https://github.com/fhempy/fhempy/pull/893),
+  [`c3f8fc5`](https://github.com/fhempy/fhempy/commit/c3f8fc521844e82f514607e0f2f2cb6e1f4ef170))
+
+- **scooter**: Miauth/cryptography is imported in a thread, no block at startup
+  ([#888](https://github.com/fhempy/fhempy/pull/888),
+  [`7be2afe`](https://github.com/fhempy/fhempy/commit/7be2afea626d4146da1937a6b0ac698f222e604d))
+
+- **scooter**: No BleakDBusError InProgress next to the shared Bluetooth scan
+  ([#884](https://github.com/fhempy/fhempy/pull/884),
+  [`704489f`](https://github.com/fhempy/fhempy/commit/704489f45fa4c38f630960da51bfcbea4ab7ab18))
+
+- **timeline**: FHEM sends many events in parts of 500, no long block after MQTT bursts
+  ([#885](https://github.com/fhempy/fhempy/pull/885),
+  [`1f204ce`](https://github.com/fhempy/fhempy/commit/1f204cec53810832c14c9b6ec47e1ba5c3009800))
+
+### Features
+
+- FHEM needs up to 64% less CPU for readings updates of fhempy devices
+  ([#881](https://github.com/fhempy/fhempy/pull/881),
+  [`1e700d3`](https://github.com/fhempy/fhempy/commit/1e700d37c30a007cb7e9149753fd45187d70769d))
+
+- **dashboard**: Station logo next to the song cover, correct preset logos
+  ([#899](https://github.com/fhempy/fhempy/pull/899),
+  [`f101b35`](https://github.com/fhempy/fhempy/commit/f101b35b6ebe853834368d6fc1b7c75ff35e8e8d))
+
+- **matter**: Readings for Thread role, device type and RSSI
+  ([#877](https://github.com/fhempy/fhempy/pull/877),
+  [`8d1762a`](https://github.com/fhempy/fhempy/commit/8d1762a7ed16c5b187eeb7c1dbd289a125c27e9e))
+
+- **pr-tester**: --yes flag and self update from newest master commit
+  ([#901](https://github.com/fhempy/fhempy/pull/901),
+  [`f76aecd`](https://github.com/fhempy/fhempy/commit/f76aecd3fc62cec826334945359782e2e10e7034))
+
+
 ## v2.14.5 (2026-11-05)
 
 ### Bug Fixes
