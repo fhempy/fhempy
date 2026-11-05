@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.14.5 (2026-11-05)
+
+### Bug Fixes
+
+- No 'partially initialized module aiohttp' warning when two tasks import it at once
+  ([#873](https://github.com/fhempy/fhempy/pull/873),
+  [`cfe8f2e`](https://github.com/fhempy/fhempy/commit/cfe8f2e196faaa84c3d3a2b8f88c04f2fca53ee6))
+
+
 ## v2.14.4 (2026-11-04)
 
 ### Bug Fixes
