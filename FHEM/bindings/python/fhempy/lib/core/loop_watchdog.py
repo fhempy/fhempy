@@ -2,10 +2,17 @@
 
 While the event loop hangs in synchronous code, fhempy can't answer FHEM.
 FHEM waits for function replies (Set, Get, Attr, ...) and is frozen in the
-meantime. A thread checks a heartbeat of the loop and logs where the loop
-hangs, so the blocking module can be found.
+meantime. Every callback of the loop is timed, so each blockade of at least
+THRESHOLD is logged with its exact duration. A thread looks at the running
+callback every POLL seconds without waking the loop: it records the stack of
+a callback running longer than POLL and logs it right away after THRESHOLD,
+so the blocking module is found even if the loop never recovers. A blockade
+>= THRESHOLD still runs >= POLL at one of the thread's checks, so its stack
+is always known. The former heartbeat woke the loop 10 times per second, on a
+Raspberry Pi this was the whole idle CPU usage of fhempy.
 """
 
+import asyncio
 import logging
 import os
 import sys
@@ -16,9 +23,8 @@ import traceback
 logger = logging.getLogger(__name__)
 
 THRESHOLD = 0.5
-INTERVAL = 1.0
-# check this often while the heartbeat is missing
-POLL = 0.1
+# the thread checks the running callback this often, POLL <= THRESHOLD / 2
+POLL = 0.25
 # log the stack of a blocked loop at most this often
 LOG_INTERVAL = 60
 STACK_LIMIT = 8
@@ -38,24 +44,25 @@ def _module_of(stack):
 
 
 class LoopWatchdog:
-    def __init__(self, loop, threshold=THRESHOLD, interval=INTERVAL):
+    def __init__(self, loop, threshold=THRESHOLD, interval=POLL):
         self._loop = loop
         self._threshold = threshold
-        self._interval = interval
-        self._last_beat = time.monotonic()
+        self._interval = min(interval, threshold / 2)
         self._loop_thread_id = None
         self._stop = threading.Event()
-        # set by the loop when it answered the last heartbeat request
-        self._answered = threading.Event()
         self._thread = None
-        self._blocked_since = None
+        self._original_run = None
+        # start time of the callback which runs right now, None between callbacks
+        self._running_since = None
+        # (start of the callback, stack) seen by the thread
+        self._seen = None
+        # start of the callback whose blockade was already logged by the thread
+        self._logged_since = None
         self._last_log = None
-        # the current blockade was logged, log its duration when it ends
-        self._logged = False
 
     def start(self):
         self._loop_thread_id = threading.get_ident()
-        self._last_beat = time.monotonic()
+        self._install()
         self._thread = threading.Thread(
             target=self._watch, name="fhempy_loop_watchdog", daemon=True
         )
@@ -63,65 +70,77 @@ class LoopWatchdog:
 
     def stop(self):
         self._stop.set()
+        if self._original_run is not None:
+            asyncio.events.Handle._run = self._original_run
+            self._original_run = None
 
-    def _beat(self):
-        self._last_beat = time.monotonic()
-        self._answered.set()
+    def _install(self):
+        original = asyncio.events.Handle._run
+        self._original_run = original
+        watchdog = self
+        loop_thread = self._loop_thread_id
+        monotonic = time.monotonic
 
-    def _request_beat(self):
-        """False if the loop is closed."""
-        self._answered.clear()
-        # the loop answered the last request, the lag counts from now on
-        self._last_beat = time.monotonic()
-        try:
-            self._loop.call_soon_threadsafe(self._beat)
-        except RuntimeError:
-            return False
-        return True
+        def _run(handle):
+            if threading.get_ident() != loop_thread:
+                # e.g. a module with its own loop in a thread
+                return original(handle)
+            start = monotonic()
+            watchdog._running_since = start
+            try:
+                return original(handle)
+            finally:
+                watchdog._running_since = None
+                duration = monotonic() - start
+                if duration >= watchdog._threshold:
+                    watchdog.finished(start, duration)
+
+        asyncio.events.Handle._run = _run
 
     def _watch(self):
         while not self._stop.wait(self._interval):
-            if not self._request_beat():
-                return
-            # usually answered within microseconds
-            if self._answered.wait(self._threshold):
-                if self._blocked_since is not None:
-                    self.check(time.monotonic())
-                continue
-            while not self._stop.is_set():
-                self.check(time.monotonic())
-                if self._answered.wait(POLL):
-                    break
-            # logs the duration of the blockade
             self.check(time.monotonic())
 
     def check(self, now):
-        lag = now - self._last_beat
-        if lag > self._threshold:
-            if self._blocked_since is None:
-                self._blocked_since = self._last_beat
-                self._report_blocked(lag)
-        elif self._blocked_since is not None:
-            duration = (self._last_beat - self._blocked_since) * 1000
-            self._blocked_since = None
-            if self._logged:
-                self._logged = False
-                logger.warning(f"Event loop was blocked for {duration:.0f}ms")
+        """Called by the thread, the loop keeps running meanwhile."""
+        since = self._running_since
+        if since is None:
+            return
+        lag = now - since
+        if lag < self._interval:
+            return
+        if self._seen is None or self._seen[0] != since:
+            frame = sys._current_frames().get(self._loop_thread_id)
+            if frame is None:
+                return
+            self._seen = (since, traceback.extract_stack(frame))
+        if lag >= self._threshold and self._logged_since != since:
+            self._logged_since = since
+            self._report(lag, self._seen[1], still_blocked=True)
 
-    def _report_blocked(self, lag):
-        now = time.monotonic()
-        if self._last_log is not None and now - self._last_log < LOG_INTERVAL:
+    def finished(self, since, duration):
+        """Called in the loop after a callback which ran >= threshold."""
+        if self._logged_since == since:
+            logger.warning(f"Event loop was blocked for {duration * 1000:.0f}ms")
             return
-        frame = sys._current_frames().get(self._loop_thread_id)
-        if frame is None:
-            return
-        stack = traceback.extract_stack(frame)
-        module = _module_of(stack)
-        self._last_log = now
-        self._logged = True
+        seen = self._seen
+        stack = seen[1] if seen is not None and seen[0] == since else None
+        self._report(duration, stack, still_blocked=False)
+
+    def _report(self, duration, stack, still_blocked):
+        module = _module_of(stack) if stack else None
         where = f" in {module}" if module else ""
-        logger.warning(
-            f"Event loop blocked for >{lag * 1000:.0f}ms{where}, FHEM waits for "
-            "fhempy meanwhile. Blocking code:\n"
-            + "".join(traceback.format_list(stack[-STACK_LIMIT:]))
-        )
+        if still_blocked:
+            text = f"Event loop blocked for >{duration * 1000:.0f}ms{where}"
+        else:
+            text = f"Event loop was blocked for {duration * 1000:.0f}ms{where}"
+        now = time.monotonic()
+        if stack and (self._last_log is None or now - self._last_log >= LOG_INTERVAL):
+            # the stack at most once per LOG_INTERVAL, the duration always
+            self._last_log = now
+            logger.warning(
+                f"{text}, FHEM waits for fhempy meanwhile. Blocking code:\n"
+                + "".join(traceback.format_list(stack[-STACK_LIMIT:]))
+            )
+        else:
+            logger.warning(f"{text}, FHEM waits for fhempy meanwhile")
