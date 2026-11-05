@@ -573,3 +573,56 @@ async def test_module_migrates_hidden_address(mocker):
         assert ".address" not in readings
     finally:
         await module.Undefine(hash)
+
+
+@pytest.mark.asyncio
+async def test_scan_uses_running_shared_scan(mocker):
+    env, hash, module = await define(mocker, FakeNinebot())
+    from fhempy.lib.core import ble_scanner
+
+    class Shared:
+        callbacks = []
+
+        def add_callback(self, callback):
+            self.callbacks.append(callback)
+            for device, adv in env.nearby:
+                callback(device, adv)
+
+        def remove_callback(self, callback):
+            self.callbacks.remove(callback)
+
+    shared = Shared()
+    mocker.patch.object(
+        ble_scanner.BleScanner, "running_instance", staticmethod(lambda: shared)
+    )
+
+    def no_own_scan(*args, **kwargs):
+        raise AssertionError("own scan next to the shared scan")
+
+    mocker.patch("bleak.BleakScanner", no_own_scan)
+    module._address = ADDRESS
+    found = await module._scan(1, lambda d, adv: True)
+    assert ADDRESS in found
+    assert shared.callbacks == []
+
+
+@pytest.mark.asyncio
+async def test_scan_busy_adapter_is_no_error(mocker):
+    env, hash, module = await define(mocker, FakeNinebot())
+    from bleak.exc import BleakDBusError
+
+    class BusyScanner:
+        def __init__(self, detection_callback):
+            pass
+
+        async def __aenter__(self):
+            raise BleakDBusError(
+                "org.bluez.Error.InProgress", ["Operation already in progress"]
+            )
+
+        async def __aexit__(self, *args):
+            return False
+
+    mocker.patch("bleak.BleakScanner", BusyScanner)
+    module._address = ADDRESS
+    assert await module._scan(0.1, lambda d, adv: True) == {}
