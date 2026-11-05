@@ -376,3 +376,83 @@ async def test_reading_names_are_escaped(monkeypatch):
     assert sent[0] == (
         "readingsSingleUpdate($defs{'dev_reading_escape'},'a\\'b','v',1)"
     )
+
+
+@pytest.fixture
+def structured(monkeypatch):
+    sent = []
+
+    async def send(name, cmd, hash=None, fields=None):
+        sent.append((name, cmd, fields))
+        return ""
+
+    monkeypatch.setattr(fhem, "sendCommandName", send)
+    monkeypatch.setattr(fhem, "structured_readings", True)
+    return sent
+
+
+@pytest.mark.asyncio
+async def test_bulk_update_as_list_without_perl_code(structured):
+    hash = {"NAME": "dev_list"}
+    await fhem.readingsBeginUpdate(hash)
+    await fhem.readingsBulkUpdate(hash, "a", 1)
+    await fhem.readingsBulkUpdate(hash, "b", "it's", 0)
+    await fhem.readingsBulkUpdateIfChanged(hash, "c", True)
+    await fhem.readingsEndUpdate(hash, 1)
+
+    assert structured == [
+        (
+            "dev_list",
+            None,
+            {
+                "readings": [
+                    ["a", "1", None, 0],
+                    ["b", "it's", 0, 0],
+                    ["c", "1", None, 1],
+                ],
+                "trigger": 1,
+            },
+        )
+    ]
+    assert not fhem.update_locks["dev_list"].locked()
+
+
+@pytest.mark.asyncio
+async def test_single_updates_as_list(structured):
+    hash = {"NAME": "dev_single"}
+    await fhem.readingsSingleUpdate(hash, "state", "on", 1)
+    await fhem.readingsSingleUpdateIfChanged(hash, "state", "off", 0)
+    assert [fields for _, _, fields in structured] == [
+        {"readings": [["state", "on", None, 0]], "trigger": 1},
+        {"readings": [["state", "off", None, 1]], "trigger": 0},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_capabilities_are_detected(monkeypatch):
+    replies = {"1": True, "0": False, "": False}
+    for reply, expected in replies.items():
+        monkeypatch.setattr(fhem, "sendCommandName", lambda *a, r=reply: _value(r))
+        await fhem.detect_capabilities()
+        assert fhem.structured_readings is expected
+    fhem.updateConnection(fhem.wsconnection)
+    assert fhem.structured_readings is False
+
+
+async def _value(value):
+    return value
+
+
+@pytest.mark.asyncio
+async def test_structured_command_message(monkeypatch):
+    pb = fhem_pythonbinding.fhempy(FakeWebsocket())
+    monkeypatch.setattr(fhem, "wsconnection", pb)
+    task = asyncio.create_task(
+        fhem.send_and_wait("dev", None, {"readings": [["a", "1", None, 0]], "trigger": 1})
+    )
+    await asyncio.sleep(0)
+    msg = pb.wsconnection.sent[0]
+    assert "command" not in msg
+    assert msg["readings"] == [["a", "1", None, 0]]
+    pb._msg_listeners.pop(msg["awaitId"])({"awaitId": msg["awaitId"], "result": ""})
+    assert (await task)["result"] == ""

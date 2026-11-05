@@ -1064,22 +1064,30 @@ sub BindingsIo_processCommand($$) {
   } elsif ($json->{msgtype} eq "command") {
     my $ret = 0;
     my %res;
+    my $structured = ref($json->{readings}) eq "ARRAY";
+    my $command = $structured ? "readings update" : $json->{command} // "";
     # set proper IODev list for easier handling
-    if ($json->{command} =~ /^setDevAttrList/) {
+    if (!$structured && $command =~ /^setDevAttrList/) {
         my $liststr = BindingsIo_getIODevList($hash);
         $json->{command} =~ s/IODev/IODev:$liststr/;
+        $command = $json->{command};
     }
     local $SIG{__WARN__} = sub {
         my $message = shift;
-        Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ".$message." => COMMAND: ".$json->{command};
+        Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ".$message." => COMMAND: ".$command;
         foreach my $key (keys %$json) {
-          Log3 $hash, 1, "BindingsIo ($hash->{NAME}):    ".$key." = ".$json->{$key};
+          Log3 $hash, 1, "BindingsIo ($hash->{NAME}):    ".$key." = ".($json->{$key} // "");
         }
     };
-    Log3 $hash, 4, "BindingsIo($hash->{NAME}): processCommand ($json->{awaitId}): ".$json->{command};
-    $ret = eval $json->{command};
+    Log3 $hash, 4, "BindingsIo($hash->{NAME}): processCommand ($json->{awaitId}): ".$command;
+    if ($structured) {
+      # no Perl code to compile, eval of a string costs most of the time
+      $ret = eval { BindingsIo_readings($json) };
+    } else {
+      $ret = eval $json->{command};
+    }
     if ($@) {
-      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$json->{command}."): ".$@;
+      Log3 $hash, 1, "BindingsIo ($hash->{NAME}): ERROR failed (".$command."): ".$@;
       %res = (
         awaitId => int($json->{awaitId}),
         error => 1,
@@ -1099,6 +1107,30 @@ sub BindingsIo_processCommand($$) {
       DevIo_SimpleWrite($hash, $utf8msg, 0);
     }
   }
+}
+
+# readings update of fhempy without Perl code: NAME, trigger and
+# readings => [[reading, value, changed (undef: default), ifchanged], ...]
+# fhempy checks with defined(&BindingsIo_readings) if it may send these
+sub BindingsIo_readings($) {
+  my ($json) = @_;
+  my $devhash = $defs{$json->{NAME} // ""};
+  return undef if (!defined($devhash));
+  readingsBeginUpdate($devhash);
+  foreach my $entry (@{$json->{readings}}) {
+    next if (ref($entry) ne "ARRAY");
+    my ($reading, $value, $changed, $ifchanged) = @$entry;
+    next if (!defined($reading) || $reading eq "");
+    $value //= "";
+    if ($ifchanged) {
+      readingsBulkUpdateIfChanged($devhash, $reading, $value);
+    } elsif (defined($changed)) {
+      readingsBulkUpdate($devhash, $reading, $value, $changed);
+    } else {
+      readingsBulkUpdate($devhash, $reading, $value);
+    }
+  }
+  return readingsEndUpdate($devhash, $json->{trigger} ? 1 : 0);
 }
 
 # will be removed from DevIo, therefore it's copied here

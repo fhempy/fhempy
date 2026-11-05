@@ -147,6 +147,7 @@ async def pybinding(websocket):
         # only the local fhempy, peers use the IODev of their devices
         discovery_task = asyncio.create_task(first_start.define_once(logger))
     await fhem.send_version()
+    capabilities_task = asyncio.create_task(fhem.detect_capabilities())
     release_task = asyncio.create_task(fhem.send_latest_release())
     # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
     modules_task = asyncio.create_task(fhem_modules.install())
@@ -172,6 +173,7 @@ async def pybinding(websocket):
             exit_code = 1
             stop_event.set()
     finally:
+        capabilities_task.cancel()
         release_task.cancel()
         modules_task.cancel()
         orphan_task.cancel()
