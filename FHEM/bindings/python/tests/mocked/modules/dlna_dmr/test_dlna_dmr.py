@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import socket
 
 import pytest
 from tests.utils import mock_fhem
@@ -21,6 +23,7 @@ async def test_found_device_starts_notify_server(mocker):
     mocker.patch.object(dlna_module, "DEFAULT_LISTEN_PORT", 0)
     dmr_device = mocker.patch.object(dlna_module, "DmrDevice")
     mocker.patch.object(dlna_module.dlna_dmr, "event_handler", None)
+    mocker.patch.object(dlna_module.dlna_dmr, "notify_server", None)
 
     device = dlna_module.dlna_dmr(logging.getLogger(__name__))
     device.hash = {"NAME": "dlna_test"}
@@ -80,3 +83,113 @@ async def test_removed_device_twice(mocker):
     dmr.cleanup.assert_awaited_once()
     assert device.device is None
     assert mock_fhem.readings["dlna_test"]["state"] == "offline"
+
+
+async def prepare_found_device(mocker, port):
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("dlna_dmr")
+    from fhempy.lib.dlna_dmr import dlna_dmr as dlna_module
+
+    mocker.patch.object(
+        dlna_module, "async_get_local_ip", return_value=(2, "127.0.0.1")
+    )
+    mocker.patch.object(dlna_module, "DEFAULT_LISTEN_PORT", port)
+    mocker.patch.object(dlna_module, "DmrDevice")
+    mocker.patch.object(dlna_module.dlna_dmr, "event_handler", None)
+    mocker.patch.object(dlna_module.dlna_dmr, "notify_server", None)
+    return dlna_module
+
+
+def new_device(mocker, dlna_module, name="dlna_test"):
+    device = dlna_module.dlna_dmr(logging.getLogger(name))
+    device.hash = {"NAME": name}
+    mocker.patch.object(device, "updateDeviceReadings")
+    mocker.patch.object(device, "update")
+    return device
+
+
+async def stop_shared_server(dlna_module):
+    server = dlna_module.dlna_dmr.notify_server
+    if server is not None:
+        await server.async_stop_server()
+        await server.event_handler._requester._session.close()
+
+
+@pytest.mark.asyncio
+async def test_found_device_twice_at_once_keeps_session_open(mocker):
+    # SSDP reported the renderer twice at the same time: the second call
+    # replaced self.server, failed to bind and closed the session the shared
+    # event handler used -> "Session is closed" on every update
+    dlna_module = await prepare_found_device(mocker, 0)
+    device = new_device(mocker, dlna_module)
+    other = new_device(mocker, dlna_module, "dlna_other")
+    try:
+        await asyncio.gather(
+            device.found_device(mocker.MagicMock()),
+            device.found_device(mocker.MagicMock()),
+            other.found_device(mocker.MagicMock()),
+        )
+        server = dlna_module.dlna_dmr.notify_server
+        assert device.server is server and other.server is server
+        assert not server.event_handler._requester._session.closed
+        assert dlna_module.DmrDevice.call_count == 2
+    finally:
+        await stop_shared_server(dlna_module)
+
+
+@pytest.mark.asyncio
+async def test_port_in_use_falls_back_to_free_port(mocker, caplog):
+    blocker = socket.socket()
+    blocker.bind(("127.0.0.1", 0))
+    blocker.listen()
+    port = blocker.getsockname()[1]
+    dlna_module = await prepare_found_device(mocker, port)
+    device = new_device(mocker, dlna_module)
+    try:
+        with caplog.at_level(logging.INFO):
+            await device.found_device(mocker.MagicMock())
+        assert device.device is not None
+        assert device.server.listen_port not in (0, port)
+        assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+    finally:
+        blocker.close()
+        await stop_shared_server(dlna_module)
+
+
+@pytest.mark.asyncio
+async def test_server_start_error_is_one_line(mocker, caplog):
+    dlna_module = await prepare_found_device(mocker, 0)
+    mocker.patch.object(
+        dlna_module.AiohttpNotifyServer,
+        "async_start_server",
+        side_effect=OSError(99, "cannot assign requested address"),
+    )
+    device = new_device(mocker, dlna_module)
+    await device.found_device(mocker.MagicMock())
+
+    errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(errors) == 1
+    assert "Could not start UPnP event server" in errors[0].getMessage()
+    assert errors[0].exc_info is None
+    assert device.device is None
+    assert dlna_module.dlna_dmr.event_handler is None
+
+
+@pytest.mark.asyncio
+async def test_update_error_without_traceback(mocker, caplog):
+    device, _ = await define_offline_device(mocker)
+    from fhempy.lib.dlna_dmr import dlna_dmr as dlna_module
+
+    device.device = mocker.MagicMock()
+    device.device.async_update = mocker.AsyncMock(
+        side_effect=RuntimeError("Session is closed")
+    )
+    mocker.patch.object(
+        dlna_module.asyncio, "sleep", side_effect=asyncio.CancelledError
+    )
+    with pytest.raises(asyncio.CancelledError):
+        await device.update()
+
+    errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(errors) == 1
+    assert errors[0].exc_info is None
