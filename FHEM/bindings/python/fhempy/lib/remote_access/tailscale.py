@@ -121,7 +121,9 @@ async def latest_version(session, arch):
 async def install(logger):
     """Download Tailscale if it's missing or outdated, returns the version.
     Without internet the installed version is used."""
-    import aiohttp
+    # in a thread: another thread may import aiohttp right now, a plain
+    # import would wait for its import lock on the event loop
+    aiohttp = await utils.import_module("aiohttp")
 
     arch = architecture()
     installed = await utils.run_blocking(functools.partial(installed_version))

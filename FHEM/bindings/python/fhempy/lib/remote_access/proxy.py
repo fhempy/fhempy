@@ -11,6 +11,9 @@ import asyncio
 import hashlib
 import time
 
+
+from .. import utils
+
 AUTH_CACHE_SECONDS = 60
 # hop-by-hop headers, not forwarded
 HOP_HEADERS = {
@@ -57,7 +60,7 @@ class FhemwebLogin:
     async def check(self, headers):
         """status of FHEMWEB for a request with these headers, None if
         FHEMWEB isn't reachable"""
-        import aiohttp
+        aiohttp = await utils.import_module("aiohttp")
 
         # a new connection for every check: FHEMWEB remembers a login per
         # connection
@@ -126,8 +129,8 @@ class AuthProxy:
         self.session = None
 
     async def start(self):
-        import aiohttp
-        from aiohttp import web
+        aiohttp = await utils.import_module("aiohttp")
+        web = await utils.import_module("aiohttp.web")
 
         app = web.Application(client_max_size=64 * 1024 * 1024)
         app.router.add_route("*", "/{path:.*}", self.handle)

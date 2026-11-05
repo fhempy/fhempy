@@ -100,7 +100,7 @@ def _write_config(cameras):
 
 
 async def install(logger):
-    import aiohttp
+    aiohttp = await utils.import_module("aiohttp")
 
     if await utils.run_blocking(functools.partial(os.path.isfile, binary())):
         return
@@ -150,7 +150,7 @@ class Go2rtc:
             await child_process.stop(proc)
 
     async def request(self, method, path, **kwargs):
-        import aiohttp
+        aiohttp = await utils.import_module("aiohttp")
 
         if not self.url:
             raise RuntimeError("no camera configured")
