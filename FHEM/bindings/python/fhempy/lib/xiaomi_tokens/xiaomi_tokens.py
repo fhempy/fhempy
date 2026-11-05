@@ -59,14 +59,18 @@ class xiaomi_tokens(FhemModule):
         )
         self._enc_username = self._enc_username.replace("\\n", "")
         if self._enc_username != "":
-            self._username = utils.decrypt_string(self._enc_username, self._uniqueid)
+            self._username = await utils.async_decrypt_string(
+                self._enc_username, self._uniqueid
+            )
 
         self._enc_password = await fhem.ReadingsVal(
             self.hash["NAME"], "xiaomi_password", ""
         )
         self._enc_password = self._enc_password.replace("\\n", "")
         if self._enc_password != "":
-            self._password = utils.decrypt_string(self._enc_password, self._uniqueid)
+            self._password = await utils.async_decrypt_string(
+                self._enc_password, self._uniqueid
+            )
 
         # retrieve tokens
         if self._username and self._password:
@@ -75,7 +79,9 @@ class xiaomi_tokens(FhemModule):
 
     async def set_username(self, hash, params):
         self._username = params["username"]
-        self._enc_username = utils.encrypt_string(self._username, self._uniqueid)
+        self._enc_username = await utils.async_encrypt_string(
+            self._username, self._uniqueid
+        )
         await fhem.readingsSingleUpdateIfChanged(
             hash, "xiaomi_username", self._enc_username, 1
         )
@@ -83,7 +89,9 @@ class xiaomi_tokens(FhemModule):
 
     async def set_password(self, hash, params):
         self._password = params["password"]
-        self._enc_password = utils.encrypt_string(self._password, self._uniqueid)
+        self._enc_password = await utils.async_encrypt_string(
+            self._password, self._uniqueid
+        )
         await fhem.readingsSingleUpdateIfChanged(
             hash, "xiaomi_password", self._enc_password, 1
         )

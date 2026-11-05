@@ -173,7 +173,7 @@ class bmw(generic.FhemModule):
         if not value:
             return ""
         try:
-            return utils.decrypt_string(value, self._unique_id)
+            return await utils.async_decrypt_string(value, self._unique_id)
         except Exception:
             self.logger.warning(f"Failed to decrypt {reading}, please log in again")
             return ""
@@ -195,7 +195,7 @@ class bmw(generic.FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash,
             ".refresh_token",
-            utils.encrypt_string(self.api.refresh_token, self._unique_id),
+            await utils.async_encrypt_string(self.api.refresh_token, self._unique_id),
         )
         await fhem.readingsBulkUpdate(self.hash, ".gcid", self.api.gcid)
         await fhem.readingsEndUpdate(self.hash, 0)

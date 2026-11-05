@@ -332,7 +332,7 @@ class kia_hyundai(generic.FhemModule):
         if not value:
             return ""
         try:
-            return utils.decrypt_string(value, self._unique_id)
+            return await utils.async_decrypt_string(value, self._unique_id)
         except Exception:
             self.logger.warning(f"Failed to decrypt {reading}, please set it again")
             return ""
@@ -351,7 +351,7 @@ class kia_hyundai(generic.FhemModule):
         await fhem.readingsBulkUpdate(
             self.hash,
             ".client_secret",
-            utils.encrypt_string(client_secret, self._unique_id),
+            await utils.async_encrypt_string(client_secret, self._unique_id),
         )
         await fhem.readingsEndUpdate(self.hash, 0)
         await self._pleos_state("connecting")

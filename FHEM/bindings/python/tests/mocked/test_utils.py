@@ -21,6 +21,22 @@ def test_encrypt_decrypt():
 
 
 @pytest.mark.asyncio
+async def test_async_encrypt_decrypt_imports_in_thread(monkeypatch):
+    imported = []
+    original = utils.import_module
+
+    async def import_module(name):
+        imported.append(name)
+        return await original(name)
+
+    monkeypatch.setattr(utils, "import_module", import_module)
+    fhem_unique_id = "a3e36c8ec8622a0de0e11191dc430a34"
+    encrypted = await utils.async_encrypt_string("secret", fhem_unique_id)
+    assert await utils.async_decrypt_string(encrypted, fhem_unique_id) == "secret"
+    assert set(imported) == set(utils.CRYPTO_MODULES)
+
+
+@pytest.mark.asyncio
 async def test_run_blocking():
     test_string = await utils.run_blocking(functools.partial(test_encrypt_decrypt))
     assert "This is a test string" == test_string

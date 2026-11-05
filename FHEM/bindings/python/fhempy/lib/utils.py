@@ -36,6 +36,34 @@ def decrypt_string(encrypted_text, fhem_unique_id):
     return d_cipher.decrypt(encrypted_data).decode()
 
 
+# pycryptodomex is only imported when a module needs it. The first import
+# takes up to 2 seconds on a Raspberry Pi, the event loop would wait meanwhile.
+CRYPTO_MODULES = (
+    "Cryptodome.Cipher.AES",
+    "Cryptodome.Hash.HMAC",
+    "Cryptodome.Hash.SHA256",
+    "Cryptodome.Util.Padding",
+)
+
+
+async def load_crypto():
+    """Imports pycryptodomex in a worker thread"""
+    for name in CRYPTO_MODULES:
+        await import_module(name)
+
+
+async def async_encrypt_string(plain_text, fhem_unique_id):
+    """encrypt_string without blocking the event loop on the first call"""
+    await load_crypto()
+    return encrypt_string(plain_text, fhem_unique_id)
+
+
+async def async_decrypt_string(encrypted_text, fhem_unique_id):
+    """decrypt_string without blocking the event loop on the first call"""
+    await load_crypto()
+    return decrypt_string(encrypted_text, fhem_unique_id)
+
+
 def decrypt_fernet(token_b64, key_str):
     from Cryptodome.Cipher import AES
     from Cryptodome.Hash import HMAC, SHA256
@@ -268,7 +296,8 @@ async def handle_attr(attr_list, obj, hash, args, argsh):
             attr_val = config.get("default", "")
         try:
             value = (
-                "" if cmd != "set" and "default" not in config
+                ""
+                if cmd != "set" and "default" not in config
                 else convert2format(attr_val, config)
             )
         except (ValueError, TypeError, OverflowError) as exc:
@@ -341,7 +370,8 @@ async def handle_define_attr(attr_list, obj, hash, extra_attrs=None):
             value = convert2format(config["default"], config)
             obj.logger.error(
                 "%s Using default %r.",
-                _format_error(attr, curr_val, config, exc), value,
+                _format_error(attr, curr_val, config, exc),
+                value,
             )
         setattr(obj, "_attr_" + attr, value)
 

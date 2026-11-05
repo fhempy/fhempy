@@ -162,7 +162,7 @@ class mcp_server(generic.FhemModule):
         token = await fhem.ReadingsVal(name, ".token", "")
         if token:
             try:
-                self.token = utils.decrypt_string(token, self._unique_id)
+                self.token = await utils.async_decrypt_string(token, self._unique_id)
             except Exception:
                 self.token = ""
         if not self.token:
@@ -178,7 +178,10 @@ class mcp_server(generic.FhemModule):
     async def new_token(self):
         self.token = secrets.token_urlsafe(24)
         await fhem.readingsSingleUpdate(
-            self.hash, ".token", utils.encrypt_string(self.token, self._unique_id), 0
+            self.hash,
+            ".token",
+            await utils.async_encrypt_string(self.token, self._unique_id),
+            0,
         )
 
     async def save_lists(self):
