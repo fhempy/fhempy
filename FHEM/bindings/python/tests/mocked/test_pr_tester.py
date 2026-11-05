@@ -42,7 +42,7 @@ def runner(tester, tmp_path):
     write(fhem_dir / "www" / "fhempy" / "push.js", "old push", 0o744)
     runner = tester.Runner(
         {"dir": str(fhem_dir), "mode": "service", "user": "fhem"},
-        SimpleNamespace(port=15733, telnet_port=None),
+        SimpleNamespace(port=15733, telnet_port=None, yes=False),
     )
     src = pathlib.Path(runner.inst.src)
     write(src / "FHEM" / "10_BindingsIo.pm", "pr io", 0o600)
@@ -110,3 +110,66 @@ def test_file_without_backup_stays_if_not_new(runner):
     (pathlib.Path(runner.inst.backup_dir) / "www" / "fhempy" / "push.js").unlink()
     runner.restore_www_files(state)
     assert (runner.dir / "www" / "fhempy" / "push.js").read_text() == "pr push"
+
+
+def changed_pr(runner, monkeypatch, tester, answer):
+    monkeypatch.setattr(
+        tester,
+        "pr_changed_files",
+        lambda pr: ["FHEM/10_BindingsIo.pm", "www/fhempy/push.js"],
+    )
+    asked = []
+    monkeypatch.setattr(
+        tester, "ask", lambda question, default=False: asked.append(question) or answer
+    )
+    runner.ctx["mode"] = "local"
+    return asked
+
+
+def test_yes_copies_changed_fhem_files_without_asking(runner, tester, monkeypatch):
+    asked = changed_pr(runner, monkeypatch, tester, False)
+    runner.args.yes = True
+    modules, www = runner.select_fhem_files({"pr": 1})
+    assert modules == ["10_BindingsIo"]
+    assert www == ["www/fhempy/push.js"]
+    assert not asked
+
+
+def test_without_yes_the_user_is_asked(runner, tester, monkeypatch):
+    asked = changed_pr(runner, monkeypatch, tester, False)
+    runner.args.yes = False
+    assert runner.select_fhem_files({"pr": 1}) == ([], [])
+    assert len(asked) == 1
+
+
+def test_yes_is_kept_when_the_script_restarts(tester):
+    args = tester.argparse.Namespace(
+        debug=False,
+        fresh=False,
+        restore=False,
+        clean=False,
+        yes=True,
+        mode=None,
+        port=15733,
+        telnet_port=None,
+    )
+    assert "--yes" in tester.forwarded_args(args, 1)
+
+
+def test_short_yes_flag(tester, monkeypatch):
+    monkeypatch.setattr(tester.sys, "argv", ["pr-tester.py", "--pr", "5", "-y"])
+    assert tester.parse_args().yes
+
+
+def test_self_update_uses_newest_master_commit(tester, monkeypatch):
+    sha = "a" * 40
+    monkeypatch.setattr(tester, "github_get", lambda path: {"sha": sha})
+    assert tester.latest_script_url().endswith(f"/{sha}/tools/pr-tester.py")
+
+
+def test_self_update_falls_back_to_master_url(tester, monkeypatch):
+    def fail(path):
+        raise tester.TestError("rate limit")
+
+    monkeypatch.setattr(tester, "github_get", fail)
+    assert tester.latest_script_url() == tester.SCRIPT_URL
