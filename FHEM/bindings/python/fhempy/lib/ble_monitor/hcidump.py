@@ -1,4 +1,5 @@
 """Passive BLE monitor integration."""
+
 import asyncio
 from threading import Thread
 
@@ -155,85 +156,95 @@ class HCIdump(Thread):
             if self._event_loop is None:
                 self._event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._event_loop)
-            if "disable" not in self.config[CONF_BT_INTERFACE]:
-                for hci in self._interfaces:
-                    interface_is_ok[hci] = False
-                    try:
-                        mysocket[hci] = aiobs.create_bt_socket(hci)
-                    except OSError as error:
-                        self.logger.error(
-                            "HCIdump thread: OS error (hci%i): %s", hci, error
-                        )
-                    else:
-                        fac[hci] = getattr(
-                            self._event_loop, "_create_connection_transport"
-                        )(mysocket[hci], aiobs.BLEScanRequester, None, None)
-                        conn[hci], btctrl[hci] = self._event_loop.run_until_complete(
-                            fac[hci]
-                        )
-                        # Wait up to five seconds for aioblescan BLEScanRequester to initialize
-                        initialized_evt[hci] = getattr(btctrl[hci], "_initialized")
-                        self.logger.debug(
-                            "HCIdump thread: BLEScanRequester._initialized is %s for hci%i, "
-                            " waiting for connection...",
-                            initialized_evt[hci].is_set(),
-                            hci,
-                        )
+            stopped_while_starting = False
+            try:
+                if "disable" not in self.config[CONF_BT_INTERFACE]:
+                    for hci in self._interfaces:
+                        interface_is_ok[hci] = False
                         try:
-                            self._event_loop.run_until_complete(
-                                asyncio.wait_for(initialized_evt[hci].wait(), 5)
-                            )
-                        except asyncio.TimeoutError:
+                            mysocket[hci] = aiobs.create_bt_socket(hci)
+                        except OSError as error:
                             self.logger.error(
-                                "HCIdump thread: Something wrong - interface hci%i not ready,"
-                                " and will be skipped for current scan period.",
-                                hci,
+                                "HCIdump thread: OS error (hci%i): %s", hci, error
                             )
                         else:
-                            btctrl[hci].process = self.process_hci_events
-                            self.logger.debug("HCIdump thread: connected to hci%i", hci)
+                            fac[hci] = getattr(
+                                self._event_loop, "_create_connection_transport"
+                            )(mysocket[hci], aiobs.BLEScanRequester, None, None)
+                            conn[hci], btctrl[hci] = (
+                                self._event_loop.run_until_complete(fac[hci])
+                            )
+                            # Wait up to five seconds for aioblescan BLEScanRequester to initialize
+                            initialized_evt[hci] = getattr(btctrl[hci], "_initialized")
+                            self.logger.debug(
+                                "HCIdump thread: BLEScanRequester._initialized is %s for hci%i, "
+                                " waiting for connection...",
+                                initialized_evt[hci].is_set(),
+                                hci,
+                            )
                             try:
                                 self._event_loop.run_until_complete(
-                                    btctrl[hci].send_scan_request(self._active)
+                                    asyncio.wait_for(initialized_evt[hci].wait(), 5)
                                 )
-                            except RuntimeError as error:
+                            except asyncio.TimeoutError:
                                 self.logger.error(
-                                    "HCIdump thread: Runtime error while sending scan request on hci%i: %s.",
+                                    "HCIdump thread: Something wrong - interface hci%i not ready,"
+                                    " and will be skipped for current scan period.",
                                     hci,
-                                    error,
                                 )
                             else:
-                                interface_is_ok[hci] = True
+                                btctrl[hci].process = self.process_hci_events
                                 self.logger.debug(
-                                    "HCIdump thread: BLEScanRequester._initialized is %s for hci%i, "
-                                    " connection established, send_scan_request succeeded.",
-                                    initialized_evt[hci].is_set(),
-                                    hci,
+                                    "HCIdump thread: connected to hci%i", hci
                                 )
-                    if (interface_is_ok[hci] is False) and (
-                        self.config[CONF_BT_AUTO_RESTART] is True
-                    ):
-                        interfaces_to_reset.append(hci)
-                if interfaces_to_reset:
-                    ts_now = datetime.now()
-                    if (ts_now - self.last_bt_reset).seconds > 60:
-                        for iface in interfaces_to_reset:
-                            self.logger.error(
-                                "HCIdump thread: Trying to power cycle Bluetooth adapter hci%i %s,"
-                                " will try to use it next scan period.",
-                                iface,
-                                BT_INTERFACES[iface],
-                            )
-                            reset_bluetooth(iface)
-                        self.last_bt_reset = ts_now
+                                try:
+                                    self._event_loop.run_until_complete(
+                                        btctrl[hci].send_scan_request(self._active)
+                                    )
+                                except RuntimeError as error:
+                                    self.logger.error(
+                                        "HCIdump thread: Runtime error while sending scan request on hci%i: %s.",
+                                        hci,
+                                        error,
+                                    )
+                                else:
+                                    interface_is_ok[hci] = True
+                                    self.logger.debug(
+                                        "HCIdump thread: BLEScanRequester._initialized is %s for hci%i, "
+                                        " connection established, send_scan_request succeeded.",
+                                        initialized_evt[hci].is_set(),
+                                        hci,
+                                    )
+                        if (interface_is_ok[hci] is False) and (
+                            self.config[CONF_BT_AUTO_RESTART] is True
+                        ):
+                            interfaces_to_reset.append(hci)
+                    if interfaces_to_reset:
+                        ts_now = datetime.now()
+                        if (ts_now - self.last_bt_reset).seconds > 60:
+                            for iface in interfaces_to_reset:
+                                self.logger.error(
+                                    "HCIdump thread: Trying to power cycle Bluetooth adapter hci%i %s,"
+                                    " will try to use it next scan period.",
+                                    iface,
+                                    BT_INTERFACES[iface],
+                                )
+                                reset_bluetooth(iface)
+                            self.last_bt_reset = ts_now
+            except RuntimeError as error:
+                # restart() or join() stopped the loop while an interface
+                # was being set up, clean up and start again or finish
+                self.logger.debug("HCIdump thread: stopped while starting: %s", error)
+                stopped_while_starting = True
             self.logger.debug("HCIdump thread: start main event_loop")
             try:
-                self._event_loop.run_forever()
+                if not stopped_while_starting:
+                    self._event_loop.run_forever()
             finally:
                 self.logger.debug("HCIdump thread: main event_loop stopped, finishing.")
                 if "disable" not in self.config[CONF_BT_INTERFACE]:
                     for hci in self._interfaces:
-                        if interface_is_ok[hci] is True:
+                        if interface_is_ok.get(hci) is True:
                             try:
                                 self._event_loop.run_until_complete(
                                     btctrl[hci].stop_scan_request()

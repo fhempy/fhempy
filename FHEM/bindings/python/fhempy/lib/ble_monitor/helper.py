@@ -1,4 +1,5 @@
 """Helper for ble_monitor."""
+
 import logging
 import re
 import voluptuous as vol
