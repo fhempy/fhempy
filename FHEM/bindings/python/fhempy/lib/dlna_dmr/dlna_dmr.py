@@ -2,6 +2,7 @@
 
 import asyncio
 import datetime as dt
+import errno
 import functools
 import logging
 import time
@@ -9,6 +10,7 @@ from datetime import timedelta
 
 from aiohttp import ClientError, ClientSession
 from async_upnp_client.aiohttp import AiohttpNotifyServer, AiohttpSessionRequester
+from async_upnp_client.exceptions import UpnpError, UpnpServerOSError
 from async_upnp_client.profiles.dlna import DeviceState, DmrDevice
 from async_upnp_client.utils import async_get_local_ip
 from fhempy.lib.generic import FhemModule
@@ -17,6 +19,26 @@ from .. import fhem, utils
 from ..core.ssdp import ssdp
 
 DEFAULT_LISTEN_PORT = 8301
+
+# serializes creating the notify server shared by all dlna_dmr devices
+_event_handler_lock = asyncio.Lock()
+
+
+class _DropBindError(logging.Filter):
+    """async_upnp_client logs a failed bind itself, we retry on a free port."""
+
+    def filter(self, record):
+        return not record.getMessage().startswith("Failed to create HTTP server")
+
+
+logging.getLogger("async_upnp_client.aiohttp").addFilter(_DropBindError())
+
+
+def _is_expected_error(exc):
+    """Errors logged without traceback."""
+    if isinstance(exc, (UpnpError, asyncio.TimeoutError, ClientError, OSError)):
+        return True
+    return isinstance(exc, RuntimeError) and "Session is closed" in str(exc)
 
 
 def catch_request_errors():
@@ -43,43 +65,43 @@ def catch_request_errors():
 
 class dlna_dmr(FhemModule):
 
+    # notify server and event handler (with its aiohttp session) are shared
+    # by all dlna_dmr devices, they are created once and keep running
+    notify_server = None
     event_handler = None
 
     def __init__(self, logger):
         super().__init__(logger)
         self._errors = utils.ErrorLogger(logger)
+        self._found_lock = asyncio.Lock()
         self.server = None
         self.device = None
         # set log level to ERROR for aiohttp.access to avoid INFO notify msgs
         logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
 
     async def found_device(self, upnp_device):
-        if self.device:
-            self.logger.error("Device exists already, do not create a new one")
-            return
-
-        self.upnp_device = upnp_device
-        # the event handler (and its requester/session) is shared by all
-        # dlna_dmr devices, it is only created once
-        if dlna_dmr.event_handler is None:
-            _, server_host = await async_get_local_ip()
-            session = ClientSession()
-            requester = AiohttpSessionRequester(session, True)
+        # SSDP search responses and advertisements can report the same
+        # renderer at the same time, only set it up once
+        async with self._found_lock:
+            if self.device:
+                self.logger.debug("Device exists already, do not create a new one")
+                return
             try:
-                await self.async_start_event_handler(
-                    server_host, DEFAULT_LISTEN_PORT, requester
+                event_handler = await self.async_start_event_handler()
+            except Exception as exc:
+                self.logger.error(
+                    "Could not start UPnP event server: "
+                    + utils.describe_exception(exc)
                 )
-            except Exception:
-                await session.close()
-                raise
-        event_handler = dlna_dmr.event_handler
+                return
 
-        # wrap with DmrDevice
-        dlna_device = DmrDevice(self.upnp_device, event_handler)
+            self.upnp_device = upnp_device
+            # wrap with DmrDevice
+            dlna_device = DmrDevice(self.upnp_device, event_handler)
 
-        # create our own device
-        self.device = DlnaDmrDevice(self, dlna_device)
-        self.logger.debug("Adding device: %s", self.device)
+            # create our own device
+            self.device = DlnaDmrDevice(self, dlna_device)
+            self.logger.debug("Adding device: %s", self.device)
 
         await self.updateDeviceReadings()
         await fhem.readingsSingleUpdate(self.hash, "state", "online", 1)
@@ -94,20 +116,46 @@ class dlna_dmr(FhemModule):
         self.device = None
         await device.cleanup()
 
-    async def async_start_event_handler(
-        self, server_host: str, server_port: int, requester
-    ):
-        """Register notify view."""
-        if dlna_dmr.event_handler:
+    async def async_start_event_handler(self):
+        """Start the notify server shared by all dlna_dmr devices."""
+        async with _event_handler_lock:
+            if dlna_dmr.event_handler is None:
+                _, server_host = await async_get_local_ip()
+                session = ClientSession()
+                requester = AiohttpSessionRequester(session, True)
+                try:
+                    server = await self._start_notify_server(requester, server_host)
+                except Exception:
+                    await session.close()
+                    raise
+                dlna_dmr.notify_server = server
+                dlna_dmr.event_handler = server.event_handler
+            self.server = dlna_dmr.notify_server
             return dlna_dmr.event_handler
-        # start event handler
-        self.server = AiohttpNotifyServer(requester, (server_host, server_port))
-        await self.server.async_start_server()
+
+    async def _start_notify_server(self, requester, server_host):
+        server = AiohttpNotifyServer(requester, (server_host, DEFAULT_LISTEN_PORT))
+        try:
+            await server.async_start_server()
+        except UpnpServerOSError as exc:
+            # async_upnp_client drops errno/strerror, the OSError is the cause
+            cause = exc.__cause__ or exc
+            if DEFAULT_LISTEN_PORT == 0 or cause.errno != errno.EADDRINUSE:
+                raise cause from None
+            # e.g. a second fhempy instance on the same host uses the port
+            self.logger.info(
+                f"Port {DEFAULT_LISTEN_PORT} is already in use, "
+                "UPnP event server uses a free port"
+            )
+            server = AiohttpNotifyServer(requester, (server_host, 0))
+            try:
+                await server.async_start_server()
+            except UpnpServerOSError as exc2:
+                raise (exc2.__cause__ or exc2) from None
         self.logger.info(
-            "UPNP/DLNA event handler listening, url: %s", self.server.callback_url
+            "UPNP/DLNA event handler listening, url: %s", server.callback_url
         )
-        dlna_dmr.event_handler = self.server.event_handler
-        return dlna_dmr.event_handler
+        return server
 
     # FHEM Function
     async def Undefine(self, hash):
@@ -235,8 +283,10 @@ class dlna_dmr(FhemModule):
                 else:
                     await fhem.readingsSingleUpdate(self.hash, "state", "offline", 1)
                 self._errors.success()
-            except Exception:
-                self._errors.failed("Failed to update")
+            except Exception as exc:
+                self._errors.failed(
+                    "Failed to update", traceback=not _is_expected_error(exc)
+                )
             await asyncio.sleep(30)
 
     async def updateReadings(self):
