@@ -1,4 +1,6 @@
 import asyncio
+import time
+
 import janus
 from fhempy.lib.ble_monitor.bt_helpers import (
     BT_INTERFACES,
@@ -37,6 +39,9 @@ from .const import (
     DEFAULT_RESTORE_STATE,
     DEFAULT_USE_MEDIAN,
 )
+
+# devices register one after another at startup, restart the scan only once
+RESTART_DELAY = 3
 
 
 class BLEmonitor:
@@ -78,6 +83,8 @@ class BLEmonitor:
         }
         self.dumpthread = None
         self.fhem_devices = {}
+        self._restart_requested = 0
+        self._restart_task = None
         self.receive_from_queues()
 
     def receive_from_queues(self):
@@ -182,7 +189,29 @@ class BLEmonitor:
         return result
 
     def restart(self):
-        """Restart scanning."""
-        # wait 3s for other restarts and restart only once
+        """Restart scanning RESTART_DELAY seconds after the last request.
+
+        Every registered device requests a restart. Restarting right away
+        stopped the scan thread while it was still starting ('Event loop
+        stopped before Future completed') and joining the thread blocked
+        the event loop each time."""
+        self._restart_requested = time.monotonic()
+        if self._restart_task is None or self._restart_task.done():
+            self._restart_task = asyncio.create_task(
+                self._delayed_restart(), name="ble_monitor_restart"
+            )
+
+    async def _delayed_restart(self):
+        while True:
+            wait = self._restart_requested + RESTART_DELAY - time.monotonic()
+            if wait > 0:
+                await asyncio.sleep(wait)
+                continue
+            started = time.monotonic()
+            await asyncio.to_thread(self._restart_now)
+            if self._restart_requested <= started:
+                return
+
+    def _restart_now(self):
         self.stop()
         self.start()
