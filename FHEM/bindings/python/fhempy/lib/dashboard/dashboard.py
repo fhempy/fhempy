@@ -1479,7 +1479,7 @@ class dashboard(generic.FhemModule):
         return media.art_url(info)
 
     async def fetch_image(self, url):
-        import aiohttp
+        aiohttp = await utils.import_module("aiohttp")
 
         cached = self._images.get(url)
         if cached is not None:

@@ -588,3 +588,24 @@ async def test_logout_waits_for_running_check(module):
     module._check_lock.release()
     await asyncio.wait_for(task, 5)
     assert stopped == [True]
+
+
+@pytest.mark.asyncio
+async def test_install_imports_aiohttp_in_thread(mocker):
+    """another thread may import aiohttp at the same time, a plain import
+    would wait for its import lock on the event loop"""
+    from fhempy.lib import utils
+
+    class Stop(Exception):
+        pass
+
+    imported = []
+
+    async def import_module(name):
+        imported.append(name)
+        raise Stop()
+
+    mocker.patch.object(utils, "import_module", import_module)
+    with pytest.raises(Stop):
+        await tailscale.install(mocker.Mock())
+    assert imported == ["aiohttp"]

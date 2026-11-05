@@ -310,7 +310,7 @@ class remote_access(generic.FhemModule):
     async def check_password_protection(self):
         """FHEMWEB must refuse requests without password before it is
         reachable from the internet, raises RuntimeError otherwise"""
-        import aiohttp
+        aiohttp = await utils.import_module("aiohttp")
 
         url = self.fhemweb_url() + "/fhem"
         timeout = aiohttp.ClientTimeout(total=15)

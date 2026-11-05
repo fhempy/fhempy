@@ -423,7 +423,9 @@ class push(generic.FhemModule):
         return str(result or "") or None
 
     async def http_session(self):
-        import aiohttp
+        from .. import utils
+
+        aiohttp = await utils.import_module("aiohttp")
 
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
