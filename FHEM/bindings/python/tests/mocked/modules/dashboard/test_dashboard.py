@@ -162,6 +162,32 @@ def test_commands():
     assert model.command(lock, infos["fl_Haustuer"], "unlock") == ["unlock"]
 
 
+def test_zigbee2mqtt_dimmer_channel():
+    # MQTT2_DEVICE of the second channel of a zigbee2mqtt dimmer: brightness
+    # 0..254 stays when the light is off
+    info = {
+        "NAME": "light_ch2",
+        "TYPE": "MQTT2_DEVICE",
+        "room": "Wohnzimmer",
+        "sets": "on:noArg off:noArg toggle:noArg brightness:colorpicker,BRI,0,1,254",
+        "readings": {"state": "off", "brightness": "254", "action": "off_l1"},
+        "attrs": {"genericDeviceType": "light"},
+    }
+    item = model.tile(info)
+    assert item["kind"] == "dimmer"
+    assert item["state"]["on"] is False
+    # until the device confirms the command of the tablet: unknown, not on
+    # because of the brightness
+    info["readings"]["state"] = "set_off"
+    assert "on" not in model.tile(info)["state"]
+    # 127 of 254 is half
+    info["readings"].update(state="on", brightness="127")
+    assert model.tile(info)["state"] == {"on": True, "level": 50}
+    assert model.command(item, info, "level", 50) == ["brightness 127"]
+    assert model.command(item, info, "level", 100) == ["brightness 254"]
+    assert model.command(item, info, "level", 0) == ["off"]
+
+
 def test_doorbell_and_energy_helpers():
     assert model.is_doorbell({"NAME": "fl_Klingel"})
     assert model.is_doorbell({"NAME": "x", "FHEMPYTYPE": "ring"})
@@ -637,6 +663,14 @@ async def test_event_filter_and_global_events(module):
     assert flt.search("global:DEFINED at_1")
     assert not flt.search("wz_Deckenlicht:linkquality: 120")
     assert not flt.search("wz_Deckenlicht:state_x: 1")
+    # state events without "state: "
+    assert flt.search("wz_Deckenlicht:off")
+    assert flt.search("wz_Deckenlicht:on-for-timer 12:30")
+    # set_off until the device confirms: the tile stays as it was
+    await module.handle_event("wz_Deckenlicht", "state", "set_off")
+    assert module.data["tiles"]["wz_Deckenlicht"]["state"]["on"] is True
+    await module.handle_event("wz_Deckenlicht", "state", "off")
+    assert module.data["tiles"]["wz_Deckenlicht"]["state"]["on"] is False
 
     reloads = []
     module.schedule_reload = lambda: reloads.append(1)
