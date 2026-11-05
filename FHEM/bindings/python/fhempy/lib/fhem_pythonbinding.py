@@ -26,6 +26,7 @@ from . import (
     version,
 )
 from .autodiscovery import first_start
+from .core import memory
 from .core.loop_watchdog import LoopWatchdog
 from .core.peer_installer import peer_installer
 from .core.zeroconf import zeroconf
@@ -148,6 +149,7 @@ async def pybinding(websocket):
     # FHEM modules (.pm) matching this fhempy version, replaces FHEM update
     modules_task = asyncio.create_task(fhem_modules.install())
     orphan_task = asyncio.create_task(stop_orphans())
+    trim_task = asyncio.create_task(memory.trim_periodically())
     try:
         async for message in websocket:
             pb.create_background_task(pb.onMessage(message))
@@ -165,6 +167,7 @@ async def pybinding(websocket):
         release_task.cancel()
         modules_task.cancel()
         orphan_task.cancel()
+        trim_task.cancel()
         if discovery_task is not None:
             discovery_task.cancel()
         pb.connection_closed()

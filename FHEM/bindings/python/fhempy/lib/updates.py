@@ -12,6 +12,7 @@ from packaging.utils import (
 from packaging.version import Version
 
 from . import utils
+from .json_utils import json_loads
 
 INDEX_URL = "https://pypi.org/simple/fhempy/"
 CHECK_INTERVAL = 12 * 3600
@@ -47,15 +48,11 @@ def available_versions(files, installed):
 
 
 async def get_versions(installed):
-    # imported in a thread, the import blocks the event loop for seconds on a Pi
-    aiohttp = await utils.import_module("aiohttp")
-
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
-        async with session.get(
-            INDEX_URL, headers={"Accept": "application/vnd.pypi.simple.v1+json"}
-        ) as response:
-            response.raise_for_status()
-            data = await response.json()
+    # urllib in a thread, aiohttp would cost ~16 MB RAM just for this request
+    body = await utils.http_get(
+        INDEX_URL, headers={"Accept": "application/vnd.pypi.simple.v1+json"}
+    )
+    data = await asyncio.to_thread(json_loads, body)
     return await asyncio.to_thread(available_versions, data["files"], installed)
 
 

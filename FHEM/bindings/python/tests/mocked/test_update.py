@@ -204,30 +204,33 @@ async def test_version_reply_advertises_capability_without_overwriting_choices(b
 @pytest.mark.asyncio
 @pytest.mark.parametrize("failure", [None, RuntimeError("HTTP 503")])
 async def test_index_fetch_uses_json_and_bounded_timeout(monkeypatch, failure):
-    import aiohttp
+    from fhempy.lib import utils
 
-    response = MagicMock()
-    response.raise_for_status.side_effect = failure
-    response.json = AsyncMock(return_value={"files": [distribution("2.1.5")]})
-    request = MagicMock()
-    request.__aenter__ = AsyncMock(return_value=response)
-    request.__aexit__ = AsyncMock(return_value=False)
-    session = MagicMock()
-    session.get.return_value = request
-    context = MagicMock()
-    context.__aenter__ = AsyncMock(return_value=session)
-    context.__aexit__ = AsyncMock(return_value=False)
-    factory = MagicMock(return_value=context)
-    monkeypatch.setattr(aiohttp, "ClientSession", factory)
+    body = json.dumps({"files": [distribution("2.1.5")]}).encode()
+    http_get = AsyncMock(return_value=body, side_effect=failure)
+    monkeypatch.setattr(utils, "http_get", http_get)
     if failure:
         with pytest.raises(RuntimeError, match="503"):
             await updates.get_versions("2.1.4")
-        response.json.assert_not_awaited()
     else:
         assert await updates.get_versions("2.1.4") == ["2.1.5", "2.1.4"]
-    assert factory.call_args.kwargs["timeout"].total == 15
-    assert session.get.call_args.args == (updates.INDEX_URL,)
-    assert session.get.call_args.kwargs["headers"]["Accept"] == "application/vnd.pypi.simple.v1+json"
+    assert http_get.call_args.args == (updates.INDEX_URL,)
+    headers = http_get.call_args.kwargs["headers"]
+    assert headers["Accept"] == "application/vnd.pypi.simple.v1+json"
+
+
+@pytest.mark.asyncio
+async def test_index_fetch_doesnt_import_aiohttp(monkeypatch):
+    # aiohttp costs ~16 MB RAM, fhempy itself doesn't need it
+    import sys
+
+    from fhempy.lib import utils
+
+    monkeypatch.delitem(sys.modules, "aiohttp", raising=False)
+    body = json.dumps({"files": []}).encode()
+    monkeypatch.setattr(utils, "_http_get", lambda url, headers, timeout: body)
+    assert await updates.get_versions("2.1.4") == ["2.1.4"]
+    assert "aiohttp" not in sys.modules
 
 
 def test_uv_to_pip_fallback_preserves_exact_version(monkeypatch):

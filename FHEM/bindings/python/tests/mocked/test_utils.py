@@ -467,3 +467,25 @@ def test_error_logger_traceback_for_unexpected_errors(caplog):
     assert caplog.records[1].getMessage() == "Failed to connect: TimeoutError"
     assert errors.is_failing("readings")
     assert not errors.is_failing()
+
+
+@pytest.mark.asyncio
+async def test_http_get_runs_in_thread(monkeypatch):
+    loop_thread = threading.get_ident()
+    calls = []
+
+    def fake_get(url, headers, timeout):
+        calls.append((url, headers, timeout, threading.get_ident()))
+        return b"body"
+
+    monkeypatch.setattr(utils, "_http_get", fake_get)
+    assert await utils.http_get("https://example.org/x", {"A": "b"}, 5) == b"body"
+    url, headers, timeout, thread = calls[0]
+    assert (url, headers, timeout) == ("https://example.org/x", {"A": "b"}, 5)
+    assert thread != loop_thread
+
+
+@pytest.mark.asyncio
+async def test_http_get_only_https():
+    with pytest.raises(ValueError):
+        await utils.http_get("file:///etc/passwd")

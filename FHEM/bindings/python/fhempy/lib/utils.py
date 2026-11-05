@@ -109,6 +109,24 @@ async def import_module(name):
     return await asyncio.to_thread(importlib.import_module, name)
 
 
+def _http_get(url, headers, timeout):
+    import urllib.request
+
+    request = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read()
+
+
+async def http_get(url, headers=None, timeout=15):
+    """Body of an https GET request, raises urllib.error.URLError on errors.
+
+    For fhempy's own requests (update check, FHEM modules). aiohttp isn't
+    needed for this, it costs ~16 MB RAM if no device module uses it."""
+    if not url.startswith("https://"):
+        raise ValueError("only https URLs are supported")
+    return await asyncio.to_thread(_http_get, url, headers, timeout)
+
+
 async def run_blocking(function):
     if isinstance(function, partial) is False:
         raise Exception("Use functools.partial to call run_blocking")
