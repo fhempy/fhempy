@@ -10,6 +10,26 @@ import datetime
 import ipaddress
 import socket
 
+# imported in a worker thread by load(), the first import of cryptography
+# takes more than half a second on a Raspberry Pi
+CRYPTOGRAPHY_MODULES = (
+    "cryptography.x509",
+    "cryptography.x509.oid",
+    "cryptography.hazmat.primitives.asymmetric.ec",
+    "cryptography.hazmat.primitives.hashes",
+    "cryptography.hazmat.primitives.serialization",
+)
+
+
+async def load():
+    """Imports cryptography without blocking the event loop, call it before
+    the other functions of this module are used on the event loop."""
+    from .. import utils
+
+    for name in CRYPTOGRAPHY_MODULES:
+        await utils.import_module(name)
+
+
 # iOS accepts certificates of a trusted CA only up to 825 days
 SERVER_DAYS = 825
 CA_DAYS = 3650

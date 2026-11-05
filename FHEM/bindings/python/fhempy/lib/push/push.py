@@ -196,8 +196,12 @@ class push(generic.FhemModule):
     # --- keys of this FHEM (VAPID) ---
 
     async def load_vapid(self):
-        from py_vapid import Vapid
         from .. import utils
+
+        # the first import takes long on a Raspberry Pi, not on the event loop
+        await certs.load()
+        await utils.import_module("py_vapid")
+        from py_vapid import Vapid
 
         stored = await fhem.ReadingsVal(self.hash["NAME"], ".vapid_key", "")
         if stored:
@@ -445,6 +449,10 @@ class push(generic.FhemModule):
 
     async def send_one(self, key, data):
         """True if delivered, None if the phone is gone, False on errors"""
+        from .. import utils
+
+        # imports aiohttp, takes seconds on a Raspberry Pi the first time
+        await utils.import_module("pywebpush")
         import aiohttp
         from pywebpush import WebPushException, webpush_async
 
@@ -687,6 +695,8 @@ class LocalHttps:
 
     async def load_ca(self):
         from .. import utils
+
+        await certs.load()
 
         key_text = await self.reading(".ca_key")
         cert_text = await self.reading(".ca_cert")

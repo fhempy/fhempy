@@ -1229,6 +1229,8 @@ class dashboard(generic.FhemModule):
     async def load_ca(self):
         from ..push import certs
 
+        await certs.load()
+
         name = self.hash["NAME"]
         key_text = await fhem.ReadingsVal(name, ".ca_key", "")
         cert_text = await fhem.ReadingsVal(name, ".ca_cert", "")
