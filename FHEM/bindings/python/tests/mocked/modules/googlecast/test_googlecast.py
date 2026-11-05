@@ -60,3 +60,17 @@ async def test_failing_reading_update_does_not_block_listener(mocker):
     status.status = "FAILED"
     await asyncio.wait_for(asyncio.to_thread(device.new_connection_status, status), 5)
     assert device.updateConnectionReadings.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_set_before_define_finished(mocker):
+    # FHEM can send a Set while Define still waits for FHEM
+    mock_fhem.mock_module(mocker)
+    await check_and_install_dependencies("googlecast")
+    from fhempy.lib.googlecast import googlecast as googlecast_module
+
+    device = googlecast_module.googlecast(logging.getLogger(__name__))
+    hash = {"NAME": "testcast", "CASTNAME": "Living Room"}
+
+    ret = await device.Set(hash, ["testcast", "pause"], {})
+    assert "Living Room not found yet" in ret
