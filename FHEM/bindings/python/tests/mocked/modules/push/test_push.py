@@ -412,3 +412,20 @@ def test_hostnames():
     assert certs.valid_hostname("bad host") is None
     assert certs.valid_hostname("") is None
     assert all(certs.valid_hostname(n) for n in certs.local_names())
+
+
+@pytest.mark.asyncio
+async def test_certs_load_imports_cryptography_in_thread(mocker):
+    from fhempy.lib import utils
+    from fhempy.lib.push import certs
+
+    imported = []
+    original = utils.import_module
+
+    async def import_module(name):
+        imported.append(name)
+        return await original(name)
+
+    mocker.patch.object(utils, "import_module", import_module)
+    await certs.load()
+    assert imported == list(certs.CRYPTOGRAPHY_MODULES)

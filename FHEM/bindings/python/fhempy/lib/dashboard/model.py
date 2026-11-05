@@ -224,7 +224,15 @@ def _reading_time(info, *names):
 
 
 WINDOW_WORDS = ("fenster", "window", "tür", "tuer", "door", "kontakt", "contact")
-CONTACT_STATES = ("open", "opened", "closed", "tilted", "offen", "geschlossen", "gekippt")
+CONTACT_STATES = (
+    "open",
+    "opened",
+    "closed",
+    "tilted",
+    "offen",
+    "geschlossen",
+    "gekippt",
+)
 
 
 def kind_of(info):
@@ -378,8 +386,13 @@ def scenes_of(info):
 
 def _scene_items(name, info):
     return [
-        {"id": f"{name}:{scene}", "device": name, "scene": scene, "name": scene,
-         "room": room}
+        {
+            "id": f"{name}:{scene}",
+            "device": name,
+            "scene": scene,
+            "name": scene,
+            "room": room,
+        }
         for room in rooms_of(info)
         for scene in scenes_of(info)
     ]
@@ -450,9 +463,7 @@ def build(infos, order=None, keep_on=None):
         if item is None:
             continue
         if item["kind"] in SWITCHABLE:
-            item["keep_on"] = (
-                keeps_on(info) if keep_on is None else name in keep_on
-            )
+            item["keep_on"] = keeps_on(info) if keep_on is None else name in keep_on
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -469,9 +480,7 @@ def _person(info):
 
 def presence(infos):
     """people at home: ROOMMATE/GUEST, otherwise presence devices"""
-    residents = [
-        i for i in infos.values() if i.get("TYPE") in PRESENCE_TYPES
-    ]
+    residents = [i for i in infos.values() if i.get("TYPE") in PRESENCE_TYPES]
     if not residents:
         residents = [
             i
@@ -488,7 +497,9 @@ def presence(infos):
         present = state in PRESENT_STATES
         if present:
             home.append(person)
-        people.append({**person, "home": present, "since": _presence_since(info, present)})
+        people.append(
+            {**person, "home": present, "since": _presence_since(info, present)}
+        )
     people.sort(key=lambda p: (not p["home"], p["name"].lower()))
     return {"home": home, "total": len(residents), "people": people}
 
@@ -704,7 +715,9 @@ def is_energy(info):
     if info.get("FHEMPYTYPE") in ENERGY_FHEMPY_TYPES:
         return True
     readings = info.get("readings") or {}
-    return any(r in readings for r in ENERGY_READINGS["solar"] + ENERGY_READINGS["grid"])
+    return any(
+        r in readings for r in ENERGY_READINGS["solar"] + ENERGY_READINGS["grid"]
+    )
 
 
 def watts(value):
@@ -814,9 +827,7 @@ def sparks(trends, devices):
         key = _spark_key(str(trend.get("reading", "")))
         if device not in devices or key is None:
             continue
-        points = [
-            p[1] if isinstance(p, list) else p for p in trend.get("points") or []
-        ]
+        points = [p[1] if isinstance(p, list) else p for p in trend.get("points") or []]
         if sum(p is not None for p in points) < 2:
             continue
         result.setdefault(device, {}).setdefault(key, points)
@@ -876,8 +887,10 @@ def _matches(word, room):
         return False
     if word == plain or word == _initials(room):
         return True
-    return len(word) >= 3 and len(plain) >= 3 and (
-        plain.startswith(word) or word.startswith(plain)
+    return (
+        len(word) >= 3
+        and len(plain) >= 3
+        and (plain.startswith(word) or word.startswith(plain))
     )
 
 
