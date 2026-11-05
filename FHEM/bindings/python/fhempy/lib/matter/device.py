@@ -175,11 +175,11 @@ class matter_device:
             and self.supports_firmware_update()
         ):
             await self._bulk_update_state()
-        converted = self.model.convert(path, value)
-        if converted is not None:
-            name, reading_value = converted
+        converted = self.model.convert_all(path, value)
+        for name, reading_value in converted:
             self.values[name] = reading_value
             await fhem.readingsBulkUpdateIfChanged(self.hash, name, reading_value)
+        if converted:
             return True
         if self.fhemdev._attr_rawReadings == 1 and attribute < 0xFFF0:
             if isinstance(value, (dict, list)):

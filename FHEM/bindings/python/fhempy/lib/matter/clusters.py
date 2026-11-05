@@ -17,6 +17,8 @@ BRIDGED_DEVICE_BASIC_INFORMATION = 57
 BOOLEAN_STATE = 69
 AIR_QUALITY = 91
 SMOKE_CO_ALARM = 92
+THREAD_NETWORK_DIAGNOSTICS = 53
+WIFI_NETWORK_DIAGNOSTICS = 54
 ELECTRICAL_POWER_MEASUREMENT = 144
 ELECTRICAL_ENERGY_MEASUREMENT = 145
 DOOR_LOCK = 257
@@ -59,6 +61,19 @@ AIR_QUALITY_STATES = {
     6: "extremely_poor",
 }
 ALARM_STATES = {0: "ok", 1: "warning", 2: "critical"}
+THREAD_ROLES = {
+    0: "unspecified",
+    1: "unassigned",
+    2: "sleepy_end_device",
+    3: "end_device",
+    4: "reed",
+    5: "router",
+    6: "leader",
+}
+# REED, router and leader are always full Thread devices (FTD), sleepy end
+# devices always minimal ones (MTD). An end device can be both, Matter
+# doesn't tell which.
+THREAD_DEVICE_TYPES = {2: "MTD", 3: "MTD or FTD", 4: "FTD", 5: "FTD", 6: "FTD"}
 
 # readings which are used for the state, first one wins
 STATE_READINGS = [
@@ -164,6 +179,10 @@ def _energy(value, ctx):
     return _round(value / 1000000, 3)
 
 
+def _int(value, ctx):
+    return int(value)
+
+
 def _text(value, ctx):
     return str(value)
 
@@ -171,6 +190,68 @@ def _text(value, ctx):
 def _reachable(value, ctx):
     return "online" if value else "offline"
 
+
+def _field(struct, name, index):
+    """Field of a Matter struct, by name or by field id (matter.js)"""
+    if not isinstance(struct, dict):
+        return None
+    if name in struct:
+        return struct[name]
+    return struct.get(str(index))
+
+
+def _thread_role(value):
+    if not isinstance(value, int):
+        return {}
+    return {
+        "thread_role": THREAD_ROLES.get(value, str(value)),
+        "thread_device_type": THREAD_DEVICE_TYPES.get(value, "unknown"),
+    }
+
+
+def _neighbor_rssi(neighbor):
+    rssi = _field(neighbor, "averageRssi", 6)
+    if rssi is None:
+        rssi = _field(neighbor, "lastRssi", 7)
+    return rssi if isinstance(rssi, (int, float)) else None
+
+
+def _thread_neighbors(value):
+    """Signal from the Thread neighbor table: end devices only have their
+    parent router in it, routers all neighbors. rssi/lqi is the best link to
+    a router (children don't count, they connect to this device)."""
+    if not isinstance(value, list):
+        return {}
+    readings = {"thread_neighbors": len(value)}
+    routers = [
+        n
+        for n in value
+        if isinstance(n, dict)
+        and not _field(n, "isChild", 13)
+        and _neighbor_rssi(n) is not None
+    ]
+    if routers:
+        best = max(routers, key=_neighbor_rssi)
+        readings["rssi"] = _neighbor_rssi(best)
+        lqi = _field(best, "lqi", 5)
+        if isinstance(lqi, int):
+            readings["lqi"] = lqi
+    return readings
+
+
+def _wifi_rssi(value):
+    if not isinstance(value, (int, float)):
+        return {}
+    return {"rssi": value}
+
+
+# (cluster, attribute): function(value) -> {reading: value}, for attributes
+# which give several readings
+MULTI_ATTRIBUTES = {
+    (THREAD_NETWORK_DIAGNOSTICS, 1): _thread_role,
+    (THREAD_NETWORK_DIAGNOSTICS, 7): _thread_neighbors,
+    (WIFI_NETWORK_DIAGNOSTICS, 4): _wifi_rssi,
+}
 
 # (cluster, attribute): (reading name or function(ctx), converter)
 ATTRIBUTES = {
@@ -214,6 +295,8 @@ ATTRIBUTES = {
     (BRIDGED_DEVICE_BASIC_INFORMATION, 5): ("label", _text),
     (BRIDGED_DEVICE_BASIC_INFORMATION, 10): ("firmware", _text),
     (BRIDGED_DEVICE_BASIC_INFORMATION, 17): ("reachable", _reachable),
+    (THREAD_NETWORK_DIAGNOSTICS, 0): ("thread_channel", _int),
+    (THREAD_NETWORK_DIAGNOSTICS, 2): ("thread_network", _text),
     (EVE, 0x130A0008): ("voltage", _scaled(1)),
     (EVE, 0x130A0009): ("current", _scaled(1, 3)),
     (EVE, 0x130A000A): ("power", _scaled(1)),
@@ -443,6 +526,7 @@ class DeviceModel:
     def __init__(self, attributes, endpoints):
         self.endpoints = endpoints
         self.readings = {}  # path -> (reading, converter, ctx)
+        self.multi = {}  # path -> (function, reading suffix)
         self.sets = {}  # set name -> definition incl. endpoint/cluster
         self._build(attributes)
 
@@ -467,12 +551,34 @@ class DeviceModel:
             if reading_endpoints[name][0] != endpoint:
                 name = f"{name}_{endpoint}"
             self.readings[path] = (name, converter, ctx)
+        multi_endpoints = {}
+        for path in attributes:
+            endpoint, cluster, attribute = parse_path(path)
+            if endpoint in self.endpoints and (cluster, attribute) in MULTI_ATTRIBUTES:
+                multi_endpoints.setdefault((cluster, attribute), []).append(path)
+        for key, paths in multi_endpoints.items():
+            paths.sort(key=lambda p: parse_path(p)[0])
+            for i, path in enumerate(paths):
+                suffix = "" if i == 0 else f"_{parse_path(path)[0]}"
+                self.multi[path] = (MULTI_ATTRIBUTES[key], suffix)
         for set_name, entries in set_endpoints.items():
             for i, (endpoint, cluster, definition) in enumerate(entries):
                 name = set_name if i == 0 else f"{set_name}_{endpoint}"
                 self.sets[name] = dict(
                     definition, endpoint=endpoint, cluster=cluster, base=set_name
                 )
+
+    def convert_all(self, path, value):
+        """All (reading, value) pairs of an attribute, empty if not mapped"""
+        if path in self.multi and value is not None:
+            function, suffix = self.multi[path]
+            try:
+                readings = function(value)
+            except (TypeError, ValueError, ZeroDivisionError):
+                return []
+            return [(name + suffix, v) for name, v in readings.items()]
+        converted = self.convert(path, value)
+        return [converted] if converted is not None else []
 
     def convert(self, path, value):
         """Returns (reading, value) or None if the attribute isn't mapped"""

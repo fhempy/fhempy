@@ -83,6 +83,15 @@ Every device also has:
 - `refresh`: reads all information of the device again.
 - readings `vendor`, `model`, `firmware`; `state` shows `offline` if the device isn't reachable.
 
+Network readings (if the device reports them; bridged devices: on the bridge's FHEM device):
+- Thread devices: `thread_role` (`router`, `leader`, `reed`, `end_device`, `sleepy_end_device`),
+  `thread_device_type` (`FTD` = full Thread device, `MTD` = minimal Thread device, `MTD or FTD` for
+  end devices, Matter doesn't tell which), `thread_channel`, `thread_network`, `thread_neighbors`
+  (number of neighbors), `rssi` (dBm) and `lqi` (0-3) of the best link to a router. End devices only
+  have their parent router as neighbor, so this is the signal to their parent.
+- WiFi devices: `rssi` (dBm).
+- Sleepy devices rarely report changes, `set <device> refresh` reads the current values.
+
 Devices which support firmware updates via Matter (not bridged devices, they are updated by their bridge) also have:
 - reading `firmware_update`: `up to date`, `<version> available` or the progress of a running update (e.g. `downloading 40%`). fhempy checks once a day.
 - `check_firmware_update`: check now whether the manufacturer published a newer firmware.
