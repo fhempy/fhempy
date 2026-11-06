@@ -139,6 +139,9 @@ voice assistant, e.g. *"Hey Google, turn on the living room light"*.
   be enabled in the router. Check that nothing else uses port 5550.
 - **A device has the wrong type or doesn't show up**: see reading `unsupported_devices` and set the
   attribute `matterType` of the device.
+- **Reading `failed_devices`**: Matter couldn't add these devices (see `lastError`), the bridge
+  was restarted without them so that the apps keep all other devices. They are tried again after
+  a restart of fhempy.
 - **A command from the app has no effect**: see reading `lastError` and the fhempy log.
 - **Logs**: fhempy log and `.fhempy/matter_bridge/<bridge name>/bridge.log` in your FHEM directory.
 - **Backup**: `.fhempy/matter_bridge/<bridge name>` contains the pairings, github_backup saves it

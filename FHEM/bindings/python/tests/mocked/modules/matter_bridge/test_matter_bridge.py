@@ -346,6 +346,28 @@ async def test_bridge_module(mocker, tmp_path):
         assert readings["state"] == "pairing mode opened by an app"
         assert "Home Assistant" in readings["next_step"]
 
+        # matter.js couldn't add a device (e.g. a value out of range): the
+        # bridge is restarted without it, the other devices stay in the apps
+        mocker.patch("fhempy.lib.matter_bridge.matter_bridge.FAILED_RESTART_DELAY", 0)
+        restart = mocker.patch.object(bridge, "restart", mocker.AsyncMock())
+        await bridge.reload_devices()
+        assert "Lamp" in bridge.endpoints
+        for _ in range(2):
+            await bridge.handle_message(
+                {
+                    "event": "error",
+                    "id": "Lamp",
+                    "message": "Behaviors have errors",
+                    "failed": True,
+                }
+            )
+        await wait_for(lambda: restart.await_count == 1)
+        assert "Lamp Behaviors have errors" in readings["lastError"]
+        await bridge.reload_devices()
+        assert readings["failed_devices"] == "Lamp"
+        assert "Lamp:" not in readings["devices"]
+        assert "Lamp" not in bridge.endpoints
+
         html = bridge.pairing_html()
         assert '<img src="data:image/png;base64,' in html and "3497-011-2332" in html
     finally:
@@ -451,3 +473,12 @@ def test_bridge_knows_fan():
     script = open(runtime.SCRIPT, encoding="utf-8").read()
     assert "fan: { device: FanDevice }" in script
     assert "fan" in devices.TYPES
+
+
+def test_bridge_keeps_values_in_range():
+    # matter.js rejects the whole device for a value out of range
+    script = open(runtime.SCRIPT, encoding="utf-8").read()
+    assert "measuredValue: humidityValue(state.humidity)" in script
+    assert "measuredValue: temperatureValue(state.temperature)" in script
+    assert "localTemperature = temperatureValue(state.current)" in script
+    assert "failed: true" in script

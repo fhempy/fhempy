@@ -25,6 +25,7 @@ class tuya(generic.FhemModule):
         self._update_dps = []
         self._update_dps_task = None
         self._connected = False
+        self._errors = utils.ErrorLogger(logger)
         self.tuya_cloud = None
         self.tt_key = ""
         self.tt_secret = ""
@@ -36,6 +37,7 @@ class tuya(generic.FhemModule):
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        self._errors = utils.ErrorLogger(self.logger, hash)
         if len(args) < 7:
             return (
                 "Usage: define wifi_plug fhempy tuya"
@@ -600,29 +602,25 @@ class tuya(generic.FhemModule):
         """
         self._loop = asyncio.get_running_loop()
         state_set = False
-        retry = 5
         while True:
             try:
                 device, status = await utils.run_blocking(
                     functools.partial(self._open_device)
                 )
+                self._errors.success("connect")
                 break
-            except Exception as exc:
+            except Exception:
                 if not state_set:
                     await fhem.readingsSingleUpdateIfChanged(
                         self.hash, "online", "0", 1
                     )
                     state_set = True
-                    if isinstance(exc, OSError):
-                        # device offline, no traceback needed
-                        self.logger.error(
-                            f"Failed to connect to device: {exc}, "
-                            "retrying in the background"
-                        )
-                    else:
-                        self.logger.exception("Failed to connect to device")
-                await asyncio.sleep(retry)
-                retry = min(retry * 2, 60)
+                # device offline: logged once, then only rare summaries
+                self._errors.failed(
+                    "Failed to connect to device, retrying in the background",
+                    key="connect",
+                )
+                await asyncio.sleep(self._errors.next_delay("connect", 5, 60))
 
         monitor = tt.Monitor(
             on_status=self._monitor_status,
@@ -708,12 +706,28 @@ class tuya(generic.FhemModule):
         self._connected = True
         # status changes while offline are not pushed, request the full status
         monitor.command(device, "status")
+        self._call_in_loop(self._errors.success, "connection")
         self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "1", 1))
 
     def _monitor_disconnect(self, device, error):
         self._connected = False
-        self.logger.info(f"Connection to device lost: {error}")
+        # the monitor reconnects itself: one line when the connection is lost,
+        # one line when it's back (from _monitor_connect)
+        self._call_in_loop(
+            functools.partial(
+                self._errors.failed,
+                f"Connection to device lost ({error}), reconnecting",
+                key="connection",
+                exc=None,
+            )
+        )
         self._schedule(fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1))
+
+    def _call_in_loop(self, function, *args):
+        # called from the monitor thread
+        if self._loop is None or self._loop.is_closed():
+            return
+        self._loop.call_soon_threadsafe(function, *args)
 
     async def create_device(self):
         try:

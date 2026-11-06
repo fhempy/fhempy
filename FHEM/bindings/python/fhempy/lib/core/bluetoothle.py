@@ -65,7 +65,8 @@ class BluetoothLE:
 
         self.connection_task = None
         self.connected = asyncio.Event()
-        self._no_adapter_logged = False
+        # a device out of range is logged once, then only rare summaries
+        self._errors = utils.ErrorLogger(logger)
 
         # initialize bluetoothctl_lock here to avoid thread without event loop error
         if BluetoothLE.bluetoothctl_lock is None:
@@ -266,6 +267,7 @@ class BluetoothLE:
                     ret = await self.pair()
                     if ret == PairingState.SUCCESS:
                         self.paired = True
+                        self._errors.success("pairing")
                     elif ret == PairingState.NOT_FOUND:
                         waittime = min(
                             PAIRING_RETRY * 2**not_found_count, PAIRING_RETRY_MAX
@@ -274,9 +276,11 @@ class BluetoothLE:
                         await fhem.readingsSingleUpdateIfChanged(
                             self._dev_hash, "connection", "not found", 1
                         )
-                        self.logger.error(
+                        self._errors.failed(
                             f"Device {self.addr} not found for pairing (battery, "
-                            f"range?), retry in {waittime}s"
+                            "range?), retrying in the background",
+                            key="pairing",
+                            exc=None,
                         )
                         await asyncio.sleep(waittime)
                         continue
@@ -285,20 +289,23 @@ class BluetoothLE:
                         await fhem.readingsSingleUpdateIfChanged(
                             self._dev_hash, "connection", "pairing failed", 1
                         )
-                        self.logger.error(
-                            f"Pairing failed ({ret}), retry in {PAIRING_RETRY}s"
+                        self._errors.failed(
+                            f"Pairing failed ({ret}), retrying in the background",
+                            key="pairing",
+                            exc=None,
                         )
                         await asyncio.sleep(PAIRING_RETRY)
                         continue
 
                 await self.connect_once(timeout, max_retries)
                 if self._client and self._client.is_connected:
+                    self._errors.success("loop")
                     # loop is started again on disconnect
                     return
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger.exception("Failed to connect")
+                self._errors.failed("Failed to connect", key="loop")
 
             # wait 10s before next retry
             await asyncio.sleep(10)
@@ -310,11 +317,9 @@ class BluetoothLE:
             await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection", "no adapter", 1
             )
-            if not self._no_adapter_logged:
-                self._no_adapter_logged = True
-                self.logger.error("No Bluetooth adapter found")
+            self._errors.failed("No Bluetooth adapter found", key="adapter", exc=None)
             return
-        self._no_adapter_logged = False
+        self._errors.success("adapter")
 
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection", "connecting", 1
@@ -370,11 +375,14 @@ class BluetoothLE:
                     async with ble_scanner.paused():
                         await self._client.connect()
                 except BleakError:
-                    self.logger.exception("Failed to connect")
+                    self._errors.failed(
+                        "Failed to connect", key="connect", traceback=False
+                    )
                 except asyncio.TimeoutError:
                     pass
 
                 if self._client and self._client.is_connected:
+                    self._errors.success("connect")
                     bt_recovery.report_success(adapter)
                     # set before the listener, it might write to the device
                     self.connected.set()

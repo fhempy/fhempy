@@ -4,7 +4,7 @@ import json
 import datetime
 from enum import IntEnum
 
-from .. import fhem, generic
+from .. import fhem, generic, utils
 from . import eq3btsmart as eq3
 from .structures import HOUR_24_PLACEHOLDER as END_OF_DAY, NAME_TO_DAY as DAY_MAP
 
@@ -31,7 +31,7 @@ class eq3bt(generic.FhemModule):
         self._mac = None
         self._pin = "0000"
         self.thermostat = None
-        self._offline = False
+        self._errors = utils.ErrorLogger(logger)
         self.notification_lock = asyncio.Lock()
         self._notify_task = None
         # readings as written last time, per group (status, id, schedule)
@@ -197,17 +197,15 @@ class eq3bt(generic.FhemModule):
                     )
                     self._written.pop("status", None)
                 await self.update_all()
-                if self._offline:
-                    self._offline = False
-                    self.logger.info("Thermostat reachable again")
+                self._errors.success("offline")
+                self._errors.success("update")
             except asyncio.CancelledError:
                 self.logger.info("Stopped update loop")
                 raise
             except asyncio.TimeoutError:
                 await self._set_offline()
-                self.logger.debug(f"Timeout on update, retry in {waittime}s")
             except Exception:
-                self.logger.exception(f"Failed to update, retry in {waittime}s")
+                self._errors.failed(f"Failed to update, retry in {waittime}s", "update")
             await asyncio.sleep(waittime)
 
     async def notification_received(self):
@@ -388,10 +386,12 @@ class eq3bt(generic.FhemModule):
     async def _set_offline(self):
         await fhem.readingsSingleUpdateIfChanged(self.hash, "state", "offline", 1)
         self._written.pop("status", None)
-        if not self._offline:
-            # log only once until the thermostat is reachable again
-            self._offline = True
-            self.logger.error("Thermostat not reachable, retrying in the background")
+        # logged once, then only rare summaries until it's reachable again
+        self._errors.failed(
+            "Thermostat not reachable, retrying in the background",
+            key="offline",
+            expected=True,
+        )
 
     async def set_and_update(self, fct):
         try:

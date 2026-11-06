@@ -132,7 +132,7 @@ async def test_unreachable_device_logged_once(mocker, caplog):
     warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert len(warnings) == 1
     assert "not reachable" in warnings[0].getMessage()
-    assert any("reachable again" in r.getMessage() for r in caplog.records)
+    assert any(r.getMessage().startswith("Works again") for r in caplog.records)
     assert mock_fhem.readings["testmiio4"]["presence"] == "online"
 
 
@@ -180,7 +180,7 @@ async def test_connection_error_logged_without_traceback(mocker, caplog):
     assert "Unable to discover the device" in errors[0].getMessage()
 
     # device already reported offline: no further warning or error
+    device._errors.failed("Device not reachable", exc=DeviceException("offline"))
     caplog.clear()
-    device._offline_logged = True
     await device.send_command("status", None)
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
