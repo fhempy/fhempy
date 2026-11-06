@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from .. import fhem, generic, utils
-from ..core import ble_scanner, bt_recovery
+from ..core import ble_proxy, ble_scanner, bt_recovery
 from . import protocol
 
 SCAN_TIME = 10
@@ -326,9 +326,8 @@ class scooter(generic.FhemModule):
         await fhem.readingsEndUpdate(self.hash, 1)
 
     async def _connect(self, device):
-        from bleak import BleakClient
-
-        client = BleakClient(
+        # BlueZ or the ESPHome Bluetooth proxy which received the scooter
+        client = ble_proxy.bleak_client(
             device,
             timeout=CONNECT_TIMEOUT,
             disconnected_callback=self._on_disconnect,

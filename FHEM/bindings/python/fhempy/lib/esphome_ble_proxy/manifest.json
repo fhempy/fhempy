@@ -1,0 +1,54 @@
+{
+  "requirements": [
+    "aioesphomeapi==46.12.0",
+    "bleak==3.0.2",
+    "bleak-esphome==4.1.0",
+    "habluetooth==7.1.2",
+    "bluetooth-adapters==2.4.0"
+  ],
+  "installer": {
+    "title": "ESPHome Bluetooth proxy",
+    "description": "Use ESP32 Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules",
+    "category": "bt",
+    "order": 140,
+    "name": "bt_proxy",
+    "logo": "esphome.png",
+    "params": [
+      {
+        "label": "Host",
+        "placeholder": "bluetooth-proxy.local",
+        "help": "Hostname or IP of the ESP32 with bluetooth_proxy"
+      },
+      {
+        "label": "Encryption key",
+        "help": "API encryption key of the ESPHome device (api: encryption: key:), empty if none",
+        "optional": true
+      }
+    ]
+  },
+  "discovery": {
+    "mdns": [
+      {
+        "type": "_esphomelib._tcp.local.",
+        "txt": {
+          "project_name": "*bluetooth*proxy*"
+        }
+      }
+    ],
+    "title": "{txt.friendly_name}",
+    "name": "bt_proxy",
+    "model": "ESPHome Bluetooth proxy",
+    "unique": "{txt.mac}",
+    "exists": "{host}",
+    "define": [
+      "{host}.local"
+    ],
+    "params": [
+      {
+        "label": "Encryption key",
+        "help": "API encryption key of the ESPHome device, empty if none",
+        "optional": true
+      }
+    ]
+  }
+}

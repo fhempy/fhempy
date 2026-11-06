@@ -1224,6 +1224,26 @@
   ]
  },
  {
+  "id": "esphome_ble_proxy",
+  "title": "ESPHome Bluetooth proxy",
+  "description": "Use ESP32 Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules",
+  "category": "bt",
+  "name": "bt_proxy",
+  "logo": "esphome.png",
+  "params": [
+   {
+    "label": "Host",
+    "placeholder": "bluetooth-proxy.local",
+    "help": "Hostname or IP of the ESP32 with bluetooth_proxy"
+   },
+   {
+    "label": "Encryption key",
+    "help": "API encryption key of the ESPHome device (api: encryption: key:), empty if none",
+    "optional": true
+   }
+  ]
+ },
+ {
   "id": "helloworld",
   "title": "Hello World",
   "description": "Example for developers to start writing their own module",

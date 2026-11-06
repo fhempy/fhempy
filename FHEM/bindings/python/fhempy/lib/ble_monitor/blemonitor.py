@@ -9,7 +9,7 @@ from fhempy.lib.ble_monitor.bt_helpers import (
 )
 from fhempy.lib.ble_monitor.hcidump import HCIdump
 
-
+from ..core import ble_proxy
 from .const import (
     CONF_DEVICE_ENCRYPTION_KEY,
     CONF_DISCOVERY,
@@ -42,6 +42,15 @@ from .const import (
 
 # devices register one after another at startup, restart the scan only once
 RESTART_DELAY = 3
+
+
+def hci_packet(address, address_type, rssi, data):
+    """HCI LE advertising report like the local adapter sends it, for an
+    advertisement received by an ESPHome Bluetooth proxy."""
+    mac = bytes.fromhex(address.replace(":", ""))[::-1]
+    report = bytes([0x02, 0x01, 0x00, address_type & 0xFF]) + mac
+    report += bytes([len(data)]) + bytes(data) + bytes([rssi & 0xFF])
+    return bytes([0x04, 0x3E, len(report)]) + report
 
 
 class BLEmonitor:
@@ -86,6 +95,16 @@ class BLEmonitor:
         self._restart_requested = 0
         self._restart_task = None
         self.receive_from_queues()
+        # advertisements of ESPHome Bluetooth proxies
+        ble_proxy.add_raw_callback(self.proxy_advertisement)
+
+    def proxy_advertisement(self, address, address_type, rssi, data, proxy_name):
+        dumpthread = self.dumpthread
+        if dumpthread is None or not self.fhem_devices:
+            return
+        dumpthread.process_hci_events(
+            hci_packet(address, address_type, rssi, data), gateway_id=proxy_name
+        )
 
     def receive_from_queues(self):
         self.task_measuring = asyncio.create_task(self.receive_from_measuring())

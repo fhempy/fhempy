@@ -120,7 +120,7 @@ class HCIdump(Thread):
         self.evt_cnt += 1
         if len(data) < 12:
             return
-        sensor_msg, tracker_msg = self.ble_parser.parse_data(data)
+        sensor_msg, tracker_msg = self.ble_parser.parse_raw_data(data)
         if sensor_msg:
             measurements = list(sensor_msg.keys())
             device_type = sensor_msg["type"]

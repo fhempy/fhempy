@@ -13,7 +13,8 @@ get every advertisement:
 The scan runs continuously, passive (only listening) where BlueZ supports
 advertisement monitors, active otherwise. A passive scan doesn't get the names
 some devices only send on request, therefore a short active scan runs every
-15 minutes. While a module connects to a device the scan pauses
+15 minutes. ESPHome Bluetooth proxies (core/ble_proxy) send their
+advertisements to the same callbacks. While a module connects to a device the scan pauses
 (async with scanner.paused()). After the Bluetooth recovery had to reset an
 adapter, or with mode "interval", it only scans 10s every 5 minutes.
 """
@@ -28,6 +29,7 @@ from bleak import BleakScanner
 from bleak.exc import BleakError
 
 from .. import utils
+from . import ble_proxy
 
 MODE_CONTINUOUS = "continuous"
 MODE_INTERVAL = "interval"
@@ -85,8 +87,8 @@ def passive_problem(error):
 
 def _passive_args():
     """BlueZ advertisement monitor patterns matching (nearly) all devices."""
-    from bleak.assigned_numbers import AdvertisementDataType
     from bleak.args.bluez import OrPattern
+    from bleak.assigned_numbers import AdvertisementDataType
 
     return {
         "or_patterns": [
@@ -116,6 +118,7 @@ class BleScanner:
     def __init__(self, logger):
         self.logger = logger
         self._callbacks = []
+        self._local_only = set()
         self._recent = {}
         self._task = None
         self._pause_count = 0
@@ -135,15 +138,20 @@ class BleScanner:
 
     # --- API for modules ---
 
-    def add_callback(self, callback):
+    def add_callback(self, callback, proxies=True):
+        """proxies=False: only advertisements of the local adapters, for
+        libraries which connect via BlueZ themselves (aiohomekit)."""
         if callback not in self._callbacks:
             self._callbacks.append(callback)
+        if not proxies:
+            self._local_only.add(callback)
         if self._task is None or self._task.done():
             self._task = asyncio.create_task(self._run(), name="ble_scanner")
 
     def remove_callback(self, callback):
         if callback in self._callbacks:
             self._callbacks.remove(callback)
+        self._local_only.discard(callback)
         if not self._callbacks and self._task is not None:
             self._task.cancel()
             self._task = None
@@ -219,6 +227,18 @@ class BleScanner:
             except Exception:
                 self.logger.exception("Failed to handle Bluetooth advertisement")
 
+    def proxy_detection(self, device, advertisement):
+        """An advertisement received by an ESPHome Bluetooth proxy
+        (core/ble_proxy). Not in recent_device(), that's only for the local
+        adapters, ble_proxy knows the devices of the proxies."""
+        for callback in list(self._callbacks):
+            if callback in self._local_only:
+                continue
+            try:
+                callback(device, advertisement)
+            except Exception:
+                self.logger.exception("Failed to handle Bluetooth advertisement")
+
     def _cleanup_recent(self):
         limit = time.monotonic() - 10 * RECENT_MAX_AGE
         for address in [a for a, v in self._recent.items() if v[2] < limit]:
@@ -274,6 +294,11 @@ class BleScanner:
                     continue
                 if "No Bluetooth adapters" in str(exc) or "not found" in str(exc):
                     self.scanning = "no adapter"
+                    if ble_proxy.active():
+                        # only ESPHome Bluetooth proxies, that's fine
+                        self.scanning = "proxies only"
+                        await self._wait_changed(NO_ADAPTER_RETRY)
+                        continue
                 else:
                     self.scanning = "failed"
                 self._errors.failed(

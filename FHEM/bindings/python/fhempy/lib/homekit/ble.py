@@ -14,7 +14,8 @@ class SharedScanBleController(BleController):
 
     async def async_start(self):
         self._shared_scanner = BleScanner.get_instance(logger)
-        self._shared_scanner.add_callback(self._device_detected)
+        # aiohomekit connects via BlueZ, not via ESPHome Bluetooth proxies
+        self._shared_scanner.add_callback(self._device_detected, proxies=False)
 
     async def async_stop(self, *args):
         self._shared_scanner.remove_callback(self._device_detected)

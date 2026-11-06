@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>69 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>70 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -209,6 +209,7 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
+|[esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md)|ESPHome Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
 |[mantra_ble](FHEM/bindings/python/fhempy/lib/mantra_ble/README.md)|mAntra ceiling fan lamps|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
@@ -260,6 +261,9 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 - **Where is the log?** fhempy writes its own log file next to the FHEM log: `log/fhempy-YYYY-MM-DD.log`. Set `attr fhempyserver_15733 verbose 5` for debug output.
 - **`Installing fhempy failed: ...`**: the state of `fhempy_local` names the reason, the fhempy log has the details. If uv can't be downloaded from github.com and the system Python has no venv support, run `sudo apt install python3-venv` and restart fhempy with `set fhempyserver_15733 restart`.
 - **A module doesn't work**: check its README first. Questions are welcome in the [FHEM forum](https://forum.fhem.de/), bugs in the [GitHub issues](https://github.com/fhempy/fhempy/issues).
+
+## ESPHome Bluetooth proxies
+An ESP32 with ESPHome's `bluetooth_proxy` extends the range of all Bluetooth LE modules which use the shared scan or bleak (autodiscovery, ble_presence, ble_monitor, blue_connect, eq3bt, gfprobt, mitemp2, scooter). Define one [esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md) device per ESP32, ready-made proxies are found by autodiscovery. fhempy connects each device through the adapter or proxy with the best signal.
 
 ## Bluetooth auto recovery
 Modules using Bluetooth LE via bleak (blue_connect, eq3bt, gfprobt, mitemp2) detect a stuck Bluetooth adapter and try to recover it automatically. After 3 failed connection attempts in a row (connect errors, or scans which don't see any device at all) the adapter gets recovered, each time escalating one stage further:

@@ -83,6 +83,39 @@
   ]
  },
  {
+  "module": "esphome_ble_proxy",
+  "title": "ESPHome Bluetooth proxy",
+  "name": "bt_proxy",
+  "logo": "esphome.png",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_esphomelib._tcp.local.",
+      "txt": {
+       "project_name": "*bluetooth*proxy*"
+      }
+     }
+    ],
+    "title": "{txt.friendly_name}",
+    "name": "bt_proxy",
+    "model": "ESPHome Bluetooth proxy",
+    "unique": "{txt.mac}",
+    "exists": "{host}",
+    "define": [
+     "{host}.local"
+    ],
+    "params": [
+     {
+      "label": "Encryption key",
+      "help": "API encryption key of the ESPHome device, empty if none",
+      "optional": true
+     }
+    ]
+   }
+  ]
+ },
+ {
   "module": "gfprobt",
   "title": "GF Pro irrigation",
   "name": "irrigation",

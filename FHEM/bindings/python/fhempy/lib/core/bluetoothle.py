@@ -16,7 +16,7 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from .. import fhem, utils
-from . import ble_scanner, bt_recovery
+from . import ble_proxy, ble_scanner, bt_recovery
 from .bt_pairing_state import PairingState
 
 # wait time after a failed pairing attempt
@@ -62,6 +62,7 @@ class BluetoothLE:
 
         self.conf_checked = False
         self.paired = False
+        self._proxy_pairing_noted = False
 
         self.connection_task = None
         self.connected = asyncio.Event()
@@ -260,7 +261,12 @@ class BluetoothLE:
         not_found_count = 0
         while True:
             try:
-                if self.pairing_required and not self.paired:
+                if (
+                    self.pairing_required
+                    and not self.paired
+                    and self._proxy_choice() is None
+                ):
+                    # a proxy can't pair, see _note_proxy_pairing
                     await fhem.readingsSingleUpdateIfChanged(
                         self._dev_hash, "connection", "pairing", 1
                     )
@@ -313,7 +319,7 @@ class BluetoothLE:
     async def connect_once(self, timeout, max_retries):
         # get latest adapter list
         await self.update_adapters()
-        if not self.adapters:
+        if not self.adapters and not ble_proxy.active():
             await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection", "no adapter", 1
             )
@@ -327,6 +333,12 @@ class BluetoothLE:
         self._disconnect_called = False
 
         for i in range(0, max_retries):
+            # an ESPHome Bluetooth proxy receives the device better
+            if await self._connect_via_proxy(timeout):
+                return
+            if not self.adapters:
+                await asyncio.sleep(20)
+                continue
             for adapter in self.adapters:
                 adapter_working = await self.find_device(
                     timeout=timeout, adapter=adapter
@@ -343,23 +355,10 @@ class BluetoothLE:
                     await asyncio.sleep(20)
                     continue
 
-                await fhem.readingsSingleUpdateIfChanged(
-                    self._dev_hash, "connection_adapter", adapter, 1
-                )
-                manufacturer = self.adapter_details[adapter]["manufacturer"]
-                if not manufacturer:
-                    manufacturer = "unknown"
-                await fhem.readingsSingleUpdateIfChanged(
-                    self._dev_hash,
-                    "connection_adapter_details",
-                    manufacturer
-                    + " ("
-                    + self.adapter_details[adapter]["address"]
-                    + ")",
-                    1,
-                )
-                await fhem.readingsSingleUpdateIfChanged(
-                    self._dev_hash, "rssi", self._rssi, 1
+                await self._update_adapter_readings(
+                    adapter,
+                    self.adapter_details[adapter]["manufacturer"] or "unknown",
+                    self.adapter_details[adapter]["address"],
                 )
 
                 # a client left over from a failed attempt
@@ -382,27 +381,8 @@ class BluetoothLE:
                     pass
 
                 if self._client and self._client.is_connected:
-                    self._errors.success("connect")
                     bt_recovery.report_success(adapter)
-                    # set before the listener, it might write to the device
-                    self.connected.set()
-                    try:
-                        await self._subscribe_notifies()
-                    except BleakError:
-                        # set state to connected (no notifications)
-                        await fhem.readingsSingleUpdate(
-                            self._dev_hash,
-                            "connection",
-                            "connected (no notifications)",
-                            1,
-                        )
-                        self.logger.exception("Failed to subscribe to notifications")
-                    else:
-                        await fhem.readingsSingleUpdate(
-                            self._dev_hash, "connection", "connected", 1
-                        )
-                    if self.connected_listener:
-                        await self.connected_listener()
+                    await self._connection_established()
                     return
                 else:
                     if await self._adapter_failed(adapter):
@@ -418,6 +398,105 @@ class BluetoothLE:
         self.logger.debug(
             f"Unable to connect to {self.addr} after {max_retries} attempts"
         )
+
+    async def _update_adapter_readings(self, adapter, manufacturer, address):
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection_adapter", adapter, 1
+        )
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash,
+            "connection_adapter_details",
+            f"{manufacturer} ({address})",
+            1,
+        )
+        await fhem.readingsSingleUpdateIfChanged(self._dev_hash, "rssi", self._rssi, 1)
+
+    def _local_rssi(self):
+        """RSSI of the device at the local adapters, None if not seen."""
+        scanner = ble_scanner.BleScanner.running_instance()
+        recent = scanner.recent_device(self.addr) if scanner else None
+        return recent[1] if recent else None
+
+    def _proxy_choice(self):
+        """(BLEDevice, rssi, proxy) if the device should be connected through
+        an ESPHome Bluetooth proxy, None for the local adapters."""
+        if self.addr is None or not ble_proxy.active():
+            return None
+        found = ble_proxy.best_device(self.addr)
+        if found is None:
+            return None
+        # a device the shared scan doesn't see locally goes through the proxy
+        if not ble_proxy.use_proxy(found[1], self._local_rssi()):
+            return None
+        return found
+
+    async def _connect_via_proxy(self, timeout):
+        """Connects through an ESPHome Bluetooth proxy if one receives the
+        device clearly better than the local adapters (or there is no local
+        adapter). Returns True if connected."""
+        found = self._proxy_choice()
+        if found is None:
+            return False
+        device, rssi, proxy = found
+
+        self._device, self._rssi = device, rssi
+        await self._update_adapter_readings(proxy.name, "ESPHome proxy", proxy.source)
+        await self._release_client(self._client)
+        self._client = ble_proxy.client(
+            device, disconnected_callback=self._disconnect_callback, timeout=timeout
+        )
+        try:
+            await self._client.connect()
+        except (BleakError, asyncio.TimeoutError) as exc:
+            self._errors.failed(
+                f"Failed to connect via {proxy.name}",
+                key="connect",
+                exc=exc,
+                traceback=False,
+            )
+        if not (self._client and self._client.is_connected):
+            await self._release_client(self._client)
+            self._client = None
+            self._device = None
+            return False
+        if self.pairing_required:
+            self._note_proxy_pairing(proxy)
+        await self._connection_established()
+        return True
+
+    def _note_proxy_pairing(self, proxy):
+        """An ESPHome proxy can't enter a PIN, a device which needs one has to
+        be paired by a local Bluetooth adapter (or in the ESPHome YAML)."""
+        if self.pin in (None, "", "0000") or self._proxy_pairing_noted:
+            return
+        self._proxy_pairing_noted = True
+        self.logger.warning(
+            f"Connected via {proxy.name} without pairing, the ESPHome "
+            "Bluetooth proxy can't pair with a PIN. If commands don't work, "
+            "the device has to be in range of a local Bluetooth adapter."
+        )
+
+    async def _connection_established(self):
+        self._errors.success("connect")
+        # set before the listener, it might write to the device
+        self.connected.set()
+        try:
+            await self._subscribe_notifies()
+        except BleakError:
+            # set state to connected (no notifications)
+            await fhem.readingsSingleUpdate(
+                self._dev_hash,
+                "connection",
+                "connected (no notifications)",
+                1,
+            )
+            self.logger.exception("Failed to subscribe to notifications")
+        else:
+            await fhem.readingsSingleUpdate(
+                self._dev_hash, "connection", "connected", 1
+            )
+        if self.connected_listener:
+            await self.connected_listener()
 
     async def _adapter_failed(self, adapter):
         """Returns True if the adapter was recovered."""
