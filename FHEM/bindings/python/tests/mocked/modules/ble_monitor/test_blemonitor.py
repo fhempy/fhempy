@@ -67,3 +67,21 @@ async def test_restart_requested_while_restarting_runs_again(blemonitor, mocker)
     monitor.restart()
     await asyncio.wait_for(monitor._restart_task, 5)
     assert len(started) == 2
+
+
+@pytest.mark.asyncio
+async def test_malformed_advertisement_is_skipped(mocker):
+    """bleparser raises on malformed payloads (e.g. struct.error for a too
+    short service data), the packet is skipped instead of logged as error."""
+    import struct
+
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    dump.ble_parser.parse_raw_data.side_effect = struct.error(
+        "unpack requires a buffer of 6 bytes"
+    )
+    hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20, gateway_id="proxy")
+    dump.logger.debug.assert_called_once()
+    dump.dataqueue_tracker.sync_q.put_nowait.assert_not_called()
