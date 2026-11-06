@@ -59,6 +59,8 @@ class LoopWatchdog:
         # start of the callback whose blockade was already logged by the thread
         self._logged_since = None
         self._last_log = None
+        # called in the loop after a blockade: on_blocked(module, duration)
+        self.on_blocked = None
 
     def start(self):
         self._loop_thread_id = threading.get_ident()
@@ -120,12 +122,17 @@ class LoopWatchdog:
 
     def finished(self, since, duration):
         """Called in the loop after a callback which ran >= threshold."""
-        if self._logged_since == since:
-            logger.warning(f"Event loop was blocked for {duration * 1000:.0f}ms")
-            return
         seen = self._seen
         stack = seen[1] if seen is not None and seen[0] == since else None
-        self._report(duration, stack, still_blocked=False)
+        if self._logged_since == since:
+            logger.warning(f"Event loop was blocked for {duration * 1000:.0f}ms")
+        else:
+            self._report(duration, stack, still_blocked=False)
+        if self.on_blocked is not None:
+            try:
+                self.on_blocked(_module_of(stack) if stack else None, duration)
+            except Exception:
+                logger.exception("Failed to handle the blocked event loop")
 
     def _report(self, duration, stack, still_blocked):
         module = _module_of(stack) if stack else None

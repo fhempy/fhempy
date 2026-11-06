@@ -97,6 +97,25 @@ Parts which find devices themselves (e.g. MQTT discovery in `autodiscovery/mqtt.
 
 `python3 manifest2modules.py` also builds `lib/autodiscovery/discovery.json`.
 
+## Worker processes
+
+fhempy moves a module to a worker process by itself when its requirements conflict
+with the modules already running or when it blocks the event loop again and again
+(see README, "Worker processes"). A module runs in a worker like in the main process,
+but it can't reach the instances of other modules there. If a module uses other
+fhempy devices directly (`fhem_pythonbinding.getFhemPyDeviceByName`,
+`loadedModuleInstances`), declare it in `manifest.json` so they always share a
+process:
+
+```json
+"worker": {"with": ["xiaomi_gateway3"]}
+```
+
+Devices of the same module type are always in the same process. A module that has to
+stay in the main fhempy process (e.g. `system_update`, which updates and restarts
+fhempy) declares `"worker": {"core": true}`; every module in its family stays there
+too.
+
 ## Keep the event loop responsive
 
 While fhempy runs synchronous code in the event loop, FHEM waits and is frozen.
