@@ -164,7 +164,8 @@ def test_watchdog_reports_the_blocking_module(monkeypatch):
 
     wd.finished(1.0, 0.8)
 
-    assert reported == [("tuya", 0.8)]
+    assert [module for module, _ in reported] == ["tuya"]
+    assert reported[0][1] == pytest.approx(0.8)
 
 
 class FakeFHEM:

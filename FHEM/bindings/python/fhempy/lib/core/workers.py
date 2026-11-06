@@ -130,11 +130,7 @@ class Worker:
     async def _start_and_serve(self):
         python, env = await self._prepare()
         path = socket_path(self.group)
-        os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
-        try:
-            os.unlink(path)
-        except FileNotFoundError:
-            pass
+        await utils.run_blocking(functools.partial(_prepare_socket, path))
         args = [
             python,
             "-m",
@@ -272,6 +268,14 @@ class Worker:
             # wait without raising the cancellation of the task in this one
             await asyncio.wait({self._task})
         await self._cleanup()
+
+
+def _prepare_socket(path):
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    try:
+        os.unlink(path)
+    except FileNotFoundError:
+        pass
 
 
 def _venv_state(venv):

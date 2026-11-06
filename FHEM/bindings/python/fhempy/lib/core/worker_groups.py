@@ -404,10 +404,8 @@ async def resolve_requirements(reqs):
     uv = pkg_installer.find_uv()
     if uv is None:
         return False, False
-    fd, path = tempfile.mkstemp(prefix="fhempy_resolve_", suffix=".txt")
+    path = await utils.run_blocking(functools.partial(_write_requirements, reqs))
     try:
-        with os.fdopen(fd, "w") as f:
-            f.write("\n".join(reqs) + "\n")
         args = [
             uv,
             "pip",
@@ -446,7 +444,18 @@ async def resolve_requirements(reqs):
         logger.exception("Failed to check module requirements")
         return False, False
     finally:
-        try:
-            os.unlink(path)
-        except OSError:
-            pass
+        await utils.run_blocking(functools.partial(_remove_file, path))
+
+
+def _write_requirements(reqs):
+    fd, path = tempfile.mkstemp(prefix="fhempy_resolve_", suffix=".txt")
+    with os.fdopen(fd, "w") as f:
+        f.write("\n".join(reqs) + "\n")
+    return path
+
+
+def _remove_file(path):
+    try:
+        os.unlink(path)
+    except OSError:
+        pass

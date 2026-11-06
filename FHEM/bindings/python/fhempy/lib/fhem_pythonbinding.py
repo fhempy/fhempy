@@ -1091,10 +1091,7 @@ async def async_worker_main(socket_path):
     logger.info(f"Starting fhempy worker '{worker_group}' {version.__version__}")
     watchdog = LoopWatchdog(asyncio.get_running_loop())
     watchdog.start()
-    try:
-        os.unlink(socket_path)
-    except FileNotFoundError:
-        pass
+    _remove_socket(socket_path)
     try:
         async with websockets.asyncio.server.unix_serve(
             worker_binding,
@@ -1106,14 +1103,19 @@ async def async_worker_main(socket_path):
             compression=None,
             close_timeout=2,
         ):
-            os.chmod(socket_path, 0o600)
+            # only the fhempy user may connect
+            await utils.run_blocking(functools.partial(os.chmod, socket_path, 0o600))
             await stop_event.wait()
     finally:
         watchdog.stop()
-        try:
-            os.unlink(socket_path)
-        except OSError:
-            pass
+        _remove_socket(socket_path)
+
+
+def _remove_socket(path):
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
 
 
 def run_worker(socket_path, group):
