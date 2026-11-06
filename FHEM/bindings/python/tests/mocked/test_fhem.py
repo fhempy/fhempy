@@ -88,9 +88,7 @@ async def test_missing_end_update_does_not_block_next_update(monkeypatch):
     await asyncio.wait_for(fhem.readingsBeginUpdate(hash), 1)
     await fhem.readingsBulkUpdate(hash, "a", 1)
     await fhem.readingsEndUpdate(hash, 1)
-    await asyncio.wait_for(
-        fhem.readingsSingleUpdate(hash, "state", "ok", 1), 1
-    )
+    await asyncio.wait_for(fhem.readingsSingleUpdate(hash, "state", "ok", 1), 1)
 
     assert sent == [
         "readingsBeginUpdate($defs{'dev_no_end'});;"
@@ -348,10 +346,11 @@ def test_perl_string_is_not_interpolated():
 async def test_commands_quote_values_as_perl_strings(monkeypatch):
     sent = []
 
-    async def send(hash, cmd):
+    async def send(name, cmd, hash=None, fields=None):
         sent.append(cmd)
 
-    monkeypatch.setattr(fhem, "sendCommandHash", send)
+    monkeypatch.setattr(fhem, "sendCommandName", send)
+    monkeypatch.setattr(fhem, "operations", False)
     hash = {"NAME": "dev"}
 
     await fhem.CommandAttr(hash, "dev alias it's $name")
@@ -430,13 +429,94 @@ async def test_single_updates_as_list(structured):
 
 @pytest.mark.asyncio
 async def test_capabilities_are_detected(monkeypatch):
-    replies = {"1": True, "0": False, "": False}
+    # BindingsIo replies its protocol: 2 operations, 1 readings lists, 0 Perl
+    replies = {
+        "2": (True, True),
+        2: (True, True),
+        "1": (True, False),
+        "0": (False, False),
+        "": (False, False),
+    }
     for reply, expected in replies.items():
         monkeypatch.setattr(fhem, "sendCommandName", lambda *a, r=reply: _value(r))
         await fhem.detect_capabilities()
-        assert fhem.structured_readings is expected
+        assert (fhem.structured_readings, fhem.operations) == expected
     fhem.updateConnection(fhem.wsconnection)
     assert fhem.structured_readings is False
+    assert fhem.operations is False
+
+
+@pytest.fixture
+def operations(monkeypatch):
+    sent = []
+    replies = {}
+
+    async def send(name, cmd, hash=None, fields=None):
+        sent.append((name, cmd, fields))
+        return replies.get(fields["op"], "") if fields else ""
+
+    monkeypatch.setattr(fhem, "sendCommandName", send)
+    monkeypatch.setattr(fhem, "operations", True)
+    return sent, replies
+
+
+@pytest.mark.asyncio
+async def test_operations_send_values_as_data(operations):
+    sent, replies = operations
+    hash = {"NAME": "dev"}
+    replies["find_device"] = "other"
+
+    await fhem.CommandAttr(hash, "dev alias it's $name @{[1]}")
+    await fhem.ReadingsVal("dev", "r'x", 5)
+    assert await fhem.checkIfDeviceExists(hash, "TYPE", "x", "IP", "1'2") == 1
+    replies["find_device"] = 0
+    assert await fhem.checkIfDeviceExists(hash, "TYPE", "x", "IP", "1'2") == 0
+    await fhem.FW_runJavascript(hash, "location.reload()", detail="dev")
+
+    # no Perl code at all
+    assert all(cmd is None for _, cmd, _ in sent)
+    assert sent[0][2] == {"op": "attr", "args": {"def": "dev alias it's $name @{[1]}"}}
+    assert sent[1][2] == {
+        "op": "readings_val",
+        "args": {"name": "dev", "reading": "r'x", "default": "5"},
+    }
+    assert sent[2][2]["args"]["value"] == "1'2"
+    assert sent[4][2] == {
+        "op": "run_javascript",
+        "args": {"js": "location.reload()", "detail": "dev"},
+    }
+
+
+@pytest.mark.asyncio
+async def test_device_info_operation(operations):
+    sent, replies = operations
+    replies["device_info"] = {"init_done": 1, "attr": {"verbose": 5, "room": None}}
+
+    info = await fhem.getDeviceInfo("dev", {"verbose": "3", "room": "x"}, "a:1,2")
+
+    assert sent[0][2] == {
+        "op": "device_info",
+        "args": {
+            "name": "dev",
+            "attrs": {"verbose": "3", "room": "x"},
+            "dev_attr_list": "a:1,2 IODev disable:0,1 ",
+        },
+    }
+    assert info == {"init_done": 1, "attr": {"verbose": "5", "room": "x"}}
+
+
+@pytest.mark.asyncio
+async def test_event_devices_with_old_fhempy_module(operations):
+    sent, replies = operations
+    replies["event_devices"] = "old"
+
+    assert await fhem.setEventDevices({"NAME": "dev"}, ["a", "b"]) is False
+    assert sent[0][2] == {"op": "event_devices", "args": {"devspec": "a,b"}}
+
+
+def test_operation_is_described_in_logs():
+    assert fhem.describeCommand(None, {"op": "attr", "args": {"def": "x"}}) == "attr"
+    assert fhem.describeCommand(None) == "readings update"
 
 
 async def _value(value):
@@ -448,7 +528,9 @@ async def test_structured_command_message(monkeypatch):
     pb = fhem_pythonbinding.fhempy(FakeWebsocket())
     monkeypatch.setattr(fhem, "wsconnection", pb)
     task = asyncio.create_task(
-        fhem.send_and_wait("dev", None, {"readings": [["a", "1", None, 0]], "trigger": 1})
+        fhem.send_and_wait(
+            "dev", None, {"readings": [["a", "1", None, 0]], "trigger": 1}
+        )
     )
     await asyncio.sleep(0)
     msg = pb.wsconnection.sent[0]
