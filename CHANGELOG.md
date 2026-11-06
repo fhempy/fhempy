@@ -2,6 +2,32 @@
 
 <!-- version list -->
 
+## v2.16.0 (2026-11-06)
+
+### Bug Fixes
+
+- **matter_bridge**: One device with a value out of range no longer hides all devices
+  ([#907](https://github.com/fhempy/fhempy/pull/907),
+  [`3bdd022`](https://github.com/fhempy/fhempy/commit/3bdd0221e67f3fa627ea54d58e25e156f12af1e1))
+
+### Features
+
+- Quiet logging for devices which keep retrying ([#904](https://github.com/fhempy/fhempy/pull/904),
+  [`d4c2067`](https://github.com/fhempy/fhempy/commit/d4c2067ec2e7613e939c1d3ffc876440e85a5606))
+
+- Run conflicting or blocking modules in worker processes automatically
+  ([#905](https://github.com/fhempy/fhempy/pull/905),
+  [`c19b35a`](https://github.com/fhempy/fhempy/commit/c19b35afbdebf439f1d15cd3bd8ad6cc1b5331b4))
+
+- Typed BindingsIo operations instead of Perl code (protocol 2)
+  ([#908](https://github.com/fhempy/fhempy/pull/908),
+  [`b6f18ad`](https://github.com/fhempy/fhempy/commit/b6f18ad9c7a4d6b2c12e604b9e19921497de5cba))
+
+- Update dependencies, aiomqtt 2 and meross-iot 0.4.10 via worker processes
+  ([#906](https://github.com/fhempy/fhempy/pull/906),
+  [`bdfbf28`](https://github.com/fhempy/fhempy/commit/bdfbf28d7189e2b11e64f390b51435681c35308b))
+
+
 ## v2.15.0 (2026-11-06)
 
 ### Features
