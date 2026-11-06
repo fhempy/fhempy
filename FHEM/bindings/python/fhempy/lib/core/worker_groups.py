@@ -67,7 +67,6 @@ CORE_PACKAGES = (
     "markdown2",
     "pycryptodomex",
     "async-upnp-client",
-    "importlib_metadata",
 )
 
 
