@@ -459,7 +459,7 @@ def test_error_logger_logs_once(caplog):
         ("WARNING", "Failed to update: ConnectionRefusedError: refused", None),
         ("DEBUG", "Failed to update: ConnectionRefusedError: refused", None),
         ("DEBUG", "Failed to update: ConnectionRefusedError: refused", None),
-        ("INFO", "Works again after previous error: Failed to update", None),
+        ("INFO", "Works again after 0s and 3 failed attempts: Failed to update", None),
     ]
 
 

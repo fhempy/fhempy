@@ -1084,6 +1084,8 @@ def run():
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     # httpx logs every request on INFO, polling modules (e.g. prusalink) flood the log
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    # the same message over and over (e.g. reconnect loops) is logged rarely
+    utils.install_repeated_log_filter()
     # Python 3.14+ doesn't create an event loop in get_event_loop() anymore
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
