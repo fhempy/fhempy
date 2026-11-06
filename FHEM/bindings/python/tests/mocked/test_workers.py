@@ -386,3 +386,16 @@ async def test_events_are_passed_to_workers():
     await fhem_pythonbinding.read_messages(pb, ListWebsocket([event, reply]))
 
     assert pb.router.events == [event]
+
+
+def test_autodiscovery_frontends_run_with_autodiscovery():
+    """discover_* devices and mqtt_ha_discovery use the autodiscovery engine of
+    their process, they have to run where autodiscovery runs"""
+    assigner = worker_groups.GroupAssigner(path="/nonexistent/workers.json")
+    families = assigner.families()
+    for module in ("discover_mdns", "discover_upnp", "discover_ble"):
+        assert families.key(module) == "autodiscovery"
+        assert assigner.module_requirements(module) == assigner.module_requirements(
+            "autodiscovery"
+        )
+    assert families.key("mqtt_ha_discovery") == "autodiscovery"

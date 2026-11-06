@@ -8,6 +8,7 @@ setList. Nothing is created without asking.
 """
 
 import asyncio
+import importlib
 
 import ifaddr
 
@@ -20,6 +21,8 @@ LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 1883
 LOCAL_INTERVAL = 600
 RECONNECT_DELAY = 60
+# client.messages iterator of aiomqtt 2
+AIOMQTT_MAJOR = 2
 # devices republish their discovery messages when Home Assistant starts
 BIRTH_TOPIC = "homeassistant/status"
 LOGO = "mqtt_ha_discovery.png"
@@ -29,6 +32,19 @@ BRIDGE_DEVICES_TOPIC = "+/bridge/devices"
 STATES_DELAY = 5
 # candidate status of a device not in FHEM (engine.STATUS_NEW)
 STATUS_NEW = "new"
+
+
+def load_aiomqtt():
+    """aiomqtt 2.x or None, e.g. if an old aiomqtt 1.x is installed"""
+    try:
+        import aiomqtt
+    except ImportError:
+        importlib.invalidate_caches()
+        return None
+    # aiomqtt 1.x has the method messages(), 2.x the iterator messages
+    if not isinstance(getattr(aiomqtt.Client, "messages", None), property):
+        return None
+    return aiomqtt
 
 
 def local_addresses():
@@ -165,49 +181,64 @@ class MqttDiscovery:
         return (self.username or None, self.password or None)
 
     async def _broker_loop(self, key):
-        try:
-            import aiomqtt
-        except ImportError:
-            self.logger.warning("MQTT discovery needs aiomqtt")
-            return
         host, port = key
         while True:
-            username, password = self.credentials(key)
+            aiomqtt = load_aiomqtt()
+            if aiomqtt is None:
+                # e.g. installed by the module meanwhile, or an old aiomqtt 1.x
+                self._errors.failed(
+                    f"MQTT discovery needs aiomqtt {AIOMQTT_MAJOR}.x, no MQTT "
+                    f"devices from {host}:{port}, check again in "
+                    f"{RECONNECT_DELAY}s",
+                    key=f"{host}:{port}",
+                    exc=ImportError(f"aiomqtt {AIOMQTT_MAJOR}.x not available"),
+                )
+                await asyncio.sleep(RECONNECT_DELAY)
+                continue
             try:
-                async with aiomqtt.Client(
-                    host, port, username=username, password=password
-                ) as client:
-                    messages = client.messages
-                    await client.subscribe(mqtt_ha.DISCOVERY_TOPIC)
-                    await client.subscribe(BRIDGE_DEVICES_TOPIC)
-                    # ESPHome, Zigbee2MQTT... send their discovery again
-                    await client.publish(BIRTH_TOPIC, "online")
-                    self._clients[key] = client
-                    # after a reconnect: values of the offered devices
-                    for topic in self._topics:
-                        await client.subscribe(topic)
-                    self._errors.success(f"{host}:{port}")
-                    async for message in messages:
-                        try:
-                            await self.handle_message(
-                                key, message.topic.value, message.payload
-                            )
-                        except Exception:
-                            self.logger.exception(
-                                f"Failed to handle MQTT discovery message on "
-                                f"{message.topic}"
-                            )
-            except aiomqtt.MqttError as exc:
+                await self._connect(aiomqtt, key)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
                 self._clients.pop(key, None)
-                # MqttError isn't an OSError, log it without traceback
+                if isinstance(exc, aiomqtt.MqttError):
+                    # MqttError isn't an OSError, log it without traceback
+                    exc = ConnectionError(str(exc))
                 self._errors.failed(
                     f"MQTT discovery: connection to {host}:{port} failed, retry "
                     f"every {RECONNECT_DELAY}s (attributes mqtt_username, "
                     "mqtt_password)",
                     key=f"{host}:{port}",
-                    exc=ConnectionError(str(exc)),
+                    exc=exc,
                 )
                 await asyncio.sleep(RECONNECT_DELAY)
+
+    async def _connect(self, aiomqtt, key):
+        """Listens on the broker until the connection is lost"""
+        host, port = key
+        username, password = self.credentials(key)
+        async with aiomqtt.Client(
+            host, port, username=username, password=password
+        ) as client:
+            messages = client.messages
+            await client.subscribe(mqtt_ha.DISCOVERY_TOPIC)
+            await client.subscribe(BRIDGE_DEVICES_TOPIC)
+            # ESPHome, Zigbee2MQTT... send their discovery again
+            await client.publish(BIRTH_TOPIC, "online")
+            self._clients[key] = client
+            # after a reconnect: values of the offered devices
+            for topic in self._topics:
+                await client.subscribe(topic)
+            self._errors.success(f"{host}:{port}")
+            async for message in messages:
+                try:
+                    await self.handle_message(key, message.topic.value, message.payload)
+                except Exception:
+                    self.logger.exception(
+                        f"Failed to handle MQTT discovery message on "
+                        f"{message.topic}"
+                    )
+        self._clients.pop(key, None)
 
     # --- discovery messages ---
 

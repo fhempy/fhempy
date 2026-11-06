@@ -2,6 +2,11 @@
   "requirements": [
     "aiomqtt==2.5.1"
   ],
+  "worker": {
+    "with": [
+      "autodiscovery"
+    ]
+  },
   "installer": {
     "title": "MQTT discovery",
     "description": "Creates FHEM devices for MQTT devices using Home Assistant MQTT discovery",

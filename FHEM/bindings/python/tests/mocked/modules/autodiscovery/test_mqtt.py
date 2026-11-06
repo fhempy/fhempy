@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -348,3 +349,52 @@ async def test_mqtt_ha_discovery_leaves_new_devices_to_autodiscovery(
     await device.handle_ha_msg(Msg(*z2m_entity("0x01", "Temperature")))
     assert mock_fhem.command_define == []
     assert added == [("10.0.0.2", 1883, "u", "p")]
+
+
+class OldAiomqtt:
+    """aiomqtt 1.x: messages() is a method, not the iterator of 2.x"""
+
+    class MqttError(Exception):
+        pass
+
+    class Client:
+        def messages(self):
+            pass
+
+
+def test_old_aiomqtt_is_not_used(mocker):
+    mocker.patch.dict("sys.modules", {"aiomqtt": OldAiomqtt})
+    assert mqtt_module.load_aiomqtt() is None
+
+
+@pytest.mark.asyncio
+async def test_broker_loop_keeps_retrying(engine, mocker):
+    """An unexpected error or a missing aiomqtt 2 doesn't end MQTT discovery
+    of the broker for good, it's tried again"""
+    attempts = []
+
+    class Aiomqtt:
+        class MqttError(Exception):
+            pass
+
+    async def connect(aiomqtt, key):
+        attempts.append(key)
+        if len(attempts) == 1:
+            raise TypeError("unexpected")
+        raise Aiomqtt.MqttError("refused")
+
+    loaded = iter([None, Aiomqtt, Aiomqtt, Aiomqtt])
+    mocker.patch.object(mqtt_module, "load_aiomqtt", lambda: next(loaded))
+    mocker.patch.object(engine.mqtt, "_connect", connect)
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+        if len(sleeps) == 3:
+            raise asyncio.CancelledError
+
+    mocker.patch.object(mqtt_module.asyncio, "sleep", sleep)
+    with pytest.raises(asyncio.CancelledError):
+        await engine.mqtt._broker_loop(BROKER)
+    assert attempts == [BROKER, BROKER]
+    assert sleeps == [mqtt_module.RECONNECT_DELAY] * 3

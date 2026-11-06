@@ -1,5 +1,11 @@
 {
   "requirements": [
+    "aiomqtt==2.5.1",
     "bleak==3.0.2"
-  ]
+  ],
+  "worker": {
+    "with": [
+      "autodiscovery"
+    ]
+  }
 }
