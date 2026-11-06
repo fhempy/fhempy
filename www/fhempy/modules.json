@@ -605,24 +605,27 @@
   ]
  },
  {
-  "id": "skodaconnect",
+  "id": "skoda_api",
   "title": "Skoda",
-  "description": "Control your Skoda car",
+  "description": "Your Skoda car via the official MyŠkoda API (API key)",
   "category": "cars",
   "name": "my_skoda",
   "logo": "skodaconnect.png",
   "params": [
    {
-    "label": "Username / e-mail",
-    "placeholder": "me@example.com"
+    "label": "API key",
+    "secret": true,
+    "help": "MyŠkoda Public API key"
    },
    {
-    "label": "Password",
-    "secret": true
+    "label": "VIN",
+    "placeholder": "TMBJJ7NX0R1234567"
    },
    {
     "label": "S-PIN",
-    "secret": true
+    "secret": true,
+    "optional": true,
+    "help": "Only needed for the auxiliary heating"
    }
   ]
  },
@@ -716,6 +719,28 @@
     "label": "Bluetooth address (MAC)",
     "placeholder": "AA:BB:CC:DD:EE:FF",
     "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
+   }
+  ]
+ },
+ {
+  "id": "skodaconnect",
+  "title": "Skoda Connect (old)",
+  "description": "Skoda car via username/password (unofficial, use Skoda with API key instead)",
+  "category": "cars",
+  "name": "my_skoda",
+  "logo": "skodaconnect.png",
+  "params": [
+   {
+    "label": "Username / e-mail",
+    "placeholder": "me@example.com"
+   },
+   {
+    "label": "Password",
+    "secret": true
+   },
+   {
+    "label": "S-PIN",
+    "secret": true
    }
   ]
  },
