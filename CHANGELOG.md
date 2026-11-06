@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.15.0 (2026-11-06)
+
+### Features
+
+- **skoda_api**: New module for the official MyŠkoda Public API
+  ([#902](https://github.com/fhempy/fhempy/pull/902),
+  [`00a4a61`](https://github.com/fhempy/fhempy/commit/00a4a6178f93c047f1e3309ef20711a344bf5a7e))
+
+
 ## v2.14.6 (2026-11-05)
 
 ### Bug Fixes
