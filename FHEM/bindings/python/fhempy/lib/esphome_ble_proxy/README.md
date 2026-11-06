@@ -57,8 +57,9 @@ via proxy fails, the local adapters are tried.
   authentication, reading `connection_proxy`) and fhempy pairs and connects via
   the local adapters, and tries the proxy again whenever they fail.
 - Connections via WiFi take a bit longer and drop more often, fhempy reconnects.
-- Modules running in their own worker process (fhempy does this on dependency
-  conflicts) don't see the proxies.
+- esphome_ble_proxy always runs in the fhempy process. Bluetooth modules running in
+  their own worker process (fhempy does this on dependency conflicts) don't see
+  the proxies.
 
 ## Devices with PIN (eQ-3)
 

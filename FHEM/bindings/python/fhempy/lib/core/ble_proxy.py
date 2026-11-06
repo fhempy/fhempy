@@ -67,6 +67,15 @@ def _get_manager():
     return _manager
 
 
+def load_libraries():
+    """Imports the libraries of the proxies, takes a while on a Raspberry
+    Pi: call it via utils.run_blocking before register()."""
+    import aioesphomeapi  # noqa: F401
+    import bleak_esphome.backend.client  # noqa: F401
+    import bleak_esphome.backend.scanner  # noqa: F401
+    import habluetooth  # noqa: F401
+
+
 def add_raw_callback(callback):
     if callback not in _raw_callbacks:
         _raw_callbacks.append(callback)

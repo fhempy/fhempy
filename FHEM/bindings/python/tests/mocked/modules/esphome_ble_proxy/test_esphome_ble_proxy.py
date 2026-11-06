@@ -433,3 +433,26 @@ def test_define_usage():
     assert esphome_ble_proxy.validate_define(["a", "fhempy", "x", "host"], {}) is None
     assert _parse_host("bt-proxy.local") == ("bt-proxy.local", 6053)
     assert _parse_host("192.168.1.5:6054") == ("192.168.1.5", 6054)
+
+
+def test_proxy_stays_in_fhempy_process(tmp_path):
+    """The Bluetooth modules only see proxies of their own process."""
+    import json
+    import os
+
+    from fhempy.lib.core import worker_groups
+
+    path = os.path.join(
+        os.path.dirname(worker_groups.__file__),
+        "..",
+        "esphome_ble_proxy",
+        "manifest.json",
+    )
+    with open(path) as f:
+        manifest = json.load(f)
+    assigner = worker_groups.GroupAssigner(
+        path=str(tmp_path / "workers.json"),
+        manifests={"esphome_ble_proxy": manifest},
+    )
+    for _ in range(worker_groups.BLOCKING_COUNT + 1):
+        assert assigner.record_blocking("esphome_ble_proxy", 5) is None
