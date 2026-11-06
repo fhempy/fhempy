@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import re
+from urllib.parse import parse_qs
 
 import pytest
 import requests_mock
@@ -18,12 +19,82 @@ def load_fixture(filename):
         return fdp.read()
 
 
+class FakeRingOAuth:
+    """Ring OAuth v2 sign-in (authorize page, signin, 2fa, code exchange)."""
+
+    CSRF = "csrf-mock-token"
+    CODE = "mock-auth-code"
+    TWO_FA_CODE = "123456"
+
+    def __init__(self, mock, require_2fa=False, password="asdfasdfasdf"):
+        self.require_2fa = require_2fa
+        self.password = password
+        self.state = None
+        self.signed_in = False
+        self.token_requests = []
+        mock.get("https://oauth.ring.com/oauth/v2/authorize", text=self._authorize)
+        mock.post("https://oauth.ring.com/oauth/v2/signin", text=self._signin)
+        mock.post("https://oauth.ring.com/oauth/v2/2fa/verify", text=self._verify)
+        mock.post("https://oauth.ring.com/oauth/token", text=self._token)
+
+    def _authorize(self, request, context):
+        if "state" in request.qs:
+            self.state = request.qs["state"][0]
+            self.signed_in = False
+            return (
+                '<html><form><input type="hidden" name="csrf-token" value="'
+                + self.CSRF
+                + '"/></form></html>'
+            )
+        if not self.signed_in:
+            context.status_code = 200
+            return "<html>sign in</html>"
+        context.status_code = 302
+        context.headers["location"] = (
+            "https://ring.com/signin/callback?code="
+            + self.CODE
+            + "&state="
+            + self.state
+        )
+        return ""
+
+    def _signin(self, request, context):
+        form = parse_qs(request.text)
+        assert form["csrf-token"] == [self.CSRF]
+        if form["password"] != [self.password]:
+            context.status_code = 401
+            return '{"error": "invalid_grant"}'
+        if self.require_2fa:
+            context.status_code = 412
+            return '{"tsv_state": "sms", "phone": "+1xxxxxx00"}'
+        self.signed_in = True
+        return "{}"
+
+    def _verify(self, request, context):
+        form = parse_qs(request.text)
+        if form["2fa_code"] != [self.TWO_FA_CODE]:
+            context.status_code = 400
+            return "{}"
+        self.signed_in = True
+        return '{"redirect_url": "/oauth/v2/authorize"}'
+
+    def _token(self, request, context):
+        form = parse_qs(request.text)
+        self.token_requests.append((form, request.headers))
+        if form["grant_type"] == ["password"]:
+            # Ring blocks the old password grant
+            context.status_code = 406
+            return "406 Not Acceptable"
+        if form["grant_type"] == ["authorization_code"]:
+            assert form["code"] == [self.CODE]
+            assert "code_verifier" in form
+        return load_fixture("ring_oauth.json")
+
+
 @pytest.fixture(autouse=True)
 def mock_ring_requests():
     with requests_mock.Mocker() as mock:
-        mock.post(
-            "https://oauth.ring.com/oauth/token", text=load_fixture("ring_oauth.json")
-        )
+        mock.fake_oauth = FakeRingOAuth(mock)
         mock.post(
             "https://api.ring.com/clients_api/session",
             text=load_fixture("ring_session.json"),
@@ -103,7 +174,7 @@ def mock_ring_requests():
 
 
 @pytest.mark.asyncio
-async def test_login(mocker):
+async def test_login(mocker, mock_ring_requests):
     mock_fhem.mock_module(mocker)
     testhash = {"NAME": "testdevice", "FHEMPYTYPE": "ring"}
     await check_and_install_dependencies("ring")
@@ -183,4 +254,76 @@ async def test_login(mocker):
         "history_1_created_at"
     ] == datetime.datetime(2017, 3, 5, 15, 3, 40, tzinfo=datetime.timezone.utc)
 
+    await fhempy_device.Undefine(testhash)
+
+    token_form, token_headers = mock_ring_requests.fake_oauth.token_requests[0]
+    assert token_form["grant_type"] == ["authorization_code"]
+    assert token_headers["User-Agent"] == "android:com.ringapp"
+    assert "hardware_id" in token_headers
+    # identifier is stored, so the hardware id stays the same after restart
+    assert len(mock_fhem.readings["testdevice"]["identifier"]) == 20
+
+
+async def wait_for_state(name, expected):
+    for _ in range(50):
+        if mock_fhem.readings.get(name, {}).get("state") == expected:
+            return
+        await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+async def test_login_2fa(mocker, mock_ring_requests):
+    mock_fhem.mock_module(mocker)
+    mock_ring_requests.fake_oauth.require_2fa = True
+    testhash = {"NAME": "testdevice2fa", "FHEMPYTYPE": "ring"}
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import ring
+
+    fhempy_device = ring(logging.getLogger(__name__))
+    await fhempy_device.Define(
+        testhash,
+        ["testdevice2fa", "fhempy", "ring", "test@test.com", "Front Door", "abc"],
+        {},
+    )
+    await fhempy_device.Set(testhash, ["testdevice2fa", "password", "asdfasdfasdf"], {})
+    await wait_for_state("testdevice2fa", "please set 2fa_code")
+    assert mock_fhem.readings["testdevice2fa"]["state"] == "please set 2fa_code"
+
+    await fhempy_device.Set(testhash, ["testdevice2fa", "2fa_code", "000000"], {})
+    await wait_for_state("testdevice2fa", "invalid 2fa_code, please set 2fa_code again")
+    assert (
+        mock_fhem.readings["testdevice2fa"]["state"]
+        == "invalid 2fa_code, please set 2fa_code again"
+    )
+
+    await fhempy_device.Set(
+        testhash,
+        ["testdevice2fa", "2fa_code", FakeRingOAuth.TWO_FA_CODE],
+        {},
+    )
+    await wait_for_state("testdevice2fa", "connected")
+    assert mock_fhem.readings["testdevice2fa"]["state"] == "connected"
+    assert "token" in mock_fhem.readings["testdevice2fa"]
+    await fhempy_device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_login_wrong_password(mocker, mock_ring_requests):
+    mock_fhem.mock_module(mocker)
+    testhash = {"NAME": "testdevicepw", "FHEMPYTYPE": "ring"}
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import ring
+
+    fhempy_device = ring(logging.getLogger(__name__))
+    await fhempy_device.Define(
+        testhash,
+        ["testdevicepw", "fhempy", "ring", "test@test.com", "Front Door", "abc"],
+        {},
+    )
+    await fhempy_device.Set(testhash, ["testdevicepw", "password", "wrong"], {})
+    await wait_for_state("testdevicepw", "AccessDenied: wrong username or password")
+    assert (
+        mock_fhem.readings["testdevicepw"]["state"]
+        == "AccessDenied: wrong username or password"
+    )
     await fhempy_device.Undefine(testhash)

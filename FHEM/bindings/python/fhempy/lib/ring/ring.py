@@ -5,9 +5,12 @@ import random
 import string
 import threading
 import time
+import uuid
 
-from oauthlib.oauth2 import AccessDeniedError, MissingTokenError
+from oauthlib.oauth2 import OAuth2Error
 from ring_doorbell import Auth, Ring
+from ring_doorbell.const import NAMESPACE_UUID, OAuth
+from ring_doorbell.exceptions import AuthenticationError
 
 try:
     # Python 3.7
@@ -19,6 +22,36 @@ except ImportError:
 from fhempy.lib.generic import FhemModule
 
 from .. import fhem, utils
+from .ring_login import (
+    USER_AGENT,
+    RingAccessDenied,
+    RingInvalid2FA,
+    RingLoginError,
+    RingPkceLogin,
+    RingRequires2FA,
+)
+
+
+class RingAuth(Auth):
+    """Auth that refreshes tokens with the headers the Ring app sends."""
+
+    def refresh_tokens(self):
+        try:
+            token = self._oauth.refresh_token(
+                OAuth.ENDPOINT,
+                headers={
+                    "User-Agent": self.user_agent,
+                    "hardware_id": self.hardware_id,
+                    "Accept": "application/json",
+                },
+            )
+        except OAuth2Error as ex:
+            raise AuthenticationError(ex) from ex
+
+        if self.token_updater is not None:
+            self.token_updater(token)
+
+        return token
 
 
 class ring(FhemModule):
@@ -30,6 +63,7 @@ class ring(FhemModule):
         self._password = ""
         self._token = ""
         self._2facode = None
+        self._pkce_login = None
         self._attr_dingPollInterval = 5
         self._attr_deviceUpdateInterval = 300
         self._history = []
@@ -74,8 +108,19 @@ class ring(FhemModule):
             self._ridentifier = args[5]
             self.hash["IDENTIFIER"] = args[5]
         else:
-            characters = string.ascii_letters + string.digits
-            self._ridentifier = "".join(random.choice(characters) for _ in range(20))
+            # keep the identifier across restarts, otherwise Ring sees a new
+            # client device (hardware id) on every start
+            self._ridentifier = await fhem.ReadingsVal(
+                self.hash["NAME"], "identifier", ""
+            )
+            if self._ridentifier == "":
+                characters = string.ascii_letters + string.digits
+                self._ridentifier = "".join(
+                    random.choice(characters) for _ in range(20)  # NOSONAR
+                )
+                await fhem.readingsSingleUpdate(
+                    self.hash, "identifier", self._ridentifier, 1
+                )
         self._reading_encryption_key = await fhem.getUniqueId(hash)
         # ring service
         self._ring = None
@@ -348,30 +393,61 @@ class ring(FhemModule):
             # except Exception:
             #    self._snapshot = None
 
+    def _hardware_id(self):
+        # same id as older versions used, existing tokens stay valid
+        return str(
+            uuid.uuid5(
+                uuid.UUID(NAMESPACE_UUID),
+                str(uuid.getnode()) + self._ridentifier + "/1.0",
+            )
+        )
+
+    def _create_auth(self, token, token_updater):
+        auth = RingAuth(USER_AGENT, token, token_updater, self._hardware_id())
+        auth.device_model = "ring-doorbell:" + self._ridentifier + "/1.0"
+        return auth
+
+    def _fetch_token(self):
+        """Sign in with password (and 2FA code), returns error text or None."""
+        try:
+            pending = self._pkce_login
+            if self._2facode and pending and pending.waiting_for_2fa:
+                code = self._2facode
+                self._2facode = None
+                token = pending.verify_2fa(code)
+            else:
+                # a code without a waiting sign-in (e.g. after restart) is stale
+                self._2facode = None
+                self._pkce_login = RingPkceLogin(self._hardware_id())
+                token = self._pkce_login.login(self._username, self._password)
+        except RingRequires2FA:
+            return "please set 2fa_code"
+        except RingInvalid2FA:
+            return "invalid 2fa_code, please set 2fa_code again"
+        except RingAccessDenied:
+            self._pkce_login = None
+            return "AccessDenied: wrong username or password"
+        except RingLoginError as ex:
+            self._pkce_login = None
+            self.logger.error(f"Ring login failed: {ex}")
+            return "Login failed"
+        self._pkce_login = None
+        return token
+
     def blocking_login(self):
         def token_updater(token):
             asyncio.run_coroutine_threadsafe(
                 self.token_updated(token), self.loop
             ).result()
 
-        if self._token != "":
-            self._auth = Auth(self._ridentifier + "/1.0", self._token, token_updater)
-        else:
-            if self._password != "":
-                self._auth = Auth(self._ridentifier + "/1.0", None, token_updater)
-                if self._2facode:
-                    self._auth.fetch_token(
-                        self._username, self._password, self._2facode
-                    )
-                else:
-                    try:
-                        self._auth.fetch_token(self._username, self._password)
-                    except AccessDeniedError:
-                        return "AccessDenied: wrong username or password"
-                    except MissingTokenError:
-                        return "please set 2fa_code"
-            else:
+        if self._token == "":
+            if self._password == "":
                 return "please set password"
+            token = self._fetch_token()
+            if isinstance(token, str):
+                return token
+            token_updater(token)
+        self._auth = self._create_auth(self._token, token_updater)
         self._ring = Ring(self._auth)
 
     async def set_volume(self, hash, params):
