@@ -54,8 +54,8 @@ via proxy fails, the local adapters are tried.
 - The ESPHome API can't pass a PIN. Devices which need pairing with a PIN (eQ-3
   firmware 1.20+) work via proxy only if the proxy's YAML answers the PIN request
   (see below). Otherwise the device rejects the connection (insufficient
-  authentication) and fhempy uses only the local adapters for it, reading
-  `connection_proxy`.
+  authentication, reading `connection_proxy`) and fhempy pairs and connects via
+  the local adapters, and tries the proxy again whenever they fail.
 - Connections via WiFi take a bit longer and drop more often, fhempy reconnects.
 - Modules running in their own worker process (fhempy does this on dependency
   conflicts) don't see the proxies.

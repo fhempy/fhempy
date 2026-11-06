@@ -248,10 +248,14 @@ async def test_bluetoothle_pin_device_falls_back_to_local_pairing(proxy_env, moc
     find_device.assert_not_called()
     assert conn._client is None
     assert not conn.connected.is_set()
-    assert mock_fhem.readings["testble"]["connection_proxy"] == (
-        "not possible (PIN pairing)"
-    )
+    assert mock_fhem.readings["testble"]["connection_proxy"] == ("pairing failed (PIN)")
     assert conn._proxy_choice() is None
+
+    # local pairing fails (e.g. out of range): the proxy is tried again
+    assert conn._retry_proxy()
+    assert conn._proxy_choice() is not None
+    # no proxy failure, nothing to retry
+    assert not conn._retry_proxy()
 
 
 @pytest.mark.asyncio
