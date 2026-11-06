@@ -18,6 +18,8 @@
 //   {"event": "command", "id", "command": {...}}
 //   {"event": "pairing_mode", "minutes"}
 //   {"event": "error", "id", "message"}
+//     with "failed": true if the device couldn't be added, the bridge has to
+//     be restarted without it
 //
 // state and command use the same keys per type:
 //   switch/outlet/light: on (bool); dimmer: on, level (0-100)
@@ -105,6 +107,11 @@ const pctToLevel = pct => Math.min(254, Math.max(1, Math.round((pct / 100) * 254
 const positionToMatter = position => Math.round((100 - position) * 100);
 const matterToPosition = value => (value === null ? null : 100 - Math.round(value / 100));
 const toHundredths = value => Math.round(value * 100);
+// Matter rejects values outside the range of an attribute, the whole
+// endpoint then fails ("Behaviors have errors"), e.g. a humidity of 150 %
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const temperatureValue = value => clamp(toHundredths(value), -27315, 32767);
+const humidityValue = value => clamp(toHundredths(value), 0, 10000);
 const FAN_MODES = {
     off: FanControl.FanMode.Off,
     low: FanControl.FanMode.Low,
@@ -242,9 +249,9 @@ function matterState(type, state) {
             break;
         case "thermostat":
             result.thermostat = {};
-            if (has("current")) result.thermostat.localTemperature = toHundredths(state.current);
+            if (has("current")) result.thermostat.localTemperature = temperatureValue(state.current);
             if (has("target")) {
-                result.thermostat.occupiedHeatingSetpoint = Math.min(3200, Math.max(400, toHundredths(state.target)));
+                result.thermostat.occupiedHeatingSetpoint = clamp(toHundredths(state.target), 400, 3200);
             }
             break;
         case "lock":
@@ -267,11 +274,11 @@ function matterState(type, state) {
             if (has("occupied")) result.occupancySensing = { occupancy: { occupied: state.occupied } };
             break;
         case "temperature":
-            if (has("temperature")) result.temperatureMeasurement = { measuredValue: toHundredths(state.temperature) };
+            if (has("temperature")) result.temperatureMeasurement = { measuredValue: temperatureValue(state.temperature) };
             break;
         case "humidity":
             if (has("humidity")) {
-                result.relativeHumidityMeasurement = { measuredValue: toHundredths(state.humidity) };
+                result.relativeHumidityMeasurement = { measuredValue: humidityValue(state.humidity) };
             }
             break;
     }
@@ -363,7 +370,15 @@ async function addDevice({ id, type, name, state, parts }) {
         ...parts.map(part => TYPES[part].sensor),
     );
     const endpoint = new Endpoint(endpointType, options);
-    await aggregator.add(endpoint);
+    try {
+        await aggregator.add(endpoint);
+    } catch (error) {
+        // the endpoint number of a failed endpoint stays in the PartsList,
+        // controllers like Home Assistant and Google Home then lose all
+        // devices of the bridge: fhempy restarts the bridge without it
+        send({ event: "error", id, message: String(error?.message ?? error), failed: true });
+        return;
+    }
     devices.set(id, { type, name, parts, endpoint, state: { ...state }, pending: {} });
     listen(id, type, endpoint);
 }
