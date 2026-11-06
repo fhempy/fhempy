@@ -38,9 +38,9 @@ pyproject-api==1.12.2 \
     --hash=sha256:ad2a72516abcc950877222e9eff760c9120d2086f0d9fce6aef4f16985a3e946 \
     --hash=sha256:b832f139e5b5e6a01a67e55e38603e8a99cd43556fc2f6fc5659946da25c5f54
     # via tox
-python-discovery==1.6.7 \
-    --hash=sha256:5422f67e5f533bb02d7b73de1c422ed74037536fd869e05156c07565926ec68e \
-    --hash=sha256:7f7c28568c8ec3d988d8bddbdbec8e65f08e8767e52f734e18b8b498549b9b70
+python-discovery==1.9.4 \
+    --hash=sha256:b468f365040b40f4cb39918b0766d3e5a2f340968e07df752fbc96f1bb4641ab \
+    --hash=sha256:c01b45fe515c1d268b57c57d554bb0e1d320b8e9eb5490bb2f4f577be26e4380
     # via
     #   tox
     #   virtualenv
@@ -48,9 +48,9 @@ tomli-w==1.2.0 \
     --hash=sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90 \
     --hash=sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021
     # via tox
-tox==4.67.4 \
-    --hash=sha256:6f97945d3ca1c204337aeecd858b178b30fc5cf9d0b0c15aacea12d1c5eb0946 \
-    --hash=sha256:e1be08d3dbeb44c7a87ec6b4f0be840b0a0db375013c3c801e5bb428c5607361
+tox==4.67.7 \
+    --hash=sha256:35e450ff098d1f3f815dd47145208c4bf29d86ea3bee10dd57ce9d2ea378253d \
+    --hash=sha256:a153a70dc7d31560e3b365b6ad945a6868ee9b3785295bc6385d960ac4308840
     # via
     #   -r tests.in
     #   tox-gh-actions
@@ -58,10 +58,6 @@ tox-gh-actions==3.5.0 \
     --hash=sha256:070790114c92f4c94337047515ca5e077ceb269a5cb9366e0a0b3440a024eca1 \
     --hash=sha256:cc8e148c4513042e5019973e5672594c3df241b035e7fb550f6f778588110051
     # via -r tests.in
-typing-extensions==4.16.0 ; python_full_version < '3.13' \
-    --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8 \
-    --hash=sha256:dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5
-    # via tox
 virtualenv==21.15.1 \
     --hash=sha256:0d14a991689c67600316880eadc0a37b7690cb632e3b4ac67e2bc05b2b2e24a4 \
     --hash=sha256:e79c90b8f601701599c25905e02839924fede2c798d52325670d24fbdaab74ee
