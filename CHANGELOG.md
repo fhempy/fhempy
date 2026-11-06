@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.16.1 (2026-11-06)
+
+### Bug Fixes
+
+- **workers**: Move modules out of the core if an installed dependency conflicts
+  ([#911](https://github.com/fhempy/fhempy/pull/911),
+  [`a2f54a9`](https://github.com/fhempy/fhempy/commit/a2f54a9976291f9c6c45d0d046968362e3f20f7c))
+
+
 ## v2.16.0 (2026-11-06)
 
 ### Bug Fixes
