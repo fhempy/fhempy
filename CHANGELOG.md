@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.17.0 (2026-11-06)
+
+### Bug Fixes
+
+- **bluetoothle**: Pair PIN devices via ESPHome proxy, fall back to local adapter
+  ([#914](https://github.com/fhempy/fhempy/pull/914),
+  [`977a16f`](https://github.com/fhempy/fhempy/commit/977a16ffbbf64b12ff6e1e2fa8ab6aeb090d08fd))
+
+### Features
+
+- Use ESPHome Bluetooth proxies for all Bluetooth LE modules
+  ([#913](https://github.com/fhempy/fhempy/pull/913),
+  [`d73bc6f`](https://github.com/fhempy/fhempy/commit/d73bc6f0d95158135d7211a91cf8e56acabc84c4))
+
+
 ## v2.16.2 (2026-11-06)
 
 ### Bug Fixes
