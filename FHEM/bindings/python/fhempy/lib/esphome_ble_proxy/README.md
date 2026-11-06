@@ -51,13 +51,39 @@ via proxy fails, the local adapters are tried.
   keeps the connection open) use one slot each.
 - Only one program can receive the advertisements of a proxy: a proxy which is used
   by Home Assistant can't be used by fhempy at the same time.
-- The proxy can't pair with a PIN: the key stays with the adapter which paired.
-  eQ-3 thermostats with a PIN (firmware 1.20+) always connect via a local adapter.
-  If a device rejects the connection via proxy (insufficient authentication),
-  fhempy uses only the local adapters for it, reading `connection_proxy`.
+- The ESPHome API can't pass a PIN. Devices which need pairing with a PIN (eQ-3
+  firmware 1.20+) work via proxy only if the proxy's YAML answers the PIN request
+  (see below). Otherwise the device rejects the connection (insufficient
+  authentication) and fhempy uses only the local adapters for it, reading
+  `connection_proxy`.
 - Connections via WiFi take a bit longer and drop more often, fhempy reconnects.
 - Modules running in their own worker process (fhempy does this on dependency
   conflicts) don't see the proxies.
+
+## Devices with PIN (eQ-3)
+
+The pairing key is stored by the adapter which paired, a PIN entered on the Raspberry
+Pi doesn't help the ESP32. Add to the YAML of the proxy (one `ble_client` per device,
+it never connects by itself, it only answers the PIN request when fhempy pairs via
+the proxy):
+
+```yaml
+esp32_ble:
+  io_capability: keyboard_only
+  max_connections: 4   # 3 for bluetooth_proxy + 1 per ble_client
+
+ble_client:
+  - mac_address: "00:1A:22:XX:XX:XX"
+    id: eq3_pairing
+    auto_connect: false
+    on_passkey_request:
+      then:
+        - ble_client.passkey_reply:
+            id: eq3_pairing
+            passkey: 123456   # PIN shown on the thermostat
+```
+
+Restart fhempy (or the eq3bt device) after flashing.
 
 ## Readings
 

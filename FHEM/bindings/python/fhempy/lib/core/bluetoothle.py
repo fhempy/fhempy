@@ -438,13 +438,8 @@ class BluetoothLE:
         if self._proxy_auth_failed:
             # needs an encrypted (PIN) connection, see _connect_via_proxy
             return None
-        local_rssi = self._local_rssi()
-        if self._needs_pin() and local_rssi is not None:
-            # the proxy can't pair with a PIN, only if the local adapters
-            # don't see the device at all
-            return None
         # a device the shared scan doesn't see locally goes through the proxy
-        if not ble_proxy.use_proxy(found[1], local_rssi):
+        if not ble_proxy.use_proxy(found[1], self._local_rssi()):
             return None
         return found
 
@@ -495,7 +490,9 @@ class BluetoothLE:
         return True
 
     async def _pair_via_proxy(self, proxy):
-        """ESPHome pairs without PIN (just works), some devices accept it."""
+        """The ESPHome API has no PIN. It works if the proxy's YAML answers
+        the PIN request (ble_client with on_passkey_request, see the
+        esphome_ble_proxy README) or the device accepts pairing without PIN."""
         try:
             await self._client.pair()
         except Exception as exc:
@@ -503,12 +500,13 @@ class BluetoothLE:
 
     async def _proxy_auth_error(self, proxy):
         """The device only accepts an encrypted connection after pairing with
-        a PIN, the ESPHome proxy can't do that: local adapters only."""
+        a PIN, the proxy couldn't pair: local adapters only."""
         self._proxy_auth_failed = True
         self.logger.warning(
-            f"{self.addr} needs pairing with a PIN, the ESPHome Bluetooth proxy "
-            f"{proxy.name} can't pair with a PIN. Connecting via the local "
-            "Bluetooth adapters only, the device has to be in their range."
+            f"{self.addr} needs pairing with a PIN, pairing via the ESPHome "
+            f"Bluetooth proxy {proxy.name} failed (the PIN has to be in its YAML, "
+            "see esphome_ble_proxy README). Connecting via the local Bluetooth "
+            "adapters only."
         )
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection_proxy", "not possible (PIN pairing)", 1
