@@ -269,10 +269,8 @@ class Worker:
                 await child_process._wait(proc, STOP_TIMEOUT)
         if self._task is not None:
             self._task.cancel()
-            try:
-                await self._task
-            except (asyncio.CancelledError, Exception):
-                pass
+            # wait without raising the cancellation of the task in this one
+            await asyncio.wait({self._task})
         await self._cleanup()
 
 

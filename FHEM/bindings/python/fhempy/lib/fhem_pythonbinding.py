@@ -212,8 +212,12 @@ async def worker_binding(websocket):
     """Connection of a worker process to the core, the core is its FHEM."""
     pb = fhempy(websocket)
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
-    loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(pb.shutdown()))
+    loop.add_signal_handler(
+        signal.SIGTERM, lambda: pb.create_background_task(pb.shutdown())
+    )
+    loop.add_signal_handler(
+        signal.SIGINT, lambda: pb.create_background_task(pb.shutdown())
+    )
     fhem.updateConnection(pb)
     capabilities_task = asyncio.create_task(fhem.detect_capabilities())
     trim_task = asyncio.create_task(memory.trim_periodically())
