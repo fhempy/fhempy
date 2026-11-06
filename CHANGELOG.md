@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.16.2 (2026-11-06)
+
+### Bug Fixes
+
+- **ring**: Sign in via Ring OAuth v2 (PKCE) to avoid HTTP 406
+  ([#912](https://github.com/fhempy/fhempy/pull/912),
+  [`7a0f0b4`](https://github.com/fhempy/fhempy/commit/7a0f0b4ac40b54fd51017335ec506048f741d14c))
+
+
 ## v2.16.1 (2026-11-06)
 
 ### Bug Fixes
