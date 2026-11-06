@@ -71,6 +71,14 @@ Add the following settings to `/etc/dbus-1/system.d/bluetooth.conf`
 Set the user to the one which runs fhempy. On FHEM installations it's fhem, on remote peers it's normally pi.
 Restart dbus afterwards: `sudo systemctl restart dbus`
 
+## Via ESPHome Bluetooth proxy
+
+Thermostats out of range of the Raspberry Pi can be connected through an ESP32
+with ESPHome (module `esphome_ble_proxy`). With PIN (firmware 1.20+) the proxy
+has to answer the PIN request itself, the pairing on the Raspberry Pi doesn't
+help the ESP32. See [Devices with PIN](../esphome_ble_proxy/README.md#devices-with-pin-eq-3)
+for the YAML.
+
 ## Usage
 ```
 define thermostat1 fhempy eq3bt MAC PIN

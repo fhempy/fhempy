@@ -51,11 +51,64 @@ via proxy fails, the local adapters are tried.
   keeps the connection open) use one slot each.
 - Only one program can receive the advertisements of a proxy: a proxy which is used
   by Home Assistant can't be used by fhempy at the same time.
-- The proxy can't pair with a PIN. eQ-3 thermostats with firmware 1.20+ which need a
-  PIN have to be paired by a local adapter once (see eq3bt).
+- The ESPHome API can't pass a PIN. Devices which need pairing with a PIN (eQ-3
+  firmware 1.20+) work via proxy only if the proxy's YAML answers the PIN request
+  (see below). Otherwise the device rejects the connection (insufficient
+  authentication, reading `connection_proxy`) and fhempy pairs and connects via
+  the local adapters, and tries the proxy again whenever they fail.
 - Connections via WiFi take a bit longer and drop more often, fhempy reconnects.
-- Modules running in their own worker process (fhempy does this on dependency
-  conflicts) don't see the proxies.
+- esphome_ble_proxy always runs in the fhempy process. Bluetooth modules running in
+  their own worker process (fhempy does this on dependency conflicts) don't see
+  the proxies.
+
+## Devices with PIN (eQ-3)
+
+The pairing key is stored by the adapter which paired, a PIN entered on the Raspberry
+Pi doesn't help the ESP32. The proxy answers the PIN request itself: add one
+`ble_client` per device to its YAML. It never connects by itself
+(`auto_connect: false`), it only answers the PIN request when fhempy pairs via the
+proxy.
+
+Complete example for a ready-made proxy (firmware from
+[esphome.github.io/bluetooth-proxies](https://esphome.github.io/bluetooth-proxies/)),
+take `substitutions` and `packages` from the YAML of your proxy:
+
+```yaml
+substitutions:
+  name: esp32-bluetooth-proxy-xxxxxx
+  friendly_name: Bluetooth Proxy xxxxxx
+packages:
+  esphome.bluetooth-proxy: github://esphome/bluetooth-proxies/esp32-generic/esp32-generic.yaml@main
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+esp32_ble:
+  io_capability: keyboard_only
+  max_connections: 4   # 3 for bluetooth_proxy + 1 per ble_client
+
+ble_client:
+  - mac_address: "00:1A:22:AA:BB:CC"   # MAC of the thermostat
+    id: eq3_pairing
+    auto_connect: false
+    on_passkey_request:
+      then:
+        - ble_client.passkey_reply:
+            id: eq3_pairing
+            passkey: 123456   # PIN shown on the thermostat
+```
+
+For several thermostats add one `ble_client` each (with its own `id`) and raise
+`max_connections` by one per `ble_client`.
+
+Define the thermostat as usual with its PIN (`define thermostat1 fhempy eq3bt <MAC>
+<PIN>`) and restart fhempy (or the eq3bt device) after flashing. fhempy pairs via the
+proxy if it receives the thermostat clearly better or local pairing fails.
+`connection_adapter` shows the proxy and `connection_proxy` is `ok` once connected.
 
 ## Readings
 

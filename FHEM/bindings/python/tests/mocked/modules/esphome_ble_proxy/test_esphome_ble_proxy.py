@@ -205,6 +205,136 @@ async def test_bluetoothle_connects_via_proxy_without_local_adapter(proxy_env, m
 
 
 @pytest.mark.asyncio
+async def test_bluetoothle_pin_device_falls_back_to_local_pairing(proxy_env, mocker):
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from bleak.exc import BleakError
+
+    from fhempy.lib.core import bluetoothle
+
+    mock_fhem.readings.pop("testble", None)
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-70)
+
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    conn.conf_checked = True
+    mocker.patch.object(conn, "update_adapters", mocker.AsyncMock())
+    conn.adapters = ["hci0"]
+    client = mocker.MagicMock(is_connected=True)
+    client.connect = mocker.AsyncMock()
+    client.disconnect = mocker.AsyncMock()
+    client.pair = mocker.AsyncMock(side_effect=BleakError("not supported"))
+    mocker.patch.object(ble_proxy, "client", return_value=client)
+    mocker.patch.object(
+        conn,
+        "_subscribe_notifies",
+        mocker.AsyncMock(
+            side_effect=BleakError(
+                "Bluetooth GATT Error handle=1072 error=5 "
+                "description=Insufficient authentication"
+            )
+        ),
+    )
+    find_device = mocker.patch.object(conn, "find_device")
+
+    await conn.connect_once(1, 1)
+
+    client.pair.assert_awaited_once()
+    client.disconnect.assert_awaited()
+    # back to connect_loop, which pairs via the local adapter
+    find_device.assert_not_called()
+    assert conn._client is None
+    assert not conn.connected.is_set()
+    assert mock_fhem.readings["testble"]["connection_proxy"] == ("pairing failed (PIN)")
+    assert conn._proxy_choice() is None
+
+    # local pairing fails (e.g. out of range): the proxy is tried again right
+    # away instead of waiting for the next local attempt
+    await asyncio.wait_for(conn._wait_for_retry(3600), 1)
+    assert conn._proxy_choice() is not None
+
+
+@pytest.mark.asyncio
+async def test_bluetoothle_waits_for_proxy_after_startup(proxy_env, mocker):
+    """The proxy reports the device only after the first local pairing
+    attempt failed: the long wait ends as soon as the proxy sees it."""
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    mocker.patch.object(bluetoothle, "PROXY_CHECK_INTERVAL", 0.01)
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+
+    waiting = asyncio.create_task(conn._wait_for_retry(3600))
+    await asyncio.sleep(0.05)
+    assert not waiting.done()
+    cli.advertise()
+    await asyncio.wait_for(waiting, 1)
+
+
+@pytest.mark.asyncio
+async def test_bluetoothle_prefers_proxy_after_local_pairing_failed(proxy_env, mocker):
+    """The local adapter receives the device weakly but can't pair: the
+    proxy is used although its signal isn't clearly better."""
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-79)
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    mocker.patch.object(conn, "_local_rssi", return_value=-85)
+    assert conn._proxy_choice() is None
+
+    await asyncio.wait_for(conn._wait_for_retry(3600), 1)
+    assert conn._proxy_choice() is not None
+
+
+@pytest.mark.asyncio
+async def test_bluetoothle_pin_device_pairs_via_proxy(proxy_env, mocker):
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    mock_fhem.readings.pop("testble", None)
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-60)
+
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    conn.conf_checked = True
+    mocker.patch.object(conn, "update_adapters", mocker.AsyncMock())
+    conn.adapters = ["hci0"]
+    client = mocker.MagicMock(is_connected=True)
+    client.connect = mocker.AsyncMock()
+    client.disconnect = mocker.AsyncMock()
+    # the proxy's YAML answers the PIN request
+    client.pair = mocker.AsyncMock()
+    mocker.patch.object(ble_proxy, "client", return_value=client)
+    mocker.patch.object(conn, "_subscribe_notifies", mocker.AsyncMock())
+
+    await conn.connect_once(1, 1)
+
+    client.pair.assert_awaited_once()
+    assert conn.connected.is_set()
+    assert mock_fhem.readings["testble"]["connection"] == "connected"
+    assert mock_fhem.readings["testble"]["connection_adapter"] == "BT Proxy"
+    await conn.disconnect()
+
+
+@pytest.mark.asyncio
 async def test_bluetoothle_prefers_local_adapter(proxy_env, mocker):
     ble_proxy, scanner = proxy_env
     await check_and_install_dependencies("blue_connect")
@@ -303,3 +433,26 @@ def test_define_usage():
     assert esphome_ble_proxy.validate_define(["a", "fhempy", "x", "host"], {}) is None
     assert _parse_host("bt-proxy.local") == ("bt-proxy.local", 6053)
     assert _parse_host("192.168.1.5:6054") == ("192.168.1.5", 6054)
+
+
+def test_proxy_stays_in_fhempy_process(tmp_path):
+    """The Bluetooth modules only see proxies of their own process."""
+    import json
+    import os
+
+    from fhempy.lib.core import worker_groups
+
+    path = os.path.join(
+        os.path.dirname(worker_groups.__file__),
+        "..",
+        "esphome_ble_proxy",
+        "manifest.json",
+    )
+    with open(path) as f:
+        manifest = json.load(f)
+    assigner = worker_groups.GroupAssigner(
+        path=str(tmp_path / "workers.json"),
+        manifests={"esphome_ble_proxy": manifest},
+    )
+    for _ in range(worker_groups.BLOCKING_COUNT + 1):
+        assert assigner.record_blocking("esphome_ble_proxy", 5) is None

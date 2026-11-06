@@ -2,6 +2,7 @@
 Bluetooth modules of fhempy (see core/ble_proxy)."""
 
 import asyncio
+import functools
 import ipaddress
 
 from aioesphomeapi import APIClient, ReconnectLogic
@@ -111,6 +112,7 @@ class esphome_ble_proxy(generic.FhemModule):
                 "(and 'active: true' for connections) to its ESPHome YAML"
             )
             return
+        await utils.run_blocking(functools.partial(ble_proxy.load_libraries))
         self._drop_proxy()
         self._proxy = ble_proxy.register(
             self.logger, self._cli, info, info.friendly_name or info.name

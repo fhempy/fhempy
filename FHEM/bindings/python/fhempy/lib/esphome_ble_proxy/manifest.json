@@ -50,5 +50,8 @@
         "optional": true
       }
     ]
+  },
+  "worker": {
+    "core": true
   }
 }

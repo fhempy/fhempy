@@ -27,6 +27,15 @@ PAIRING_RETRY = 300
 PAIRING_RETRY_MAX = 3600
 # discovery scan duration per pairing attempt
 PAIRING_DISCOVERY_TIMEOUT = 30
+# while waiting for the next local pairing attempt, check this often whether an
+# ESPHome Bluetooth proxy receives the device
+PROXY_CHECK_INTERVAL = 5
+
+
+def _is_auth_error(exc):
+    """GATT error 5/15: the device needs an encrypted (paired) connection."""
+    text = str(exc).lower()
+    return "insufficient authentication" in text or "insufficient encryption" in text
 
 
 class BluetoothLE:
@@ -62,7 +71,10 @@ class BluetoothLE:
 
         self.conf_checked = False
         self.paired = False
-        self._proxy_pairing_noted = False
+        # the device rejected the unencrypted connection via proxy
+        self._proxy_auth_failed = False
+        # local pairing failed: use a proxy whatever the signal
+        self._local_failed = False
 
         self.connection_task = None
         self.connected = asyncio.Event()
@@ -266,13 +278,14 @@ class BluetoothLE:
                     and not self.paired
                     and self._proxy_choice() is None
                 ):
-                    # a proxy can't pair, see _note_proxy_pairing
+                    # a proxy can't pair with a PIN, see _proxy_auth_error
                     await fhem.readingsSingleUpdateIfChanged(
                         self._dev_hash, "connection", "pairing", 1
                     )
                     ret = await self.pair()
                     if ret == PairingState.SUCCESS:
                         self.paired = True
+                        self._local_failed = False
                         self._errors.success("pairing")
                     elif ret == PairingState.NOT_FOUND:
                         waittime = min(
@@ -288,7 +301,7 @@ class BluetoothLE:
                             key="pairing",
                             exc=None,
                         )
-                        await asyncio.sleep(waittime)
+                        await self._wait_for_retry(waittime)
                         continue
                     else:
                         not_found_count = 0
@@ -300,7 +313,7 @@ class BluetoothLE:
                             key="pairing",
                             exc=None,
                         )
-                        await asyncio.sleep(PAIRING_RETRY)
+                        await self._wait_for_retry(PAIRING_RETRY)
                         continue
 
                 await self.connect_once(timeout, max_retries)
@@ -333,8 +346,14 @@ class BluetoothLE:
         self._disconnect_called = False
 
         for i in range(0, max_retries):
+            if i > 0:
+                # the local adapters failed, try the proxy again
+                self._proxy_auth_failed = False
             # an ESPHome Bluetooth proxy receives the device better
             if await self._connect_via_proxy(timeout):
+                return
+            if self._proxy_auth_failed and self.pairing_required and not self.paired:
+                # pair via the local adapter first (connect_loop)
                 return
             if not self.adapters:
                 await asyncio.sleep(20)
@@ -391,7 +410,8 @@ class BluetoothLE:
                     await asyncio.sleep(20)
                     continue
 
-        # connection failed
+        # connection failed, next time try the proxy again
+        self._proxy_auth_failed = False
         await fhem.readingsSingleUpdateIfChanged(
             self._dev_hash, "connection", "not found", 1
         )
@@ -425,10 +445,47 @@ class BluetoothLE:
         found = ble_proxy.best_device(self.addr)
         if found is None:
             return None
+        if self._proxy_auth_failed:
+            # needs an encrypted (PIN) connection, see _connect_via_proxy
+            return None
         # a device the shared scan doesn't see locally goes through the proxy
-        if not ble_proxy.use_proxy(found[1], self._local_rssi()):
+        if not self._local_failed and not ble_proxy.use_proxy(
+            found[1], self._local_rssi()
+        ):
             return None
         return found
+
+    async def _wait_for_retry(self, waittime):
+        """Waits before pairing locally again, but stops as soon as an ESPHome
+        proxy receives the device: the proxy is tried again (it might pair
+        with the PIN from its YAML), also right after startup, when the proxy
+        didn't report the device yet."""
+        self._proxy_auth_failed = False
+        self._local_failed = True
+        if not ble_proxy.active():
+            await asyncio.sleep(waittime)
+            return
+        end = time.monotonic() + waittime
+        reported = False
+        while time.monotonic() < end:
+            if self._proxy_choice() is not None:
+                return
+            if not reported:
+                reported = True
+                await fhem.readingsSingleUpdateIfChanged(
+                    self._dev_hash,
+                    "connection_proxy",
+                    "waiting for advertisement",
+                    1,
+                )
+                self.logger.info(
+                    f"No ESPHome proxy (with active: true) received {self.addr} "
+                    f"within {ble_proxy.RECENT_MAX_AGE}s, waiting for it"
+                )
+            await asyncio.sleep(min(PROXY_CHECK_INTERVAL, end - time.monotonic()))
+
+    def _needs_pin(self):
+        return self.pairing_required and self.pin not in (None, "", "0000")
 
     async def _connect_via_proxy(self, timeout):
         """Connects through an ESPHome Bluetooth proxy if one receives the
@@ -459,29 +516,61 @@ class BluetoothLE:
             self._client = None
             self._device = None
             return False
-        if self.pairing_required:
-            self._note_proxy_pairing(proxy)
-        await self._connection_established()
+        if self._needs_pin():
+            await self._pair_via_proxy(proxy)
+        try:
+            await self._subscribe_notifies()
+        except BleakError as exc:
+            if not _is_auth_error(exc):
+                # tries again, connected without notifications if that fails
+                await self._connection_established()
+                return True
+            await self._proxy_auth_error(proxy)
+            return False
+        self._errors.success("proxy_pin")
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection_proxy", "ok", 1
+        )
+        await self._connection_established(subscribed=True)
         return True
 
-    def _note_proxy_pairing(self, proxy):
-        """An ESPHome proxy can't enter a PIN, a device which needs one has to
-        be paired by a local Bluetooth adapter (or in the ESPHome YAML)."""
-        if self.pin in (None, "", "0000") or self._proxy_pairing_noted:
-            return
-        self._proxy_pairing_noted = True
-        self.logger.warning(
-            f"Connected via {proxy.name} without pairing, the ESPHome "
-            "Bluetooth proxy can't pair with a PIN. If commands don't work, "
-            "the device has to be in range of a local Bluetooth adapter."
-        )
+    async def _pair_via_proxy(self, proxy):
+        """The ESPHome API has no PIN. It works if the proxy's YAML answers
+        the PIN request (ble_client with on_passkey_request, see the
+        esphome_ble_proxy README) or the device accepts pairing without PIN."""
+        try:
+            await self._client.pair()
+        except Exception as exc:
+            self.logger.debug(f"Pairing via {proxy.name} failed: {exc}")
 
-    async def _connection_established(self):
+    async def _proxy_auth_error(self, proxy):
+        """The device only accepts an encrypted connection after pairing with
+        a PIN, the proxy couldn't pair: the local adapters next, the proxy
+        again when they fail."""
+        self._proxy_auth_failed = True
+        # logged once, then only rare summaries while it keeps failing
+        self._errors.failed(
+            f"{self.addr} needs pairing with a PIN, pairing via the ESPHome "
+            f"Bluetooth proxy {proxy.name} failed (the PIN has to be in its YAML, "
+            "see esphome_ble_proxy README). Trying the local Bluetooth adapters, "
+            "the proxy again if they fail.",
+            key="proxy_pin",
+            exc=None,
+        )
+        await fhem.readingsSingleUpdateIfChanged(
+            self._dev_hash, "connection_proxy", "pairing failed (PIN)", 1
+        )
+        await self._release_client(self._client)
+        self._client = None
+        self._device = None
+
+    async def _connection_established(self, subscribed=False):
         self._errors.success("connect")
         # set before the listener, it might write to the device
         self.connected.set()
         try:
-            await self._subscribe_notifies()
+            if not subscribed:
+                await self._subscribe_notifies()
         except BleakError:
             # set state to connected (no notifications)
             await fhem.readingsSingleUpdate(
