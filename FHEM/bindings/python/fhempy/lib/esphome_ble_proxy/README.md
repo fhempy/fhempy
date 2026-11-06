@@ -51,8 +51,10 @@ via proxy fails, the local adapters are tried.
   keeps the connection open) use one slot each.
 - Only one program can receive the advertisements of a proxy: a proxy which is used
   by Home Assistant can't be used by fhempy at the same time.
-- The proxy can't pair with a PIN. eQ-3 thermostats with firmware 1.20+ which need a
-  PIN have to be paired by a local adapter once (see eq3bt).
+- The proxy can't pair with a PIN: the key stays with the adapter which paired.
+  eQ-3 thermostats with a PIN (firmware 1.20+) always connect via a local adapter.
+  If a device rejects the connection via proxy (insufficient authentication),
+  fhempy uses only the local adapters for it, reading `connection_proxy`.
 - Connections via WiFi take a bit longer and drop more often, fhempy reconnects.
 - Modules running in their own worker process (fhempy does this on dependency
   conflicts) don't see the proxies.

@@ -205,6 +205,75 @@ async def test_bluetoothle_connects_via_proxy_without_local_adapter(proxy_env, m
 
 
 @pytest.mark.asyncio
+async def test_bluetoothle_pin_device_falls_back_to_local_pairing(proxy_env, mocker):
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from bleak.exc import BleakError
+
+    from fhempy.lib.core import bluetoothle
+
+    mock_fhem.readings.pop("testble", None)
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-70)
+
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    conn.conf_checked = True
+    mocker.patch.object(conn, "update_adapters", mocker.AsyncMock())
+    conn.adapters = ["hci0"]
+    client = mocker.MagicMock(is_connected=True)
+    client.connect = mocker.AsyncMock()
+    client.disconnect = mocker.AsyncMock()
+    client.pair = mocker.AsyncMock(side_effect=BleakError("not supported"))
+    mocker.patch.object(ble_proxy, "client", return_value=client)
+    mocker.patch.object(
+        conn,
+        "_subscribe_notifies",
+        mocker.AsyncMock(
+            side_effect=BleakError(
+                "Bluetooth GATT Error handle=1072 error=5 "
+                "description=Insufficient authentication"
+            )
+        ),
+    )
+    find_device = mocker.patch.object(conn, "find_device")
+
+    await conn.connect_once(1, 1)
+
+    client.pair.assert_awaited_once()
+    client.disconnect.assert_awaited()
+    # back to connect_loop, which pairs via the local adapter
+    find_device.assert_not_called()
+    assert conn._client is None
+    assert not conn.connected.is_set()
+    assert mock_fhem.readings["testble"]["connection_proxy"] == (
+        "not possible (PIN pairing)"
+    )
+    assert conn._proxy_choice() is None
+
+
+@pytest.mark.asyncio
+async def test_bluetoothle_pin_device_prefers_local_adapter(proxy_env, mocker):
+    ble_proxy, scanner = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-50)
+    scanner.add_callback(lambda d, a: None)
+    scanner._detection(mocker.MagicMock(address=THERMOSTAT), mocker.MagicMock(rssi=-90))
+
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    # proxy much better, but it can't pair with the PIN
+    assert conn._proxy_choice() is None
+
+
+@pytest.mark.asyncio
 async def test_bluetoothle_prefers_local_adapter(proxy_env, mocker):
     ble_proxy, scanner = proxy_env
     await check_and_install_dependencies("blue_connect")
