@@ -289,7 +289,12 @@ class GroupAssigner:
             if entry.get("reason") in (REASON_MANUAL, REASON_BLOCKING):
                 return entry["group"]
             if entry.get("requirements") == req_hash:
-                return entry["group"]
+                if entry.get("group") != CORE or not await self._installed_conflict(
+                    key, reqs, core_modules
+                ):
+                    return entry["group"]
+                # e.g. both were installed into the core before
+                logger.info(f"Requirements of {key} conflict with the core")
 
         group, reason = await self._decide(key, reqs, core_modules)
         new_entry = {"group": group, "requirements": req_hash}
@@ -307,16 +312,8 @@ class GroupAssigner:
             self.save()
         return group
 
-    async def _decide(self, key, reqs, core_modules):
-        if not reqs:
-            return CORE, None
-        if await self._deps_ok(reqs):
-            # already installed, nothing changes in the environment of the core
-            return CORE, None
-        if pkg_installer.find_uv() is None:
-            # without uv no check and no own environment, like before
-            return CORE, None
-
+    def _core_requirements(self, key, core_modules):
+        """Requirements of the core and its modules, without family key"""
         core_reqs = list(core_requirements())
         families = self.families()
         core_keys = {families.key(m) for m in core_modules}
@@ -326,7 +323,32 @@ class GroupAssigner:
         core_keys.discard(key)
         for other in sorted(core_keys):
             core_reqs += self.family_requirements(other)
-        ok, conflict = await self._resolver(core_reqs + reqs)
+        return core_reqs
+
+    async def _installed_conflict(self, key, reqs, core_modules):
+        core_reqs = self._core_requirements(key, core_modules)
+        return await utils.run_blocking(
+            functools.partial(installed_conflict, core_reqs, reqs)
+        )
+
+    async def _decide(self, key, reqs, core_modules):
+        if not reqs:
+            return CORE, None
+        core_reqs = self._core_requirements(key, core_modules)
+        if await utils.run_blocking(
+            functools.partial(installed_conflict, core_reqs, reqs)
+        ):
+            # installed, but a module of the core pins another version of one of
+            # its dependencies (e.g. aiomqtt 2 and paho-mqtt==1.6.1)
+            ok, conflict = False, True
+        elif await self._deps_ok(reqs):
+            # already installed, nothing changes in the environment of the core
+            return CORE, None
+        elif pkg_installer.find_uv() is None:
+            # without uv no check and no own environment, like before
+            return CORE, None
+        else:
+            ok, conflict = await self._resolver(core_reqs + reqs)
         if ok or not conflict:
             # also if the check failed (e.g. no network): install as before
             return CORE, None
@@ -386,6 +408,70 @@ class GroupAssigner:
             "fhempy worker from now on"
         )
         return key
+
+
+def _requirement(req):
+    try:
+        return Requirement(req)
+    except InvalidRequirement:
+        return None
+
+
+def _dependencies(req):
+    """Requirements of the installed distribution of req (no extras), None if
+    req isn't installed in a matching version."""
+    parsed = _requirement(req)
+    if parsed is None:
+        return None
+    try:
+        dist = distribution(parsed.name)
+    except PackageNotFoundError:
+        return None
+    if not parsed.specifier.contains(dist.version, prereleases=True):
+        return None
+    deps = []
+    for dep in dist.requires or []:
+        dep = _requirement(dep)
+        if dep is None:
+            continue
+        if dep.marker is not None and not dep.marker.evaluate({"extra": ""}):
+            continue
+        deps.append(dep)
+    return deps
+
+
+def _canonical(name):
+    return name.lower().replace("_", "-").replace(".", "-")
+
+
+def _pins(reqs):
+    pins = {}
+    for req in reqs:
+        parsed = _requirement(req)
+        if parsed is None:
+            continue
+        for spec in parsed.specifier:
+            if spec.operator == "==" and "*" not in spec.version:
+                pins[_canonical(parsed.name)] = spec.version
+    return pins
+
+
+def installed_conflict(core_reqs, reqs):
+    """True if an installed package of reqs needs another version of a package
+    which the core pins, e.g. aiomqtt 2 (paho-mqtt>=2.1) next to a module with
+    paho-mqtt==1.6.1. Only the module which needs the other version leaves the
+    core. Not installed packages are checked with uv (resolve_requirements)."""
+    pins = _pins(core_reqs)
+    if not pins:
+        return False
+    for req in reqs:
+        for dep in _dependencies(req) or []:
+            pinned = pins.get(_canonical(dep.name))
+            if pinned is not None and not dep.specifier.contains(
+                pinned, prereleases=True
+            ):
+                return True
+    return False
 
 
 async def _deps_installed(reqs):
