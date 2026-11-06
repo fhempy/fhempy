@@ -64,17 +64,35 @@ via proxy fails, the local adapters are tried.
 ## Devices with PIN (eQ-3)
 
 The pairing key is stored by the adapter which paired, a PIN entered on the Raspberry
-Pi doesn't help the ESP32. Add to the YAML of the proxy (one `ble_client` per device,
-it never connects by itself, it only answers the PIN request when fhempy pairs via
-the proxy):
+Pi doesn't help the ESP32. The proxy answers the PIN request itself: add one
+`ble_client` per device to its YAML. It never connects by itself
+(`auto_connect: false`), it only answers the PIN request when fhempy pairs via the
+proxy.
+
+Complete example for a ready-made proxy (firmware from
+[esphome.github.io/bluetooth-proxies](https://esphome.github.io/bluetooth-proxies/)),
+take `substitutions` and `packages` from the YAML of your proxy:
 
 ```yaml
+substitutions:
+  name: esp32-bluetooth-proxy-xxxxxx
+  friendly_name: Bluetooth Proxy xxxxxx
+packages:
+  esphome.bluetooth-proxy: github://esphome/bluetooth-proxies/esp32-generic/esp32-generic.yaml@main
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
 esp32_ble:
   io_capability: keyboard_only
   max_connections: 4   # 3 for bluetooth_proxy + 1 per ble_client
 
 ble_client:
-  - mac_address: "00:1A:22:XX:XX:XX"
+  - mac_address: "00:1A:22:AA:BB:CC"   # MAC of the thermostat
     id: eq3_pairing
     auto_connect: false
     on_passkey_request:
@@ -84,7 +102,13 @@ ble_client:
             passkey: 123456   # PIN shown on the thermostat
 ```
 
-Restart fhempy (or the eq3bt device) after flashing.
+For several thermostats add one `ble_client` each (with its own `id`) and raise
+`max_connections` by one per `ble_client`.
+
+Define the thermostat as usual with its PIN (`define thermostat1 fhempy eq3bt <MAC>
+<PIN>`) and restart fhempy (or the eq3bt device) after flashing. fhempy pairs via the
+proxy if it receives the thermostat clearly better or local pairing fails.
+`connection_adapter` shows the proxy and `connection_proxy` is `ok` once connected.
 
 ## Readings
 
