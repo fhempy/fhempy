@@ -251,11 +251,32 @@ async def test_bluetoothle_pin_device_falls_back_to_local_pairing(proxy_env, moc
     assert mock_fhem.readings["testble"]["connection_proxy"] == ("pairing failed (PIN)")
     assert conn._proxy_choice() is None
 
-    # local pairing fails (e.g. out of range): the proxy is tried again
-    assert conn._retry_proxy()
+    # local pairing fails (e.g. out of range): the proxy is tried again right
+    # away instead of waiting for the next local attempt
+    await asyncio.wait_for(conn._wait_for_retry(3600), 1)
     assert conn._proxy_choice() is not None
-    # no proxy failure, nothing to retry
-    assert not conn._retry_proxy()
+
+
+@pytest.mark.asyncio
+async def test_bluetoothle_waits_for_proxy_after_startup(proxy_env, mocker):
+    """The proxy reports the device only after the first local pairing
+    attempt failed: the long wait ends as soon as the proxy sees it."""
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    mocker.patch.object(bluetoothle, "PROXY_CHECK_INTERVAL", 0.01)
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+
+    waiting = asyncio.create_task(conn._wait_for_retry(3600))
+    await asyncio.sleep(0.05)
+    assert not waiting.done()
+    cli.advertise()
+    await asyncio.wait_for(waiting, 1)
 
 
 @pytest.mark.asyncio

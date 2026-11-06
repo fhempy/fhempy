@@ -27,6 +27,9 @@ PAIRING_RETRY = 300
 PAIRING_RETRY_MAX = 3600
 # discovery scan duration per pairing attempt
 PAIRING_DISCOVERY_TIMEOUT = 30
+# while waiting for the next local pairing attempt, check this often whether an
+# ESPHome Bluetooth proxy receives the device
+PROXY_CHECK_INTERVAL = 5
 
 
 def _is_auth_error(exc):
@@ -282,8 +285,6 @@ class BluetoothLE:
                         self.paired = True
                         self._errors.success("pairing")
                     elif ret == PairingState.NOT_FOUND:
-                        if self._retry_proxy():
-                            continue
                         waittime = min(
                             PAIRING_RETRY * 2**not_found_count, PAIRING_RETRY_MAX
                         )
@@ -297,12 +298,9 @@ class BluetoothLE:
                             key="pairing",
                             exc=None,
                         )
-                        await asyncio.sleep(waittime)
+                        await self._wait_for_retry(waittime)
                         continue
                     else:
-                        if self._retry_proxy():
-                            await asyncio.sleep(10)
-                            continue
                         not_found_count = 0
                         await fhem.readingsSingleUpdateIfChanged(
                             self._dev_hash, "connection", "pairing failed", 1
@@ -312,7 +310,7 @@ class BluetoothLE:
                             key="pairing",
                             exc=None,
                         )
-                        await asyncio.sleep(PAIRING_RETRY)
+                        await self._wait_for_retry(PAIRING_RETRY)
                         continue
 
                 await self.connect_once(timeout, max_retries)
@@ -452,13 +450,20 @@ class BluetoothLE:
             return None
         return found
 
-    def _retry_proxy(self):
-        """Local pairing failed: try the ESPHome proxy again, maybe it can
-        pair now (PIN in its YAML). True if a proxy receives the device."""
-        if not self._proxy_auth_failed:
-            return False
+    async def _wait_for_retry(self, waittime):
+        """Waits before pairing locally again, but stops as soon as an ESPHome
+        proxy receives the device: the proxy is tried again (it might pair
+        with the PIN from its YAML), also right after startup, when the proxy
+        didn't report the device yet."""
         self._proxy_auth_failed = False
-        return self._proxy_choice() is not None
+        if not ble_proxy.active():
+            await asyncio.sleep(waittime)
+            return
+        end = time.monotonic() + waittime
+        while time.monotonic() < end:
+            if self._proxy_choice() is not None:
+                return
+            await asyncio.sleep(min(PROXY_CHECK_INTERVAL, end - time.monotonic()))
 
     def _needs_pin(self):
         return self.pairing_required and self.pin not in (None, "", "0000")
