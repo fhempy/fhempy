@@ -3,9 +3,13 @@ import binascii
 import concurrent.futures
 import importlib
 import inspect
+import logging
 import os
+import secrets
 import socket
 import sys
+import threading
+import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from codecs import decode
 from datetime import datetime
@@ -207,51 +211,280 @@ def describe_exception(exc):
     return f"{type(exc).__name__}: {text}"
 
 
-class ErrorLogger:
-    """Log a recurring error once instead of in every update interval.
+def format_duration(seconds):
+    """Short human readable duration: 45s, 12m, 3h12m, 2d3h."""
+    seconds = int(max(seconds, 0))
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes, seconds = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m"
+    hours, minutes = divmod(minutes, 60)
+    if hours < 24:
+        return f"{hours}h{minutes:02d}m" if minutes else f"{hours}h"
+    days, hours = divmod(hours, 24)
+    return f"{days}d{hours}h" if hours else f"{days}d"
 
-    The first failure is logged as warning (connection errors, without
-    traceback) or error (unexpected errors, with traceback). Repeated
-    failures are only logged on debug level until success() is called,
-    which logs the recovery on info level.
+
+class _Failure:
+    __slots__ = ("msg", "since", "attempts", "next_reminder", "error_types")
+
+    def __init__(self, msg, now):
+        self.msg = msg
+        self.since = now
+        self.attempts = 0
+        self.next_reminder = now + ErrorLogger.REMINDERS[0]
+        self.error_types = set()
+
+
+class ErrorLogger:
+    """Log a device/service which keeps failing without flooding the log.
+
+    Works like FHEM's DevIo: one line when it fails, one line when it works
+    again, and in between only rare summaries.
+
+    - The first failure is logged as warning (connection errors, without
+      traceback) or error (unexpected errors, with traceback).
+    - Repeated failures are logged on debug level. A different kind of error
+      (other exception type) is logged once as warning.
+    - While it keeps failing, a summary is logged after 1h, 6h, 24h and then
+      once a day: "Still failing since 3h12m (140 attempts): ...".
+    - success() logs the recovery with duration and number of attempts.
+
+    With hash, the reading lastError gets the error text (only when the text
+    changes, it stays after recovery; its timestamp tells when it happened).
+    With state, the state reading is set to that value once on the first
+    failure and set back to the previous value after recovery (unless the
+    module changed state in the meantime).
+
+    next_delay() returns a retry delay with exponential backoff.
 
     Usage:
-        try:
-            await self.update()
-            self._errors.success()
-        except Exception:
-            self._errors.failed("Failed to update")
+        self._errors = utils.ErrorLogger(logger, hash, state="disconnected")
+        while True:
+            try:
+                await self.update()
+                self._errors.success()
+            except Exception:
+                self._errors.failed("Failed to update")
+            await asyncio.sleep(self._errors.next_delay())
     """
 
-    def __init__(self, logger):
+    # summaries after 1h, 6h, 24h, then every 24h
+    REMINDERS = (3600, 6 * 3600, 24 * 3600)
+
+    def __init__(self, logger, hash=None, state=None):
         self._logger = logger
+        self._hash = hash
+        self._state = state
         self._failing = {}
+        self._last_error = None
+        self._state_before = None
+        self._state_set = False
+        self._readings_task = None
 
     def is_failing(self, key=None):
         return (key or "default") in self._failing
 
-    def failed(self, msg, key=None, exc=None, traceback=True):
+    def attempts(self, key=None):
+        """Number of failed attempts since the last success."""
+        failure = self._failing.get(key or "default")
+        return failure.attempts if failure else 0
+
+    def failing_since(self, key=None):
+        """time.time() of the first failure, None if it works."""
+        failure = self._failing.get(key or "default")
+        return failure.since if failure else None
+
+    def next_delay(self, key=None, minimum=5, maximum=600):
+        """Retry delay: minimum while it works, doubled with every failed
+        attempt up to maximum, with +-10% jitter so many devices don't
+        retry at exactly the same moment."""
+        attempts = self.attempts(key)
+        if attempts <= 1:
+            delay = minimum
+        else:
+            delay = min(minimum * 2 ** min(attempts - 1, 30), maximum)
+        return delay * _jitter.uniform(0.9, 1.1)
+
+    def failed(self, msg, key=None, exc=None, traceback=True, expected=None):
         """Call within an except block or pass the exception.
-        traceback=False: known errors are logged as error without traceback."""
+        traceback=False: known errors are logged as error without traceback.
+        expected=True: log like a connection error (warning, no traceback),
+        e.g. for library specific "device offline" exceptions."""
         if exc is None:
             exc = sys.exc_info()[1]
         key = key or "default"
         detail = f"{msg}: {describe_exception(exc)}" if exc is not None else msg
-        if key in self._failing:
-            self._logger.debug(detail)
-            return
-        self._failing[key] = msg
-        if exc is None or is_connection_error(exc):
-            self._logger.warning(detail)
-        elif not traceback:
-            self._logger.error(detail)
+        now = time.time()
+        failure = self._failing.get(key)
+        error_type = type(exc).__name__ if exc is not None else None
+        if failure is None:
+            failure = self._failing[key] = _Failure(msg, now)
+            failure.attempts = 1
+            failure.error_types.add(error_type)
+            if expected is None:
+                expected = exc is None or is_connection_error(exc)
+            if expected:
+                self._logger.warning(detail)
+            elif not traceback:
+                self._logger.error(detail)
+            else:
+                self._logger.error(msg, exc_info=exc)
         else:
-            self._logger.error(msg, exc_info=exc)
+            failure.attempts += 1
+            if error_type not in failure.error_types:
+                failure.error_types.add(error_type)
+                self._logger.warning(detail)
+            elif now >= failure.next_reminder:
+                self._logger.warning(
+                    f"Still failing since {format_duration(now - failure.since)} "
+                    f"({failure.attempts} attempts): {detail}"
+                )
+            else:
+                self._logger.debug(detail)
+            if now >= failure.next_reminder:
+                failure.next_reminder = self._next_reminder(failure, now)
+        self._update_readings(detail)
 
     def success(self, key=None):
-        msg = self._failing.pop(key or "default", None)
-        if msg is not None:
-            self._logger.info(f"Works again after previous error: {msg}")
+        failure = self._failing.pop(key or "default", None)
+        if failure is None:
+            return
+        failed_for = format_duration(time.time() - failure.since)
+        self._logger.info(
+            f"Works again after {failed_for} and {failure.attempts} failed "
+            f"attempt{'s' if failure.attempts != 1 else ''}: {failure.msg}"
+        )
+        if not self._failing:
+            self._update_readings(None)
+
+    def _next_reminder(self, failure, now):
+        for offset in ErrorLogger.REMINDERS:
+            if failure.since + offset > now:
+                return failure.since + offset
+        days = int((now - failure.since) // 86400) + 1
+        return failure.since + days * 86400
+
+    def _update_readings(self, error):
+        if self._hash is None:
+            return
+        set_error = error is not None and error != self._last_error
+        set_state = self._state is not None and (error is not None) != self._state_set
+        if not set_error and not set_state:
+            return
+        if set_error:
+            self._last_error = error
+        if set_state:
+            self._state_set = error is not None
+        previous = self._readings_task
+
+        async def update():
+            if previous is not None and not previous.done():
+                # keep the order of the updates
+                await asyncio.wait([previous])
+            try:
+                await self._write_readings(error, set_error, set_state)
+            except Exception:
+                self._logger.debug("Failed to update error readings", exc_info=True)
+
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._readings_task = create_background_task(update())
+
+    async def _write_readings(self, error, set_error, set_state):
+        if set_error:
+            await fhem.readingsSingleUpdateIfChanged(self._hash, "lastError", error, 1)
+        if not set_state:
+            return
+        name = self._hash["NAME"]
+        if error is not None:
+            current = await fhem.ReadingsVal(name, "state", "")
+            if current != self._state:
+                self._state_before = current
+            await fhem.readingsSingleUpdateIfChanged(
+                self._hash, "state", self._state, 1
+            )
+        else:
+            current = await fhem.ReadingsVal(name, "state", "")
+            # the module may have set a new state already
+            if current == self._state and self._state_before is not None:
+                await fhem.readingsSingleUpdateIfChanged(
+                    self._hash, "state", self._state_before, 1
+                )
+            self._state_before = None
+
+
+_jitter = secrets.SystemRandom()
+
+
+class RepeatedLogFilter(logging.Filter):
+    """Safety net against log floods, e.g. from libraries which log every
+    failed reconnect attempt.
+
+    The same message (same logger, level and message template) is let through
+    once, repetitions are suppressed for a while (10 minutes, doubled while
+    it keeps repeating, up to 6 hours). The next line that passes says how
+    many lines were suppressed. Debug messages and loggers on debug level
+    (verbose 5) are never suppressed.
+    """
+
+    WINDOW = 600
+    MAX_WINDOW = 6 * 3600
+    MAX_KEYS = 2000
+
+    def __init__(self):
+        super().__init__()
+        self._lock = threading.Lock()
+        self._seen = {}
+
+    def filter(self, record):
+        if record.levelno < logging.INFO:
+            return True
+        if logging.getLogger(record.name).isEnabledFor(logging.DEBUG):
+            return True
+        key = (record.name, record.levelno, str(record.msg))
+        now = record.created
+        with self._lock:
+            entry = self._seen.get(key)
+            if entry is None or now - entry[0] >= entry[1] * 2:
+                # new message or quiet for a long time: start again
+                if len(self._seen) >= self.MAX_KEYS:
+                    self._purge(now)
+                self._seen[key] = [now, self.WINDOW, 0]
+                return True
+            last, window, suppressed = entry
+            if now - last < window:
+                entry[2] += 1
+                return False
+            entry[0] = now
+            entry[1] = min(window * 2, self.MAX_WINDOW) if suppressed else window
+            entry[2] = 0
+        if suppressed:
+            record.msg = (
+                f"{record.msg} (repeated {suppressed}x in the last "
+                f"{format_duration(now - last)}, suppressed)"
+            )
+        return True
+
+    def _purge(self, now):
+        for key, entry in list(self._seen.items()):
+            if now - entry[0] >= entry[1] * 2:
+                del self._seen[key]
+        if len(self._seen) >= self.MAX_KEYS:
+            self._seen.clear()
+
+
+_repeated_log_filter = RepeatedLogFilter()
+
+
+def install_repeated_log_filter():
+    """Add RepeatedLogFilter to all handlers of the root logger."""
+    for handler in logging.getLogger().handlers:
+        if _repeated_log_filter not in handler.filters:
+            handler.addFilter(_repeated_log_filter)
 
 
 def run_blocking_task(function):

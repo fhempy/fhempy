@@ -44,7 +44,7 @@ class spotify(generic.FhemModule):
         )
         self.loggedin = False
         # connection problems are logged once, not on every update interval
-        self._connection_error_logged = False
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -401,16 +401,12 @@ class spotify(generic.FhemModule):
     def _log_update_error(self, what, exc):
         if not self._is_connection_error(exc):
             self.logger.exception(f"Failed to update {what}")
-        elif not self._connection_error_logged:
-            self.logger.warning(
-                f"Spotify not reachable ({type(exc).__name__}: {exc}), "
-                "retrying in the background"
-            )
-            self._connection_error_logged = True
         else:
-            self.logger.debug(f"Failed to update {what}: {exc}")
+            self._errors.failed(
+                "Spotify not reachable, retrying in the background",
+                exc=exc,
+                expected=True,
+            )
 
     def _connection_ok(self):
-        if self._connection_error_logged:
-            self.logger.info("Spotify is reachable again")
-            self._connection_error_logged = False
+        self._errors.success()
