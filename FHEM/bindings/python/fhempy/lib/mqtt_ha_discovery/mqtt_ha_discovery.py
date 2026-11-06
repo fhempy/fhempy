@@ -74,17 +74,17 @@ class mqtt_ha_discovery(generic.FhemModule):
                     password=self.mqtt_pw,
                     logger=self.logger,
                 ) as client:
-                    async with client.messages() as messages:
-                        await client.subscribe("homeassistant/#")
-                        self._errors.success()
-                        async for message in messages:
-                            try:
-                                await self.handle_ha_msg(message)
-                            except Exception:
-                                self.logger.exception(
-                                    f"Failed to handle message on {message.topic}: "
-                                    f"{message.payload!r}"
-                                )
+                    messages = client.messages
+                    await client.subscribe("homeassistant/#")
+                    self._errors.success()
+                    async for message in messages:
+                        try:
+                            await self.handle_ha_msg(message)
+                        except Exception:
+                            self.logger.exception(
+                                f"Failed to handle message on {message.topic}: "
+                                f"{message.payload!r}"
+                            )
             except aiomqtt.MqttError as exc:
                 # MqttError isn't an OSError, log it without traceback
                 self._errors.failed(

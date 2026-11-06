@@ -1,7 +1,7 @@
 {
   "requirements": [
-    "pychromecast==14.1.0",
-    "yt-dlp==2026.8.19",
+    "pychromecast==14.1.1",
+    "yt-dlp==2026.10.26",
     "spotipy==2.26.0",
     "six==1.17.0"
   ],

@@ -223,7 +223,9 @@ class FakeMqtt:
     async def __aexit__(self, *args):
         return False
 
+    @property
     def messages(self):
+        # aiomqtt 2: async iterator, no context manager
         return FakeMessages(self.queue)
 
     async def subscribe(self, topic):
@@ -326,6 +328,7 @@ async def test_setup_login_and_data(env):
     assert mqtt.kwargs["username"] == GCID
     assert mqtt.kwargs["password"] == "id1"
     assert mqtt.kwargs["tls_context"] is not None
+    assert mqtt.kwargs["identifier"] == GCID
     assert mqtt.subscribed == [f"{GCID}/{VIN}"]
     mqtt.send(
         {

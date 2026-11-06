@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "aiomqtt==1.2.1"
+    "aiomqtt==2.5.1"
   ],
   "installer": {
     "title": "BMW & MINI",
