@@ -129,6 +129,29 @@ Two checks catch this before a change is merged:
   (`tests/mocked/conftest.py`). Tests that block on purpose use
   `@pytest.mark.allow_blocking`.
 
+## Talking to FHEM (BindingsIo protocol)
+
+After connecting, fhempy asks BindingsIo for its protocol version
+(`BindingsIo_protocol()`, 0 if the function is missing):
+
+| Protocol | Commands of fhempy |
+| --- | --- |
+| 0 | Perl code only, BindingsIo runs it with `eval` |
+| 1 | plus readings lists (`"readings": [[reading, value, changed, ifchanged], ...]`) |
+| 2 | plus typed operations (`"op": "...", "args": {...}`), see `%BindingsIo_ops` |
+
+With protocol 2, the functions in `fhem.py` (`ReadingsVal`, `AttrVal`,
+`CommandAttr`, `CommandDefine`, `FW_runJavascript`, ...) send operations. Their
+arguments are JSON data and are never compiled as Perl code. With older
+BindingsIo versions the same functions send Perl code as before, so modules
+don't need to care.
+
+Use these functions in modules. `sendCommand*` with Perl code still works and
+stays the explicit escape hatch for things without an operation. Build such
+code only with `fhem.perlString()` for values. A new operation needs an entry
+in `%BindingsIo_ops` (10_BindingsIo.pm), a Perl fallback in `fhem.py` and a
+test in `t/FHEM/10_BindingsIo/14_operations.t`.
+
 ## Log errors of devices which keep retrying
 
 A device which is offline for days must not fill the log. Use `utils.ErrorLogger` for every

@@ -1065,9 +1065,10 @@ sub BindingsIo_processCommand($$) {
     my $ret = 0;
     my %res;
     my $structured = ref($json->{readings}) eq "ARRAY";
-    my $command = $structured ? "readings update" : $json->{command} // "";
+    my $op = $json->{op};
+    my $command = defined($op) ? "op $op" : $structured ? "readings update" : $json->{command} // "";
     # set proper IODev list for easier handling
-    if (!$structured && $command =~ /^setDevAttrList/) {
+    if (!$structured && !defined($op) && $command =~ /^setDevAttrList/) {
         my $liststr = BindingsIo_getIODevList($hash);
         $json->{command} =~ s/IODev/IODev:$liststr/;
         $command = $json->{command};
@@ -1080,10 +1081,14 @@ sub BindingsIo_processCommand($$) {
         }
     };
     Log3 $hash, 4, "BindingsIo($hash->{NAME}): processCommand ($json->{awaitId}): ".$command;
-    if ($structured) {
+    if (defined($op)) {
+      # typed operation, its arguments are data
+      $ret = eval { BindingsIo_op($hash, $json) };
+    } elsif ($structured) {
       # no Perl code to compile, eval of a string costs most of the time
       $ret = eval { BindingsIo_readings($json) };
     } else {
+      # Perl code: only modules which have no operation for it
       $ret = eval $json->{command};
     }
     if ($@) {
@@ -1131,6 +1136,106 @@ sub BindingsIo_readings($) {
     }
   }
   return readingsEndUpdate($devhash, $json->{trigger} ? 1 : 0);
+}
+
+# Protocol of the structured commands fhempy may send instead of Perl code:
+# 1 = readings lists (BindingsIo_readings), 2 = operations ("op" + "args").
+# fhempy asks for it once after connecting.
+sub BindingsIo_protocol() {
+  return 2;
+}
+
+sub BindingsIo_attrList($$) {
+  my ($hash, $list) = @_;
+  # same IODev list as for Perl setDevAttrList commands of fhempy
+  my $iodevs = BindingsIo_getIODevList($hash);
+  $list =~ s/IODev/IODev:$iodevs/;
+  return $list." ".$readingFnAttributes;
+}
+
+sub BindingsIo_findDevice($) {
+  my ($args) = @_;
+  foreach my $fhem_dev (sort keys %main::defs) {
+    my $d = $main::defs{$fhem_dev};
+    next if (!defined($d->{$args->{typeinternal} // ""})
+      || $d->{$args->{typeinternal}} ne ($args->{typevalue} // ""));
+    next if (!defined($d->{$args->{internal} // ""})
+      || $d->{$args->{internal}} ne ($args->{value} // ""));
+    return $d->{NAME};
+  }
+  return 0;
+}
+
+sub BindingsIo_runJavascript($) {
+  my ($args) = @_;
+  return "" if (!defined(&FW_directNotify));
+  foreach my $fw (devspec2array("TYPE=FHEMWEB:FILTER=TEMPORARY!=1")) {
+    if (defined($args->{detail}) && $args->{detail} ne "") {
+      FW_directNotify("FILTER=".$args->{detail}, "#FHEMWEB:$fw", $args->{js} // "", "");
+    } else {
+      FW_directNotify("#FHEMWEB:$fw", $args->{js} // "", "");
+    }
+  }
+  return "";
+}
+
+sub BindingsIo_fhempyCall($@) {
+  my ($fn, @args) = @_;
+  # 10_fhempy.pm might be older than this module
+  return "old" if (!defined(&{"main::$fn"}));
+  no strict 'refs';
+  return &{"main::$fn"}(@args) // "ok";
+}
+
+# Operations of fhempy, all values are data and never compiled as Perl code:
+# op => sub($hash, $args, $json), the return value is the result of the command
+my %BindingsIo_ops = (
+  readings_val => sub { ReadingsVal($_[1]->{name}, $_[1]->{reading}, $_[1]->{default}) },
+  attr_val => sub { AttrVal($_[1]->{name}, $_[1]->{attr}, $_[1]->{default}) },
+  internal_val => sub { InternalVal($_[1]->{name}, $_[1]->{internal}, $_[1]->{default}) },
+  init_done => sub { $init_done },
+  unique_id => sub { getUniqueId() },
+  device_info => sub {
+    my ($hash, $args) = @_;
+    my $name = $args->{name} // "";
+    if (defined($args->{dev_attr_list})) {
+      setDevAttrList($name, BindingsIo_attrList($hash, $args->{dev_attr_list}));
+    }
+    my %attr;
+    foreach my $attr (keys %{$args->{attrs} // {}}) {
+      $attr{$attr} = AttrVal($name, $attr, $args->{attrs}{$attr});
+    }
+    return {init_done => $init_done, attr => \%attr};
+  },
+  set_dev_attr_list => sub {
+    setDevAttrList($_[1]->{name}, BindingsIo_attrList($_[0], $_[1]->{list} // ""))
+  },
+  add_dev_attr_list => sub { addToDevAttrList($_[1]->{name}, $_[1]->{list}) },
+  attr => sub { CommandAttr(undef, $_[1]->{def}) },
+  delete_attr => sub { CommandDeleteAttr(undef, $_[1]->{def}) },
+  delete_reading => sub { CommandDeleteReading(undef, $_[1]->{def}) },
+  define => sub { CommandDefine(undef, $_[1]->{def}) },
+  list => sub { CommandList(undef, $_[1]->{def}) },
+  find_device => sub { BindingsIo_findDevice($_[1]) },
+  run_javascript => sub { BindingsIo_runJavascript($_[1]) },
+  event_devices => sub {
+    BindingsIo_fhempyCall("fhempy_setEventDevices", $_[2]->{NAME}, $_[1]->{devspec} // "")
+  },
+  event_filter => sub {
+    BindingsIo_fhempyCall("fhempy_setEventFilter", $_[2]->{NAME}, $_[1]->{regexp} // "")
+  },
+  event_recorder => sub {
+    BindingsIo_fhempyCall("fhempy_setEventRecorder", $_[2]->{NAME},
+      $_[1]->{enable} ? 1 : 0, $_[1]->{skip} // "")
+  },
+);
+
+sub BindingsIo_op($$) {
+  my ($hash, $json) = @_;
+  my $fn = $BindingsIo_ops{$json->{op}};
+  die "unknown operation $json->{op}\n" if (!defined($fn));
+  my $args = ref($json->{args}) eq "HASH" ? $json->{args} : {};
+  return $fn->($hash, $args, $json);
 }
 
 # will be removed from DevIo, therefore it's copied here

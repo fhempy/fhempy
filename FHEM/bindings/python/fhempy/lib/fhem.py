@@ -37,30 +37,55 @@ await_ids = itertools.count(1)
 # with eval for each update. Detected after the connection, older BindingsIo
 # versions get Perl code.
 structured_readings = False
+# BindingsIo runs typed operations ("op" + "args", see BindingsIo_ops) instead
+# of Perl code, values are never compiled as code. Protocol 2 and newer.
+operations = False
 CAPABILITIES_NAME = "fhempy_capabilities"
-CAPABILITIES_CMD = "defined(&BindingsIo_readings) ? 1 : 0"
+CAPABILITIES_CMD = (
+    "defined(&BindingsIo_protocol) ? BindingsIo_protocol() : "
+    "(defined(&BindingsIo_readings) ? 1 : 0)"
+)
 
 
 class _Readings(list):
     """readings of readingsBeginUpdate: [reading, value, changed, ifchanged]"""
+
 
 # TODO use run_coroutine_threadsafe if asyncio.get_event_loop() == None
 # this would make all functions threadsafe
 
 
 def updateConnection(ws):
-    global wsconnection, structured_readings
+    global wsconnection, structured_readings, operations
     wsconnection = ws
     # FHEM might have been updated or downgraded meanwhile
     structured_readings = False
+    operations = False
 
 
 async def detect_capabilities():
     """Ask BindingsIo which messages it supports, once after connecting."""
-    global structured_readings
+    global structured_readings, operations
     ret = await sendCommandName(CAPABILITIES_NAME, CAPABILITIES_CMD)
-    structured_readings = str(ret) == "1"
-    logger.debug(f"BindingsIo supports structured readings: {structured_readings}")
+    try:
+        protocol = int(ret)
+    except (TypeError, ValueError):
+        protocol = 0
+    structured_readings = protocol >= 1
+    operations = protocol >= 2
+    logger.debug(f"BindingsIo protocol {protocol}")
+
+
+async def _op(name, op, args, perl, hash=None):
+    """Run the operation op of BindingsIo, older BindingsIo get Perl code."""
+    if not operations:
+        if hash is not None:
+            return await sendCommandHash(hash, perl)
+        return await sendCommandName(name, perl)
+    fields = {"op": op, "args": args}
+    if hash is not None:
+        return await sendCommandHash(hash, None, fields)
+    return await sendCommandName(name, None, fields=fields)
 
 
 async def _send_readings(hash, readings, do_trigger):
@@ -155,6 +180,11 @@ async def waitForFunction(name):
 
 
 async def getDeviceHashName(hash, typeinternal, typevalue, internal, value):
+    if operations:
+        args = _find_args(typeinternal, typevalue, internal, value)
+        return await sendCommandName(
+            hash["NAME"], None, hash, fields={"op": "find_device", "args": args}
+        )
     cmd = (
         "foreach my $fhem_dev (sort keys %main::defs) {"
         + "  return $main::defs{$fhem_dev}{NAME} if("
@@ -167,13 +197,11 @@ async def getDeviceHashName(hash, typeinternal, typevalue, internal, value):
 
 
 async def getUniqueId(hash):
-    cmd = "getUniqueId()"
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "unique_id", {}, "getUniqueId()", hash)
 
 
 async def init_done(hash):
-    cmd = "$init_done"
-    res = await sendCommandHash(hash, cmd)
+    res = await _op(hash["NAME"], "init_done", {}, "$init_done", hash)
     return int(res)
 
 
@@ -181,12 +209,14 @@ async def ReadingsVal(name, reading, default):
     cmd = (
         f"ReadingsVal({perlString(name)}, {perlString(reading)}, {perlString(default)})"
     )
-    return await sendCommandName(name, cmd)
+    args = {"name": name, "reading": reading, "default": str(default)}
+    return await _op(name, "readings_val", args, cmd)
 
 
 async def AttrVal(name, attr, default):
     cmd = f"AttrVal({perlString(name)}, {perlString(attr)}, {perlString(default)})"
-    return await sendCommandName(name, cmd)
+    args = {"name": name, "attr": attr, "default": str(default)}
+    return await _op(name, "attr_val", args, cmd)
 
 
 async def InternalVal(name, internal, default):
@@ -194,12 +224,14 @@ async def InternalVal(name, internal, default):
         f"InternalVal({perlString(name)}, {perlString(internal)}, "
         f"{perlString(default)})"
     )
-    return await sendCommandName(name, cmd)
+    args = {"name": name, "internal": internal, "default": str(default)}
+    return await _op(name, "internal_val", args, cmd)
 
 
 async def addToDevAttrList(name, attr_list):
     cmd = f"addToDevAttrList({perlString(name)}, {perlString(attr_list)})"
-    return await sendCommandName(name, cmd)
+    args = {"name": name, "list": attr_list}
+    return await _op(name, "add_dev_attr_list", args, cmd)
 
 
 def _setDevAttrListCmd(name, attr_list):
@@ -211,7 +243,10 @@ def _setDevAttrListCmd(name, attr_list):
 
 
 async def setDevAttrList(name, attr_list):
-    return await sendCommandName(name, _setDevAttrListCmd(name, attr_list))
+    args = {"name": name, "list": attr_list + " IODev disable:0,1 "}
+    return await _op(
+        name, "set_dev_attr_list", args, _setDevAttrListCmd(name, attr_list)
+    )
 
 
 async def getDeviceInfo(name, attrs, dev_attr_list=None):
@@ -221,6 +256,16 @@ async def getDeviceInfo(name, attrs, dev_attr_list=None):
     given, setDevAttrList is executed within the same roundtrip.
     Returns {"init_done": int, "attr": {attribute: value}}.
     """
+    info = {"init_done": 0, "attr": {attr: str(d) for attr, d in attrs.items()}}
+    if operations:
+        args = {"name": name, "attrs": dict(info["attr"])}
+        if dev_attr_list is not None:
+            args["dev_attr_list"] = dev_attr_list + " IODev disable:0,1 "
+        res = await sendCommandName(
+            name, None, fields={"op": "device_info", "args": args}
+        )
+        return _device_info(name, info, res)
+
     name_esc = escapeValue(name)
     attr_vals = ",".join(
         f"'{escapeValue(attr)}'=>AttrVal('{name_esc}','{escapeValue(attr)}',"
@@ -233,10 +278,13 @@ async def getDeviceInfo(name, attrs, dev_attr_list=None):
         cmd = _setDevAttrListCmd(name, dev_attr_list) + ";;"
     cmd += "to_json({init_done=>$init_done,attr=>{" + attr_vals + "}})"
 
-    info = {"init_done": 0, "attr": {attr: str(d) for attr, d in attrs.items()}}
     res = await sendCommandName(name, cmd)
+    return _device_info(name, info, res)
+
+
+def _device_info(name, info, res):
     try:
-        reply = json_loads(res)
+        reply = res if isinstance(res, dict) else json_loads(res)
         info["init_done"] = int(reply["init_done"])
         for attr, value in reply["attr"].items():
             if attr in info["attr"] and value is not None:
@@ -424,7 +472,7 @@ async def readingsSingleUpdateIfChanged(hash, reading, value, do_trigger):
 
 async def CommandDefine(hash, definition: str):
     cmd = f"CommandDefine(undef, {perlString(definition)})"
-    ret = await sendCommandHash(hash, cmd)
+    ret = await _op(hash["NAME"], "define", {"def": definition}, cmd, hash)
     if ret is not None:
         return ret
 
@@ -447,12 +495,12 @@ async def CommandDefine(hash, definition: str):
 
 async def CommandList(hash, listcmd):
     cmd = f"CommandList(undef, {perlString(listcmd)})"
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "list", {"def": listcmd}, cmd, hash)
 
 
 async def CommandAttr(hash, attrdef):
     cmd = f"CommandAttr(undef, {perlString(attrdef)})"
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "attr", {"def": attrdef}, cmd, hash)
 
 
 # names of the default attributes fhempy already handled for a device
@@ -487,12 +535,12 @@ async def setDefaultAttrs(hash, attrs, name=None):
 
 async def CommandDeleteAttr(hash, deldef):
     cmd = f"CommandDeleteAttr(undef, {perlString(deldef)})"
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "delete_attr", {"def": deldef}, cmd, hash)
 
 
 async def CommandDeleteReading(hash, deldef):
     cmd = f"CommandDeleteReading(undef, {perlString(deldef)})"
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "delete_reading", {"def": deldef}, cmd, hash)
 
 
 async def FW_runJavascript(hash, javascript, detail=None):
@@ -505,7 +553,8 @@ async def FW_runJavascript(hash, javascript, detail=None):
         f'FW_directNotify({pagefilter}"#FHEMWEB:$fw", '
         f'{perlString(javascript)}, ""); }} }} ""'
     )
-    return await sendCommandHash(hash, cmd)
+    args = {"js": javascript, "detail": detail or ""}
+    return await _op(hash["NAME"], "run_javascript", args, cmd, hash)
 
 
 async def setEventDevices(hash, devices):
@@ -518,7 +567,8 @@ async def setEventDevices(hash, devices):
         f"(fhempy_setEventDevices({perlString(hash['NAME'])}, {perlString(devspec)})"
         " // 'ok') : 'old'"
     )
-    return await sendCommandHash(hash, cmd) != "old"
+    ret = await _op(hash["NAME"], "event_devices", {"devspec": devspec}, cmd, hash)
+    return ret != "old"
 
 
 async def setEventFilter(hash, regexp):
@@ -531,7 +581,7 @@ async def setEventFilter(hash, regexp):
         f"(fhempy_setEventFilter({perlString(hash['NAME'])}, {perlString(regexp)})"
         " // 'ok') : 'old'"
     )
-    return await sendCommandHash(hash, cmd)
+    return await _op(hash["NAME"], "event_filter", {"regexp": regexp}, cmd, hash)
 
 
 def register_event_listener(device, callback):
@@ -578,7 +628,8 @@ async def setEventRecorder(hash, enable, skip=""):
         f"(fhempy_setEventRecorder({perlString(hash['NAME'])}, "
         f"{1 if enable else 0}, {perlString(skip)}) // 'ok') : 'old'"
     )
-    return await sendCommandHash(hash, cmd)
+    args = {"enable": 1 if enable else 0, "skip": skip}
+    return await _op(hash["NAME"], "event_recorder", args, cmd, hash)
 
 
 def register_recorder_listener(device, callback):
@@ -617,6 +668,12 @@ async def dispatch_recorded_events(device, args):
 
 
 async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
+    if operations:
+        args = _find_args(typeinternal, typevalue, internal, value)
+        found = await sendCommandName(
+            hash["NAME"], None, hash, fields={"op": "find_device", "args": args}
+        )
+        return 0 if str(found) in ("0", "") else 1
     cmd = (
         "foreach my $fhem_dev (sort keys %main::defs) {"
         + "  return 1 if("
@@ -626,6 +683,15 @@ async def checkIfDeviceExists(hash, typeinternal, typevalue, internal, value):
         + "return 0;;"
     )
     return await sendCommandHash(hash, cmd)
+
+
+def _find_args(typeinternal, typevalue, internal, value):
+    return {
+        "typeinternal": typeinternal,
+        "typevalue": typevalue,
+        "internal": internal,
+        "value": value,
+    }
 
 
 def _perlDeviceMatch(typeinternal, typevalue, internal, value):
@@ -728,10 +794,12 @@ async def send_default_response(hash, set_default_response):
     await wsconnection.send(msg)
 
 
-def describeCommand(cmd):
+def describeCommand(cmd, fields=None):
     """Short command description for error logs, the full command can contain
     reading values like tokens and is only logged on debug level."""
     if cmd is None:
+        if fields and fields.get("op"):
+            return str(fields["op"])
         return "readings update"
     return cmd.split("(", 1)[0].split(" ", 1)[0][:50]
 
@@ -761,7 +829,7 @@ async def send_and_wait(name, cmd, fields=None):
             if fhem_time > 5000:
                 # log error message if fhem took too long to handle cmd
                 logger.error(
-                    f"FHEM took {fhem_time:.0f}ms for {describeCommand(cmd)} "
+                    f"FHEM took {fhem_time:.0f}ms for {describeCommand(cmd, fields)} "
                     + f"of {name}"
                 )
                 logger.debug(f"Slow command: {cmd}")
@@ -803,7 +871,7 @@ async def sendCommandName(name, cmd, hash=None, fields=None):
         if duration > 5:
             logger.error(
                 f"{name}: waited {duration:.0f}s for FHEM before sending "
-                + describeCommand(cmd)
+                + describeCommand(cmd, fields)
             )
         # wait max 180s for reply from FHEM
         if fields is None:
@@ -814,7 +882,7 @@ async def sendCommandName(name, cmd, hash=None, fields=None):
     except asyncio.TimeoutError:
         logger.error(
             f"{name}: no response from FHEM since {timeout}s for "
-            + describeCommand(cmd)
+            + describeCommand(cmd, fields)
         )
         logger.debug(f"Command without response: {cmd}")
         ret = ""
@@ -829,5 +897,5 @@ async def sendCommandName(name, cmd, hash=None, fields=None):
     return ret
 
 
-async def sendCommandHash(hash, cmd):
-    return await sendCommandName(hash["NAME"], cmd, hash)
+async def sendCommandHash(hash, cmd, fields=None):
+    return await sendCommandName(hash["NAME"], cmd, hash, fields=fields)
