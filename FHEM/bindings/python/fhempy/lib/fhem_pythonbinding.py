@@ -26,7 +26,7 @@ from . import (
     version,
 )
 from .autodiscovery import first_start
-from .core import memory
+from .core import memory, worker_groups, workers
 from .core.loop_watchdog import LoopWatchdog
 from .core.peer_installer import peer_installer
 from .core.zeroconf import zeroconf
@@ -50,6 +50,9 @@ exit_code = 0
 # internal modules
 active_internal_modules = []
 conf = {"internal_modules": ["discover_fhempy"]}
+
+# name of the worker group if this process is a worker, None for the core
+worker_group = None
 
 
 UNDEFINE_TIMEOUT = 60
@@ -116,6 +119,9 @@ async def stop_orphans():
         dev_hash = getattr(instance, "hash", None) or {}
         if dev_hash.get("FHEMPYTYPE") == "remote_access":
             return
+    router = workers.get_router()
+    if router is not None and router.runs_type("remote_access"):
+        return
     try:
         await tailscale.stop_orphan(logger)
     except Exception:
@@ -141,6 +147,10 @@ async def pybinding(websocket):
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
     loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(pb.shutdown()))
     fhem.updateConnection(pb)
+    if not worker_groups.workers_disabled():
+        # devices of conflicting or blocking modules run in worker processes
+        pb.router = workers.Router(pb)
+        pb.router.activate()
     await activate_internal_modules()
     discovery_task = None
     if ipaddress.ip_address(websocket.remote_address[0]).is_loopback:
@@ -154,15 +164,7 @@ async def pybinding(websocket):
     orphan_task = asyncio.create_task(stop_orphans())
     trim_task = asyncio.create_task(memory.trim_periodically())
     try:
-        handled = 0
-        async for message in websocket:
-            hash = pb.parse_message(message)
-            if hash is not None and not pb.dispatch_without_task(hash):
-                pb.create_background_task(pb.onMessage(message, hash))
-            handled += 1
-            if handled % YIELD_EVERY == 0:
-                # many queued messages, let their tasks run meanwhile
-                await asyncio.sleep(0)
+        await read_messages(pb, websocket)
     except asyncio.CancelledError:
         raise
     except websockets.exceptions.ConnectionClosedError:
@@ -181,6 +183,67 @@ async def pybinding(websocket):
         if discovery_task is not None:
             discovery_task.cancel()
         pb.connection_closed()
+        if pb.router is not None:
+            pb.router.deactivate()
+
+
+async def read_messages(pb, websocket):
+    router = pb.router
+    handled = 0
+    async for message in websocket:
+        hash = pb.parse_message(message)
+        if hash is not None:
+            if (
+                router is not None
+                and router.has_workers()
+                and hash.get("msgtype") in workers.EVENT_MSGTYPES
+            ):
+                # devices in workers might listen to the event
+                router.forward_event(message)
+            if not pb.dispatch_without_task(hash):
+                pb.create_background_task(pb.onMessage(message, hash))
+        handled += 1
+        if handled % YIELD_EVERY == 0:
+            # many queued messages, let their tasks run meanwhile
+            await asyncio.sleep(0)
+
+
+async def worker_binding(websocket):
+    """Connection of a worker process to the core, the core is its FHEM."""
+    pb = fhempy(websocket)
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(pb.shutdown()))
+    loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(pb.shutdown()))
+    fhem.updateConnection(pb)
+    capabilities_task = asyncio.create_task(fhem.detect_capabilities())
+    trim_task = asyncio.create_task(memory.trim_periodically())
+    try:
+        await read_messages(pb, websocket)
+    except asyncio.CancelledError:
+        raise
+    except websockets.exceptions.ConnectionClosed:
+        pass
+    finally:
+        capabilities_task.cancel()
+        trim_task.cancel()
+        pb.connection_closed()
+        # without the core there is no FHEM
+        stop_event.set()
+
+
+async def undefine_local(name):
+    """Undefine a device of the core without FHEM, e.g. it moves to a worker."""
+    instance = loadedModuleInstances.pop(name, None)
+    dev_hash = getattr(instance, "hash", None)
+    if dev_hash is None:
+        return
+    try:
+        await asyncio.wait_for(instance.Undefine(dev_hash), UNDEFINE_TIMEOUT)
+    except Exception:
+        logger.exception(f"Undefine failed for {name}")
+    finally:
+        if isinstance(instance, generic.FhemModule):
+            await generic.FhemModule.Undefine(instance, dev_hash)
 
 
 class fhempy:
@@ -199,6 +262,8 @@ class fhempy:
         self._background_tasks = set()
         # Set commands of a device run one after the other, in FHEM's order
         self._set_locks = {}
+        # passes devices of worker processes through, None in a worker
+        self.router = None
 
     def create_background_task(self, coro):
         task = asyncio.create_task(coro)
@@ -408,6 +473,10 @@ class fhempy:
                 listener(hash)
             else:
                 logger.debug(f"No listener waiting for reply: {msg}")
+        elif hash.get("msgtype") == "worker_stop":
+            # the core stops this worker, its devices are undefined first
+            if worker_group is not None:
+                await self.shutdown()
         elif hash["msgtype"] == "installPeer":
             # don't log the message, it contains the peer's password
             logger.debug(f">>> {int(hash['id']):08d}: installPeer")
@@ -460,6 +529,9 @@ class fhempy:
         if self._stopping:
             # modules are being undefined, don't call them anymore
             await self.sendBackReturn(hash, stopping_reply(hash))
+            return 0
+        if self.router is not None and await self.router.route_function(hash, msg):
+            # a worker process handles this device
             return 0
         # this is needed to avoid 2 replies on dep installation
         fhem_reply_done = False
@@ -519,6 +591,11 @@ class fhempy:
                 fhem_reply_done = True
 
                 try:
+                    if self.router is not None and await self.router.route_after_reply(
+                        hash
+                    ):
+                        # requirements conflict, a worker process runs the device
+                        return 0
                     await self.check_and_install_dependencies(hash)
 
                     module_object = await self.import_module(hash)
@@ -821,7 +898,7 @@ class fhempy:
         exit_code = 1
         logger.info("Restart initiated...")
         self._stopping = True
-        await self.undefine_all()
+        await self.undefine_everywhere()
         self._stop()
 
     async def shutdown(self, *args):
@@ -831,12 +908,19 @@ class fhempy:
             self.shutdown_started = 1
             logger.info("Shutdown initiated...")
             self._stopping = True
-            await self.undefine_all()
+            await self.undefine_everywhere()
             self._stop()
         else:
             logger.info("Shutdown is already running, keep calm.")
             asyncio.get_event_loop().remove_signal_handler(signal.SIGTERM)
             asyncio.get_event_loop().remove_signal_handler(signal.SIGINT)
+
+    async def undefine_everywhere(self):
+        """Undefine the devices of the core and of all workers."""
+        if self.router is None:
+            await self.undefine_all()
+            return
+        await asyncio.gather(self.undefine_all(), self.router.stop_all())
 
     async def undefine_all(self):
         tasks = {}
@@ -965,6 +1049,8 @@ async def async_main():
 
     # logs where the event loop hangs, FHEM waits for fhempy meanwhile
     watchdog = LoopWatchdog(asyncio.get_running_loop())
+    # a module which blocks again and again moves to a worker process
+    watchdog.on_blocked = workers.on_loop_blocked
     watchdog.start()
 
     celebration.ReleaseBanner().show_in_log()
@@ -995,6 +1081,53 @@ async def async_main():
         )
     finally:
         watchdog.stop()
+
+
+async def async_worker_main(socket_path):
+    logger.info(f"Starting fhempy worker '{worker_group}' {version.__version__}")
+    watchdog = LoopWatchdog(asyncio.get_running_loop())
+    watchdog.start()
+    try:
+        os.unlink(socket_path)
+    except FileNotFoundError:
+        pass
+    try:
+        async with websockets.asyncio.server.unix_serve(
+            worker_binding,
+            socket_path,
+            ping_timeout=None,
+            ping_interval=None,
+            max_size=None,
+            write_limit=2**20,
+            compression=None,
+            close_timeout=2,
+        ):
+            os.chmod(socket_path, 0o600)
+            await stop_event.wait()
+    finally:
+        watchdog.stop()
+        try:
+            os.unlink(socket_path)
+        except OSError:
+            pass
+
+
+def run_worker(socket_path, group):
+    """Entry point of a worker process, see core/workers.py"""
+    global worker_group
+    worker_group = group
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    logging.getLogger("websockets.server").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(async_worker_main(socket_path))
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+    logger.info(f"Worker '{group}' exit {exit_code}")
+    os._exit(exit_code)
 
 
 def handle_cmdline_options(opts):

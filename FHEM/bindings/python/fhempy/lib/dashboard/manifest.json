@@ -10,5 +10,10 @@
     "name": "tablets",
     "single": true,
     "icon": "📱"
+  },
+  "worker": {
+    "with": [
+      "timeline"
+    ]
   }
 }

@@ -8,5 +8,8 @@
     "name": "system_update",
     "single": true,
     "icon": "🔄"
+  },
+  "worker": {
+    "core": true
   }
 }

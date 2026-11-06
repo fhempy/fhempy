@@ -20,5 +20,10 @@
         "help": "Directory in the repository, one per FHEM installation"
       }
     ]
+  },
+  "worker": {
+    "with": [
+      "system_update"
+    ]
   }
 }
