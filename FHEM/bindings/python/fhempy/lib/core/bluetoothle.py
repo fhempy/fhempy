@@ -73,6 +73,8 @@ class BluetoothLE:
         self.paired = False
         # the device rejected the unencrypted connection via proxy
         self._proxy_auth_failed = False
+        # local pairing failed: use a proxy whatever the signal
+        self._local_failed = False
 
         self.connection_task = None
         self.connected = asyncio.Event()
@@ -283,6 +285,7 @@ class BluetoothLE:
                     ret = await self.pair()
                     if ret == PairingState.SUCCESS:
                         self.paired = True
+                        self._local_failed = False
                         self._errors.success("pairing")
                     elif ret == PairingState.NOT_FOUND:
                         waittime = min(
@@ -446,7 +449,9 @@ class BluetoothLE:
             # needs an encrypted (PIN) connection, see _connect_via_proxy
             return None
         # a device the shared scan doesn't see locally goes through the proxy
-        if not ble_proxy.use_proxy(found[1], self._local_rssi()):
+        if not self._local_failed and not ble_proxy.use_proxy(
+            found[1], self._local_rssi()
+        ):
             return None
         return found
 
@@ -456,13 +461,27 @@ class BluetoothLE:
         with the PIN from its YAML), also right after startup, when the proxy
         didn't report the device yet."""
         self._proxy_auth_failed = False
+        self._local_failed = True
         if not ble_proxy.active():
             await asyncio.sleep(waittime)
             return
         end = time.monotonic() + waittime
+        reported = False
         while time.monotonic() < end:
             if self._proxy_choice() is not None:
                 return
+            if not reported:
+                reported = True
+                await fhem.readingsSingleUpdateIfChanged(
+                    self._dev_hash,
+                    "connection_proxy",
+                    "waiting for advertisement",
+                    1,
+                )
+                self.logger.info(
+                    f"No ESPHome proxy (with active: true) received {self.addr} "
+                    f"within {ble_proxy.RECENT_MAX_AGE}s, waiting for it"
+                )
             await asyncio.sleep(min(PROXY_CHECK_INTERVAL, end - time.monotonic()))
 
     def _needs_pin(self):

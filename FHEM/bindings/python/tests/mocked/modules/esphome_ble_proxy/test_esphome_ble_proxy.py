@@ -280,6 +280,27 @@ async def test_bluetoothle_waits_for_proxy_after_startup(proxy_env, mocker):
 
 
 @pytest.mark.asyncio
+async def test_bluetoothle_prefers_proxy_after_local_pairing_failed(proxy_env, mocker):
+    """The local adapter receives the device weakly but can't pair: the
+    proxy is used although its signal isn't clearly better."""
+    ble_proxy, _ = proxy_env
+    await check_and_install_dependencies("blue_connect")
+    from fhempy.lib.core import bluetoothle
+
+    cli = FakeCli()
+    ble_proxy.register(logger, cli, device_info(), "BT Proxy")
+    cli.advertise(rssi=-79)
+    conn = bluetoothle.BluetoothLE(
+        logger, {"NAME": "testble"}, THERMOSTAT, pairing_required=True, pin="1234"
+    )
+    mocker.patch.object(conn, "_local_rssi", return_value=-85)
+    assert conn._proxy_choice() is None
+
+    await asyncio.wait_for(conn._wait_for_retry(3600), 1)
+    assert conn._proxy_choice() is not None
+
+
+@pytest.mark.asyncio
 async def test_bluetoothle_pin_device_pairs_via_proxy(proxy_env, mocker):
     ble_proxy, _ = proxy_env
     await check_and_install_dependencies("blue_connect")
