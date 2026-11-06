@@ -3,7 +3,7 @@
     "construct==2.10.70",
     "bleak==3.0.2",
     "bluetooth-adapters==2.4.0",
-    "dbus-python==1.5.0",
+    "dbus-python==1.5.1",
     "PyGObject<=3.50.0"
   ],
   "installer": {

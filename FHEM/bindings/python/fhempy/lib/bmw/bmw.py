@@ -460,20 +460,20 @@ class bmw(generic.FhemModule):
                     cardata.STREAM_PORT,
                     username=self.api.gcid,
                     password=self.api.id_token,
-                    client_id=self.api.gcid,
+                    identifier=self.api.gcid,
                     tls_context=tls_context,
                     keepalive=30,
                     logger=self.logger,
                 ) as client:
-                    async with client.messages() as messages:
-                        await client.subscribe(f"{self.api.gcid}/{self._vin}")
-                        self._errors.success("stream")
-                        await fhem.readingsSingleUpdateIfChanged(
-                            self.hash, "stream", "connected", 1
-                        )
-                        retry = STREAM_RETRY[0]
-                        async for message in messages:
-                            await self._on_stream_message(message.payload)
+                    messages = client.messages
+                    await client.subscribe(f"{self.api.gcid}/{self._vin}")
+                    self._errors.success("stream")
+                    await fhem.readingsSingleUpdateIfChanged(
+                        self.hash, "stream", "connected", 1
+                    )
+                    retry = STREAM_RETRY[0]
+                    async for message in messages:
+                        await self._on_stream_message(message.payload)
             except (aiomqtt.MqttError, OSError) as exc:
                 self._errors.failed(
                     "BMW CarData stream disconnected, reconnecting",
