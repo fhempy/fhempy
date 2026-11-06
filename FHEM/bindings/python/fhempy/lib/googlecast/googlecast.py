@@ -53,6 +53,7 @@ class googlecast(generic.FhemModule):
         self.hash = None
         self.currPosTask = None
         self.connectionStateCache = ""
+        self._errors = utils.ErrorLogger(logger)
         self.browser = None
         self.spotipy = None
         self.spotify_access_token = None
@@ -712,12 +713,29 @@ class googlecast(generic.FhemModule):
             # prevent to many disconnect events
             if status.status != self.connectionStateCache:
                 self.connectionStateCache = status.status
+                self._log_connection_status(status.status)
                 # run reading updates in main thread
                 self.run_in_loop(self.updateConnectionReadings(self.hash, status))
 
             if status.status == "CONNECTED":
                 # run reading updates in main thread
                 self.run_in_loop(self.updateDeviceReadings(self.hash))
+
+    # THREADING: called by pychromecast threads. pychromecast reconnects
+    # itself: one line when the connection is lost, one when it's back
+    def _log_connection_status(self, status):
+        if status == "CONNECTED":
+            function = functools.partial(self._errors.success)
+        elif status in ("LOST", "FAILED", "FAILED_RESOLVE"):
+            function = functools.partial(
+                self._errors.failed,
+                f"Connection to cast device {status.lower()}, reconnecting",
+                exc=None,
+            )
+        else:
+            return
+        if not self.loop.is_closed():
+            self.loop.call_soon_threadsafe(function)
 
     # THREADING: called by pychromecast threads, waits with timeout so that a
     # hanging FHEM connection can't block heartbeat and reconnect of the cast

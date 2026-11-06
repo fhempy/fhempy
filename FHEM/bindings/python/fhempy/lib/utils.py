@@ -307,9 +307,11 @@ class ErrorLogger:
             delay = min(minimum * 2 ** min(attempts - 1, 30), maximum)
         return delay * _jitter.uniform(0.9, 1.1)
 
-    def failed(self, msg, key=None, exc=None, traceback=True):
+    def failed(self, msg, key=None, exc=None, traceback=True, expected=None):
         """Call within an except block or pass the exception.
-        traceback=False: known errors are logged as error without traceback."""
+        traceback=False: known errors are logged as error without traceback.
+        expected=True: log like a connection error (warning, no traceback),
+        e.g. for library specific "device offline" exceptions."""
         if exc is None:
             exc = sys.exc_info()[1]
         key = key or "default"
@@ -321,7 +323,9 @@ class ErrorLogger:
             failure = self._failing[key] = _Failure(msg, now)
             failure.attempts = 1
             failure.error_types.add(error_type)
-            if exc is None or is_connection_error(exc):
+            if expected is None:
+                expected = exc is None or is_connection_error(exc)
+            if expected:
                 self._logger.warning(detail)
             elif not traceback:
                 self._logger.error(detail)

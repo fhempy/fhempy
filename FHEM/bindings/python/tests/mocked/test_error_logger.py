@@ -214,3 +214,13 @@ def test_repeated_log_filter_verbose5_shows_everything():
     flt = utils.RepeatedLogFilter()
     for i in range(5):
         assert flt.filter(make_record("lib.verbose", "same", 1000.0 + i))
+
+
+def test_expected_error_logged_as_warning(monkeypatch, caplog):
+    Clock(monkeypatch)
+    logger = logging.getLogger("errlog_expected")
+    errors = utils.ErrorLogger(logger)
+    caplog.set_level(logging.INFO, logger="errlog_expected")
+    errors.failed("Device offline", exc=ValueError("lib specific"), expected=True)
+    assert caplog.records[0].levelno == logging.WARNING
+    assert caplog.records[0].exc_info is None

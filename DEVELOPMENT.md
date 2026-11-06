@@ -135,6 +135,8 @@ while True:
   value after recovery (unless the module set a new state meanwhile). No event per attempt.
 - `next_delay()` backs off from 5s, doubled with every failed attempt, up to 10 minutes.
 - Use `key=` for independent parts (e.g. `"login"` and `"poll"`).
+- `expected=True` logs a library specific "device offline" exception like a connection error
+  (warning without traceback).
 
 As a safety net, fhempy suppresses the same log message (same logger, level and message
 template) for 10 minutes, doubled while it keeps repeating, up to 6 hours. The next line says how

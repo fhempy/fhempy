@@ -44,7 +44,7 @@ async def test_connection_error_logged_once(mocker, caplog):
     device.spotipy.current_playback.return_value = {"is_playing": False}
     with caplog.at_level(logging.INFO):
         await device.update_playback()
-    assert "reachable again" in caplog.text
+    assert "Works again" in caplog.text
     assert mock_fhem.readings["testspotify"]["current_is_playing"] is False
 
 
