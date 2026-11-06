@@ -17,6 +17,7 @@ from . import devices as bridge_devices
 from . import runtime
 
 RESTART_DELAY = 10
+FAILED_RESTART_DELAY = 2
 RELOAD_DELAY = 2
 # new FHEM devices show up in 'set add' after this time
 CANDIDATES_INTERVAL = 600
@@ -165,6 +166,9 @@ class matter_bridge(generic.FhemModule):
         self._maintenance = asyncio.Lock()
         self._reload_task = None
         self._events_supported = True
+        # endpoint ids which matter.js couldn't add, left out until fhempy restarts
+        self.failed_endpoints = set()
+        self._failed_restart = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -458,6 +462,22 @@ class matter_bridge(generic.FhemModule):
             await fhem.readingsSingleUpdate(
                 self.hash, "lastError", f"{device} {message.get('message')}", 1
             )
+            if message.get("failed") and message.get("id"):
+                self.restart_without(message["id"])
+
+    def restart_without(self, endpoint_id):
+        """A device matter.js couldn't add breaks the whole bridge for the
+        apps (its endpoint number stays in the PartsList): restart without it"""
+        self.failed_endpoints.add(endpoint_id)
+        if self._failed_restart is not None and not self._failed_restart.done():
+            return
+
+        async def restart_later():
+            # all devices of one update first
+            await asyncio.sleep(FAILED_RESTART_DELAY)
+            await self.restart()
+
+        self._failed_restart = self.create_async_task(restart_later())
 
     async def update_status(self):
         commissioned = self.status.get("commissioned")
@@ -587,12 +607,16 @@ class matter_bridge(generic.FhemModule):
         self.infos = await self.fetch_infos(names)
         endpoints = {}
         unsupported = []
+        failed = []
         for name in names:
             info = self.infos.get(name)
             device_endpoints = bridge_devices.endpoints(info) if info else []
             if not device_endpoints:
                 unsupported.append(name)
             for endpoint in device_endpoints:
+                if endpoint["id"] in self.failed_endpoints:
+                    failed.append(name)
+                    continue
                 endpoint["device"] = name
                 endpoint["state"] = bridge_devices.endpoint_state(endpoint, info)
                 endpoints[endpoint["id"]] = endpoint
@@ -621,6 +645,9 @@ class matter_bridge(generic.FhemModule):
         )
         await fhem.readingsBulkUpdateIfChanged(
             self.hash, "unsupported_devices", ",".join(unsupported) or "-"
+        )
+        await fhem.readingsBulkUpdateIfChanged(
+            self.hash, "failed_devices", ",".join(dict.fromkeys(failed)) or "-"
         )
         await fhem.readingsEndUpdate(self.hash, 1)
         await self.update_set_config()

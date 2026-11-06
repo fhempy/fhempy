@@ -324,6 +324,16 @@ In short:
 
 Optionally fhempy can also run on **another computer** (a [fhempy peer](#fhempy-peers-eg-extend-bluetooth-range)), e.g. a Raspberry Pi next to a Bluetooth thermostat. FHEM finds it automatically and creates a `fhempy_peer_...` BindingsIo; set a device's `IODev` to it to run that device there.
 
+### Worker processes
+
+fhempy keeps all modules in one process as long as their Python libraries fit together. Nothing has to be configured:
+
+- **Conflicting libraries:** a module whose libraries can't be installed together with the modules already running (e.g. it needs `paho-mqtt` 2 while another one needs 1.6.1) automatically gets its own **worker process** with its own Python environment. Modules which fit into an existing worker share it.
+- **Blocking modules:** a module which blocked fhempy for more than 1 s three times within an hour is moved to its own worker process, so it doesn't freeze the other devices anymore.
+- **Crashes:** a crashed worker is started again and defines its devices again; the other devices keep running.
+
+The decision is stored in `.fhempy/workers.json` and checked again after an update. The log lines of a worker start with its name, e.g. `[tuya_cloud]`. Set the environment variable `FHEMPY_WORKERS=0` to run all modules in the fhempy process like before.
+
 <details>
 <summary>Details for developers</summary>
 
@@ -342,6 +352,8 @@ Example: `define castdevice fhempy googlecast "Living Room"`
 4. FHEM waits for the answer, the same way as for Perl modules, and fhempy returns the result as JSON via websocket.
 
 At any time a module can call FHEM functions like `readingsSingleUpdate(...)` via the fhem.py module (`fhem.readingsSingleUpdate(...)`).
+
+Worker processes ([core/workers.py](FHEM/bindings/python/fhempy/lib/core/workers.py), [core/worker_groups.py](FHEM/bindings/python/fhempy/lib/core/worker_groups.py)) run the same binding. FHEM only talks to the main fhempy process, which passes the messages of devices in a worker through a local unix socket and keeps FHEM's waiting logic in one place.
 
 </details>
 

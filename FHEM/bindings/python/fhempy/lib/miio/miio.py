@@ -45,11 +45,12 @@ class miio(generic.FhemModule):
         self._fct_update_tasks = {}
         self._cmd_lock = asyncio.Lock()
         self._attr_update_functions = ""
-        self._offline_logged = False
+        self._errors = utils.ErrorLogger(logger)
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
         await super().Define(hash, args, argsh)
+        self._errors = utils.ErrorLogger(self.logger, hash)
 
         self._attr_list = {
             "update_functions": {
@@ -157,22 +158,17 @@ class miio(generic.FhemModule):
                 async with self._cmd_lock:
                     await asyncio.sleep(1)
                     await self.send_command(fct_name, None, raise_exc=True)
-                if self._offline_logged:
-                    self.logger.info("Device is reachable again")
-                    self._offline_logged = False
+                self._errors.success()
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "online", 1
                 )
             except Exception as exc:
                 # an unreachable device is logged once, not on every retry
-                if not self._offline_logged:
-                    self.logger.warning(
-                        f"Device not reachable ({fct_name}: {exc}), "
-                        "retrying in the background"
-                    )
-                    self._offline_logged = True
-                else:
-                    self.logger.debug(f"Failed to send_command {fct_name}: {exc}")
+                self._errors.failed(
+                    f"Device not reachable ({fct_name}), retrying in the background",
+                    exc=exc,
+                    traceback=not isinstance(exc, DeviceException),
+                )
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "presence", "offline", 1
                 )
@@ -229,7 +225,7 @@ class miio(generic.FhemModule):
             if isinstance(exc, DeviceException):
                 # connection errors (e.g. device offline) don't need a traceback,
                 # an already reported offline device isn't logged again
-                if self._offline_logged:
+                if self._errors.is_failing():
                     self.logger.debug(f"Failed to call {fct_name}: {exc}")
                 else:
                     self.logger.error(f"Failed to call {fct_name}: {exc}")

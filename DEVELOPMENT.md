@@ -97,6 +97,25 @@ Parts which find devices themselves (e.g. MQTT discovery in `autodiscovery/mqtt.
 
 `python3 manifest2modules.py` also builds `lib/autodiscovery/discovery.json`.
 
+## Worker processes
+
+fhempy moves a module to a worker process by itself when its requirements conflict
+with the modules already running or when it blocks the event loop again and again
+(see README, "Worker processes"). A module runs in a worker like in the main process,
+but it can't reach the instances of other modules there. If a module uses other
+fhempy devices directly (`fhem_pythonbinding.getFhemPyDeviceByName`,
+`loadedModuleInstances`), declare it in `manifest.json` so they always share a
+process:
+
+```json
+"worker": {"with": ["xiaomi_gateway3"]}
+```
+
+Devices of the same module type are always in the same process. A module that has to
+stay in the main fhempy process (e.g. `system_update`, which updates and restarts
+fhempy) declares `"worker": {"core": true}`; every module in its family stays there
+too.
+
 ## Keep the event loop responsive
 
 While fhempy runs synchronous code in the event loop, FHEM waits and is frozen.
@@ -132,6 +151,39 @@ stays the explicit escape hatch for things without an operation. Build such
 code only with `fhem.perlString()` for values. A new operation needs an entry
 in `%BindingsIo_ops` (10_BindingsIo.pm), a Perl fallback in `fhem.py` and a
 test in `t/FHEM/10_BindingsIo/14_operations.t`.
+
+## Log errors of devices which keep retrying
+
+A device which is offline for days must not fill the log. Use `utils.ErrorLogger` for every
+polling or reconnect loop, it works like FHEM's DevIo: one line when it fails, one line when it
+works again, and in between only a summary after 1h, 6h, 24h and then once a day.
+
+```python
+self._errors = utils.ErrorLogger(logger, hash, state="disconnected")
+while True:
+    try:
+        await self.connect_and_update()
+        self._errors.success()
+    except Exception:
+        self._errors.failed("Failed to connect")
+    await asyncio.sleep(self._errors.next_delay())
+```
+
+- `failed()` logs the first failure (connection errors as warning without traceback, other
+  errors with traceback), a different kind of error once, everything else on debug level.
+- With `hash`, the reading `lastError` gets the error text when it changes. It stays after
+  recovery; its timestamp tells when it happened.
+- With `state`, the state reading is set once on the first failure and set back to the previous
+  value after recovery (unless the module set a new state meanwhile). No event per attempt.
+- `next_delay()` backs off from 5s, doubled with every failed attempt, up to 10 minutes.
+- Use `key=` for independent parts (e.g. `"login"` and `"poll"`).
+- `expected=True` logs a library specific "device offline" exception like a connection error
+  (warning without traceback).
+
+As a safety net, fhempy suppresses the same log message (same logger, level and message
+template) for 10 minutes, doubled while it keeps repeating, up to 6 hours. The next line says how
+many were suppressed. This also covers libraries which log every reconnect attempt. With
+`verbose 5` nothing is suppressed.
 
 ## Test a pull request on your system
 
