@@ -167,8 +167,9 @@ class MqttDiscovery:
     async def _broker_loop(self, key):
         try:
             import aiomqtt
-        except ImportError:
-            self.logger.warning("MQTT discovery needs aiomqtt")
+        except ImportError as exc:
+            # e.g. aiomqtt 2 next to paho-mqtt 1.x, fhempy restart needed
+            self.logger.error(f"MQTT discovery doesn't work, aiomqtt: {exc}")
             return
         host, port = key
         while True:

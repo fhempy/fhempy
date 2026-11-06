@@ -386,3 +386,67 @@ async def test_events_are_passed_to_workers():
     await fhem_pythonbinding.read_messages(pb, ListWebsocket([event, reply]))
 
     assert pb.router.events == [event]
+
+
+class FakeDist:
+    def __init__(self, ver, requires):
+        self.version = ver
+        self.requires = requires
+
+
+def fake_installed(monkeypatch, dists):
+    def distribution(name):
+        try:
+            return dists[name]
+        except KeyError:
+            raise worker_groups.PackageNotFoundError(name) from None
+
+    monkeypatch.setattr(worker_groups, "distribution", distribution)
+
+
+def test_installed_conflict_detects_dependency_of_installed_package(monkeypatch):
+    fake_installed(
+        monkeypatch,
+        {
+            "aiomqtt": FakeDist("2.5.1", ["paho-mqtt<3.0.0,>=2.1.0"]),
+            "tuya-iot-py-sdk": FakeDist("0.6.6", ["paho-mqtt", "requests"]),
+        },
+    )
+    # aiomqtt 2 needs paho-mqtt 2, the core pins 1.6.1
+    assert worker_groups.installed_conflict(["paho-mqtt==1.6.1"], ["aiomqtt==2.5.1"])
+    # the module with the pin stays, it doesn't need another version
+    assert not worker_groups.installed_conflict(
+        ["aiomqtt==2.5.1"], ["paho-mqtt==1.6.1", "tuya-iot-py-sdk==0.6.6"]
+    )
+    # not installed in this version: uv decides
+    assert not worker_groups.installed_conflict(
+        ["paho-mqtt==1.6.1"], ["aiomqtt==2.6.0"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_module_installed_into_core_by_mistake_moves_to_worker(
+    tmp_path, monkeypatch
+):
+    """aiomqtt 2 was installed into the core next to paho-mqtt 1.6.1, the
+    stored assignment core is checked again"""
+    fake_installed(
+        monkeypatch, {"aiomqtt": FakeDist("2.5.1", ["paho-mqtt<3.0.0,>=2.1.0"])}
+    )
+    manifests = dict(MANIFESTS)
+    manifests["discovery"] = {"requirements": ["aiomqtt==2.5.1"]}
+    a = assigner(
+        tmp_path, monkeypatch, installed=("paho-mqtt==1.6.1", "aiomqtt==2.5.1")
+    )
+    a._manifests = manifests
+    reqs = a.family_requirements("discovery")
+    a.state["families"] = {
+        "old_mqtt": {"group": "core", "requirements": "x"},
+        "discovery": {
+            "group": "core",
+            "requirements": worker_groups.requirements_hash(reqs),
+        },
+    }
+
+    assert await a.group_for("discovery") == "discovery"
+    assert a.state["families"]["discovery"]["reason"] == "conflict"
