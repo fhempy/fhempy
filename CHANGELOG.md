@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.17.2 (2026-11-07)
+
+### Bug Fixes
+
+- **ring**: Send Accept: application/json and hardware_id on all Ring API requests
+  ([#919](https://github.com/fhempy/fhempy/pull/919),
+  [`b994fc6`](https://github.com/fhempy/fhempy/commit/b994fc6f5766c53513e863aed74d85259a783042))
+
+
 ## v2.17.1 (2026-11-07)
 
 ### Bug Fixes
