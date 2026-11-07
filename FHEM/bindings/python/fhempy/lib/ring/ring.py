@@ -33,7 +33,22 @@ from .ring_login import (
 
 
 class RingAuth(Auth):
-    """Auth that refreshes tokens with the headers the Ring app sends."""
+    """Auth that sends the headers the Ring app sends.
+
+    Ring answers requests with requests' default "Accept: */*" and without
+    hardware_id (e.g. POST clients_api/session) with 406 Not Acceptable.
+    """
+
+    def __init__(self, user_agent, token=None, token_updater=None, hardware_id=None):
+        super().__init__(user_agent, token, token_updater, hardware_id)
+        # default headers of the requests session, used for every API query
+        self._oauth.headers.update(
+            {
+                "User-Agent": self.user_agent,
+                "Accept": "application/json",
+                "hardware_id": self.hardware_id,
+            }
+        )
 
     def refresh_tokens(self):
         try:
@@ -440,14 +455,16 @@ class ring(FhemModule):
                 self.token_updated(token), self.loop
             ).result()
 
-        if self._token == "":
+        token = self._token
+        if token == "":
             if self._password == "":
                 return "please set password"
             token = self._fetch_token()
             if isinstance(token, str):
                 return token
             token_updater(token)
-        self._auth = self._create_auth(self._token, token_updater)
+        # use the local token, a parallel set password may reset self._token
+        self._auth = self._create_auth(token, token_updater)
         self._ring = Ring(self._auth)
 
     async def set_volume(self, hash, params):

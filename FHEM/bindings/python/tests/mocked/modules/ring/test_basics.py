@@ -260,6 +260,17 @@ async def test_login(mocker, mock_ring_requests):
     assert token_form["grant_type"] == ["authorization_code"]
     assert token_headers["User-Agent"] == "android:com.ringapp"
     assert "hardware_id" in token_headers
+    session_requests = [
+        req
+        for req in mock_ring_requests.request_history
+        if req.url.startswith("https://api.ring.com/clients_api/session")
+    ]
+    assert session_requests
+    for req in session_requests:
+        assert req.headers["Accept"] == "application/json"
+        assert req.headers["User-Agent"] == "android:com.ringapp"
+        assert req.headers["hardware_id"] == token_headers["hardware_id"]
+        assert req.headers["Authorization"].startswith("Bearer ")
     # identifier is stored, so the hardware id stays the same after restart
     assert len(mock_fhem.readings["testdevice"]["identifier"]) == 20
 
