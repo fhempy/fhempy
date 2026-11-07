@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.17.1 (2026-11-07)
+
+### Bug Fixes
+
+- **ble_monitor**: Skip malformed advertisements instead of logging errors
+  ([#915](https://github.com/fhempy/fhempy/pull/915),
+  [`aa8ae2e`](https://github.com/fhempy/fhempy/commit/aa8ae2e5a160ec2d6c385075975489b7d22c152f))
+
+- **esphome_ble_proxy**: Accept Base64 encryption keys ending with '='
+  ([#918](https://github.com/fhempy/fhempy/pull/918),
+  [`55d5094`](https://github.com/fhempy/fhempy/commit/55d509414f02e1201b972408018b87c36c695d61))
+
+
 ## v2.17.0 (2026-11-06)
 
 ### Bug Fixes
