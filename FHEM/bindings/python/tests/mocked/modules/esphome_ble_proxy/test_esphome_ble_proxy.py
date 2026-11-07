@@ -423,8 +423,37 @@ async def test_define_registers_proxy(proxy_env, mocker):
     reconnect.stop.assert_awaited_once()
 
 
+@pytest.mark.asyncio
+async def test_define_with_padded_base64_key(proxy_env, mocker):
+    from fhempy.lib.esphome_ble_proxy import esphome_ble_proxy as module
+
+    mock_fhem.readings.pop("testproxy", None)
+    client = mocker.patch.object(module, "APIClient", return_value=FakeCli())
+    reconnect = mocker.MagicMock()
+    reconnect.start = mocker.AsyncMock()
+    reconnect.stop = mocker.AsyncMock()
+    mocker.patch.object(module, "ReconnectLogic", return_value=reconnect)
+    mocker.patch.object(module.zeroconf, "get_instance")
+    hash = {"NAME": "testproxy", "FHEMPYTYPE": "esphome_ble_proxy"}
+    device = module.esphome_ble_proxy(logger)
+    key = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+
+    # FHEM's parseParams() puts "<key without padding>": "" into argsh
+    error = await device.Define(
+        hash,
+        ["testproxy", "fhempy", "esphome_ble_proxy", "bt-proxy.local"],
+        {key[:-1]: ""},
+    )
+    await asyncio.sleep(0)
+
+    assert error is None
+    assert client.call_args.kwargs["noise_psk"] == key
+    await device.Undefine(hash)
+
+
 def test_define_usage():
     from fhempy.lib.esphome_ble_proxy.esphome_ble_proxy import (
+        _encryption_key,
         _parse_host,
         esphome_ble_proxy,
     )
@@ -432,6 +461,18 @@ def test_define_usage():
     assert esphome_ble_proxy.validate_define(["a", "fhempy", "x"], {})
     assert esphome_ble_proxy.validate_define(["a", "fhempy", "x", "host"], {}) is None
     assert _parse_host("bt-proxy.local") == ("bt-proxy.local", 6053)
+
+    base = ["a", "fhempy", "esphome_ble_proxy", "host"]
+    key = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+    # FHEM's parseParams() moves words containing "=" into argsh
+    argsh = {key[:-1]: ""}
+    assert esphome_ble_proxy.validate_define(base, argsh) is None
+    assert _encryption_key(base, argsh) == key
+    assert _encryption_key(base, {"abc": "="}) == "abc=="
+    assert _encryption_key(base + ["plainkey"], {}) == "plainkey"
+    assert _encryption_key(base, {}) is None
+    assert esphome_ble_proxy.validate_define(base + ["k"], {"x": ""})
+    assert esphome_ble_proxy.validate_define(base, {"x": "", "y": ""})
     assert _parse_host("192.168.1.5:6054") == ("192.168.1.5", 6054)
 
 

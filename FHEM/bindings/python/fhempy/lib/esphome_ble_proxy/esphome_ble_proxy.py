@@ -36,6 +36,21 @@ def _parse_host(text):
     return text, DEFAULT_PORT
 
 
+def _encryption_key(args, argsh):
+    """Return the encryption key from the define arguments.
+
+    FHEM's parseParams() treats every word containing "=" as key=value, so a
+    Base64 key with padding ("...xyz=") arrives in argsh as {"...xyz": ""}.
+    Join it back to the original string.
+    """
+    if len(args) > 4:
+        return args[4] or None
+    if argsh:
+        name, value = next(iter(argsh.items()))
+        return f"{name}={value}"
+    return None
+
+
 class esphome_ble_proxy(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
@@ -48,9 +63,11 @@ class esphome_ble_proxy(generic.FhemModule):
 
     @staticmethod
     def validate_define(args, argsh):
-        if len(args) not in (4, 5) or argsh:
-            return USAGE
-        return None
+        if len(args) == 5 and not argsh:
+            return None
+        if len(args) == 4 and len(argsh) <= 1:
+            return None
+        return USAGE
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -61,7 +78,7 @@ class esphome_ble_proxy(generic.FhemModule):
         await self.set_icon("bluetooth")
 
         self._host, self._port = _parse_host(args[3])
-        self._key = args[4] if len(args) > 4 and args[4] else None
+        self._key = _encryption_key(args, argsh)
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
         self.create_async_task(self._start())
 
