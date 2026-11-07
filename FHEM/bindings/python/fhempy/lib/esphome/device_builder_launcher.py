@@ -16,9 +16,11 @@ import runpy
 import sys
 
 # Python puts this directory first on sys.path, its esphome.py (the fhempy
-# module) would shadow the esphome package.
-_HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path = [p for p in sys.path if os.path.abspath(p or os.curdir) != _HERE]
+# module) would shadow the esphome package. Python resolves symlinks for that
+# entry (fhempy workers reach the package through a symlink), so compare the
+# real paths.
+_HERE = os.path.realpath(os.path.dirname(os.path.abspath(__file__)))
+sys.path = [p for p in sys.path if os.path.realpath(p or os.curdir) != _HERE]
 
 
 class _FixedTokenSecrets:
