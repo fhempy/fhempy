@@ -75,3 +75,39 @@ def test_launcher_fixes_mqtt_client_id(tmp_path):
     assert out.strip() == (
         "esphome-dashboard-fhempy-esp ['esphome_config/', '--port', '6052']"
     )
+
+
+def test_launcher_through_symlink_finds_esphome_package(tmp_path):
+    # fhempy workers with own venv reach the fhempy package through a symlink,
+    # Python resolves it for sys.path[0], fhempy's esphome.py must not shadow
+    # the esphome package anyway
+    (tmp_path / "esphome").mkdir()
+    (tmp_path / "esphome" / "__init__.py").write_text("")
+    (tmp_path / "esphome" / "const.py").write_text("__version__ = 'real'\n")
+    pkg = tmp_path / "esphome_device_builder"
+    (pkg / "controllers").mkdir(parents=True)
+    (pkg / "__init__.py").write_text("")
+    (pkg / "controllers" / "__init__.py").write_text("")
+    (pkg / "controllers" / "_device_mqtt_monitor.py").write_text("import secrets\n")
+    (pkg / "__main__.py").write_text(
+        "from esphome.const import __version__\nprint(__version__)\n"
+    )
+    from fhempy.lib.esphome import esphome as esphome_module
+
+    link = tmp_path / "src" / "esphome"
+    link.parent.mkdir()
+    os.symlink(os.path.dirname(os.path.realpath(esphome_module.__file__)), link)
+    env = dict(os.environ, PYTHONPATH=str(tmp_path))
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(link / "device_builder_launcher.py"),
+            "fhempy-esp",
+            "esphome_config/",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert out.strip() == "real"
