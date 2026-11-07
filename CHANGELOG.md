@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.17.3 (2026-11-07)
+
+### Bug Fixes
+
+- **esphome**: Device Builder in worker imported fhempy esphome.py instead of esphome package
+  ([#921](https://github.com/fhempy/fhempy/pull/921),
+  [`2524d6c`](https://github.com/fhempy/fhempy/commit/2524d6cfa4bc5e2b32e4b3e74ff6fe13dceead06))
+
+
 ## v2.17.2 (2026-11-07)
 
 ### Bug Fixes
