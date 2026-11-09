@@ -123,7 +123,9 @@ def off_steps(rows):
     return sum(
         1
         for row in rows
-        if row.get("y") is not None and row.get("h") == 0.0 and row.get("window") == 0.0
+        if row.get("y") is not None
+        and (row.get("h") is not None and row["h"] <= 0)
+        and (row.get("window") is not None and row["window"] <= 0)
     )
 
 

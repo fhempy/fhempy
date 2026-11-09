@@ -150,7 +150,7 @@ def test_heat_pump_efficiency():
     assert planner.efficiency("heatpump", 10, 0.5) > planner.efficiency(
         "heatpump", -10, 0.5
     )
-    assert planner.efficiency("gas", 0, 1.0) == 0.92
+    assert planner.efficiency("gas", 0, 1.0) == pytest.approx(0.92)
 
 
 def test_sun_position():
@@ -240,23 +240,23 @@ def test_discover():
     values = {d: i["readings"] for d, i in INFOS.items()}
     sample = discover.sample_room(living, values)
     # the room sensor is used, not the thermostat on the radiator
-    assert sample["y"] == 21.3
+    assert sample["y"] == pytest.approx(21.3)
     assert sample["setp"] == 21
-    assert sample["valve"] == 0.3
+    assert sample["valve"] == pytest.approx(0.3)
     # zigbee2mqtt: contact true = closed
-    assert sample["window"] == 0.0
-    assert discover.present(values, ["rgr"]) == 1.0
-    assert discover.present({"rgr": {"state": "absent"}}, ["rgr"]) == 0.0
+    assert sample["window"] == pytest.approx(0.0)
+    assert discover.present(values, ["rgr"]) == pytest.approx(1.0)
+    assert discover.present({"rgr": {"state": "absent"}}, ["rgr"]) == pytest.approx(0.0)
     assert "wz_trv" in discover.devices_of(found)
 
 
 def test_heating_inferred_from_setpoint():
-    assert advisor.heating_of({"valve": 0.4}, None) == 0.4
-    assert advisor.heating_of({"setp": 5, "y": 18}, None) == 0.0
-    assert advisor.heating_of({"setp": 21, "y": 22}, None) == 0.0
-    assert advisor.heating_of({"setp": 21, "y": 19}, None) == 1.0
+    assert advisor.heating_of({"valve": 0.4}, None) == pytest.approx(0.4)
+    assert advisor.heating_of({"setp": 5, "y": 18}, None) == pytest.approx(0.0)
+    assert advisor.heating_of({"setp": 21, "y": 22}, None) == pytest.approx(0.0)
+    assert advisor.heating_of({"setp": 21, "y": 19}, None) == pytest.approx(1.0)
     assert advisor.heating_of({"setp": 21, "y": 20.8}, None) is None
-    assert advisor.heating_of({"y": 20}, 18.0) == 0.0
+    assert advisor.heating_of({"y": 20}, 18.0) == pytest.approx(0.0)
 
 
 def test_render():

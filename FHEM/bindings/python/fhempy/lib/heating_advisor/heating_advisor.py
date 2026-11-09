@@ -873,7 +873,7 @@ class heating_advisor(generic.FhemModule):
         """break-even at constant outdoor temperatures, only changes with
         the model"""
         results = {}
-        for ta in (0.0, -10.0, 10.0):
+        for key, ta in (("0.0", 0.0), ("-10.0", -10.0), ("10.0", 10.0)):
             rooms = self.rooms_for_planning(steady_ta=ta)
             if not rooms:
                 continue
@@ -888,11 +888,12 @@ class heating_advisor(generic.FhemModule):
                 self._attr_comfort_basis,
                 self._attr_max_radiant_asymmetry,
             )
-            results[str(ta)] = planner.worth_from(
+            results[key] = planner.worth_from(
                 res, self._attr_worth_threshold_pct, self._attr_worth_threshold_kWh
             )
             # reheat after a long setback at this temperature
-            if ta == 0.0:
+            # reheat time at 0 °C
+            if key == "0.0":
                 reheat = {}
                 for r in rooms:
                     setback = self.setback_attr() or max(

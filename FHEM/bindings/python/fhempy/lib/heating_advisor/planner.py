@@ -94,6 +94,44 @@ def comfortable(room, state, reference, basis, max_asymmetry):
     )
 
 
+def _setpoints(normal, setback, boost, reheat, absence_steps, total):
+    points = [setback] * reheat
+    points += [normal + boost] * (absence_steps - reheat)
+    points += [normal] * (total - absence_steps)
+    return points
+
+
+def _latest_reheat(room, inputs, absence_steps, setback, heating_type, boost, ready):
+    """latest start of heating up (step) which is still comfortable at the
+    return, None if heating up right away is too late or never needed"""
+    total = len(inputs)
+
+    def run(reheat):
+        points = _setpoints(room.normal, setback, boost, reheat, absence_steps, total)
+        return simulate(room, inputs, points, heating_type)
+
+    low, high = 0, absence_steps
+    if not ready(run(low)[0]):
+        return None
+    while high - low > 1:
+        mid = (low + high) // 2
+        if ready(run(mid)[0]):
+            low = mid
+        else:
+            high = mid
+    if low <= 0:
+        return None
+    # the whole reheat phase is boosted, the thermostat limits the power
+    states, heat, final = run(low)
+    return {
+        "reheat": low,
+        "boost": boost,
+        "final": final,
+        "heat": heat,
+        "states": states,
+    }
+
+
 def plan(
     room,
     inputs,
@@ -115,46 +153,19 @@ def plan(
     reference = keep_states[absence_steps - 1]
     best = None
     for boost in boosts:
-
-        def setpoints(reheat, boost=boost):
-            points = [setback] * reheat
-            points += [room.normal + boost] * (absence_steps - reheat)
-            points += [room.normal] * (total - absence_steps)
-            return points
-
-        def run(reheat):
-            return simulate(room, inputs, setpoints(reheat), heating_type)
-
-        def ready(states):
-            return comfortable(
+        result = _latest_reheat(
+            room,
+            inputs,
+            absence_steps,
+            setback,
+            heating_type,
+            boost,
+            lambda states: comfortable(
                 room, states[absence_steps - 1], reference, basis, max_asymmetry
-            )
-
-        # latest reheat start which is still comfortable at the return
-        low, high = 0, absence_steps
-        result_low = None
-        if not ready(run(low)[0]):
-            continue
-        while high - low > 1:
-            mid = (low + high) // 2
-            if ready(run(mid)[0]):
-                low = mid
-            else:
-                high = mid
-        if low == 0:
-            continue
-        # a boost only for the last part, then back to normal: here the
-        # whole reheat phase is boosted, the thermostat limits the power
-        states, heat, final = run(low)
-        result_low = {
-            "reheat": low,
-            "boost": boost,
-            "final": final,
-            "heat": heat,
-            "states": states,
-        }
-        if best is None or result_low["final"] < best["final"]:
-            best = result_low
+            ),
+        )
+        if result is not None and (best is None or result["final"] < best["final"]):
+            best = result
     return {
         "keep_final": keep_final,
         "keep_heat": keep_heat,
