@@ -33,7 +33,10 @@ MAC_PATTERN = re.compile(
 
 CONST_MESSAGE = b"Marco"
 CONST_MESSAGE_PORT = 5353
-SCAN_TIMEOUT = 1.0
+# Sleeping iPhones answer ARP only after a few seconds: probe again every
+# PROBE_REPEAT seconds until SCAN_TIMEOUT.
+SCAN_TIMEOUT = 5.0
+PROBE_REPEAT = 1.0
 SCAN_POLL_INTERVAL = 0.1
 NETLINK_TIMEOUT = 1.0
 
@@ -322,12 +325,18 @@ class arp_presence(generic.FhemModule):
         is_mac = ":" in target
         deadline = time.monotonic() + SCAN_TIMEOUT
         probed = set()
-        if not is_mac:
-            self.ping_device(target)
+        next_probe = 0.0
         while True:
-            remaining = deadline - time.monotonic()
+            now = time.monotonic()
+            remaining = deadline - now
             if remaining <= 0:
                 return False
+            if now >= next_probe:
+                next_probe = now + PROBE_REPEAT
+                if is_mac:
+                    probed.clear()
+                else:
+                    self.ping_device(target)
             matches = self._find_target_neighbours(target, is_mac)
             if is_mac:
                 matches = self._probe_mac_neighbours(target, matches, probed, deadline)
