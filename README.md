@@ -38,6 +38,7 @@
 - **Matter support**: control Matter lights, plugs, sensors, thermostats, locks and blinds directly from FHEM, also devices behind Hue, IKEA or Aqara bridges. And the other way round: use your FHEM devices in Apple Home, Google Home and Alexa, with voice control. See [Matter](#-matter).
 - **Talk to FHEM with AI**: ask Claude or a local AI model *"switch off all lights when I leave the house"* and it creates the DOIF for you, which you approve with one click. See [AI](#-ai).
 - **What happened at home?** The timeline shows all events as a readable story per day, e.g. of your holidays, without technical noise. See [Timeline](#-timeline).
+- **Turn the heating down when you leave?** The heating advisor learns how your house keeps the heat and tells from how many hours of absence a setback pays off, and heats up in time for your return. See [heating_advisor](FHEM/bindings/python/fhempy/lib/heating_advisor/README.md).
 - **A modern dashboard for your tablets**: on the wall, next to the couch or at the front door, set up in a minute on the tablet itself, with doorbell camera and door opener. See [Tablet dashboard](#-tablet-dashboard).
 - **FHEM on your phone, from anywhere**: one `define` gives you a fixed https address with password, no VPN app and no port forwarding. See [Remote access](#-remote-access).
 - **Lots of devices out of the box**: Tuya, Xiaomi, Google Cast, Spotify, Zigbee2MQTT, ESPHome, solar inverters, cars, Bluetooth sensors and many more.
@@ -161,6 +162,7 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 |[energie_gv_at](FHEM/bindings/python/fhempy/lib/energie_gv_at/)|Retrieve current Austrian energy status|
 |[fusionsolar](FHEM/bindings/python/fhempy/lib/fusionsolar/README.md)|Retrieve data from FusionSolar|
 |[goodwe](FHEM/bindings/python/fhempy/lib/goodwe/)|Get data from GoodWe inverters|
+|[heating_advisor](FHEM/bindings/python/fhempy/lib/heating_advisor/README.md)|Learns how the house keeps the heat (walls, sun, windows) and tells from how many hours of absence turning the heating down pays off, can also do it|
 |[huawei_modbus](FHEM/bindings/python/fhempy/lib/huawei_modbus/)|Retrieve data from Huawei inverters|
 |[rct_power](FHEM/bindings/python/fhempy/lib/rct_power/README.md)|RCT Power inverter|
 |[tibber](FHEM/bindings/python/fhempy/lib/tibber/README.md)|Get consumption data from tibber|
