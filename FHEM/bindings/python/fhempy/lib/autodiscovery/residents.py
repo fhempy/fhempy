@@ -1,7 +1,9 @@
 """Finds the phones of the residents and creates them as ROOMMATE.
 
-Network: every address of the local network gets a small UDP packet, the
-kernel then knows the MAC of each device (neighbour table). Phones use a
+Network: every address of the local network gets a small UDP packet on the
+mDNS port 5353, the kernel then knows the MAC of each device (neighbour
+table). Port 5353 wakes up sleeping iPhones, they answer ARP only after a few
+seconds, therefore the probe is repeated for PROBE_ROUNDS rounds. Phones use a
 private MAC (locally administered bit), it stays the same for each WiFi network
 on iOS and Android. The name comes from the DNS of the router (DHCP host name)
 or from mDNS (iPhones announce "_companion-link._tcp" with their name).
@@ -28,8 +30,11 @@ from ..core.zeroconf import zeroconf
 from .catalog import device_name
 from .engine import define_arg
 
-PROBE_PORT = 9
+PROBE_PORT = 5353
 PROBE_WAIT = 3
+PROBE_ROUNDS = 5
+# Linux NUD states with a known MAC: REACHABLE, STALE, DELAY, PROBE
+KNOWN_MAC_STATES = 0x02 | 0x04 | 0x08 | 0x10
 MAX_HOSTS = 1024
 COMPANION_TYPE = "_companion-link._tcp.local."
 PHONE_NAMES = re.compile(
@@ -125,6 +130,18 @@ async def companion_names(logger, wait=3):
     return names
 
 
+def known_neighbours(neighbours):
+    """mac -> {mac, ip} of all neighbours with a known MAC"""
+    phones = {}
+    for (ip, _), (mac, state) in neighbours.items():
+        if not mac or mac == "00:00:00:00:00:00":
+            continue
+        if not state & KNOWN_MAC_STATES:
+            continue
+        phones[mac] = {"mac": mac, "ip": ip}
+    return phones
+
+
 async def used_addresses(hash):
     """MACs, IPs and Bluetooth addresses of the existing presence devices"""
     cmd = (
@@ -138,18 +155,19 @@ async def used_addresses(hash):
 async def find_phones(hash, logger):
     """Phones in the local network: [{mac, ip, name, used}]"""
     networks = await utils.run_blocking(functools.partial(local_networks))
-    await utils.run_blocking(functools.partial(_probe, networks))
-    names_task = asyncio.create_task(companion_names(logger))
-    await asyncio.sleep(PROBE_WAIT)
-    neighbours = await utils.run_blocking(functools.partial(Host.find_with_netlink))
+    names_task = asyncio.create_task(
+        companion_names(logger, wait=PROBE_WAIT * PROBE_ROUNDS)
+    )
+    phones = {}
+    for _ in range(PROBE_ROUNDS):
+        await utils.run_blocking(functools.partial(_probe, networks))
+        await asyncio.sleep(PROBE_WAIT)
+        neighbours = await utils.run_blocking(
+            functools.partial(Host.find_with_netlink)
+        )
+        phones.update(known_neighbours(neighbours))
     mdns_names = await names_task
     used = await used_addresses(hash)
-
-    phones = {}
-    for (ip, _), (mac, state) in neighbours.items():
-        if not mac or mac == "00:00:00:00:00:00" or state not in (2, 8, 4):
-            continue
-        phones[mac] = {"mac": mac, "ip": ip}
     hostnames = await asyncio.gather(
         *(
             asyncio.wait_for(

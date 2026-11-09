@@ -41,7 +41,7 @@ async def test_last_table_query_has_its_own_timeout(monkeypatch, target, present
     monkeypatch.setattr(arp, "time", clock)
 
     def probe(*args):
-        clock.now = 0.999
+        clock.now = arp.SCAN_TIMEOUT - 0.001
 
     monkeypatch.setattr(device, "ping_device", probe)
     replies = [neighbour_reply(present)]
@@ -218,3 +218,19 @@ async def test_valid_arp_def_replaces_running_device(device_setup):
     assert current is not previous
     assert current._target == "192.0.2.2"
     assert readings == {"state": "initialized", "presence": "initialized"}
+
+
+def test_sleeping_phone_is_probed_again(monkeypatch):
+    """A phone answering only after a few seconds is still present."""
+    clock = Clock()
+    device = arp.arp_presence(logging.getLogger("arp_repeat_test"))
+    monkeypatch.setattr(arp, "time", clock)
+    probes = []
+    monkeypatch.setattr(device, "ping_device", lambda *args: probes.append(clock.now))
+
+    def neighbours(target, is_mac):
+        return {("192.0.2.1", 1): 2} if clock.now >= 3.0 else {}
+
+    monkeypatch.setattr(device, "_find_target_neighbours", neighbours)
+    assert device.scan_device("192.0.2.1") is True
+    assert len(probes) >= 3

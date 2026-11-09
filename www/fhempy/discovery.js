@@ -540,7 +540,7 @@
 
     function stepNetwork() {
       d.html('<div class="fdStep">1. Phone in the network</div>' +
-        "<div><span class=\"fdSpin\"></span>Searching phones in your network...</div>");
+        "<div><span class=\"fdSpin\"></span>Searching phones in your network for 15 seconds...</div>");
       buttons(d, [{ text: "Cancel", click: function () { $(this).dialog("close"); } }]);
       search("phones", function (res) {
         var phones = res.result || [];
