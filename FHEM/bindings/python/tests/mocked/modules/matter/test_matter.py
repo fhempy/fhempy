@@ -790,3 +790,91 @@ async def test_firmware_update(mocker):
     # bridged devices are updated by their bridge
     device.endpoint = 1
     assert not device.supports_firmware_update()
+
+
+def test_thread_ext_address():
+    # matter.js: int64 as number, octet strings as base64
+    assert clusters.ext_address(0x1A2B3C4D5E6F7081) == 0x1A2B3C4D5E6F7081
+    assert clusters.ext_address("1885667171979194497") == 0x1A2B3C4D5E6F7081
+    assert clusters.ext_address("Gis8TV5vcIE=") == 0x1A2B3C4D5E6F7081
+    assert clusters.ext_address("AAECAwQF") is None  # 6 bytes: MAC, not Thread
+    assert clusters.ext_address(None) is None
+    assert clusters.ext_address(True) is None
+    assert clusters.ext_address("not base64!") is None
+
+    assert clusters.node_ext_address({"0/53/63": 5}) == 5
+    interfaces = [
+        {"0": "wlan0", "4": "AAECAwQF", "7": 1},
+        {"name": "thread0", "hardwareAddress": "Gis8TV5vcIE=", "type": 4},
+    ]
+    assert clusters.node_ext_address({"0/51/0": interfaces}) == 0x1A2B3C4D5E6F7081
+    assert clusters.node_ext_address({"0/51/0": interfaces[:1]}) is None
+    assert clusters.node_ext_address({}) is None
+
+
+def test_thread_neighbor_list():
+    names = {1: "Kitchen plug"}
+    neighbors = [
+        {"0": 2, "6": -80, "13": True},
+        {"extAddress": 1, "averageRssi": -48, "isChild": False},
+        {"0": 0xABC, "7": -60, "13": False},
+        {"0": 3},
+    ]
+    assert clusters.thread_neighbor_list(neighbors, names) == (
+        "Kitchen plug (router, -48 dBm), 0000000000000abc (router, -60 dBm), "
+        "0000000000000002 (child, -80 dBm), 0000000000000003 (router)"
+    )
+    assert clusters.thread_neighbor_list([], names) == "none"
+    assert clusters.thread_neighbor_list(None, names) is None
+
+
+@pytest.mark.asyncio
+async def test_thread_neighbor_list_reading(mocker):
+    mock_fhem.mock_module(mocker)
+    from fhempy.lib.matter.device import matter_device
+
+    def thread_node(node_id, address, neighbors):
+        node = light_node(node_id=node_id)
+        node["attributes"].update(
+            {"0/53/1": 5, "0/53/63": address, "0/53/7": neighbors}
+        )
+        return node
+
+    plug = thread_node(10, 100, [{"0": 200, "6": -50, "13": False}])
+    sensor = thread_node(11, 200, [{"0": 100, "6": -55, "13": False}])
+    controller = mocker.Mock()
+    controller.nodes = {10: plug, 11: sensor}
+    controller.devices = []
+    devices = {}
+    for node_id, name in ((10, "matter_10"), (11, "matter_11")):
+        fhemdev = mocker.Mock()
+        fhemdev._attr_rawReadings = 0
+        fhemdev._conf_set = {}
+        fhemdev.set_set_config = mocker.AsyncMock()
+        device = matter_device(logger, fhemdev)
+        device.hash = {"NAME": name}
+        device.node_id = node_id
+        device.controller = controller
+        controller.devices.append(device)
+        devices[node_id] = device
+        mock_fhem.readings.pop(name, None)
+    mock_fhem.attributes.setdefault("matter_11", {})["alias"] = "Hallway sensor"
+
+    await devices[10].node_updated()
+    readings = mock_fhem.readings["matter_10"]
+    assert readings["thread_neighbors"] == 1
+    assert readings["thread_neighbor_list"] == "Hallway sensor (router, -50 dBm)"
+
+    await devices[11].node_updated()
+    assert (
+        mock_fhem.readings["matter_11"]["thread_neighbor_list"]
+        == "matter_10 (router, -55 dBm)"
+    )
+
+    neighbors = [{"0": 200, "6": -61, "13": False}, {"0": 300, "6": -70, "13": True}]
+    plug["attributes"]["0/53/7"] = neighbors
+    await devices[10].attribute_updated("0/53/7", neighbors)
+    assert readings["thread_neighbor_list"] == (
+        "Hallway sensor (router, -61 dBm), 000000000000012c (child, -70 dBm)"
+    )
+    mock_fhem.attributes["matter_11"].pop("alias")

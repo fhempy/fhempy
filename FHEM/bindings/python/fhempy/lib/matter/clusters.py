@@ -4,6 +4,8 @@ Attributes are addressed like the Matter server does it:
 "<endpoint>/<cluster id>/<attribute id>".
 """
 
+import base64
+import binascii
 import math
 
 # cluster ids
@@ -17,6 +19,7 @@ BRIDGED_DEVICE_BASIC_INFORMATION = 57
 BOOLEAN_STATE = 69
 AIR_QUALITY = 91
 SMOKE_CO_ALARM = 92
+GENERAL_DIAGNOSTICS = 51
 THREAD_NETWORK_DIAGNOSTICS = 53
 WIFI_NETWORK_DIAGNOSTICS = 54
 ELECTRICAL_POWER_MEASUREMENT = 144
@@ -237,6 +240,81 @@ def _thread_neighbors(value):
         if isinstance(lqi, int):
             readings["lqi"] = lqi
     return readings
+
+
+# GeneralDiagnostics NetworkInterface type of Thread interfaces
+INTERFACE_TYPE_THREAD = 4
+# ThreadNetworkDiagnostics: neighbor table and own extended address
+THREAD_NEIGHBOR_TABLE_PATH = f"0/{THREAD_NETWORK_DIAGNOSTICS}/7"
+THREAD_EXT_ADDRESS_PATH = f"0/{THREAD_NETWORK_DIAGNOSTICS}/63"
+NETWORK_INTERFACES_PATH = f"0/{GENERAL_DIAGNOSTICS}/0"
+
+
+def ext_address(value):
+    """Thread extended address as int: matter.js sends int64 as number and
+    octet strings (hardware address) as base64."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if not isinstance(value, str) or not value:
+        return None
+    if value.isdigit():
+        return int(value)
+    if value.lower().startswith("0x"):
+        try:
+            return int(value, 16)
+        except ValueError:
+            return None
+    try:
+        raw = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return int.from_bytes(raw, "big") if len(raw) == 8 else None
+
+
+def node_ext_address(attributes):
+    """Extended address of a Thread node: ThreadNetworkDiagnostics ExtAddress
+    (Matter 1.4) or the hardware address of its Thread network interface."""
+    address = ext_address(attributes.get(THREAD_EXT_ADDRESS_PATH))
+    if address is not None:
+        return address
+    interfaces = attributes.get(NETWORK_INTERFACES_PATH)
+    if not isinstance(interfaces, list):
+        return None
+    for interface in interfaces:
+        if _field(interface, "type", 7) == INTERFACE_TYPE_THREAD:
+            address = ext_address(_field(interface, "hardwareAddress", 4))
+            if address is not None:
+                return address
+    return None
+
+
+def thread_neighbor_list(value, names):
+    """Neighbors as text, strongest first: "Kitchen (router, -55 dBm), ...".
+
+    names: extended address -> name of the FHEM device, unknown neighbors
+    (e.g. border routers of other ecosystems) are shown with their address.
+    """
+    if not isinstance(value, list):
+        return None
+    neighbors = []
+    for neighbor in value:
+        if not isinstance(neighbor, dict):
+            continue
+        address = ext_address(_field(neighbor, "extAddress", 0))
+        if address is None:
+            name = "unknown"
+        else:
+            name = names.get(address, f"{address:016x}")
+        role = "child" if _field(neighbor, "isChild", 13) else "router"
+        rssi = _neighbor_rssi(neighbor)
+        details = role if rssi is None else f"{role}, {rssi} dBm"
+        neighbors.append((rssi if rssi is not None else -1000, f"{name} ({details})"))
+    if not neighbors:
+        return "none"
+    neighbors.sort(key=lambda n: n[0], reverse=True)
+    return ", ".join(text for _, text in neighbors)
 
 
 def _wifi_rssi(value):
