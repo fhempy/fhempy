@@ -179,6 +179,14 @@ class matter_device:
         for name, reading_value in converted:
             self.values[name] = reading_value
             await fhem.readingsBulkUpdateIfChanged(self.hash, name, reading_value)
+        if path == clusters.THREAD_NEIGHBOR_TABLE_PATH and converted:
+            neighbors = clusters.thread_neighbor_list(
+                value, await self._thread_device_names()
+            )
+            if neighbors is not None:
+                await fhem.readingsBulkUpdateIfChanged(
+                    self.hash, "thread_neighbor_list", neighbors
+                )
         if converted:
             return True
         if self.fhemdev._attr_rawReadings == 1 and attribute < 0xFFF0:
@@ -269,6 +277,27 @@ class matter_device:
             update.get("software_version")
         )
         return f"{version} available"
+
+    async def _thread_device_names(self):
+        """Extended Thread address -> alias (or name) of the FHEM device of
+        every node of this controller"""
+        names = {}
+        nodes = getattr(self.controller, "nodes", None)
+        devices = getattr(self.controller, "devices", None)
+        if not isinstance(nodes, dict) or not isinstance(devices, list):
+            return names
+        for device in devices:
+            if device.endpoint is not None or device.hash is None:
+                continue
+            node = nodes.get(device.node_id)
+            if not node:
+                continue
+            address = clusters.node_ext_address(node.get("attributes", {}))
+            if address is None:
+                continue
+            name = device.hash["NAME"]
+            names[address] = await fhem.AttrVal(name, "alias", name)
+        return names
 
     async def _bulk_update_state(self):
         text = self.update_state_text()

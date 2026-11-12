@@ -89,6 +89,10 @@ Network readings (if the device reports them; bridged devices: on the bridge's F
   end devices, Matter doesn't tell which), `thread_channel`, `thread_network`, `thread_neighbors`
   (number of neighbors), `rssi` (dBm) and `lqi` (0-3) of the best link to a router. End devices only
   have their parent router as neighbor, so this is the signal to their parent.
+  `thread_neighbor_list` lists the neighbors, strongest first, e.g.
+  `Kitchen plug (router, -48 dBm), Hallway sensor (child, -71 dBm)`. Neighbors which are Matter devices
+  of the same controller are shown with their alias (or FHEM name), others (e.g. border routers) with
+  their Thread extended address. `child` neighbors are end devices which use this device as parent.
 - WiFi devices: `rssi` (dBm).
 - Sleepy devices rarely report changes, `set <device> refresh` reads the current values.
 
