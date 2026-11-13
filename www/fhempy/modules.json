@@ -1385,5 +1385,14 @@
     "placeholder": "1"
    }
   ]
+ },
+ {
+  "id": "heating_advisor",
+  "title": "Heating advisor",
+  "description": "Learns how your house keeps the heat and tells from how many hours of absence turning the heating down pays off",
+  "category": "energy",
+  "name": "heating_advisor",
+  "single": true,
+  "icon": "🌡️"
  }
 ]
