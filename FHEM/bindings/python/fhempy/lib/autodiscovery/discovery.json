@@ -451,6 +451,30 @@
   ]
  },
  {
+  "module": "smlight_ble_proxy",
+  "title": "SMLIGHT Bluetooth proxy",
+  "name": "slzb_bt_proxy",
+  "icon": "📡",
+  "rules": [
+   {
+    "mdns": [
+     {
+      "type": "_slzb-06._tcp.local."
+     }
+    ],
+    "title": "{host}",
+    "name": "slzb_bt_proxy",
+    "model": "SMLIGHT SLZB",
+    "unique": "{host}",
+    "exists": "{ip}",
+    "define": [
+     "{ip}"
+    ],
+    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), \"Enable BLE\" and \"Proxy BLE advertisements\" must be enabled in SLZB-OS."
+   }
+  ]
+ },
+ {
   "module": "spotify",
   "title": "Spotify",
   "name": "spotify",

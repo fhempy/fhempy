@@ -332,7 +332,7 @@ class BluetoothLE:
     async def connect_once(self, timeout, max_retries):
         # get latest adapter list
         await self.update_adapters()
-        if not self.adapters and not ble_proxy.active():
+        if not self.adapters and not ble_proxy.active(connectable=True):
             await fhem.readingsSingleUpdateIfChanged(
                 self._dev_hash, "connection", "no adapter", 1
             )
@@ -440,7 +440,7 @@ class BluetoothLE:
     def _proxy_choice(self):
         """(BLEDevice, rssi, proxy) if the device should be connected through
         an ESPHome Bluetooth proxy, None for the local adapters."""
-        if self.addr is None or not ble_proxy.active():
+        if self.addr is None or not ble_proxy.active(connectable=True):
             return None
         found = ble_proxy.best_device(self.addr)
         if found is None:
@@ -462,7 +462,7 @@ class BluetoothLE:
         didn't report the device yet."""
         self._proxy_auth_failed = False
         self._local_failed = True
-        if not ble_proxy.active():
+        if not ble_proxy.active(connectable=True):
             await asyncio.sleep(waittime)
             return
         end = time.monotonic() + waittime

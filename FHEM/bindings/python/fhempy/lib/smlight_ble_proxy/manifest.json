@@ -1,0 +1,41 @@
+{
+  "requirements": [
+    "bleak==3.0.2",
+    "bleak-smlight==1.1.1",
+    "pysmlight==0.6.2",
+    "habluetooth==7.1.2",
+    "bluetooth-adapters==2.4.0"
+  ],
+  "installer": {
+    "title": "SMLIGHT Bluetooth proxy",
+    "description": "Use the Bluetooth of SMLIGHT SLZB gateways (SLZB-OS) as additional receiver for the Bluetooth modules",
+    "category": "bt",
+    "order": 141,
+    "name": "slzb_bt_proxy",
+    "icon": "📡",
+    "params": [
+      {
+        "label": "Host",
+        "placeholder": "slzb-06mu.local",
+        "help": "Hostname or IP of the SLZB gateway, enable \"Enable BLE\" and \"Proxy BLE advertisements\" in its web interface"
+      }
+    ]
+  },
+  "discovery": {
+    "mdns": [
+      "_slzb-06._tcp.local."
+    ],
+    "title": "{host}",
+    "name": "slzb_bt_proxy",
+    "model": "SMLIGHT SLZB",
+    "unique": "{host}",
+    "exists": "{ip}",
+    "define": [
+      "{ip}"
+    ],
+    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), \"Enable BLE\" and \"Proxy BLE advertisements\" must be enabled in SLZB-OS."
+  },
+  "worker": {
+    "core": true
+  }
+}

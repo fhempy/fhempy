@@ -459,6 +459,24 @@ aiohttp = ">=3.10.0"
 zeroconf = ">=0.142.0"
 
 [[package]]
+name = "aiohttp-sse-client2"
+version = "0.3.0"
+description = "A Server-Sent Event python client base on aiohttp"
+optional = false
+python-versions = "*"
+groups = ["all"]
+files = [
+    {file = "aiohttp-sse-client2-0.3.0.tar.gz", hash = "sha256:5cdd33fc0d034aea339e190726bb918bc61fd3424c7ab528d07b1d60790a979f"},
+    {file = "aiohttp_sse_client2-0.3.0-py2.py3-none-any.whl", hash = "sha256:1921bfe488667bf70651a38f54363fdd0c5f0d7021010e632bf80754c6850b25"},
+]
+
+[package.dependencies]
+aiohttp = ">=3"
+attrs = "*"
+multidict = "*"
+yarl = "*"
+
+[[package]]
 name = "aionefit"
 version = "0.14"
 description = "asyncio library for Bosch thermostats"
@@ -707,6 +725,21 @@ files = [
     {file = "attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309"},
     {file = "attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32"},
 ]
+
+[[package]]
+name = "awesomeversion"
+version = "25.8.0"
+description = "One version package to rule them all, One version package to find them, One version package to bring them all, and in the darkness bind them."
+optional = false
+python-versions = ">=3.9"
+groups = ["all"]
+files = [
+    {file = "awesomeversion-25.8.0-py3-none-any.whl", hash = "sha256:1c314683abfcc3e26c62af9e609b585bbcbf2ec19568df2f60ff1034fb1dae28"},
+    {file = "awesomeversion-25.8.0.tar.gz", hash = "sha256:e6cd08c90292a11f30b8de401863dcde7bc66a671d8173f9066ebd15d9310453"},
+]
+
+[package.extras]
+dev = ["black (>=25.1)", "isort (>=6.0.1)", "mypy (>=1.16)", "pylint (>=3.3.7)", "pytest (>=8.4.1)", "pytest-codspeed (>=3.2.0)", "pytest-cov (>=6.2.1)", "pytest-snapshot (>=0.9.0)", "pytest-timeout (>=2.4.0)"]
 
 [[package]]
 name = "backports-strenum"
@@ -961,6 +994,55 @@ files = [
 bleak = ">=3.0.2"
 bluetooth-adapters = {version = ">=2.3.0", markers = "platform_system == \"Linux\""}
 dbus-fast = {version = ">=5.0.22", markers = "platform_system == \"Linux\""}
+
+[[package]]
+name = "bleak-smlight"
+version = "1.1.1"
+description = "Bleak backend for SMLIGHT SLZB Bluetooth proxies"
+optional = false
+python-versions = "<4,>=3.12"
+groups = ["all"]
+files = [
+    {file = "bleak_smlight-1.1.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:dd1ef41b42b3768348c1a91d3eeac41f2bcee5736a7cc40c8d73cee74c720e98"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:67726a1971e5fc295c95a911a928a7a6b5a13bea22d5760ee31c514a3d16e550"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:31f4ffb4185b792ddbda8bdf382faa88c99fd0cfe43c780f90b1e77377c126d1"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4524701444bc8f1ebc5e2e16cf912ebcd70562d86ac4e097978105f69047f71b"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:4796bb26c9d7211cc316fc7301f18ef5499d83851f198f0e911458a4ee1f8cdf"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:f5c28d3136f69e6a0dcef5cafe5c1a30c48fbb5e089dbb6436e33b3fb12c906c"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-win32.whl", hash = "sha256:6fc4237079f56469a906d6f311e43e0e2413af3db36b398cd64891554594fa2d"},
+    {file = "bleak_smlight-1.1.1-cp312-cp312-win_amd64.whl", hash = "sha256:a0623188cc4843dabe8b83fcd53c59cf5de42b3ea9661219de4024e22b53d767"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:875685f6a7271cbf25baadc750b8a0590876b2393050649a55b7dc7a8a5ca3f3"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:432f66e917382ad6713009637bdb91f218502f3e9337d8033eed512c6062bafe"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:461d2ec138eb47da430277b3b2ba270a8da8110d82194f662fe0278a79cd2ad0"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5442aea687a99bc007481b38b831c1ad0ef0940cf1c8912d3d3da31d099163ee"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:e03ef9324c42ee1d8a2a19c841361c6e61e31c4d5266bbf99fb7caa2a9ab51ee"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:e66a3f28e8acad49ee6787233cc8b4ce1eb591af9a6a2aadfb65b0c42e8142b1"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-win32.whl", hash = "sha256:2eeec86400e03173986c012c3dae37fa7e1a235216a43eb56c32c0f8ce8f9fcd"},
+    {file = "bleak_smlight-1.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:a2e46d8f896800abc9cb78969f2a3cc9ae83a8d1a6cdcc73d5e5b767984838ae"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-macosx_10_13_x86_64.whl", hash = "sha256:42036c7241aad684527a53ff5d4f33594da81f05e5d260129d41bdba55b1e95a"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:be448b4e24830ea2008512f0608851c2c4681b08ab3a36d5945e6c4869b80de4"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:cd9f0c012ac2f130f352a7d7501adcc47ef157ac1e4a42701dcc11310cfa78d6"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7930a5390d5dfb0ddae2f9a6f29ca9c282dd2deb3b9b516b7ccb64a2d7807e15"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:912dd1b54cc030c2ec12e6e0ad5d3ad62d8db98cba923172432232705c4711ec"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:2929d47abdcf90846e2f0efc30947feea0b5d52ade4e0706f123ff8d27323354"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:d8c79ecc5de784bc65f117af8cd07a4e52a03a8703efa0da87d92583a6ad9988"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-win32.whl", hash = "sha256:f6e3c123a28dbe48d8354f3e8ec5becf4abe9814022997503661c95a4cac9ed4"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314-win_amd64.whl", hash = "sha256:11757a555ac9b4110ced6af61fdda84f60f7ef903cc1889d1e0798596aeeb25c"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-macosx_10_13_x86_64.whl", hash = "sha256:1d1864db9b6d02b6aa628b02cd5e1377b0f979180088cc478e4c0789659c4327"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:fdf8d4911b2d0ee70717e8eca52071587b597b10b68fe91c2d5af4c34204009d"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:9088821c28729547170e9f5ac6f71e87676063b1ea10c559ad7f8cd38ef71f48"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d6fb22a43e95b456c444e4bdc214b3baaa0f8528dfb3e435b9932babebdf1e46"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:cf36befcf7f636a5ed5aa14aa36e62f027dc61bc744d4520bba3333dd8577050"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:59e45fd54615b4e8d774bd8a5a6595d4f46bb4842dcc03b8ddf98cdec4569c89"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-win32.whl", hash = "sha256:9af05987c78fd1e3a488a6d4a408c03cf19f100c66dbb0145d3811e9c39e666d"},
+    {file = "bleak_smlight-1.1.1-cp314-cp314t-win_amd64.whl", hash = "sha256:a8613d9f3b51a3e539e91a4f7d8797da97babb66ba99b9b45a09aa4d307f8d78"},
+    {file = "bleak_smlight-1.1.1.tar.gz", hash = "sha256:2560a5c3266414906e17052412fd167e4c0cf9a151880373164550df8eca8885"},
+]
+
+[package.dependencies]
+bluetooth-data-tools = ">=1.18.0"
+habluetooth = ">=6.4.0"
+pysmlight = ">=0.5.0"
 
 [[package]]
 name = "bleparser"
@@ -5890,6 +5972,24 @@ files = [
 cp2110 = ["hidapi"]
 
 [[package]]
+name = "pysmlight"
+version = "0.6.2"
+description = "A library implementing API control of the SMLIGHT SLZB-06 LAN Coordinators."
+optional = false
+python-versions = ">=3.12"
+groups = ["all"]
+files = [
+    {file = "pysmlight-0.6.2-py3-none-any.whl", hash = "sha256:111de94b6bf6954496d34cb1b361edda7622a6e2aa10fc662e2fe7964dc7f935"},
+    {file = "pysmlight-0.6.2.tar.gz", hash = "sha256:8ec12fd36f7e070a435efe5ae02f1669b5345ea1882849ecec9ed55fc44e4624"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.9.3"
+aiohttp-sse-client2 = ">=0.3.0"
+awesomeversion = ">=24.6.0"
+mashumaro = ">=3.10"
+
+[[package]]
 name = "pytest"
 version = "9.2.0"
 description = "pytest: simple powerful testing with Python"
@@ -8158,4 +8258,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "d6f7b8eef6790a9d5ca6b215b8484d733e90f40fc2ce42e8bae1085c189d0052"
+content-hash = "eaf74d59ebf274ac59c4407bd9eb90370c96d39ebea42bf9cf3766fcf2507bd3"
