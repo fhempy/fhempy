@@ -13,7 +13,9 @@ SLZB gateways are found by autodiscovery.
 
 ## Setup on the gateway
 
-In the SLZB-OS web interface enable Bluetooth and the BLE proxy (Settings, Bluetooth). Only one
+In the SLZB-OS web interface (Bluetooth settings) enable both options, "Enable BLE" and
+"Proxy BLE advertisements to a Home Assistant". One of them alone is not enough. The gateway
+reboots when BLE is switched on or off, fhempy reconnects on its own. Only one
 program can receive the advertisements of a gateway, so a gateway used by Home Assistant's
 SMLIGHT integration as Bluetooth proxy can't be used by fhempy at the same time.
 

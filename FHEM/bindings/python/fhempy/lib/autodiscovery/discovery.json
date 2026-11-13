@@ -470,7 +470,7 @@
     "define": [
      "{ip}"
     ],
-    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), the BLE proxy must be enabled in SLZB-OS."
+    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), \"Enable BLE\" and \"Proxy BLE advertisements\" must be enabled in SLZB-OS."
    }
   ]
  },

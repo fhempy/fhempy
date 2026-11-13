@@ -17,7 +17,7 @@
       {
         "label": "Host",
         "placeholder": "slzb-06mu.local",
-        "help": "Hostname or IP of the SLZB gateway, enable the BLE proxy in its web interface (Bluetooth)"
+        "help": "Hostname or IP of the SLZB gateway, enable \"Enable BLE\" and \"Proxy BLE advertisements\" in its web interface"
       }
     ]
   },
@@ -33,7 +33,7 @@
     "define": [
       "{ip}"
     ],
-    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), the BLE proxy must be enabled in SLZB-OS."
+    "hint": "Only receives advertisements (ble_presence, ble_monitor, autodiscovery), \"Enable BLE\" and \"Proxy BLE advertisements\" must be enabled in SLZB-OS."
   },
   "worker": {
     "core": true
