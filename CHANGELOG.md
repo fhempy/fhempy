@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v2.18.0 (2026-11-13)
+
+### Bug Fixes
+
+- Find sleeping iPhones in resident search and arp_presence
+  ([#922](https://github.com/fhempy/fhempy/pull/922),
+  [`1c7f1f4`](https://github.com/fhempy/fhempy/commit/1c7f1f40236b550a4504040d7d1e8d3f8b75856e))
+
+### Features
+
+- Smlight_ble_proxy, SMLIGHT SLZB gateways as Bluetooth receivers
+  ([#931](https://github.com/fhempy/fhempy/pull/931),
+  [`4c0e3bc`](https://github.com/fhempy/fhempy/commit/4c0e3bc98ccc5c4d4625cf5ac6c1601ae7e129a4))
+
+- **matter**: Reading thread_neighbor_list with the names of the Thread neighbors
+  ([#929](https://github.com/fhempy/fhempy/pull/929),
+  [`339bba7`](https://github.com/fhempy/fhempy/commit/339bba7ad95d019c9e9e8ddc867b8403a0f8de90))
+
+
 ## v2.17.3 (2026-11-07)
 
 ### Bug Fixes
