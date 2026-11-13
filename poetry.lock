@@ -2375,14 +2375,14 @@ test = ["asyncmock (==0.4.2)", "flake8 (==7.4.1)", "hypothesis (==6.92.1)", "imp
 
 [[package]]
 name = "esphome-device-builder"
-version = "1.27.0"
+version = "1.28.0"
 description = "ESPHome Device Builder"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "esphome_device_builder-1.27.0-py3-none-any.whl", hash = "sha256:38723702f906b28390ecdf74b2c18ca2b07a15bf5a3743d2edbe55e5f6b341ba"},
-    {file = "esphome_device_builder-1.27.0.tar.gz", hash = "sha256:b95daa43f1eab845466f27c9c0f5b9e04a7541d5885c4c69db26b7fafaebe2d0"},
+    {file = "esphome_device_builder-1.28.0-py3-none-any.whl", hash = "sha256:8d964a26ad0b9d72916ada7e064e61e6a810290e773bbb9ebece197fc9e5077a"},
+    {file = "esphome_device_builder-1.28.0.tar.gz", hash = "sha256:4f5eded3d782605fef01446da4663aebf5c95e863cf51e09203316b05f654478"},
 ]
 
 [package.dependencies]
@@ -2390,7 +2390,7 @@ aiohttp = ">=3.9.0"
 aiohttp-asyncmdnsresolver = ">=0.1.1"
 colorlog = ">=6.8.0"
 cryptography = ">=42.0.2"
-esphome-device-builder-frontend = "0.1.381"
+esphome-device-builder-frontend = "0.1.383"
 fnv-hash-fast = ">=2.0.0"
 icmplib = ">=3.0.4"
 ifaddr = ">=0.2.0"
@@ -2409,14 +2409,14 @@ test = ["blockbuster (>=1.5.5,<1.6)", "codespell (==2.4.3)", "importtime-waterfa
 
 [[package]]
 name = "esphome-device-builder-frontend"
-version = "0.1.381"
+version = "0.1.383"
 description = "Prebuilt web frontend for the ESPHome Device Builder Dashboard"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "esphome_device_builder_frontend-0.1.381-py3-none-any.whl", hash = "sha256:c0d263a9bdc259a4d86ae09eda00c8f0dc42badc1ada44d3bac7b60c987f9808"},
-    {file = "esphome_device_builder_frontend-0.1.381.tar.gz", hash = "sha256:5c21801f1dd24e54c4d9f2782406949374efeae69eaaa1c9a16a057374d2279a"},
+    {file = "esphome_device_builder_frontend-0.1.383-py3-none-any.whl", hash = "sha256:b30d0482184ba3082db838213208b3f1b90be0bc01162a689f1b49fbbd596a29"},
+    {file = "esphome_device_builder_frontend-0.1.383.tar.gz", hash = "sha256:4f52de7aa82026570339b703be817cb463513d2f462b65162568cc7693400518"},
 ]
 
 [[package]]
@@ -8258,4 +8258,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "eaf74d59ebf274ac59c4407bd9eb90370c96d39ebea42bf9cf3766fcf2507bd3"
+content-hash = "63fb8615e3c777835f8fca8ad3f6396fb5b5dcaf80339f2b3ac519679faa3cda"
