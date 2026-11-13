@@ -1,8 +1,10 @@
 """
-ESPHome Bluetooth proxies as additional Bluetooth adapters of fhempy.
+Bluetooth proxies as additional Bluetooth adapters of fhempy.
 
 An esphome_ble_proxy device connects to one ESP32 with the bluetooth_proxy
-component (core/ble_proxy only knows the proxies, not the ESPHome API). Its
+component (core/ble_proxy only knows the proxies, not the ESPHome API). A
+smlight_ble_proxy device receives the advertisements of the BLE proxy of
+SLZB-OS (SMLIGHT gateways, scan only, no connections). Their
 advertisements go to the same callbacks as the ones of the local adapters
 (core/ble_scanner), and core/bluetoothle connects through a proxy if a proxy
 receives the device better than the local adapters, or there is no local
@@ -14,6 +16,7 @@ once a proxy is defined. fhempy doesn't use habluetooth for the local
 adapters, they stay with core/ble_scanner and bt_recovery.
 
     proxy = ble_proxy.register(logger, cli, device_info, name)
+    proxy = ble_proxy.register_smlight(logger, host, port, source, name)
     ...
     ble_proxy.unregister(proxy)
 """
@@ -33,8 +36,11 @@ _proxies = {}
 _raw_callbacks = []
 
 
-def active():
-    """True if at least one proxy is connected."""
+def active(connectable=False):
+    """True if at least one proxy is connected (connectable: one which can
+    connect to devices, SMLIGHT proxies only scan)."""
+    if connectable:
+        return any(proxy.connectable for proxy in _proxies.values())
     return bool(_proxies)
 
 
@@ -76,6 +82,14 @@ def load_libraries():
     import habluetooth  # noqa: F401
 
 
+def load_smlight_libraries():
+    """Imports bleak-smlight, call it via utils.run_blocking before
+    register_smlight()."""
+    import bleak_smlight  # noqa: F401
+    import habluetooth  # noqa: F401
+    import pysmlight  # noqa: F401
+
+
 def add_raw_callback(callback):
     if callback not in _raw_callbacks:
         _raw_callbacks.append(callback)
@@ -86,7 +100,44 @@ def remove_raw_callback(callback):
         _raw_callbacks.remove(callback)
 
 
-class Proxy:
+class _BaseProxy:
+    """Advertisements and devices of one proxy, self.scanner is its
+    habluetooth scanner."""
+
+    logger = None
+    name = None
+    scanner = None
+    connectable = False
+    advertisements = 0
+
+    def _raw(self, address, address_type, rssi, data):
+        for callback in list(_raw_callbacks):
+            try:
+                callback(address, address_type, rssi, data, self.name)
+            except Exception:
+                self.logger.exception("Failed to handle raw advertisement")
+
+    def _dispatch(self, address):
+        # the scanner merged advertisement and scan response (name)
+        info = self.scanner._previous_service_info.get(address)
+        if info is None:
+            return
+        self.advertisements += 1
+        from . import ble_scanner
+
+        scanner = ble_scanner.BleScanner.instance
+        if scanner is not None:
+            scanner.proxy_detection(info.device, info.advertisement)
+
+    def recent_device(self, address, max_age=RECENT_MAX_AGE):
+        """(BLEDevice, rssi) seen within max_age seconds, otherwise None."""
+        info = self.scanner._previous_service_info.get(address.upper())
+        if info is None or time.monotonic() - info.time > max_age:
+            return None
+        return info.device, info.rssi
+
+
+class Proxy(_BaseProxy):
     """One connected ESPHome Bluetooth proxy."""
 
     def __init__(self, logger, cli, device_info, name):
@@ -188,37 +239,88 @@ class Proxy:
         for i in range(len(advertisements)):
             adv = advertisements[i]
             address = self._int_to_address(adv.address)
-            for callback in list(_raw_callbacks):
-                try:
-                    callback(address, adv.address_type, adv.rssi, adv.data, self.name)
-                except Exception:
-                    self.logger.exception("Failed to handle raw advertisement")
+            self._raw(address, adv.address_type, adv.rssi, adv.data)
             self._dispatch(address)
 
     def _on_advertisement(self, adv):
         self.scanner.async_on_advertisement(adv)
         self._dispatch(self._int_to_address(adv.address))
 
-    def _dispatch(self, address):
-        # the scanner merged advertisement and scan response (name)
-        info = self.scanner._previous_service_info.get(address)
-        if info is None:
-            return
-        self.advertisements += 1
-        from . import ble_scanner
 
-        scanner = ble_scanner.BleScanner.instance
-        if scanner is not None:
-            scanner.proxy_detection(info.device, info.advertisement)
+class SmlightProxy(_BaseProxy):
+    """BLE proxy of SLZB-OS (SMLIGHT): advertisements via UDP, no
+    connections. pysmlight's client sends a keepalive every 2s and retries
+    on its own, see bleak-smlight."""
 
-    # --- devices ---
+    def __init__(self, logger, host, port, source, name, active_scan=False):
+        from bleak_smlight import connect_scanner
+        from habluetooth import BluetoothScanningMode
 
-    def recent_device(self, address, max_age=RECENT_MAX_AGE):
-        """(BLEDevice, rssi) seen within max_age seconds, otherwise None."""
-        info = self.scanner._previous_service_info.get(address.upper())
-        if info is None or time.monotonic() - info.time > max_age:
-            return None
-        return info.device, info.rssi
+        manager = _get_manager()
+        self.logger = logger
+        self.name = name
+        self.source = source
+        self.connectable = False
+        self.advertisements = 0
+        data = connect_scanner(source, name, host, port)
+        self.scanner = data.scanner
+        self.client = data.client
+        self._handle = self.scanner._handle_raw_advertisement
+        # every advertisement goes to the fhempy modules as well
+        data.client.callback = self._on_raw
+        self._unsetup = self.scanner.async_setup()
+        self._unregister = manager.async_register_scanner(self.scanner)
+        self._mode = (
+            BluetoothScanningMode.ACTIVE
+            if active_scan
+            else BluetoothScanningMode.PASSIVE
+        )
+
+    async def start(self):
+        await self.client.start()
+
+    def send_scan_mode(self):
+        """Tells the proxy to scan passive or active. Only works once the
+        proxy answered (connected), it forgets it after a reboot: call it
+        regularly."""
+        if self.connected:
+            self.scanner.async_set_scanning_mode(self._mode)
+
+    @property
+    def connected(self):
+        """The proxy answered the keepalive."""
+        return self.client._connected_evt.is_set()
+
+    def _on_raw(self, mac_bytes, rssi, address_type, raw_data):
+        self._handle(mac_bytes, rssi, address_type, raw_data)
+        address = ":".join(f"{b:02X}" for b in reversed(mac_bytes))
+        self._raw(address, address_type, rssi, raw_data)
+        self._dispatch(address)
+
+    @property
+    def connections_free(self):
+        return 0
+
+    @property
+    def connections_limit(self):
+        return 0
+
+    def close(self):
+        try:
+            self.client.stop()
+        finally:
+            self._unregister()
+            self._unsetup()
+
+
+def register_smlight(logger, host, port, source, name, active_scan=False):
+    """Registers a SMLIGHT proxy, call await proxy.start() afterwards."""
+    old = _proxies.get(source)
+    if old is not None:
+        unregister(old)
+    proxy = SmlightProxy(logger, host, port, source, name, active_scan)
+    _proxies[proxy.source] = proxy
+    return proxy
 
 
 def register(logger, cli, device_info, name):

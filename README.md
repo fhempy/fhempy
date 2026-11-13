@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>70 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>71 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -210,6 +210,7 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
 |[esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md)|ESPHome Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules|
+|[smlight_ble_proxy](FHEM/bindings/python/fhempy/lib/smlight_ble_proxy/README.md)|Bluetooth of SMLIGHT SLZB gateways (SLZB-OS) as additional receiver for the Bluetooth modules|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
 |[mantra_ble](FHEM/bindings/python/fhempy/lib/mantra_ble/README.md)|mAntra ceiling fan lamps|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
@@ -264,6 +265,8 @@ Alternatively [fhempy-docker](https://github.com/fhem/fhempy-docker) provides a 
 
 ## ESPHome Bluetooth proxies
 An ESP32 with ESPHome's `bluetooth_proxy` extends the range of all Bluetooth LE modules which use the shared scan or bleak (autodiscovery, ble_presence, ble_monitor, blue_connect, eq3bt, gfprobt, mitemp2, scooter). Define one [esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md) device per ESP32, ready-made proxies are found by autodiscovery. fhempy connects each device through the adapter or proxy with the best signal.
+
+SMLIGHT SLZB gateways (e.g. SLZB-06MU) with SLZB-OS have their own BLE proxy, which forwards advertisements without replacing the firmware (Zigbee and Thread border router keep working). Define one [smlight_ble_proxy](FHEM/bindings/python/fhempy/lib/smlight_ble_proxy/README.md) device per gateway. It only receives advertisements (autodiscovery, ble_presence, ble_monitor), connections still need a local adapter or an ESPHome proxy.
 
 ## Bluetooth auto recovery
 Modules using Bluetooth LE via bleak (blue_connect, eq3bt, gfprobt, mitemp2) detect a stuck Bluetooth adapter and try to recover it automatically. After 3 failed connection attempts in a row (connect errors, or scans which don't see any device at all) the adapter gets recovered, each time escalating one stage further:

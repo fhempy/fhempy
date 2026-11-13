@@ -1282,6 +1282,21 @@
   ]
  },
  {
+  "id": "smlight_ble_proxy",
+  "title": "SMLIGHT Bluetooth proxy",
+  "description": "Use the Bluetooth of SMLIGHT SLZB gateways (SLZB-OS) as additional receiver for the Bluetooth modules",
+  "category": "bt",
+  "name": "slzb_bt_proxy",
+  "icon": "📡",
+  "params": [
+   {
+    "label": "Host",
+    "placeholder": "slzb-06mu.local",
+    "help": "Hostname or IP of the SLZB gateway, enable the BLE proxy in its web interface (Bluetooth)"
+   }
+  ]
+ },
+ {
   "id": "nefit",
   "title": "Nefit / Bosch",
   "description": "Control Nefit Easy thermostats",
