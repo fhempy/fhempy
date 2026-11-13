@@ -89,7 +89,7 @@ cryptography = [
 ]
 dbus-python = "==1.5.1"
 esphome = "==2026.10.2"
-esphome-device-builder = "==1.27.0"
+esphome-device-builder = "==1.28.0"
 goodwe = "==0.4.10"
 greeclimate = "==4.2.2"
 habluetooth = "==7.1.2"
