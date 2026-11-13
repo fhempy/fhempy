@@ -2796,14 +2796,14 @@ files = [
 
 [[package]]
 name = "greeclimate"
-version = "4.2.2"
+version = "4.2.3"
 description = "Discover, connect and control Gree based minisplit systems"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
 files = [
-    {file = "greeclimate-4.2.2-py3-none-any.whl", hash = "sha256:ad3bf7d34f0fa4212caac3de12492b65576de48f4742f69a7c61ca1192e8bac8"},
-    {file = "greeclimate-4.2.2.tar.gz", hash = "sha256:0812dd1e59e516058108fe1c8746dac1cd50c88ddb8f023d4c79cad1f0826a8b"},
+    {file = "greeclimate-4.2.3-py3-none-any.whl", hash = "sha256:a90ab5a8aba75a30f2d4ca19f64274955f662fdc270f640686032cf46f9fa744"},
+    {file = "greeclimate-4.2.3.tar.gz", hash = "sha256:4890afc6696b70d20295c62141cf892f9d3ed48bdca2618ee84e12c19b3106db"},
 ]
 
 [package.dependencies]
@@ -8258,4 +8258,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "eaf74d59ebf274ac59c4407bd9eb90370c96d39ebea42bf9cf3766fcf2507bd3"
+content-hash = "74a547d24baed2054f2e66668e504c9c23891936a901e9d6c38d70444d1617a2"
