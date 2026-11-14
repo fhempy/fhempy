@@ -404,6 +404,31 @@ SET_COMMANDS = {
             "options": "slider,0,1,100",
             "help": "Brightness/level in percent (0-100). 0 switches off.",
         },
+        "dim_up": {
+            "command": "Move",
+            "payload": {
+                "moveMode": 0,
+                "rate": 30,
+                "optionsMask": 0,
+                "optionsOverride": 0,
+            },
+            "help": "Start continuous dimming up at the device's dimRate.",
+        },
+        "dim_down": {
+            "command": "Move",
+            "payload": {
+                "moveMode": 1,
+                "rate": 30,
+                "optionsMask": 0,
+                "optionsOverride": 0,
+            },
+            "help": "Start continuous dimming down at the device's dimRate.",
+        },
+        "dim_stop": {
+            "command": "Stop",
+            "payload": {"optionsMask": 0, "optionsOverride": 0},
+            "help": "Stop continuous dimming.",
+        },
     },
     COLOR_CONTROL: {
         "ct": {
