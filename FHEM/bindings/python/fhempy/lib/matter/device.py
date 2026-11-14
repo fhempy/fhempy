@@ -52,6 +52,14 @@ SHARE_HELP = (
 )
 
 
+def _dim_rate(value):
+    """Validate Matter brightness level steps per second."""
+    rate = int(value)
+    if not 1 <= rate <= 254:
+        raise ValueError("dimRate must be between 1 and 254")
+    return rate
+
+
 class matter_device:
     def __init__(self, logger, fhemdev):
         self.logger = logger
@@ -88,6 +96,12 @@ class matter_device:
 
         await self.fhemdev.set_attr_config(
             {
+                "dimRate": {
+                    "default": "30",
+                    "format": _dim_rate,
+                    "help": "Dimming speed (1-254 Matter levels/second) used "
+                    "by dim_up and dim_down.",
+                },
                 "rawReadings": {
                     "default": "0",
                     "options": "0,1",
@@ -443,6 +457,8 @@ class matter_device:
         if self.model is None:
             return "Device not ready yet, see state"
         args = self.model.command_args(params["cmd"], params.get("value"))
+        if self.model.sets[params["cmd"]]["base"] in ("dim_up", "dim_down"):
+            args["payload"]["rate"] = self.fhemdev._attr_dimRate
         self.fhemdev.create_async_task(self._run(args))
 
     async def _run(self, args):
