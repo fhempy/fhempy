@@ -66,7 +66,15 @@ device can do:
 | Device | Commands | Readings |
 |--------|----------|----------|
 | Plug, switch, light | `on`, `off`, `toggle` | `onoff` |
-| Dimmable light | `pct` (0-100) | `pct` |
+| Dimmable light | `pct` (0-100), `dim_up`, `dim_down`, `dim_stop` | `pct` |
+
+For dimmable devices, `set <device> dim_up` and `dim_down` start continuous
+brightness changes. Use `set <device> dim_stop` to stop the transition.
+The per-device FHEM attribute `dimRate` controls the speed in Matter level
+steps per second (1-254, default 30). For example,
+`attr matter_1 dimRate 50` changes only that lamp. The new speed takes
+effect on the next `dim_up` or `dim_down` command.
+These commands are available for devices with a Level Control cluster.
 | Color light | `ct` (Kelvin), `hue` (0-360), `sat` (0-100) | `ct`, `hue`, `sat` |
 | Blinds/shutters | `open`, `close`, `stop`, `position` (100 = open, 0 = closed) | `position` |
 | Thermostat | `desired-temp`, `mode` (off, heat, cool, auto) | `measured-temp`, `desired-temp`, `mode` |
