@@ -570,7 +570,11 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
     # one curve for the curve popup
     curve = json.loads(await module.Get(hash, ["tl", "curve", "hall:temperature"], {}))
     assert curve["label"] == "Hallway" and curve["category"] == "climate"
-    assert [p[1:] for p in curve["points"]] == [[21.5, 21.5, 21.5]]
+    # the value is 50 s old: shortly after a full hour it is held into the new one
+    assert [p[1:] for p in curve["points"]] in (
+        [[21.5, 21.5, 21.5]],
+        [[21.5, 21.5, 21.5]] * 2,
+    )
     assert curve["min"] == curve["max"] == curve["avg"] == 21.5
     assert curve["day"] == curve["today"]
     assert curve["to"] - curve["from"] in (82800, 86400, 90000)
