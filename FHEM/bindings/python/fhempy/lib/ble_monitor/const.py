@@ -282,6 +282,8 @@ MEASUREMENT_DICT = {
         [],
     ],
     "IBS-TH": [["temperature", "humidity", "battery", "rssi"], [], []],
+    "TP357": [["temperature", "humidity", "battery", "rssi"], [], []],
+    "TP359": [["temperature", "humidity", "battery", "rssi"], [], []],
     "BEC07-5": [["temperature", "humidity", "rssi"], [], []],
     "iBeacon": [
         ["rssi", "measured power", "cypress temperature", "cypress humidity"],

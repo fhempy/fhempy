@@ -85,3 +85,21 @@ async def test_malformed_advertisement_is_skipped(mocker):
     hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20, gateway_id="proxy")
     dump.logger.debug.assert_called_once()
     dump.dataqueue_tracker.sync_q.put_nowait.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("device_type", ["TP357", "Some new bleparser sensor"])
+async def test_sensor_type_missing_in_measurement_dict(mocker, device_type):
+    """bleparser returns sensor types (e.g. ThermoPro TP357) that must not
+    crash the scanner with a KeyError, the readings are delivered."""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+
+    msg = {"type": device_type, "mac": "AA:BB:CC:DD:EE:FF", "temperature": 21.5}
+    dump = mocker.MagicMock(evt_cnt=0)
+    dump.ble_parser.parse_raw_data.return_value = (msg, None)
+    dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
+        dump, *args
+    )
+    hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20)
+    dump.dataqueue_meas.sync_q.put_nowait.assert_called_once_with(msg)
