@@ -103,3 +103,72 @@ async def test_sensor_type_missing_in_measurement_dict(mocker, device_type):
     )
     hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20)
     dump.dataqueue_meas.sync_q.put_nowait.assert_called_once_with(msg)
+
+
+def _hci_adv(mac, name, man_spec_data, rssi=-60):
+    """Build a raw HCI LE advertising report like the scanner receives it."""
+    name_bytes = name.encode()
+    payload = bytes([len(name_bytes) + 1, 0x09]) + name_bytes
+    payload += bytes([len(man_spec_data) + 1, 0xFF]) + man_spec_data
+    body = (
+        bytes([0x02, 0x01, 0x00, 0x00])
+        + bytes.fromhex(mac.replace(":", ""))[::-1]
+        + bytes([len(payload)])
+        + payload
+        + bytes([rssi & 0xFF])
+    )
+    return bytes([0x04, 0x3E, len(body)]) + body
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "battery_byte, battery",
+    [(0x22, 100), (0x21, 50), (0x20, 0)],
+)
+async def test_thermopro_tp357s_with_battery(battery_byte, battery):
+    """TP357S sends one manufacturer data byte more than the TP357, which
+    bleparser 3.7.3 rejects. It carries the battery level."""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    parser = FhempyBleParser()
+    # temperature 21.5 C, humidity 45 %, battery
+    data = bytes([0xC2, 0xD7, 0x00, 0x2D, battery_byte, 0x2C, 0x01])
+    sensor, _ = parser.parse_raw_data(
+        _hci_adv("AA:BB:CC:DD:EE:01", "TP357S (EE01)", data)
+    )
+    assert sensor["type"] == "TP357"
+    assert sensor["temperature"] == 21.5
+    assert sensor["humidity"] == 45
+    assert sensor["battery"] == battery
+    assert sensor["rssi"] == -60
+
+
+@pytest.mark.asyncio
+async def test_thermopro_tp357_unchanged():
+    """The 7 byte TP357 advertisement is still parsed by bleparser, without
+    a battery reading."""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    parser = FhempyBleParser()
+    data = bytes([0xC2, 0xD7, 0x00, 0x2D, 0x22, 0x2C])
+    sensor, _ = parser.parse_raw_data(
+        _hci_adv("AA:BB:CC:DD:EE:02", "TP357 (EE02)", data)
+    )
+    assert sensor["temperature"] == 21.5
+    assert sensor["humidity"] == 45
+    assert "battery" not in sensor
+
+
+@pytest.mark.asyncio
+async def test_other_devices_untouched():
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    parser = FhempyBleParser()
+    data = bytes([0xC2, 0xD7, 0x00, 0x2D, 0x22, 0x2C, 0x01])
+    sensor, _ = parser.parse_raw_data(
+        _hci_adv("AA:BB:CC:DD:EE:03", "Foo123", data)
+    )
+    assert sensor is None
