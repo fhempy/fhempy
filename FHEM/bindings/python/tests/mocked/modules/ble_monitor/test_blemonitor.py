@@ -126,8 +126,8 @@ def _hci_adv(mac, name, man_spec_data, rssi=-60):
     [(0x22, 100), (0x21, 50), (0x20, 0)],
 )
 async def test_thermopro_tp357s_with_battery(battery_byte, battery):
-    """TP357S sends one manufacturer data byte more than the TP357, which
-    bleparser 3.7.3 rejects. It carries the battery level."""
+    """TP357S sends one manufacturer data byte more than the TP357, it
+    carries a 2 bit battery level (ble_monitor reports it as always low)."""
     await check_and_install_dependencies("ble_monitor")
     from fhempy.lib.ble_monitor.parser import FhempyBleParser
 
@@ -141,13 +141,13 @@ async def test_thermopro_tp357s_with_battery(battery_byte, battery):
     assert sensor["temperature"] == 21.5
     assert sensor["humidity"] == 45
     assert sensor["battery"] == battery
+    assert "battery low" not in sensor
     assert sensor["rssi"] == -60
 
 
 @pytest.mark.asyncio
 async def test_thermopro_tp357_unchanged():
-    """The 7 byte TP357 advertisement is still parsed by bleparser, without
-    a battery reading."""
+    """The 7 byte TP357 advertisement is parsed like ble_monitor does it."""
     await check_and_install_dependencies("ble_monitor")
     from fhempy.lib.ble_monitor.parser import FhempyBleParser
 
@@ -172,3 +172,33 @@ async def test_other_devices_untouched():
         _hci_adv("AA:BB:CC:DD:EE:03", "Foo123", data)
     )
     assert sensor is None
+
+
+def test_copied_parser_has_no_home_assistant_imports():
+    """tools/sync_ble_parser.py copies ble_parser from ble_monitor, which is
+    a Home Assistant component: the copy must run without Home Assistant."""
+    from pathlib import Path
+
+    import fhempy.lib.ble_monitor as module
+
+    folder = Path(module.__file__).parent / "ble_parser"
+    assert (folder / "UPSTREAM").is_file()
+    assert (folder / "LICENSE").is_file()
+    for path in folder.glob("*.py"):
+        assert "homeassistant" not in path.read_text(encoding="utf-8"), path
+
+
+@pytest.mark.asyncio
+async def test_readings_without_spaces(mocker):
+    from fhempy.lib.ble_monitor import ble_monitor
+
+    update = mocker.patch.object(
+        ble_monitor.fhem, "readingsBulkUpdateIfChanged", mocker.AsyncMock()
+    )
+    mocker.patch.object(ble_monitor.fhem, "readingsBeginUpdate", mocker.AsyncMock())
+    mocker.patch.object(ble_monitor.fhem, "readingsEndUpdate", mocker.AsyncMock())
+    dev = ble_monitor.ble_monitor.__new__(ble_monitor.ble_monitor)
+    dev.hash = {}
+    await dev.received_data({"battery low": 1, "temperature": 20.5})
+    names = [call.args[1] for call in update.call_args_list]
+    assert names == ["battery_low", "temperature"]

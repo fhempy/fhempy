@@ -55,8 +55,9 @@ class ble_monitor(generic.FhemModule):
         try:
             await fhem.readingsBeginUpdate(self.hash)
             for reading in data:
+                # FHEM readings must not contain spaces ("battery low")
                 await fhem.readingsBulkUpdateIfChanged(
-                    self.hash, reading, data[reading]
+                    self.hash, reading.replace(" ", "_"), data[reading]
                 )
             await fhem.readingsEndUpdate(self.hash, 1)
         except Exception:

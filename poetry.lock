@@ -1045,21 +1045,6 @@ habluetooth = ">=6.4.0"
 pysmlight = ">=0.5.0"
 
 [[package]]
-name = "bleparser"
-version = "3.7.3"
-description = "Parser for passive BLE advertisements"
-optional = false
-python-versions = ">=3.8"
-groups = ["all"]
-files = [
-    {file = "bleparser-3.7.3-py3-none-any.whl", hash = "sha256:472f626c0e15b1e3891ca373dd2c0751a43354df95beb39d39a42784b47b3858"},
-    {file = "bleparser-3.7.3.tar.gz", hash = "sha256:2db06504f772e944ef98eb5bf75a7e07085f71e243a850d7ed1872f92b202757"},
-]
-
-[package.dependencies]
-pycryptodomex = "*"
-
-[[package]]
 name = "bluepy"
 version = "1.3.0"
 description = "Python module for interfacing with BLE devices through Bluez"
@@ -8258,4 +8243,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "eaf74d59ebf274ac59c4407bd9eb90370c96d39ebea42bf9cf3766fcf2507bd3"
+content-hash = "bbe702ab2d0730eb1eb76e06e96ba0638a2d71030d3fc58dcbb078ecfba8ed3e"

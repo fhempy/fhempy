@@ -1,17 +1,20 @@
-"""bleparser with fixes for devices the pinned bleparser release rejects."""
+"""fhempy changes on top of the BLE parser copied from ble_monitor.
 
-from bleparser import BleParser
-from bleparser.thermopro import parse_thermopro
+The files in ble_parser/ are copied by tools/sync_ble_parser.py and must
+not be edited, fhempy specific fixes go here.
+"""
+
+from .ble_parser import BleParser
 
 THERMOPRO_TYPES = ("TP357", "TP359")
 
 
 class FhempyBleParser(BleParser):
-    """BleParser that also understands newer ThermoPro advertisements.
+    """BleParser with fixes that are not in ble_monitor (yet).
 
-    bleparser 3.7.3 only accepts ThermoPro manufacturer data with exactly
-    7 bytes. Newer variants like the TP357S send one byte more, which
-    carries the battery level (2 bit: 0..2 -> 0/50/100 %).
+    ThermoPro TP357S: the byte after the humidity is a 2 bit battery level
+    (0..2 -> 0/50/100 %) in the upper bits 0x20. ble_monitor compares it
+    with 2 and always reports "battery low" for it.
     """
 
     def parse_advertisement(
@@ -33,20 +36,10 @@ class FhempyBleParser(BleParser):
             service_data_list,
             man_spec_data_list,
         )
-        if service_data_list or not local_name:
-            return sensor_data, tracker_data
-        device_type = local_name[0:5]
-        if device_type not in THERMOPRO_TYPES:
-            return sensor_data, tracker_data
-        for man_spec_data in man_spec_data_list or []:
-            data_len = man_spec_data[0]
-            if data_len < 0x07:
-                continue
-            if sensor_data is None:
-                sensor_data = parse_thermopro(
-                    self, man_spec_data, device_type, mac, rssi
-                )
-            if sensor_data is not None and data_len >= 0x08:
-                sensor_data["battery"] = (man_spec_data[6] & 0x03) * 50
-            break
+        if sensor_data and sensor_data.get("type") in THERMOPRO_TYPES:
+            for man_spec_data in man_spec_data_list or []:
+                if man_spec_data[0] >= 0x08:
+                    sensor_data.pop("battery low", None)
+                    sensor_data["battery"] = (man_spec_data[6] & 0x03) * 50
+                    break
         return sensor_data, tracker_data
