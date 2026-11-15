@@ -357,7 +357,7 @@ async def test_bluetoothle_prefers_local_adapter(proxy_env, mocker):
 @pytest.mark.asyncio
 async def test_ble_monitor_parses_proxy_advertisements(mocker):
     await check_and_install_dependencies("ble_monitor")
-    from bleparser import BleParser
+    from fhempy.lib.ble_monitor.ble_parser import BleParser
 
     from fhempy.lib.ble_monitor.blemonitor import hci_packet
 
