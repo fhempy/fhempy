@@ -6,8 +6,6 @@ from threading import Thread
 import aioblescan as aiobs
 from datetime import datetime
 
-from bleparser import BleParser
-
 from fhempy.lib.ble_monitor.bt_helpers import reset_bluetooth, BT_INTERFACES
 
 from .const import (
@@ -24,6 +22,7 @@ from .const import (
     MEASUREMENT_DICT,
 )
 
+from .parser import FhempyBleParser
 from .helper import dict_get_or_clean, dict_get_or, identifier_clean
 
 
@@ -106,7 +105,7 @@ class HCIdump(Thread):
         )
 
         # prepare the ble_parser
-        self.ble_parser = BleParser(
+        self.ble_parser = FhempyBleParser(
             report_unknown=self.report_unknown,
             discovery=self.discovery,
             filter_duplicates=self.filter_duplicates,
