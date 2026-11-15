@@ -2,6 +2,46 @@
 
 <!-- version list -->
 
+## v2.19.0 (2026-11-15)
+
+### Bug Fixes
+
+- **ble_monitor**: No KeyError for sensor types missing in MEASUREMENT_DICT (TP357/TP359)
+  ([#937](https://github.com/fhempy/fhempy/pull/937),
+  [`26b58f9`](https://github.com/fhempy/fhempy/commit/26b58f9f528bf4fb8ef0c219dc11f611ec70904b))
+
+- **ble_monitor**: Support ThermoPro TP357S with battery level
+  ([#941](https://github.com/fhempy/fhempy/pull/941),
+  [`805e5fc`](https://github.com/fhempy/fhempy/commit/805e5fc34c60ee8283342b032a5a3f9b5020ea85))
+
+- **matter**: Keep README command table intact ([#934](https://github.com/fhempy/fhempy/pull/934),
+  [`034eb6c`](https://github.com/fhempy/fhempy/commit/034eb6cf019d3aaa56abf193d2d86ce3a9f1ffce))
+
+- **tests**: Timeline curve test failed in the first minute of an hour
+  ([#935](https://github.com/fhempy/fhempy/pull/935),
+  [`beaa3d5`](https://github.com/fhempy/fhempy/commit/beaa3d50b2a71dd4e50f59140570681045763850))
+
+### Documentation
+
+- **readme**: Recommend separate fhempy-docker containers, document Bluetooth/Matter in Docker
+  ([#939](https://github.com/fhempy/fhempy/pull/939),
+  [`ea4c2a4`](https://github.com/fhempy/fhempy/commit/ea4c2a489ac05703abe2305ca05d607aa2b41487))
+
+### Features
+
+- **ble_monitor**: Sync the BLE parser with ble_monitor monthly
+  ([#943](https://github.com/fhempy/fhempy/pull/943),
+  [`241f6e9`](https://github.com/fhempy/fhempy/commit/241f6e94011c58ae5fe855013c5886162f07f7d0))
+
+- **ble_monitor**: Use the BLE parser of ble_monitor instead of bleparser
+  ([#942](https://github.com/fhempy/fhempy/pull/942),
+  [`543d925`](https://github.com/fhempy/fhempy/commit/543d925b67ea2ce2947d170a2dc8929e07234fd8))
+
+- **matter**: Continuous dimming with dim_up/dim_down/dim_stop
+  ([#933](https://github.com/fhempy/fhempy/pull/933),
+  [`0423bc0`](https://github.com/fhempy/fhempy/commit/0423bc09b7c5f16a4dbdd9ad37ebcedc50c5a6c4))
+
+
 ## v2.18.0 (2026-11-13)
 
 ### Bug Fixes
