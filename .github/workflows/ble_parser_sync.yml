@@ -1,0 +1,56 @@
+name: Sync BLE parser
+
+# Copies the newest ble_monitor release into fhempy/lib/ble_monitor/ble_parser
+# (tools/sync_ble_parser.py) and opens a pull request for it.
+on:
+  schedule:
+    - cron: "17 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: master
+        # a token in BLE_PARSER_SYNC_TOKEN lets the PR start the normal PR checks
+        token: ${{ secrets.BLE_PARSER_SYNC_TOKEN || github.token }}
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.13"
+    - name: Copy newest ble_monitor parser
+      run: python3 tools/sync_ble_parser.py latest
+    - name: Open pull request
+      env:
+        GH_TOKEN: ${{ secrets.BLE_PARSER_SYNC_TOKEN || github.token }}
+        HAS_TOKEN: ${{ secrets.BLE_PARSER_SYNC_TOKEN != '' }}
+      run: |
+        if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
+          echo "BLE parser is up to date"
+          exit 0
+        fi
+        tag=$(sed -n 's/.* tag \([0-9.]*\)$/\1/p' FHEM/bindings/python/fhempy/lib/ble_monitor/ble_parser/UPSTREAM)
+        branch="ble-parser-sync/$tag"
+        if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+          echo "$branch already exists"
+          exit 0
+        fi
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git checkout -b "$branch"
+        git add -A
+        git commit -q -m "fix(ble_monitor): update BLE parser to ble_monitor $tag"
+        git push -q origin "$branch"
+        gh pr create --base master --head "$branch" \
+          --title "fix(ble_monitor): update BLE parser to ble_monitor $tag" \
+          --body "Copied by tools/sync_ble_parser.py from https://github.com/custom-components/ble_monitor/releases/tag/$tag"
+        if [ "$HAS_TOKEN" != "true" ]; then
+          # PRs created with the Actions token start no workflows themselves
+          gh workflow run tests.yml --ref "$branch"
+        fi

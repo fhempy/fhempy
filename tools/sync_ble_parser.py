@@ -7,7 +7,10 @@ script copies that folder from a release tag into
 fhempy/lib/ble_monitor/ble_parser and extracts MEASUREMENT_DICT of its
 const.py (which imports Home Assistant) into upstream_const.py.
 
-Usage: python3 tools/sync_ble_parser.py [TAG]   (default: tag in UPSTREAM)
+Usage: python3 tools/sync_ble_parser.py [TAG|latest]   (default: tag in UPSTREAM)
+
+"latest" takes the newest release tag of ble_monitor and does nothing when
+it is already copied. .github/workflows/ble_parser_sync.yml runs it monthly.
 
 fhempy specific changes belong into fhempy/lib/ble_monitor/parser.py, never
 into the copied files, they are overwritten by the next sync.
@@ -43,6 +46,19 @@ TAG_RE = re.compile(r"^\d+\.\d+\.\d+$")
 def current_tag():
     text = (TARGET / "UPSTREAM").read_text(encoding="utf-8")
     return re.search(r"tag (\S+)", text).group(1)
+
+
+def latest_tag():
+    """Newest x.y.z tag of ble_monitor."""
+    out = subprocess.run(
+        ["git", "ls-remote", "--tags", "--refs", f"https://github.com/{REPO}.git"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    tags = [line.rsplit("/", 1)[-1] for line in out.splitlines()]
+    tags = [t for t in tags if TAG_RE.match(t)]
+    return max(tags, key=lambda t: tuple(int(x) for x in t.split(".")))
 
 
 def upstream_files(tag):
@@ -112,6 +128,11 @@ def write_tables(files, tag):
 
 def main():
     tag = sys.argv[1] if len(sys.argv) > 1 else current_tag()
+    if tag == "latest":
+        tag = latest_tag()
+        if tag == current_tag():
+            print(f"ble_parser {tag} is up to date")
+            return
     if not TAG_RE.match(tag):
         raise SystemExit("TAG must look like 14.7.0")
     files = upstream_files(tag)
