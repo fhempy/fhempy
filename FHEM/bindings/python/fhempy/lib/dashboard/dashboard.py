@@ -138,9 +138,11 @@ LAYOUT_KEYS = (
     "hidden_tiles",
     "tile_order",
     "theme",
+    "accent",
     "lite",
     "saver",
 )
+ACCENTS = ("amber", "teal", "blue", "violet", "pink", "green", "lamps")
 # minutes until the screensaver, 0: never
 SAVER_MINUTES = (0, 2, 5, 10, 15, 30)
 SETTINGS_ATTRS = (
@@ -174,6 +176,8 @@ def clean_layout(layout):
                 if isinstance(ids, list)
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "accent" and value in ACCENTS:
             result[key] = value
         elif key == "lite" and value in ("auto", "on", "off"):
             result[key] = value

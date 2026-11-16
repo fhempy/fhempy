@@ -44,6 +44,9 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+Each tablet has an accent colour (settings: *Accent colour*) for the glow of the background, toggles and selections.
+The rainbow choice lets the background glow in the colour of the coloured lamps which are on.
+
 The last step of the setup shows how to use the dashboard: tap, drag, hold and the settings. It can be opened again in
 the settings (*How to use the dashboard*).
 

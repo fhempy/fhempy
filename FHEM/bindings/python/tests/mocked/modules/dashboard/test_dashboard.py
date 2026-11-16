@@ -1788,6 +1788,12 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_layout_accent_colour():
+    for value in ("amber", "teal", "lamps"):
+        assert clean_layout({"accent": value}) == {"accent": value}
+    assert clean_layout({"accent": "#ff0000"}) == {}
+
+
 @pytest.mark.asyncio
 async def test_bug_info_has_versions_but_no_names(module):
     module._attr_alarm_pin = "1234"

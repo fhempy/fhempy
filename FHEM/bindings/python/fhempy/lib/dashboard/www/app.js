@@ -63,6 +63,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    accent: "Akzentfarbe", accentLamps: "wie die Lampen", accentHint: "Bunt: der Hintergrund leuchtet in der Farbe der eingeschalteten Lampen",
     tourTitle: "So bedienst du das Dashboard", tourText: "Vier Handgriffe, mehr braucht es nicht.", tourGo: "Los geht’s", tourAgain: "So bedienst du das Dashboard",
     tourTap: "Tippen", tourTapList: ["Das runde Symbol schaltet an und aus", "Die Kachel zeigt Details und Verlauf", "Oben Wetter, Personen und Offen antippen"],
     tourDrag: "Ziehen", tourDragList: ["In den Details Helligkeit, Rollladen und Temperatur ziehen", "Im Raum-Popup ein Schieber für alle Rollläden"],
@@ -141,6 +142,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    accent: "Accent colour", accentLamps: "like the lamps", accentHint: "Colourful: the background glows in the colour of the lamps which are on",
     tourTitle: "How to use the dashboard", tourText: "Four moves, that is all it takes.", tourGo: "Let’s go", tourAgain: "How to use the dashboard",
     tourTap: "Tap", tourTapList: ["The round icon switches on and off", "The tile shows details and history", "Tap weather, people and open at the top"],
     tourDrag: "Drag", tourDragList: ["Drag brightness, blinds and temperature in the details", "One slider for all blinds in the room popup"],
@@ -333,6 +335,7 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
+      if (layout().accent === "lamps" && isLight(m.tile)) { applyAccent(); }
       updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
@@ -2025,6 +2028,7 @@
       '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("setLead")) + "</div>" + worthLookHtml() +
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
+      '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" + accentHtml() +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
       liteRowHtml(lay) +
       '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
@@ -2578,6 +2582,40 @@
     var theme = layout().theme || "auto";
     var light = theme === "light" || (theme === "auto" && place() === "couch" && isDay());
     document.body.classList.toggle("light", !!light);
+    applyAccent();
+  }
+  // ---------- accent colour of a tablet, or the colour of the lamps ----------
+  var ACCENTS = { amber: "#FFB547", teal: "#3DDBB8", blue: "#5AA9FF", violet: "#9B8CFF", pink: "#FF7EB6", green: "#34D399" };
+  function rgbOf(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(","); }
+  // coloured lamps which are on, not white ones
+  function litColors() {
+    var result = [];
+    Object.keys(S.tiles).forEach(function (id) {
+      var tl = S.tiles[id], st = tl.state;
+      if (!isLight(tl) || !st.on || !st.rgb || st.rgb === "#000000") { return; }
+      var c = rgbOf(st.rgb).split(",").map(Number), max = Math.max.apply(null, c), min = Math.min.apply(null, c);
+      if (max - min < 40) { return; }
+      if (result.indexOf(st.rgb) < 0) { result.push(st.rgb); }
+    });
+    return result;
+  }
+  function applyAccent() {
+    var key = layout().accent || "amber", color = ACCENTS[key] || ACCENTS.amber, b = document.body.style;
+    var glow1 = "rgba(" + rgbOf(color) + ",.14)", glow2 = "rgba(90,140,255,.12)";
+    if (key === "amber") { glow1 = "rgba(255,170,90,.14)"; }
+    if (key === "lamps") {
+      var lit = litColors();
+      if (lit.length) { glow1 = "rgba(" + rgbOf(lit[0]) + ",.26)"; glow2 = "rgba(" + rgbOf(lit[1] || lit[0]) + ",.2)"; }
+    }
+    b.setProperty("--accent", color); b.setProperty("--accent-soft", "rgba(" + rgbOf(color) + ",.16)");
+    b.setProperty("--glow1", glow1); b.setProperty("--glow2", glow2);
+    if (ACCENTS[key] && key !== "amber") { b.setProperty("--tg", color); } else { b.removeProperty("--tg"); }
+  }
+  function accentHtml() {
+    var cur = layout().accent || "amber";
+    return '<div class="mrow"><span class="mic">' + I("star", 20) + '</span><span class="ml"><b>' + esc(t("accent")) + "</b>" + (cur === "lamps" ? "<span>" + esc(t("accentHint")) + "</span>" : "") + '</span><div class="swatches accent">' +
+      Object.keys(ACCENTS).map(function (k) { return '<button class="' + (cur === k ? "on" : "") + '" data-accent="' + k + '" style="background:' + ACCENTS[k] + '" aria-label="' + k + '"></button>'; }).join("") +
+      '<button class="lamps' + (cur === "lamps" ? " on" : "") + '" data-accent="lamps" aria-label="' + esc(t("accentLamps")) + '" title="' + esc(t("accentLamps")) + '"></button></div></div>';
     var look = layout().lite || "auto";
     document.body.classList.toggle("lite", look === "on" || (look === "auto" && store("dashSlow") === "1"));
   }
@@ -2969,6 +3007,7 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-accent"))) { var l5 = copyLayout(); l5.accent = el.getAttribute("data-accent"); saveLayout(l5); return; }
     if ((el = closest(target, "data-showall")) && S.sheet) { S.sheet.all = true; renderSheet(); return; }
     if ((el = closest(target, "data-buginfo"))) { S.sheet = { settings: true, page: "buginfo" }; send({ type: "bug_info" }); renderSettings(); return; }
     if ((el = closest(target, "data-bugcopy"))) { copyBugInfo(); return; }
