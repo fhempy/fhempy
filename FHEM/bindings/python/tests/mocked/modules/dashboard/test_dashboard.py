@@ -1271,3 +1271,42 @@ def test_colour_lights():
     plain = light("")
     assert "color" not in model.tile(plain)
     assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []
+
+
+def test_bins_and_calendar():
+    assert model.is_bin("Gelbe Tonne")
+    assert model.is_bin("Biotonne") and model.is_bin("Restmüll")
+    assert model.is_bin("Altpapier") and model.is_bin("Gelber Sack")
+    assert model.is_bin("Recycling bin")
+    assert not model.is_bin("Biologie Nachhilfe")
+    assert not model.is_bin("Zahnarzt")
+    fake = FakeFhem()
+    text = "\n".join(f"{c}|{e[0]}|{e[1]}|{e[2]}" for c, e in fake.calendar)
+    events = model.parse_calendar(text + "\nbroken line\nX|a|b|c")
+    assert len(events) == 7
+    # "Gelb" alone is a pickup: most entries of its calendar are
+    assert model.bin_calendars(events) == {"Muell"}
+    result = model.calendar(events, fake_home.NOW)
+    assert result["bins"] == [{"what": "Gelb", "day": 1}]
+    names = [(e["summary"], e["day"]) for e in result["entries"]]
+    assert ("Geburtstag Oma", 0) in names and ("Zahnarzt", 1) in names
+    assert ("Elternabend", 0) in names and ("Urlaub", 5) not in names
+    oma = next(e for e in result["entries"] if e["summary"] == "Geburtstag Oma")
+    assert oma["allday"] and oma["at"] == ""
+
+
+def test_bin_devices():
+    infos = {
+        "abfall": {"NAME": "abfall", "TYPE": "ABFALL", "readings": {"next_text": "Biotonne", "next_days": "1"}},
+        "later": {"NAME": "later", "TYPE": "ABFALL", "readings": {"next_text": "Papier", "next_days": "4"}},
+    }
+    assert model.in_header(infos["abfall"])
+    assert model.bin_devices(infos) == [{"what": "Biotonne", "day": 1}]
+
+
+@pytest.mark.asyncio
+async def test_calendar_in_header(module):
+    module.calendar_events = await module.fetch_calendars()
+    head = module.make_header()
+    assert head["calendar"]["bins"] == [{"what": "Gelb", "day": 1}]
+    assert any(e["summary"] == "Zahnarzt" for e in head["calendar"]["entries"])
