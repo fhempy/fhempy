@@ -83,7 +83,11 @@ STATIC_FILES = {
     "icon.svg": "image/svg+xml",
     "icon-192.png": "image/png",
     "icon-512.png": "image/png",
+    # texts of the language of the tablet, see lang_script
+    "lang.js": "application/javascript; charset=utf-8",
 }
+# more languages than German and English: www/lang/<code>.json
+LANGUAGES = ("de", "en", "fr", "it", "nl")
 # never on a tablet
 EXCLUDED_TYPES = (
     "FHEMWEB",
@@ -221,12 +225,41 @@ def www_build():
     changes the dashboard. app.js gets it built in, so a tablet running old
     code from its cache notices the new version."""
     digest = hashlib.sha256()
-    for name in ("app.js", "app.css"):
+    names = ["app.js", "app.css"]
+    names += [os.path.join("lang", f"{code}.json") for code in LANGUAGES[2:]]
+    for name in names:
         try:
             digest.update(read_static(os.path.join(WWW_DIR, name)))
         except OSError:
             pass
     return digest.hexdigest()[:12]
+
+
+def choose_language(cookie, accept):
+    """language of a tablet: chosen in its settings (cookie), otherwise the
+    first language of the browser the dashboard knows, otherwise English"""
+    if cookie in LANGUAGES:
+        return cookie
+    for part in str(accept or "").split(","):
+        code = part.split(";")[0].strip()[:2].lower()
+        if code in LANGUAGES:
+            return code
+    return "en"
+
+
+def lang_script(code):
+    """lang.js: window.DASH_LANG with the texts of www/lang/<code>.json"""
+    data = {"code": code}
+    if code in LANGUAGES[2:]:
+        try:
+            found = json.loads(
+                read_static(os.path.join(WWW_DIR, "lang", f"{code}.json"))
+            )
+            data.update(found)
+        except (OSError, ValueError):
+            data = {"code": "en"}
+    text = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    return f"window.DASH_LANG = {text};\n".encode()
 
 
 def server_ssl_context(ca_key, ca_cert, ip):
@@ -1957,6 +1990,20 @@ class dashboard(generic.FhemModule):
         name = request.match_info.get("file", "index.html")
         if name not in STATIC_FILES:
             raise web.HTTPNotFound()
+        if name == "lang.js":
+            code = choose_language(
+                request.cookies.get("dashLang", ""),
+                request.headers.get("Accept-Language", ""),
+            )
+            body = await utils.run_blocking(functools.partial(lang_script, code))
+            return web.Response(
+                body=body,
+                headers={
+                    "Content-Type": STATIC_FILES[name],
+                    "Cache-Control": "no-cache",
+                    "Vary": "Cookie, Accept-Language",
+                },
+            )
         body = await utils.run_blocking(
             functools.partial(read_static, os.path.join(WWW_DIR, name))
         )

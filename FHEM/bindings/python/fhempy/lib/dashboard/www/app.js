@@ -61,6 +61,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    language: "Sprache",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +128,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    language: "Language",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -139,8 +141,19 @@
     away: "Away", quiet: "Nothing happened on this day.", lastDays: "days", climate: "Climate",
     now: "now", wasOn: "When it was on"
   };
-  var T = /^de/i.test(navigator.language || "de") ? DE : EN;
+  // more languages: lang.js of the server (lang/*.json, chosen in the settings
+  // or by the browser), keys missing there are English
+  var LANG = window.DASH_LANG || null;
+  var T = LANG && LANG.code === "de" ? DE : LANG && LANG.code === "en" ? EN : /^de/i.test(navigator.language || "de") ? DE : EN;
+  if (LANG && LANG.texts) {
+    T = {}; Object.keys(EN).forEach(function (k) { T[k] = EN[k]; });
+    Object.keys(LANG.texts).forEach(function (k) { T[k] = LANG.texts[k]; });
+  }
   var GERMAN = T === DE;
+  // decimal comma: German and most other languages of the dashboard
+  var COMMA = GERMAN || !!(LANG && LANG.comma);
+  var LANG_CODE = GERMAN ? "de" : T === EN ? "en" : LANG.code;
+  try { document.documentElement.lang = LANG_CODE; } catch (e) { /* old browsers */ }
   function t(key, vars) {
     var s = T[key] !== undefined ? T[key] : key;
     if (vars) { Object.keys(vars).forEach(function (k) { s = String(s).split("{" + k + "}").join(vars[k]); }); }
@@ -164,6 +177,7 @@
     win: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M4 12h16"/>',
     door: '<path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17M3 21h18"/><circle cx="15" cy="12" r="1"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     cloud: '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 18z"/>',
     rain: '<path d="M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.3 1.5A3.3 3.3 0 0 0 7 15zM8 19l-1 2M12 19l-1 2M16 19l-1 2"/>',
@@ -218,7 +232,7 @@
   function num(v, digits) {
     if (v === null || v === undefined || isNaN(v)) { return "–"; }
     var s = Number(v).toFixed(digits === undefined ? 1 : digits);
-    return GERMAN ? s.replace(".", ",") : s;
+    return COMMA ? s.replace(".", ",") : s;
   }
   function watt(w) {
     if (w === null || w === undefined) { return "–"; }
@@ -388,9 +402,17 @@
   }
   function two(n) { return (n < 10 ? "0" : "") + n; }
   function clockText(d) { return two(d.getHours()) + ":" + two(d.getMinutes()); }
+  // the languages of lang.js, chosen per browser with a cookie the server reads
+  var LANGS = [["auto", ""], ["de", "Deutsch"], ["en", "English"], ["fr", "Français"], ["it", "Italiano"], ["nl", "Nederlands"]];
+  function langChoice() { var m = /(?:^|; )dashLang=([a-z]+)/.exec(document.cookie || ""); return m ? m[1] : "auto"; }
+  function setLang(code) {
+    document.cookie = "dashLang=" + (code === "auto" ? "; max-age=0" : code + "; max-age=315360000") + "; path=/; SameSite=Lax";
+    location.reload();
+  }
   function dateText(d) {
-    return GERMAN ? T.weekdays[d.getDay()] + ", " + d.getDate() + ". " + T.months[d.getMonth()]
-      : T.weekdays[d.getDay()] + ", " + T.months[d.getMonth()] + " " + d.getDate();
+    if (GERMAN) { return T.weekdays[d.getDay()] + ", " + d.getDate() + ". " + T.months[d.getMonth()]; }
+    if (T === EN) { return T.weekdays[d.getDay()] + ", " + T.months[d.getMonth()] + " " + d.getDate(); }
+    return T.weekdays[d.getDay()] + " " + d.getDate() + " " + T.months[d.getMonth()];
   }
   function greeting(d) {
     var h = d.getHours();
@@ -1957,6 +1979,7 @@
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      '<div class="mrow"><span class="mic">' + I("globe", 20) + '</span><span class="ml"><b>' + esc(t("language")) + '</b></span><select id="langsel" data-lang="1">' + LANGS.map(function (l) { return '<option value="' + l[0] + '"' + (langChoice() === l[0] ? " selected" : "") + ">" + esc(l[0] === "auto" ? t("auto") : l[1]) + "</option>"; }).join("") + "</select></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -2388,7 +2411,7 @@
   function finishSetup() {
     var room = S.setupRoom || "", pl = S.setupPlace || "wall";
     var label = { wall: "Wand", couch: "Couch", door: "Tür" }[pl];
-    send({ type: "setup", place: pl, room: room, name: (room ? room + " " : "") + (GERMAN ? label : pl) });
+    send({ type: "setup", place: pl, room: room, name: (room ? room + " " : "") + (T !== EN ? label : pl) });
     if (S.setupHidden) {
       var lay = copyLayout(); lay.hidden_rooms = S.setupHidden.slice();
       S.tablet.layout = lay; send({ type: "layout", layout: lay });
@@ -2838,6 +2861,7 @@
     if (ev.target.id === "tabroom") { send({ type: "setup", room: ev.target.value }); S.tablet.room = ev.target.value; }
     if (ev.target.id === "tabname" && ev.target.value.trim()) { send({ type: "setup", name: ev.target.value.trim() }); }
     if (ev.target.id === "setuproom") { S.setupRoom = ev.target.value; }
+    if (ev.target.id === "langsel") { setLang(ev.target.value); return; }
     if (ev.target.getAttribute && S.sheet) {
       var ins = ev.target.getAttribute("data-inslider"), itm = ev.target.getAttribute("data-intime");
       if (ins) { S.sliding = false; setInput(ins, ev.target.value); }
