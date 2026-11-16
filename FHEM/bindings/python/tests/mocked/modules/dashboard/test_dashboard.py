@@ -1786,3 +1786,11 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_motion_tile_knows_since_when():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    motion = next(t for t in tiles.values() if t["kind"] == "motion")
+    assert motion["state"]["occupied"] is False
+    assert motion["state"]["since"]

@@ -412,6 +412,9 @@ def tile_state(kind, info):
         state["since"] = _reading_time(info, "contact", "state")
     if kind == "thermostat":
         state.update(heating_state(info))
+    if kind == "motion":
+        # last change: since when somebody is there or the room is quiet
+        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
 
     if kind in HAZARD_READINGS:
         state["alarm"] = bool(hazard_alarm(kind, info))

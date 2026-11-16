@@ -139,6 +139,9 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
 
+A room card with a motion or presence sensor shows *Someone here* while it detects somebody, otherwise how long the room
+is quiet, e.g. *quiet for 40 min*.
+
 ## Own notices
 
 A notice like *Mail is here* shows at the top of *Home* while a device is on, open or triggered, and chimes once on

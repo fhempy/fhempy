@@ -26,6 +26,7 @@
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     ntTitle: "Meldung auf Zuhause", ntHint: "Zeigt den Text auf Zuhause, solange das Gerät an, offen oder ausgelöst ist. Mit dem Haken wird es zurückgesetzt.", ntText: "Text, z. B. Post ist da", ntSave: "Speichern", ntDone: "Erledigt", ntSaved: "Gespeichert",
+    someone: "Jemand da", quietFor: "ruhig {t}",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
@@ -92,6 +93,7 @@
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     ntTitle: "Notice on Home", ntHint: "Shows the text on Home while the device is on, open or triggered. The tick resets it.", ntText: "Text, e.g. Mail is here", ntSave: "Save", ntDone: "Done", ntSaved: "Saved",
+    someone: "Someone here", quietFor: "quiet {t}",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
@@ -182,6 +184,7 @@
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
+    person: '<circle cx="12" cy="7" r="3.2"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
@@ -591,7 +594,7 @@
     } else if (k === "smoke" || k === "water") {
       if (st.alarm) { cls = "alarm"; sub = t(k + "Now") + " " + since(st.since); } else { sub = t("calm"); }
     } else if (k === "motion") {
-      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion"); }
+      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion") + (since(st.since) ? " · " + since(st.since) : ""); }
     } else if (k === "temperature") {
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
@@ -875,9 +878,10 @@
     return rooms;
   }
   function roomCardHtml(room, editState) {
-    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null;
+    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null, motion = 0, someone = false, quiet = "";
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
+      if (tile.kind === "motion") { motion++; if (st.occupied) { someone = true; } else if (st.since && st.since > quiet) { quiet = st.since; } }
       if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
       if (humid === null && st.humidity !== undefined && st.humidity !== null) { humid = st.humidity; }
       if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on) { other++; }
@@ -897,6 +901,8 @@
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
+    // somebody in the room: motion or presence sensors
+    if (someone) { facts += '<span class="fact pres">' + I("person", 14) + " " + esc(t("someone")) + "</span>"; } else if (motion && quiet && since(quiet)) { facts += '<span class="fact">' + esc(t("quietFor", { t: since(quiet) })) + "</span>"; }
     if (editState) {
       return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
         '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
