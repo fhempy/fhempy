@@ -270,6 +270,12 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
   initials are shown.
 * Covers are loaded through fhempy, so the tablets need no access to the players and https works too.
 
+## Settings
+
+Every settings page says whether it applies to this tablet or to all tablets. On top, *Worth a look* lists what needs
+sorting out: devices without a room (they are not shown before), devices not used for more than a month and devices
+which need attention (battery, not reachable, silent). Long lists show six entries and *Show all*.
+
 ## Bug reports
 
 Settings → *Info for a bug report* shows versions (fhempy, Python, the dashboard), counts of devices and tiles, which

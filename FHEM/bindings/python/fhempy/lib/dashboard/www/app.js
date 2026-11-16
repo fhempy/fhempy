@@ -63,6 +63,8 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    worthLook: "Einen Blick wert", wlNoRoom: "{n} Geräte ohne Raum", wlNoRoom1: "1 Gerät ohne Raum", wlNoRoomSub: "Werden erst angezeigt, wenn sie einen Raum haben", wlIdle: "{n} Geräte lange nicht benutzt", wlIdle1: "1 Gerät lange nicht benutzt", wlIdleSub: "Seit über einem Monat keine Meldung", wlMaint: "{n} Geräte brauchen Aufmerksamkeit", wlMaintSub: "Batterie, nicht erreichbar oder still",
+    setLead: "Oben gilt nur für dieses Tablet, unten für alle Tablets im Zuhause.", tabLead: "Gilt nur für dieses Tablet. Der Standort legt fest, womit es startet und ob es einen Bildschirmschoner hat.", showAll: "Alle zeigen ({n})",
     bugInfo: "Info für Fehlerbericht", bugLead: "Versionen und Browser, ohne Namen und Adressen. Zum Einfügen ins Forum oder in ein GitHub-Issue.", bugCopy: "Kopieren", bugCopied: "Kopiert",
     look: "Darstellung", lookAuto: "Automatisch", lookLite: "Einfach", lookFull: "Voll", lookHint: "Einfach: ohne Unschärfe, für ältere Tablets",
     saver: "Bildschirmschoner", saverOff: "Aus", saverMin: "{n} min",
@@ -134,6 +136,8 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    worthLook: "Worth a look", wlNoRoom: "{n} devices without a room", wlNoRoom1: "1 device without a room", wlNoRoomSub: "They are shown once they have a room", wlIdle: "{n} devices not used for long", wlIdle1: "1 device not used for long", wlIdleSub: "No value for more than a month", wlMaint: "{n} devices need attention", wlMaintSub: "Battery, not reachable or silent",
+    setLead: "The top applies to this tablet only, the bottom to all tablets at home.", tabLead: "Applies to this tablet only. The place sets what it starts with and whether it has a screensaver.", showAll: "Show all ({n})",
     bugInfo: "Info for a bug report", bugLead: "Versions and browser, without names and addresses. To paste into the forum or a GitHub issue.", bugCopy: "Copy", bugCopied: "Copied",
     look: "Display", lookAuto: "Automatic", lookLite: "Simple", lookFull: "Full", lookHint: "Simple: without blur, for older tablets",
     saver: "Screensaver", saverOff: "Off", saverMin: "{n} min",
@@ -311,7 +315,11 @@
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); checkBuild(m.build); }
       render(); loadSparks(true); tapHint(); return;
     }
-    if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
+    if (m.type === "rooms_setup") {
+      var idle = 0; (m.rooms || []).forEach(function (r) { r.devices.forEach(function (d) { if (d.idle) { idle++; } }); });
+      S.setupHints = { noRoom: (m.unassigned || []).length, idle: idle };
+      if (!S.arrange && S.sheet && S.sheet.settings && !S.sheet.page) { renderSettings(); }
+      if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
@@ -1180,11 +1188,14 @@
   function keepOnListHtml() {
     var ids = Object.keys(S.tiles).filter(function (id) { var tl = S.tiles[id]; return tl.kind === "switch" || tl.kind === "outlet" || tl.keep_on; });
     if (!ids.length) { return ""; }
-    ids.sort(function (a, b) { return S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    ids.sort(function (a, b) { var ka = S.tiles[a].keep_on ? 0 : 1, kb = S.tiles[b].keep_on ? 0 : 1; return ka - kb || S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    // long lists: the ones left on first, the rest on request
+    var all = ids.length, more = !S.sheet.all && all > 6 ? '<button class="linkbtn" data-showall="1">' + esc(t("showAll", { n: all })) + "</button>" : "";
+    if (more) { ids = ids.slice(0, 6); }
     return '<div class="group"><div class="label">' + esc(t("keepOnList")) + '</div><div class="hint" style="text-align:left;margin:0 0 6px">' + esc(t("keepOnHint")) + '</div><div class="list">' + ids.map(function (id) {
       var tl = S.tiles[id];
       return '<div class="item"><span class="grow">' + esc(tl.name) + '<span style="color:var(--mu)"> · ' + esc(tl.rooms[0] || "") + '</span></span><button class="tg' + (tl.keep_on ? "" : " off") + '" data-keepon="' + esc(id) + '"></button></div>';
-    }).join("") + "</div></div>";
+    }).join("") + "</div>" + more + "</div>";
   }
   function sheetHistoryHtml() {
     var hist = S.sheet && S.sheet.history; if (!hist || !hist.activity) { return ""; }
@@ -1828,7 +1839,12 @@
     sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
-  function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
+  function openSettings() {
+    if (!pinOk()) { askPin(openSettings); return; }
+    S.sheet = { settings: true }; renderSettings();
+    // devices without a room or idle: only tablets which arrange rooms
+    if (S.tablet && S.tablet.arrange) { send({ type: "rooms_setup" }); }
+  }
 
   // ---------- own notices, e.g. "Mail is here" ----------
   function noticesHtml() {
@@ -1995,6 +2011,7 @@
     var hidden = lay.hidden_rooms || [], shown = S.rooms.filter(function (r) { return hidden.indexOf(r.name) < 0; }).length;
     var kept = Object.keys(S.tiles).filter(function (id) { return S.tiles[id].keep_on; }).length;
     var html = settingsHead(t("settings"), tb.name + (tb.readonly ? " · " + t("readonly") : ""), false) +
+      '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("setLead")) + "</div>" + worthLookHtml() +
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
@@ -2013,6 +2030,14 @@
     html += '<div class="group"><div class="menu">' + settingsRow('data-buginfo="1"', "gear", t("bugInfo"), "") + "</div></div>";
     html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
     sheetShell(html);
+  }
+  // things to sort out: devices without a room, idle ones, maintenance
+  function worthLookHtml() {
+    var rows = "", h = S.setupHints, todo = maintenance().length;
+    if (h && h.noRoom) { rows += settingsRow('data-arrange="1"', "home", h.noRoom === 1 ? t("wlNoRoom1") : t("wlNoRoom", { n: h.noRoom }), t("wlNoRoomSub")); }
+    if (h && h.idle) { rows += settingsRow('data-arrange="1"', "clock", h.idle === 1 ? t("wlIdle1") : t("wlIdle", { n: h.idle }), t("wlIdleSub")); }
+    if (todo) { rows += settingsRow('data-overview="maintenance"', "battery", t("wlMaint", { n: todo }), t("wlMaintSub")); }
+    return rows ? '<div class="group"><div class="label">' + esc(t("worthLook")) + '</div><div class="menu">' + rows + "</div></div>" : "";
   }
   // ---------- info for a bug report ----------
   function bugText() {
@@ -2047,7 +2072,7 @@
     var tb = S.tablet;
     var places = ["wall", "couch", "door"].map(function (p) { return '<button class="' + (tb.place === p ? "on" : "") + '" data-place="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var roomOpts = '<option value="">' + esc(t("noRoom")) + "</option>" + S.rooms.map(function (r) { return '<option' + (r.name === tb.room ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
-    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) +
+    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("tabLead")) + "</div>" +
       '<div class="group"><div class="label">' + esc(t("name")) + '</div><input id="tabname" value="' + esc(tb.name) + '" maxlength="40" style="width:100%"></div>' +
       '<div class="group"><div class="label">' + esc(t("place")) + '</div><div class="seg">' + places + "</div></div>" +
       '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom" style="width:100%">' + roomOpts + "</select></div>");
@@ -2923,6 +2948,7 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-showall")) && S.sheet) { S.sheet.all = true; renderSheet(); return; }
     if ((el = closest(target, "data-buginfo"))) { S.sheet = { settings: true, page: "buginfo" }; send({ type: "bug_info" }); renderSettings(); return; }
     if ((el = closest(target, "data-bugcopy"))) { copyBugInfo(); return; }
     if ((el = closest(target, "data-lite"))) { var l3 = copyLayout(); l3.lite = el.getAttribute("data-lite"); saveLayout(l3); return; }
