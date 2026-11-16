@@ -691,3 +691,32 @@ async def test_frequent_readings_are_hidden(mocker, tmp_path, monkeypatch):
     assert max(e["count"] for e in data["days"][0]["entries"]) > 1
     assert data["days"][0]["hidden"] == 70 - FREQUENT_PER_HOUR
     await module.Undefine(hash)
+
+
+@pytest.mark.asyncio
+async def test_hourly_values_for_other_modules(tmp_path):
+    module = timeline(logger)
+    assert await module.hourly_values([("pv", "power")], 0, 1) is None
+    module.store = Store(str(tmp_path / "t.db"))
+    module.store.open()
+    hour = int(time.time() // 3600 * 3600) - 3 * 3600
+    module.store.add(
+        [],
+        {
+            (hour - 3600, "pv", "power"): ["energy", 100.0, 300.0, 400.0, 2, 300.0],
+            (hour, "pv", "power"): ["energy", 500.0, 700.0, 1200.0, 2, 700.0],
+            (hour, "pv", "voltage"): ["energy", 230.0, 230.0, 230.0, 1, 230.0],
+            (hour, "plug", "power"): ["energy", 50.0, 50.0, 50.0, 1, 50.0],
+        },
+        {},
+    )
+    found = await module.hourly_values(
+        [("pv", "power"), ("plug", "power"), ("gone", "power")], hour, hour + 7200
+    )
+    assert found[("pv", "power")] == {
+        "carry": 300.0,
+        "rows": [(hour, 1200.0, 2, 700.0, 700.0)],
+    }
+    assert found[("plug", "power")]["carry"] is None
+    assert found[("gone", "power")] == {"carry": None, "rows": []}
+    module.store.close()

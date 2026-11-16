@@ -1831,3 +1831,395 @@ async def test_lang_script_served(module):
             headers={"Accept-Language": "it-IT", "Cookie": "dashLang=de"},
         ) as resp:
             assert await resp.text() == 'window.DASH_LANG = {"code":"de"};\n'
+
+
+def view_device(name, sets="", readings=None, **extra):
+    return {
+        "NAME": name,
+        "TYPE": extra.pop("TYPE", "MQTT2_DEVICE"),
+        "FHEMPYTYPE": extra.pop("FHEMPYTYPE", ""),
+        "alias": "",
+        "room": "Haus",
+        "sets": sets,
+        "readings": readings or {},
+        "attrs": extra.pop("attrs", {}),
+    }
+
+
+def test_device_views_found_by_commands_and_readings():
+    from fhempy.lib.dashboard import views
+
+    vacuum = view_device(
+        "robby",
+        "start stop pause dock locate fan_speed:quiet,balanced,turbo",
+        {"state": "cleaning", "batteryPercent": "81", "cleaned_area": "23.5"},
+    )
+    car = view_device(
+        "x1",
+        "lock unlock start_charging stop_charging update",
+        {"soc": "64", "range": "212 km", "mileage": "12345", "charging_status": "CHARGING", "locked": "true", "charging_power": "7.4"},
+    )
+    kia = view_device("ev", "", {"soc": "50"}, TYPE="fhempy", FHEMPYTYPE="kia_hyundai")
+    wallbox = view_device(
+        "wb",
+        "charge_mode:Fast,Eco,Eco+,Stop",
+        {"plug_status": "EV Connected", "charge_mode": "Eco", "power_ct": "3.7", "energy_today": "8.2"},
+    )
+    heatpump = view_device(
+        "wp",
+        "",
+        {"flow_temperature": "35.2", "return_temperature": "30.1", "outside_temperature": "4", "compressor": "on", "cop": "3.9"},
+    )
+    valve = view_device("garden", "on off", {"state": "off", "soil_moisture": "31"})
+    plug = view_device("plug", "on off", {"state": "on", "power": "12"})
+    # a name says nothing
+    named = view_device("Saugroboter_Auto_Wallbox", "on off", {"state": "on"})
+    assert views.detect(vacuum) == "vacuum"
+    assert views.detect(car) == "car"
+    assert views.detect(kia) == "car"
+    assert views.detect(wallbox) == "wallbox"
+    assert views.detect(heatpump) == "heatpump"
+    assert views.detect(valve) == "irrigation"
+    assert views.detect(plug) is None
+    assert views.detect(named) is None
+    assert views.detect(view_device("v", "", attrs={"genericDeviceType": "vacuum"})) == "vacuum"
+
+    assert views.state("vacuum", vacuum) == {"status": "cleaning", "battery": 81, "area": 23.5}
+    assert views.features("vacuum", vacuum) == {
+        "view": "vacuum",
+        "actions": ["start", "pause", "stop", "dock", "locate"],
+        "modes": ["quiet", "balanced", "turbo"],
+    }
+    state = views.state("car", car)
+    assert state["charging"] is True and state["locked"] is True
+    assert state["soc"] == 64 and state["range"] == 212 and state["mileage"] == 12345
+    assert state["power"] == 7400
+    assert views.state("wallbox", wallbox)["power"] == 3700
+    assert views.state("wallbox", wallbox)["mode"] == "Eco"
+    hp = views.state("heatpump", heatpump)
+    assert hp["compressor"] is True and hp["flow"] == 35.2 and hp["cop"] == 3.9
+    heatpump["readings"]["compressor"] = "62"
+    assert views.state("heatpump", heatpump)["compressor_pct"] == 62
+    heatpump["readings"]["compressor"] = "0"
+    assert views.state("heatpump", heatpump)["compressor"] is False
+    assert views.state("irrigation", valve) == {"moisture": 31, "on": False}
+
+    # only commands the device has, modes only from its list
+    assert views.command("vacuum", vacuum, "dock") == ["dock"]
+    assert views.command("vacuum", vacuum, "mode", "turbo") == ["fan_speed turbo"]
+    assert views.command("vacuum", vacuum, "mode", "rm -rf") == []
+    assert views.command("car", car, "unlock") == ["unlock"]
+    assert views.command("car", car, "climate_start") == []
+    assert views.command("wallbox", wallbox, "mode", "Eco+") == ["charge_mode Eco+"]
+    assert views.command("irrigation", valve, "toggle") == ["on"]
+    assert views.command("irrigation", valve, "shell") == []
+
+    assert views.parse_views("robby:vacuum, plug:none,bad:rocket,:car") == {
+        "robby": "vacuum",
+        "plug": "none",
+    }
+    assert views.format_views({"b": "car", "a": "none"}) == "a:none,b:car"
+
+    # in the model: own kind, 'none' keeps the normal tile, chosen wins
+    built = model.build(
+        {"robby": vacuum, "garden": valve, "plug": plug},
+        device_views={"garden": "none", "plug": "irrigation"},
+    )
+    tiles = built["tiles"]
+    assert tiles["robby"]["kind"] == "vacuum" and tiles["robby"]["detected"] is True
+    assert tiles["garden"]["kind"] == "switch"
+    assert tiles["plug"]["kind"] == "irrigation" and tiles["plug"]["detected"] is False
+    assert tiles["plug"]["state"]["on"] is True
+    assert model.command(tiles["robby"], vacuum, "start") == ["start"]
+    assert "irrigation" in model.TIMER_KINDS
+    assert "cleaned_area" in model.READINGS
+
+
+@pytest.mark.asyncio
+async def test_device_view_chosen_on_tablet(module):
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json(
+            {"type": "device_view", "id": "ku_Kaffeemaschine", "view": "irrigation"}
+        )
+        tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
+        assert tile["kind"] == "irrigation"
+        assert module._attr_device_views == "ku_Kaffeemaschine:irrigation"
+        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": "rocket"})
+        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": ""})
+        tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
+        assert tile["kind"] == "outlet"
+        assert module._attr_device_views == ""
+
+
+def test_energy_report_from_hourly_values():
+    hour = 1_800_000_000
+    now = hour + 3 * 3600 + 1800
+    buckets = [(hour + i * 3600, hour + (i + 1) * 3600) for i in range(4)]
+    sources = {"solar": ("PV", "pv", None), "grid": ("Meter", "grid", 1)}
+    series = {
+        # kW without unit: 2 kW all the time
+        ("PV", "pv"): {"carry": 2.5, "rows": [(hour, 1.5, 1, 1.5, 1.5)]},
+        # 1000 W from the grid, then 500 W fed in from the second hour on
+        ("Meter", "grid"): {"carry": 1000.0, "rows": [(hour + 3600, -500.0, 1, -500.0, -500.0)]},
+        ("Plug", "power"): {"carry": None, "rows": [(hour + 7200, 200.0, 1, 200.0, 200.0)]},
+    }
+    consumers = [("Plug", "Kaffee", "Plug", "power"), ("Quiet", "Quiet", "Quiet", "power")]
+    report = model.energy_report(series, sources, consumers, buckets, now, (0.3, 0.08))
+    totals = report["totals"]
+    # solar: 2 + 1.5 + 1.5 + 0.75 (half an hour so far)
+    assert totals["solar"] == pytest.approx(5.75)
+    # first hour average of 1000 W at the start and 1000 W: 1 kWh
+    assert totals["import"] == pytest.approx(1.25)
+    # 250 W import in the second hour, then 500 W and half an hour fed in
+    assert totals["export"] == pytest.approx(0.5 + 0.25)
+    assert totals["load"] == pytest.approx(5.75 + 1.25 - 0.75)
+    assert totals["cost"] == pytest.approx(1.25 * 0.3, abs=0.01)
+    assert totals["revenue"] == pytest.approx(0.75 * 0.08, abs=0.01)
+    assert totals["autarky"] == 80
+    assert [b["at"] for b in report["bars"]] == [b[0] for b in buckets]
+    assert report["bars"][0]["import"] == pytest.approx(1.0)
+    assert report["consumers"] == [
+        {"id": "Plug", "name": "Kaffee", "kwh": 0.3, "cost": pytest.approx(0.09)}
+    ]
+    assert report["price"] == "attr"
+    # a price reading wins over the attribute
+    sources["price"] = ("Meter", "price", 1)
+    series[("Meter", "price")] = {"carry": 0.4, "rows": []}
+    report = model.energy_report(series, sources, [], buckets, now, (0.3, None))
+    assert report["price"] == "reading"
+    assert report["totals"]["cost"] == pytest.approx(1.25 * 0.4, abs=0.01)
+    assert "revenue" not in report["totals"]
+    # without a grid meter the cost is what the house used
+    report = model.energy_report(
+        {("PV", "load"): {"carry": 1000.0, "rows": []}},
+        {"load": ("PV", "load", 1)},
+        [],
+        buckets,
+        now,
+        (0.3, None),
+    )
+    assert report["totals"]["cost"] == pytest.approx(3.5 * 0.3, abs=0.01)
+
+
+def test_energy_price_attribute():
+    assert model.parse_energy_price("0.32") == (0.32, None)
+    assert model.parse_energy_price("0.32,0.08") == (0.32, 0.08)
+    assert model.parse_energy_price("") is None
+    assert model.parse_energy_price("abc") is None
+    assert model.parse_energy_price("0.3,0.1,1") is None
+    assert model.parse_energy_price("20") is None
+    assert model.format_energy_price(0.32, 0.08) == "0.32,0.08"
+    infos = {"PV": {**fake_home.DEVICES["PV"], "NAME": "PV"}}
+    assert model.energy_sources(infos) == {
+        "solar": ("PV", "inverter_output_power", None),
+        "load": ("PV", "electrical_load", None),
+    }
+
+
+@pytest.mark.asyncio
+async def test_energy_page(module, mocker):
+    asked = []
+
+    class FakeTimeline:
+        async def hourly_values(self, readings, start, end):
+            asked.append((sorted(readings), start, end))
+            return {r: {"carry": 1.0, "rows": []} for r in readings}
+
+    mocker.patch.object(module, "timeline_device", return_value=FakeTimeline())
+    _, answer = await pair(module)
+    auth = {"Authorization": "Bearer " + answer["token"]}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "api/energy?range=week", headers=auth) as resp:
+            data = await resp.json()
+        assert len(data["bars"]) == 7
+        assert data["range"] == "week"
+        assert data["sources"] == ["load", "solar"]
+        assert ("ku_Kaffeemaschine", "power") in asked[0][0]
+        assert asked[0][2] - asked[0][1] >= 7 * 86400 - 3600
+        async with session.get(base(module) + "api/energy?range=year", headers=auth) as resp:
+            assert resp.status == 400
+        async with session.get(base(module) + "api/energy") as resp:
+            assert resp.status == 401
+
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "energy_price", "price": "0,32", "feed_in": "0,08"})
+        for _ in range(50):
+            if module._attr_energy_price:
+                break
+            await asyncio.sleep(0.02)
+        assert module._attr_energy_price == "0.32,0.08"
+        async with session.get(base(module) + "api/energy?range=day", headers=auth) as resp:
+            data = await resp.json()
+        assert len(data["bars"]) in (23, 24, 25)
+        assert data["price_attr"] == "0.32,0.08"
+        # nonsense is ignored, empty deletes
+        await ws.send_json({"type": "energy_price", "price": "viel"})
+        await ws.send_json({"type": "energy_price", "price": ""})
+        for _ in range(50):
+            if not module._attr_energy_price:
+                break
+            await asyncio.sleep(0.02)
+        assert module._attr_energy_price == ""
+        await ws.close()
+
+    mocker.patch.object(module, "timeline_device", return_value=None)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "api/energy", headers=auth) as resp:
+            assert (await resp.json()) == {"error": "no timeline"}
+
+
+def test_layout_start_page():
+    assert clean_layout({"start": "cameras"}) == {"start": "cameras"}
+    assert clean_layout({"start": "history"}) == {}
+
+
+def test_parse_floors():
+    floors = model.parse_floors("EG=Küche, Wohnzimmer;OG=Bad,Küche;EG=Flur; =x")
+    assert floors == [
+        {"name": "EG", "rooms": ["Küche", "Wohnzimmer"]},
+        {"name": "OG", "rooms": ["Bad"]},
+    ]
+    assert model.parse_floors(model.format_floors(floors)) == floors
+    assert model.format_floors([{"name": "A;B=", "rooms": ["x,y"]}]) == "A B=x y"
+
+
+@pytest.mark.asyncio
+async def test_floors_set_on_tablet(module):
+    _, answer = await pair(module)
+    module.tablets[answer["tablet"]["id"]]["rooms"] = []
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        floors = [{"name": "EG", "rooms": ["Küche", "Wohnzimmer"]}]
+        await ws.send_json({"type": "floors", "floors": floors})
+        await asyncio.sleep(0.1)
+        assert module._attr_floors == "EG=Küche,Wohnzimmer"
+        assert module.head["floors"] == floors
+        await ws.send_json({"type": "floors", "floors": []})
+        await asyncio.sleep(0.1)
+        assert module.head["floors"] == []
+
+
+def test_layout_tile_sizes_and_headings():
+    layout = clean_layout(
+        {
+            "tile_size": {"wz_Licht": "b", "wz_Tv": "huge"},
+            "tile_order": {"Wohnzimmer": ["#Decke", "wz_Licht"]},
+        }
+    )
+    assert layout["tile_size"] == {"wz_Licht": "b"}
+    assert layout["tile_order"] == {"Wohnzimmer": ["#Decke", "wz_Licht"]}
+
+
+def test_layout_accent_colour():
+    for value in ("amber", "teal", "lamps"):
+        assert clean_layout({"accent": value}) == {"accent": value}
+    assert clean_layout({"accent": "#ff0000"}) == {}
+
+
+@pytest.mark.asyncio
+async def test_bug_info_has_versions_but_no_names(module):
+    module._attr_alarm_pin = "1234"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "bug_info"})
+        while True:
+            message = await ws.receive_json(timeout=2)
+            if message["type"] == "bug_info":
+                break
+        info = message["info"]
+        assert info["fhempy"] and info["python"]
+        assert info["tiles"] == len(module.data["tiles"])
+        assert "alarm_pin" in info["attrs"]
+        text = json.dumps(info)
+        # neither device names nor the PIN
+        assert "1234" not in text and "wz_" not in text
+
+
+def test_layout_simple_display():
+    for value in ("auto", "on", "off"):
+        assert clean_layout({"lite": value}) == {"lite": value}
+    assert clean_layout({"lite": "fast"}) == {}
+
+
+def test_layout_screensaver_minutes():
+    assert clean_layout({"saver": 10}) == {"saver": 10}
+    assert clean_layout({"saver": 0}) == {"saver": 0}
+    for bad in (7, "5", False, True, None, 300):
+        assert clean_layout({"saver": bad}) == {}
+
+
+def test_motion_tile_knows_since_when():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    motion = next(t for t in tiles.values() if t["kind"] == "motion")
+    assert motion["state"]["occupied"] is False
+    assert motion["state"]["since"]
+
+
+def test_may_open_windows():
+    assert model.clean_window("7:00-20:00") == "07:00-20:00"
+    assert model.clean_window("22:00 - 6:30") == "22:00-06:30"
+    for bad in ("", "7-20", "25:00-06:00", "08:00-08:00", "08:61-09:00", None):
+        assert model.clean_window(bad) is None
+    windows = model.parse_may_open("Hoftor=07:00-20:00, Garage=8:00-18:00,Tor=x")
+    assert windows == {"Hoftor": "07:00-20:00", "Garage": "08:00-18:00"}
+    assert model.parse_may_open(model.format_may_open(windows)) == windows
+    assert model.may_open_now("07:00-20:00", 7 * 60)
+    assert not model.may_open_now("07:00-20:00", 20 * 60)
+    # over midnight
+    assert model.may_open_now("22:00-06:00", 23 * 60)
+    assert model.may_open_now("22:00-06:00", 60)
+    assert not model.may_open_now("22:00-06:00", 12 * 60)
+
+
+@pytest.mark.asyncio
+async def test_may_open_set_on_tablet(module):
+    module._attr_may_open = "wz_Fenster=07:00-20:00,wz_Stehlampe=07:00-20:00"
+    await module.reload()
+    assert module.data["tiles"]["wz_Fenster"]["may_open"] == "07:00-20:00"
+    # only doors and windows
+    assert "may_open" not in module.data["tiles"]["wz_Stehlampe"]
+    window = next(o for o in module.head["open"] if o["id"] == "wz_Fenster")
+    assert window["may_open"] == "07:00-20:00"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "may_open", "id": "bad_Fenster", "window": "9:00-17:30"})
+        await asyncio.sleep(0.1)
+        assert module.data["tiles"]["bad_Fenster"]["may_open"] == "09:00-17:30"
+        await ws.send_json({"type": "may_open", "id": "wz_Fenster", "window": ""})
+        await asyncio.sleep(0.1)
+        assert "may_open" not in module.data["tiles"]["wz_Fenster"]
+        assert module.may_open() == {
+            "bad_Fenster": "09:00-17:30",
+            "wz_Stehlampe": "07:00-20:00",
+        }
+        await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_measure_only_plug_is_never_switched(module):
+    module._attr_measure_only = "ku_Kaffeemaschine"
+    await module.reload()
+    plug = module.data["tiles"]["ku_Kaffeemaschine"]
+    assert plug["measure"] is True and plug["keep_on"] is True
+    info = module.infos["ku_Kaffeemaschine"]
+    for action in ("on", "off", "toggle"):
+        assert model.command(plug, info, action) == []
+    running = next(r for r in module.head["running"] if r["id"] == "ku_Kaffeemaschine")
+    assert running["measure"] is True
+    _, answer = await pair(module)
+    module.tablets[answer["tablet"]["id"]]["rooms"] = []
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "off", "id": "ku_Kaffeemaschine"})
+        await asyncio.sleep(0.1)
+        assert module.fake.sets == []
+        await ws.send_json({"type": "measure_only", "id": "ku_Kaffeemaschine", "measure": False})
+        await asyncio.sleep(0.1)
+        assert "measure" not in module.data["tiles"]["ku_Kaffeemaschine"]
+        await ws.close()

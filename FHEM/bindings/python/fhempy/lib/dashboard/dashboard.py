@@ -14,6 +14,7 @@ import hmac
 import html
 import json
 import os
+import platform
 import re
 import secrets
 import ssl
@@ -21,7 +22,8 @@ import tempfile
 import time
 
 from .. import fhem, generic, utils
-from . import go2rtc, media, model
+from ..version import __version__
+from . import go2rtc, media, model, views
 
 DEFAULT_PORT = 8095
 DEFAULT_HTTPS_PORT = 8096
@@ -66,10 +68,15 @@ ATTRS_TEXT = (
     "door_camera",
     "door_opener",
     "keep_on",
+    "measure_only",
     "notices",
+    "floors",
+    "may_open",
     "appliances",
     "alarm_system",
     "alarm_pin",
+    "device_views",
+    "energy_price",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -116,9 +123,19 @@ ARRANGE_MESSAGES = (
     "rename_room",
     "keep_on",
     "delete_device",
+    "device_view",
+    "measure_only",
+    "floors",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + (
+    "setup",
+    "layout",
+    "notice",
+    "appliance",
+    "energy_price",
+    "may_open",
+)
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -127,7 +144,23 @@ RELOAD_ATTRS = (
     "disable",
     "setList",
 )
-LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
+LAYOUT_KEYS = (
+    "room_order",
+    "hidden_rooms",
+    "hidden_tiles",
+    "tile_order",
+    "theme",
+    "start",
+    "tile_size",
+    "accent",
+    "lite",
+    "saver",
+)
+# small, wide, tall, big
+TILE_SIZES = ("s", "w", "t", "b")
+ACCENTS = ("amber", "teal", "blue", "violet", "pink", "green", "lamps")
+# minutes until the screensaver, 0: never
+SAVER_MINUTES = (0, 2, 5, 10, 15, 30)
 SETTINGS_ATTRS = (
     "devices",
     "hidden_devices",
@@ -158,7 +191,21 @@ def clean_layout(layout):
                 for room, ids in list(value.items())[:200]
                 if isinstance(ids, list)
             }
+        elif key == "tile_size" and isinstance(value, dict):
+            result[key] = {
+                str(tile)[:200]: size
+                for tile, size in list(value.items())[:1000]
+                if size in TILE_SIZES
+            }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "start" and value == "cameras":
+            result[key] = value
+        elif key == "accent" and value in ACCENTS:
+            result[key] = value
+        elif key == "lite" and value in ("auto", "on", "off"):
+            result[key] = value
+        elif key == "saver" and not isinstance(value, bool) and value in SAVER_MINUTES:
             result[key] = value
         elif isinstance(value, list):
             result[key] = [str(v)[:200] for v in value[:500]]
@@ -397,6 +444,18 @@ class dashboard(generic.FhemModule):
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
             },
+            "floors": {
+                "default": "",
+                "help": "Rooms grouped by floor on Home, e.g. "
+                "Ground floor=Kitchen,Living room;Upstairs=Bath,Bedroom. "
+                "Also set on the tablets in the settings.",
+            },
+            "may_open": {
+                "default": "",
+                "help": "Doors and gates which may be open at some times without "
+                "a warning, e.g. Yard_gate=07:00-20:00,Garage=08:00-18:00. "
+                "Also set on the tablets in the details of a door.",
+            },
             "notices": {
                 "default": "",
                 "help": "Own notices on Home while a device has a value, "
@@ -404,6 +463,20 @@ class dashboard(generic.FhemModule):
                 "Mailbox Mail is here; Basement:water=wet Water in the basement. "
                 "Without =value: while it is on/open/1. Also set on the tablets "
                 "in the details of a device.",
+            },
+            "device_views": {
+                "default": "",
+                "help": "Own views of devices, e.g. Robby:vacuum,Valve_garden:"
+                "irrigation,Plug:none. Views: vacuum, car, wallbox, heatpump, "
+                "irrigation, none: a normal tile. Empty: found by their set "
+                "commands and readings. Also set on the tablet.",
+            },
+            "energy_price": {
+                "default": "",
+                "help": "Price of electricity in €/kWh for the energy page, "
+                "optional with the feed-in tariff, e.g. 0.32 or 0.32,0.08. A "
+                "price reading of a device (e.g. tibber) wins. Also set on the "
+                "tablet.",
             },
             "appliances": {
                 "default": "",
@@ -424,6 +497,13 @@ class dashboard(generic.FhemModule):
                 "help": "PIN of 4 to 8 digits to disarm the alarm system on the "
                 "tablets. FHEM checks it, the tablets never get it. Empty: "
                 "disarming needs a second tap.",
+            },
+            "measure_only": {
+                "default": "",
+                "help": "Plugs which only measure, e.g. of a fridge or freezer: "
+                "the tablets show their power but never switch them, also not "
+                "with All off. Separated by commas. Also set on the tablets in "
+                "the details of a plug.",
             },
             "keep_on": {
                 "default": "",
@@ -700,11 +780,21 @@ class dashboard(generic.FhemModule):
     def set_attr_notices(self, hash):
         self.schedule_reload()
 
+    def set_attr_floors(self, hash):
+        if self.ready:
+            self.schedule_header()
+
+    def set_attr_may_open(self, hash):
+        self.schedule_reload()
+
     def set_attr_appliances(self, hash):
         if self.ready:
             self.schedule_header()
 
     def set_attr_keep_on(self, hash):
+        self.schedule_reload()
+
+    def set_attr_measure_only(self, hash):
         self.schedule_reload()
 
     def set_attr_hidden_devices(self, hash):
@@ -929,8 +1019,11 @@ class dashboard(generic.FhemModule):
         self.data = model.build(
             {n: i for n, i in self.infos.items() if n != alarm},
             keep_on=self.keep_on_names(),
+            device_views=views.parse_views(self._attr_device_views),
+            measure=self.measure_names(),
         )
         self.apply_timers()
+        self.apply_may_open()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
@@ -965,6 +1058,7 @@ class dashboard(generic.FhemModule):
         head["calendar"] = model.calendar(self.calendar_events, time.time())
         head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
+        head["floors"] = model.parse_floors(getattr(self, "_attr_floors", ""))
         head["notices"] = model.active_notices(
             self.notices(), self.infos, self.dismissed
         )
@@ -1320,6 +1414,42 @@ class dashboard(generic.FhemModule):
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
 
+    # --- doors and gates which may be open at some times ---
+
+    def may_open(self):
+        return model.parse_may_open(getattr(self, "_attr_may_open", ""))
+
+    def apply_may_open(self):
+        for name, window in self.may_open().items():
+            item = self.data["tiles"].get(name)
+            if item is not None and item["kind"] == "contact":
+                item["may_open"] = window
+
+    async def set_may_open(self, tablet, message):
+        """the tablet sets or removes the time a door may be open"""
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] != "contact":
+            return
+        windows = self.may_open()
+        window = model.clean_window(message.get("window"))
+        if window:
+            windows[item["id"]] = window
+        else:
+            windows.pop(item["id"], None)
+        value = model.format_may_open(windows)
+        self.logger.info(f"{tablet['name']}: may_open {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_may_open = value
+        await self.reload()
+
     # --- devices which 'All off' leaves on ---
 
     def keep_on_names(self):
@@ -1348,6 +1478,80 @@ class dashboard(generic.FhemModule):
         self._attr_keep_on = value
         await self.reload()
 
+    # --- own views of vacuums, cars, wallboxes, heat pumps, irrigation ---
+
+    async def set_device_view(self, tablet, message):
+        device = str(message.get("id", ""))
+        view = str(message.get("view", ""))
+        if device not in self.data["tiles"] or view not in views.VIEWS + ("none", ""):
+            return
+        chosen = views.parse_views(self._attr_device_views)
+        if view:
+            chosen[device] = view
+        else:
+            # found automatically again
+            chosen.pop(device, None)
+        value = views.format_views(chosen)
+        name = self.hash["NAME"]
+        if value:
+            self.logger.info(f"{tablet['name']}: attr device_views {value}")
+            code = f"CommandAttr(undef, {fhem.perlString(name + ' device_views ' + value)})"
+        else:
+            self.logger.info(f"{tablet['name']}: deleteattr device_views")
+            code = f"CommandDeleteAttr(undef, {fhem.perlString(name + ' device_views')})"
+        await fhem.sendCommandHash(self.hash, code)
+        self._attr_device_views = value
+        await self.reload()
+
+    # --- plugs which only measure ---
+
+    def measure_names(self):
+        value = getattr(self, "_attr_measure_only", "") or ""
+        return {n.strip() for n in value.split(",") if n.strip()}
+
+    async def set_measure_only(self, tablet, message):
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] not in model.MEASURE_KINDS:
+            return
+        names = self.measure_names()
+        if message.get("measure"):
+            names.add(item["id"])
+        else:
+            names.discard(item["id"])
+        value = ",".join(sorted(names))
+        self.logger.info(f"{tablet['name']}: measure_only {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} measure_only {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} measure_only"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_measure_only = value
+        await self.reload()
+
+    # --- floors ---
+
+    async def set_floors(self, tablet, message):
+        floors = message.get("floors")
+        if not isinstance(floors, list):
+            return
+        value = model.format_floors([f for f in floors[:20] if isinstance(f, dict)])
+        self.logger.info(f"{tablet['name']}: floors {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} floors {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} floors"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_floors = value
+        await self.update_header()
+
     # --- arranging rooms ---
 
     def can_arrange(self, tablet):
@@ -1360,6 +1564,15 @@ class dashboard(generic.FhemModule):
         kind = message.get("type")
         if kind == "keep_on":
             await self.set_keep_on(tablet, message)
+            return
+        if kind == "device_view":
+            await self.set_device_view(tablet, message)
+            return
+        if kind == "measure_only":
+            await self.set_measure_only(tablet, message)
+            return
+        if kind == "floors":
+            await self.set_floors(tablet, message)
             return
         if kind == "move_device":
             await self.arrange_move(tablet, message)
@@ -1824,6 +2037,96 @@ class dashboard(generic.FhemModule):
             await instance.get_device(instance.hash, {"device": device, "days": "1"})
         )
 
+    # --- energy over days ---
+
+    def energy_buckets(self, span, now):
+        """(start, end) of the bars: hours of today, or days"""
+        today = datetime.date.fromtimestamp(now)
+
+        def midnight(day):
+            return datetime.datetime.combine(day, datetime.time()).timestamp()
+
+        if span == "day":
+            start = midnight(today)
+            end = midnight(today + datetime.timedelta(days=1))
+            hours = []
+            hour = start
+            while hour < end:
+                hours.append((hour, hour + 3600))
+                hour += 3600
+            return hours
+        days = model.ENERGY_RANGES[span]
+        return [
+            (
+                midnight(today - datetime.timedelta(days=i)),
+                midnight(today - datetime.timedelta(days=i - 1)),
+            )
+            for i in range(days - 1, -1, -1)
+        ]
+
+    def energy_consumers(self, tablet):
+        """(id, name, device, reading) of devices which report their power"""
+        result = []
+        for item in self.data["tiles"].values():
+            if item["state"].get("power") is None:
+                continue
+            if self.allowed_tile(tablet, item):
+                result.append((item["id"], item["name"], item["id"], "power"))
+        return result
+
+    async def energy_history(self, tablet, span):
+        instance = self.timeline_device()
+        if instance is None or not hasattr(instance, "hourly_values"):
+            return {"error": "no timeline"}
+        now = time.time()
+        buckets = self.energy_buckets(span, now)
+        sources = model.energy_sources(self.infos)
+        consumers = self.energy_consumers(tablet)
+        wanted = [s[:2] for s in sources.values()] + [c[2:] for c in consumers]
+        series = await instance.hourly_values(wanted, buckets[0][0], buckets[-1][1])
+        if series is None:
+            return {"error": "no timeline"}
+        report = model.energy_report(
+            series,
+            sources,
+            consumers,
+            buckets,
+            now,
+            model.parse_energy_price(self._attr_energy_price),
+        )
+        report["range"] = span
+        price = model.parse_energy_price(self._attr_energy_price)
+        report["price_attr"] = model.format_energy_price(*price) if price else ""
+        report["sources"] = sorted(k for k in sources if k != "price")
+        return report
+
+    async def set_energy_price(self, tablet, message):
+        # 0,32 on a German tablet
+        values = [
+            str(message.get(k) or "").strip().replace(",", ".")
+            for k in ("price", "feed_in")
+        ]
+        price = model.parse_energy_price(",".join(v for v in values if v))
+        if price is None and values[0]:
+            return
+        if price is None:
+            self.logger.info(f"{tablet['name']}: deleteattr energy_price")
+            await fhem.sendCommandHash(
+                self.hash,
+                "CommandDeleteAttr(undef, "
+                f"{fhem.perlString(self.hash['NAME'] + ' energy_price')})",
+            )
+            self._attr_energy_price = ""
+            return
+        value = model.format_energy_price(*price)
+        self.logger.info(f"{tablet['name']}: attr energy_price {value}")
+        await fhem.sendCommandHash(
+            self.hash,
+            "CommandAttr(undef, "
+            f"{fhem.perlString(self.hash['NAME'] + ' energy_price ' + value)})",
+        )
+        self._attr_energy_price = value
+
     # --- HTTP server ---
 
     def url(self):
@@ -1846,6 +2149,7 @@ class dashboard(generic.FhemModule):
         app.router.add_get("/api/ws", self.handle_ws)
         app.router.add_post("/api/pair", self.handle_pair)
         app.router.add_get("/api/timeline", self.handle_timeline)
+        app.router.add_get("/api/energy", self.handle_energy)
         app.router.add_get("/api/history", self.handle_history)
         app.router.add_get("/api/sparks", self.handle_sparks)
         app.router.add_post("/api/webrtc", self.handle_webrtc)
@@ -2101,6 +2405,15 @@ class dashboard(generic.FhemModule):
             data = {k: v for k, v in data.items() if k in ("trends", "from", "to")}
         return web.json_response(data)
 
+    async def handle_energy(self, request):
+        from aiohttp import web
+
+        tablet = self._checked(request)
+        span = request.query.get("range", "day")
+        if span not in model.ENERGY_RANGES:
+            raise web.HTTPBadRequest()
+        return web.json_response(await self.energy_history(tablet, span))
+
     async def handle_sparks(self, request):
         from aiohttp import web
 
@@ -2268,9 +2581,15 @@ class dashboard(generic.FhemModule):
             await self.arrange(tablet, message, ws)
         elif kind == "action":
             await self.run_action(tablet, message)
+        elif kind == "bug_info" and ws is not None:
+            await self.send(ws, {"type": "bug_info", "info": self.bug_info()})
         elif kind == "notice" and not tablet.get("readonly"):
             await self.set_notice(tablet, message)
+        elif kind == "may_open" and not tablet.get("readonly"):
+            await self.set_may_open(tablet, message)
 
+        elif kind == "energy_price" and not tablet.get("readonly"):
+            await self.set_energy_price(tablet, message)
         elif kind == "appliance" and not tablet.get("readonly"):
             await self.answer_appliance(tablet, message)
         elif kind == "appliance_seen" and not tablet.get("readonly"):
@@ -2346,6 +2665,29 @@ class dashboard(generic.FhemModule):
             await ws.send_json(message)
         except (ConnectionError, RuntimeError):
             self.clients.pop(ws, None)
+
+    def bug_info(self):
+        """versions and counts for a bug report, nothing personal: no names,
+        no addresses, only which attributes are set"""
+        kinds = {}
+        for item in self.data["tiles"].values():
+            kinds[item["kind"]] = kinds.get(item["kind"], 0) + 1
+        return {
+            "fhempy": __version__,
+            "build": self.build,
+            "python": platform.python_version(),
+            "system": f"{platform.system()} {platform.machine()}",
+            "devices": len(self.infos),
+            "tiles": len(self.data["tiles"]),
+            "rooms": len(self.data["rooms"]),
+            "kinds": dict(sorted(kinds.items())),
+            "tablets": len(self.tablets),
+            "connected": len(self.clients),
+            "https": bool(self._attr_https_port),
+            "attrs": sorted(
+                a for a in ATTRS_TEXT if (getattr(self, "_attr_" + a, "") or "")
+            ),
+        }
 
     def connected(self):
         """(websocket, tablet id) of the connected tablets, as a copy: sending
