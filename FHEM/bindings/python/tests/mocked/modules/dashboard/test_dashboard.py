@@ -1788,6 +1788,51 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_languages():
+    import os
+    import re
+
+    assert dash_module.choose_language("fr", "de-DE,de;q=0.9") == "fr"
+    assert dash_module.choose_language("", "nl-BE,nl;q=0.9,en;q=0.8") == "nl"
+    assert dash_module.choose_language("xx", "pt-BR,it;q=0.8") == "it"
+    assert dash_module.choose_language("", "") == "en"
+    assert dash_module.lang_script("de") == b'window.DASH_LANG = {"code":"de"};\n'
+    texts = {}
+    for code in dash_module.LANGUAGES[2:]:
+        script = dash_module.lang_script(code).decode()
+        data = json.loads(script[len("window.DASH_LANG = ") : -2])
+        assert data["code"] == code and data["name"] and data["texts"]
+        texts[code] = data["texts"]
+        assert len(data["texts"]["weekdays"]) == 7
+        assert len(data["texts"]["months"]) == 12
+    # the same keys and placeholders in every language as in English
+    source = open(
+        os.path.join(dash_module.WWW_DIR, "app.js"), encoding="utf-8"
+    ).read()
+    english = source[source.index("var EN = {") : source.index("var LANG = ")]
+    for code, found in texts.items():
+        for key, value in found.items():
+            assert re.search(r"[\s{]" + key + ":", english), f"{code}: {key}"
+            if isinstance(value, str):
+                match = re.search(r"[\s{]" + key + r': "((?:[^"\\]|\\.)*)"', english)
+                wanted = set(re.findall(r"\{\w+\}", match.group(1)))
+                assert set(re.findall(r"\{\w+\}", value)) == wanted, f"{code}: {key}"
+
+
+@pytest.mark.asyncio
+async def test_lang_script_served(module):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            base(module) + "lang.js", headers={"Accept-Language": "it-IT"}
+        ) as resp:
+            assert "Italiano" in await resp.text()
+        async with session.get(
+            base(module) + "lang.js",
+            headers={"Accept-Language": "it-IT", "Cookie": "dashLang=de"},
+        ) as resp:
+            assert await resp.text() == 'window.DASH_LANG = {"code":"de"};\n'
+
+
 def view_device(name, sets="", readings=None, **extra):
     return {
         "NAME": name,

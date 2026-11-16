@@ -225,6 +225,13 @@ with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`h
 disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
 tile, so *All off* and *Leave home* never disarm it.
 
+## Languages
+
+The tablets speak German, English, French, Italian and Dutch: the language of the browser, or chosen per tablet in the
+settings (*Language*). French, Italian and Dutch are in `www/lang/<code>.json` (`texts` with the same keys as the
+English texts in `app.js`, missing keys stay English), a new language is one more file and its code in `LANGUAGES` of
+`dashboard.py`. Names of rooms and devices come from FHEM and stay as they are.
+
 ## Robot vacuum, car, wallbox, heat pump and irrigation
 
 Devices which are more than a switch get their own view, found by their set commands and readings (never by their
