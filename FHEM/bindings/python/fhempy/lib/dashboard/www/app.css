@@ -760,3 +760,11 @@ body.lite #app { background: var(--bg); }
 body.lite .dim { background: rgba(5,7,10,.9); }
 body.lite .ringtop, body.lite .rb .c { background: rgba(10,12,16,.92); }
 body.lite .tile.media .mcover { display: none; }
+/* baby monitor: dark at night, clock and room climate */
+.camview.baby.night video, .camview.baby.night img { filter: brightness(.45); }
+.camview.baby.night .camtop, .camview.baby.night .babybar { opacity: .55; }
+.camtop .pill { background: rgba(0,0,0,.5); color: #fff; border-color: transparent; }
+.babybar { position: absolute; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 18px; color: #fff; font-size: 20px; z-index: 2; padding: 10px 16px; border-radius: 18px; background: rgba(0,0,0,.5); flex-wrap: wrap; }
+.babybar b { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.babybar span { display: inline-flex; align-items: center; gap: 6px; }
+.babybar select { margin-left: auto; background: rgba(255,255,255,.12); color: #fff; border: 0; }

@@ -105,6 +105,9 @@ is shown. A tap opens the live picture full screen, swipe or the arrows go to th
 cameras sets *Start page: Cameras* in its settings; it then starts with the cameras, comes back to them and has no
 screensaver. Tablets restricted to some rooms see no camera page.
 
+*Baby monitor* in the live view keeps the camera open with sound and without time limit or screensaver, dims it from
+22 to 6 o'clock and shows the clock with temperature and humidity of a room chosen at the bottom.
+
 ## All off
 
 *All off* switches off lights, switches and plugs, never thermostats. Plugs of heating, heat pumps, fridges, routers
