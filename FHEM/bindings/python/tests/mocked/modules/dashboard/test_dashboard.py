@@ -1356,3 +1356,39 @@ async def test_good_night_and_undo(module):
         await ws.send_json({"type": "action", "action": "undo"})
         await asyncio.sleep(0.2)
         assert module.fake.sets == []
+
+
+def test_weather_forecast():
+    weather = model.weather(FakeFhem().infos(["Wetter"]))
+    assert len(weather["hours"]) == 24
+    assert weather["hours"][0] == {
+        "at": "17:00",
+        "temp": 9,
+        "rain": 10,
+        "condition": "Bewölkt",
+    }
+    assert len(weather["days"]) == 7
+    assert weather["days"][1] == {
+        "name": "Dienstag",
+        "condition": "Regen",
+        "high": 11,
+        "low": 6,
+        "rain": 90,
+    }
+    # the FHEM Weather module, here counting from fc1
+    info = {
+        "TYPE": "Weather",
+        "NAME": "w",
+        "readings": {
+            "fc1_day_of_week": "Mo",
+            "fc1_condition": "sonnig",
+            "fc1_high_c": "12",
+            "fc1_low_c": "3",
+            "fc2_day_of_week": "Di",
+            "fc2_high_c": "10",
+            "fc2_low_c": "2",
+        },
+    }
+    days = model.weather({"w": info})["days"]
+    assert [d["name"] for d in days] == ["Mo", "Di"]
+    assert days[0]["rain"] is None

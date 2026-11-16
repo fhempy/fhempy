@@ -20,6 +20,7 @@
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
+    wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
     rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
@@ -72,6 +73,7 @@
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
+    wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
     rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
@@ -264,7 +266,7 @@
       updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -682,8 +684,8 @@
     var el = document.getElementById("hdr"); if (!el) { return; }
     var h = S.header || {}, now = new Date(), chips = "";
     if (h.weather && h.weather.temperature !== null && h.weather.temperature !== undefined) {
-      chips += '<div class="chip">' + I(weatherIcon(h.weather.condition)) + " " + num(h.weather.temperature, 0) + '° <span class="sub">' + esc(h.weather.condition || "") +
-        (h.weather.high !== null && h.weather.high !== undefined ? " · " + num(h.weather.low, 0) + "° / " + num(h.weather.high, 0) + "°" : "") + "</span></div>";
+      chips += '<button class="chip" data-weather="1">' + I(weatherIcon(h.weather.condition)) + " " + num(h.weather.temperature, 0) + '° <span class="sub">' + esc(h.weather.condition || "") +
+        (h.weather.high !== null && h.weather.high !== undefined ? " · " + num(h.weather.low, 0) + "° / " + num(h.weather.high, 0) + "°" : "") + "</span></button>";
     }
     if (h.presence) {
       var home = h.presence.home || [];
@@ -718,10 +720,10 @@
     var s = String(name).replace(/^(fenster|window|tür|door|kontakt|contact)[\s_-]+/i, "");
     return s || name;
   }
-  function weatherIcon(cond) {
+  function weatherIcon(cond, day) {
     cond = String(cond || "").toLowerCase();
     if (/regen|rain|schauer|shower|drizzle|niesel|gewitter|thunder/.test(cond)) { return "rain"; }
-    if (/klar|sonn|clear|sunny/.test(cond)) { return isDay() ? "sun" : "moon"; }
+    if (/klar|sonn|clear|sunny/.test(cond)) { return day || isDay() ? "sun" : "moon"; }
     return "cloud";
   }
 
@@ -1037,7 +1039,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine, S.sheet && S.sheet.weather]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1057,6 +1059,7 @@
     if (S.sheet.room) { renderRoomPop(); return; }
     if (S.sheet.overview) { renderOverview(); return; }
     if (S.sheet.routine) { renderRoutine(); return; }
+    if (S.sheet.weather) { renderWeather(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1379,6 +1382,54 @@
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
     move(ev);
+  }
+
+  // ---------- weather details ----------
+  function has(v) { return v !== null && v !== undefined; }
+  // temperature curve with rain bars of the next hours
+  function hoursSvg(hours) {
+    var pts = hours.filter(function (x) { return has(x.temp); });
+    if (pts.length < 2) { return ""; }
+    var W = 720, H = 170, top = 30, bottom = 130, step = W / hours.length;
+    var lo = Math.min.apply(null, pts.map(function (x) { return x.temp; })), hi = Math.max.apply(null, pts.map(function (x) { return x.temp; }));
+    if (hi - lo < 4) { var mid = (hi + lo) / 2; lo = mid - 2; hi = mid + 2; }
+    function y(v) { return bottom - (v - lo) / (hi - lo) * (bottom - top); }
+    var bars = "", line = "", labels = "";
+    hours.forEach(function (x, i) {
+      var cx = step * i + step / 2;
+      if (has(x.rain) && x.rain > 0) { var bh = x.rain / 100 * 40; bars += '<rect x="' + (cx - step * 0.3).toFixed(1) + '" y="' + (H - 18 - bh).toFixed(1) + '" width="' + (step * 0.6).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" class="wxrain"/>'; }
+      if (has(x.temp)) { line += (line ? "L" : "M") + cx.toFixed(1) + " " + y(x.temp).toFixed(1); }
+      if (i % 3 === 0) {
+        labels += '<text x="' + cx.toFixed(1) + '" y="' + (H - 2) + '" class="wxat">' + esc(x.at) + "</text>";
+        if (has(x.temp)) { labels += '<text x="' + cx.toFixed(1) + '" y="' + (y(x.temp) - 10).toFixed(1) + '" class="wxt">' + num(x.temp, 0) + "°</text>"; }
+      }
+    });
+    return '<div class="wxscroll"><svg class="wxsvg" viewBox="0 0 ' + W + " " + H + '">' + bars + '<path d="' + line + '" class="wxline"/>' + labels + "</svg></div>";
+  }
+  function renderWeather() {
+    var w = (S.header && S.header.weather) || {}, sun = S.header && S.header.sun, hours = w.hours || [], days = w.days || [], body = "";
+    body += '<div class="wxnow">' + I(weatherIcon(w.condition), 44) + '<div><b>' + (has(w.temperature) ? num(w.temperature, 0) + "°" : "–") + "</b><span>" + esc(w.condition || "") + (has(w.high) ? " · " + num(w.low, 0) + "° / " + num(w.high, 0) + "°" : "") + "</span></div>" +
+      (sun ? '<div class="wxsun"><span>' + I("sun", 18) + " " + esc(t("wxSunrise")) + " <b>" + esc(sun.rise) + "</b></span><span>" + I("moon", 18) + " " + esc(t("wxSunset")) + " <b>" + esc(sun.set) + "</b></span></div>" : "") + "</div>";
+    if (w.warn) { body += '<div class="rtwarn">' + I(w.warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + w.warn.kind, { t: w.warn.at })) + "</b></div></div>"; }
+    var svg = hoursSvg(hours);
+    if (svg) { body += '<div class="section">' + esc(t("wxHours")) + "</div>" + svg; }
+    if (days.length) {
+      var lo = Math.min.apply(null, days.filter(function (d) { return has(d.low); }).map(function (d) { return d.low; }));
+      var hi = Math.max.apply(null, days.filter(function (d) { return has(d.high); }).map(function (d) { return d.high; }));
+      body += '<div class="section">' + esc(t("wxDays")) + '</div><div class="wxdays">' + days.map(function (d, i) {
+        var bar = has(d.low) && has(d.high) && hi > lo ? '<div class="wxbar"><i style="left:' + ((d.low - lo) / (hi - lo) * 100).toFixed(1) + "%;right:" + ((hi - d.high) / (hi - lo) * 100).toFixed(1) + '%"></i></div>' : '<div class="wxbar"></div>';
+        return '<div class="wxday"><b>' + esc(i === 0 ? t("wxToday") : d.name.slice(0, 2)) + "</b>" + I(weatherIcon(d.condition, true), 22) + '<span class="wxr">' + (has(d.rain) && d.rain >= 10 ? I("drop", 14) + Math.round(d.rain) + " %" : "") + "</span>" +
+          '<span class="wxl">' + (has(d.low) ? num(d.low, 0) + "°" : "") + "</span>" + bar + '<span class="wxh">' + (has(d.high) ? num(d.high, 0) + "°" : "") + "</span></div>";
+      }).join("") + "</div>";
+    }
+    if (!svg && !days.length) { body += '<div class="lead">' + esc(t("wxNone")) + "</div>"; }
+    sheetShell('<div class="head"><div><h1>' + esc(t("wxTitle")) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + body);
+  }
+  // the next hours in the screensaver
+  function saverHours(w) {
+    var hours = ((w && w.hours) || []).filter(function (x, i) { return i > 0 && i % 2 === 0 && has(x.temp); }).slice(0, 5);
+    if (!hours.length) { return ""; }
+    return '<div class="sh">' + hours.map(function (x) { return "<div>" + "<span>" + esc(x.at) + "</span>" + I(weatherIcon(x.condition), 22) + "<b>" + num(x.temp, 0) + "°</b>" + (has(x.rain) && x.rain >= 30 ? "<i>" + Math.round(x.rain) + " %</i>" : "") + "</div>"; }).join("") + "</div>";
   }
 
   // ---------- good night and leaving home ----------
@@ -2048,7 +2099,7 @@
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");
     el.innerHTML = '<div class="wrap" style="transform:translate(' + shift + "px," + (-shift) + 'px)"><div class="t">' + clockText(now) + '</div><div class="d">' + esc(dateText(now)) + "</div>" +
-      (w && w.temperature !== null && w.temperature !== undefined ? '<div class="w"><b>' + num(w.temperature, 0) + "°</b><span>" + esc(w.condition || "") + "</span>" + (w.high !== null && w.high !== undefined ? "<span>" + num(w.low, 0) + "° / " + num(w.high, 0) + "°</span>" : "") + "</div>" : "") +
+      (w && w.temperature !== null && w.temperature !== undefined ? '<div class="w"><b>' + num(w.temperature, 0) + "°</b><span>" + esc(w.condition || "") + "</span>" + (w.high !== null && w.high !== undefined ? "<span>" + num(w.low, 0) + "° / " + num(w.high, 0) + "°</span>" : "") + "</div>" + saverHours(w) : "") +
       '<div class="b">' + items + "</div></div>";
   }
   function insideTemp() {
@@ -2391,6 +2442,7 @@
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-weather"))) { S.sheet = { weather: true }; renderSheet(); return; }
     if ((el = closest(target, "data-routine"))) { S.sheet = { routine: el.getAttribute("data-routine") }; renderSheet(); return; }
     if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
     if ((el = closest(target, "data-undo"))) { send({ type: "action", action: "undo" }); S.undoUntil = 0; hideToast(); if (S.tab === "home") { renderContent(); } return; }
