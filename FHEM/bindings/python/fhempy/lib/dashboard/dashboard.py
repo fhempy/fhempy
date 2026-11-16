@@ -1095,7 +1095,11 @@ class dashboard(generic.FhemModule):
             (s for s in self.data["scenes"] if s["id"] == message.get("id")), None
         )
         if scene is not None and (not allowed or scene["room"] in allowed):
-            await self.fhem_set(tablet, scene["device"], f"scene {scene['scene']}")
+            error = await self.fhem_set_error(
+                tablet, scene["device"], f"scene {scene['scene']}"
+            )
+            if error:
+                await self.send_failed(tablet, None, scene["name"], error)
 
     async def action_tile(self, tablet, action, message):
         item = self.data["tiles"].get(str(message.get("id", "")))
@@ -1107,12 +1111,18 @@ class dashboard(generic.FhemModule):
         except ValueError:
             return
         for arg in args:
-            if not await self.fhem_set(tablet, item["id"], arg):
-                # show the real state again
+            error = await self.fhem_set_error(tablet, item["id"], arg)
+            if error:
+                # tell the tablet why and show the real state again
+                await self.send_failed(tablet, item["id"], item["name"], error)
                 await self.send_tile(item)
                 return
 
     async def fhem_set(self, tablet, device, arg):
+        return not await self.fhem_set_error(tablet, device, arg)
+
+    async def fhem_set_error(self, tablet, device, arg):
+        """empty when set worked, otherwise the answer of FHEM"""
         definition = f"{device} {arg}"
         self.logger.info(f"{tablet['name']}: set {definition}")
         result = await fhem.sendCommandHash(
@@ -1123,8 +1133,19 @@ class dashboard(generic.FhemModule):
             await fhem.readingsSingleUpdate(
                 self.hash, "lastError", f"set {definition}: {result}", 1
             )
-            return False
-        return True
+            return str(result)
+        return ""
+
+    async def send_failed(self, tablet, tile_id, name, error):
+        message = {
+            "type": "failed",
+            "id": tile_id,
+            "name": name,
+            "reason": model.short_error(error),
+        }
+        for ws, tablet_id in self.connected():
+            if tablet_id == tablet["id"]:
+                await self.send(ws, message)
 
     # --- timeline ---
 
