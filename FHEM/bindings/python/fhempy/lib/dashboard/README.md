@@ -146,6 +146,30 @@ come from the set command (e.g. `desired-temp:slider,4.5,0.5,30.5`). The flame a
 thermostat really heats: its valve is open (`actuator`, `ValvePosition`, `valve`, `pi_heating_demand` …) or it says so
 (`hvac_action`, `running_state`). Without these readings the tablets guess from the target and the room temperature.
 
+## Washing machine, dryer and dishwasher
+
+Plugs which report their power are watched. A long program (at least 20 minutes, with a peak of 300 W or more for
+heating or spinning) followed by 10 minutes without power is a finished program. After the first one the tablets ask
+once what is plugged in: *Washing machine*, *Dryer*, *Dishwasher* or *None of these*. The name of the plug is only used
+to put the likely answer first. The answer is stored in attribute `appliances` (e.g. `Plug_basement:washer`), which
+can also be set by hand.
+
+While a program runs, *Home* shows it with the time it runs and, after the first programs, about how long it takes. When
+it is done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12
+hours pass.
+
+## Smoke, water and the alarm system
+
+Smoke and water detectors are found by their readings (`smoke`, `smoke_detect`, `fire`, `water_leak`, `leak`,
+`flood`, `moistureDetected` …). When one goes off, every tablet shows a full screen alarm with a siren sound, also
+tablets restricted to other rooms. *Sound off* and *Hide* only act on that tablet, a new alarm shows again.
+
+`attr <dashboard> alarm_system <device>` adds the alarm system to *Security*: arm when away, arm at home and disarm,
+with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`home`/`night`, `disarm`/`disarmed`/
+`off`). A state with *alarm* or *triggered* is an intrusion alarm on all tablets. With `attr <dashboard> alarm_pin 2580`
+disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
+tile, so *All off* and *Leave home* never disarm it.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices

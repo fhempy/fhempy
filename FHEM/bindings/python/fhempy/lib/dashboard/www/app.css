@@ -651,3 +651,35 @@ button.chip { color: var(--tx); }
 .tring .ring .rval b { font-size: 44px; }
 .pcside.heats .pcs b svg { color: #FF8A3D; animation: flick 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
 @keyframes flick { 50% { transform: scale(1.12) rotate(-3deg); } }
+/* washing machine, dryer, dishwasher */
+.apbar { height: 6px; border-radius: 3px; background: var(--card2); margin-top: 8px; overflow: hidden; }
+.apbar i { display: block; height: 100%; border-radius: 3px; background: #4DA3FF; transition: width .6s ease; }
+.apask { padding: 4px 0 10px; }
+.apask .row { border-bottom: 0; }
+.apask .actions { flex-wrap: wrap; justify-content: flex-start; gap: 8px; margin: 0 0 4px; }
+.apask .pill { height: 42px; }
+.apdone .t b { color: #34D399; }
+/* smoke, water and the alarm system */
+.tile.alarm { border-color: rgba(255,90,95,.6); background: rgba(255,90,95,.16); animation: alarmglow 1.2s ease-in-out infinite; }
+.tile.alarm .ic { background: rgba(255,90,95,.3); color: #FF8A8E; }
+.tile.alarm .s { color: #FFB3B5; }
+.schip.alarm { border-color: rgba(255,90,95,.6); background: rgba(255,90,95,.14); }
+.schip.alarm .sic { background: rgba(255,90,95,.3); color: #FF8A8E; }
+@keyframes alarmglow { 50% { background: rgba(255,90,95,.28); } }
+.alarmfull { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; padding: 24px 16px; color: #fff; background: radial-gradient(circle at 50% 35%, #8f1d22, #3a0a0d 75%); animation: alarmbg 1.4s ease-in-out infinite; overflow-y: auto; }
+.alarmfull.water { background: radial-gradient(circle at 50% 35%, #1d4f8f, #0a1a3a 75%); animation: none; }
+@keyframes alarmbg { 50% { filter: brightness(1.25); } }
+.alin { max-width: 560px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+.alic { width: 128px; height: 128px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.14); box-shadow: 0 0 0 14px rgba(255,255,255,.07); }
+.alin h1 { margin: 0; font-size: 42px; font-weight: 700; letter-spacing: -.5px; }
+.allist { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.alrow { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 18px; background: rgba(0,0,0,.25); text-align: left; }
+.alrow b { display: block; font-size: 19px; }
+.alrow span { color: rgba(255,255,255,.75); font-size: 15px; }
+.altip { font-size: 17px; color: rgba(255,255,255,.88); }
+.alctrl { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.alctrl .pill { background: rgba(255,255,255,.16); color: #fff; border-color: rgba(255,255,255,.3); height: 54px; padding: 0 22px; font-size: 17px; }
+.alctrl .pill.primary { background: #fff; color: #8f1d22; }
+.alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
+.alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
+.alsysb { margin: 4px 0 14px; justify-content: flex-start; }
