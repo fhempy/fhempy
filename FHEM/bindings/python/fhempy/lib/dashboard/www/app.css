@@ -708,3 +708,32 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
 .alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
 .alsysb { margin: 4px 0 14px; justify-content: flex-start; }
+
+/* energy over days */
+.enleave { cursor: pointer; }
+.ensheet .enseg { margin: 4px 0 16px; }
+.enfacts .fact2.ensol b { color: var(--green); }
+.enfacts .fact2.enuse b { color: #9B8CFF; }
+.enchart { width: 100%; height: 150px; display: block; }
+.enaxis { position: relative; height: 22px; }
+.enaxis span { position: absolute; top: 4px; transform: translateX(-50%); color: var(--mu); font-size: 12px; }
+.enfacts { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.enfacts .fact2 b { font-size: 21px; white-space: nowrap; }
+.enchart .enuse { fill: #9B8CFF; }
+.enchart .ensol { fill: var(--green); }
+.enchart .enbase { stroke: var(--line); stroke-width: 1; }
+.enchart .ennow { stroke: var(--mu); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.enlegend { text-transform: none; letter-spacing: 0; display: inline-flex; align-items: center; gap: 6px; }
+.enlegend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; background: #9B8CFF; }
+.enlegend i.sol { background: var(--green); margin-left: 8px; }
+.entop .item { cursor: pointer; }
+.entop .item b { font-weight: 600; }
+.enbar { display: block; height: 6px; border-radius: 3px; background: var(--card2); margin-top: 8px; overflow: hidden; }
+.enbar i { display: block; height: 100%; background: #9B8CFF; border-radius: 3px; }
+.env { text-align: right; display: flex; flex-direction: column; min-width: 90px; }
+.env span { color: var(--mu); font-size: 13px; }
+.enprice { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--mu); }
+.enprice span { flex: 1; }
+.enprice b { color: var(--tx); font-weight: 600; }
+.enform { display: flex; gap: 10px; flex-wrap: wrap; }
+.enform input { flex: 1; min-width: 140px; }

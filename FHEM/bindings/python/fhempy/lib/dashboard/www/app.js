@@ -61,6 +61,9 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    enTitle: "Energie", enDay: "Heute", enWeek: "7 Tage", enMonth: "30 Tage", enSolar: "Solar", enLoad: "Verbrauch", enImport: "Netzbezug", enExport: "Eingespeist", enAutarky: "Selbst versorgt", enCost: "Kosten", enRevenue: "Vergütung",
+    enTop: "Größte Verbraucher", enTopLead: "Geräte, die ihre Leistung melden", enChart: "Verlauf", enNoTimeline: "Für Tage und Wochen braucht es das timeline-Modul in FHEM, es merkt sich die Leistung.", enEmpty: "Noch keine Werte für diesen Zeitraum.",
+    enPrice: "Strompreis", enPriceLead: "Für die Kosten, in €/kWh. Ein Preis-Reading (z. B. tibber) hat Vorrang.", enFeedIn: "Einspeisung €/kWh (optional)", enPriceReading: "Preis vom Stromanbieter", enPriceSave: "Speichern", enPriceEdit: "Ändern", enPriceNone: "Kein Preis eingetragen", enFeedInShort: "Einspeisung",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +130,9 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    enTitle: "Energy", enDay: "Today", enWeek: "7 days", enMonth: "30 days", enSolar: "Solar", enLoad: "Usage", enImport: "From grid", enExport: "Fed in", enAutarky: "Self-supplied", enCost: "Cost", enRevenue: "Feed-in pay",
+    enTop: "Biggest consumers", enTopLead: "Devices which report their power", enChart: "History", enNoTimeline: "Days and weeks need the timeline module in FHEM, it remembers the power.", enEmpty: "No values for this period yet.",
+    enPrice: "Electricity price", enPriceLead: "For the cost, in €/kWh. A price reading (e.g. tibber) wins.", enFeedIn: "Feed-in €/kWh (optional)", enPriceReading: "Price of the supplier", enPriceSave: "Save", enPriceEdit: "Change", enPriceNone: "No price set", enFeedInShort: "Feed-in",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -856,7 +862,7 @@
     if (e.battery !== undefined) { parts.push([Math.round(e.battery) + " %", t("storage")]); }
     if (e.price !== undefined) { parts.push([num(e.price * 100, 1) + " ct", t("price")]); }
     var surplus = e.solar !== undefined && e.load !== undefined && e.solar > e.load;
-    return '<div class="leave"><div class="section" style="margin:0 0 12px"><span>' + esc(t("energy")) + "</span>" + (surplus ? '<span style="color:var(--green);text-transform:none;letter-spacing:0">' + esc(t("surplus")) + "</span>" : "") +
+    return '<div class="leave enleave" data-energy="1"><div class="section" style="margin:0 0 12px"><span>' + esc(t("energy")) + "</span>" + (surplus ? '<span style="color:var(--green);text-transform:none;letter-spacing:0">' + esc(t("surplus")) + "</span>" : "") +
       '</div><div class="facts2">' + parts.map(function (p) { return '<div class="fact2"><b>' + esc(p[0]) + "</b><span>" + esc(p[1]) + "</span></div>"; }).join("") + "</div></div>";
   }
 
@@ -1096,7 +1102,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine, S.sheet && S.sheet.weather, S.sheet && S.sheet.pin !== undefined]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine, S.sheet && S.sheet.weather, S.sheet && S.sheet.energy, S.sheet && S.sheet.pin !== undefined]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1118,6 +1124,7 @@
     if (S.sheet.pin !== undefined) { renderPin(); return; }
     if (S.sheet.routine) { renderRoutine(); return; }
     if (S.sheet.weather) { renderWeather(); return; }
+    if (S.sheet.energy) { renderEnergy(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1513,6 +1520,119 @@
     if (!svg && !days.length) { body += '<div class="lead">' + esc(t("wxNone")) + "</div>"; }
     sheetShell('<div class="head"><div><h1>' + esc(t("wxTitle")) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + body);
   }
+  // ---------- energy over days ----------
+  function openEnergy(span) {
+    var keep = S.sheet && S.sheet.energy ? S.sheet : null;
+    S.sheet = { energy: true, range: span || (keep && keep.range) || "day", data: keep && keep.range === span ? keep.data : null, editPrice: keep && keep.editPrice };
+    renderSheet(); loadEnergy();
+  }
+  function loadEnergy() {
+    var sh = S.sheet; if (!sh || !sh.energy) { return; }
+    var span = sh.range;
+    api("api/energy?range=" + span).then(function (data) {
+      if (S.sheet && S.sheet.energy && S.sheet.range === span) { S.sheet.data = data; S.sheet.at = Date.now(); renderSheet(); }
+    }).catch(function () {
+      if (S.sheet && S.sheet.energy && S.sheet.range === span) { S.sheet.data = { error: "failed" }; renderSheet(); }
+    });
+  }
+  function kwh(v) {
+    if (!has(v)) { return "–"; }
+    return (v >= 100 ? num(v, 0) : v >= 10 ? num(v, 1) : num(v, 2)) + " kWh";
+  }
+  function euro(v) { return has(v) ? num(v, 2) + " €" : "–"; }
+  function energyBarLabel(at, span, i) {
+    var d = new Date(at * 1000);
+    if (span === "day") { return i % 6 === 0 ? two(d.getHours()) : ""; }
+    if (span === "week") { return d.toLocaleDateString(GERMAN ? "de-DE" : "en-GB", { weekday: "short" }).slice(0, 2); }
+    return i % 5 === 0 || i === 29 ? String(d.getDate()) : "";
+  }
+  function energySvg(data, span) {
+    var bars = data.bars || [], max = 0;
+    bars.forEach(function (b) { max = Math.max(max, b.load || 0, b.solar || 0, b.import || 0); });
+    if (!max) { return ""; }
+    var w = 640, h = 150, base = 146, axis = "", n = bars.length, slot = w / n, bw = Math.max(2, slot * (data.solarShown ? 0.36 : 0.62));
+    var out = '<svg class="enchart" viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="none">';
+    var now = Date.now() / 1000;
+    bars.forEach(function (b, i) {
+      var x = i * slot + slot / 2, use = has(b.load) ? b.load : b.import;
+      if (has(use)) {
+        var uh = use / max * (base - 10);
+        out += '<rect class="enuse" x="' + (x - (data.solarShown ? bw : bw / 2)).toFixed(1) + '" y="' + (base - uh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(uh, 0).toFixed(1) + '" rx="2"/>';
+      }
+      if (data.solarShown && has(b.solar)) {
+        var sh = b.solar / max * (base - 10);
+        out += '<rect class="ensol" x="' + x.toFixed(1) + '" y="' + (base - sh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(sh, 0).toFixed(1) + '" rx="2"/>';
+      }
+      var label = energyBarLabel(b.at, span, i);
+      if (label) { axis += '<span style="left:' + (x / w * 100).toFixed(2) + '%">' + esc(label) + "</span>"; }
+      if (span === "day" && b.at <= now && now < b.at + 3600) { out += '<line class="ennow" x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="4" y2="' + base + '"/>'; }
+    });
+    // labels outside of the stretched svg, so they keep their shape
+    return '<div class="enwrap">' + out + '<line class="enbase" x1="0" x2="' + w + '" y1="' + base + '" y2="' + base + '"/></svg><div class="enaxis">' + axis + "</div></div>";
+  }
+  function energyPriceHtml(data, sh) {
+    if (S.tablet && S.tablet.readonly) { return ""; }
+    if (data.price === "reading" && !sh.editPrice) {
+      return '<div class="enprice">' + I("bolt", 18) + "<span>" + esc(t("enPriceReading")) + "</span></div>";
+    }
+    var value = data.price_attr || "", parts = value.split(",");
+    if (value && !sh.editPrice) {
+      return '<div class="enprice">' + I("bolt", 18) + "<span>" + esc(t("enPrice")) + " <b>" + esc(num(parseFloat(parts[0]), 2)) + " €/kWh</b>" + (parts[1] ? " · " + esc(t("enFeedInShort")) + " " + esc(num(parseFloat(parts[1]), 2)) + " €/kWh" : "") +
+        '</span><button class="pill" data-enprice="edit">' + esc(t("enPriceEdit")) + "</button></div>";
+    }
+    var fmt = function (v) { return v ? (GERMAN ? v.replace(".", ",") : v) : ""; };
+    return '<div class="section">' + esc(t("enPrice")) + '</div><div class="lead">' + esc(t("enPriceLead")) + '</div><div class="enform">' +
+      '<input id="enprice" inputmode="decimal" placeholder="0' + (GERMAN ? "," : ".") + '32" value="' + esc(fmt(parts[0])) + '">' +
+      '<input id="enfeed" inputmode="decimal" placeholder="' + esc(t("enFeedIn")) + '" value="' + esc(fmt(parts[1])) + '">' +
+      '<button class="pill" data-enprice="save">' + esc(t("enPriceSave")) + "</button></div>";
+  }
+  function renderEnergy() {
+    var sh = S.sheet, span = sh.range, data = sh.data, body = "";
+    body += '<div class="seg enseg">' + [["day", "enDay"], ["week", "enWeek"], ["month", "enMonth"]].map(function (r) {
+      return '<button class="' + (r[0] === span ? "on" : "") + '" data-enrange="' + r[0] + '">' + esc(t(r[1])) + "</button>";
+    }).join("") + "</div>";
+    if (!data) {
+      body += '<div class="lead">…</div>';
+    } else if (data.error) {
+      body += '<div class="lead">' + esc(data.error === "no timeline" ? t("enNoTimeline") : t("enEmpty")) + "</div>";
+    } else {
+      var tot = data.totals || {}, facts = [];
+      data.solarShown = has(tot.solar);
+      if (has(tot.solar)) { facts.push([kwh(tot.solar), t("enSolar"), "sol"]); }
+      if (has(tot.load)) { facts.push([kwh(tot.load), t("enLoad"), "use"]); }
+      if (has(tot.import)) { facts.push([kwh(tot.import), t("enImport"), ""]); }
+      if (tot.export) { facts.push([kwh(tot.export), t("enExport"), ""]); }
+      if (has(tot.autarky) && has(tot.solar)) { facts.push([tot.autarky + " %", t("enAutarky"), ""]); }
+      if (has(tot.cost)) { facts.push([euro(tot.cost), t("enCost"), ""]); }
+      if (tot.revenue) { facts.push([euro(tot.revenue), t("enRevenue"), ""]); }
+      if (facts.length) {
+        body += '<div class="facts2 enfacts">' + facts.map(function (f) { return '<div class="fact2' + (f[2] ? " en" + f[2] : "") + '"><b>' + esc(f[0]) + "</b><span>" + esc(f[1]) + "</span></div>"; }).join("") + "</div>";
+      }
+      var svg = energySvg(data, span);
+      if (svg) {
+        body += '<div class="section"><span>' + esc(t("enChart")) + '</span><span class="enlegend"><i class="use"></i>' + esc(t("enLoad")) + (data.solarShown ? ' <i class="sol"></i>' + esc(t("enSolar")) : "") + "</span></div>" + svg;
+      }
+      var top = data.consumers || [];
+      if (top.length) {
+        var most = top[0].kwh || 1;
+        body += '<div class="section">' + esc(t("enTop")) + '</div><div class="lead">' + esc(t("enTopLead")) + '</div><div class="list entop">' + top.map(function (c) {
+          return '<div class="item" data-tile="' + esc(c.id) + '"><span class="grow"><b>' + esc(c.name) + '</b><span class="enbar"><i style="width:' + Math.max(3, c.kwh / most * 100).toFixed(1) + '%"></i></span></span><span class="env"><b>' + esc(kwh(c.kwh)) + "</b>" + (has(c.cost) ? "<span>" + esc(euro(c.cost)) + "</span>" : "") + "</span></div>";
+        }).join("") + "</div>";
+      }
+      if (!facts.length && !top.length) { body += '<div class="lead">' + esc(t("enEmpty")) + "</div>"; }
+      body += energyPriceHtml(data, sh);
+    }
+    sheetShell('<div class="head"><div><h1>' + esc(t("enTitle")) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + body, "ensheet");
+  }
+  function energyPriceClick(el) {
+    var what = el.getAttribute("data-enprice");
+    if (what === "edit") { S.sheet.editPrice = true; renderSheet(); return; }
+    var price = (document.getElementById("enprice") || {}).value || "", feed = (document.getElementById("enfeed") || {}).value || "";
+    send({ type: "energy_price", price: price.trim(), feed_in: feed.trim() });
+    S.sheet.editPrice = false;
+    setTimeout(loadEnergy, 600);
+  }
+
   // the next hours in the screensaver
   function saverHours(w) {
     var hours = ((w && w.hours) || []).filter(function (x, i) { return i > 0 && i % 2 === 0 && has(x.temp); }).slice(0, 5);
@@ -2794,6 +2914,9 @@
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
     if ((el = closest(target, "data-weather"))) { S.sheet = { weather: true }; renderSheet(); return; }
+    if ((el = closest(target, "data-energy"))) { openEnergy("day"); return; }
+    if ((el = closest(target, "data-enrange"))) { openEnergy(el.getAttribute("data-enrange")); return; }
+    if ((el = closest(target, "data-enprice"))) { energyPriceClick(el); return; }
     if ((el = closest(target, "data-routine"))) { S.sheet = { routine: el.getAttribute("data-routine") }; renderSheet(); return; }
     if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
     if ((el = closest(target, "data-undo"))) { send({ type: "action", action: "undo" }); S.undoUntil = 0; hideToast(); if (S.tab === "home") { renderContent(); } return; }

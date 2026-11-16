@@ -70,6 +70,7 @@ ATTRS_TEXT = (
     "appliances",
     "alarm_system",
     "alarm_pin",
+    "energy_price",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -114,7 +115,13 @@ ARRANGE_MESSAGES = (
     "delete_device",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + (
+    "setup",
+    "layout",
+    "notice",
+    "appliance",
+    "energy_price",
+)
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -371,6 +378,13 @@ class dashboard(generic.FhemModule):
                 "Mailbox Mail is here; Basement:water=wet Water in the basement. "
                 "Without =value: while it is on/open/1. Also set on the tablets "
                 "in the details of a device.",
+            },
+            "energy_price": {
+                "default": "",
+                "help": "Price of electricity in €/kWh for the energy page, "
+                "optional with the feed-in tariff, e.g. 0.32 or 0.32,0.08. A "
+                "price reading of a device (e.g. tibber) wins. Also set on the "
+                "tablet.",
             },
             "appliances": {
                 "default": "",
@@ -1791,6 +1805,96 @@ class dashboard(generic.FhemModule):
             await instance.get_device(instance.hash, {"device": device, "days": "1"})
         )
 
+    # --- energy over days ---
+
+    def energy_buckets(self, span, now):
+        """(start, end) of the bars: hours of today, or days"""
+        today = datetime.date.fromtimestamp(now)
+
+        def midnight(day):
+            return datetime.datetime.combine(day, datetime.time()).timestamp()
+
+        if span == "day":
+            start = midnight(today)
+            end = midnight(today + datetime.timedelta(days=1))
+            hours = []
+            hour = start
+            while hour < end:
+                hours.append((hour, hour + 3600))
+                hour += 3600
+            return hours
+        days = model.ENERGY_RANGES[span]
+        return [
+            (
+                midnight(today - datetime.timedelta(days=i)),
+                midnight(today - datetime.timedelta(days=i - 1)),
+            )
+            for i in range(days - 1, -1, -1)
+        ]
+
+    def energy_consumers(self, tablet):
+        """(id, name, device, reading) of devices which report their power"""
+        result = []
+        for item in self.data["tiles"].values():
+            if item["state"].get("power") is None:
+                continue
+            if self.allowed_tile(tablet, item):
+                result.append((item["id"], item["name"], item["id"], "power"))
+        return result
+
+    async def energy_history(self, tablet, span):
+        instance = self.timeline_device()
+        if instance is None or not hasattr(instance, "hourly_values"):
+            return {"error": "no timeline"}
+        now = time.time()
+        buckets = self.energy_buckets(span, now)
+        sources = model.energy_sources(self.infos)
+        consumers = self.energy_consumers(tablet)
+        wanted = [s[:2] for s in sources.values()] + [c[2:] for c in consumers]
+        series = await instance.hourly_values(wanted, buckets[0][0], buckets[-1][1])
+        if series is None:
+            return {"error": "no timeline"}
+        report = model.energy_report(
+            series,
+            sources,
+            consumers,
+            buckets,
+            now,
+            model.parse_energy_price(self._attr_energy_price),
+        )
+        report["range"] = span
+        price = model.parse_energy_price(self._attr_energy_price)
+        report["price_attr"] = model.format_energy_price(*price) if price else ""
+        report["sources"] = sorted(k for k in sources if k != "price")
+        return report
+
+    async def set_energy_price(self, tablet, message):
+        # 0,32 on a German tablet
+        values = [
+            str(message.get(k) or "").strip().replace(",", ".")
+            for k in ("price", "feed_in")
+        ]
+        price = model.parse_energy_price(",".join(v for v in values if v))
+        if price is None and values[0]:
+            return
+        if price is None:
+            self.logger.info(f"{tablet['name']}: deleteattr energy_price")
+            await fhem.sendCommandHash(
+                self.hash,
+                "CommandDeleteAttr(undef, "
+                f"{fhem.perlString(self.hash['NAME'] + ' energy_price')})",
+            )
+            self._attr_energy_price = ""
+            return
+        value = model.format_energy_price(*price)
+        self.logger.info(f"{tablet['name']}: attr energy_price {value}")
+        await fhem.sendCommandHash(
+            self.hash,
+            "CommandAttr(undef, "
+            f"{fhem.perlString(self.hash['NAME'] + ' energy_price ' + value)})",
+        )
+        self._attr_energy_price = value
+
     # --- HTTP server ---
 
     def url(self):
@@ -1813,6 +1917,7 @@ class dashboard(generic.FhemModule):
         app.router.add_get("/api/ws", self.handle_ws)
         app.router.add_post("/api/pair", self.handle_pair)
         app.router.add_get("/api/timeline", self.handle_timeline)
+        app.router.add_get("/api/energy", self.handle_energy)
         app.router.add_get("/api/history", self.handle_history)
         app.router.add_get("/api/sparks", self.handle_sparks)
         app.router.add_post("/api/webrtc", self.handle_webrtc)
@@ -2054,6 +2159,15 @@ class dashboard(generic.FhemModule):
             data = {k: v for k, v in data.items() if k in ("trends", "from", "to")}
         return web.json_response(data)
 
+    async def handle_energy(self, request):
+        from aiohttp import web
+
+        tablet = self._checked(request)
+        span = request.query.get("range", "day")
+        if span not in model.ENERGY_RANGES:
+            raise web.HTTPBadRequest()
+        return web.json_response(await self.energy_history(tablet, span))
+
     async def handle_sparks(self, request):
         from aiohttp import web
 
@@ -2224,6 +2338,8 @@ class dashboard(generic.FhemModule):
         elif kind == "notice" and not tablet.get("readonly"):
             await self.set_notice(tablet, message)
 
+        elif kind == "energy_price" and not tablet.get("readonly"):
+            await self.set_energy_price(tablet, message)
         elif kind == "appliance" and not tablet.get("readonly"):
             await self.answer_appliance(tablet, message)
         elif kind == "appliance_seen" and not tablet.get("readonly"):

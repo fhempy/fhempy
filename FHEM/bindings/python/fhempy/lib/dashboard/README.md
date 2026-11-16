@@ -187,6 +187,18 @@ with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`h
 disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
 tile, so *All off* and *Leave home* never disarm it.
 
+## Energy
+
+A tap on the energy card of *Home* opens the energy page: today by hour, the last 7 or 30 days by day. It shows how much
+the solar system made, what the house used, what came from the grid and was fed in, how much the home supplied itself
+and the cost. *Biggest consumers* lists the plugs and switches which report their power (reading `power`), with kWh and
+cost; a tap opens the device.
+
+The page needs a [timeline](../timeline/README.md) device: it keeps the power of every hour, the energy is calculated
+from it. The price is set on the tablet or with `attr <dashboard> energy_price 0.32` (€/kWh, optionally with the
+feed-in tariff: `0.32,0.08`). A price reading like `current_price_total` of tibber wins and is taken for every hour.
+Without a grid meter the cost is only shown when there is no solar system either (then everything used was bought).
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
@@ -267,6 +279,7 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
 | door_opener | Command of the door opener without `set` |
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
+| energy_price | Price of electricity in €/kWh for the energy page, optionally with the feed-in tariff (`0.32,0.08`) |
 
 ## Set commands
 
