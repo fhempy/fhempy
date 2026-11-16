@@ -478,3 +478,11 @@ body.light .banner.push { background: #fff; color: #151922; }
 .inctl .inval { width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
 .inctl .seg button { height: 40px; }
 @media (max-width: 560px) { .inname { flex-basis: 100%; } .inctl { min-width: 0; width: 100%; } }
+
+/* time left of a "switch off in" timer */
+.tile .tbadge { position: absolute; right: 12px; top: 12px; display: flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 12px; background: rgba(0,0,0,.28); color: var(--tx); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+body.light .tile .tbadge { background: rgba(255,255,255,.75); color: #151922; }
+.sheet .label.tl { display: flex; align-items: center; gap: 6px; }
+.sheet .label .tleft { margin-left: auto; color: var(--tx); text-transform: none; letter-spacing: 0; }
+.actions.timers { flex-wrap: wrap; }
+.actions.timers .pill { flex: 1 1 22%; }
