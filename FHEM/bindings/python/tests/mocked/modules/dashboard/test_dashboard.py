@@ -1788,6 +1788,13 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_layout_screensaver_minutes():
+    assert clean_layout({"saver": 10}) == {"saver": 10}
+    assert clean_layout({"saver": 0}) == {"saver": 0}
+    for bad in (7, "5", False, True, None, 300):
+        assert clean_layout({"saver": bad}) == {}
+
+
 def test_motion_tile_knows_since_when():
     fake = FakeFhem()
     tiles = model.build(fake.infos(fake.devices))["tiles"]

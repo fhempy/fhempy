@@ -130,7 +130,16 @@ RELOAD_ATTRS = (
     "disable",
     "setList",
 )
-LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
+LAYOUT_KEYS = (
+    "room_order",
+    "hidden_rooms",
+    "hidden_tiles",
+    "tile_order",
+    "theme",
+    "saver",
+)
+# minutes until the screensaver, 0: never
+SAVER_MINUTES = (0, 2, 5, 10, 15, 30)
 SETTINGS_ATTRS = (
     "devices",
     "hidden_devices",
@@ -162,6 +171,8 @@ def clean_layout(layout):
                 if isinstance(ids, list)
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "saver" and not isinstance(value, bool) and value in SAVER_MINUTES:
             result[key] = value
         elif isinstance(value, list):
             result[key] = [str(v)[:200] for v in value[:500]]

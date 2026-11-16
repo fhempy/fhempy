@@ -63,6 +63,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    saver: "Bildschirmschoner", saverOff: "Aus", saverMin: "{n} min",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -131,6 +132,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    saver: "Screensaver", saverOff: "Off", saverMin: "{n} min",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -1990,6 +1992,7 @@
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -2436,7 +2439,14 @@
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
-    if (idle > 300 && place() !== "couch" && !S.saver) { S.saver = true; renderSaver(); }
+    var after = saverMinutes();
+    if (after && idle > after * 60 && !S.saver) { S.saver = true; renderSaver(); }
+  }
+  // minutes until the screensaver, 0: never. Default 5, on the couch never
+  function saverMinutes() {
+    var m = layout().saver;
+    if (typeof m === "number") { return m; }
+    return place() === "couch" ? 0 : 5;
   }
   function wake() {
     S.lastTouch = Date.now();
@@ -2453,8 +2463,10 @@
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
     binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
-    var nextCal = ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.allday && !e.now; })[0];
-    if (nextCal) { items += '<div class="x">' + I("clock", 20) + " " + esc(nextCal.at + " " + nextCal.summary) + "</div>"; }
+    // what is still coming today
+    ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.now; }).slice(0, 3).forEach(function (e) {
+      items += '<div class="x">' + I("clock", 20) + " " + esc((e.allday ? t("calAllDay") : e.at) + " " + e.summary) + "</div>";
+    });
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");
@@ -2840,6 +2852,7 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-saver"))) { var l2 = copyLayout(); l2.saver = +el.getAttribute("data-saver"); saveLayout(l2); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");

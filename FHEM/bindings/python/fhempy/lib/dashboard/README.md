@@ -44,6 +44,9 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+The screensaver starts after 2 to 30 minutes or never, set per tablet in the settings (*Screensaver*). Besides the clock
+and the weather of the next hours it shows what is still coming today from the calendars and the bins.
+
 ![Setting up a tablet: choose wall, couch or door and its room](screenshot-setup.png)
 
 Then it asks which rooms this tablet shows: every room is a big tile with an icon and its number of devices, tap to
