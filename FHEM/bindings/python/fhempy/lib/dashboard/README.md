@@ -8,13 +8,17 @@ minute on the tablet itself.
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
 - the header shows weather, who is at home (tap it: who arrived when, who is away since when), open windows (by name
   when only a few are open) and empty batteries
+- *Home* starts with status chips for light (how many are on), climate (rooms heating or the range of temperatures), blinds and security (open windows and doors, unlocked locks); a tap opens an overview of the rooms this tablet shows, e.g. every lamp that is on by room with *Off* and *All lights off*, every room's temperature with target and humidity, all blinds with *Up*/*Down* and *All up*/*All down*
 - a tap on a room card on *Home* opens the room at a glance: a temperature ring (drag it to set the target, or + and −), *Light* with one button for all lamps of the room, *Blinds* with one slider for all blinds and up/down, *Switches*, the scenes and the other devices; the arrow unfolds every lamp, blind or switch with its own slider. *Open the whole room* goes to the room tab
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
 - *Home* warns when a room is heated while its window is open, room cards suggest airing at high humidity
-- tap switches, swiping sideways over a dimmer or blind tile dims or moves it, long press opens the details: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
+- tap the icon of a tile to switch, tap the rest of the tile (or hold it) for the details; swiping sideways over a dimmer or blind tile dims or moves it. The details have: dimming by dragging, target temperature, blinds, history of the day with temperature and humidity curves (if a timeline device exists)
 - *History* shows the [timeline](../timeline/README.md) of every day, if a timeline device exists; *Home* shows what happened last in the whole home (today, after a quiet day also yesterday)
+- scenes and unlocking need a second tap (*Tap again*), so nothing starts by accident
+- when a device doesn't react or FHEM refuses the command, the tablet says so with *Try again*
+- timers: the details of a light, switch or fan offer *Switch off in* 15 min, 30 min, 1 h or 2 h (*Switch on for* when it is off), the tile shows the time left. FHEM runs the timer (a temporary `at`), so it works with the tablet off too; switching off by hand ends it
 - push messages of the [push](../push/README.md) module are shown on the tablets as well
 - doorbell: the tablets show the camera live (WebRTC), you can talk to the visitor and open the door by sliding
 - every tablet keeps its own place, room, layout (order of rooms and tiles by dragging, hidden tiles; the room cards of *Home* have their own order and can be hidden there only) and theme

@@ -46,6 +46,9 @@ KIND_ORDER = (
     "motion",
 )
 SWITCHABLE = ("light", "dimmer", "switch", "outlet")
+# tiles with "switch off in 15 min / 30 min / 1 h / 2 h"
+TIMER_KINDS = SWITCHABLE + ("fan",)
+TIMER_PREFIX = "dashboard_timer_"
 LIGHTS = ("light", "dimmer")
 DOOR_WORDS = ("tür", "tuer", "door", "tor", "gate", "garage", "eingang", "entrance")
 TILTED_WORDS = ("tilt", "gekippt", "kipp")
@@ -601,6 +604,13 @@ def header(infos, tiles):
 # --- commands of the tablets ---
 
 
+def short_error(text):
+    """the answer of FHEM to a failed set, short enough for a tablet"""
+    text = " ".join(str(text or "").split())
+    text = re.split(r",? choose one of", text, maxsplit=1)[0]
+    return text if len(text) <= 120 else text[:119] + "…"
+
+
 def _toggle(kind, state):
     if kind in SWITCHABLE:
         return {"on": not state.get("on")}
@@ -683,6 +693,35 @@ def _clamp(value, low, high, digits=0):
     if digits == 0:
         return int(round(number))
     return round(number * 2) / 2
+
+
+def timer_name(device):
+    """name of the temporary at device which switches a device off"""
+    return TIMER_PREFIX + re.sub(r"[^A-Za-z0-9._]", "_", device)
+
+
+def timer_minutes(value):
+    """minutes of a timer from a tablet, 0: cancel, at most a day"""
+    number = kinds.number(value)
+    if number is None:
+        return 0
+    return max(0, min(24 * 60, int(number)))
+
+
+def timer_definition(device, minutes, off_args):
+    """definition of the at device: at +01:30:00 set lamp off"""
+    hours, mins = divmod(int(minutes), 60)
+    sets = "; ".join(f"set {device} {arg}" for arg in off_args)
+    return f"{timer_name(device)} at +{hours:02d}:{mins:02d}:00 {sets}"
+
+
+def running_timers(timers, now):
+    """timers which haven't run yet, {device: end as epoch seconds}"""
+    result = {}
+    for device, end in (timers or {}).items():
+        if isinstance(end, (int, float)) and end > now:
+            result[str(device)] = end
+    return result
 
 
 def all_off(tiles, room=None):
