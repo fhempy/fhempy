@@ -1066,7 +1066,41 @@
     if (e.price !== undefined) { parts.push([num(e.price * 100, 1) + " ct", t("price")]); }
     var surplus = e.solar !== undefined && e.load !== undefined && e.solar > e.load;
     return '<div class="leave enleave" data-energy="1"><div class="section" style="margin:0 0 12px"><span>' + esc(t("energy")) + "</span>" + (surplus ? '<span style="color:var(--green);text-transform:none;letter-spacing:0">' + esc(t("surplus")) + "</span>" : "") +
-      '</div><div class="facts2">' + parts.map(function (p) { return '<div class="fact2"><b>' + esc(p[0]) + "</b><span>" + esc(p[1]) + "</span></div>"; }).join("") + "</div></div>";
+      '</div><div class="facts2">' + parts.map(function (p) { return '<div class="fact2"><b>' + esc(p[0]) + "</b><span>" + esc(p[1]) + "</span></div>"; }).join("") + "</div>" + energyDayHtml() + "</div>";
+  }
+  // the curve of today on the energy card: solar as area, usage as line
+  function energyDayHtml() {
+    if (!S.header.timeline) { return ""; }
+    var c = S.enDay;
+    if (!c || (!c.loading && Date.now() - c.at > 600000)) {
+      S.enDay = { loading: true, at: Date.now(), data: c && c.data };
+      api("api/energy?range=day").then(function (data) {
+        S.enDay = { at: Date.now(), data: data };
+        var el = document.getElementById("enday"); if (el) { el.outerHTML = energyDayHtml(); }
+      }).catch(function () { S.enDay = { at: Date.now(), data: null }; });
+    }
+    var data = S.enDay && S.enDay.data, bars = (data && data.bars) || [];
+    var now = Date.now() / 1000, past = bars.filter(function (b) { return b.at <= now; });
+    var solar = past.some(function (b) { return b.solar > 0; }), use = past.some(function (b) { return has(b.load); });
+    if (!past.length || (!solar && !use)) { return '<div id="enday"></div>'; }
+    var w = 300, h = 54, n = bars.length, max = 0;
+    past.forEach(function (b) { max = Math.max(max, b.solar || 0, b.load || 0); });
+    if (!max) { return '<div id="enday"></div>'; }
+    function x(i) { return (i + 0.5) / n * w; }
+    function y(v) { return h - 2 - (v / max) * (h - 6); }
+    var svg = '<svg class="endaysvg" viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="none">';
+    if (solar) {
+      var area = "M" + x(0).toFixed(1) + " " + (h - 2);
+      past.forEach(function (b, i) { area += " L" + x(i).toFixed(1) + " " + y(b.solar || 0).toFixed(1); });
+      area += " L" + x(past.length - 1).toFixed(1) + " " + (h - 2) + "Z";
+      svg += '<path class="sol" d="' + area + '"/>';
+    }
+    if (use) { svg += '<polyline class="use" points="' + past.map(function (b, i) { return x(i).toFixed(1) + "," + y(b.load || 0).toFixed(1); }).join(" ") + '"/>'; }
+    svg += "</svg>";
+    var tot = data.totals || {}, label = [];
+    if (solar && has(tot.solar)) { label.push('<i class="sol"></i>' + esc(kwh(tot.solar)) + " " + esc(t("solar"))); }
+    if (use && has(tot.load)) { label.push('<i class="use"></i>' + esc(kwh(tot.load)) + " " + esc(t("usage"))); }
+    return '<div id="enday" class="enday"><div class="endaylbl"><span>' + esc(t("enDay")) + "</span>" + label.join("") + "</div>" + svg + "</div>";
   }
 
   // room cards of the home page: own order and hidden cards, independent of the room order (layout key HOME)
