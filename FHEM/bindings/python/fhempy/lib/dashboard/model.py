@@ -41,6 +41,8 @@ KIND_ORDER = (
     "inputs",
     "lock",
     "contact",
+    "smoke",
+    "water",
     "temperature",
     "humidity",
     "motion",
@@ -169,6 +171,28 @@ CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp
 COLOR_READINGS = ("rgb", "hex", "RGB", "Color", "color")
 CT_READINGS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
 READINGS = READINGS + COLOR_READINGS + CT_READINGS
+# smoke and water detectors: readings which say there is smoke or water
+HAZARD_READINGS = {
+    "smoke": (
+        "smoke",
+        "smoke_detected",
+        "smokeDetected",
+        "smoke_detect",
+        "smokeAlarm",
+        "fire",
+    ),
+    "water": (
+        "water_leak",
+        "waterLeak",
+        "leak",
+        "flood",
+        "water_detected",
+        "waterDetected",
+        "moistureDetected",
+        "waterlevelDetected",
+    ),
+}
+READINGS = READINGS + tuple(r for names in HAZARD_READINGS.values() for r in names)
 # the next hours of openmeteo_weather: warnings before the night or leaving
 # (WARN_HOURS) and the weather details (FORECAST_HOURS)
 WARN_HOURS = 12
@@ -273,6 +297,9 @@ def kind_of(info):
         return "inputs"
     if media.is_media(info):
         return "media"
+    hazard = hazard_kind(info)
+    if hazard is not None:
+        return hazard
     kind = kinds.detect_type(info)
     if kind is not None:
         return kind
@@ -282,6 +309,70 @@ def kind_of(info):
     if state in CONTACT_STATES and any(word in text for word in WINDOW_WORDS):
         return "contact"
     return None
+
+
+CALM_VALUES = (
+    "0",
+    "false",
+    "off",
+    "no",
+    "none",
+    "ok",
+    "clear",
+    "dry",
+    "idle",
+    "idle_off",
+    "noalarm",
+    "no_alarm",
+    "normal",
+    "nosmoke",
+    "no_smoke",
+    "quiet",
+    "ruhe",
+)
+ALARM_VALUES = (
+    "1",
+    "true",
+    "on",
+    "yes",
+    "detected",
+    "alarm",
+    "wet",
+    "leak",
+    "smoke",
+    "fire",
+)
+
+
+def hazard_kind(info):
+    """smoke or water detector: one of its readings says smoke or water.
+    Devices with set commands (e.g. a valve with a leak reading) are no
+    detectors."""
+    readings = info.get("readings") or {}
+    for kind, names in HAZARD_READINGS.items():
+        if any(name in readings for name in names):
+            sets = kinds.set_names(info.get("sets")) - {"alarmTest", "test"}
+            if sets & {"on", "off", "pct", "open", "close"}:
+                return None
+            return kind
+    return None
+
+
+def hazard_alarm(kind, info):
+    """True: smoke or water, False: calm, None: the detector doesn't say"""
+    result = None
+    for name in HAZARD_READINGS[kind]:
+        value = _reading(info, name)
+        if value is None:
+            continue
+        word = str(value).strip().lower()
+        if word in CALM_VALUES or word.startswith(("no ", "no_", "kein")):
+            result = False if result is None else result
+        elif word in ALARM_VALUES or "alarm" in word or name == "smoke_detect":
+            # HomeMatic: smoke_detect is the name of the detector which
+            # raised the alarm, none when all are calm
+            return True
+    return result
 
 
 def is_door(info):
@@ -303,6 +394,9 @@ def tile_state(kind, info):
         if state.get("closed") is False and any(w in raw for w in TILTED_WORDS):
             state["tilted"] = True
         state["since"] = _reading_time(info, "contact", "state")
+    if kind in HAZARD_READINGS:
+        state["alarm"] = bool(hazard_alarm(kind, info))
+        state["since"] = _reading_time(info, *HAZARD_READINGS[kind])
     if kind in ("temperature", "thermostat"):
         humidity = kinds.number(_reading(info, "humidity"))
         if humidity is not None:
@@ -847,6 +941,86 @@ def header(infos, tiles):
         "battery": low_batteries(infos),
         "bins": bin_devices(infos),
     }
+
+
+# --- alarm system ---
+
+ALARM_MODES = {
+    "away": ("armAway", "arm_away", "armed", "arm", "away", "scharf", "on"),
+    "home": ("armHome", "arm_home", "armStay", "arm_stay", "armNight", "home", "night"),
+    "off": ("disarm", "disarmed", "unscharf", "off"),
+}
+_TRIGGERED_RE = re.compile(r"trigger|alarm|alert|intrusion|einbruch|ausgel", re.I)
+
+
+def alarm_mode(info):
+    """mode of an alarm system from its state: off, home, away, triggered"""
+    state = str(_reading(info, "state") or "").strip().lower()
+    if not state:
+        return None
+    if "disarm" in state or "unscharf" in state or state in ("off", "aus"):
+        return "off"
+    if _TRIGGERED_RE.search(state):
+        return "triggered"
+    if any(w in state for w in ("home", "stay", "night", "intern")):
+        return "home"
+    if "arm" in state or "scharf" in state or state in ("on", "away", "extern"):
+        return "away"
+    return None
+
+
+def alarm_commands(info):
+    """mode -> set command of an alarm system, by its set commands"""
+    sets = kinds.set_names(info.get("sets"))
+    result = {}
+    for mode, names in ALARM_MODES.items():
+        for name in names:
+            if name in sets:
+                result[mode] = name
+                break
+    return result
+
+
+def alarm_system(info, pin=False):
+    """the alarm system chosen with attribute alarm_system, None: none"""
+    if not info:
+        return None
+    return {
+        "id": info["NAME"],
+        "name": display_name(info),
+        "mode": alarm_mode(info),
+        "modes": [m for m in ALARM_MODES if m in alarm_commands(info)],
+        "since": _reading_time(info, "state"),
+        "pin": pin,
+    }
+
+
+def alarms(tiles, system=None):
+    """smoke, water and a triggered alarm system: shown on every tablet"""
+    result = []
+    for item in tiles.values():
+        if item["kind"] in HAZARD_READINGS and item["state"].get("alarm"):
+            result.append(
+                {
+                    "id": item["id"],
+                    "name": item["name"],
+                    "kind": item["kind"],
+                    "room": (item["rooms"] or [""])[0],
+                    "since": item["state"].get("since"),
+                }
+            )
+    if system and system["mode"] == "triggered":
+        result.append(
+            {
+                "id": system["id"],
+                "name": system["name"],
+                "kind": "intrusion",
+                "room": "",
+                "since": system["since"],
+            }
+        )
+    result.sort(key=lambda a: (a["since"] or "", a["name"].lower()))
+    return result
 
 
 def clean_pin(value):
