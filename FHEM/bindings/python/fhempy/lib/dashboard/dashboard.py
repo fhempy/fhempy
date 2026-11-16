@@ -68,6 +68,7 @@ ATTRS_TEXT = (
     "door_camera",
     "door_opener",
     "keep_on",
+    "measure_only",
     "notices",
     "floors",
     "may_open",
@@ -116,6 +117,7 @@ ARRANGE_MESSAGES = (
     "rename_room",
     "keep_on",
     "delete_device",
+    "measure_only",
     "floors",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
@@ -445,6 +447,13 @@ class dashboard(generic.FhemModule):
                 "tablets. FHEM checks it, the tablets never get it. Empty: "
                 "disarming needs a second tap.",
             },
+            "measure_only": {
+                "default": "",
+                "help": "Plugs which only measure, e.g. of a fridge or freezer: "
+                "the tablets show their power but never switch them, also not "
+                "with All off. Separated by commas. Also set on the tablets in "
+                "the details of a plug.",
+            },
             "keep_on": {
                 "default": "",
                 "help": "Devices which 'All off' leaves on, e.g. heating, heat "
@@ -734,6 +743,9 @@ class dashboard(generic.FhemModule):
     def set_attr_keep_on(self, hash):
         self.schedule_reload()
 
+    def set_attr_measure_only(self, hash):
+        self.schedule_reload()
+
     def set_attr_hidden_devices(self, hash):
         self.schedule_reload()
 
@@ -956,6 +968,7 @@ class dashboard(generic.FhemModule):
         self.data = model.build(
             {n: i for n, i in self.infos.items() if n != alarm},
             keep_on=self.keep_on_names(),
+            measure=self.measure_names(),
         )
         self.apply_timers()
         self.apply_may_open()
@@ -1413,6 +1426,35 @@ class dashboard(generic.FhemModule):
         self._attr_keep_on = value
         await self.reload()
 
+    # --- plugs which only measure ---
+
+    def measure_names(self):
+        value = getattr(self, "_attr_measure_only", "") or ""
+        return {n.strip() for n in value.split(",") if n.strip()}
+
+    async def set_measure_only(self, tablet, message):
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] not in model.MEASURE_KINDS:
+            return
+        names = self.measure_names()
+        if message.get("measure"):
+            names.add(item["id"])
+        else:
+            names.discard(item["id"])
+        value = ",".join(sorted(names))
+        self.logger.info(f"{tablet['name']}: measure_only {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} measure_only {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} measure_only"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_measure_only = value
+        await self.reload()
+
     # --- floors ---
 
     async def set_floors(self, tablet, message):
@@ -1445,6 +1487,9 @@ class dashboard(generic.FhemModule):
         kind = message.get("type")
         if kind == "keep_on":
             await self.set_keep_on(tablet, message)
+            return
+        if kind == "measure_only":
+            await self.set_measure_only(tablet, message)
             return
         if kind == "floors":
             await self.set_floors(tablet, message)
