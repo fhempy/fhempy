@@ -497,3 +497,19 @@ body.light .tile .tbadge { background: rgba(255,255,255,.75); color: #151922; }
 .sheet .label .tleft { margin-left: auto; color: var(--tx); text-transform: none; letter-spacing: 0; }
 .actions.timers { flex-wrap: wrap; }
 .actions.timers .pill { flex: 1 1 22%; }
+/* status chips on Home */
+.schips { display: flex; gap: 10px; margin-bottom: 18px; overflow-x: auto; scrollbar-width: none; }
+.schips::-webkit-scrollbar { display: none; }
+.schip { flex: none; display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 18px 0 9px; border-radius: 29px; background: var(--card); border: 1px solid var(--line); text-align: left; }
+.schip .sic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card2); color: var(--mu); }
+.schip .st b { display: block; font-size: 15px; font-weight: 600; }
+.schip .st span { font-size: 13px; color: var(--mu); white-space: nowrap; }
+.schip.lit .sic { background: var(--amber); color: #3a2300; }
+.schip.heat .sic { background: rgba(255,138,61,.22); color: var(--amber2); }
+.schip.warn { border-color: rgba(255,138,61,.4); }
+.schip.warn .sic { background: rgba(255,138,61,.22); color: var(--amber2); }
+.schip:active { transform: scale(.97); }
+.ovlist .section.ovroom { margin: 16px 0 2px; }
+.ovlist .row .pill { flex: none; height: 40px; }
+.ovlist .row .pill + .pill { margin-left: -8px; }
+.ovtemp { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }

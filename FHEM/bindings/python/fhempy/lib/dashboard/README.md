@@ -8,6 +8,7 @@ minute on the tablet itself.
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
 - the header shows weather, who is at home (tap it: who arrived when, who is away since when), open windows (by name
   when only a few are open) and empty batteries
+- *Home* starts with status chips for light (how many are on), climate (rooms heating or the range of temperatures), blinds and security (open windows and doors, unlocked locks); a tap opens an overview of the rooms this tablet shows, e.g. every lamp that is on by room with *Off* and *All lights off*, every room's temperature with target and humidity, all blinds with *Up*/*Down* and *All up*/*All down*
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
