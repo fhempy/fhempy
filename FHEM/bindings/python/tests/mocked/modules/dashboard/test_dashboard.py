@@ -1786,3 +1786,8 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_layout_start_page():
+    assert clean_layout({"start": "cameras"}) == {"start": "cameras"}
+    assert clean_layout({"start": "history"}) == {}

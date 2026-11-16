@@ -85,6 +85,13 @@ tablet, then tap *Switch to https* in the settings of the dashboard (port 8096).
 
 ![Somebody rings: live picture, talking and slide to open](screenshot-doorbell.png)
 
+## Camera page
+
+With cameras the tablets get a tab *Cameras*: all cameras as still pictures, refreshed every two seconds while the page
+is shown. A tap opens the live picture full screen, swipe or the arrows go to the next camera. A tablet only for
+cameras sets *Start page: Cameras* in its settings; it then starts with the cameras, comes back to them and has no
+screensaver. Tablets restricted to some rooms see no camera page.
+
 ## All off
 
 *All off* switches off lights, switches and plugs, never thermostats. Plugs of heating, heat pumps, fridges, routers

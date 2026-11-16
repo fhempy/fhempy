@@ -708,3 +708,21 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
 .alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
 .alsysb { margin: 4px 0 14px; justify-content: flex-start; }
+/* camera page and live view */
+.camgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.camcard { position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: var(--card); border: 1px solid var(--line); padding: 0; }
+.camcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camcard img:not([src]) { visibility: hidden; }
+.camcard span { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 14px; font-weight: 600; }
+.camview { position: fixed; inset: 0; z-index: 30; background: #000; touch-action: pan-y; }
+.camview video, .camview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+.camview video { opacity: 0; }
+.camview video.on { opacity: 1; }
+.camtop { position: absolute; top: calc(16px + env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; align-items: center; gap: 12px; color: #fff; font-weight: 600; font-size: 17px; z-index: 2; }
+.camtop span:first-child { margin-right: auto; padding: 6px 12px; border-radius: 12px; background: rgba(0,0,0,.5); }
+.camtop span + span { padding: 6px 12px; border-radius: 12px; background: rgba(0,0,0,.5); font-weight: 500; }
+.camtop .iconbtn { background: rgba(0,0,0,.5); color: #fff; }
+.camnav { position: absolute; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; display: grid; place-items: center; z-index: 2; }
+.camnav.l { left: 16px; }
+.camnav.r { right: 16px; }
+@media (max-width: 860px) { .camgrid { grid-template-columns: 1fr; } }
