@@ -1786,3 +1786,28 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_measure_only_plug_is_never_switched(module):
+    module._attr_measure_only = "ku_Kaffeemaschine"
+    await module.reload()
+    plug = module.data["tiles"]["ku_Kaffeemaschine"]
+    assert plug["measure"] is True and plug["keep_on"] is True
+    info = module.infos["ku_Kaffeemaschine"]
+    for action in ("on", "off", "toggle"):
+        assert model.command(plug, info, action) == []
+    running = next(r for r in module.head["running"] if r["id"] == "ku_Kaffeemaschine")
+    assert running["measure"] is True
+    _, answer = await pair(module)
+    module.tablets[answer["tablet"]["id"]]["rooms"] = []
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "off", "id": "ku_Kaffeemaschine"})
+        await asyncio.sleep(0.1)
+        assert module.fake.sets == []
+        await ws.send_json({"type": "measure_only", "id": "ku_Kaffeemaschine", "measure": False})
+        await asyncio.sleep(0.1)
+        assert "measure" not in module.data["tiles"]["ku_Kaffeemaschine"]
+        await ws.close()

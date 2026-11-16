@@ -754,10 +754,15 @@ def keeps_on(info):
     return any(w.lower() in KEEP_ON_WORDS for w in _split_words(text))
 
 
-def build(infos, order=None, keep_on=None):
+# plugs and switches which may only measure
+MEASURE_KINDS = ("switch", "outlet")
+
+
+def build(infos, order=None, keep_on=None, measure=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)
-    keep_on: devices 'All off' leaves on, None: found by their names"""
+    keep_on: devices 'All off' leaves on, None: found by their names
+    measure: plugs which only measure, the tablets never switch them"""
     tiles = {}
     rooms = {}
     scenes = []
@@ -774,6 +779,9 @@ def build(infos, order=None, keep_on=None):
             item["keep_on"] = (
                 keeps_on(info) if keep_on is None else name in keep_on
             )
+            if measure and name in measure and item["kind"] in MEASURE_KINDS:
+                item["measure"] = True
+                item["keep_on"] = True
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -968,6 +976,7 @@ def running(tiles):
                     "room": (item["rooms"] or [""])[0],
                     "power": item["state"].get("power"),
                     "keep_on": bool(item.get("keep_on")),
+                    "measure": bool(item.get("measure")),
                 }
             )
     result.sort(key=lambda r: (r["kind"] not in LIGHTS, r["room"], r["name"].lower()))
@@ -1252,6 +1261,9 @@ def _fan_toggle(item, info, action):
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
+    if item.get("measure") and action in ("on", "off", "toggle", "timer"):
+        # e.g. the plug of a fridge: shows its power, never switched
+        return []
     if item["kind"] == "media":
         return media.command(info, action, value)
     if item["kind"] == "inputs":

@@ -61,6 +61,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    measure: "Nur messen", measureHint: "Für Kühlschrank oder Gefrierschrank: zeigt den Verbrauch, schaltet nie, auch nicht bei „Alles aus“. Gilt für alle Tablets.", measuring: "misst",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +128,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    measure: "Only measure", measureHint: "For a fridge or freezer: shows the power, never switches, also not with “All off”. Applies to all tablets.", measuring: "measures",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -572,6 +574,8 @@
     if (k === "light" || k === "dimmer") {
       if (st.on) { cls = "light"; sub = t("on") + (st.level !== undefined && k === "dimmer" ? " · " + st.level + " %" : ""); bar = k === "dimmer" ? st.level : null; } else { sub = t("off"); }
       if (st.fan && st.fan.mode && st.fan.mode !== "off") { sub += " · " + t("fan") + " " + fanText({ mode: st.fan.mode }); }
+    } else if (tile.measure) {
+      sub = st.power !== undefined ? watt(st.power) : st.on ? t("on") : t("off");
     } else if (k === "switch" || k === "outlet") {
       if (st.on) { cls = "power"; sub = t("on") + (st.power ? " · " + watt(st.power) : ""); } else { sub = t("off"); }
     } else if (k === "blind") {
@@ -615,7 +619,7 @@
     } else if (tile.kind === "media") {
       body = mediaTileBody(id, tile, look, editState);
     } else {
-      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] ? " sw" : "") + '">' + (tile.kind === "blind" ? winMini(tile.state.position) : I(look.icon)) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
+      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] && !tile.measure ? " sw" : "") + '">' + (tile.kind === "blind" ? winMini(tile.state.position) : I(look.icon)) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
@@ -702,7 +706,7 @@
   function tap(id) {
     var tile = S.tiles[id]; if (!tile) { return; }
     if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
-    if (!TAP_TOGGLES[tile.kind]) { openSheet(id); return; }
+    if (!TAP_TOGGLES[tile.kind] || tile.measure) { openSheet(id); return; }
     var st = tile.state;
     if (tile.kind === "fan") {
       act(id, "toggle", null, st.on ? { on: false, mode: "off", percent: 0 } : { on: true, mode: "medium", percent: 66 });
@@ -805,7 +809,8 @@
   }
 
   function leaveHtml() {
-    var h = S.header, open = shownList(h.open), running = shownList(h.running), rows = "";
+    // plugs which only measure (fridge) are always on: not worth a line
+    var h = S.header, open = shownList(h.open), running = shownList(h.running).filter(function (r) { return !r.measure; }), rows = "";
     open.forEach(function (o) {
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
@@ -880,7 +885,7 @@
       var tile = S.tiles[id], st = tile.state;
       if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
       if (humid === null && st.humidity !== undefined && st.humidity !== null) { humid = st.humidity; }
-      if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on) { other++; }
+      if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on && !tile.measure) { other++; }
       if (temp === null && tile.kind === "thermostat" && st.current !== undefined) { temp = st.current; }
       if (temp === null && tile.kind === "temperature" && st.temperature !== undefined) { temp = st.temperature; }
       if (tile.kind === "contact" && st.closed === false) { open++; }
@@ -1133,12 +1138,15 @@
     if (k === "inputs") { body += inputsHtml(tile); }
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
+    } else if (tile.measure) {
+      body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + (st.power !== undefined ? watt(st.power) : "–") + "</b><span>" + esc(t("usage")) + "</span></div></div></div>";
+      if (S.tablet && S.tablet.arrange) { body += measureHtml(tile); }
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
       if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
       if (tile.color) { body += colorHtml(tile); }
       body += timerHtml(tile);
-      if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
+      if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile) + (k === "switch" || k === "outlet" ? measureHtml(tile) : ""); }
     } else if (k === "blind") {
       var bp = st.position;
       body += '<div class="group"><div class="actions wbtns"><button class="pill' + (bp >= 99 ? " on" : "") + '" data-do="up">' + esc(t("up")) + '</button><button class="pill' + (bp >= 45 && bp <= 55 ? " on" : "") + '" data-half="1">' + esc(t("half")) + "</button>" +
@@ -1155,6 +1163,10 @@
     body += sheetTrendsHtml() + sheetHistoryHtml();
     var cols = !!left;
     sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" + (k === "media" ? " msheet" : "") : "");
+  }
+  function measureHtml(tile) {
+    return '<div class="group"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("measure")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("measureHint")) + "</div></div>" +
+      '<button class="tg' + (tile.measure ? "" : " off") + '" data-measure="' + esc(tile.id) + '" aria-label="' + esc(t("measure")) + '"></button></div></div></div>';
   }
   function keepOnHtml(tile) {
     return '<div class="group"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("keepOn")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("keepOnHint")) + "</div></div>" +
@@ -1328,7 +1340,7 @@
       head = ro ? "" : '<button class="round sm pwr' + (on.length ? " on" : "") + '" data-pgroup="' + key + '" aria-label="' + esc(on.length ? t("rpAllOffShort") : t("on")) + '">' + I("power", 18) + "</button>";
       rows = tiles.map(function (tl) {
         var lv = tl.kind === "dimmer" ? (tl.state.on ? tl.state.level || 0 : 0) : null;
-        return '<div class="prow"><button class="pic' + (tl.state.on ? (key === "light" ? " lit" : " pow") : "") + '" ' + (ro ? 'data-pdetail="' : 'data-ptoggle="') + esc(tl.id) + '">' + I(key === "light" ? "bulb" : tl.kind === "outlet" ? "plug" : "power", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "<span>" + esc(tileLook(tl).sub) + "</span></div>" +
+        return '<div class="prow"><button class="pic' + (tl.state.on ? (key === "light" ? " lit" : " pow") : "") + '" ' + (ro || tl.measure ? 'data-pdetail="' : 'data-ptoggle="') + esc(tl.id) + '">' + I(key === "light" ? "bulb" : tl.kind === "outlet" ? "plug" : "power", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "<span>" + esc(tileLook(tl).sub) + "</span></div>" +
           (lv !== null && !ro ? hslideHtml("level", [tl.id], lv) : "") + "</div>";
       }).join("");
     }
@@ -2686,6 +2698,11 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if ((el = closest(target, "data-measure"))) {
+      if (!pinOk()) { askPin(null); return; }
+      var mt = S.tiles[el.getAttribute("data-measure")]; if (!mt) { return; }
+      send({ type: "measure_only", id: mt.id, measure: !mt.measure }); return;
+    }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
     if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }

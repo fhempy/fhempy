@@ -95,6 +95,10 @@ in the settings. This is stored in attribute `keep_on` and applies to all tablet
 *All off* switches a few devices at a time with a short pause, so radio systems (433 MHz, HomeMatic duty cycle, Zigbee)
 don't lose commands. A few seconds later the tablet names the devices that are still on, with *Try again*.
 
+Plugs of a fridge or freezer can be set to *Only measure* in their details (tablets which arrange rooms) or with
+attribute `measure_only`: the tile shows the power, a tap opens the details, and neither the tablets, *All off*, timers
+nor routines switch them. They are not listed as *on*.
+
 ## PIN for the settings
 
 On a family tablet somebody may rearrange everything by accident. With `attr <dashboard> settings_pin 1234` the
@@ -267,6 +271,7 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
 | door_opener | Command of the door opener without `set` |
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
+| measure_only | Plugs which only measure (fridge, freezer): power shown, never switched |
 
 ## Set commands
 
