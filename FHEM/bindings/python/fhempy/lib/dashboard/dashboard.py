@@ -136,6 +136,7 @@ LAYOUT_KEYS = (
     "hidden_tiles",
     "tile_order",
     "theme",
+    "lite",
     "saver",
 )
 # minutes until the screensaver, 0: never
@@ -171,6 +172,8 @@ def clean_layout(layout):
                 if isinstance(ids, list)
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "lite" and value in ("auto", "on", "off"):
             result[key] = value
         elif key == "saver" and not isinstance(value, bool) and value in SAVER_MINUTES:
             result[key] = value

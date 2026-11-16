@@ -1788,6 +1788,12 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_layout_simple_display():
+    for value in ("auto", "on", "off"):
+        assert clean_layout({"lite": value}) == {"lite": value}
+    assert clean_layout({"lite": "fast"}) == {}
+
+
 def test_layout_screensaver_minutes():
     assert clean_layout({"saver": 10}) == {"saver": 10}
     assert clean_layout({"saver": 0}) == {"saver": 0}

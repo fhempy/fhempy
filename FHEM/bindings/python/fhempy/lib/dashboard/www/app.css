@@ -710,3 +710,10 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
 .alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
 .alsysb { margin: 4px 0 14px; justify-content: flex-start; }
+
+/* simple display for slow tablets: no blur, no animations, no shadows */
+body.lite *, body.lite *::before, body.lite *::after { animation: none !important; transition: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.lite #app { background: var(--bg); }
+body.lite .dim { background: rgba(5,7,10,.9); }
+body.lite .ringtop, body.lite .rb .c { background: rgba(10,12,16,.92); }
+body.lite .tile.media .mcover { display: none; }

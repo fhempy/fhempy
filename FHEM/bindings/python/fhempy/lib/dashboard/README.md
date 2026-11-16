@@ -44,6 +44,10 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+Old or slow tablets get a simple display without blur, shadows and animations. It switches on by itself when the
+tablet has only two cores or draws less than 30 frames per second, and can be set per tablet in the settings
+(*Display: Automatic, Simple, Full*).
+
 The screensaver starts after 2 to 30 minutes or never, set per tablet in the settings (*Screensaver*). Besides the clock
 and the weather of the next hours it shows what is still coming today from the calendars and the bins.
 
