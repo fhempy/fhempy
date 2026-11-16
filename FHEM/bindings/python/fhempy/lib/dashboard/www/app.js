@@ -3,6 +3,8 @@
    live changes come over the WebSocket. */
 (function () {
   "use strict";
+  // replaced by the server with the version of the app files
+  var BUILD = "__DASHBOARD_BUILD__";
 
   // ---------- texts ----------
   var DE = {
@@ -35,6 +37,7 @@
     roomOfTablet: "Raum für dieses Tablet:", next: "Weiter", noRoom: "Kein Raum",
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
+    newVersion: "Neue Version des Dashboards.", reloadNow: "Neu laden",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
     tapHint: "Tipp auf das Symbol schaltet, Tipp auf die Kachel zeigt die Details.", confirmTap: "Nochmal tippen", unlockSure: "Nochmal tippen zum Entriegeln",
     noReaction: "„{name}“ hat nicht reagiert.", failed: "„{name}“ ging nicht: {reason}", retry: "Nochmal",
@@ -91,6 +94,7 @@
     roomOfTablet: "Room of this tablet:", next: "Next", noRoom: "No room",
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
+    newVersion: "New version of the dashboard.", reloadNow: "Reload",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
     tapHint: "Tap the icon to switch, tap the tile for the details.", confirmTap: "Tap again", unlockSure: "Tap again to unlock",
     noReaction: "“{name}” didn't react.", failed: "“{name}” didn't work: {reason}", retry: "Try again",
@@ -251,6 +255,14 @@
     S.retry = Math.min(S.retry + 1, 6);
     setTimeout(connect, Math.min(15000, 500 * Math.pow(2, S.retry)));
   }
+  // after an update of fhempy the server has newer app files than the code
+  // running here (also when it came from the cache of the service worker)
+  function checkBuild(build) {
+    if (!build || BUILD.indexOf("__") === 0 || build === BUILD) { S.newBuild = false; return; }
+    S.newBuild = true;
+    // nobody is using a wall tablet in the screensaver: just take the new version
+    if (S.saver) { location.reload(); }
+  }
   function send(m) { if (S.ws && S.connected) { S.ws.send(JSON.stringify(m)); return true; } return false; }
 
   function handle(m) {
@@ -263,7 +275,7 @@
       if (m.tablet) { S.tablet = m.tablet; }
       S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {};
       S.pending = {};
-      if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); }
+      if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); checkBuild(m.build); }
       render(); loadSparks(true); tapHint(); return;
     }
     if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
@@ -682,7 +694,9 @@
     // drawing everything again must not jump back to the top
     var old = document.getElementById("content"), top = old ? old.scrollTop : 0, shownTab = S.shownTab;
     app.innerHTML = '<div id="hdr"></div><div id="tabs" class="tabs"></div><div id="content" class="content"></div>' +
-      (S.connected ? "" : '<div class="banner">' + esc(t("connLost")) + "</div>");
+      (S.connected ? "" : '<div class="banner">' + esc(t("connLost")) + "</div>") +
+      (S.newBuild ? '<div class="banner update"><span>' + esc(t("newVersion")) + '</span><button class="pill" data-reload="1">' + I("check", 18) + " " + esc(t("reloadNow")) + "</button></div>" : "");
+    document.body.classList.toggle("offline", !S.connected);
     renderHeader(); renderTabs(); renderContent();
     if (shownTab === S.tab) { document.getElementById("content").scrollTop = top; }
     if (S.sheet) { renderSheet(); }
@@ -2505,6 +2519,7 @@
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }
     if (target.id === "sheet") { closeSheet(); return; }
+    if ((el = closest(target, "data-reload"))) { location.reload(); return; }
     if ((el = closest(target, "data-retry"))) { retry(el.getAttribute("data-retry")); return; }
     if ((el = closest(target, "data-do"))) {
       var sid = S.sheet.id, what = el.getAttribute("data-do");

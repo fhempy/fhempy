@@ -1278,6 +1278,21 @@ def test_colour_lights():
 
 
 @pytest.mark.asyncio
+async def test_build_of_the_app_files(module):
+    build = module.build
+    assert len(build) == 12 and build == dash_module.www_build()
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "app.js") as resp:
+            code = await resp.text()
+        assert f'var BUILD = "{build}";' in code
+        assert "__DASHBOARD_BUILD__" not in code
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["build"] == build
+        await ws.close()
+
+
+@pytest.mark.asyncio
 async def test_all_off_in_groups_tells_what_stayed_on(module, mocker):
     mocker.patch.object(dash_module, "ALL_OFF_CHECK", 0.1)
     mocker.patch.object(dash_module, "ALL_OFF_PAUSE", 0.01)

@@ -124,6 +124,12 @@ them with one tap), lights and switches, and at night the open blinds. One tap s
 minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
 forecast of `openmeteo_weather`).
 
+## Connection and updates
+
+When the connection to fhempy is lost, the tablet says so at the top and greys out the values, so nobody trusts an old
+state. After an fhempy update that changes the dashboard, a tablet still running the old version shows *New version*
+with *Reload*. A wall tablet in the screensaver reloads by itself.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
