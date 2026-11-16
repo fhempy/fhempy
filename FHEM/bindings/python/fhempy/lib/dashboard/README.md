@@ -92,6 +92,9 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+*All off* switches a few devices at a time with a short pause, so radio systems (433 MHz, HomeMatic duty cycle, Zigbee)
+don't lose commands. A few seconds later the tablet names the devices that are still on, with *Try again*.
+
 ## PIN for the settings
 
 On a family tablet somebody may rearrange everything by accident. With `attr <dashboard> settings_pin 1234` the

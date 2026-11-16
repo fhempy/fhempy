@@ -183,6 +183,10 @@ class FakeFhem:
         self.module = None
         # device name -> answer of FHEM to set (a failed command)
         self.fail = {}
+        # devices which take a set but never report the new state
+        self.silent = set()
+
+
         # (calendar, (start, end, summary)) of 'get <calendar> events'
         midnight = time.mktime(time.localtime(NOW)[:3] + (0, 0, 0, 0, 0, -1))
         day = 86400
@@ -259,7 +263,7 @@ class FakeFhem:
                 return f"Please define {name} first"
             if name in self.fail:
                 return self.fail[name]
-            if self.module is not None:
+            if self.module is not None and name not in self.silent:
                 await self.apply(name, args)
             return ""
         return ""
