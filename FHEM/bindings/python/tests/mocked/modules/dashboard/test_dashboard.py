@@ -81,7 +81,12 @@ def test_model_rooms_and_tiles():
     # lights first, sensors last
     assert data["tiles"][living[0]]["kind"] in ("light", "dimmer")
     assert data["tiles"]["wz_Deckenlicht"]["name"] == "Deckenlicht"
-    assert data["tiles"]["wz_Deckenlicht"]["state"] == {"on": True, "level": 70}
+    assert data["tiles"]["wz_Deckenlicht"]["state"] == {
+        "on": True,
+        "level": 70,
+        "rgb": "#ffb070",
+        "ct": 2703,
+    }
     assert data["tiles"]["wz_Fernseher"]["kind"] == "outlet"
     assert data["tiles"]["bad_Fenster"]["state"]["tilted"] is True
     assert data["tiles"]["bad_Heizung"]["state"]["battery_low"] is True
@@ -1227,3 +1232,42 @@ async def test_timer_switches_off_later(module, mocker):
             f"'dashboard_timer_{lamp['id']}'; CommandDelete" in c for c in sent
         )
         await ws.close()
+def light(sets, readings=None):
+    info = fake_home.device("dummy", "Wohnzimmer", "on off pct:slider,0,1,100 " + sets)
+    info.update({"NAME": "lamp", "readings": readings or {"state": "on", "pct": "50"}})
+    return info
+
+
+def test_colour_lights():
+    hue = light(
+        "rgb:colorpicker,RGB ct:colorpicker,CT,154,1,500 hue:colorpicker,HUE,0,1,65535",
+        {"state": "on", "pct": "50", "rgb": "FF8800", "ct": "250"},
+    )
+    item = model.tile(hue)
+    assert item["kind"] == "dimmer"
+    assert item["color"] == {"rgb": True, "ct": [2000, 6494]}
+    assert item["state"]["rgb"] == "#ff8800"
+    assert item["state"]["ct"] == 4000
+    assert model.command(item, hue, "rgb", "#00ff00") == ["rgb 00FF00"]
+    # kelvin to mired, within the range of the lamp
+    assert model.command(item, hue, "ct", 2700) == ["ct 370"]
+    assert model.command(item, hue, "ct", 10000) == ["ct 154"]
+    with pytest.raises(ValueError):
+        model.command(item, hue, "rgb", "red; set x")
+
+    # zigbee2mqtt: hex and color_temp in mired
+    z2m = light("hex:colorpicker,RGB color_temp:colorpicker,CT,250,1,454")
+    assert model.color_caps(z2m)["ct"] == [2203, 4000]
+    assert model.command(model.tile(z2m), z2m, "rgb", "123abc") == ["hex 123ABC"]
+
+    # Shelly: colour temperature in kelvin
+    shelly = light("ct:slider,3000,100,6500", {"state": "on", "ct": "4000"})
+    item = model.tile(shelly)
+    assert item["color"] == {"ct": [3000, 6500]}
+    assert item["state"]["ct"] == 4000
+    assert model.command(item, shelly, "ct", 2700) == ["ct 3000"]
+
+    # a plain dimmer has no colour
+    plain = light("")
+    assert "color" not in model.tile(plain)
+    assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []

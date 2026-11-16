@@ -575,3 +575,14 @@ body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
   .phead { flex-wrap: wrap; }
   .phead .hslide { order: 10; flex: 1 1 100%; }
 }
+/* colour and white of lights */
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.swatch { width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.swatch.on { border-color: var(--tx); }
+.cstrip { position: relative; height: 44px; border-radius: 22px; box-shadow: inset 0 0 0 1px rgba(128,128,128,.25); touch-action: none; cursor: pointer; }
+.cstrip.hue { background: linear-gradient(90deg, #f00, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00); }
+.cstrip .ck { position: absolute; top: 50%; width: 34px; height: 34px; margin-left: -17px; transform: translateY(-50%); border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); pointer-events: none; }
+.cends { display: flex; justify-content: space-between; color: var(--mu); font-size: 13px; margin-top: 6px; }
+.sheet .label.tl2 { display: flex; justify-content: space-between; }
+.sheet .label.tl2 span + span { color: var(--tx); text-transform: none; letter-spacing: 0; }
+.tile .cdot { position: absolute; right: 14px; bottom: 14px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 12px currentColor; }

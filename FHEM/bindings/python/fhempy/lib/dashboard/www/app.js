@@ -19,6 +19,7 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
     couchList: ["Startet im eigenen Raum", "Licht, Szenen, Rollläden zuerst", "Kein Bildschirmschoner", "Tagsüber hell, abends dunkel"],
@@ -66,6 +67,7 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
     couchList: ["Starts in its own room", "Lights, scenes, blinds first", "No screensaver", "Bright by day, dark at night"],
@@ -555,6 +557,7 @@
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
     if (tile.state.fan && tile.state.fan.mode && tile.state.fan.mode !== "off" && !editState) { extra += '<div class="fanbadge">' + I("fan", 18) + "</div>"; }
     if (timerLeft(tile) && !editState) { extra += '<div class="tbadge">' + I("timer", 15) + " " + esc(timerText(timerLeft(tile))) + "</div>"; }
+    if (tile.color && tile.state.on && (tile.state.rgb || tile.state.ct) && !editState) { extra += '<div class="cdot" style="background:' + lampColor(tile.state) + '"></div>'; }
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
@@ -1059,6 +1062,7 @@
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
       if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
+      if (tile.color) { body += colorHtml(tile); }
       body += timerHtml(tile);
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
     } else if (k === "blind") {
@@ -1303,6 +1307,67 @@
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
     ev.preventDefault();
+  }
+
+  // ---------- colour and white of lights ----------
+  function hx2(n) { return ("0" + n.toString(16)).slice(-2); }
+  var SWATCHES = ["#ff3b30", "#ff8a3d", "#ffcc00", "#34c759", "#30d5c8", "#007aff", "#7d5cff", "#ff2d92"];
+  function hueHex(h) {
+    function f(n) { var k = (n + h / 60) % 6, v = 1 - Math.max(0, Math.min(k, 4 - k, 1)); return hx2(Math.round(v * 255)); }
+    return "#" + f(5) + f(3) + f(1);
+  }
+  function hexHue(hex) {
+    var r = parseInt(hex.substr(1, 2), 16) / 255, g = parseInt(hex.substr(3, 2), 16) / 255, b = parseInt(hex.substr(5, 2), 16) / 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (!d) { return null; }
+    var h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return (h * 60 + 360) % 360;
+  }
+  // colour of a white light in kelvin, roughly
+  function kelvinHex(k) {
+    var f = Math.max(0, Math.min(1, (k - 2000) / 4500));
+    var r = 255, g = Math.round(170 + f * 80), b = Math.round(90 + f * 165);
+    return "#" + hx2(r) + hx2(g) + hx2(b);
+  }
+  function lampColor(st) { return st.rgb && st.rgb !== "#000000" ? st.rgb : st.ct ? kelvinHex(st.ct) : "transparent"; }
+  function colorHtml(tile) {
+    var c = tile.color, st = tile.state, html = "";
+    if (c.rgb) {
+      var hue = st.rgb ? hexHue(st.rgb) : null;
+      html += '<div class="group"><div class="label">' + esc(t("colorTitle")) + '</div><div class="swatches">' +
+        SWATCHES.map(function (h) { return '<button class="swatch' + (st.rgb === h ? " on" : "") + '" data-swatch="' + h + '" style="background:' + h + '"></button>'; }).join("") + "</div>" +
+        '<div class="cstrip hue" data-cstrip="hue">' + (hue !== null ? '<div class="ck" style="left:' + (hue / 360 * 100).toFixed(1) + "%;background:" + st.rgb + '"></div>' : "") + "</div></div>";
+    }
+    if (c.ct) {
+      var lo = c.ct[0], hi = c.ct[1], k = st.ct;
+      var pos = k ? Math.max(0, Math.min(1, (k - lo) / (hi - lo))) : null;
+      html += '<div class="group"><div class="label tl2"><span>' + esc(t("whiteTitle")) + "</span>" + (k ? "<span>" + k + " K</span>" : "") + '</div>' +
+        '<div class="cstrip ct" data-cstrip="ct" style="background:linear-gradient(90deg,' + kelvinHex(lo) + "," + kelvinHex(hi) + ')">' + (pos !== null ? '<div class="ck" style="left:' + (pos * 100).toFixed(1) + "%;background:" + kelvinHex(k) + '"></div>' : "") + "</div>" +
+        '<div class="cends"><span>' + esc(t("warm")) + "</span><span>" + esc(t("cold")) + "</span></div></div>";
+    }
+    return html;
+  }
+  function colorDrag(el, ev) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var kind = el.getAttribute("data-cstrip"), id = S.sheet && S.sheet.id, tile = S.tiles[id]; if (!tile) { return; }
+    var value = null;
+    S.sliding = true;
+    function move(e) {
+      var r = el.getBoundingClientRect(), f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      var knob = el.querySelector(".ck"); if (!knob) { knob = document.createElement("div"); knob.className = "ck"; el.appendChild(knob); }
+      if (kind === "hue") { value = hueHex(f * 359); knob.style.background = value; } else { value = Math.round((tile.color.ct[0] + f * (tile.color.ct[1] - tile.color.ct[0])) / 50) * 50; knob.style.background = kelvinHex(value); }
+      knob.style.left = (f * 100).toFixed(1) + "%";
+      if (e.cancelable) { e.preventDefault(); }
+    }
+    function up() {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false;
+      if (value === null) { return; }
+      if (kind === "hue") { act(id, "rgb", value, { rgb: value, on: true }); } else { act(id, "ct", value, { ct: value, on: true }); }
+      renderSheet();
+    }
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+    move(ev);
   }
 
   // ---------- settings ----------
@@ -2113,6 +2178,7 @@
     if (wasSaver) { press = { saver: Date.now() }; ev.preventDefault(); return; }
     if (dragStart(ev) || tileDragStart(ev) || roomDragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
+    var cs = closest(ev.target, "data-cstrip"); if (cs) { colorDrag(cs, ev); return; }
     var hs = closest(ev.target, "data-hslide"); if (hs) { hslideDrag(hs, ev); return; }
     var ring = closest(ev.target, "data-ring"); if (ring) { ringDrag(ring, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
@@ -2203,6 +2269,7 @@
       }
       renderSheet(); return;
     }
+    if ((el = closest(target, "data-swatch")) && S.sheet) { var sw = el.getAttribute("data-swatch"); act(S.sheet.id, "rgb", sw, { rgb: sw, on: true }); renderSheet(); return; }
     if ((el = closest(target, "data-timer")) && S.sheet) { setTimer(S.sheet.id, Number(el.getAttribute("data-timer"))); return; }
     if ((el = closest(target, "data-preset"))) {
       var pn = Number(el.getAttribute("data-preset"));
