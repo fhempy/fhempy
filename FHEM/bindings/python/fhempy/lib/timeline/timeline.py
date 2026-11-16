@@ -751,6 +751,36 @@ class timeline(generic.FhemModule):
             ensure_ascii=False,
         )
 
+    async def hourly_values(self, readings, start, end):
+        """hourly rows of readings for other modules, e.g. the energy of the
+        dashboard. readings: (device, reading) pairs.
+        Returns {(device, reading): {"carry": value before start or None,
+        "rows": [(hour, sum, n, last, max), ...]}}"""
+        if self.store is None:
+            return None
+        await self.flush()
+        wanted = set(readings)
+        devices = {device for device, _ in wanted}
+        data = await utils.run_blocking(
+            functools.partial(self.query_hourly, devices, start, end)
+        )
+        result = {key: {"carry": None, "rows": []} for key in wanted}
+        for row in data["carry"]:
+            if (row[1], row[2]) in result:
+                result[(row[1], row[2])]["carry"] = row[8]
+        for row in data["hourly"]:
+            if (row[1], row[2]) in result:
+                result[(row[1], row[2])]["rows"].append(
+                    (row[0], row[6], row[7], row[8], row[5])
+                )
+        return result
+
+    def query_hourly(self, devices, start, end):
+        hourly = []
+        for device in sorted(devices):
+            hourly.extend(self.store.device_hourly(device, start, end))
+        return {"hourly": hourly, "carry": self.store.values_before(start, devices)}
+
     async def get_curve(self, hash, params):
         if self.store is None:
             return json.dumps({"error": "The timeline is starting"})

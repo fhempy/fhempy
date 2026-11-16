@@ -420,6 +420,9 @@ def tile_state(kind, info):
         state["since"] = _reading_time(info, "contact", "state")
     if kind == "thermostat":
         state.update(heating_state(info))
+    if kind == "motion":
+        # last change: since when somebody is there or the room is quiet
+        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
 
     if kind in HAZARD_READINGS:
         state["alarm"] = bool(hazard_alarm(kind, info))
@@ -767,10 +770,15 @@ def keeps_on(info):
     return any(w.lower() in KEEP_ON_WORDS for w in _split_words(text))
 
 
-def build(infos, order=None, keep_on=None, device_views=None):
+# plugs and switches which may only measure
+MEASURE_KINDS = ("switch", "outlet")
+
+
+def build(infos, order=None, keep_on=None, measure=None, device_views=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)
     keep_on: devices 'All off' leaves on, None: found by their names
+    measure: plugs which only measure, the tablets never switch them
     device_views: device -> own view or 'none', see views.parse_views"""
     device_views = device_views or {}
     tiles = {}
@@ -793,6 +801,9 @@ def build(infos, order=None, keep_on=None, device_views=None):
             item["keep_on"] = (
                 keeps_on(info) if keep_on is None else name in keep_on
             )
+            if measure and name in measure and item["kind"] in MEASURE_KINDS:
+                item["measure"] = True
+                item["keep_on"] = True
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -968,10 +979,59 @@ def open_contacts(tiles):
                 "door": item.get("door", False),
                 "tilted": item["state"].get("tilted", False),
                 "since": item["state"].get("since"),
+                "may_open": item.get("may_open"),
             }
         )
     result.sort(key=lambda c: (c["since"] or "9999", c["name"].lower()))
     return result
+
+
+# --- doors and gates which may be open at some times, e.g. a yard gate by day ---
+
+_WINDOW_RE = re.compile(r"^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$")
+
+
+def clean_window(value):
+    """'7:00-20:00' -> '07:00-20:00', None when it is no time window"""
+    match = _WINDOW_RE.match(str(value or ""))
+    if not match:
+        return None
+    h1, m1, h2, m2 = (int(x) for x in match.groups())
+    if h1 > 23 or h2 > 24 or m1 > 59 or m2 > 59 or (h2 == 24 and m2):
+        return None
+    if (h1, m1) == (h2, m2):
+        return None
+    return f"{h1:02d}:{m1:02d}-{h2:02d}:{m2:02d}"
+
+
+def parse_may_open(value):
+    """attribute may_open: 'Yard_gate=07:00-20:00,Garage=08:00-18:00'
+    -> {device: '07:00-20:00'}"""
+    result = {}
+    for entry in re.split(r"[,;\s]+(?=[^,;\s]+=)", str(value or "").strip()):
+        name, _, window = entry.partition("=")
+        window = clean_window(window)
+        if name.strip() and window:
+            result[name.strip().rstrip(",;")] = window
+    return result
+
+
+def format_may_open(windows):
+    return ",".join(f"{n}={w}" for n, w in sorted(windows.items()))
+
+
+def may_open_now(window, minutes):
+    """window '07:00-20:00', minutes since midnight. Over midnight works too:
+    '22:00-06:00'"""
+    window = clean_window(window)
+    if window is None:
+        return False
+    start, end = (
+        int(part[:2]) * 60 + int(part[3:]) for part in window.split("-")
+    )
+    if start < end:
+        return start <= minutes < end
+    return minutes >= start or minutes < end
 
 
 def running(tiles):
@@ -987,6 +1047,7 @@ def running(tiles):
                     "room": (item["rooms"] or [""])[0],
                     "power": item["state"].get("power"),
                     "keep_on": bool(item.get("keep_on")),
+                    "measure": bool(item.get("measure")),
                 }
             )
     result.sort(key=lambda r: (r["kind"] not in LIGHTS, r["room"], r["name"].lower()))
@@ -1271,6 +1332,9 @@ def _fan_toggle(item, info, action):
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
+    if item.get("measure") and action in ("on", "off", "toggle", "timer"):
+        # e.g. the plug of a fridge: shows its power, never switched
+        return []
     if item["kind"] == "media":
         return media.command(info, action, value)
     if item["kind"] in views.VIEWS:
@@ -1425,6 +1489,209 @@ def energy(infos):
     if "load" not in result and "solar" in result and "grid" in result:
         result["load"] = result["solar"] + result["grid"]
     return result
+
+
+
+# --- energy over days: from the hourly values of the timeline ---
+
+ENERGY_RANGES = {"day": 1, "week": 7, "month": 30}
+ENERGY_FLOWS = ("solar", "grid", "load", "price")
+TOP_CONSUMERS = 8
+
+
+def energy_sources(infos):
+    """flow -> (device, reading, factor to W or None) like energy(); price
+    in €/kWh has factor 1"""
+    result = {}
+    for info in sorted(infos.values(), key=lambda i: i["NAME"].lower()):
+        if not is_energy(info):
+            continue
+        readings = info.get("readings") or {}
+        for key in ENERGY_FLOWS:
+            if key in result:
+                continue
+            for name in ENERGY_READINGS[key]:
+                if name in readings and _energy_value(key, readings[name]) is not None:
+                    result[key] = (info["NAME"], name, _factor(key, readings[name]))
+                    break
+    return result
+
+
+def _factor(key, value):
+    """the timeline keeps the number of '1.2 kW', the dashboard wants W.
+    None: like watts(), decided by the values of the days"""
+    if key == "price":
+        return 1
+    return 1000 if "kw" in str(value).lower() else None
+
+
+def _series_factor(series):
+    """1000 if all values are small numbers with decimals: kW, see watts()"""
+    values = [v for row in series.get("rows", []) for v in (row[3], row[4])]
+    if series.get("carry") is not None:
+        values.append(series["carry"])
+    values = [v for v in values if v is not None]
+    if values and all(abs(v) < 50 for v in values):
+        if any(v != int(v) for v in values):
+            return 1000
+    return 1
+
+
+def parse_energy_price(text):
+    """attr energy_price '0.32' or '0.32,0.08' (price, feed-in) in €/kWh.
+    Returns (price, feed_in) or None"""
+    parts = [p.strip().replace(" ", "") for p in str(text or "").split(",")]
+    values = []
+    for part in parts[:2]:
+        try:
+            value = float(part.replace("€", ""))
+        except ValueError:
+            return None
+        if not 0 <= value < 10:
+            return None
+        values.append(value)
+    if not values or len(parts) > 2:
+        return None
+    return values[0], values[1] if len(values) > 1 else None
+
+
+def format_energy_price(price, feed_in=None):
+    text = f"{price:g}"
+    if feed_in:
+        text += f",{feed_in:g}"
+    return text
+
+
+def hourly_watts(series, start, end, now, factor=1):
+    """hour -> (mean value, share of the hour which is over) from the hourly
+    rows of the timeline. FHEM sends only changes: an hour without a row
+    keeps the last value, the value at the start of an hour counts as one
+    more sample."""
+    rows = {row[0]: row for row in series.get("rows", [])}
+    value = series.get("carry")
+    result = {}
+    hour = int(start)
+    while hour < end and hour < now:
+        row = rows.get(hour)
+        if row is not None and row[2]:
+            total, count = row[1], row[2]
+            if value is not None:
+                total, count = total + value, count + 1
+            mean = total / count
+            value = row[3]
+        else:
+            mean = value
+        if mean is not None:
+            result[hour] = (mean * factor, min(1, (now - hour) / 3600))
+        hour += 3600
+    return result
+
+
+def _kwh(watts_by_hour, sign=0):
+    """kWh per hour; sign 1 only positive values, -1 only negative ones"""
+    result = {}
+    for hour, (watt, share) in watts_by_hour.items():
+        if sign > 0:
+            watt = max(watt, 0)
+        elif sign < 0:
+            watt = max(-watt, 0)
+        result[hour] = watt / 1000 * share
+    return result
+
+
+def energy_report(series, sources, consumers, buckets, now, price=None):
+    """energy of the energy page.
+    series: (device, reading) -> hourly rows, see timeline hourly_values
+    sources: energy_sources(); consumers: [(id, name, device, reading)]
+    buckets: [(start, end)] of the bars (hours of a day or days)
+    price: (price, feed_in) of the attribute, the price reading wins"""
+    start, end = buckets[0][0], buckets[-1][1]
+
+    def flow(key, sign=0):
+        source = sources.get(key)
+        if source is None:
+            return None
+        found = series.get(source[:2], {})
+        factor = source[2] or _series_factor(found)
+        watt = hourly_watts(found, start, end, now, factor)
+        return _kwh(watt, sign) if watt else None
+
+    flows = {
+        "solar": flow("solar", 1),
+        "import": flow("grid", 1),
+        "export": flow("grid", -1),
+        "load": flow("load"),
+    }
+    if flows["load"] is None and flows["solar"] is not None and flows["import"]:
+        flows["load"] = {
+            hour: flows["solar"].get(hour, 0)
+            + flows["import"].get(hour, 0)
+            - flows["export"].get(hour, 0)
+            for hour in set(flows["solar"]) | set(flows["import"])
+        }
+    hourly_price = None
+    if "price" in sources:
+        found = hourly_watts(series.get(sources["price"][:2], {}), start, end, now)
+        hourly_price = {hour: value for hour, (value, _) in found.items()}
+    fixed, feed_in = price if price else (None, None)
+
+    def price_at(hour):
+        if hourly_price and hour in hourly_price:
+            return hourly_price[hour]
+        return fixed
+
+    def total(values, first, last):
+        return sum(v for h, v in values.items() if first <= h < last)
+
+    bars = []
+    for first, last in buckets:
+        bar = {"at": first}
+        for key, values in flows.items():
+            if values is not None:
+                bar[key] = round(total(values, first, last), 3)
+        bars.append(bar)
+    totals = {}
+    for key, values in flows.items():
+        if values is not None:
+            totals[key] = round(total(values, start, end), 3)
+    cost = None
+    if flows["import"] is not None:
+        prices = [(v, price_at(h)) for h, v in flows["import"].items()]
+        if prices and all(p is not None for _, p in prices):
+            cost = sum(v * p for v, p in prices)
+    elif flows["load"] is not None and flows["solar"] is None:
+        # no meter at the grid and no solar: all the house used is bought
+        prices = [(v, price_at(h)) for h, v in flows["load"].items()]
+        if all(p is not None for _, p in prices):
+            cost = sum(v * p for v, p in prices)
+    if cost is not None:
+        totals["cost"] = round(cost, 2)
+    if feed_in and flows["export"]:
+        totals["revenue"] = round(totals["export"] * feed_in, 2)
+    if totals.get("load") and "import" in totals:
+        share = 1 - totals["import"] / totals["load"]
+        totals["autarky"] = round(min(max(share, 0), 1) * 100)
+
+    used = []
+    for item_id, name, device, reading in consumers:
+        watt = hourly_watts(series.get((device, reading), {}), start, end, now)
+        kwh = sum(_kwh(watt, 1).values())
+        if kwh >= 0.01:
+            entry = {"id": item_id, "name": name, "kwh": round(kwh, 2)}
+            if fixed is not None or hourly_price:
+                cost = sum(
+                    v * (price_at(h) or 0) for h, v in _kwh(watt, 1).items()
+                )
+                entry["cost"] = round(cost, 2)
+            used.append(entry)
+    used.sort(key=lambda e: (-e["kwh"], e["name"].lower()))
+    return {
+        "bars": bars,
+        "totals": totals,
+        "consumers": used[:TOP_CONSUMERS],
+        "price": "reading" if hourly_price else ("attr" if fixed is not None else None),
+        "feed_in": feed_in,
+    }
 
 
 # --- doorbell ---
@@ -1661,6 +1928,42 @@ def renamed_layout(layout, source, target):
         order[target] = order.pop(source)
         result["tile_order"] = order
     return result
+
+
+# --- floors: rooms grouped by floor, FHEM itself knows no floors ---
+
+
+def parse_floors(value):
+    """attribute floors: 'Ground floor=Kitchen,Living room;Upstairs=Bath'
+    -> [{name, rooms}]. A room belongs to the first floor naming it."""
+    result, seen = [], set()
+    for entry in re.split(r"[;\n]", str(value or "")):
+        name, _, rooms = entry.partition("=")
+        name = name.strip()[:40]
+        if not name or any(f["name"] == name for f in result):
+            continue
+        members = []
+        for room in rooms.split(","):
+            room = room.strip()
+            if room and room not in seen:
+                seen.add(room)
+                members.append(room)
+        result.append({"name": name, "rooms": members})
+    return result
+
+
+def format_floors(floors):
+    parts = []
+    for floor in floors:
+        name = re.sub(r"[;=,\n]", " ", str(floor.get("name") or "")).strip()[:40]
+        rooms = [
+            re.sub(r"[;,\n]", " ", str(r)).strip()
+            for r in floor.get("rooms") or []
+            if str(r).strip()
+        ]
+        if name:
+            parts.append(name + "=" + ",".join(rooms))
+    return ";".join(parts)
 
 
 # --- own notices: "Mail is here" while a device has a value ---
