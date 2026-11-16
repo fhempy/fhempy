@@ -55,7 +55,7 @@ DEVICES = {
         "CUL_HM",
         "Wohnzimmer",
         THERMO,
-        {"desired-temp": "22.0", "measured-temp": "21.3", "humidity": "48"},
+        {"desired-temp": "22.0", "measured-temp": "21.3", "humidity": "48", "actuator": "35"},
         alias="Heizung",
     ),
     "wz_Fenster": device(

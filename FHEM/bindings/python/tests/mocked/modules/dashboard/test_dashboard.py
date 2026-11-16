@@ -1531,6 +1531,34 @@ def test_weather_forecast():
     assert days[0]["rain"] is None
 
 
+def test_thermostat_heats_and_range():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    living = tiles["wz_Heizung"]
+    assert living["state"]["valve"] == 35 and living["state"]["heating"] is True
+    assert (living["min"], living["max"], living["step"]) == (4.5, 30, 0.5)
+    # no valve, no action: the tablets guess from the temperatures
+    assert "heating" not in tiles["bad_Heizung"]["state"]
+
+    def thermostat(readings, sets="desired-temp:slider,5,0.5,29"):
+        return {"NAME": "t", "TYPE": "x", "sets": sets, "readings": readings}
+
+    assert model.heating_state(thermostat({"actuator": "0 %"})) == {
+        "valve": 0,
+        "heating": False,
+    }
+    assert model.heating_state(thermostat({"hvac_action": "heating"})) == {"heating": True}
+    assert model.heating_state(thermostat({"running_state": "idle"})) == {"heating": False}
+    assert model.heating_state(thermostat({})) == {}
+    assert model.target_range(thermostat({})) == (5, 29, 0.5)
+    assert model.target_range(thermostat({}, "desired-temp:4.5,5.0,6.0,30.5")) == (
+        4.5,
+        30.5,
+        0.5,
+    )
+    assert model.target_range(thermostat({}, "desired-temp")) == (4.5, 30.0, 0.5)
+
+
 def test_appliance_watch():
     watch = model.ApplianceWatch()
     minute = 60

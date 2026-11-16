@@ -139,6 +139,13 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
 
+## Thermostats
+
+The details of a thermostat show a ring: drag the knob to the wanted temperature, or use − and +. The range and steps
+come from the set command (e.g. `desired-temp:slider,4.5,0.5,30.5`). The flame and *Heating* appear only when the
+thermostat really heats: its valve is open (`actuator`, `ValvePosition`, `valve`, `pi_heating_demand` …) or it says so
+(`hvac_action`, `running_state`). Without these readings the tablets guess from the target and the room temperature.
+
 ## Washing machine, dryer and dishwasher
 
 Plugs which report their power are watched. A long program (at least 20 minutes, with a peak of 300 W or more for

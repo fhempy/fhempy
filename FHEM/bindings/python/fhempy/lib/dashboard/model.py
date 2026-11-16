@@ -171,6 +171,22 @@ CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp
 COLOR_READINGS = ("rgb", "hex", "RGB", "Color", "color")
 CT_READINGS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
 READINGS = READINGS + COLOR_READINGS + CT_READINGS
+# how far the valve of a thermostat is open, in percent
+VALVE_READINGS = (
+    "actuator",
+    "ValvePosition",
+    "valveposition",
+    "valve_position",
+    "valve",
+    "pi_heating_demand",
+    "heating_demand",
+    "level_valve",
+)
+# what a thermostat does right now: heating, idle
+ACTION_READINGS = ("hvac_action", "hvacAction", "running_state", "heating_state")
+READINGS = READINGS + VALVE_READINGS + ACTION_READINGS
+
+
 # smoke and water detectors: readings which say there is smoke or water
 HAZARD_READINGS = {
     "smoke": (
@@ -394,6 +410,10 @@ def tile_state(kind, info):
         if state.get("closed") is False and any(w in raw for w in TILTED_WORDS):
             state["tilted"] = True
         state["since"] = _reading_time(info, "contact", "state")
+    if kind == "thermostat":
+        state.update(heating_state(info))
+
+
     if kind in HAZARD_READINGS:
         state["alarm"] = bool(hazard_alarm(kind, info))
         state["since"] = _reading_time(info, *HAZARD_READINGS[kind])
@@ -425,6 +445,42 @@ def tile_state(kind, info):
         if seen:
             state["seen"] = seen[:13]
     return state
+
+
+def heating_state(info):
+    """valve: percent open, heating: the thermostat really heats. Without
+    valve and action the tablets guess from target and current temperature."""
+    result = {}
+    valve = kinds.number(_reading(info, *VALVE_READINGS))
+    if valve is not None and 0 <= valve <= 100:
+        result["valve"] = valve
+        result["heating"] = valve > 0
+    action = str(_reading(info, *ACTION_READINGS) or "").strip().lower()
+    if action:
+        if "heat" in action:
+            result["heating"] = True
+        elif "valve" not in result:
+            result["heating"] = False
+    return result
+
+
+def target_range(info):
+    """(min, max, step) of the target temperature from the set command,
+    e.g. desired-temp:slider,4.5,0.5,30.5"""
+    args = _set_args(info.get("sets"))
+    for name in kinds.TARGET_SETS:
+        if name not in args:
+            continue
+        parts = args[name].split(",")
+        if parts[0] == "slider" and len(parts) >= 4:
+            low, step, high = (kinds.number(p) for p in parts[1:4])
+            if None not in (low, step, high) and low < high and step > 0:
+                return low, high, step
+        numbers = [kinds.number(p) for p in parts]
+        numbers = [n for n in numbers if n is not None]
+        if len(numbers) >= 2:
+            return min(numbers), max(numbers), 0.5
+    return 4.5, 30.0, 0.5
 
 
 def unreachable(info):
@@ -501,7 +557,10 @@ def tile(info, room=None):
         sets = kinds.set_names(info.get("sets"))
         result["stop"] = "stop" in sets
     if kind == "thermostat":
-        result["step"] = 0.5
+        low, high, step = target_range(info)
+        result["min"] = low
+        result["max"] = high
+        result["step"] = step
     if kind == "media":
         result["media"] = media.features(info)
     if kind == "inputs":
