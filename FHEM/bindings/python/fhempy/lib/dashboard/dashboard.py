@@ -140,6 +140,7 @@ LAYOUT_KEYS = (
     "hidden_tiles",
     "tile_order",
     "theme",
+    "start",
     "tile_size",
     "accent",
     "lite",
@@ -187,6 +188,8 @@ def clean_layout(layout):
                 if size in TILE_SIZES
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "start" and value == "cameras":
             result[key] = value
         elif key == "accent" and value in ACCENTS:
             result[key] = value

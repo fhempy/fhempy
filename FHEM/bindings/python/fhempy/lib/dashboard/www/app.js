@@ -63,6 +63,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    cameras: "Kameras", camStart: "Startseite", camStartAuto: "Automatisch", camStartCams: "Kameras", camNext: "Nächste Kamera", camPrev: "Vorherige Kamera",
     floors: "Etagen", floorsLead: "Fasst die Räume auf Zuhause nach Etagen zusammen, mit „Licht aus“ und „Rollläden zu“ pro Etage. Gilt für alle Tablets.", floorsValue: "{n} Etagen", floorsNone: "keine", floorAdd: "Etage hinzufügen", floorName: "Name, z. B. EG", floorNone: "–", floorSave: "Speichern", floorSuggest: "Vorschlag aus den Raumnamen: {list}", floorTake: "Übernehmen", floorLights: "Licht aus", floorBlinds: "Rollläden zu", floorOther: "Weitere Räume",
     tileSize: "Größe", headAdd: "Überschrift", headPlaceholder: "z. B. Decke, Fenster …", roomReset: "Raum zurücksetzen", editHint2: "1×1 neben dem × wechselt zwischen klein, breit, hoch und groß.",
     accent: "Akzentfarbe", accentLamps: "wie die Lampen", accentHint: "Bunt: der Hintergrund leuchtet in der Farbe der eingeschalteten Lampen",
@@ -144,6 +145,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    cameras: "Cameras", camStart: "Start page", camStartAuto: "Automatic", camStartCams: "Cameras", camNext: "Next camera", camPrev: "Previous camera",
     floors: "Floors", floorsLead: "Groups the rooms on Home by floor, with “Lights off” and “Blinds down” per floor. Applies to all tablets.", floorsValue: "{n} floors", floorsNone: "none", floorAdd: "Add floor", floorName: "Name, e.g. Ground floor", floorNone: "–", floorSave: "Save", floorSuggest: "Suggestion from the room names: {list}", floorTake: "Apply", floorLights: "Lights off", floorBlinds: "Blinds down", floorOther: "Other rooms",
     tileSize: "Size", headAdd: "Heading", headPlaceholder: "e.g. Ceiling, Windows …", roomReset: "Reset room", editHint2: "1×1 next to the × switches between small, wide, tall and big.",
     accent: "Accent colour", accentLamps: "like the lamps", accentHint: "Colourful: the background glows in the colour of the lamps which are on",
@@ -369,6 +371,7 @@
   function place() { return (S.tablet && S.tablet.place) || "wall"; }
   function layout() { return (S.tablet && S.tablet.layout) || {}; }
   function startTab() {
+    if (layout().start === "cameras" && seesCameras()) { return "cameras"; }
     if (place() === "couch" && S.tablet.room && roomByName(S.tablet.room)) { return "room:" + S.tablet.room; }
     return "home";
   }
@@ -853,6 +856,7 @@
       var openHere = (S.header.open || []).some(function (o) { return o.room === r.name && !mayOpenNow(o.may_open); });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
+    if (seesCameras()) { tabs.push({ id: "cameras", name: t("cameras") }); } else if (S.tab === "cameras") { S.tab = "home"; }
     if (seesTimeline()) { tabs.push({ id: "history", name: t("history") }); } else if (S.tab === "history") { S.tab = "home"; }
     el.innerHTML = tabs.map(function (tb) {
       return '<button class="tab' + (tb.id === S.tab ? " on" : "") + '" data-tab="' + esc(tb.id) + '">' + esc(tb.name) + (tb.dot ? '<span class="dot"></span>' : "") + "</button>";
@@ -863,7 +867,7 @@
   function renderContent() {
     var el = document.getElementById("content"); if (!el) { return; }
     var top = el.scrollTop;
-    if (S.arrange) { el.innerHTML = arrangeHtml(); } else if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
+    if (S.arrange) { el.innerHTML = arrangeHtml(); } else if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else if (S.tab === "cameras") { el.innerHTML = camerasHtml(); camSnaps(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
     el.scrollTop = top;
     S.shownTab = S.tab;
   }
@@ -2152,6 +2156,7 @@
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" + accentHtml() +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      (seesCameras() ? '<div class="mrow"><span class="mic">' + I("film", 20) + '</span><span class="ml"><b>' + esc(t("camStart")) + '</b></span><div class="seg"><button class="' + (lay.start !== "cameras" ? "on" : "") + '" data-camstart="">' + esc(t("camStartAuto")) + '</button><button class="' + (lay.start === "cameras" ? "on" : "") + '" data-camstart="cameras">' + esc(t("camStartCams")) + "</button></div></div>" : "") +
       liteRowHtml(lay) +
       '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
@@ -2653,11 +2658,13 @@
   function idleCheck() {
     var idle = (Date.now() - S.lastTouch) / 1000;
     if (S.ring || alarmList().length || !S.tablet || !S.tablet.place) { return; }
+    // a live picture left open on a normal tablet ends after two minutes
+    if (idle > 120 && S.camView && layout().start !== "cameras") { closeCam(); }
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
     var after = saverMinutes();
-    if (after && idle > after * 60 && !S.saver) { S.saver = true; renderSaver(); }
+    if (after && idle > after * 60 && layout().start !== "cameras" && !S.saver) { S.saver = true; renderSaver(); }
   }
   // minutes until the screensaver, 0: never. Default 5, on the couch never
   function saverMinutes() {
@@ -2842,6 +2849,7 @@
   var pc = null, mic = null;
   function startRing(m) {
     wake();
+    if (S.camView) { closeCam(); }
     S.ring = { name: m.name, camera: m.camera, opener: m.opener, started: Date.now(), full: place() === "door" || place() === "wall", muted: false, talking: false };
     chime();
     render();
@@ -2888,6 +2896,75 @@
       '<button class="rb end" data-hangup="1"><span class="c">' + I("x") + "</span>" + esc(t("hangup")) + "</button></div>";
     if (r.camera) { startVideo(r.camera, r.talking); }
   }
+  // ---------- camera page: all cameras, tap for live, swipe to the next ----------
+  var camPc = null;
+  function cameraList() { return (S.header && S.header.door && S.header.door.cameras) || []; }
+  // restricted tablets (only some rooms) see no camera page
+  function seesCameras() { return cameraList().length > 0 && !(S.tablet && S.tablet.rooms && S.tablet.rooms.length); }
+  function camerasHtml() {
+    S.camSnap = S.camSnap || {};
+    return '<div class="camgrid">' + cameraList().map(function (c, i) {
+      return '<button class="camcard" data-cam="' + i + '"><img data-camimg="' + esc(c) + '" alt=""' + (S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '><span>' + esc(c) + "</span></button>";
+    }).join("") + "</div>";
+  }
+  // still pictures every 2 s while the page is shown, one camera after the other
+  function camSnaps() {
+    if (S.camTimer) { return; }
+    var list = cameraList(), i = 0;
+    function next() {
+      S.camTimer = null;
+      if (S.tab !== "cameras" || S.saver || S.camView || document.hidden || !list.length) { return; }
+      var c = list[i % list.length]; i++;
+      fetch("api/snapshot?stream=" + encodeURIComponent(c) + "&t=" + Date.now(), { headers: { Authorization: "Bearer " + S.token } })
+        .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); })
+        .then(function (b) {
+          var old = S.camSnap[c]; S.camSnap[c] = URL.createObjectURL(b);
+          var img = document.querySelector('[data-camimg="' + cssEsc(c) + '"]'); if (img) { img.src = S.camSnap[c]; }
+          if (old) { URL.revokeObjectURL(old); }
+        })
+        .catch(function () { /* camera offline */ })
+        .then(function () { S.camTimer = setTimeout(next, Math.max(300, 2000 / list.length)); });
+    }
+    S.camTimer = setTimeout(next, 10);
+  }
+  function openCam(i) {
+    var list = cameraList(); if (!list.length) { return; }
+    S.camView = { i: (i + list.length) % list.length }; renderCam();
+  }
+  function renderCam() {
+    var v = S.camView, list = cameraList(), el = document.getElementById("camview");
+    if (!v) { if (el) { el.parentNode.removeChild(el); } closeCamLive(); camSnaps(); return; }
+    if (!el) { el = document.createElement("div"); el.id = "camview"; el.className = "camview"; document.body.appendChild(el); }
+    var c = list[v.i];
+    el.innerHTML = '<video id="camvideo" autoplay playsinline muted></video><img id="camsnap" alt=""' + (S.camSnap && S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '>' +
+      '<div class="camtop"><span>' + esc(c) + "</span>" + (list.length > 1 ? "<span>" + (v.i + 1) + " / " + list.length + "</span>" : "") + '<button class="iconbtn" data-camclose="1">' + I("x") + "</button></div>" +
+      (list.length > 1 ? '<button class="camnav l" data-camstep="-1" aria-label="' + esc(t("camPrev")) + '">' + I("left") + '</button><button class="camnav r" data-camstep="1" aria-label="' + esc(t("camNext")) + '">' + I("chev") + "</button>" : "");
+    camLive(c);
+  }
+  function camLive(stream) {
+    closeCamLive();
+    var video = document.getElementById("camvideo");
+    if (!window.RTCPeerConnection || !video) { return; }
+    var conn = camPc = new RTCPeerConnection({ iceServers: [] });
+    conn.addTransceiver("video", { direction: "recvonly" });
+    conn.addTransceiver("audio", { direction: "recvonly" });
+    conn.ontrack = function (ev) { if (video.srcObject !== ev.streams[0]) { video.srcObject = ev.streams[0] || new MediaStream([ev.track]); video.classList.add("on"); } };
+    conn.createOffer().then(function (offer) { return conn.setLocalDescription(offer); }).then(function () { return waitIce(conn); }).then(function () {
+      return fetch("api/webrtc?stream=" + encodeURIComponent(stream), { method: "POST", headers: { Authorization: "Bearer " + S.token, "Content-Type": "application/sdp" }, body: conn.localDescription.sdp });
+    }).then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.text(); })
+      .then(function (sdp) { if (conn === camPc) { return conn.setRemoteDescription({ type: "answer", sdp: sdp }); } })
+      .catch(function () { /* the still picture stays */ });
+  }
+  function closeCamLive() { if (camPc) { try { camPc.close(); } catch (e) { /* closed */ } camPc = null; } }
+  function closeCam() { S.camView = null; renderCam(); }
+  // swipe in the live view
+  document.addEventListener("pointerdown", function (ev) { if (S.camView && ev.target.closest && ev.target.closest("#camview")) { S.camView.sx = ev.clientX; } }, true);
+  document.addEventListener("pointerup", function (ev) {
+    var v = S.camView; if (!v || v.sx === undefined) { return; }
+    var dx = ev.clientX - v.sx; v.sx = undefined;
+    if (Math.abs(dx) > 60 && cameraList().length > 1) { openCam(v.i + (dx < 0 ? 1 : -1)); }
+  }, true);
+
   function startVideo(stream, withMic) {
     stopVideo();
     var video = document.getElementById("ringvideo");
@@ -3016,6 +3093,10 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if ((el = closest(target, "data-camclose"))) { closeCam(); return; }
+    if ((el = closest(target, "data-camstep")) && S.camView) { openCam(S.camView.i + +el.getAttribute("data-camstep")); return; }
+    if ((el = closest(target, "data-cam"))) { openCam(+el.getAttribute("data-cam")); return; }
+    if ((el = closest(target, "data-camstart"))) { var lc = copyLayout(); lc.start = el.getAttribute("data-camstart") || undefined; if (!lc.start) { delete lc.start; } saveLayout(lc); return; }
     if (floorClick(target)) { return; }
     if ((el = closest(target, "data-size"))) {
       var sid = el.getAttribute("data-size"), ls = copyLayout(); ls.tile_size = ls.tile_size || {};

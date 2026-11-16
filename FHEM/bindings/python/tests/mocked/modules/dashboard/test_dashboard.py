@@ -1788,6 +1788,11 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_layout_start_page():
+    assert clean_layout({"start": "cameras"}) == {"start": "cameras"}
+    assert clean_layout({"start": "history"}) == {}
+
+
 def test_parse_floors():
     floors = model.parse_floors("EG=Küche, Wohnzimmer;OG=Bad,Küche;EG=Flur; =x")
     assert floors == [
