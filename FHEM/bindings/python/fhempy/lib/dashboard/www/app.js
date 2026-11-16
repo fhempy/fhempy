@@ -27,6 +27,7 @@
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     ntTitle: "Meldung auf Zuhause", ntHint: "Zeigt den Text auf Zuhause, solange das Gerät an, offen oder ausgelöst ist. Mit dem Haken wird es zurückgesetzt.", ntText: "Text, z. B. Post ist da", ntSave: "Speichern", ntDone: "Erledigt", ntSaved: "Gespeichert",
     someone: "Jemand da", quietFor: "ruhig {t}",
+    moTitle: "Darf offen sein", moHint: "In dieser Zeit warnt das Dashboard nicht, wenn offen ist, z. B. ein Hoftor tagsüber. Gilt für alle Tablets.", moFrom: "von", moTo: "bis", moUntil: "darf offen sein bis {t}", moAllowed: "Darf gerade offen sein",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
@@ -94,6 +95,7 @@
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     ntTitle: "Notice on Home", ntHint: "Shows the text on Home while the device is on, open or triggered. The tick resets it.", ntText: "Text, e.g. Mail is here", ntSave: "Save", ntDone: "Done", ntSaved: "Saved",
     someone: "Someone here", quietFor: "quiet {t}",
+    moTitle: "May be open", moHint: "During this time the dashboard does not warn when it is open, e.g. a yard gate by day. Applies to all tablets.", moFrom: "from", moTo: "to", moUntil: "may be open until {t}", moAllowed: "May be open now",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
@@ -590,7 +592,7 @@
       sub = st.locked ? t("locked") : st.locked === false ? t("unlocked") : "–";
     } else if (k === "contact") {
       icon = tile.door ? "door" : "win";
-      if (st.closed === false) { cls = "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
+      if (st.closed === false) { cls = mayOpenNow(tile.may_open) ? "" : "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
     } else if (k === "smoke" || k === "water") {
       if (st.alarm) { cls = "alarm"; sub = t(k + "Now") + " " + since(st.since); } else { sub = t("calm"); }
     } else if (k === "motion") {
@@ -768,7 +770,7 @@
     return (list || []).filter(function (x) { return !ids || ids[x.id]; });
   }
   function warningText() {
-    var open = shownList(S.header && S.header.open);
+    var open = warnOpen(S.header && S.header.open);
     if (!open.length) { return ""; }
     if (open.length <= 3) { return t("openNames", { names: open.map(function (o) { return shortName(o.name); }).join(", ") }); }
     return t("openCount", { n: open.length });
@@ -789,7 +791,7 @@
     var el = document.getElementById("tabs"); if (!el) { return; }
     var tabs = [{ id: "home", name: t("home") }];
     visibleRooms().forEach(function (r) {
-      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name; });
+      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name && !mayOpenNow(o.may_open); });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
     if (seesTimeline()) { tabs.push({ id: "history", name: t("history") }); } else if (S.tab === "history") { S.tab = "home"; }
@@ -808,7 +810,7 @@
   }
 
   function leaveHtml() {
-    var h = S.header, open = shownList(h.open), running = shownList(h.running), rows = "";
+    var h = S.header, open = warnOpen(h.open), running = shownList(h.running), rows = "";
     open.forEach(function (o) {
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
@@ -1153,6 +1155,8 @@
       body += '<div class="tring">' + climateHtml(tile) + "</div>";
     } else if (k === "lock") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.locked ? " on" : "") + '" data-do="lock">' + I("lock", 20) + " " + esc(t("lock")) + '</button><button class="pill danger" data-do="unlock">' + I("unlock", 20) + " " + esc(t("unlock")) + "</button></div></div>";
+    } else if (k === "contact" && S.tablet && !S.tablet.readonly) {
+      body += mayOpenHtml(tile);
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
@@ -1646,7 +1650,26 @@
     return result;
   }
   function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
-  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false && !mayOpenNow(tl.may_open)) || (tl.kind === "lock" && tl.state.locked === false); }
+  // ---------- doors and gates which may be open at some times ----------
+  function mayOpenNow(win) {
+    var m = /^(\d\d):(\d\d)-(\d\d):(\d\d)$/.exec(win || ""); if (!m) { return false; }
+    var now = S.now || new Date(), n = now.getHours() * 60 + now.getMinutes(), a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4];
+    return a < b ? n >= a && n < b : n >= a || n < b;
+  }
+  function warnOpen(list) { return shownList(list).filter(function (o) { return !mayOpenNow(o.may_open); }); }
+  function mayOpenHtml(tile) {
+    var on = !!tile.may_open, parts = (tile.may_open || "07:00-20:00").split("-");
+    return '<div class="group ntedit"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("moTitle")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("moHint")) + "</div></div>" +
+      '<button class="tg' + (on ? "" : " off") + '" data-mayopen="' + esc(tile.id) + '" aria-label="' + esc(t("moTitle")) + '"></button></div>' +
+      (on ? '<div class="item ntrow"><span>' + esc(t("moFrom")) + '</span><input type="time" id="mofrom" value="' + esc(parts[0]) + '"><span>' + esc(t("moTo")) + '</span><input type="time" id="moto" value="' + esc(parts[1] === "24:00" ? "23:59" : parts[1]) + '"><button class="pill" data-mayopensave="' + esc(tile.id) + '">' + esc(t("ntSave")) + "</button></div>" : "") + "</div></div>";
+  }
+  function sendMayOpen(id, on) {
+    if (!pinOk()) { askPin(null); return; }
+    var from = document.getElementById("mofrom"), to = document.getElementById("moto");
+    var win = !on ? "" : from && to && from.value && to.value ? from.value + "-" + to.value : "07:00-20:00";
+    send({ type: "may_open", id: id, window: win });
+  }
   // devices which need attention: not reachable, a sensor without values for
   // two days, a low battery
   function maintenance() {
@@ -1770,6 +1793,10 @@
         if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
         return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
+      var allowed = all.filter(function (x) { return x.tile.kind === "contact" && x.tile.state.closed === false && mayOpenNow(x.tile.may_open); });
+      if (allowed.length) {
+        body += '<div class="section"><span>' + esc(t("moAllowed")) + "</span></div>" + byRoom(allowed, function (x) { return ovRow(x, x.tile.door ? "door" : "win", "#8E8E93", t("open") + " " + since(x.tile.state.since) + " · " + t("moUntil", { t: x.tile.may_open.split("-")[1] })); });
+      }
     }
     sheetShell('<div class="head"><div><h1>' + esc(title) + "</h1>" + (lead ? '<div class="subtitle">' + esc(lead) + "</div>" : "") + '</div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       '<div class="blist ovlist">' + body + "</div>" + (actions ? '<div class="actions">' + actions + "</div>" : ""));
@@ -2422,7 +2449,7 @@
     var now = new Date(), h = S.header || {}, w = h.weather, items = "";
     if (h.presence) { items += '<div class="x">' + I("home", 20) + " " + esc((h.presence.home || []).length ? t("atHome", { n: h.presence.home.length }) : t("nobody")) + "</div>"; }
     var inside = insideTemp(); if (inside !== null) { items += '<div class="x">' + I("thermo", 20) + " " + num(inside) + "°</div>"; }
-    var open = shownList(h.open);
+    var open = warnOpen(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
     binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
@@ -2693,6 +2720,8 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-mayopen"))) { sendMayOpen(el.getAttribute("data-mayopen"), el.classList.contains("off")); return; }
+    if ((el = closest(target, "data-mayopensave"))) { sendMayOpen(el.getAttribute("data-mayopensave"), true); showToast(t("ntSaved"), null, 2000); return; }
     if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }
     if ((el = closest(target, "data-noticesave"))) { sendNotice(el.getAttribute("data-noticesave"), true); showToast(t("ntSaved"), null, 2000); return; }
@@ -2864,6 +2893,10 @@
   function tick() {
     S.now = new Date();
     renderHeader(); idleCheck(); loadSparks(); tickTimers();
+    // a door which may be open by day warns again in the evening
+    var mo = Object.keys(S.tiles).filter(function (id) { return mayOpenNow(S.tiles[id].may_open); }).join("\n");
+    if (S.moKey !== undefined && mo !== S.moKey) { renderContent(); }
+    S.moKey = mo;
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }
