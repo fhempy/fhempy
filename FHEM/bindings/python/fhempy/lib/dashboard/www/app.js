@@ -61,6 +61,11 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    tourTitle: "So bedienst du das Dashboard", tourText: "Vier Handgriffe, mehr braucht es nicht.", tourGo: "Los geht’s", tourAgain: "So bedienst du das Dashboard",
+    tourTap: "Tippen", tourTapList: ["Das runde Symbol schaltet an und aus", "Die Kachel zeigt Details und Verlauf", "Oben Wetter, Personen und Offen antippen"],
+    tourDrag: "Ziehen", tourDragList: ["In den Details Helligkeit, Rollladen und Temperatur ziehen", "Im Raum-Popup ein Schieber für alle Rollläden"],
+    tourHold: "Halten", tourHoldList: ["Lampe oder Steckdose halten: Ausschalt-Timer", "Beim Bearbeiten Kacheln halten und verschieben"],
+    tourGear: "Einstellungen", tourGearList: ["Zahnrad oben rechts", "Design, Räume, Bildschirmschoner", "Kacheln bearbeiten und Räume ordnen"],
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +132,11 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    tourTitle: "How to use the dashboard", tourText: "Four moves, that is all it takes.", tourGo: "Let’s go", tourAgain: "How to use the dashboard",
+    tourTap: "Tap", tourTapList: ["The round icon switches on and off", "The tile shows details and history", "Tap weather, people and open at the top"],
+    tourDrag: "Drag", tourDragList: ["Drag brightness, blinds and temperature in the details", "One slider for all blinds in the room popup"],
+    tourHold: "Hold", tourHoldList: ["Hold a lamp or plug: switch-off timer", "While editing hold tiles to move them"],
+    tourGear: "Settings", tourGearList: ["Gear at the top right", "Design, rooms, screensaver", "Edit tiles and arrange rooms"],
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -720,6 +730,7 @@
     if (!S.token) { renderPair(); return; }
     if (!S.tablet) { app.innerHTML = '<div class="ob"><div class="empty">' + (S.connected ? "" : t("connLost")) + "</div></div>"; return; }
     if (!S.tablet.place) { renderSetup(); return; }
+    if (S.tour) { renderTour(); return; }
     if (!S.tab || (S.tab.indexOf("room:") === 0 && !roomByName(S.tab.slice(5)))) { S.tab = startTab(); }
     // drawing everything again must not jump back to the top
     var old = document.getElementById("content"), top = old ? old.scrollTop : 0, shownTab = S.shownTab;
@@ -1967,6 +1978,7 @@
     if (tb.https && location.protocol !== "https:") {
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
     }
+    html += '<div class="group"><div class="menu">' + settingsRow('data-tour="1"', "star", t("tourAgain"), "") + "</div></div>";
     html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
     sheetShell(html);
   }
@@ -2358,8 +2370,17 @@
       ' <select id="setuproom">' + roomOpts + '</select><button class="pill primary" data-setupdone="1">' + esc(t(S.rooms.length ? "next" : "pickDone")) + "</button></div></div></div>";
   }
   function setupSteps(step) {
-    if (!S.rooms.length) { return ""; }
-    return '<div class="steps"><span class="' + (step === 1 ? "on" : "done") + '"></span><span class="' + (step === 2 ? "on" : "") + '"></span></div>';
+    // place, rooms (only with rooms), how to use it
+    var steps = S.rooms.length ? [1, 2, 3] : [1, 3];
+    return '<div class="steps">' + steps.map(function (n) { return '<span class="' + (n === step ? "on" : n < step ? "done" : "") + '"></span>'; }).join("") + "</div>";
+  }
+  // third step of the setup, also from the settings: tap, drag, hold, gear
+  function renderTour() {
+    var cards = [["tourTap", "power"], ["tourDrag", "blind"], ["tourHold", "clock"], ["tourGear", "gear"]].map(function (c) {
+      return '<div class="pl tour"><div class="pi">' + I(c[1]) + "</div><h3>" + esc(t(c[0])) + "</h3><ul>" + T[c[0] + "List"].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    }).join("");
+    app.innerHTML = '<div class="ob"><div class="obbox"><div class="logo"><div class="m"></div>' + esc(t("home")) + "</div>" + (S.tour === "setup" ? setupSteps(3) : "") + "<h1>" + esc(t("tourTitle")) + '</h1><p class="l">' + esc(t("tourText")) +
+      '</p><div class="places tours">' + cards + '</div><div class="found"><button class="pill primary" data-tourdone="1">' + esc(t("tourGo")) + "</button></div></div></div>";
   }
   // icon from the room name, for the big room tiles of the setup
   var ROOM_ICONS = [
@@ -2393,7 +2414,7 @@
       var lay = copyLayout(); lay.hidden_rooms = S.setupHidden.slice();
       S.tablet.layout = lay; send({ type: "layout", layout: lay });
     }
-    S.tablet.place = pl; S.tablet.room = room; S.setupStep = null; S.tab = startTab(); render(); applyTheme(); wakeLock();
+    S.tablet.place = pl; S.tablet.room = room; S.setupStep = null; S.tab = startTab(); S.tour = "setup"; render(); applyTheme(); wakeLock();
   }
 
   // ---------- screensaver, idle, wake ----------
@@ -2819,6 +2840,8 @@
       if (!S.setupHidden) { S.setupHidden = (layout().hidden_rooms || []).slice(); }
       S.setupStep = "rooms"; renderSetup(); return;
     }
+    if ((el = closest(target, "data-tourdone"))) { S.tour = null; store("dashTapHint", "1"); render(); return; }
+    if ((el = closest(target, "data-tour"))) { closeSheet(); S.tour = "again"; render(); return; }
     if ((el = closest(target, "data-setupback"))) { S.setupStep = null; renderSetup(); return; }
     if ((el = closest(target, "data-pickroom"))) {
       var pr = el.getAttribute("data-pickroom"), sh = S.setupHidden || [];
