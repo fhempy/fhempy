@@ -67,6 +67,7 @@ ATTRS_TEXT = (
     "door_opener",
     "keep_on",
     "notices",
+    "may_open",
     "appliances",
     "alarm_system",
     "alarm_pin",
@@ -114,7 +115,13 @@ ARRANGE_MESSAGES = (
     "delete_device",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + (
+    "setup",
+    "layout",
+    "notice",
+    "appliance",
+    "may_open",
+)
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -374,6 +381,12 @@ class dashboard(generic.FhemModule):
                 "help": "PIN of 4 to 8 digits for the settings, arranging rooms "
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
+            },
+            "may_open": {
+                "default": "",
+                "help": "Doors and gates which may be open at some times without "
+                "a warning, e.g. Yard_gate=07:00-20:00,Garage=08:00-18:00. "
+                "Also set on the tablets in the details of a door.",
             },
             "notices": {
                 "default": "",
@@ -678,6 +691,9 @@ class dashboard(generic.FhemModule):
     def set_attr_notices(self, hash):
         self.schedule_reload()
 
+    def set_attr_may_open(self, hash):
+        self.schedule_reload()
+
     def set_attr_appliances(self, hash):
         if self.ready:
             self.schedule_header()
@@ -909,6 +925,7 @@ class dashboard(generic.FhemModule):
             keep_on=self.keep_on_names(),
         )
         self.apply_timers()
+        self.apply_may_open()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
@@ -1297,6 +1314,42 @@ class dashboard(generic.FhemModule):
             tablet = self.tablets.get(tablet_id)
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
+
+    # --- doors and gates which may be open at some times ---
+
+    def may_open(self):
+        return model.parse_may_open(getattr(self, "_attr_may_open", ""))
+
+    def apply_may_open(self):
+        for name, window in self.may_open().items():
+            item = self.data["tiles"].get(name)
+            if item is not None and item["kind"] == "contact":
+                item["may_open"] = window
+
+    async def set_may_open(self, tablet, message):
+        """the tablet sets or removes the time a door may be open"""
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] != "contact":
+            return
+        windows = self.may_open()
+        window = model.clean_window(message.get("window"))
+        if window:
+            windows[item["id"]] = window
+        else:
+            windows.pop(item["id"], None)
+        value = model.format_may_open(windows)
+        self.logger.info(f"{tablet['name']}: may_open {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_may_open = value
+        await self.reload()
 
     # --- devices which 'All off' leaves on ---
 
@@ -2234,6 +2287,8 @@ class dashboard(generic.FhemModule):
             await self.run_action(tablet, message)
         elif kind == "notice" and not tablet.get("readonly"):
             await self.set_notice(tablet, message)
+        elif kind == "may_open" and not tablet.get("readonly"):
+            await self.set_may_open(tablet, message)
 
         elif kind == "appliance" and not tablet.get("readonly"):
             await self.answer_appliance(tablet, message)
