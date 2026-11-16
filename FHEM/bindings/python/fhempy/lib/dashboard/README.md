@@ -211,6 +211,13 @@ with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`h
 disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
 tile, so *All off* and *Leave home* never disarm it.
 
+## Floors
+
+FHEM knows no floors. Settings → *Floors* (tablets which arrange rooms) adds floors and puts each room on one; *Home*
+then groups the room cards by floor, each with *Lights off* and *Blinds down*. Room names like `EG Küche` or `OG.Bad`
+give a suggestion which is applied with one tap. Attribute `floors` holds them:
+`Ground floor=Kitchen,Living room;Upstairs=Bath,Bedroom`.
+
 ## Editing tiles
 
 Settings → *Edit tiles* (per tablet): drag tiles to a new place, × hides them, the size button (*1×1*) switches
@@ -309,6 +316,8 @@ into the forum or a GitHub issue.
 | door_opener | Command of the door opener without `set` |
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
+| floors | Rooms grouped by floor, e.g. `Ground floor=Kitchen,Living room;Upstairs=Bath` |
+
 | may_open | Doors and gates which may be open at some times without a warning, e.g. `Yard_gate=07:00-20:00` |
 
 ## Set commands

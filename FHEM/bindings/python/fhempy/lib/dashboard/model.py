@@ -1694,6 +1694,42 @@ def renamed_layout(layout, source, target):
     return result
 
 
+# --- floors: rooms grouped by floor, FHEM itself knows no floors ---
+
+
+def parse_floors(value):
+    """attribute floors: 'Ground floor=Kitchen,Living room;Upstairs=Bath'
+    -> [{name, rooms}]. A room belongs to the first floor naming it."""
+    result, seen = [], set()
+    for entry in re.split(r"[;\n]", str(value or "")):
+        name, _, rooms = entry.partition("=")
+        name = name.strip()[:40]
+        if not name or any(f["name"] == name for f in result):
+            continue
+        members = []
+        for room in rooms.split(","):
+            room = room.strip()
+            if room and room not in seen:
+                seen.add(room)
+                members.append(room)
+        result.append({"name": name, "rooms": members})
+    return result
+
+
+def format_floors(floors):
+    parts = []
+    for floor in floors:
+        name = re.sub(r"[;=,\n]", " ", str(floor.get("name") or "")).strip()[:40]
+        rooms = [
+            re.sub(r"[;,\n]", " ", str(r)).strip()
+            for r in floor.get("rooms") or []
+            if str(r).strip()
+        ]
+        if name:
+            parts.append(name + "=" + ",".join(rooms))
+    return ";".join(parts)
+
+
 # --- own notices: "Mail is here" while a device has a value ---
 
 # a notice without =value shows while the reading is one of these
