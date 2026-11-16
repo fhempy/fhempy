@@ -14,6 +14,7 @@ import hmac
 import html
 import json
 import os
+import platform
 import re
 import secrets
 import ssl
@@ -21,6 +22,7 @@ import tempfile
 import time
 
 from .. import fhem, generic, utils
+from ..version import __version__
 from . import go2rtc, media, model
 
 DEFAULT_PORT = 8095
@@ -67,6 +69,7 @@ ATTRS_TEXT = (
     "door_opener",
     "keep_on",
     "notices",
+    "may_open",
     "appliances",
     "alarm_system",
     "alarm_pin",
@@ -114,7 +117,13 @@ ARRANGE_MESSAGES = (
     "delete_device",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + (
+    "setup",
+    "layout",
+    "notice",
+    "appliance",
+    "may_open",
+)
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -130,9 +139,15 @@ LAYOUT_KEYS = (
     "tile_order",
     "theme",
     "tile_size",
+    "accent",
+    "lite",
+    "saver",
 )
 # small, wide, tall, big
 TILE_SIZES = ("s", "w", "t", "b")
+ACCENTS = ("amber", "teal", "blue", "violet", "pink", "green", "lamps")
+# minutes until the screensaver, 0: never
+SAVER_MINUTES = (0, 2, 5, 10, 15, 30)
 SETTINGS_ATTRS = (
     "devices",
     "hidden_devices",
@@ -170,6 +185,12 @@ def clean_layout(layout):
                 if size in TILE_SIZES
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "accent" and value in ACCENTS:
+            result[key] = value
+        elif key == "lite" and value in ("auto", "on", "off"):
+            result[key] = value
+        elif key == "saver" and not isinstance(value, bool) and value in SAVER_MINUTES:
             result[key] = value
         elif isinstance(value, list):
             result[key] = [str(v)[:200] for v in value[:500]]
@@ -378,6 +399,12 @@ class dashboard(generic.FhemModule):
                 "help": "PIN of 4 to 8 digits for the settings, arranging rooms "
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
+            },
+            "may_open": {
+                "default": "",
+                "help": "Doors and gates which may be open at some times without "
+                "a warning, e.g. Yard_gate=07:00-20:00,Garage=08:00-18:00. "
+                "Also set on the tablets in the details of a door.",
             },
             "notices": {
                 "default": "",
@@ -682,6 +709,9 @@ class dashboard(generic.FhemModule):
     def set_attr_notices(self, hash):
         self.schedule_reload()
 
+    def set_attr_may_open(self, hash):
+        self.schedule_reload()
+
     def set_attr_appliances(self, hash):
         if self.ready:
             self.schedule_header()
@@ -913,6 +943,7 @@ class dashboard(generic.FhemModule):
             keep_on=self.keep_on_names(),
         )
         self.apply_timers()
+        self.apply_may_open()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
@@ -1301,6 +1332,42 @@ class dashboard(generic.FhemModule):
             tablet = self.tablets.get(tablet_id)
             if tablet is not None and self.allowed_tile(tablet, item):
                 await self.send(ws, {"type": "tile", "tile": item})
+
+    # --- doors and gates which may be open at some times ---
+
+    def may_open(self):
+        return model.parse_may_open(getattr(self, "_attr_may_open", ""))
+
+    def apply_may_open(self):
+        for name, window in self.may_open().items():
+            item = self.data["tiles"].get(name)
+            if item is not None and item["kind"] == "contact":
+                item["may_open"] = window
+
+    async def set_may_open(self, tablet, message):
+        """the tablet sets or removes the time a door may be open"""
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if item is None or item["kind"] != "contact":
+            return
+        windows = self.may_open()
+        window = model.clean_window(message.get("window"))
+        if window:
+            windows[item["id"]] = window
+        else:
+            windows.pop(item["id"], None)
+        value = model.format_may_open(windows)
+        self.logger.info(f"{tablet['name']}: may_open {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} may_open"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_may_open = value
+        await self.reload()
 
     # --- devices which 'All off' leaves on ---
 
@@ -2236,8 +2303,12 @@ class dashboard(generic.FhemModule):
             await self.arrange(tablet, message, ws)
         elif kind == "action":
             await self.run_action(tablet, message)
+        elif kind == "bug_info" and ws is not None:
+            await self.send(ws, {"type": "bug_info", "info": self.bug_info()})
         elif kind == "notice" and not tablet.get("readonly"):
             await self.set_notice(tablet, message)
+        elif kind == "may_open" and not tablet.get("readonly"):
+            await self.set_may_open(tablet, message)
 
         elif kind == "appliance" and not tablet.get("readonly"):
             await self.answer_appliance(tablet, message)
@@ -2314,6 +2385,29 @@ class dashboard(generic.FhemModule):
             await ws.send_json(message)
         except (ConnectionError, RuntimeError):
             self.clients.pop(ws, None)
+
+    def bug_info(self):
+        """versions and counts for a bug report, nothing personal: no names,
+        no addresses, only which attributes are set"""
+        kinds = {}
+        for item in self.data["tiles"].values():
+            kinds[item["kind"]] = kinds.get(item["kind"], 0) + 1
+        return {
+            "fhempy": __version__,
+            "build": self.build,
+            "python": platform.python_version(),
+            "system": f"{platform.system()} {platform.machine()}",
+            "devices": len(self.infos),
+            "tiles": len(self.data["tiles"]),
+            "rooms": len(self.data["rooms"]),
+            "kinds": dict(sorted(kinds.items())),
+            "tablets": len(self.tablets),
+            "connected": len(self.clients),
+            "https": bool(self._attr_https_port),
+            "attrs": sorted(
+                a for a in ATTRS_TEXT if (getattr(self, "_attr_" + a, "") or "")
+            ),
+        }
 
     def connected(self):
         """(websocket, tablet id) of the connected tablets, as a copy: sending

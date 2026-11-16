@@ -1797,3 +1797,91 @@ def test_layout_tile_sizes_and_headings():
     )
     assert layout["tile_size"] == {"wz_Licht": "b"}
     assert layout["tile_order"] == {"Wohnzimmer": ["#Decke", "wz_Licht"]}
+
+
+def test_layout_accent_colour():
+    for value in ("amber", "teal", "lamps"):
+        assert clean_layout({"accent": value}) == {"accent": value}
+    assert clean_layout({"accent": "#ff0000"}) == {}
+
+
+@pytest.mark.asyncio
+async def test_bug_info_has_versions_but_no_names(module):
+    module._attr_alarm_pin = "1234"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "bug_info"})
+        while True:
+            message = await ws.receive_json(timeout=2)
+            if message["type"] == "bug_info":
+                break
+        info = message["info"]
+        assert info["fhempy"] and info["python"]
+        assert info["tiles"] == len(module.data["tiles"])
+        assert "alarm_pin" in info["attrs"]
+        text = json.dumps(info)
+        # neither device names nor the PIN
+        assert "1234" not in text and "wz_" not in text
+
+
+def test_layout_simple_display():
+    for value in ("auto", "on", "off"):
+        assert clean_layout({"lite": value}) == {"lite": value}
+    assert clean_layout({"lite": "fast"}) == {}
+
+
+def test_layout_screensaver_minutes():
+    assert clean_layout({"saver": 10}) == {"saver": 10}
+    assert clean_layout({"saver": 0}) == {"saver": 0}
+    for bad in (7, "5", False, True, None, 300):
+        assert clean_layout({"saver": bad}) == {}
+
+
+def test_motion_tile_knows_since_when():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    motion = next(t for t in tiles.values() if t["kind"] == "motion")
+    assert motion["state"]["occupied"] is False
+    assert motion["state"]["since"]
+
+
+def test_may_open_windows():
+    assert model.clean_window("7:00-20:00") == "07:00-20:00"
+    assert model.clean_window("22:00 - 6:30") == "22:00-06:30"
+    for bad in ("", "7-20", "25:00-06:00", "08:00-08:00", "08:61-09:00", None):
+        assert model.clean_window(bad) is None
+    windows = model.parse_may_open("Hoftor=07:00-20:00, Garage=8:00-18:00,Tor=x")
+    assert windows == {"Hoftor": "07:00-20:00", "Garage": "08:00-18:00"}
+    assert model.parse_may_open(model.format_may_open(windows)) == windows
+    assert model.may_open_now("07:00-20:00", 7 * 60)
+    assert not model.may_open_now("07:00-20:00", 20 * 60)
+    # over midnight
+    assert model.may_open_now("22:00-06:00", 23 * 60)
+    assert model.may_open_now("22:00-06:00", 60)
+    assert not model.may_open_now("22:00-06:00", 12 * 60)
+
+
+@pytest.mark.asyncio
+async def test_may_open_set_on_tablet(module):
+    module._attr_may_open = "wz_Fenster=07:00-20:00,wz_Stehlampe=07:00-20:00"
+    await module.reload()
+    assert module.data["tiles"]["wz_Fenster"]["may_open"] == "07:00-20:00"
+    # only doors and windows
+    assert "may_open" not in module.data["tiles"]["wz_Stehlampe"]
+    window = next(o for o in module.head["open"] if o["id"] == "wz_Fenster")
+    assert window["may_open"] == "07:00-20:00"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "may_open", "id": "bad_Fenster", "window": "9:00-17:30"})
+        await asyncio.sleep(0.1)
+        assert module.data["tiles"]["bad_Fenster"]["may_open"] == "09:00-17:30"
+        await ws.send_json({"type": "may_open", "id": "wz_Fenster", "window": ""})
+        await asyncio.sleep(0.1)
+        assert "may_open" not in module.data["tiles"]["wz_Fenster"]
+        assert module.may_open() == {
+            "bad_Fenster": "09:00-17:30",
+            "wz_Stehlampe": "07:00-20:00",
+        }
+        await ws.close()
