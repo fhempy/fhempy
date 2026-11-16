@@ -1817,6 +1817,12 @@ def test_languages():
                 match = re.search(r"[\s{]" + key + r': "((?:[^"\\]|\\.)*)"', english)
                 wanted = set(re.findall(r"\{\w+\}", match.group(1)))
                 assert set(re.findall(r"\{\w+\}", value)) == wanted, f"{code}: {key}"
+    # and every English text is translated
+    english = english[: english.index("\n  };")]
+    keys = set(re.findall(r"(?:^|\{|, |\n\s+)(\w+): [\[\"']", english))
+    assert len(keys) > 400
+    for code, found in texts.items():
+        assert not keys - set(found), f"{code}: {sorted(keys - set(found))}"
 
 
 @pytest.mark.asyncio
