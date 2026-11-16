@@ -1529,3 +1529,78 @@ def test_weather_forecast():
     days = model.weather({"w": info})["days"]
     assert [d["name"] for d in days] == ["Mo", "Di"]
     assert days[0]["rain"] is None
+
+
+def test_appliance_watch():
+    watch = model.ApplianceWatch()
+    minute = 60
+    assert watch.feed(2, 0) is None
+    assert watch.feed(2100, 0) == "start"
+    assert watch.feed(150, 30 * minute) is None
+    assert watch.feed(3, 45 * minute) is None
+    assert watch.tick(50 * minute) is None
+    # still running: plugs report changes only
+    assert watch.tick(44 * minute) is None
+    assert watch.tick(56 * minute) == "done" and watch.seconds == 45 * minute
+    # a coffee machine: high power, but short
+    assert watch.feed(1200, 0) == "start"
+    assert watch.feed(1200, 4 * minute) is None
+    assert watch.feed(1, 6 * minute) is None
+    assert watch.tick(20 * minute) == "short"
+    # a TV: long, but never much power
+    watch.feed(90, 0)
+    watch.feed(110, 120 * minute)
+    watch.feed(2, 125 * minute)
+    assert watch.tick(140 * minute) == "short"
+    assert model.parse_appliances("A:washer, B:none,C:toaster") == {"A": "washer", "B": "none"}
+    assert model.format_appliances({"B": "none", "A": "washer"}) == "A:washer,B:none"
+    assert model.typical_seconds([3000, 3600, 4000]) == 3600
+    assert model.typical_seconds([]) is None
+    assert model.appliance_guess("Steckdose Waschmaschine") == "washer"
+    assert model.appliance_guess("Plug 3") is None
+
+
+@pytest.mark.asyncio
+async def test_appliance_asked_then_done(module, mocker):
+    clock = [100000.0]
+    mocker.patch.object(dash_module.time, "time", lambda: clock[0])
+    minute = 60
+
+    async def power(value, minutes):
+        clock[0] = 100000.0 + minutes * minute
+        await module.handle_event("wz_Fernseher", "power", str(value))
+
+    async def tick(minutes):
+        clock[0] = 100000.0 + minutes * minute
+        for name, watch in list(module.watches.items()):
+            await module.appliance_result(name, watch, watch.tick(clock[0]))
+
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        # the first long program with a peak: the tablets ask
+        await power(2000, 0)
+        await power(400, 30)
+        await power(2, 40)
+        await tick(52)
+        ask = module.make_header()["appliances"]["ask"]
+        assert [a["id"] for a in ask] == ["wz_Fernseher"]
+        await ws.send_json({"type": "appliance", "id": "wz_Fernseher", "what": "washer"})
+        head = (await next_of(ws, "header"))["header"]
+        assert head["appliances"]["ask"] == []
+        assert module._attr_appliances == "wz_Fernseher:washer"
+        # the next program runs with "about ... left", then it is done
+        await power(1800, 100)
+        await power(300, 110)
+        running = module.make_header()["appliances"]["running"][0]
+        assert running["what"] == "washer" and running["typical"] == 40 * minute
+        await power(1, 135)
+        await tick(146)
+        done = await next_of(ws, "appliance_done")
+        assert done["what"] == "washer" and done["id"] == "wz_Fernseher"
+        while not (await next_of(ws, "header"))["header"]["appliances"]["done"]:
+            pass
+        await ws.send_json({"type": "appliance_seen", "id": "wz_Fernseher"})
+        head = (await next_of(ws, "header"))["header"]
+        assert head["appliances"]["done"] == []
+        await ws.close()

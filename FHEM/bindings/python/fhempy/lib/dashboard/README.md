@@ -139,6 +139,18 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
 
+## Washing machine, dryer and dishwasher
+
+Plugs which report their power are watched. A long program (at least 20 minutes, with a peak of 300 W or more for
+heating or spinning) followed by 10 minutes without power is a finished program. After the first one the tablets ask
+once what is plugged in: *Washing machine*, *Dryer*, *Dishwasher* or *None of these*. The name of the plug is only used
+to put the likely answer first. The answer is stored in attribute `appliances` (e.g. `Plug_basement:washer`), which
+can also be set by hand.
+
+While a program runs, *Home* shows it with the time it runs and, after the first programs, about how long it takes. When
+it is done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12
+hours pass.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices

@@ -644,3 +644,11 @@ button.chip { color: var(--tx); }
 .ss .sh div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; }
 .ss .sh b { font-size: 20px; font-weight: 300; color: #c9cfd8; }
 .ss .sh i { font-style: normal; color: #4DA3FF; font-size: 13px; }
+/* washing machine, dryer, dishwasher */
+.apbar { height: 6px; border-radius: 3px; background: var(--card2); margin-top: 8px; overflow: hidden; }
+.apbar i { display: block; height: 100%; border-radius: 3px; background: #4DA3FF; transition: width .6s ease; }
+.apask { padding: 4px 0 10px; }
+.apask .row { border-bottom: 0; }
+.apask .actions { flex-wrap: wrap; justify-content: flex-start; gap: 8px; margin: 0 0 4px; }
+.apask .pill { height: 42px; }
+.apdone .t b { color: #34D399; }
