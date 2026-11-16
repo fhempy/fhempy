@@ -27,6 +27,7 @@ FORECAST = {
         "weather_code": [3, 95],
         "temperature_2m_max": [15.6, 18.2],
         "temperature_2m_min": [7.4, 9.0],
+        "precipitation_probability_max": [20, 85],
     },
 }
 
@@ -103,6 +104,7 @@ async def test_update_sets_readings(mocker):
     assert readings["cur_windspeed_with_unit"] == "10 km/h"
     assert readings["next_days_0_name"] == "Saturday"
     assert readings["next_days_1_weather"] == "Thunderstorm"
+    assert readings["next_days_1_precipitation"] == "85"
     assert readings["next_days_1_max_temp"] == "18"
     assert readings["next_days_1_min_temp"] == "9"
     assert readings["next_hours_00_time"] == "Saturday 08:00"

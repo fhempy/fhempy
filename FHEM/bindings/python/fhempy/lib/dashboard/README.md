@@ -99,6 +99,28 @@ settings, arranging rooms, editing tiles and *Leave on* ask for the PIN first, t
 tablet. FHEM checks the PIN, the tablets never get it. After 5 wrong PINs a tablet waits 5 minutes. A new tablet is
 set up without the PIN.
 
+## Calendar and waste collection
+
+FHEM `Calendar` devices are read every 5 minutes. *Home* shows the entries of today and tomorrow. Pickups of waste get a
+chip on *Home* and a line in the screensaver on the day before and on the day itself (*Tomorrow: Yellow bin*). Pickups
+are found by what an entry says (bin, Tonne, Müll, Altpapier, Gelber Sack, recycling …), and every entry of a calendar
+that mostly holds pickups counts as one, also a bare *Gelb* or *Papier*. Devices with the readings `next_text` and
+`next_days` (e.g. ABFALL) work the same way.
+
+## Weather
+
+A tap on the weather in the header shows the next 24 hours as a curve with the chance of rain, the next days with
+rain and low/high, and sunrise and sunset. The screensaver shows the next hours under the weather. Hours come from
+`openmeteo_weather`, days also from the FHEM `Weather` module.
+
+## Good night and leaving home
+
+*Good night* and *Leave home* on *Home* first show what is still open or on: windows and doors, unlocked locks (lock
+them with one tap), lights and switches, and at night the open blinds. One tap switches off the lights and switches
+(not those left on with *All off*) and, at night, closes the blinds. *Undo* brings back how it was before, for 10
+minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
+forecast of `openmeteo_weather`).
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
