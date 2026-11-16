@@ -1529,3 +1529,205 @@ def test_weather_forecast():
     days = model.weather({"w": info})["days"]
     assert [d["name"] for d in days] == ["Mo", "Di"]
     assert days[0]["rain"] is None
+
+
+def test_thermostat_heats_and_range():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    living = tiles["wz_Heizung"]
+    assert living["state"]["valve"] == 35 and living["state"]["heating"] is True
+    assert (living["min"], living["max"], living["step"]) == (4.5, 30, 0.5)
+    # no valve, no action: the tablets guess from the temperatures
+    assert "heating" not in tiles["bad_Heizung"]["state"]
+
+    def thermostat(readings, sets="desired-temp:slider,5,0.5,29"):
+        return {"NAME": "t", "TYPE": "x", "sets": sets, "readings": readings}
+
+    assert model.heating_state(thermostat({"actuator": "0 %"})) == {
+        "valve": 0,
+        "heating": False,
+    }
+    assert model.heating_state(thermostat({"hvac_action": "heating"})) == {"heating": True}
+    assert model.heating_state(thermostat({"running_state": "idle"})) == {"heating": False}
+    assert model.heating_state(thermostat({})) == {}
+    assert model.target_range(thermostat({})) == (5, 29, 0.5)
+    assert model.target_range(thermostat({}, "desired-temp:4.5,5.0,6.0,30.5")) == (
+        4.5,
+        30.5,
+        0.5,
+    )
+    assert model.target_range(thermostat({}, "desired-temp")) == (4.5, 30.0, 0.5)
+
+
+def test_appliance_watch():
+    watch = model.ApplianceWatch()
+    minute = 60
+    assert watch.feed(2, 0) is None
+    assert watch.feed(2100, 0) == "start"
+    assert watch.feed(150, 30 * minute) is None
+    assert watch.feed(3, 45 * minute) is None
+    assert watch.tick(50 * minute) is None
+    # still running: plugs report changes only
+    assert watch.tick(44 * minute) is None
+    assert watch.tick(56 * minute) == "done" and watch.seconds == 45 * minute
+    # a coffee machine: high power, but short
+    assert watch.feed(1200, 0) == "start"
+    assert watch.feed(1200, 4 * minute) is None
+    assert watch.feed(1, 6 * minute) is None
+    assert watch.tick(20 * minute) == "short"
+    # a TV: long, but never much power
+    watch.feed(90, 0)
+    watch.feed(110, 120 * minute)
+    watch.feed(2, 125 * minute)
+    assert watch.tick(140 * minute) == "short"
+    assert model.parse_appliances("A:washer, B:none,C:toaster") == {"A": "washer", "B": "none"}
+    assert model.format_appliances({"B": "none", "A": "washer"}) == "A:washer,B:none"
+    assert model.typical_seconds([3000, 3600, 4000]) == 3600
+    assert model.typical_seconds([]) is None
+    assert model.appliance_guess("Steckdose Waschmaschine") == "washer"
+    assert model.appliance_guess("Plug 3") is None
+
+
+@pytest.mark.asyncio
+async def test_appliance_asked_then_done(module, mocker):
+    clock = [100000.0]
+    mocker.patch.object(dash_module.time, "time", lambda: clock[0])
+    minute = 60
+
+    async def power(value, minutes):
+        clock[0] = 100000.0 + minutes * minute
+        await module.handle_event("wz_Fernseher", "power", str(value))
+
+    async def tick(minutes):
+        clock[0] = 100000.0 + minutes * minute
+        for name, watch in list(module.watches.items()):
+            await module.appliance_result(name, watch, watch.tick(clock[0]))
+
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        # the first long program with a peak: the tablets ask
+        await power(2000, 0)
+        await power(400, 30)
+        await power(2, 40)
+        await tick(52)
+        ask = module.make_header()["appliances"]["ask"]
+        assert [a["id"] for a in ask] == ["wz_Fernseher"]
+        await ws.send_json({"type": "appliance", "id": "wz_Fernseher", "what": "washer"})
+        head = (await next_of(ws, "header"))["header"]
+        assert head["appliances"]["ask"] == []
+        assert module._attr_appliances == "wz_Fernseher:washer"
+        # the next program runs with "about ... left", then it is done
+        await power(1800, 100)
+        await power(300, 110)
+        running = module.make_header()["appliances"]["running"][0]
+        assert running["what"] == "washer" and running["typical"] == 40 * minute
+        await power(1, 135)
+        await tick(146)
+        done = await next_of(ws, "appliance_done")
+        assert done["what"] == "washer" and done["id"] == "wz_Fernseher"
+        while not (await next_of(ws, "header"))["header"]["appliances"]["done"]:
+            pass
+        await ws.send_json({"type": "appliance_seen", "id": "wz_Fernseher"})
+        head = (await next_of(ws, "header"))["header"]
+        assert head["appliances"]["done"] == []
+
+
+def test_smoke_and_water_detectors():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    assert tiles["ku_Rauchmelder"]["kind"] == "smoke"
+    assert tiles["ku_Rauchmelder"]["state"]["alarm"] is False
+    assert tiles["ku_Wasser"]["kind"] == "water"
+    assert model.alarms(tiles) == []
+
+    def detector(readings, sets=""):
+        return {"NAME": "d", "TYPE": "dummy", "sets": sets, "readings": readings}
+
+    for readings in (
+        {"smoke": "true"},
+        {"smoke_detect": "Melder_Flur"},
+        {"fire": "ALARM"},
+        {"smoke": "on", "temperature": "21"},
+    ):
+        info = detector(readings)
+        assert model.kind_of(info) == "smoke"
+        assert model.hazard_alarm("smoke", info) is True
+    assert model.hazard_alarm("smoke", detector({"smoke_detect": "none"})) is False
+    assert model.hazard_alarm("water", detector({"water_leak": "wet"})) is True
+    assert model.hazard_alarm("water", detector({"moistureDetected": "no"})) is False
+    # a valve with a leak reading is no detector
+    assert model.kind_of(detector({"leak": "false"}, "on off")) != "water"
+
+
+def test_alarm_system_modes():
+    def system(state, sets="armAway armHome disarm"):
+        return {"NAME": "a", "TYPE": "dummy", "sets": sets, "readings": {"state": state}}
+
+    assert model.alarm_mode(system("disarmed")) == "off"
+    assert model.alarm_mode(system("armed_away")) == "away"
+    assert model.alarm_mode(system("armed home")) == "home"
+    assert model.alarm_mode(system("triggered")) == "triggered"
+    assert model.alarm_mode(system("Alarm")) == "triggered"
+    assert model.alarm_mode(system("on", "on off")) == "away"
+    assert model.alarm_commands(system("off")) == {
+        "away": "armAway",
+        "home": "armHome",
+        "off": "disarm",
+    }
+    assert model.alarm_commands(system("off", "on off")) == {"away": "on", "off": "off"}
+    found = model.alarm_system(system("triggered"))
+    assert found["modes"] == ["away", "home", "off"]
+    assert model.alarms({}, found)[0]["kind"] == "intrusion"
+    assert model.alarm_system(None) is None
+
+
+@pytest.mark.asyncio
+async def test_alarm_on_all_tablets(module):
+    _, answer = await pair(module)
+    tablet = next(iter(module.tablets.values()))
+    # a tablet of another room also gets the alarm
+    tablet["rooms"] = ["Bad"]
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["header"]["alarm"]["alarms"] == []
+        await module.handle_event("ku_Rauchmelder", "smoke", "true")
+        head = (await next_of(ws, "header"))["header"]
+        alarm = head["alarm"]["alarms"][0]
+        assert alarm["id"] == "ku_Rauchmelder" and alarm["kind"] == "smoke"
+        assert alarm["room"] == "Küche"
+        await module.handle_event("ku_Rauchmelder", "smoke", "false")
+        assert (await next_of(ws, "header"))["header"]["alarm"]["alarms"] == []
+        await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_arm_and_disarm_with_pin(module):
+    module._attr_alarm_system = "Alarmanlage"
+    module._attr_alarm_pin = "2580"
+    await module.reload()
+    # no tile, "All off" must never disarm it
+    assert "Alarmanlage" not in module.data["tiles"]
+    system = module.head["alarm"]["system"]
+    assert system["mode"] == "off" and system["pin"] is True
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "alarm_mode", "mode": "away"})
+        assert (await next_of(ws, "alarm_mode"))["ok"] is True
+        assert module.fake.sets == ["Alarmanlage armAway"]
+        await module.handle_event("Alarmanlage", "state", "triggered")
+        head = (await next_of(ws, "header"))["header"]
+        assert head["alarm"]["alarms"][0]["kind"] == "intrusion"
+        # disarming needs the PIN
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "alarm_mode", "mode": "off"})
+        wrong = await next_of(ws, "alarm_mode")
+        assert wrong["ok"] is False and wrong["wrong"] is True
+        await ws.send_json(
+            {"type": "action", "action": "alarm_mode", "mode": "off", "pin": "2580"}
+        )
+        assert (await next_of(ws, "alarm_mode"))["ok"] is True
+        assert module.fake.sets == ["Alarmanlage disarm"]
+        await ws.close()

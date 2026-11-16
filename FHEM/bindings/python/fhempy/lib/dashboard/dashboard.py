@@ -53,6 +53,10 @@ PIN_WAIT = 5 * 60
 
 # seconds between reading the calendars
 CALENDAR_INTERVAL = 300
+# seconds between the checks if a washing machine is done
+APPLIANCE_INTERVAL = 60
+# "Laundry done" stays this long on Home unless somebody ticks it off
+APPLIANCE_DONE_HOURS = 12
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -62,6 +66,11 @@ ATTRS_TEXT = (
     "door_camera",
     "door_opener",
     "keep_on",
+    "appliances",
+
+
+    "alarm_system",
+    "alarm_pin",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -106,7 +115,7 @@ ARRANGE_MESSAGES = (
     "delete_device",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "appliance")
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -279,6 +288,10 @@ class dashboard(generic.FhemModule):
         self.sun = None
         # entries of the FHEM Calendar devices, see model.parse_calendar
         self.calendar_events = []
+        # device -> model.ApplianceWatch of plugs which report their power
+        self.watches = {}
+        # learned: durations of programs, done time, plugs to ask about
+        self.appliance_data = {"cycles": {}, "done": {}, "ask": []}
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
@@ -350,6 +363,28 @@ class dashboard(generic.FhemModule):
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
             },
+            "appliances": {
+                "default": "",
+                "help": "Plugs of a washing machine, dryer or dishwasher, e.g. "
+                "Plug_basement:washer,Plug_kitchen:dishwasher (none: no "
+                "appliance). The tablets ask after the first program found by "
+                "the power, this is set by their answer.",
+            },
+
+
+            "alarm_system": {
+                "default": "",
+                "help": "Alarm system the tablets arm and disarm, e.g. "
+                "Alarm_system. Its set commands are used: armAway/armed/arm/on, "
+                "armHome/home/night and disarm/disarmed/off. A state with "
+                "alarm or triggered shows the alarm on all tablets.",
+            },
+            "alarm_pin": {
+                "default": "",
+                "help": "PIN of 4 to 8 digits to disarm the alarm system on the "
+                "tablets. FHEM checks it, the tablets never get it. Empty: "
+                "disarming needs a second tap.",
+            },
             "keep_on": {
                 "default": "",
                 "help": "Devices which 'All off' leaves on, e.g. heating, heat "
@@ -364,6 +399,7 @@ class dashboard(generic.FhemModule):
         await self.load_tablets()
         await self.load_timers()
         await self.load_preset_art()
+        await self.load_appliances()
         await self.update_set_config()
         self.ip = await utils.run_blocking(functools.partial(utils.get_local_ip))
         await self.reload()
@@ -371,6 +407,7 @@ class dashboard(generic.FhemModule):
         self.ready = True
         self.create_async_task(self.start_cameras())
         self.create_async_task(self.calendar_loop())
+        self.create_async_task(self.appliance_loop())
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -620,6 +657,10 @@ class dashboard(generic.FhemModule):
     def set_attr_devices(self, hash):
         self.schedule_reload()
 
+    def set_attr_appliances(self, hash):
+        if self.ready:
+            self.schedule_header()
+
     def set_attr_keep_on(self, hash):
         self.schedule_reload()
 
@@ -633,6 +674,12 @@ class dashboard(generic.FhemModule):
         self.schedule_reload()
 
     def set_attr_door_opener(self, hash):
+        self.schedule_reload()
+
+    def set_attr_alarm_system(self, hash):
+        self.schedule_reload()
+
+    def set_attr_alarm_pin(self, hash):
         self.schedule_reload()
 
     def set_attr_settings_pin(self, hash):
@@ -815,15 +862,25 @@ class dashboard(generic.FhemModule):
 
         self._reload_task = self.create_async_task(reload_later())
 
+    def alarm_system_name(self):
+        return (getattr(self, "_attr_alarm_system", "") or "").strip()
+
     async def reload(self):
         names = await self.resolve_devices()
+        alarm = self.alarm_system_name()
+        if alarm and alarm not in names:
+            names.append(alarm)
         self.infos = await self.fetch_infos(names)
         for name, info in self.infos.items():
             if media.is_media(info):
                 info["preset_art"] = self.preset_art.setdefault(name, {})
         self._head_infos = {n: i for n, i in self.infos.items() if model.in_header(i)}
         before = (self.data, self.head)
-        self.data = model.build(self.infos, keep_on=self.keep_on_names())
+        # the alarm system gets no tile: "All off" must not disarm it
+        self.data = model.build(
+            {n: i for n, i in self.infos.items() if n != alarm},
+            keep_on=self.keep_on_names(),
+        )
         self.apply_timers()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
@@ -859,6 +916,17 @@ class dashboard(generic.FhemModule):
         head["calendar"] = model.calendar(self.calendar_events, time.time())
         head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
+        head["appliances"] = self.appliance_header()
+
+
+        system = model.alarm_system(
+            self.infos.get(self.alarm_system_name()),
+            pin=model.clean_pin(getattr(self, "_attr_alarm_pin", "")) is not None,
+        )
+        head["alarm"] = {
+            "system": system,
+            "alarms": model.alarms(self.data["tiles"], system),
+        }
         head["timeline"] = self.timeline_device() is not None
         return head
 
@@ -910,6 +978,8 @@ class dashboard(generic.FhemModule):
         if reading in model.BATTERY_READINGS:
             self._head_infos[device] = info
         item = self.data["tiles"].get(device)
+        if reading == "power" and item is not None:
+            await self.watch_power(item, value)
         if item is not None and item["kind"] == "media":
             await self.learn_preset_art(device, info)
         if item is not None:
@@ -927,6 +997,156 @@ class dashboard(generic.FhemModule):
                 if rooms:
                     await self.broadcast({"type": "motion", "rooms": rooms})
         self.schedule_header()
+
+    # --- washing machine, dryer and dishwasher ---
+
+    def appliances(self):
+        return model.parse_appliances(getattr(self, "_attr_appliances", ""))
+
+    async def load_appliances(self):
+        raw = await fhem.ReadingsVal(self.hash["NAME"], ".appliances", "")
+        try:
+            data = json.loads(raw) if raw else {}
+        except ValueError:
+            data = {}
+        if isinstance(data, dict):
+            for key, empty in (("cycles", {}), ("done", {}), ("ask", [])):
+                if isinstance(data.get(key), type(empty)):
+                    self.appliance_data[key] = data[key]
+
+    async def save_appliances(self):
+        await fhem.readingsSingleUpdate(
+            self.hash, ".appliances", json.dumps(self.appliance_data), 0
+        )
+
+    async def watch_power(self, item, value):
+        if item["kind"] not in ("switch", "outlet"):
+            return
+        if self.appliances().get(item["id"]) == "none":
+            return
+        watch = self.watches.setdefault(item["id"], model.ApplianceWatch())
+        result = watch.feed(model.kinds.number(value), time.time())
+        await self.appliance_result(item["id"], watch, result)
+
+    async def appliance_result(self, name, watch, result):
+        if result is None:
+            return
+        data = self.appliance_data
+        what = self.appliances().get(name)
+        if result == "start":
+            if data["done"].pop(name, None) is not None:
+                await self.save_appliances()
+            self.schedule_header()
+            return
+        if result == "short":
+            self.schedule_header()
+            return
+        if what in model.APPLIANCES:
+            cycles = data["cycles"].setdefault(name, [])
+            cycles.append(int(watch.seconds))
+            del cycles[: -model.APPLIANCE_KEEP]
+            data["done"][name] = time.time()
+            item = self.data["tiles"].get(name)
+            await self.broadcast(
+                {
+                    "type": "appliance_done",
+                    "id": name,
+                    "what": what,
+                    "name": item["name"] if item else name,
+                }
+            )
+        elif what is None and name not in data["ask"]:
+            # the first program of an unknown plug: the tablets ask once
+            data["ask"].append(name)
+            data["cycles"].setdefault(name, []).append(int(watch.seconds))
+        await self.save_appliances()
+        self.schedule_header()
+
+    async def appliance_loop(self):
+        """done is "no power for a while", which sends no event"""
+        while True:
+            await asyncio.sleep(APPLIANCE_INTERVAL)
+            now = time.time()
+            for name, watch in list(self.watches.items()):
+                await self.appliance_result(name, watch, watch.tick(now))
+            done = self.appliance_data["done"]
+            old = [n for n, t in done.items() if now - t > APPLIANCE_DONE_HOURS * 3600]
+            for name in old:
+                done.pop(name)
+            if old:
+                await self.save_appliances()
+                self.schedule_header()
+
+    def appliance_header(self):
+        """running and done appliances, plugs to ask about"""
+        known = self.appliances()
+        tiles = self.data["tiles"]
+        data = self.appliance_data
+        result = {"running": [], "done": [], "ask": []}
+        for name, what in sorted(known.items()):
+            item = tiles.get(name)
+            if item is None or what not in model.APPLIANCES:
+                continue
+            base = {
+                "id": name,
+                "name": item["name"],
+                "what": what,
+                "room": (item["rooms"] or [""])[0],
+            }
+            watch = self.watches.get(name)
+            if watch is not None and watch.running:
+                result["running"].append(
+                    {
+                        **base,
+                        "since": int(watch.start),
+                        "typical": model.typical_seconds(data["cycles"].get(name)),
+                    }
+                )
+            elif name in data["done"]:
+                result["done"].append({**base, "at": int(data["done"][name])})
+        for name in data["ask"]:
+            item = tiles.get(name)
+            if item is None or name in known:
+                continue
+            result["ask"].append(
+                {
+                    "id": name,
+                    "name": item["name"],
+                    "room": (item["rooms"] or [""])[0],
+                    "guess": model.appliance_guess(item["name"] + " " + name),
+                }
+            )
+        return result
+
+    async def answer_appliance(self, tablet, message):
+        """the tablet says what a plug is: washer, dryer, dishwasher, none"""
+        name = str(message.get("id", ""))
+        what = str(message.get("what", ""))
+        if name not in self.data["tiles"] or what not in model.APPLIANCES + ("none",):
+            return
+        known = self.appliances()
+        known[name] = what
+        value = model.format_appliances(known)
+        self.logger.info(f"{tablet['name']}: {name} is {what}")
+        await fhem.sendCommandHash(
+            self.hash,
+            "CommandAttr(undef, "
+            + fhem.perlString(f"{self.hash['NAME']} appliances {value}")
+            + ")",
+        )
+        self._attr_appliances = value
+        if name in self.appliance_data["ask"]:
+            self.appliance_data["ask"].remove(name)
+        if what == "none":
+            self.watches.pop(name, None)
+            self.appliance_data["cycles"].pop(name, None)
+        await self.save_appliances()
+        await self.update_header()
+
+    async def appliance_seen(self, message):
+        if self.appliance_data["done"].pop(str(message.get("id", "")), None):
+            await self.save_appliances()
+            await self.update_header()
 
     def schedule_header(self):
         """build the header again soon: busy homes send hundreds of events per
@@ -1168,6 +1388,7 @@ class dashboard(generic.FhemModule):
             "timer": self.action_timer,
             "routine": self.action_routine,
             "undo": self.action_undo,
+            "alarm_mode": self.action_alarm_mode,
         }.get(action)
         if special is not None:
             await special(tablet, message)
@@ -1272,6 +1493,29 @@ class dashboard(generic.FhemModule):
         for ws, tablet_id in self.connected():
             if tablet_id == tablet["id"]:
                 await self.send(ws, message)
+
+    async def action_alarm_mode(self, tablet, message):
+        """arm or disarm the alarm system, disarming needs the alarm PIN"""
+        info = self.infos.get(self.alarm_system_name())
+        mode = str(message.get("mode", ""))
+        command = model.alarm_commands(info).get(mode) if info else None
+        answer = {"type": "alarm_mode", "mode": mode, "ok": False, "wait": False}
+        if command is None:
+            await self.send_to_tablet(tablet, answer)
+            return
+        pin = model.clean_pin(getattr(self, "_attr_alarm_pin", ""))
+        if mode == "off" and pin is not None:
+            ok, wait = self.check_pin(tablet, pin, message.get("pin"), "alarm")
+            if not ok:
+                answer["wait"] = wait
+                answer["wrong"] = True
+                await self.send_to_tablet(tablet, answer)
+                return
+        error = await self.fhem_set_error(tablet, info["NAME"], command)
+        if error:
+            await self.send_failed(tablet, info["NAME"], model.display_name(info), error)
+        answer["ok"] = not error
+        await self.send_to_tablet(tablet, answer)
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
@@ -1902,6 +2146,10 @@ class dashboard(generic.FhemModule):
             await self.arrange(tablet, message, ws)
         elif kind == "action":
             await self.run_action(tablet, message)
+        elif kind == "appliance" and not tablet.get("readonly"):
+            await self.answer_appliance(tablet, message)
+        elif kind == "appliance_seen" and not tablet.get("readonly"):
+            await self.appliance_seen(message)
         elif kind == "setup":
             place = message.get("place")
             if place in PLACES:
@@ -1927,27 +2175,33 @@ class dashboard(generic.FhemModule):
             return True
         return self.unlocked.get(tablet["id"], 0) > time.time()
 
-    async def unlock(self, tablet, message, ws):
+    def check_pin(self, tablet, pin, given, what="settings"):
+        """(ok, wait): wait when there were too many wrong PINs. Wrong PINs
+        of the settings and of the alarm system count together."""
         now = time.time()
         fails = [t for t in self.pin_fails.get(tablet["id"], []) if t > now - PIN_WAIT]
-        pin = self.settings_pin()
         ok = False
         if pin is None:
             ok = True
         elif len(fails) < PIN_TRIES:
-            ok = hmac.compare_digest(str(message.get("pin", "")), pin)
+            ok = hmac.compare_digest(str(given or ""), pin)
         if ok:
-            self.unlocked[tablet["id"]] = now + PIN_OPEN
             self.pin_fails.pop(tablet["id"], None)
-        else:
-            fails.append(now)
-            self.pin_fails[tablet["id"]] = fails
-            self.logger.warning(f"{tablet['name']}: wrong PIN for the settings")
+            return True, False
+        fails.append(now)
+        self.pin_fails[tablet["id"]] = fails
+        self.logger.warning(f"{tablet['name']}: wrong PIN for the {what}")
+        return False, len(fails) >= PIN_TRIES
+
+    async def unlock(self, tablet, message, ws):
+        ok, wait = self.check_pin(tablet, self.settings_pin(), message.get("pin"))
+        if ok:
+            self.unlocked[tablet["id"]] = time.time() + PIN_OPEN
         answer = {
             "type": "unlocked",
             "ok": ok,
             "until": self.unlocked.get(tablet["id"], 0),
-            "wait": len(fails) >= PIN_TRIES,
+            "wait": wait,
         }
         if ws is not None:
             await self.send(ws, answer)

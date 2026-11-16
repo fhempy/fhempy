@@ -55,7 +55,7 @@ DEVICES = {
         "CUL_HM",
         "Wohnzimmer",
         THERMO,
-        {"desired-temp": "22.0", "measured-temp": "21.3", "humidity": "48"},
+        {"desired-temp": "22.0", "measured-temp": "21.3", "humidity": "48", "actuator": "35"},
         alias="Heizung",
     ),
     "wz_Fenster": device(
@@ -75,6 +75,13 @@ DEVICES = {
         {"state": "on", "power": "1180"},
         attrs={"genericDeviceType": "outlet"},
         alias="Kaffeemaschine",
+    ),
+    "ku_Rauchmelder": device(
+        "dummy", "Küche", "alarmTest", {"smoke": "false", "battery": "ok"}, alias="Rauchmelder Küche"
+    ),
+    "ku_Wasser": device("dummy", "Küche", "", {"water_leak": "dry"}, alias="Wassermelder Spüle"),
+    "Alarmanlage": device(
+        "dummy", "", "armAway armHome disarm", {"state": "disarmed"}, alias="Alarmanlage"
     ),
     "ku_Fenster": device("dummy", "Küche", "", {"contact": "closed"}, alias="Fenster Küche"),
     "ku_Klima": device(

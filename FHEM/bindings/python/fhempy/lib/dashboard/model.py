@@ -41,6 +41,8 @@ KIND_ORDER = (
     "inputs",
     "lock",
     "contact",
+    "smoke",
+    "water",
     "temperature",
     "humidity",
     "motion",
@@ -169,6 +171,44 @@ CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp
 COLOR_READINGS = ("rgb", "hex", "RGB", "Color", "color")
 CT_READINGS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
 READINGS = READINGS + COLOR_READINGS + CT_READINGS
+# how far the valve of a thermostat is open, in percent
+VALVE_READINGS = (
+    "actuator",
+    "ValvePosition",
+    "valveposition",
+    "valve_position",
+    "valve",
+    "pi_heating_demand",
+    "heating_demand",
+    "level_valve",
+)
+# what a thermostat does right now: heating, idle
+ACTION_READINGS = ("hvac_action", "hvacAction", "running_state", "heating_state")
+READINGS = READINGS + VALVE_READINGS + ACTION_READINGS
+
+
+# smoke and water detectors: readings which say there is smoke or water
+HAZARD_READINGS = {
+    "smoke": (
+        "smoke",
+        "smoke_detected",
+        "smokeDetected",
+        "smoke_detect",
+        "smokeAlarm",
+        "fire",
+    ),
+    "water": (
+        "water_leak",
+        "waterLeak",
+        "leak",
+        "flood",
+        "water_detected",
+        "waterDetected",
+        "moistureDetected",
+        "waterlevelDetected",
+    ),
+}
+READINGS = READINGS + tuple(r for names in HAZARD_READINGS.values() for r in names)
 # the next hours of openmeteo_weather: warnings before the night or leaving
 # (WARN_HOURS) and the weather details (FORECAST_HOURS)
 WARN_HOURS = 12
@@ -273,6 +313,9 @@ def kind_of(info):
         return "inputs"
     if media.is_media(info):
         return "media"
+    hazard = hazard_kind(info)
+    if hazard is not None:
+        return hazard
     kind = kinds.detect_type(info)
     if kind is not None:
         return kind
@@ -282,6 +325,70 @@ def kind_of(info):
     if state in CONTACT_STATES and any(word in text for word in WINDOW_WORDS):
         return "contact"
     return None
+
+
+CALM_VALUES = (
+    "0",
+    "false",
+    "off",
+    "no",
+    "none",
+    "ok",
+    "clear",
+    "dry",
+    "idle",
+    "idle_off",
+    "noalarm",
+    "no_alarm",
+    "normal",
+    "nosmoke",
+    "no_smoke",
+    "quiet",
+    "ruhe",
+)
+ALARM_VALUES = (
+    "1",
+    "true",
+    "on",
+    "yes",
+    "detected",
+    "alarm",
+    "wet",
+    "leak",
+    "smoke",
+    "fire",
+)
+
+
+def hazard_kind(info):
+    """smoke or water detector: one of its readings says smoke or water.
+    Devices with set commands (e.g. a valve with a leak reading) are no
+    detectors."""
+    readings = info.get("readings") or {}
+    for kind, names in HAZARD_READINGS.items():
+        if any(name in readings for name in names):
+            sets = kinds.set_names(info.get("sets")) - {"alarmTest", "test"}
+            if sets & {"on", "off", "pct", "open", "close"}:
+                return None
+            return kind
+    return None
+
+
+def hazard_alarm(kind, info):
+    """True: smoke or water, False: calm, None: the detector doesn't say"""
+    result = None
+    for name in HAZARD_READINGS[kind]:
+        value = _reading(info, name)
+        if value is None:
+            continue
+        word = str(value).strip().lower()
+        if word in CALM_VALUES or word.startswith(("no ", "no_", "kein")):
+            result = False if result is None else result
+        elif word in ALARM_VALUES or "alarm" in word or name == "smoke_detect":
+            # HomeMatic: smoke_detect is the name of the detector which
+            # raised the alarm, none when all are calm
+            return True
+    return result
 
 
 def is_door(info):
@@ -303,6 +410,13 @@ def tile_state(kind, info):
         if state.get("closed") is False and any(w in raw for w in TILTED_WORDS):
             state["tilted"] = True
         state["since"] = _reading_time(info, "contact", "state")
+    if kind == "thermostat":
+        state.update(heating_state(info))
+
+
+    if kind in HAZARD_READINGS:
+        state["alarm"] = bool(hazard_alarm(kind, info))
+        state["since"] = _reading_time(info, *HAZARD_READINGS[kind])
     if kind in ("temperature", "thermostat"):
         humidity = kinds.number(_reading(info, "humidity"))
         if humidity is not None:
@@ -331,6 +445,42 @@ def tile_state(kind, info):
         if seen:
             state["seen"] = seen[:13]
     return state
+
+
+def heating_state(info):
+    """valve: percent open, heating: the thermostat really heats. Without
+    valve and action the tablets guess from target and current temperature."""
+    result = {}
+    valve = kinds.number(_reading(info, *VALVE_READINGS))
+    if valve is not None and 0 <= valve <= 100:
+        result["valve"] = valve
+        result["heating"] = valve > 0
+    action = str(_reading(info, *ACTION_READINGS) or "").strip().lower()
+    if action:
+        if "heat" in action:
+            result["heating"] = True
+        elif "valve" not in result:
+            result["heating"] = False
+    return result
+
+
+def target_range(info):
+    """(min, max, step) of the target temperature from the set command,
+    e.g. desired-temp:slider,4.5,0.5,30.5"""
+    args = _set_args(info.get("sets"))
+    for name in kinds.TARGET_SETS:
+        if name not in args:
+            continue
+        parts = args[name].split(",")
+        if parts[0] == "slider" and len(parts) >= 4:
+            low, step, high = (kinds.number(p) for p in parts[1:4])
+            if None not in (low, step, high) and low < high and step > 0:
+                return low, high, step
+        numbers = [kinds.number(p) for p in parts]
+        numbers = [n for n in numbers if n is not None]
+        if len(numbers) >= 2:
+            return min(numbers), max(numbers), 0.5
+    return 4.5, 30.0, 0.5
 
 
 def unreachable(info):
@@ -407,7 +557,10 @@ def tile(info, room=None):
         sets = kinds.set_names(info.get("sets"))
         result["stop"] = "stop" in sets
     if kind == "thermostat":
-        result["step"] = 0.5
+        low, high, step = target_range(info)
+        result["min"] = low
+        result["max"] = high
+        result["step"] = step
     if kind == "media":
         result["media"] = media.features(info)
     if kind == "inputs":
@@ -847,6 +1000,86 @@ def header(infos, tiles):
         "battery": low_batteries(infos),
         "bins": bin_devices(infos),
     }
+
+
+# --- alarm system ---
+
+ALARM_MODES = {
+    "away": ("armAway", "arm_away", "armed", "arm", "away", "scharf", "on"),
+    "home": ("armHome", "arm_home", "armStay", "arm_stay", "armNight", "home", "night"),
+    "off": ("disarm", "disarmed", "unscharf", "off"),
+}
+_TRIGGERED_RE = re.compile(r"trigger|alarm|alert|intrusion|einbruch|ausgel", re.I)
+
+
+def alarm_mode(info):
+    """mode of an alarm system from its state: off, home, away, triggered"""
+    state = str(_reading(info, "state") or "").strip().lower()
+    if not state:
+        return None
+    if "disarm" in state or "unscharf" in state or state in ("off", "aus"):
+        return "off"
+    if _TRIGGERED_RE.search(state):
+        return "triggered"
+    if any(w in state for w in ("home", "stay", "night", "intern")):
+        return "home"
+    if "arm" in state or "scharf" in state or state in ("on", "away", "extern"):
+        return "away"
+    return None
+
+
+def alarm_commands(info):
+    """mode -> set command of an alarm system, by its set commands"""
+    sets = kinds.set_names(info.get("sets"))
+    result = {}
+    for mode, names in ALARM_MODES.items():
+        for name in names:
+            if name in sets:
+                result[mode] = name
+                break
+    return result
+
+
+def alarm_system(info, pin=False):
+    """the alarm system chosen with attribute alarm_system, None: none"""
+    if not info:
+        return None
+    return {
+        "id": info["NAME"],
+        "name": display_name(info),
+        "mode": alarm_mode(info),
+        "modes": [m for m in ALARM_MODES if m in alarm_commands(info)],
+        "since": _reading_time(info, "state"),
+        "pin": pin,
+    }
+
+
+def alarms(tiles, system=None):
+    """smoke, water and a triggered alarm system: shown on every tablet"""
+    result = []
+    for item in tiles.values():
+        if item["kind"] in HAZARD_READINGS and item["state"].get("alarm"):
+            result.append(
+                {
+                    "id": item["id"],
+                    "name": item["name"],
+                    "kind": item["kind"],
+                    "room": (item["rooms"] or [""])[0],
+                    "since": item["state"].get("since"),
+                }
+            )
+    if system and system["mode"] == "triggered":
+        result.append(
+            {
+                "id": system["id"],
+                "name": system["name"],
+                "kind": "intrusion",
+                "room": "",
+                "since": system["since"],
+            }
+        )
+    result.sort(key=lambda a: (a["since"] or "", a["name"].lower()))
+    return result
 
 
 def clean_pin(value):
@@ -1408,3 +1641,106 @@ def renamed_layout(layout, source, target):
         order[target] = order.pop(source)
         result["tile_order"] = order
     return result
+
+
+# --- washing machine, dryer and dishwasher, found by their power ---
+
+APPLIANCES = ("washer", "dryer", "dishwasher")
+# above this the appliance runs
+APPLIANCE_RUN_W = 15
+# a program heats or spins: more than a TV, a lamp or a router ever draws
+APPLIANCE_PEAK_W = 300
+APPLIANCE_MIN_MINUTES = 20
+# below APPLIANCE_RUN_W this long: the program is done
+APPLIANCE_DONE_MINUTES = 10
+# durations of the last programs used for "about 20 min left"
+APPLIANCE_KEEP = 5
+# only a hint for the suggestion, the user confirms
+APPLIANCE_HINTS = {
+    "washer": ("wasch", "washer", "washing", "laundry"),
+    "dryer": ("trockn", "dryer", "tumble"),
+    "dishwasher": ("spülm", "spuelm", "geschirr", "dishwasher", "dish"),
+}
+
+
+def appliance_guess(name):
+    """washer/dryer/dishwasher from the name, None: no idea"""
+    text = str(name or "").lower()
+    for what, words in APPLIANCE_HINTS.items():
+        if any(w in text for w in words):
+            return what
+    return None
+
+
+def parse_appliances(value):
+    """attribute appliances 'Plug_A:washer,Plug_B:none' -> {device: what}"""
+    result = {}
+    for entry in re.split(r"[,\s]+", str(value or "")):
+        name, _, what = entry.partition(":")
+        if name and what in APPLIANCES + ("none",):
+            result[name] = what
+    return result
+
+
+def format_appliances(appliances):
+    return ",".join(f"{n}:{w}" for n, w in sorted(appliances.items()))
+
+
+def typical_seconds(durations):
+    """median of the last programs, None: none yet"""
+    values = sorted(d for d in durations or [] if isinstance(d, (int, float)) and d > 0)
+    if not values:
+        return None
+    return int(values[len(values) // 2])
+
+
+class ApplianceWatch:
+    """follows the power of a plug: a program starts above APPLIANCE_RUN_W
+    and is done after APPLIANCE_DONE_MINUTES below it. Only programs of at
+    least APPLIANCE_MIN_MINUTES with a peak of APPLIANCE_PEAK_W count, so a
+    coffee machine, a kettle or a TV are no washing machine."""
+
+    def __init__(self):
+        self.start = None
+        self.last_active = None
+        self.peak = 0
+        # last power and length of the last program
+        self.power = 0
+        self.seconds = 0
+
+    @property
+    def running(self):
+        return self.start is not None
+
+    def feed(self, power, now):
+        """'start', 'done', 'short' (no program) or None"""
+        if power is None:
+            return None
+        before, self.power = self.power, power
+        if power >= APPLIANCE_RUN_W:
+            started = self.start is None
+            if started:
+                self.start = now
+                self.peak = 0
+            self.last_active = now
+            self.peak = max(self.peak, power)
+            return "start" if started else None
+        if self.start is not None and before >= APPLIANCE_RUN_W:
+            # plugs report changes only: it ran until now
+            self.last_active = now
+        return self.tick(now)
+
+    def tick(self, now):
+        if self.start is None or self.power >= APPLIANCE_RUN_W:
+            return None
+        if now - self.last_active < APPLIANCE_DONE_MINUTES * 60:
+            return None
+        seconds = self.last_active - self.start
+        peak = self.peak
+        self.start = None
+        self.last_active = None
+        self.peak = 0
+        self.seconds = seconds
+        if seconds >= APPLIANCE_MIN_MINUTES * 60 and peak >= APPLIANCE_PEAK_W:
+            return "done"
+        return "short"
