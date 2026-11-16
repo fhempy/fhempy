@@ -222,6 +222,8 @@ class dashboard(generic.FhemModule):
         self.tablets = {}
         # device -> end of its "switch off in" timer (epoch seconds)
         self.timers = {}
+        # tablet id -> {"until": epoch, "steps": [...]} of good night / leaving
+        self.undo = {}
         self.codes = {}
         self.pair_fails = []
         self.clients = {}
@@ -1072,6 +1074,8 @@ class dashboard(generic.FhemModule):
             "open_door": self.action_open_door,
             "scene": self.action_scene,
             "timer": self.action_timer,
+            "routine": self.action_routine,
+            "undo": self.action_undo,
         }.get(action)
         if special is not None:
             await special(tablet, message)
@@ -1089,6 +1093,67 @@ class dashboard(generic.FhemModule):
         for name in model.all_off(self.data["tiles"], room):
             if wanted is None or name in wanted:
                 await self.fhem_set(tablet, name, "off")
+
+    async def action_routine(self, tablet, message):
+        """good night or leaving home: lights and switches off, at night the
+        blinds down, and remember how it was for undo"""
+        mode = message.get("mode")
+        if mode not in model.ROUTINES:
+            return
+        tiles = {
+            i: t
+            for i, t in self.data["tiles"].items()
+            if self.allowed_tile(tablet, t)
+        }
+        off = message.get("off") if isinstance(message.get("off"), list) else []
+        close = message.get("close") if isinstance(message.get("close"), list) else []
+        steps, undo = model.routine_steps(tiles, mode, off, close)
+        failed = await self.run_steps(tablet, steps)
+        self.undo[tablet["id"]] = {
+            "until": time.time() + model.UNDO_SECONDS,
+            "steps": undo,
+        }
+        await self.send_to_tablet(
+            tablet,
+            {
+                "type": "routine",
+                "mode": mode,
+                "done": len(steps) - len(failed),
+                "failed": failed,
+                "undo": bool(undo),
+                "until": self.undo[tablet["id"]]["until"],
+            },
+        )
+
+    async def action_undo(self, tablet, message):
+        entry = self.undo.pop(tablet["id"], None)
+        if entry is None or entry["until"] < time.time():
+            return
+        failed = await self.run_steps(tablet, entry["steps"])
+        await self.send_to_tablet(tablet, {"type": "undone", "failed": failed})
+
+    async def run_steps(self, tablet, steps):
+        """(device, action, value) one after the other, names that failed"""
+        failed = []
+        for device, action, value in steps:
+            item = self.data["tiles"].get(device)
+            if item is None:
+                continue
+            try:
+                args = model.command(item, self.infos.get(device, {}), action, value)
+            except ValueError:
+                continue
+            for arg in args:
+                if await self.fhem_set_error(tablet, device, arg):
+                    failed.append(item["name"])
+                    await self.send_tile(item)
+                    break
+        return failed
+
+    async def send_to_tablet(self, tablet, message):
+        for ws, tablet_id in self.connected():
+            if tablet_id == tablet["id"]:
+                await self.send(ws, message)
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
@@ -1238,9 +1303,7 @@ class dashboard(generic.FhemModule):
             "name": name,
             "reason": model.short_error(error),
         }
-        for ws, tablet_id in self.connected():
-            if tablet_id == tablet["id"]:
-                await self.send(ws, message)
+        await self.send_to_tablet(tablet, message)
 
     # --- timeline ---
 
