@@ -1271,3 +1271,31 @@ def test_colour_lights():
     plain = light("")
     assert "color" not in model.tile(plain)
     assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []
+
+
+@pytest.mark.asyncio
+async def test_all_off_in_groups_tells_what_stayed_on(module, mocker):
+    mocker.patch.object(dash_module, "ALL_OFF_CHECK", 0.1)
+    mocker.patch.object(dash_module, "ALL_OFF_PAUSE", 0.01)
+    mocker.patch.object(dash_module, "ALL_OFF_GROUP", 2)
+    sleeps = []
+    real_sleep = asyncio.sleep
+
+    async def spy(delay, *args):
+        sleeps.append(delay)
+        await real_sleep(delay, *args)
+
+    mocker.patch.object(dash_module.asyncio, "sleep", spy)
+    _, answer = await pair(module)
+    on = model.all_off(module.data["tiles"])
+    assert len(on) >= 4
+    module.fake.fail[on[0]] = "No answer, choose one of on off"
+    module.fake.silent.add(on[1])
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "action", "action": "all_off", "room": None})
+        result = await next_of(ws, "all_off")
+    assert sorted(x["id"] for x in result["left"]) == sorted(on[:2])
+    assert result["done"] == len(on) - 2
+    # groups of two with a pause between them
+    assert sleeps.count(0.01) == (len(on) + 1) // 2 - 1

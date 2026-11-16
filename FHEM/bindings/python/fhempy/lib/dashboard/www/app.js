@@ -19,6 +19,7 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
@@ -67,6 +68,7 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
@@ -262,6 +264,7 @@
       return;
     }
     if (m.type === "failed") { failed(m); return; }
+    if (m.type === "all_off") { allOffResult(m); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -2019,13 +2022,20 @@
   }
 
   // a short message at the bottom, optionally with "Try again"
-  function showToast(text, retryId, ms) {
+  function showToast(text, retryId, ms, button) {
     var el = document.getElementById("toast");
     if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
-    el.className = retryId ? "warn" : "";
-    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "");
+    el.className = retryId || button ? "warn" : "";
+    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "") + (button || "");
     clearTimeout(S.toastTimer);
     S.toastTimer = setTimeout(hideToast, ms || 7000);
+  }
+  // "All off" switches in groups and then tells which devices stayed on
+  function allOffResult(m) {
+    var left = m.left || [];
+    if (!left.length) { if (m.done > 1) { showToast(t("offDone", { n: m.done }), null, 3000); } return; }
+    showToast(t("offLeft", { names: left.map(function (x) { return x.name; }).join(", ") }), null, 15000,
+      '<button class="pill" data-alloffagain="' + esc(left.map(function (x) { return x.id; }).join("\n")) + '">' + esc(t("offAgain")) + "</button>");
   }
   function hideToast() { var el = document.getElementById("toast"); if (el && el.parentNode) { el.parentNode.removeChild(el); } }
   function failed(m) {
@@ -2305,6 +2315,7 @@
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
     if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } if (!armed(el, "scene:" + el.getAttribute("data-scene"), t("confirmTap"))) { return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
+    if ((el = closest(target, "data-alloffagain"))) { send({ type: "action", action: "all_off", room: null, ids: el.getAttribute("data-alloffagain").split("\n") }); hideToast(); return; }
     if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } var ids = el.getAttribute("data-ids"); send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null, ids: ids ? ids.split("\n") : null }); return; }
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }

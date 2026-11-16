@@ -147,6 +147,8 @@ class FakeFhem:
         self.module = None
         # device name -> answer of FHEM to set (a failed command)
         self.fail = {}
+        # devices which take a set but never report the new state
+        self.silent = set()
 
     def infos(self, names):
         result = {}
@@ -209,7 +211,7 @@ class FakeFhem:
                 return f"Please define {name} first"
             if name in self.fail:
                 return self.fail[name]
-            if self.module is not None:
+            if self.module is not None and name not in self.silent:
                 await self.apply(name, args)
             return ""
         return ""

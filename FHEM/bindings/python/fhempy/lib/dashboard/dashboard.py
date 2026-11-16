@@ -37,6 +37,11 @@ MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
 # the header (warnings, running devices, energy) is built at most this often
 HEADER_DELAY = 0.5
+# "All off": devices per group, seconds between groups and until the check
+# which devices are still on
+ALL_OFF_GROUP = 4
+ALL_OFF_PAUSE = 0.4
+ALL_OFF_CHECK = 6
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -1086,9 +1091,35 @@ class dashboard(generic.FhemModule):
         # the tablet sends the devices it shows (rooms hidden on it stay on)
         ids = message.get("ids")
         wanted = set(str(i) for i in ids) if isinstance(ids, list) else None
-        for name in model.all_off(self.data["tiles"], room):
-            if wanted is None or name in wanted:
-                await self.fhem_set(tablet, name, "off")
+        names = [
+            name
+            for name in model.all_off(self.data["tiles"], room)
+            if wanted is None or name in wanted
+        ]
+        failed = []
+        # a few at a time: many radio commands at once get lost (433 MHz,
+        # HomeMatic duty cycle, Zigbee groups)
+        for start in range(0, len(names), ALL_OFF_GROUP):
+            if start:
+                await asyncio.sleep(ALL_OFF_PAUSE)
+            for name in names[start : start + ALL_OFF_GROUP]:
+                if not await self.fhem_set(tablet, name, "off"):
+                    failed.append(name)
+        if names:
+            self.create_async_task(self.check_all_off(tablet, names, failed))
+
+    async def check_all_off(self, tablet, names, failed):
+        """tell the tablet which devices are still on after a moment"""
+        await asyncio.sleep(ALL_OFF_CHECK)
+        tiles = self.data["tiles"]
+        left = [
+            {"id": name, "name": tiles[name]["name"]}
+            for name in names
+            if name in tiles and (name in failed or tiles[name]["state"].get("on"))
+        ]
+        await self.send_to_tablet(
+            tablet, {"type": "all_off", "done": len(names) - len(left), "left": left}
+        )
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
@@ -1238,6 +1269,9 @@ class dashboard(generic.FhemModule):
             "name": name,
             "reason": model.short_error(error),
         }
+        await self.send_to_tablet(tablet, message)
+
+    async def send_to_tablet(self, tablet, message):
         for ws, tablet_id in self.connected():
             if tablet_id == tablet["id"]:
                 await self.send(ws, message)
