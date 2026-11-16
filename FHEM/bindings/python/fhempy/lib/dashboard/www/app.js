@@ -15,6 +15,7 @@
     allOffN: "Alles aus ({n})", beforeLeave: "Bevor du gehst", stillOpen: "Das ist noch offen oder an.",
     allClosed: "Alles zu, alles aus.", nowOn: "Gerade offen und an", lightsOn: "{n} Lichter an",
     lightOn: "1 Licht an", deviceOn: "1 Gerät an", devicesOn: "{n} Geräte an", humidity: "Luftfeuchte", atHome: "{n} zu Hause", nobody: "Niemand zu Hause",
+    chLight: "Licht", chClimate: "Klima", chBlinds: "Rollläden", chSecurity: "Sicherheit", chNOn: "{n} an", chAllOff: "alles aus", chNHeat: "{n} heizen", chOneHeat: "1 heizt", chNOpen: "{n} von {m} offen", chAllClosed: "alle zu", chSecOpen: "{n} offen", chSecOk: "alles zu", ovLight: "Was leuchtet", ovClimate: "Raumklima", ovBlinds: "Rollläden", ovSecurity: "Fenster, Türen und Schlösser", ovNoLight: "Alle Lichter sind aus.", ovSecOk: "Alles zu und verriegelt.", allUp: "Alle auf", allDown: "Alle zu", lightsOff: "Alle Lichter aus", heatsNow: "heizt",
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
@@ -57,6 +58,7 @@
     allOffN: "All off ({n})", beforeLeave: "Before you leave", stillOpen: "Still open or on.",
     allClosed: "Everything closed and off.", nowOn: "Open and on right now", lightsOn: "{n} lights on", deviceOn: "1 device on", devicesOn: "{n} devices on", humidity: "Humidity", temperature: "Temperature",
     lightOn: "1 light on", atHome: "{n} at home", nobody: "Nobody at home",
+    chLight: "Light", chClimate: "Climate", chBlinds: "Blinds", chSecurity: "Security", chNOn: "{n} on", chAllOff: "all off", chNHeat: "{n} heating", chOneHeat: "1 heating", chNOpen: "{n} of {m} open", chAllClosed: "all closed", chSecOpen: "{n} open", chSecOk: "all closed", ovLight: "What is on", ovClimate: "Room climate", ovBlinds: "Blinds", ovSecurity: "Windows, doors and locks", ovNoLight: "All lights are off.", ovSecOk: "Everything closed and locked.", allUp: "All up", allDown: "All down", lightsOff: "All lights off", heatsNow: "heating",
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
@@ -240,7 +242,7 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding && !chartActive) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
     if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
@@ -793,7 +795,7 @@
     } else {
       right = '<div class="grid">' + homeRooms(false).map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
     }
-    return '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
+    return statusChipsHtml() + '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
   }
 
   function scenesHtml(room) {
@@ -971,7 +973,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.overview]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -988,6 +990,7 @@
     if (S.sheet.arrange) { renderPick(); return; }
     if (S.sheet.rename) { renderRename(); return; }
     if (S.sheet.people) { renderPeople(); return; }
+    if (S.sheet.overview) { renderOverview(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1115,6 +1118,120 @@
   }
 
   // ---------- settings ----------
+  // ---------- status chips on Home and their overviews ----------
+  // every device of the rooms this tablet shows, once, with the room it is shown in
+  function shownTiles() {
+    var seen = {}, result = [];
+    visibleRooms().forEach(function (room) {
+      room.tiles.forEach(function (id) { var tl = S.tiles[id]; if (tl && !seen[id]) { seen[id] = true; result.push({ id: id, tile: tl, room: room.name }); } });
+    });
+    return result;
+  }
+  function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
+  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  function roomClimates() {
+    return visibleRooms().map(function (room) {
+      var c = { room: room.name };
+      room.tiles.forEach(function (id) {
+        var tl = S.tiles[id]; if (!tl) { return; }
+        if (tl.kind === "thermostat" && c.thermostat === undefined) {
+          c.thermostat = id; c.target = tl.state.target;
+          if (tl.state.current !== undefined) { c.temp = tl.state.current; c.id = id; }
+          if (tl.state.humidity !== undefined && c.humidity === undefined) { c.humidity = tl.state.humidity; }
+        }
+        if (tl.kind === "temperature" && c.temp === undefined && tl.state.temperature !== undefined) { c.temp = tl.state.temperature; c.id = id; if (tl.state.humidity !== undefined) { c.humidity = tl.state.humidity; } }
+        if (tl.kind === "humidity" && c.humidity === undefined) { c.humidity = tl.state.humidity; }
+      });
+      if (c.thermostat) { c.id = c.thermostat; }
+      c.heats = c.target !== undefined && c.temp !== undefined && c.target > c.temp + 0.3;
+      return c;
+    }).filter(function (c) { return c.temp !== undefined; });
+  }
+  function statusChipsHtml() {
+    var all = shownTiles(), chips = "";
+    function chip(kind, icon, cls, title, sub) {
+      return '<button class="schip ' + cls + '" data-overview="' + kind + '"><span class="sic">' + I(icon, 20) + '</span><span class="st"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></span></button>";
+    }
+    var lights = all.filter(function (x) { return isLight(x.tile); });
+    if (lights.length) {
+      var on = lights.filter(function (x) { return x.tile.state.on; }).length;
+      chips += chip("light", "bulb", on ? "lit" : "", t("chLight"), on ? t("chNOn", { n: on }) : t("chAllOff"));
+    }
+    var climates = roomClimates();
+    if (climates.length) {
+      var heat = climates.filter(function (c) { return c.heats; }).length, temps = climates.map(function (c) { return c.temp; });
+      var lo = Math.min.apply(null, temps), hi = Math.max.apply(null, temps);
+      chips += chip("climate", "thermo", heat ? "heat" : "", t("chClimate"), heat ? (heat === 1 ? t("chOneHeat") : t("chNHeat", { n: heat })) : num(lo, 0) + (hi - lo >= 0.5 ? "–" + num(hi, 0) : "") + "°");
+    }
+    var blinds = all.filter(function (x) { return x.tile.kind === "blind"; });
+    if (blinds.length) {
+      var up = blinds.filter(function (x) { return (x.tile.state.position || 0) > 1; }).length;
+      chips += chip("blinds", "blind", "", t("chBlinds"), up ? t("chNOpen", { n: up, m: blinds.length }) : t("chAllClosed"));
+    }
+    var sec = all.filter(function (x) { return x.tile.kind === "contact" || x.tile.kind === "lock"; });
+    if (sec.length) {
+      var open = sec.filter(function (x) { return secOpen(x.tile); }).length;
+      chips += chip("security", "lock", open ? "warn" : "", t("chSecurity"), open ? t("chSecOpen", { n: open }) : t("chSecOk"));
+    }
+    return chips ? '<div class="schips">' + chips + "</div>" : "";
+  }
+  function ovRow(x, icon, color, sub, button) {
+    return '<div class="row tap" data-ovopen="' + esc(x.id) + '"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I(icon) + '</div><div class="t"><b>' + esc(x.tile.name) + "</b><span>" + esc(sub) + "</span></div>" + (button || I("chev")) + "</div>";
+  }
+  function byRoom(list, rowFn) {
+    var html = "", last = null;
+    list.forEach(function (x) {
+      if (x.room !== last) { html += '<div class="section ovroom">' + esc(x.room) + "</div>"; last = x.room; }
+      html += rowFn(x);
+    });
+    return html;
+  }
+  function renderOverview() {
+    var kind = S.sheet.overview, all = shownTiles(), title = "", lead = "", body = "", actions = "", ro = S.tablet && S.tablet.readonly;
+    if (kind === "light") {
+      var on = all.filter(function (x) { return isLight(x.tile) && x.tile.state.on; });
+      title = t("ovLight"); lead = on.length ? t("chNOn", { n: on.length }) : "";
+      body = on.length ? byRoom(on, function (x) {
+        return ovRow(x, "bulb", "#FFB547", x.tile.kind === "dimmer" && x.tile.state.level ? x.tile.state.level + " %" : t("on"), ro ? "" : '<button class="pill" data-off="' + esc(x.id) + '">' + esc(t("off")) + "</button>");
+      }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovNoLight")) + "</div>";
+      if (on.length > 1 && !ro) { actions = '<button class="pill primary" data-ovall="lights">' + I("power", 20) + " " + esc(t("lightsOff")) + "</button>"; }
+    } else if (kind === "climate") {
+      title = t("ovClimate");
+      body = roomClimates().map(function (c) {
+        var color = tempColor(c.temp), sub = [];
+        if (c.target !== undefined) { sub.push(t("target") + " " + num(c.target) + "°"); }
+        if (c.humidity !== undefined) { sub.push(Math.round(c.humidity) + " %"); }
+        if (c.heats) { sub.push(t("heatsNow")); }
+        return '<div class="row tap" data-ovopen="' + esc(c.id) + '"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I("thermo") + '</div><div class="t"><b>' + esc(c.room) + "</b><span>" + esc(sub.join(" · ")) + '</span></div><div class="ovtemp" style="color:' + color + '">' + num(c.temp) + "°</div>" + I("chev") + "</div>";
+      }).join("");
+    } else if (kind === "blinds") {
+      var blinds = all.filter(function (x) { return x.tile.kind === "blind"; });
+      title = t("ovBlinds");
+      body = byRoom(blinds, function (x) {
+        var p = x.tile.state.position;
+        var sub = p === undefined ? "–" : p >= 99 ? t("open") : p <= 1 ? t("closed") : t("open") + " " + p + " %";
+        return ovRow(x, "blind", "#3DDBB8", sub, ro ? "" : '<button class="pill" data-ovpos="' + esc(x.id) + '|100">' + esc(t("up")) + '</button><button class="pill" data-ovpos="' + esc(x.id) + '|0">' + esc(t("down")) + "</button>");
+      });
+      if (!ro) { actions = '<button class="pill" data-ovall="up">' + esc(t("allUp")) + '</button><button class="pill" data-ovall="down">' + esc(t("allDown")) + "</button>"; }
+    } else if (kind === "security") {
+      var sec = all.filter(function (x) { return secOpen(x.tile); });
+      title = t("ovSecurity");
+      body = sec.length ? byRoom(sec, function (x) {
+        if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
+        return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
+      }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
+    }
+    sheetShell('<div class="head"><div><h1>' + esc(title) + "</h1>" + (lead ? '<div class="subtitle">' + esc(lead) + "</div>" : "") + '</div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="blist ovlist">' + body + "</div>" + (actions ? '<div class="actions">' + actions + "</div>" : ""));
+  }
+  function overviewAll(what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    shownTiles().forEach(function (x) {
+      var tl = x.tile;
+      if (what === "lights" && isLight(tl) && tl.state.on) { act(x.id, "off", null, { on: false }); }
+      if ((what === "up" || what === "down") && tl.kind === "blind") { var v = what === "up" ? 100 : 0; if (tl.state.position !== v) { act(x.id, "position", v, { position: v }); } }
+    });
+  }
   function openBatteries() { S.sheet = { batteries: true }; renderBatteries(); }
   function renderBatteries() {
     var list = (S.header && S.header.battery) || [];
@@ -1899,6 +2016,11 @@
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-overview"))) { S.sheet = { overview: el.getAttribute("data-overview") }; renderSheet(); return; }
+    if ((el = closest(target, "data-ovpos"))) { var pv = el.getAttribute("data-ovpos").split("|"); act(pv[0], "position", Number(pv[1]), { position: Number(pv[1]) }); return; }
+    if ((el = closest(target, "data-ovall"))) { overviewAll(el.getAttribute("data-ovall")); return; }
+    if ((el = closest(target, "data-ovlock"))) { act(el.getAttribute("data-ovlock"), "lock", null, { locked: true }); return; }
+    if ((el = closest(target, "data-ovopen"))) { openSheet(el.getAttribute("data-ovopen")); return; }
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
