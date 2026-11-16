@@ -8,6 +8,7 @@ minute on the tablet itself.
   thermostats, locks, windows and doors, motion and climate sensors, LightScene scenes
 - the header shows weather, who is at home (tap it: who arrived when, who is away since when), open windows (by name
   when only a few are open) and empty batteries
+- a tap on a room card on *Home* opens the room at a glance: a temperature ring (drag it to set the target, or + and −), *Light* with one button for all lamps of the room, *Blinds* with one slider for all blinds and up/down, *Switches*, the scenes and the other devices; the arrow unfolds every lamp, blind or switch with its own slider. *Open the whole room* goes to the room tab
 - *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
