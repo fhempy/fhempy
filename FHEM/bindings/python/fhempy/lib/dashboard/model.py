@@ -412,6 +412,9 @@ def tile_state(kind, info):
         state["since"] = _reading_time(info, "contact", "state")
     if kind == "thermostat":
         state.update(heating_state(info))
+    if kind == "motion":
+        # last change: since when somebody is there or the room is quiet
+        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
 
     if kind in HAZARD_READINGS:
         state["alarm"] = bool(hazard_alarm(kind, info))
@@ -949,10 +952,59 @@ def open_contacts(tiles):
                 "door": item.get("door", False),
                 "tilted": item["state"].get("tilted", False),
                 "since": item["state"].get("since"),
+                "may_open": item.get("may_open"),
             }
         )
     result.sort(key=lambda c: (c["since"] or "9999", c["name"].lower()))
     return result
+
+
+# --- doors and gates which may be open at some times, e.g. a yard gate by day ---
+
+_WINDOW_RE = re.compile(r"^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$")
+
+
+def clean_window(value):
+    """'7:00-20:00' -> '07:00-20:00', None when it is no time window"""
+    match = _WINDOW_RE.match(str(value or ""))
+    if not match:
+        return None
+    h1, m1, h2, m2 = (int(x) for x in match.groups())
+    if h1 > 23 or h2 > 24 or m1 > 59 or m2 > 59 or (h2 == 24 and m2):
+        return None
+    if (h1, m1) == (h2, m2):
+        return None
+    return f"{h1:02d}:{m1:02d}-{h2:02d}:{m2:02d}"
+
+
+def parse_may_open(value):
+    """attribute may_open: 'Yard_gate=07:00-20:00,Garage=08:00-18:00'
+    -> {device: '07:00-20:00'}"""
+    result = {}
+    for entry in re.split(r"[,;\s]+(?=[^,;\s]+=)", str(value or "").strip()):
+        name, _, window = entry.partition("=")
+        window = clean_window(window)
+        if name.strip() and window:
+            result[name.strip().rstrip(",;")] = window
+    return result
+
+
+def format_may_open(windows):
+    return ",".join(f"{n}={w}" for n, w in sorted(windows.items()))
+
+
+def may_open_now(window, minutes):
+    """window '07:00-20:00', minutes since midnight. Over midnight works too:
+    '22:00-06:00'"""
+    window = clean_window(window)
+    if window is None:
+        return False
+    start, end = (
+        int(part[:2]) * 60 + int(part[3:]) for part in window.split("-")
+    )
+    if start < end:
+        return start <= minutes < end
+    return minutes >= start or minutes < end
 
 
 def running(tiles):
