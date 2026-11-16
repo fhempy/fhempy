@@ -198,10 +198,10 @@ class tuya_smartlife_device:
     async def set_colour_data(self, hash, params):
         # convert e.g. ff0000 to hsv (360, 255, 255) and set hsv values with json
         hsv = self.fhemrgb2hsv(params["new_val"])
-        if self._t_info["category"] == "dj":
+        if self.device.category == "dj":
             hsv["s"] = int(hsv["s"] / 1000 * 255)
             hsv["v"] = int(hsv["v"] / 1000 * 255)
-        code = params["function_param"].code
+        code = params["function_param"]["code"]
         await self.send_commands([{"code": code, "value": hsv}])
 
     async def set_colour_data_v2(self, hash, params):
@@ -233,7 +233,7 @@ class tuya_smartlife_device:
             return "state"
 
         # pir device
-        if code == "pir" and self._t_info["category"] == "pir":
+        if code == "pir" and self.device.category == "pir":
             return "state"
 
         # smoke detector

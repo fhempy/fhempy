@@ -1103,7 +1103,11 @@ class dashboard(generic.FhemModule):
             (s for s in self.data["scenes"] if s["id"] == message.get("id")), None
         )
         if scene is not None and (not allowed or scene["room"] in allowed):
-            await self.fhem_set(tablet, scene["device"], f"scene {scene['scene']}")
+            error = await self.fhem_set_error(
+                tablet, scene["device"], f"scene {scene['scene']}"
+            )
+            if error:
+                await self.send_failed(tablet, None, scene["name"], error)
 
     # --- timers: switch off in 15 min ... ---
 
@@ -1147,7 +1151,9 @@ class dashboard(generic.FhemModule):
         if not item["state"].get("on"):
             # "on for 30 min"
             for arg in model.command(item, info, "on"):
-                if not await self.fhem_set(tablet, item["id"], arg):
+                error = await self.fhem_set_error(tablet, item["id"], arg)
+                if error:
+                    await self.send_failed(tablet, item["id"], item["name"], error)
                     await self.send_tile(item)
                     return
         definition = model.timer_definition(item["id"], minutes, off)
@@ -1168,6 +1174,7 @@ class dashboard(generic.FhemModule):
             await fhem.readingsSingleUpdate(
                 self.hash, "lastError", f"timer {definition}: {result}", 1
             )
+            await self.send_failed(tablet, item["id"], item["name"], str(result))
             return
         self.logger.info(f"{tablet['name']}: {definition}")
         self.timers[item["id"]] = round(time.time() + minutes * 60)
@@ -1199,12 +1206,18 @@ class dashboard(generic.FhemModule):
         except ValueError:
             return
         for arg in args:
-            if not await self.fhem_set(tablet, item["id"], arg):
-                # show the real state again
+            error = await self.fhem_set_error(tablet, item["id"], arg)
+            if error:
+                # tell the tablet why and show the real state again
+                await self.send_failed(tablet, item["id"], item["name"], error)
                 await self.send_tile(item)
                 return
 
     async def fhem_set(self, tablet, device, arg):
+        return not await self.fhem_set_error(tablet, device, arg)
+
+    async def fhem_set_error(self, tablet, device, arg):
+        """empty when set worked, otherwise the answer of FHEM"""
         definition = f"{device} {arg}"
         self.logger.info(f"{tablet['name']}: set {definition}")
         result = await fhem.sendCommandHash(
@@ -1215,8 +1228,19 @@ class dashboard(generic.FhemModule):
             await fhem.readingsSingleUpdate(
                 self.hash, "lastError", f"set {definition}: {result}", 1
             )
-            return False
-        return True
+            return str(result)
+        return ""
+
+    async def send_failed(self, tablet, tile_id, name, error):
+        message = {
+            "type": "failed",
+            "id": tile_id,
+            "name": name,
+            "reason": model.short_error(error),
+        }
+        for ws, tablet_id in self.connected():
+            if tablet_id == tablet["id"]:
+                await self.send(ws, message)
 
     # --- timeline ---
 

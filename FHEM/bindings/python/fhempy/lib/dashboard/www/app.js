@@ -26,6 +26,8 @@
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
+    tapHint: "Tipp auf das Symbol schaltet, Tipp auf die Kachel zeigt die Details.", confirmTap: "Nochmal tippen", unlockSure: "Nochmal tippen zum Entriegeln",
+    noReaction: "„{name}“ hat nicht reagiert.", failed: "„{name}“ ging nicht: {reason}", retry: "Nochmal",
     inputsHint: "Werte dieser Automatik", inputSet: "Übernehmen", inputRun: "Ausführen",
     fan: "Ventilator", fanOff: "Aus", fanLow: "Niedrig", fanMedium: "Mittel", fanHigh: "Hoch", pullToFan: "Ziehen für die Stufe",
     playing: "Spielt", paused: "Pausiert", idle: "Bereit", nothingPlays: "Gerade läuft nichts", volume: "Lautstärke", presets: "Senderspeicher", prevTrack: "Zurück", nextTrack: "Weiter", playPause: "Abspielen oder Pause",
@@ -69,6 +71,8 @@
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
+    tapHint: "Tap the icon to switch, tap the tile for the details.", confirmTap: "Tap again", unlockSure: "Tap again to unlock",
+    noReaction: "“{name}” didn't react.", failed: "“{name}” didn't work: {reason}", retry: "Try again",
     inputsHint: "Values of this automation", inputSet: "Apply", inputRun: "Run",
     fan: "Fan", fanOff: "Off", fanLow: "Low", fanMedium: "Medium", fanHigh: "High", pullToFan: "Drag to set the speed",
     playing: "Playing", paused: "Paused", idle: "Ready", nothingPlays: "Nothing is playing", volume: "Volume", presets: "Presets", prevTrack: "Previous", nextTrack: "Next", playPause: "Play or pause",
@@ -138,6 +142,7 @@
     chev: '<path d="M9 6l6 6-6 6"/>',
     battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
@@ -192,7 +197,7 @@
   var S = {
     token: null, tablet: null, rooms: [], tiles: {}, scenes: [], header: {},
     tab: null, sheet: null, edit: false, ws: null, connected: false, retry: 0,
-    lastTouch: Date.now(), saver: false, ring: null, pending: {}, timeline: {},
+    lastTouch: Date.now(), saver: false, ring: null, pending: {}, last: {}, arm: null, timeline: {},
     history: null, historyDay: null, usage: {}, banner: null, now: new Date(), sparks: {}, sparksAt: 0
   };
   try { S.usage = JSON.parse(store("dashUsage") || "{}") || {}; } catch (e) { S.usage = {}; }
@@ -236,7 +241,7 @@
       S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {};
       S.pending = {};
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); }
-      render(); loadSparks(true); return;
+      render(); loadSparks(true); tapHint(); return;
     }
     if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
@@ -250,6 +255,7 @@
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
     }
+    if (m.type === "failed") { failed(m); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -539,7 +545,7 @@
     } else if (tile.kind === "media") {
       body = mediaTileBody(id, tile, look, editState);
     } else {
-      body = '<div class="ic">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
+      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] ? " sw" : "") + '">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
@@ -603,11 +609,18 @@
   function act(id, action, value, optimistic) {
     if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
     var tile = S.tiles[id];
+    S.last[id] = { action: action, value: value, optimistic: optimistic };
     if (tile && optimistic) {
       var before = JSON.parse(JSON.stringify(tile.state));
+      // thermostats on batteries take minutes, a value that was already set sends no event
+      var tell = tile.kind !== "thermostat" && Object.keys(optimistic).some(function (k) { return JSON.stringify(before[k]) !== JSON.stringify(optimistic[k]); });
+      clearTimeout(S.pending[id]);
       Object.keys(optimistic).forEach(function (k) { tile.state[k] = optimistic[k]; });
       S.pending[id] = setTimeout(function () {
-        if (S.pending[id]) { tile.state = before; delete S.pending[id]; updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); } }
+        if (S.pending[id]) {
+          tile.state = before; delete S.pending[id]; updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); }
+          if (tell) { showToast(t("noReaction", { name: tile.name }), id); }
+        }
       }, 4000);
       updateTile(id);
     }
@@ -1685,6 +1698,46 @@
     if (ms) { S.bannerTimer = setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, ms); }
   }
 
+  // a short message at the bottom, optionally with "Try again"
+  function showToast(text, retryId, ms) {
+    var el = document.getElementById("toast");
+    if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+    el.className = retryId ? "warn" : "";
+    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "");
+    clearTimeout(S.toastTimer);
+    S.toastTimer = setTimeout(hideToast, ms || 7000);
+  }
+  function hideToast() { var el = document.getElementById("toast"); if (el && el.parentNode) { el.parentNode.removeChild(el); } }
+  function failed(m) {
+    if (m.id && S.pending[m.id]) { clearTimeout(S.pending[m.id]); delete S.pending[m.id]; }
+    showToast(t("failed", { name: m.name || "", reason: m.reason || "" }), m.id && S.last[m.id] ? m.id : null, 10000);
+  }
+  function retry(id) {
+    hideToast();
+    var l = S.last[id]; if (!l || !S.tiles[id]) { return; }
+    act(id, l.action, l.value, l.optimistic);
+  }
+  function tapHint() {
+    if (!S.tablet || !S.tablet.place || S.tablet.readonly || store("dashTapHint")) { return; }
+    store("dashTapHint", "1"); showToast(t("tapHint"), null, 9000);
+  }
+  // scenes and unlocking need a second tap within 4 s
+  function armed(el, key, label) {
+    var a = S.arm;
+    if (a && a.key === key && Date.now() - a.at < 4000) { disarm(); return true; }
+    disarm();
+    S.arm = { key: key, at: Date.now(), el: el, html: el.innerHTML };
+    el.classList.add("arm"); el.innerHTML = I("check", 20) + " " + esc(label);
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+    S.arm.timer = setTimeout(disarm, 4000);
+    return false;
+  }
+  function disarm() {
+    var a = S.arm; if (!a) { return; }
+    S.arm = null; clearTimeout(a.timer);
+    if (a.el && a.el.isConnected) { a.el.classList.remove("arm"); a.el.innerHTML = a.html; }
+  }
+
   // ---------- doorbell ----------
   var pc = null, mic = null;
   function startRing(m) {
@@ -1902,7 +1955,11 @@
       var id = el.getAttribute("data-tile");
       if (S.edit) { return; }
       if (press && press.long) { press = null; return; }
-      press = null; tap(id); return;
+      press = null;
+      // the icon switches, the rest of the tile opens the details
+      var tt = S.tiles[id];
+      if (tt && TAP_TOGGLES[tt.kind] && !(target.closest && target.closest(".ic"))) { openSheet(id); return; }
+      tap(id); return;
     }
     if ((el = closest(target, "data-edit"))) {
       var tileEl = closest(el, "data-tile");
@@ -1917,13 +1974,15 @@
     if ((el = closest(target, "data-tab"))) { S.arrange = null; S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
-    if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
+    if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } if (!armed(el, "scene:" + el.getAttribute("data-scene"), t("confirmTap"))) { return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
     if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } var ids = el.getAttribute("data-ids"); send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null, ids: ids ? ids.split("\n") : null }); return; }
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }
     if (target.id === "sheet") { closeSheet(); return; }
+    if ((el = closest(target, "data-retry"))) { retry(el.getAttribute("data-retry")); return; }
     if ((el = closest(target, "data-do"))) {
       var sid = S.sheet.id, what = el.getAttribute("data-do");
+      if (what === "unlock" && !armed(el, "unlock:" + sid, t("unlockSure"))) { return; }
       if (what === "on") { act(sid, "on", null, { on: true }); } else if (what === "off") { act(sid, "off", null, { on: false }); } else if (what === "up") { act(sid, "position", 100, { position: 100 }); } else if (what === "down") { act(sid, "position", 0, { position: 0 }); } else if (what === "stop") { act(sid, "stop"); } else { act(sid, what, null, { locked: what === "lock" }); }
       renderSheet(); return;
     }

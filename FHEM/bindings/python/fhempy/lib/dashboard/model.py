@@ -604,6 +604,13 @@ def header(infos, tiles):
 # --- commands of the tablets ---
 
 
+def short_error(text):
+    """the answer of FHEM to a failed set, short enough for a tablet"""
+    text = " ".join(str(text or "").split())
+    text = re.split(r",? choose one of", text, maxsplit=1)[0]
+    return text if len(text) <= 120 else text[:119] + "…"
+
+
 def _toggle(kind, state):
     if kind in SWITCHABLE:
         return {"on": not state.get("on")}

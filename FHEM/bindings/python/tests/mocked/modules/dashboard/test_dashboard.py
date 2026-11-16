@@ -1145,6 +1145,30 @@ def test_station_logo_and_song_cover():
     assert media.logo_url(bose(channel="", art=song)) is None
 
 
+def test_short_error():
+    assert model.short_error("Unknown argument foo, choose one of on off") == (
+        "Unknown argument foo"
+    )
+    assert model.short_error("x" * 300).endswith("…")
+    assert len(model.short_error("x" * 300)) == 120
+
+
+@pytest.mark.asyncio
+async def test_failed_set_is_told_to_the_tablet(module):
+    _, answer = await pair(module)
+    switch = next(
+        t for t in module.data["tiles"].values() if t["kind"] in ("switch", "outlet")
+    )
+    module.fake.fail[switch["id"]] = "No answer from the device, choose one of on off"
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "action", "action": "toggle", "id": switch["id"]})
+        message = await next_of(ws, "failed")
+        assert message["id"] == switch["id"]
+        assert message["name"] == switch["name"]
+        assert message["reason"] == "No answer from the device"
+        # the real state follows
+        assert (await next_of(ws, "tile"))["tile"]["id"] == switch["id"]
 def test_timer_definition():
     assert model.timer_name("wz.Lamp-1") == "dashboard_timer_wz.Lamp_1"
     assert model.timer_definition("lamp", 90, ["off"]) == (
