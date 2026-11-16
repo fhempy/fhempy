@@ -19,6 +19,7 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    chMaint: "Wartung", chMaintN: "{n} Geräte", ovMaint: "Wartung", ovMaintLead: "Diese Geräte brauchen Aufmerksamkeit.", mtUnreachable: "nicht erreichbar", mtSilent: "keine Werte {t}", mtOk: "Alles in Ordnung.", mtBattery: "Batterie schwach",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
@@ -67,6 +68,7 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    chMaint: "Maintenance", chMaintN: "{n} devices", ovMaint: "Maintenance", ovMaintLead: "These devices need attention.", mtUnreachable: "not reachable", mtSilent: "no values {t}", mtOk: "Everything is fine.", mtBattery: "battery low",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
@@ -808,7 +810,7 @@
     return rooms;
   }
   function roomCardHtml(room, editState) {
-    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null;
+    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null;
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
       if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
@@ -817,6 +819,7 @@
       if (temp === null && tile.kind === "thermostat" && st.current !== undefined) { temp = st.current; }
       if (temp === null && tile.kind === "temperature" && st.temperature !== undefined) { temp = st.temperature; }
       if (tile.kind === "contact" && st.closed === false) { open++; }
+      if (st.co2 !== undefined && st.co2 !== null && (co2 === null || st.co2 > co2)) { co2 = st.co2; }
     });
     var facts = "", climate = "";
     if (temp !== null) {
@@ -824,7 +827,8 @@
       climate = (pts ? sparkSvg(pts, color, temp) : "") + '<div class="rtemp" style="color:' + color + '">' + num(temp) + "°" + (arrow ? '<span class="arrow">' + arrow + "</span>" : "") +
         (humid !== null ? '<span class="rhum">' + Math.round(humid) + " %</span>" : "") + "</div>";
     }
-    if (humid !== null && humid >= 65 && !open) { facts += '<span class="fact warn">' + esc(t("airOut")) + "</span>"; }
+    // stale air: humid or much CO2, not while a window is open already
+    if (((humid !== null && humid >= 65) || (co2 !== null && co2 >= 1400)) && !open) { facts += '<span class="fact warn">' + esc(t("airOut")) + (co2 !== null && co2 >= 1400 ? " · " + Math.round(co2) + " ppm" : "") + "</span>"; }
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
@@ -1382,6 +1386,21 @@
   }
   function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
   function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  // devices which need attention: not reachable, a sensor without values for
+  // two days, a low battery
+  function maintenance() {
+    var result = [], limit = Date.now() - 48 * 3600 * 1000;
+    shownTiles().forEach(function (x) {
+      var st = x.tile.state;
+      if (st.unreachable) { result.push({ id: x.id, tile: x.tile, room: x.room, why: "unreachable" }); return; }
+      if (st.seen) {
+        var when = new Date(st.seen.replace(" ", "T") + ":00:00").getTime();
+        if (when && when < limit) { result.push({ id: x.id, tile: x.tile, room: x.room, why: "silent", since: st.seen + ":00:00" }); return; }
+      }
+      if (st.battery_low) { result.push({ id: x.id, tile: x.tile, room: x.room, why: "battery" }); }
+    });
+    return result;
+  }
   function roomClimates() {
     return visibleRooms().map(function (room) {
       var c = { room: room.name };
@@ -1426,6 +1445,9 @@
       var open = sec.filter(function (x) { return secOpen(x.tile); }).length;
       chips += chip("security", "lock", open ? "warn" : "", t("chSecurity"), open ? t("chSecOpen", { n: open }) : t("chSecOk"));
     }
+    // only when something needs to be done
+    var todo = maintenance();
+    if (todo.length) { chips += chip("maintenance", "gear", "warn", t("chMaint"), t("chMaintN", { n: todo.length })); }
     return chips ? '<div class="schips">' + chips + "</div>" : "";
   }
   function ovRow(x, icon, color, sub, button) {
@@ -1466,6 +1488,13 @@
         return ovRow(x, "blind", "#3DDBB8", sub, ro ? "" : '<button class="pill" data-ovpos="' + esc(x.id) + '|100">' + esc(t("up")) + '</button><button class="pill" data-ovpos="' + esc(x.id) + '|0">' + esc(t("down")) + "</button>");
       });
       if (!ro) { actions = '<button class="pill" data-ovall="up">' + esc(t("allUp")) + '</button><button class="pill" data-ovall="down">' + esc(t("allDown")) + "</button>"; }
+    } else if (kind === "maintenance") {
+      var todo = maintenance();
+      title = t("ovMaint"); lead = todo.length ? t("ovMaintLead") : "";
+      body = todo.length ? byRoom(todo, function (x) {
+        return ovRow(x, x.why === "battery" ? "battery" : x.why === "silent" ? "clock" : "x", "#FF8A3D",
+          x.why === "battery" ? t("mtBattery") : x.why === "silent" ? t("mtSilent", { t: since(x.since) }) : t("mtUnreachable"));
+      }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("mtOk")) + "</div>";
     } else if (kind === "security") {
       var sec = all.filter(function (x) { return secOpen(x.tile); });
       title = t("ovSecurity");

@@ -152,6 +152,12 @@ DOORBELL_VALUES = (
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
 READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
+# CO2 of the air in ppm
+CO2_READINGS = ("co2", "CO2", "carbonDioxide", "carbon_dioxide")
+# reachability: HomeMatic Activity, zigbee2mqtt/MQTT availability
+REACH_READINGS = ("Activity", "availability")
+UNREACHABLE_WORDS = ("dead", "unreachable", "offline", "disconnected", "not connected")
+READINGS = READINGS + CO2_READINGS + REACH_READINGS
 # colour lights: HUEDevice, zigbee2mqtt, Tasmota, Shelly, WLED, ...
 RGB_SETS = ("rgb", "hex", "RGB", "Color", "color")
 CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
@@ -287,7 +293,28 @@ def tile_state(kind, info):
             state["power"] = power
     if battery_low(info):
         state["battery_low"] = True
+    co2 = kinds.number(_reading(info, *CO2_READINGS))
+    if co2 is not None:
+        state["co2"] = co2
+    if unreachable(info):
+        state["unreachable"] = True
+    if kind in CLIMATE_KINDS:
+        # sensors report every few minutes: the hour of the newest value
+        # shows one that went silent (battery, radio, gone)
+        seen = max((str(t) for t in (info.get("times") or {}).values()), default="")
+        if seen:
+            state["seen"] = seen[:13]
     return state
+
+
+def unreachable(info):
+    """the device says it is not reachable: Activity dead, availability
+    offline or such a state"""
+    for name in REACH_READINGS + ("state",):
+        value = str(_reading(info, name) or "").strip().lower()
+        if value in UNREACHABLE_WORDS:
+            return True
+    return False
 
 
 def _low_battery_reading(info):

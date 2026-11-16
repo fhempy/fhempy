@@ -1271,3 +1271,18 @@ def test_colour_lights():
     plain = light("")
     assert "color" not in model.tile(plain)
     assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []
+
+
+def test_maintenance_and_co2():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    assert tiles["ku_Klima"]["state"]["co2"] == 1650
+    assert tiles["ga_Steckdose"]["state"]["unreachable"] is True
+    assert "unreachable" not in tiles["ku_Licht"]["state"]
+    # the hour of the newest value of a sensor
+    seen = tiles["ga_Aussen"]["state"]["seen"]
+    assert len(seen) == 13 and seen == fake_home.ts(3 * 24 * 60)[:13]
+    assert "seen" not in tiles["ku_Licht"]["state"]
+    for readings in ({"Activity": "dead"}, {"state": "unreachable"}, {"availability": "offline"}):
+        assert model.unreachable({"readings": readings})
+    assert not model.unreachable({"readings": {"Activity": "alive", "state": "on"}})

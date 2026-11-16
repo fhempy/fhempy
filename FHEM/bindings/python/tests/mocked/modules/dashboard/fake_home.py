@@ -78,7 +78,11 @@ DEVICES = {
     ),
     "ku_Fenster": device("dummy", "Küche", "", {"contact": "closed"}, alias="Fenster Küche"),
     "ku_Klima": device(
-        "dummy", "Küche", "", {"temperature": "22.4", "humidity": "51"}, alias="Klima Küche"
+        "dummy",
+        "Küche",
+        "",
+        {"temperature": "22.4", "humidity": "51", "co2": "1650"},
+        alias="Klima Küche",
     ),
     "sz_Licht": device("dummy", "Schlafzimmer", DIM, {"state": "off", "pct": "0"}, alias="Nachtlicht"),
     "sz_Rollladen": device("dummy", "Schlafzimmer", BLIND, {"pct": "0"}, alias="Rollladen"),
@@ -112,6 +116,13 @@ DEVICES = {
         alias="Teichpumpe",
     ),
     "ga_Aussen": device("dummy", "Garten", "", {"temperature": "9.2"}, alias="Außentemperatur"),
+    "ga_Steckdose": device(
+        "dummy",
+        "Garten",
+        "on off",
+        {"state": "off", "availability": "offline"},
+        alias="Steckdose Gartenhaus",
+    ),
     "rr_Anna": device("ROOMMATE", "", "", {"state": "home"}, alias="Anna"),
     "rr_Max": device("ROOMMATE", "", "", {"state": "home"}, alias="Max"),
     "rr_Lea": device("ROOMMATE", "", "", {"state": "absent"}, alias="Lea"),
@@ -137,7 +148,7 @@ DEVICES = {
     "push": device("fhempy", "", "", {"message": "-"}, fhempytype="push"),
 }
 # minutes ago of the last change
-AGES = {"wz_Fenster": 25, "bad_Fenster": 64}
+AGES = {"wz_Fenster": 25, "bad_Fenster": 64, "ga_Aussen": 3 * 24 * 60}
 
 
 class FakeFhem:
