@@ -138,10 +138,13 @@ LAYOUT_KEYS = (
     "hidden_tiles",
     "tile_order",
     "theme",
+    "tile_size",
     "accent",
     "lite",
     "saver",
 )
+# small, wide, tall, big
+TILE_SIZES = ("s", "w", "t", "b")
 ACCENTS = ("amber", "teal", "blue", "violet", "pink", "green", "lamps")
 # minutes until the screensaver, 0: never
 SAVER_MINUTES = (0, 2, 5, 10, 15, 30)
@@ -174,6 +177,12 @@ def clean_layout(layout):
                 str(room)[:100]: [str(v)[:200] for v in ids[:500]]
                 for room, ids in list(value.items())[:200]
                 if isinstance(ids, list)
+            }
+        elif key == "tile_size" and isinstance(value, dict):
+            result[key] = {
+                str(tile)[:200]: size
+                for tile, size in list(value.items())[:1000]
+                if size in TILE_SIZES
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
             result[key] = value

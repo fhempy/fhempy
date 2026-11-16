@@ -63,6 +63,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    tileSize: "Größe", headAdd: "Überschrift", headPlaceholder: "z. B. Decke, Fenster …", roomReset: "Raum zurücksetzen", editHint2: "1×1 neben dem × wechselt zwischen klein, breit, hoch und groß.",
     accent: "Akzentfarbe", accentLamps: "wie die Lampen", accentHint: "Bunt: der Hintergrund leuchtet in der Farbe der eingeschalteten Lampen",
     tourTitle: "So bedienst du das Dashboard", tourText: "Vier Handgriffe, mehr braucht es nicht.", tourGo: "Los geht’s", tourAgain: "So bedienst du das Dashboard",
     tourTap: "Tippen", tourTapList: ["Das runde Symbol schaltet an und aus", "Die Kachel zeigt Details und Verlauf", "Oben Wetter, Personen und Offen antippen"],
@@ -142,6 +143,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    tileSize: "Size", headAdd: "Heading", headPlaceholder: "e.g. Ceiling, Windows …", roomReset: "Reset room", editHint2: "1×1 next to the × switches between small, wide, tall and big.",
     accent: "Accent colour", accentLamps: "like the lamps", accentHint: "Colourful: the background glows in the colour of the lamps which are on",
     tourTitle: "How to use the dashboard", tourText: "Four moves, that is all it takes.", tourGo: "Let’s go", tourAgain: "How to use the dashboard",
     tourTap: "Tap", tourTapList: ["The round icon switches on and off", "The tile shows details and history", "Tap weather, people and open at the top"],
@@ -641,7 +643,7 @@
 
   function tileHtml(id, editState) {
     var tile = S.tiles[id]; if (!tile) { return ""; }
-    var look = tileLook(tile), wide = tile.kind === "thermostat" || tile.kind === "media";
+    var look = tileLook(tile), size = tileSize(id), wide = size === "w" || size === "b", tall = size === "t" || size === "b";
     var body, climate = tile.kind === "thermostat" || tile.kind === "temperature" || tile.kind === "humidity";
     if (climate) {
       body = climateTileBody(id, tile, look, editState);
@@ -658,11 +660,37 @@
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
+      if (editState === "shown") { extra += '<div class="szbtn" data-size="' + esc(id) + '" aria-label="' + esc(t("tileSize")) + '">' + SIZE_LABEL[size] + "</div>"; }
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (tall ? " tall" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
+  // size of a tile on this tablet: s small, w wide, t tall, b big
+  var SIZES = ["s", "w", "t", "b"], SIZE_LABEL = { s: "1×1", w: "2×1", t: "1×2", b: "2×2" };
+  function tileSize(id) {
+    var size = (layout().tile_size || {})[id], tile = S.tiles[id];
+    if (SIZES.indexOf(size) >= 0) { return size; }
+    return tile && (tile.kind === "thermostat" || tile.kind === "media") ? "w" : "s";
+  }
+  // headings are entries "#Text" in the order of a room
+  function withHeadings(ids, order) {
+    var result = ids.slice();
+    (order || []).forEach(function (entry, i) {
+      if (entry.charAt(0) !== "#") { return; }
+      var next = null;
+      for (var j = i + 1; j < order.length; j++) { if (order[j].charAt(0) !== "#" && result.indexOf(order[j]) >= 0) { next = order[j]; break; } }
+      var at = next === null ? result.length : result.indexOf(next);
+      // headings right before this one stay in their order
+      while (at > 0 && result[at - 1].charAt(0) === "#" && order.indexOf(result[at - 1]) > i) { at--; }
+      result.splice(at, 0, entry);
+    });
+    return result;
+  }
+  function headHtml(entry, edit) {
+    return '<div class="gh' + (edit ? " tile" : "") + '" ' + (edit ? "data-tile" : "data-head") + '="' + esc(entry) + '"><span>' + esc(entry.slice(1)) + "</span>" + (edit ? '<div class="edit" data-delhead="' + esc(entry) + '">' + I("x") + "</div>" : "") + "</div>";
+  }
+  function gridItem(id, editState) { return id.charAt(0) === "#" ? headHtml(id, !!editState) : tileHtml(id, editState); }
   function updateTile(id) {
     if (S.sliding && press && press.id === id) { return; }
     var el = app.querySelector('[data-tile="' + cssEsc(id) + '"]');
@@ -969,18 +997,19 @@
   function roomHtml(room) {
     if (!room) { return ""; }
     var html = scenesHtml(room);
-    var ids = roomTiles(room, S.edit);
+    var ids = roomTiles(room, S.edit), order = (layout().tile_order || {})[room.name];
     if (S.edit) {
       var hidden = layout().hidden_tiles || [];
-      var shown = ids.filter(function (id) { return hidden.indexOf(id) < 0; });
+      var shown = withHeadings(ids.filter(function (id) { return hidden.indexOf(id) < 0; }), order);
       var gone = ids.filter(function (id) { return hidden.indexOf(id) >= 0; });
-      html += '<div class="edithint">' + esc(t("editHint")) + "</div>";
-      html += '<div class="grid">' + shown.map(function (id) { return tileHtml(id, "shown"); }).join("") + "</div>";
+      html += '<div class="edithint">' + esc(t("editHint")) + " " + esc(t("editHint2")) + "</div>";
+      html += '<div class="headadd"><input id="newhead" maxlength="40" placeholder="' + esc(t("headPlaceholder")) + '"><button class="pill" data-addhead="1">' + I("plus", 18) + " " + esc(t("headAdd")) + '</button><button class="linkbtn" data-roomreset="' + esc(room.name) + '">' + esc(t("roomReset")) + "</button></div>";
+      html += '<div class="grid tgrid">' + shown.map(function (id) { return gridItem(id, "shown"); }).join("") + "</div>";
       if (gone.length) { html += '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (id) { return tileHtml(id, "hidden"); }).join("") + "</div>"; }
       html += '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
       return html;
     }
-    html += '<div class="grid">' + ids.map(function (id) { return tileHtml(id); }).join("") + "</div>";
+    html += '<div class="grid tgrid">' + withHeadings(ids, order).map(function (id) { return gridItem(id); }).join("") + "</div>";
     html += happenedHtml(room.name);
     return html;
   }
@@ -2117,6 +2146,13 @@
     if (S.sheet && S.sheet.settings) { renderSettings(); }
   }
   function copyLayout() { return JSON.parse(JSON.stringify(layout())); }
+  // change the order of the room shown, starting from what is on screen
+  function editRoomOrder(fn) {
+    var room = S.tab.indexOf("room:") === 0 && roomByName(S.tab.slice(5)); if (!room) { return; }
+    var lay = copyLayout(), cur = (lay.tile_order || {})[room.name];
+    if (!cur || !cur.length) { cur = roomTiles(room, true); }
+    lay.tile_order = lay.tile_order || {}; lay.tile_order[room.name] = fn(cur.slice()); saveLayout(lay);
+  }
 
   // ---------- arranging rooms (FHEM attribute room, for all tablets) ----------
   function startArrange() {
@@ -2886,6 +2922,26 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if ((el = closest(target, "data-size"))) {
+      var sid = el.getAttribute("data-size"), ls = copyLayout(); ls.tile_size = ls.tile_size || {};
+      ls.tile_size[sid] = SIZES[(SIZES.indexOf(tileSize(sid)) + 1) % SIZES.length]; saveLayout(ls); return;
+    }
+    if ((el = closest(target, "data-delhead"))) { editRoomOrder(function (o) { return o.filter(function (x) { return x !== el.getAttribute("data-delhead"); }); }); return; }
+    if ((el = closest(target, "data-addhead"))) {
+      var input = document.getElementById("newhead"), text = input ? input.value.replace(/[\u0000-\u001f]/g, "").trim() : "";
+      if (text) { editRoomOrder(function (o) { return o.indexOf("#" + text) >= 0 ? o : ["#" + text].concat(o); }); }
+      return;
+    }
+    if ((el = closest(target, "data-roomreset"))) {
+      var rr = roomByName(el.getAttribute("data-roomreset")), lr = copyLayout();
+      if (rr) {
+        if (lr.tile_order) { delete lr.tile_order[rr.name]; }
+        if (lr.tile_size) { rr.tiles.forEach(function (x) { delete lr.tile_size[x]; }); }
+        lr.hidden_tiles = (lr.hidden_tiles || []).filter(function (x) { return rr.tiles.indexOf(x) < 0; });
+        saveLayout(lr);
+      }
+      return;
+    }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
     if ((el = closest(target, "data-mayopen"))) { sendMayOpen(el.getAttribute("data-mayopen"), el.classList.contains("off")); return; }
     if ((el = closest(target, "data-mayopensave"))) { sendMayOpen(el.getAttribute("data-mayopensave"), true); showToast(t("ntSaved"), null, 2000); return; }

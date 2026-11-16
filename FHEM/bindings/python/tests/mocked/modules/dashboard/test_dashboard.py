@@ -1788,6 +1788,17 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_layout_tile_sizes_and_headings():
+    layout = clean_layout(
+        {
+            "tile_size": {"wz_Licht": "b", "wz_Tv": "huge"},
+            "tile_order": {"Wohnzimmer": ["#Decke", "wz_Licht"]},
+        }
+    )
+    assert layout["tile_size"] == {"wz_Licht": "b"}
+    assert layout["tile_order"] == {"Wohnzimmer": ["#Decke", "wz_Licht"]}
+
+
 def test_layout_accent_colour():
     for value in ("amber", "teal", "lamps"):
         assert clean_layout({"accent": value}) == {"accent": value}
