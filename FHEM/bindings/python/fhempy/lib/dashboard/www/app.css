@@ -586,6 +586,19 @@ body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
 .sheet .label.tl2 { display: flex; justify-content: space-between; }
 .sheet .label.tl2 span + span { color: var(--tx); text-transform: none; letter-spacing: 0; }
 .tile .cdot { position: absolute; right: 14px; bottom: 14px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 12px currentColor; }
+/* PIN for the settings */
+.sheet.pinsheet { max-width: 440px; }
+.pinpad { display: flex; flex-direction: column; align-items: center; gap: 26px; margin: 18px 0 6px; }
+.pdots { display: flex; gap: 16px; height: 18px; }
+.pdots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--mu); }
+.pdots i.on { background: var(--tx); border-color: var(--tx); }
+.pdots.bad i { border-color: var(--red); }
+.pkeys { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; }
+.pkey { width: 76px; height: 76px; border-radius: 50%; background: var(--card2); border: 1px solid var(--line); color: var(--tx); font-size: 28px; font-weight: 400; display: grid; place-items: center; }
+.pkey:active { transform: scale(.94); background: var(--line); }
+.pkey.fn { background: none; border-color: transparent; font-size: 17px; font-weight: 600; }
+.pkey.ok { color: var(--amber); }
+.pkey:disabled { opacity: .35; }
 /* calendar */
 .cal .section + .lrow { border-top: 0; }
 .cal .section:not(:first-child) { margin-top: 10px; }
