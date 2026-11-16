@@ -644,3 +644,18 @@ button.chip { color: var(--tx); }
 .ss .sh div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; }
 .ss .sh b { font-size: 20px; font-weight: 300; color: #c9cfd8; }
 .ss .sh i { font-style: normal; color: #4DA3FF; font-size: 13px; }
+/* blinds as a window */
+.win { width: 220px; height: 340px; margin: 0 auto; position: relative; border-radius: 14px; overflow: hidden; touch-action: none; cursor: ns-resize; border: 8px solid #d9dde3; box-shadow: inset 0 0 0 2px rgba(0,0,0,.15), 0 12px 40px rgba(0,0,0,.35); }
+body.light .win { border-color: #fff; }
+.win .wsky { position: absolute; inset: 0; background: linear-gradient(180deg, #5aa9ff 0%, #9fd0ff 70%, #cfe8ff 100%); }
+.win.night .wsky { background: linear-gradient(180deg, #0c1530 0%, #1d2b52 70%, #33406b 100%); }
+.win .wsky::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 8px; transform: translateX(-50%); background: #d9dde3; }
+.win .wsky::before { content: ""; position: absolute; left: 0; right: 0; top: 46%; height: 8px; background: #d9dde3; z-index: 1; }
+body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; }
+.win .wsill { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: rgba(0,0,0,.18); }
+.win .wshut { position: absolute; left: 0; right: 0; top: 0; z-index: 2; background: repeating-linear-gradient(180deg, #8b96a6 0 13px, #6f7a8b 13px 15px); transition: height .5s ease; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.win.drag .wshut { transition: none; }
+.win .wshut i { position: absolute; left: 0; right: 0; bottom: 0; height: 9px; background: #5d6878; border-radius: 0 0 2px 2px; }
+.win .lbl { position: absolute; left: 0; right: 0; bottom: 22px; z-index: 3; text-align: center; font-size: 34px; font-weight: 700; color: #fff; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
+.wbtns { flex-wrap: wrap; }
+@media (max-width: 520px) { .win { width: 180px; height: 260px; } }
