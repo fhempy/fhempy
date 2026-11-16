@@ -513,3 +513,65 @@ body.light .tile .tbadge { background: rgba(255,255,255,.75); color: #151922; }
 .ovlist .row .pill { flex: none; height: 40px; }
 .ovlist .row .pill + .pill { margin-left: -8px; }
 .ovtemp { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* room popup (tap on a room card on Home) */
+.sheet.roompop { width: min(640px, 100%); }
+.rpop { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.rpop .scenes { margin: 4px 0 0; flex-wrap: wrap; }
+.rpop .section { margin: 10px 0 0; }
+.rpop .actions { margin-top: 6px; }
+.pclimate { display: flex; align-items: center; gap: 22px; padding: 18px 22px; border-radius: 24px; background: var(--card); border: 1px solid var(--line); }
+.pclimate .pbig { font-size: 56px; font-weight: 600; letter-spacing: -2px; }
+.pclimate .pctext b { display: block; font-size: 20px; }
+.pclimate .pctext span { color: var(--mu); font-size: 14px; }
+.ring { position: relative; width: 180px; height: 180px; flex: none; touch-action: none; cursor: pointer; }
+.ringsvg { width: 100%; height: 100%; }
+.ringsvg path { fill: none; stroke-width: 12; stroke-linecap: round; }
+.ringsvg .rtrack { stroke: rgba(255,255,255,.1); }
+.ringsvg .rknob { fill: #fff; stroke: rgba(0,0,0,.25); stroke-width: 2; }
+body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
+.ring .rval { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.ring .rval b { font-size: 36px; font-weight: 600; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.ring .rval span { font-size: 13px; color: var(--mu); }
+.pcside { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pcs b { display: flex; align-items: center; gap: 6px; font-size: 17px; }
+.pcs span { color: var(--mu); font-size: 13px; }
+.pcside.heats .pcs b { color: var(--amber2); }
+.pcside .target.small { justify-content: flex-start; gap: 12px; margin: 0; }
+.pcside .phum { color: var(--mu); font-size: 14px; display: flex; align-items: center; gap: 4px; }
+.round.sm { width: 44px; height: 44px; font-size: 22px; flex: none; }
+.target.small .round { width: 52px; height: 52px; font-size: 26px; }
+.pgroup { border-radius: 22px; background: var(--card); border: 1px solid var(--line); padding: 12px 14px; }
+.pgroup.lit { background: linear-gradient(145deg, rgba(255,181,71,.24), rgba(255,138,61,.08)); border-color: rgba(255,181,71,.35); }
+.pgroup.pow { border-color: rgba(155,140,255,.32); }
+.phead { display: flex; align-items: center; gap: 12px; }
+.pgi { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: var(--card2); color: var(--mu); flex: none; }
+.pgroup.lit .pgi { background: var(--amber); color: #3a2300; }
+.pgroup.pow .pgi { background: var(--violet); color: #1a1240; }
+.pgt { flex: 1; min-width: 0; text-align: left; }
+.pgt b { display: block; font-size: 16px; }
+.pgt span { font-size: 13px; color: var(--mu); }
+.round.pwr.on { background: var(--tx); color: var(--bg); }
+.round.exp svg { transform: rotate(90deg); transition: transform .2s; }
+.pgroup.open .round.exp svg { transform: rotate(-90deg); }
+.phead .hslide { flex: 1.3; }
+.prows { margin-top: 10px; border-top: 1px solid var(--line); }
+.prow { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.pic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--card2); color: var(--mu); flex: none; }
+.pic.lit { background: var(--amber); color: #3a2300; }
+.pic.pow { background: var(--violet); color: #1a1240; }
+.pic.teal { background: rgba(61,219,184,.18); color: var(--teal); }
+.prow .pn { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; cursor: pointer; }
+.prow .pn span { display: block; font-size: 13px; color: var(--mu); font-weight: 400; }
+.prow .hslide { flex: 1; }
+.hslide { position: relative; height: 40px; border-radius: 14px; background: var(--card2); overflow: hidden; touch-action: none; cursor: pointer; min-width: 110px; }
+.hslide .hf { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(255,138,61,.55), rgba(255,194,102,.75)); }
+.hslide.teal .hf { background: linear-gradient(90deg, rgba(31,168,137,.5), rgba(61,219,184,.7)); }
+.hslide .hl { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pgrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+@media (max-width: 560px) {
+  .pclimate { flex-direction: column; align-items: stretch; }
+  .ring { align-self: center; }
+  .phead { flex-wrap: wrap; }
+  .phead .hslide { order: 10; flex: 1 1 100%; }
+}

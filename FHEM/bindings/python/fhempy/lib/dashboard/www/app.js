@@ -42,6 +42,7 @@
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
+    rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
     switchHttps: "Zu https wechseln (für Sprechen)", energy: "Energie", solar: "Solar", usage: "Verbrauch",
     grid: "Netz", storage: "Speicher", price: "Preis", surplus: "Überschuss", fromGrid: "Netzbezug",
     hiddenTiles: "Ausgeblendet, + zum Zurückholen", days: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
@@ -88,6 +89,7 @@
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
+    rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
     switchHttps: "Switch to https (for talking)", energy: "Energy", solar: "Solar", usage: "Usage",
     grid: "Grid", storage: "Battery", price: "Price", surplus: "Surplus", fromGrid: "From grid",
     hiddenTiles: "Hidden, + brings them back", days: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
@@ -249,7 +251,7 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
     if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
@@ -827,7 +829,7 @@
       return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
         '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
     }
-    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-tab="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
+    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-roompop="' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
   }
 
   function homeHtml() {
@@ -1022,7 +1024,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.overview]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1039,6 +1041,7 @@
     if (S.sheet.arrange) { renderPick(); return; }
     if (S.sheet.rename) { renderRename(); return; }
     if (S.sheet.people) { renderPeople(); return; }
+    if (S.sheet.room) { renderRoomPop(); return; }
     if (S.sheet.overview) { renderOverview(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
@@ -1165,6 +1168,141 @@
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
     move(ev);
+  }
+
+  // ---------- room popup: a tap on a room card on Home ----------
+  function roomGroups(room) {
+    var g = { light: [], switch: [], blind: [], climate: null, more: [] };
+    roomTiles(room).forEach(function (id) {
+      var tl = S.tiles[id];
+      if (tl.kind === "light" || tl.kind === "dimmer") { g.light.push(id); } else if (tl.kind === "switch" || tl.kind === "outlet") { g.switch.push(id); } else if (tl.kind === "blind") { g.blind.push(id); } else if (tl.kind === "thermostat" && (!g.climate || g.climate.kind !== "thermostat")) { if (g.climate) { g.more.push(g.climate.id); } g.climate = tl; } else if (tl.kind === "temperature" && !g.climate) { g.climate = tl; } else { g.more.push(id); }
+    });
+    return g;
+  }
+  var RING_MIN = 10, RING_MAX = 28, RING_SWEEP = 270;
+  function ringPoint(frac, r, c) {
+    var a = (135 + frac * RING_SWEEP) * Math.PI / 180;
+    return [c + r * Math.cos(a), c + r * Math.sin(a)];
+  }
+  function ringArc(f0, f1, r, c) {
+    var p0 = ringPoint(f0, r, c), p1 = ringPoint(f1, r, c), large = (f1 - f0) * RING_SWEEP > 180 ? 1 : 0;
+    return "M" + p0[0].toFixed(1) + " " + p0[1].toFixed(1) + " A" + r + " " + r + " 0 " + large + " 1 " + p1[0].toFixed(1) + " " + p1[1].toFixed(1);
+  }
+  function ringFrac(v) { return Math.max(0, Math.min(1, (v - RING_MIN) / (RING_MAX - RING_MIN))); }
+  function climateHtml(tl) {
+    var st = tl.state;
+    if (tl.kind !== "thermostat") {
+      var cv = st.temperature;
+      return '<div class="pclimate"><div class="pbig" style="color:' + tempColor(cv) + '">' + num(cv) + '°</div><div class="pctext">' + (st.humidity !== undefined ? "<b>" + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span>" : "") + "</div></div>";
+    }
+    var cur = st.current, target = st.target, heats = target !== undefined && cur !== undefined && target > cur + 0.3, color = heats ? "#FF8A3D" : tempColor(cur);
+    var c = 90, r = 72, ft = ringFrac(target === undefined ? RING_MIN : target), knob = ringPoint(ft, r, c);
+    var svg = '<svg viewBox="0 0 180 180" class="ringsvg"><path d="' + ringArc(0, 1, r, c) + '" class="rtrack"/>' +
+      (target !== undefined ? '<path d="' + ringArc(0, Math.max(ft, 0.002), r, c) + '" class="rfill" style="stroke:' + color + '"/><circle cx="' + knob[0].toFixed(1) + '" cy="' + knob[1].toFixed(1) + '" r="11" class="rknob"/>' : "") + "</svg>";
+    var side = heats ? '<div class="pcs"><b>' + I("thermo", 18) + " " + esc(t("rpHeatsNow")) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>" : '<div class="pcs"><b>' + esc(cur !== undefined && target !== undefined && Math.abs(cur - target) <= 0.3 ? t("rpReached") : t("rpSetTo", { t: num(target) })) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>";
+    return '<div class="pclimate"><div class="ring" data-ring="' + esc(tl.id) + '">' + svg + '<div class="rval"><b style="color:' + tempColor(cur) + '">' + (cur !== undefined ? num(cur) + "°" : "–") + "</b><span>" + esc(t("rpSetTo", { t: num(target) })) + "</span></div></div>" +
+      '<div class="pcside' + (heats ? " heats" : "") + '">' + side + '<div class="target small"><button class="round" data-step="-1" data-sid="' + esc(tl.id) + '">−</button><button class="round" data-step="1" data-sid="' + esc(tl.id) + '">+</button></div>' +
+      (st.humidity !== undefined ? '<div class="phum">' + I("drop", 16) + " " + Math.round(st.humidity) + " %</div>" : "") + "</div></div>";
+  }
+  function hslideHtml(kind, ids, value, teal) {
+    return '<div class="hslide' + (teal ? " teal" : "") + '" data-hslide="' + kind + '" data-ids="' + esc(ids.join("\n")) + '"><div class="hf" style="width:' + value + '%"></div><span class="hl">' + value + " %</span></div>";
+  }
+  function avg(list) { return list.length ? Math.round(list.reduce(function (a, b) { return a + b; }, 0) / list.length) : 0; }
+  function groupHtml(key, icon, title, ids, ro) {
+    var open = S.sheet.open[key], tiles = ids.map(function (id) { return S.tiles[id]; }), sub = "", head = "", rows = "", cls = "";
+    if (key === "blind") {
+      var pos = avg(tiles.map(function (tl) { return tl.state.position || 0; }));
+      sub = pos >= 99 ? t("open") : pos <= 1 ? t("closed") : t("open") + " " + pos + " %";
+      head = ro ? "" : hslideHtml("position", ids, pos, true) + '<button class="round sm" data-pgroup="up" aria-label="' + esc(t("up")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(-90deg)"') + '</button><button class="round sm" data-pgroup="down" aria-label="' + esc(t("down")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(90deg)"') + "</button>";
+      rows = tiles.map(function (tl) {
+        return '<div class="prow"><button class="pic teal" data-pdetail="' + esc(tl.id) + '">' + I("blind", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "</div>" + (ro ? "" : hslideHtml("position", [tl.id], tl.state.position || 0, true)) + "</div>";
+      }).join("");
+    } else {
+      var on = tiles.filter(function (tl) { return tl.state.on; });
+      var levels = on.filter(function (tl) { return tl.kind === "dimmer" && tl.state.level; }).map(function (tl) { return tl.state.level; });
+      sub = (on.length ? t("rpNofM", { n: on.length, m: tiles.length }) : t("off")) + (levels.length ? " · " + avg(levels) + " %" : "");
+      cls = on.length ? (key === "light" ? " lit" : " pow") : "";
+      head = ro ? "" : '<button class="round sm pwr' + (on.length ? " on" : "") + '" data-pgroup="' + key + '" aria-label="' + esc(on.length ? t("rpAllOffShort") : t("on")) + '">' + I("power", 18) + "</button>";
+      rows = tiles.map(function (tl) {
+        var lv = tl.kind === "dimmer" ? (tl.state.on ? tl.state.level || 0 : 0) : null;
+        return '<div class="prow"><button class="pic' + (tl.state.on ? (key === "light" ? " lit" : " pow") : "") + '" ' + (ro ? 'data-pdetail="' : 'data-ptoggle="') + esc(tl.id) + '">' + I(key === "light" ? "bulb" : tl.kind === "outlet" ? "plug" : "power", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "<span>" + esc(tileLook(tl).sub) + "</span></div>" +
+          (lv !== null && !ro ? hslideHtml("level", [tl.id], lv) : "") + "</div>";
+      }).join("");
+    }
+    return '<div class="pgroup' + cls + (open ? " open" : "") + '"><div class="phead"><span class="pgi">' + I(icon, 20) + '</span><button class="pgt" data-pexp="' + key + '"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></button>" + head +
+      '<button class="round sm exp" data-pexp="' + key + '">' + I("chev", 18) + "</button></div>" + (open ? '<div class="prows">' + rows + "</div>" : "") + "</div>";
+  }
+  function renderRoomPop() {
+    var room = roomByName(S.sheet.room); if (!room) { closeSheet(); return; }
+    var g = roomGroups(room), ro = S.tablet && S.tablet.readonly, body = "";
+    if (g.climate) { body += climateHtml(g.climate); }
+    if (g.light.length) { body += groupHtml("light", "bulb", t("rpLight"), g.light, ro); }
+    if (g.blind.length) { body += groupHtml("blind", "blind", t("rpBlinds"), g.blind, ro); }
+    if (g.switch.length) { body += groupHtml("switch", "plug", t("rpSwitches"), g.switch, ro); }
+    body += scenesHtml(room);
+    if (g.more.length) { body += '<div class="section">' + esc(t("rpMore")) + '</div><div class="grid pgrid">' + g.more.map(function (id) { return tileHtml(id); }).join("") + "</div>"; }
+    body += '<div class="actions"><button class="pill" data-gotab="room:' + esc(room.name) + '">' + esc(t("rpOpenRoom")) + "</button></div>";
+    sheetShell('<div class="head"><div><h1>' + esc(room.name) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + '<div class="rpop">' + body + "</div>", "roompop");
+  }
+  function roomGroupAction(what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var g = roomGroups(roomByName(S.sheet.room));
+    if (what === "up" || what === "down") {
+      var v = what === "up" ? 100 : 0;
+      g.blind.forEach(function (id) { act(id, "position", v, { position: v }); });
+    } else {
+      var ids = g[what] || [], anyOn = ids.some(function (id) { return S.tiles[id].state.on; });
+      ids.forEach(function (id) { if (!!S.tiles[id].state.on === anyOn) { act(id, anyOn ? "off" : "on", null, { on: !anyOn }); } });
+    }
+    renderSheet();
+  }
+  function hslideDrag(el, ev) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var kind = el.getAttribute("data-hslide"), ids = el.getAttribute("data-ids").split("\n"), value = null, sx = ev.clientX, moved = false;
+    S.sliding = true;
+    function calc(x) { var r = el.getBoundingClientRect(); return Math.round(Math.max(0, Math.min(100, (x - r.left) / r.width * 100))); }
+    function move(e) {
+      if (Math.abs(e.clientX - sx) > 4) { moved = true; }
+      value = calc(e.clientX);
+      el.querySelector(".hf").style.width = value + "%"; el.querySelector(".hl").textContent = value + " %";
+      if (e.cancelable) { e.preventDefault(); }
+    }
+    function up(e) {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false; dragEnded = Date.now();
+      if (!moved) { value = calc(e.clientX); }
+      ids.forEach(function (id) {
+        if (!S.tiles[id]) { return; }
+        if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else { act(id, "position", value, { position: value }); }
+      });
+      renderSheet();
+    }
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+    ev.preventDefault();
+  }
+  function ringDrag(el, ev) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var id = el.getAttribute("data-ring"), tile = S.tiles[id]; if (!tile) { return; }
+    var step = tile.step || 0.5, value = tile.state.target;
+    S.sliding = true;
+    function move(e) {
+      var live = document.querySelector("#sheet [data-ring]") || el, r = live.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var a = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+      var rel = ((a - 135) % 360 + 360) % 360;
+      if (rel > RING_SWEEP) { rel = rel - RING_SWEEP < (360 - RING_SWEEP) / 2 ? RING_SWEEP : 0; }
+      value = Math.round((RING_MIN + rel / RING_SWEEP * (RING_MAX - RING_MIN)) / step) * step;
+      tile.state.target = value;
+      var box = document.querySelector("#sheet .pclimate"); if (box && box.parentNode) { var d = document.createElement("div"); d.innerHTML = climateHtml(tile); box.parentNode.replaceChild(d.firstChild, box); }
+      if (e.cancelable) { e.preventDefault(); }
+    }
+    function up() {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false; dragEnded = Date.now();
+      if (value !== undefined) { act(id, "target", value, { target: value }); }
+      renderSheet();
+    }
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+    ev.preventDefault();
   }
 
   // ---------- settings ----------
@@ -1975,6 +2113,8 @@
     if (wasSaver) { press = { saver: Date.now() }; ev.preventDefault(); return; }
     if (dragStart(ev) || tileDragStart(ev) || roomDragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
+    var hs = closest(ev.target, "data-hslide"); if (hs) { hslideDrag(hs, ev); return; }
+    var ring = closest(ev.target, "data-ring"); if (ring) { ringDrag(ring, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
     var tile = closest(ev.target, "data-tile");
     if (tile && !S.edit) {
@@ -2088,6 +2228,12 @@
       S.edit = true; closeSheet(); if (S.tab === "history") { var first = visibleRooms()[0]; if (first) { S.tab = "room:" + first.name; } } renderTabs(); renderContent(); return;
     }
     if ((el = closest(target, "data-editdone"))) { S.edit = false; renderContent(); return; }
+    if ((el = closest(target, "data-roompop"))) { if (S.edit) { return; } S.sheet = { room: el.getAttribute("data-roompop"), open: {} }; renderSheet(); return; }
+    if ((el = closest(target, "data-pexp")) && S.sheet && S.sheet.room) { var pg = el.getAttribute("data-pexp"); S.sheet.open[pg] = !S.sheet.open[pg]; renderSheet(); return; }
+    if ((el = closest(target, "data-pgroup")) && S.sheet && S.sheet.room) { roomGroupAction(el.getAttribute("data-pgroup")); return; }
+    if ((el = closest(target, "data-ptoggle"))) { tap(el.getAttribute("data-ptoggle")); return; }
+    if ((el = closest(target, "data-pdetail"))) { openSheet(el.getAttribute("data-pdetail")); return; }
+    if ((el = closest(target, "data-gotab"))) { closeSheet(); S.tab = el.getAttribute("data-gotab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-tab"))) { S.arrange = null; S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
