@@ -181,6 +181,8 @@ body.dragging .tile.dragtile { opacity: .85; transform: scale(1.04); outline: 2p
 .fact { font-size: 13px; padding: 4px 10px; border-radius: 10px; background: var(--card2); color: var(--mu); }
 .fact.on { background: #372C1C; color: #FFD9A8; }
 .fact.warn { background: #37241B; color: #FFC59A; }
+.fact.pres { background: #1C3330; color: #8FEBD8; display: inline-flex; align-items: center; gap: 4px; }
+body.light .fact.pres { background: #D9F3EE; color: #0F6B5C; }
 
 /* before you leave */
 .leave { border-radius: 24px; background: var(--card); border: 1px solid var(--line); padding: 22px 24px; }
@@ -269,6 +271,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); }
 .pl h3 { font-size: 19px; margin-top: 18px; }
 .pl ul { list-style: none; margin-top: 10px; color: var(--mu); font-size: 14px; line-height: 1.45; }
 .pl li { margin-bottom: 6px; }
+.places.tours { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.pl.tour { cursor: default; }
 .found { margin-top: 24px; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); font-size: 15px; flex-wrap: wrap; }
 .found .pill { margin-left: auto; }
 .code { display: flex; gap: 10px; margin-top: 28px; }
@@ -715,3 +719,10 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .swatches.accent button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; }
 .swatches.accent button.on { border-color: var(--tx); }
 .swatches.accent .lamps { background: conic-gradient(#ff5a5f, #ffb547, #34d399, #5aa9ff, #9b8cff, #ff5a5f); }
+
+/* simple display for slow tablets: no blur, no animations, no shadows */
+body.lite *, body.lite *::before, body.lite *::after { animation: none !important; transition: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.lite #app { background: var(--bg); }
+body.lite .dim { background: rgba(5,7,10,.9); }
+body.lite .ringtop, body.lite .rb .c { background: rgba(10,12,16,.92); }
+body.lite .tile.media .mcover { display: none; }
