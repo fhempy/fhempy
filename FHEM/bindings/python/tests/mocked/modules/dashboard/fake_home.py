@@ -30,7 +30,12 @@ BLIND = "up down stop pct:slider,0,1,100"
 THERMO = "desired-temp:slider,4.5,0.5,30"
 
 DEVICES = {
-    "wz_Deckenlicht": device("HUEDevice", "Wohnzimmer", DIM, {"state": "on", "pct": "70"}),
+    "wz_Deckenlicht": device(
+        "HUEDevice",
+        "Wohnzimmer",
+        DIM + " rgb:colorpicker,RGB ct:colorpicker,CT,154,1,500",
+        {"state": "on", "pct": "70", "rgb": "ffb070", "ct": "370"},
+    ),
     "wz_Stehlampe": device(
         "dummy", "Wohnzimmer", "on off", {"state": "on"}, alias="Stehlampe"
     ),

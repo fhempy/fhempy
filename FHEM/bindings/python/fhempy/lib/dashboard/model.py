@@ -149,6 +149,12 @@ DOORBELL_VALUES = (
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
 READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
+# colour lights: HUEDevice, zigbee2mqtt, Tasmota, Shelly, WLED, ...
+RGB_SETS = ("rgb", "hex", "RGB", "Color", "color")
+CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
+COLOR_READINGS = ("rgb", "hex", "RGB", "Color", "color")
+CT_READINGS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
+READINGS = READINGS + COLOR_READINGS + CT_READINGS
 READING_SET = frozenset(READINGS)
 WEATHER_TYPES = ("Weather",)
 WEATHER_FHEMPY_TYPES = ("openmeteo_weather",)
@@ -270,6 +276,8 @@ def tile_state(kind, info):
         state["on"] = bool(state.get("percent"))
     elif kinds.has_fan_endpoint(kind, info):
         state["fan"] = kinds.state("fan", info)
+    if kind in LIGHTS and color_caps(info):
+        state.update(color_state(info))
     if kind in ("switch", "outlet"):
         power = kinds.number(_reading(info, "power"))
         if power is not None:
@@ -350,7 +358,112 @@ def tile(info, room=None):
         result["inputs"] = inputs.parse(info)
     if kind == "fan" or kinds.has_fan_endpoint(kind, info):
         result["fan"] = True
+    if kind in LIGHTS:
+        caps = color_caps(info)
+        if caps:
+            result["color"] = {k: v for k, v in caps.items() if k != "sets"}
     return result
+
+
+# --- colour and white of lights ---
+
+HEX6 = re.compile(r"^#?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$")
+
+
+def _set_args(sets):
+    """'on rgb:colorpicker,RGB ct:colorpicker,CT,154,1,500' -> {name: args}"""
+    result = {}
+    for entry in (sets or "").split():
+        name, _, args = entry.partition(":")
+        result[name] = args
+    return result
+
+
+def _ct_range(args):
+    """(min, max) of a colour temperature set, mired or kelvin"""
+    numbers = [kinds.number(n) for n in re.split(r"[,]", args or "")]
+    numbers = [n for n in numbers if n is not None]
+    if len(numbers) >= 3 and ("colorpicker" in args or "slider" in args):
+        low, high = numbers[0], numbers[-1]
+    elif len(numbers) >= 2:
+        low, high = min(numbers), max(numbers)
+    else:
+        return None
+    if low >= high:
+        return None
+    return low, high
+
+
+def color_caps(info):
+    """what a light can do besides dimming: {'rgb': True, 'ct': [2000, 6500]}
+    (colour temperature always in kelvin for the tablets), with the FHEM set
+    names in 'sets'. Found by the set commands, never by names."""
+    args = _set_args(info.get("sets"))
+    caps, sets = {}, {}
+    for name in RGB_SETS:
+        if name in args and (
+            "colorpicker,RGB" in args[name] or name in ("rgb", "hex", "RGB")
+        ):
+            sets["rgb"] = name
+            caps["rgb"] = True
+            break
+    for name in CT_SETS:
+        if name not in args:
+            continue
+        rng = _ct_range(args[name])
+        if rng is None:
+            # e.g. HUEDevice without a range: mired 153..500
+            rng = (153, 500)
+        low, high = rng
+        kelvin = high > 1000
+        if kelvin:
+            caps["ct"] = [int(low), int(high)]
+        else:
+            caps["ct"] = [int(round(1e6 / high)), int(round(1e6 / low))]
+        sets["ct"] = {"name": name, "low": low, "high": high, "kelvin": kelvin}
+        break
+    if not caps:
+        return None
+    caps["sets"] = sets
+    return caps
+
+
+def color_state(info):
+    """current colour as #rrggbb and white as kelvin, if the device tells"""
+    readings = info.get("readings") or {}
+    state = {}
+    for name in COLOR_READINGS:
+        match = HEX6.match(str(readings.get(name, "")).strip())
+        if match:
+            state["rgb"] = "#" + match.group(1).lower()
+            break
+    for name in CT_READINGS:
+        value = kinds.number(readings.get(name))
+        if value:
+            state["ct"] = int(value if value > 1000 else round(1e6 / value))
+            break
+    return state
+
+
+def color_command(info, action, value):
+    caps = color_caps(info)
+    if caps is None:
+        return []
+    sets = caps["sets"]
+    if action == "rgb" and "rgb" in sets:
+        match = HEX6.match(str(value or "").strip())
+        if match is None:
+            raise ValueError(f"no colour: {value}")
+        return [f"{sets['rgb']} {match.group(1).upper()}"]
+    if action == "ct" and "ct" in sets:
+        kelvin = kinds.number(value)
+        if kelvin is None or kelvin <= 0:
+            raise ValueError(f"no colour temperature: {value}")
+        ct = sets["ct"]
+        target = kelvin if ct["kelvin"] else 1e6 / kelvin
+        target = max(ct["low"], min(ct["high"], target))
+        return [f"{ct['name']} {int(round(target))}"]
+    return []
 
 
 def device_readings(info):
@@ -664,6 +777,8 @@ def command(item, info, action, value=None):
         return kinds.fhem_commands("fan", info, FAN_ACTIONS[action](value))
     if item["kind"] == "fan":
         return _fan_toggle(item, info, action)
+    if item["kind"] in LIGHTS and action in ("rgb", "ct"):
+        return color_command(info, action, value)
     if action == "toggle":
         wanted = _toggle(item["kind"], item["state"])
     elif action in ACTIONS:
