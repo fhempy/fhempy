@@ -1174,6 +1174,8 @@ async def test_failed_set_is_told_to_the_tablet(module):
         assert message["reason"] == "No answer from the device"
         # the real state follows
         assert (await next_of(ws, "tile"))["tile"]["id"] == switch["id"]
+
+
 def test_timer_definition():
     assert model.timer_name("wz.Lamp-1") == "dashboard_timer_wz.Lamp_1"
     assert model.timer_definition("lamp", 90, ["off"]) == (
@@ -1232,6 +1234,8 @@ async def test_timer_switches_off_later(module, mocker):
             f"'dashboard_timer_{lamp['id']}'; CommandDelete" in c for c in sent
         )
         await ws.close()
+
+
 def light(sets, readings=None):
     info = fake_home.device("dummy", "Wohnzimmer", "on off pct:slider,0,1,100 " + sets)
     info.update({"NAME": "lamp", "readings": readings or {"state": "on", "pct": "50"}})
@@ -1286,3 +1290,227 @@ async def test_build_of_the_app_files(module):
         ws, welcome = await connect(session, module, answer["token"])
         assert welcome["build"] == build
         await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_all_off_in_groups_tells_what_stayed_on(module, mocker):
+    mocker.patch.object(dash_module, "ALL_OFF_CHECK", 0.1)
+    mocker.patch.object(dash_module, "ALL_OFF_PAUSE", 0.01)
+    mocker.patch.object(dash_module, "ALL_OFF_GROUP", 2)
+    sleeps = []
+    real_sleep = asyncio.sleep
+
+    async def spy(delay, *args):
+        sleeps.append(delay)
+        await real_sleep(delay, *args)
+
+    mocker.patch.object(dash_module.asyncio, "sleep", spy)
+    _, answer = await pair(module)
+    on = model.all_off(module.data["tiles"])
+    assert len(on) >= 4
+    module.fake.fail[on[0]] = "No answer, choose one of on off"
+    module.fake.silent.add(on[1])
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "action", "action": "all_off", "room": None})
+        result = await next_of(ws, "all_off")
+    assert sorted(x["id"] for x in result["left"]) == sorted(on[:2])
+    assert result["done"] == len(on) - 2
+    # groups of two with a pause between them
+    assert sleeps.count(0.01) == (len(on) + 1) // 2 - 1
+
+
+def test_clean_pin():
+    assert model.clean_pin(" 1234 ") == "1234"
+    assert model.clean_pin("12345678") == "12345678"
+    assert model.clean_pin("123") is None
+    assert model.clean_pin("12a4") is None
+    assert model.clean_pin("") is None
+
+
+@pytest.mark.asyncio
+async def test_settings_pin(module):
+    _, answer = await pair(module)
+    tablet = next(iter(module.tablets.values()))
+    tablet["place"] = "wall"
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["tablet"]["pin"] is False
+        module._attr_settings_pin = "4711"
+        module.set_attr_settings_pin(module.hash)
+        assert (await next_of(ws, "tablet"))["tablet"]["pin"] is True
+        # locked: the layout does not change
+        await ws.send_json({"type": "layout", "layout": {"theme": "light"}})
+        await next_of(ws, "locked")
+        assert (tablet.get("layout") or {}).get("theme") != "light"
+        await ws.send_json({"type": "unlock", "pin": "0000"})
+        wrong = await next_of(ws, "unlocked")
+        assert wrong["ok"] is False and wrong["wait"] is False
+        await ws.send_json({"type": "unlock", "pin": "4711"})
+        assert (await next_of(ws, "unlocked"))["ok"] is True
+        await ws.send_json({"type": "layout", "layout": {"theme": "light"}})
+        assert (await next_of(ws, "tablet"))["tablet"]["layout"]["theme"] == "light"
+        # too many wrong PINs: even the right one waits
+        module.unlocked = {}
+        for _ in range(dash_module.PIN_TRIES):
+            await ws.send_json({"type": "unlock", "pin": "0000"})
+            last = await next_of(ws, "unlocked")
+        assert last["wait"] is True
+        await ws.send_json({"type": "unlock", "pin": "4711"})
+        assert (await next_of(ws, "unlocked"))["ok"] is False
+
+
+def test_bins_and_calendar():
+    assert model.is_bin("Gelbe Tonne")
+    assert model.is_bin("Biotonne") and model.is_bin("Restmüll")
+    assert model.is_bin("Altpapier") and model.is_bin("Gelber Sack")
+    assert model.is_bin("Recycling bin")
+    assert not model.is_bin("Biologie Nachhilfe")
+    assert not model.is_bin("Zahnarzt")
+    fake = FakeFhem()
+    text = "\n".join(f"{c}|{e[0]}|{e[1]}|{e[2]}" for c, e in fake.calendar)
+    events = model.parse_calendar(text + "\nbroken line\nX|a|b|c")
+    assert len(events) == 7
+    # "Gelb" alone is a pickup: most entries of its calendar are
+    assert model.bin_calendars(events) == {"Muell"}
+    result = model.calendar(events, fake_home.NOW)
+    assert result["bins"] == [{"what": "Gelb", "day": 1}]
+    names = [(e["summary"], e["day"]) for e in result["entries"]]
+    assert ("Geburtstag Oma", 0) in names and ("Zahnarzt", 1) in names
+    assert ("Elternabend", 0) in names and ("Urlaub", 5) not in names
+    oma = next(e for e in result["entries"] if e["summary"] == "Geburtstag Oma")
+    assert oma["allday"] and oma["at"] == ""
+
+
+def test_bin_devices():
+    infos = {
+        "abfall": {"NAME": "abfall", "TYPE": "ABFALL", "readings": {"next_text": "Biotonne", "next_days": "1"}},
+        "later": {"NAME": "later", "TYPE": "ABFALL", "readings": {"next_text": "Papier", "next_days": "4"}},
+    }
+    assert model.in_header(infos["abfall"])
+    assert model.bin_devices(infos) == [{"what": "Biotonne", "day": 1}]
+
+
+@pytest.mark.asyncio
+async def test_calendar_in_header(module):
+    module.calendar_events = await module.fetch_calendars()
+    head = module.make_header()
+    assert head["calendar"]["bins"] == [{"what": "Gelb", "day": 1}]
+    assert any(e["summary"] == "Zahnarzt" for e in head["calendar"]["entries"])
+
+
+def test_weather_warning():
+    def forecast(**hours):
+        readings = {}
+        for i, values in hours.items():
+            prefix = f"next_hours_{int(i[1:]):02d}_"
+            readings[prefix + "time"] = f"Di {values.get('at', '18:00')}"
+            for key in ("condition", "precipitation", "temperature", "windspeed"):
+                if key in values:
+                    readings[prefix + key] = values[key]
+        return {"readings": readings}
+
+    assert model.weather_warning({"readings": {}}) is None
+    assert model.weather_warning(
+        forecast(h0={"precipitation": "10", "temperature": "5"})
+    ) is None
+    assert model.weather_warning(
+        forecast(
+            h0={"precipitation": "10", "temperature": "5"},
+            h1={"at": "19:00", "precipitation": "70", "temperature": "5"},
+        )
+    ) == {"kind": "rain", "at": "19:00"}
+    assert model.weather_warning(forecast(h0={"temperature": "-1"}))["kind"] == "frost"
+    assert model.weather_warning(forecast(h0={"windspeed": "75"}))["kind"] == "storm"
+    assert (
+        model.weather_warning(forecast(h0={"condition": "Leichtes Gewitter"}))["kind"]
+        == "storm"
+    )
+
+
+def test_weather_warning_in_header():
+    infos = FakeFhem().infos(["Wetter"])
+    assert model.weather(infos)["warn"] == {"kind": "rain", "at": "20:00"}
+
+
+def test_routine_steps():
+    tiles = {
+        "lamp": {"id": "lamp", "kind": "light", "state": {"on": True}},
+        "fridge": {"id": "fridge", "kind": "outlet", "state": {"on": True}, "keep_on": True},
+        "dark": {"id": "dark", "kind": "light", "state": {"on": False}},
+        "blind": {"id": "blind", "kind": "blind", "state": {"position": 60}},
+        "shut": {"id": "shut", "kind": "blind", "state": {"position": 0}},
+    }
+    off, close = ["lamp", "fridge", "dark", "gone"], ["blind", "shut"]
+    steps, undo = model.routine_steps(tiles, "away", off, close)
+    assert steps == [("lamp", "off", None)]
+    assert undo == [("lamp", "on", None)]
+    steps, undo = model.routine_steps(tiles, "night", off, close)
+    assert steps == [("lamp", "off", None), ("blind", "position", 0)]
+    assert undo == [("lamp", "on", None), ("blind", "position", 60)]
+
+
+@pytest.mark.asyncio
+async def test_good_night_and_undo(module):
+    _, answer = await pair(module)
+    tiles = module.data["tiles"]
+    on = [i for i, t in tiles.items() if t["kind"] in model.SWITCHABLE and t["state"].get("on")]
+    blinds = [i for i, t in tiles.items() if t["kind"] == "blind"]
+    open_blind = next(i for i in blinds if tiles[i]["state"].get("position"))
+    position = tiles[open_blind]["state"]["position"]
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        await ws.send_json(
+            {"type": "action", "action": "routine", "mode": "night", "off": on, "close": blinds}
+        )
+        done = await next_of(ws, "routine")
+        assert done["mode"] == "night" and done["undo"] and done["failed"] == []
+        assert f"{on[0]} off" in module.fake.sets
+        assert f"{open_blind} pct 0" in module.fake.sets
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "undo"})
+        assert (await next_of(ws, "undone"))["failed"] == []
+        assert f"{on[0]} on" in module.fake.sets
+        assert f"{open_blind} pct {position}" in module.fake.sets
+        # only once
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "undo"})
+        await asyncio.sleep(0.2)
+        assert module.fake.sets == []
+
+
+def test_weather_forecast():
+    weather = model.weather(FakeFhem().infos(["Wetter"]))
+    assert len(weather["hours"]) == 24
+    assert weather["hours"][0] == {
+        "at": "17:00",
+        "temp": 9,
+        "rain": 10,
+        "condition": "Bewölkt",
+    }
+    assert len(weather["days"]) == 7
+    assert weather["days"][1] == {
+        "name": "Dienstag",
+        "condition": "Regen",
+        "high": 11,
+        "low": 6,
+        "rain": 90,
+    }
+    # the FHEM Weather module, here counting from fc1
+    info = {
+        "TYPE": "Weather",
+        "NAME": "w",
+        "readings": {
+            "fc1_day_of_week": "Mo",
+            "fc1_condition": "sonnig",
+            "fc1_high_c": "12",
+            "fc1_low_c": "3",
+            "fc2_day_of_week": "Di",
+            "fc2_high_c": "10",
+            "fc2_low_c": "2",
+        },
+    }
+    days = model.weather({"w": info})["days"]
+    assert [d["name"] for d in days] == ["Mo", "Di"]
+    assert days[0]["rain"] is None

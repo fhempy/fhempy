@@ -21,7 +21,15 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
+    pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
+    calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
+    wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
+    rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus",
+    warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
+    rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
     couchList: ["Startet im eigenen Raum", "Licht, Szenen, Rollläden zuerst", "Kein Bildschirmschoner", "Tagsüber hell, abends dunkel"],
@@ -70,7 +78,15 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
+    pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
+    calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
+    wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
+    rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off",
+    warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
+    rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
     couchList: ["Starts in its own room", "Lights, scenes, blinds first", "No screensaver", "Bright by day, dark at night"],
@@ -150,6 +166,7 @@
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
     battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
@@ -265,15 +282,20 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
     }
     if (m.type === "failed") { failed(m); return; }
+    if (m.type === "all_off") { allOffResult(m); return; }
+    if (m.type === "unlocked") { pinAnswer(m); return; }
+    if (m.type === "locked") { S.unlockedUntil = 0; showToast(t("pinLocked"), null, 4000); return; }
+    if (m.type === "routine") { routineDone(m); return; }
+    if (m.type === "undone") { showToast(m.failed && m.failed.length ? t("rtFailed", { names: m.failed.join(", ") }) : t("undone"), null, 5000); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -686,8 +708,8 @@
     var el = document.getElementById("hdr"); if (!el) { return; }
     var h = S.header || {}, now = new Date(), chips = "";
     if (h.weather && h.weather.temperature !== null && h.weather.temperature !== undefined) {
-      chips += '<div class="chip">' + I(weatherIcon(h.weather.condition)) + " " + num(h.weather.temperature, 0) + '° <span class="sub">' + esc(h.weather.condition || "") +
-        (h.weather.high !== null && h.weather.high !== undefined ? " · " + num(h.weather.low, 0) + "° / " + num(h.weather.high, 0) + "°" : "") + "</span></div>";
+      chips += '<button class="chip" data-weather="1">' + I(weatherIcon(h.weather.condition)) + " " + num(h.weather.temperature, 0) + '° <span class="sub">' + esc(h.weather.condition || "") +
+        (h.weather.high !== null && h.weather.high !== undefined ? " · " + num(h.weather.low, 0) + "° / " + num(h.weather.high, 0) + "°" : "") + "</span></button>";
     }
     if (h.presence) {
       var home = h.presence.home || [];
@@ -722,10 +744,10 @@
     var s = String(name).replace(/^(fenster|window|tür|door|kontakt|contact)[\s_-]+/i, "");
     return s || name;
   }
-  function weatherIcon(cond) {
+  function weatherIcon(cond, day) {
     cond = String(cond || "").toLowerCase();
     if (/regen|rain|schauer|shower|drizzle|niesel|gewitter|thunder/.test(cond)) { return "rain"; }
-    if (/klar|sonn|clear|sunny/.test(cond)) { return isDay() ? "sun" : "moon"; }
+    if (/klar|sonn|clear|sunny/.test(cond)) { return day || isDay() ? "sun" : "moon"; }
     return "cloud";
   }
 
@@ -852,7 +874,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = leaveHtml() + energyHtml() + latelyHtml();
+    var left = routinesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
     var right;
     if (S.edit) {
       var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
@@ -1041,7 +1063,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine, S.sheet && S.sheet.weather, S.sheet && S.sheet.pin !== undefined]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1060,6 +1082,9 @@
     if (S.sheet.people) { renderPeople(); return; }
     if (S.sheet.room) { renderRoomPop(); return; }
     if (S.sheet.overview) { renderOverview(); return; }
+    if (S.sheet.pin !== undefined) { renderPin(); return; }
+    if (S.sheet.routine) { renderRoutine(); return; }
+    if (S.sheet.weather) { renderWeather(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1384,7 +1409,132 @@
     move(ev);
   }
 
+  // ---------- weather details ----------
+  function has(v) { return v !== null && v !== undefined; }
+  // temperature curve with rain bars of the next hours
+  function hoursSvg(hours) {
+    var pts = hours.filter(function (x) { return has(x.temp); });
+    if (pts.length < 2) { return ""; }
+    var W = 720, H = 170, top = 30, bottom = 130, step = W / hours.length;
+    var lo = Math.min.apply(null, pts.map(function (x) { return x.temp; })), hi = Math.max.apply(null, pts.map(function (x) { return x.temp; }));
+    if (hi - lo < 4) { var mid = (hi + lo) / 2; lo = mid - 2; hi = mid + 2; }
+    function y(v) { return bottom - (v - lo) / (hi - lo) * (bottom - top); }
+    var bars = "", line = "", labels = "";
+    hours.forEach(function (x, i) {
+      var cx = step * i + step / 2;
+      if (has(x.rain) && x.rain > 0) { var bh = x.rain / 100 * 40; bars += '<rect x="' + (cx - step * 0.3).toFixed(1) + '" y="' + (H - 18 - bh).toFixed(1) + '" width="' + (step * 0.6).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" class="wxrain"/>'; }
+      if (has(x.temp)) { line += (line ? "L" : "M") + cx.toFixed(1) + " " + y(x.temp).toFixed(1); }
+      if (i % 3 === 0) {
+        labels += '<text x="' + cx.toFixed(1) + '" y="' + (H - 2) + '" class="wxat">' + esc(x.at) + "</text>";
+        if (has(x.temp)) { labels += '<text x="' + cx.toFixed(1) + '" y="' + (y(x.temp) - 10).toFixed(1) + '" class="wxt">' + num(x.temp, 0) + "°</text>"; }
+      }
+    });
+    return '<div class="wxscroll"><svg class="wxsvg" viewBox="0 0 ' + W + " " + H + '">' + bars + '<path d="' + line + '" class="wxline"/>' + labels + "</svg></div>";
+  }
+  function renderWeather() {
+    var w = (S.header && S.header.weather) || {}, sun = S.header && S.header.sun, hours = w.hours || [], days = w.days || [], body = "";
+    body += '<div class="wxnow">' + I(weatherIcon(w.condition), 44) + '<div><b>' + (has(w.temperature) ? num(w.temperature, 0) + "°" : "–") + "</b><span>" + esc(w.condition || "") + (has(w.high) ? " · " + num(w.low, 0) + "° / " + num(w.high, 0) + "°" : "") + "</span></div>" +
+      (sun ? '<div class="wxsun"><span>' + I("sun", 18) + " " + esc(t("wxSunrise")) + " <b>" + esc(sun.rise) + "</b></span><span>" + I("moon", 18) + " " + esc(t("wxSunset")) + " <b>" + esc(sun.set) + "</b></span></div>" : "") + "</div>";
+    if (w.warn) { body += '<div class="rtwarn">' + I(w.warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + w.warn.kind, { t: w.warn.at })) + "</b></div></div>"; }
+    var svg = hoursSvg(hours);
+    if (svg) { body += '<div class="section">' + esc(t("wxHours")) + "</div>" + svg; }
+    if (days.length) {
+      var lo = Math.min.apply(null, days.filter(function (d) { return has(d.low); }).map(function (d) { return d.low; }));
+      var hi = Math.max.apply(null, days.filter(function (d) { return has(d.high); }).map(function (d) { return d.high; }));
+      body += '<div class="section">' + esc(t("wxDays")) + '</div><div class="wxdays">' + days.map(function (d, i) {
+        var bar = has(d.low) && has(d.high) && hi > lo ? '<div class="wxbar"><i style="left:' + ((d.low - lo) / (hi - lo) * 100).toFixed(1) + "%;right:" + ((hi - d.high) / (hi - lo) * 100).toFixed(1) + '%"></i></div>' : '<div class="wxbar"></div>';
+        return '<div class="wxday"><b>' + esc(i === 0 ? t("wxToday") : d.name.slice(0, 2)) + "</b>" + I(weatherIcon(d.condition, true), 22) + '<span class="wxr">' + (has(d.rain) && d.rain >= 10 ? I("drop", 14) + Math.round(d.rain) + " %" : "") + "</span>" +
+          '<span class="wxl">' + (has(d.low) ? num(d.low, 0) + "°" : "") + "</span>" + bar + '<span class="wxh">' + (has(d.high) ? num(d.high, 0) + "°" : "") + "</span></div>";
+      }).join("") + "</div>";
+    }
+    if (!svg && !days.length) { body += '<div class="lead">' + esc(t("wxNone")) + "</div>"; }
+    sheetShell('<div class="head"><div><h1>' + esc(t("wxTitle")) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + body);
+  }
+  // the next hours in the screensaver
+  function saverHours(w) {
+    var hours = ((w && w.hours) || []).filter(function (x, i) { return i > 0 && i % 2 === 0 && has(x.temp); }).slice(0, 5);
+    if (!hours.length) { return ""; }
+    return '<div class="sh">' + hours.map(function (x) { return "<div>" + "<span>" + esc(x.at) + "</span>" + I(weatherIcon(x.condition), 22) + "<b>" + num(x.temp, 0) + "°</b>" + (has(x.rain) && x.rain >= 30 ? "<i>" + Math.round(x.rain) + " %</i>" : "") + "</div>"; }).join("") + "</div>";
+  }
+
+  // ---------- good night and leaving home ----------
+  function routinesHtml() {
+    if (S.tablet && S.tablet.readonly) { return ""; }
+    return '<div class="routines"><button class="routine" data-routine="night">' + I("moon", 22) + " " + esc(t("rtNight")) + '</button><button class="routine" data-routine="away">' + I("walk", 22) + " " + esc(t("rtAway")) + "</button>" +
+      (S.undoUntil && Date.now() < S.undoUntil * 1000 ? '<button class="routine" data-undo="1">' + I("left", 22) + " " + esc(t("undo")) + "</button>" : "") + "</div>";
+  }
+  // what the routine does: lights and switches off, at night the blinds down
+  function routinePlan(mode) {
+    var all = shownTiles();
+    var off = all.filter(function (x) { return ["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on; });
+    var blinds = mode === "night" ? all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; }) : [];
+    return { off: off, blinds: blinds, open: all.filter(function (x) { return secOpen(x.tile); }) };
+  }
+  function weatherWarn() {
+    var w = S.header && S.header.weather, warn = w && w.warn;
+    if (!warn) { return ""; }
+    var windows = routinePlan("away").open.filter(function (x) { return x.tile.kind === "contact" && !x.tile.door; });
+    if (!windows.length) { return ""; }
+    return '<div class="rtwarn">' + I(warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + warn.kind, { t: warn.at })) + "</b><span>" +
+      esc(t("warnWindows", { names: windows.map(function (x) { return x.tile.name; }).join(", ") })) + "</span></div></div>";
+  }
+  function renderRoutine() {
+    var mode = S.sheet.routine, p = routinePlan(mode), body = "";
+    p.open.forEach(function (x) {
+      if (x.tile.kind === "lock") { body += ovRow(x, "unlock", "#FF8A3D", [x.room, t("unlocked")].join(" · "), '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); return; }
+      body += ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", [x.room, (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since)].join(" · "));
+    });
+    p.off.forEach(function (x) {
+      body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", isLight(x.tile) ? "#FFB547" : "#9B8CFF", [x.room, x.tile.keep_on ? t("staysOn") : t("rtOff")].join(" · "));
+    });
+    if (p.blinds.length) {
+      var rooms = []; p.blinds.forEach(function (x) { if (rooms.indexOf(x.room) < 0) { rooms.push(x.room); } });
+      body += '<div class="row"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
+    }
+    var title = mode === "night" ? t("rtNight") : t("rtAway");
+    sheetShell('<div class="head"><div><h1>' + esc(title) + '</h1><div class="subtitle">' + esc(body ? t(mode === "night" ? "rtNightLead" : "rtAwayLead") : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      weatherWarn() + '<div class="blist ovlist">' + (body || '<div class="allclear">' + I("check", 26) + " " + esc(t("rtAllFine")) + "</div>") + "</div>" +
+      '<div class="actions"><button class="pill primary" data-rtgo="' + mode + '">' + I(mode === "night" ? "moon" : "walk", 20) + " " + esc(t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</button></div>");
+  }
+  function routineGo(mode) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var p = routinePlan(mode);
+    send({ type: "action", action: "routine", mode: mode, off: p.off.filter(function (x) { return !x.tile.keep_on; }).map(function (x) { return x.id; }), close: p.blinds.map(function (x) { return x.id; }) });
+    closeSheet();
+  }
+  function routineDone(m) {
+    var text = m.done ? t(m.mode === "night" ? "rtDoneNight" : "rtDoneAway", { n: m.done }) : t("rtDoneNone");
+    if (m.failed && m.failed.length) { text += " " + t("rtFailed", { names: m.failed.join(", ") }); }
+    var ms = Math.max(5000, Math.min(60000, (m.until || 0) * 1000 - Date.now()));
+    S.undoUntil = m.undo ? m.until : 0;
+    if (S.tab === "home") { renderContent(); }
+    showToast(text, null, ms, m.undo ? '<button class="pill" data-undo="1">' + esc(t("undo")) + "</button>" : "");
+  }
+
   // ---------- settings ----------
+  // ---------- calendar and waste collection ----------
+  function binTexts() {
+    var bins = (S.header && S.header.calendar && S.header.calendar.bins) || [], seen = {}, out = [];
+    bins.forEach(function (b) { var key = b.day + "|" + b.what; if (!seen[key]) { seen[key] = true; out.push(b); } });
+    out.sort(function (a, b) { return a.day - b.day; });
+    return out.map(function (b) { return t(b.day === 0 ? "binToday" : "binTomorrow", { what: b.what }); });
+  }
+  function binChipHtml() {
+    var texts = binTexts();
+    if (!texts.length) { return ""; }
+    return '<div class="schip warn"><span class="sic">' + I("trash", 20) + '</span><span class="st"><b>' + esc(t("binTitle")) + "</b><span>" + esc(texts.join(" · ")) + "</span></span></div>";
+  }
+  function calendarHtml() {
+    var entries = (S.header && S.header.calendar && S.header.calendar.entries) || [];
+    if (!entries.length) { return ""; }
+    var html = "", last = -1;
+    entries.forEach(function (e) {
+      if (e.day !== last) { html += '<div class="section">' + esc(e.day === 0 ? t("calTitle") : t("calTomorrow")) + "</div>"; last = e.day; }
+      html += '<div class="lrow"><span class="lt">' + esc(e.allday ? t("calAllDay") : e.now ? t("calNow") : e.at) + '</span><span class="ld" style="background:' + (e.now ? "var(--amber)" : "#5AA9FF") + '"></span><span class="lx">' + esc(e.summary) + "</span></div>";
+    });
+    return '<div class="leave lately cal">' + html + "</div>";
+  }
+
   // ---------- status chips on Home and their overviews ----------
   // every device of the rooms this tablet shows, once, with the room it is shown in
   function shownTiles() {
@@ -1415,7 +1565,7 @@
     }).filter(function (c) { return c.temp !== undefined; });
   }
   function statusChipsHtml() {
-    var all = shownTiles(), chips = "";
+    var all = shownTiles(), chips = binChipHtml();
     function chip(kind, icon, cls, title, sub) {
       return '<button class="schip ' + cls + '" data-overview="' + kind + '"><span class="sic">' + I(icon, 20) + '</span><span class="st"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></span></button>";
     }
@@ -1511,7 +1661,40 @@
     sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
-  function openSettings() { S.sheet = { settings: true }; renderSettings(); }
+  function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
+
+  // ---------- PIN for the settings ----------
+  function pinOk() { return !(S.tablet && S.tablet.pin) || Date.now() < (S.unlockedUntil || 0) * 1000; }
+  function askPin(then) {
+    S.pinReturn = S.sheet && !S.sheet.pin ? S.sheet : null; S.afterPin = then || null;
+    S.sheet = { pin: "", error: "" }; renderSheet();
+  }
+  function renderPin() {
+    var p = S.sheet, dots = "";
+    for (var i = 0; i < Math.max(4, p.pin.length); i++) { dots += '<i class="' + (i < p.pin.length ? "on" : "") + '"></i>'; }
+    var keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"].map(function (k) {
+      if (k === "del") { return '<button class="pkey fn" data-pinkey="del" aria-label="⌫">' + I("left", 22) + "</button>"; }
+      if (k === "ok") { return '<button class="pkey fn ok" data-pinkey="ok"' + (p.pin.length >= 4 ? "" : " disabled") + ">" + esc(t("pinOk")) + "</button>"; }
+      return '<button class="pkey" data-pinkey="' + k + '">' + k + "</button>";
+    }).join("");
+    sheetShell('<div class="head"><div><h1>' + esc(t("pinTitle")) + '</h1><div class="subtitle">' + esc(p.error || t("pinLead")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="pinpad"><div class="pdots' + (p.error ? " bad" : "") + '">' + dots + '</div><div class="pkeys">' + keys + "</div></div>", "pinsheet");
+  }
+  function pinKey(k) {
+    var p = S.sheet; if (!p || p.pin === undefined || p.busy) { return; }
+    if (k === "del") { p.pin = p.pin.slice(0, -1); }
+    else if (k === "ok") { if (p.pin.length >= 4) { p.busy = true; send({ type: "unlock", pin: p.pin }); } }
+    else if (p.pin.length < 8) { p.pin += k; p.error = ""; }
+    renderSheet();
+  }
+  function pinAnswer(m) {
+    if (!S.sheet || S.sheet.pin === undefined) { return; }
+    if (!m.ok) { S.sheet = { pin: "", error: t(m.wait ? "pinWait" : "pinWrong") }; renderSheet(); return; }
+    S.unlockedUntil = m.until;
+    var then = S.afterPin; S.sheet = S.pinReturn; S.afterPin = null; S.pinReturn = null;
+    if (then) { closeSheet(); then(); } else if (S.sheet) { renderSheet(); } else { closeSheet(); }
+    showToast(t("pinOpen"), null, 3000);
+  }
   function settingsRow(attr, icon, label, value, extra) {
     return '<button class="mrow" ' + attr + '><span class="mic">' + I(icon, 20) + '</span><span class="ml"><b>' + esc(label) + "</b>" + (value ? "<span>" + esc(value) + "</span>" : "") + "</span>" + (extra || I("chev", 18)) + "</button>";
   }
@@ -1993,11 +2176,14 @@
     var open = shownList(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
+    binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
+    var nextCal = ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.allday && !e.now; })[0];
+    if (nextCal) { items += '<div class="x">' + I("clock", 20) + " " + esc(nextCal.at + " " + nextCal.summary) + "</div>"; }
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");
     el.innerHTML = '<div class="wrap" style="transform:translate(' + shift + "px," + (-shift) + 'px)"><div class="t">' + clockText(now) + '</div><div class="d">' + esc(dateText(now)) + "</div>" +
-      (w && w.temperature !== null && w.temperature !== undefined ? '<div class="w"><b>' + num(w.temperature, 0) + "°</b><span>" + esc(w.condition || "") + "</span>" + (w.high !== null && w.high !== undefined ? "<span>" + num(w.low, 0) + "° / " + num(w.high, 0) + "°</span>" : "") + "</div>" : "") +
+      (w && w.temperature !== null && w.temperature !== undefined ? '<div class="w"><b>' + num(w.temperature, 0) + "°</b><span>" + esc(w.condition || "") + "</span>" + (w.high !== null && w.high !== undefined ? "<span>" + num(w.low, 0) + "° / " + num(w.high, 0) + "°</span>" : "") + "</div>" + saverHours(w) : "") +
       '<div class="b">' + items + "</div></div>";
   }
   function insideTemp() {
@@ -2033,13 +2219,20 @@
   }
 
   // a short message at the bottom, optionally with "Try again"
-  function showToast(text, retryId, ms) {
+  function showToast(text, retryId, ms, button) {
     var el = document.getElementById("toast");
     if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
-    el.className = retryId ? "warn" : "";
-    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "");
+    el.className = retryId || button ? "warn" : "";
+    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "") + (button || "");
     clearTimeout(S.toastTimer);
     S.toastTimer = setTimeout(hideToast, ms || 7000);
+  }
+  // "All off" switches in groups and then tells which devices stayed on
+  function allOffResult(m) {
+    var left = m.left || [];
+    if (!left.length) { if (m.done > 1) { showToast(t("offDone", { n: m.done }), null, 3000); } return; }
+    showToast(t("offLeft", { names: left.map(function (x) { return x.name; }).join(", ") }), null, 15000,
+      '<button class="pill" data-alloffagain="' + esc(left.map(function (x) { return x.id; }).join("\n")) + '">' + esc(t("offAgain")) + "</button>");
   }
   function hideToast() { var el = document.getElementById("toast"); if (el && el.parentNode) { el.parentNode.removeChild(el); } }
   function failed(m) {
@@ -2250,7 +2443,9 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
     if ((el = closest(target, "data-keepon"))) {
+      if (!pinOk()) { askPin(null); return; }
       var kid = el.getAttribute("data-keepon"), kt = S.tiles[kid];
       if (kt) {
         kt.keep_on = !kt.keep_on; send({ type: "keep_on", id: kid, keep: kt.keep_on });
@@ -2319,6 +2514,7 @@
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
     if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } if (!armed(el, "scene:" + el.getAttribute("data-scene"), t("confirmTap"))) { return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
+    if ((el = closest(target, "data-alloffagain"))) { send({ type: "action", action: "all_off", room: null, ids: el.getAttribute("data-alloffagain").split("\n") }); hideToast(); return; }
     if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } var ids = el.getAttribute("data-ids"); send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null, ids: ids ? ids.split("\n") : null }); return; }
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }
@@ -2341,6 +2537,10 @@
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-weather"))) { S.sheet = { weather: true }; renderSheet(); return; }
+    if ((el = closest(target, "data-routine"))) { S.sheet = { routine: el.getAttribute("data-routine") }; renderSheet(); return; }
+    if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
+    if ((el = closest(target, "data-undo"))) { send({ type: "action", action: "undo" }); S.undoUntil = 0; hideToast(); if (S.tab === "home") { renderContent(); } return; }
     if ((el = closest(target, "data-overview"))) { S.sheet = { overview: el.getAttribute("data-overview") }; renderSheet(); return; }
     if ((el = closest(target, "data-ovpos"))) { var pv = el.getAttribute("data-ovpos").split("|"); act(pv[0], "position", Number(pv[1]), { position: Number(pv[1]) }); return; }
     if ((el = closest(target, "data-ovall"))) { overviewAll(el.getAttribute("data-ovall")); return; }

@@ -37,6 +37,22 @@ MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
 # the header (warnings, running devices, energy) is built at most this often
 HEADER_DELAY = 0.5
+# "All off": devices per group, seconds between groups and until the check
+# which devices are still on
+ALL_OFF_GROUP = 4
+ALL_OFF_PAUSE = 0.4
+ALL_OFF_CHECK = 6
+
+
+# settings stay open this long after the PIN, wrong PINs: PIN_TRIES within
+# PIN_WAIT seconds, then no more tries until PIN_WAIT passed
+PIN_OPEN = 10 * 60
+PIN_TRIES = 5
+PIN_WAIT = 5 * 60
+
+
+# seconds between reading the calendars
+CALENDAR_INTERVAL = 300
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -89,6 +105,8 @@ ARRANGE_MESSAGES = (
     "keep_on",
     "delete_device",
 )
+# changes of settings, layout and rooms: only with the PIN when one is set
+LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout")
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -238,8 +256,16 @@ class dashboard(generic.FhemModule):
         self.tablets = {}
         # device -> end of its "switch off in" timer (epoch seconds)
         self.timers = {}
+        # tablet id -> {"until": epoch, "steps": [...]} of good night / leaving
+        self.undo = {}
         self.codes = {}
         self.build = www_build()
+
+
+        # tablet id -> end of the time the settings are open after the PIN
+        self.unlocked = {}
+        # tablet id -> times of wrong PINs
+        self.pin_fails = {}
         self.pair_fails = []
         self.clients = {}
         self._listening = []
@@ -251,6 +277,8 @@ class dashboard(generic.FhemModule):
         self.https_ready = False
         self.doorbells = []
         self.sun = None
+        # entries of the FHEM Calendar devices, see model.parse_calendar
+        self.calendar_events = []
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
@@ -316,6 +344,12 @@ class dashboard(generic.FhemModule):
                 "help": "Command of the door opener without set, e.g. "
                 "Door_opener on. The tablet at the door shows 'Slide to open'.",
             },
+            "settings_pin": {
+                "default": "",
+                "help": "PIN of 4 to 8 digits for the settings, arranging rooms "
+                "and editing tiles on the tablets. After the PIN they stay open "
+                "for 10 minutes. Empty: no PIN.",
+            },
             "keep_on": {
                 "default": "",
                 "help": "Devices which 'All off' leaves on, e.g. heating, heat "
@@ -336,6 +370,7 @@ class dashboard(generic.FhemModule):
         await self.start_server()
         self.ready = True
         self.create_async_task(self.start_cameras())
+        self.create_async_task(self.calendar_loop())
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -464,6 +499,7 @@ class dashboard(generic.FhemModule):
         result["https"] = self.https_url() if self.https_ready else ""
         result["arrange"] = self.can_arrange(tablet)
         result["timeline"] = self.sees_timeline(tablet)
+        result["pin"] = self.settings_pin() is not None
         return result
 
     @staticmethod
@@ -599,6 +635,17 @@ class dashboard(generic.FhemModule):
     def set_attr_door_opener(self, hash):
         self.schedule_reload()
 
+    def set_attr_settings_pin(self, hash):
+        # a new PIN closes the settings everywhere
+        self.unlocked = {}
+        self.pin_fails = {}
+        if self.ready:
+            self.create_async_task(self.send_all_tablets())
+
+    async def send_all_tablets(self):
+        for tablet in list(self.tablets.values()):
+            await self.send_tablet(tablet)
+
     # --- FHEM devices ---
 
     async def resolve_devices(self, any_room=False):
@@ -679,6 +726,34 @@ class dashboard(generic.FhemModule):
         except (TypeError, ValueError):
             self.logger.error(f"Failed to read FHEM devices: {result}")
             return {}
+
+    async def fetch_calendars(self):
+        """entries of the next days of all Calendar devices"""
+        code = (
+            "my @r; foreach my $c (devspec2array('TYPE=Calendar')) {"
+            " next if (!defined($defs{$c}) || $defs{$c}{TYPE} ne 'Calendar');"
+            " my $t = CommandGet(undef, \"$c events format:custom=\\\"\\$t1|\\$t2|\\$S\\\""
+            f" limit:from=0,to=+{model.CALENDAR_DAYS}d\") // '';"
+            " foreach my $l (split(/\\n/, $t)) { push(@r, \"$c|$l\") } }"
+            " join(\"\\n\", @r)"
+        )
+        try:
+            result = await fhem.sendCommandHash(self.hash, code)
+        except Exception as err:
+            self.logger.error(f"Failed to read the calendars: {err}")
+            return self.calendar_events
+        return model.parse_calendar(result)
+
+    async def calendar_loop(self):
+        """calendars change rarely and give no events for new entries: read
+        them every few minutes, the header follows the day by itself"""
+        while True:
+            self.calendar_events = await self.fetch_calendars()
+            head = self.make_header()
+            if head != self.head:
+                self.head = head
+                await self.broadcast({"type": "header", "header": head})
+            await asyncio.sleep(CALENDAR_INTERVAL)
 
     async def fetch_sun(self):
         """sunrise and sunset of today for the light/dark design"""
@@ -781,6 +856,8 @@ class dashboard(generic.FhemModule):
     def make_header(self):
         head = model.header(self._head_infos, self.data["tiles"])
         head["sun"] = self.sun
+        head["calendar"] = model.calendar(self.calendar_events, time.time())
+        head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
         head["timeline"] = self.timeline_device() is not None
         return head
@@ -1089,6 +1166,8 @@ class dashboard(generic.FhemModule):
             "open_door": self.action_open_door,
             "scene": self.action_scene,
             "timer": self.action_timer,
+            "routine": self.action_routine,
+            "undo": self.action_undo,
         }.get(action)
         if special is not None:
             await special(tablet, message)
@@ -1103,9 +1182,96 @@ class dashboard(generic.FhemModule):
         # the tablet sends the devices it shows (rooms hidden on it stay on)
         ids = message.get("ids")
         wanted = set(str(i) for i in ids) if isinstance(ids, list) else None
-        for name in model.all_off(self.data["tiles"], room):
-            if wanted is None or name in wanted:
-                await self.fhem_set(tablet, name, "off")
+        names = [
+            name
+            for name in model.all_off(self.data["tiles"], room)
+            if wanted is None or name in wanted
+        ]
+        failed = []
+        # a few at a time: many radio commands at once get lost (433 MHz,
+        # HomeMatic duty cycle, Zigbee groups)
+        for start in range(0, len(names), ALL_OFF_GROUP):
+            if start:
+                await asyncio.sleep(ALL_OFF_PAUSE)
+            for name in names[start : start + ALL_OFF_GROUP]:
+                if not await self.fhem_set(tablet, name, "off"):
+                    failed.append(name)
+        if names:
+            self.create_async_task(self.check_all_off(tablet, names, failed))
+
+    async def check_all_off(self, tablet, names, failed):
+        """tell the tablet which devices are still on after a moment"""
+        await asyncio.sleep(ALL_OFF_CHECK)
+        tiles = self.data["tiles"]
+        left = [
+            {"id": name, "name": tiles[name]["name"]}
+            for name in names
+            if name in tiles and (name in failed or tiles[name]["state"].get("on"))
+        ]
+        await self.send_to_tablet(
+            tablet, {"type": "all_off", "done": len(names) - len(left), "left": left}
+        )
+
+    async def action_routine(self, tablet, message):
+        """good night or leaving home: lights and switches off, at night the
+        blinds down, and remember how it was for undo"""
+        mode = message.get("mode")
+        if mode not in model.ROUTINES:
+            return
+        tiles = {
+            i: t
+            for i, t in self.data["tiles"].items()
+            if self.allowed_tile(tablet, t)
+        }
+        off = message.get("off") if isinstance(message.get("off"), list) else []
+        close = message.get("close") if isinstance(message.get("close"), list) else []
+        steps, undo = model.routine_steps(tiles, mode, off, close)
+        failed = await self.run_steps(tablet, steps)
+        self.undo[tablet["id"]] = {
+            "until": time.time() + model.UNDO_SECONDS,
+            "steps": undo,
+        }
+        await self.send_to_tablet(
+            tablet,
+            {
+                "type": "routine",
+                "mode": mode,
+                "done": len(steps) - len(failed),
+                "failed": failed,
+                "undo": bool(undo),
+                "until": self.undo[tablet["id"]]["until"],
+            },
+        )
+
+    async def action_undo(self, tablet, message):
+        entry = self.undo.pop(tablet["id"], None)
+        if entry is None or entry["until"] < time.time():
+            return
+        failed = await self.run_steps(tablet, entry["steps"])
+        await self.send_to_tablet(tablet, {"type": "undone", "failed": failed})
+
+    async def run_steps(self, tablet, steps):
+        """(device, action, value) one after the other, names that failed"""
+        failed = []
+        for device, action, value in steps:
+            item = self.data["tiles"].get(device)
+            if item is None:
+                continue
+            try:
+                args = model.command(item, self.infos.get(device, {}), action, value)
+            except ValueError:
+                continue
+            for arg in args:
+                if await self.fhem_set_error(tablet, device, arg):
+                    failed.append(item["name"])
+                    await self.send_tile(item)
+                    break
+        return failed
+
+    async def send_to_tablet(self, tablet, message):
+        for ws, tablet_id in self.connected():
+            if tablet_id == tablet["id"]:
+                await self.send(ws, message)
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
@@ -1255,9 +1421,7 @@ class dashboard(generic.FhemModule):
             "name": name,
             "reason": model.short_error(error),
         }
-        for ws, tablet_id in self.connected():
-            if tablet_id == tablet["id"]:
-                await self.send(ws, message)
+        await self.send_to_tablet(tablet, message)
 
     # --- timeline ---
 
@@ -1723,6 +1887,17 @@ class dashboard(generic.FhemModule):
 
     async def handle_message(self, tablet, message, ws=None):
         kind = message.get("type")
+        if kind == "unlock":
+            await self.unlock(tablet, message, ws)
+            return
+        if kind in LOCKED_MESSAGES and not self.is_unlocked(tablet):
+            if ws is not None:
+                await self.send(ws, {"type": "locked"})
+            return
+        if kind == "setup" and not tablet.get("place"):
+            # the first setup of a new tablet needs no PIN, also the layout
+            # right after it
+            self.unlocked[tablet["id"]] = time.time() + 60
         if kind in ARRANGE_MESSAGES:
             await self.arrange(tablet, message, ws)
         elif kind == "action":
@@ -1741,6 +1916,41 @@ class dashboard(generic.FhemModule):
             tablet["layout"] = clean_layout(message.get("layout"))
             await self.save_tablets()
             await self.send_tablet(tablet)
+
+    # --- PIN for the settings ---
+
+    def settings_pin(self):
+        return model.clean_pin(getattr(self, "_attr_settings_pin", ""))
+
+    def is_unlocked(self, tablet):
+        if self.settings_pin() is None:
+            return True
+        return self.unlocked.get(tablet["id"], 0) > time.time()
+
+    async def unlock(self, tablet, message, ws):
+        now = time.time()
+        fails = [t for t in self.pin_fails.get(tablet["id"], []) if t > now - PIN_WAIT]
+        pin = self.settings_pin()
+        ok = False
+        if pin is None:
+            ok = True
+        elif len(fails) < PIN_TRIES:
+            ok = hmac.compare_digest(str(message.get("pin", "")), pin)
+        if ok:
+            self.unlocked[tablet["id"]] = now + PIN_OPEN
+            self.pin_fails.pop(tablet["id"], None)
+        else:
+            fails.append(now)
+            self.pin_fails[tablet["id"]] = fails
+            self.logger.warning(f"{tablet['name']}: wrong PIN for the settings")
+        answer = {
+            "type": "unlocked",
+            "ok": ok,
+            "until": self.unlocked.get(tablet["id"], 0),
+            "wait": len(fails) >= PIN_TRIES,
+        }
+        if ws is not None:
+            await self.send(ws, answer)
 
     async def send_tablet(self, tablet, with_model=False):
         for ws, tablet_id in self.connected():
