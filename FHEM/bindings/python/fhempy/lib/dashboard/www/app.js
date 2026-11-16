@@ -63,6 +63,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    baby: "Babyfon", babyEnd: "Babyfon beenden", babyRoom: "Raum",
     cameras: "Kameras", camStart: "Startseite", camStartAuto: "Automatisch", camStartCams: "Kameras", camNext: "Nächste Kamera", camPrev: "Vorherige Kamera",
     floors: "Etagen", floorsLead: "Fasst die Räume auf Zuhause nach Etagen zusammen, mit „Licht aus“ und „Rollläden zu“ pro Etage. Gilt für alle Tablets.", floorsValue: "{n} Etagen", floorsNone: "keine", floorAdd: "Etage hinzufügen", floorName: "Name, z. B. EG", floorNone: "–", floorSave: "Speichern", floorSuggest: "Vorschlag aus den Raumnamen: {list}", floorTake: "Übernehmen", floorLights: "Licht aus", floorBlinds: "Rollläden zu", floorOther: "Weitere Räume",
     tileSize: "Größe", headAdd: "Überschrift", headPlaceholder: "z. B. Decke, Fenster …", roomReset: "Raum zurücksetzen", editHint2: "1×1 neben dem × wechselt zwischen klein, breit, hoch und groß.",
@@ -145,6 +146,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    baby: "Baby monitor", babyEnd: "End baby monitor", babyRoom: "Room",
     cameras: "Cameras", camStart: "Start page", camStartAuto: "Automatic", camStartCams: "Cameras", camNext: "Next camera", camPrev: "Previous camera",
     floors: "Floors", floorsLead: "Groups the rooms on Home by floor, with “Lights off” and “Blinds down” per floor. Applies to all tablets.", floorsValue: "{n} floors", floorsNone: "none", floorAdd: "Add floor", floorName: "Name, e.g. Ground floor", floorNone: "–", floorSave: "Save", floorSuggest: "Suggestion from the room names: {list}", floorTake: "Apply", floorLights: "Lights off", floorBlinds: "Blinds down", floorOther: "Other rooms",
     tileSize: "Size", headAdd: "Heading", headPlaceholder: "e.g. Ceiling, Windows …", roomReset: "Reset room", editHint2: "1×1 next to the × switches between small, wide, tall and big.",
@@ -2659,12 +2661,12 @@
     var idle = (Date.now() - S.lastTouch) / 1000;
     if (S.ring || alarmList().length || !S.tablet || !S.tablet.place) { return; }
     // a live picture left open on a normal tablet ends after two minutes
-    if (idle > 120 && S.camView && layout().start !== "cameras") { closeCam(); }
+    if (idle > 120 && S.camView && !S.camView.baby && layout().start !== "cameras") { closeCam(); }
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
     var after = saverMinutes();
-    if (after && idle > after * 60 && layout().start !== "cameras" && !S.saver) { S.saver = true; renderSaver(); }
+    if (after && idle > after * 60 && layout().start !== "cameras" && !(S.camView && S.camView.baby) && !S.saver) { S.saver = true; renderSaver(); }
   }
   // minutes until the screensaver, 0: never. Default 5, on the couch never
   function saverMinutes() {
@@ -2936,9 +2938,12 @@
     if (!v) { if (el) { el.parentNode.removeChild(el); } closeCamLive(); camSnaps(); return; }
     if (!el) { el = document.createElement("div"); el.id = "camview"; el.className = "camview"; document.body.appendChild(el); }
     var c = list[v.i];
-    el.innerHTML = '<video id="camvideo" autoplay playsinline muted></video><img id="camsnap" alt=""' + (S.camSnap && S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '>' +
-      '<div class="camtop"><span>' + esc(c) + "</span>" + (list.length > 1 ? "<span>" + (v.i + 1) + " / " + list.length + "</span>" : "") + '<button class="iconbtn" data-camclose="1">' + I("x") + "</button></div>" +
-      (list.length > 1 ? '<button class="camnav l" data-camstep="-1" aria-label="' + esc(t("camPrev")) + '">' + I("left") + '</button><button class="camnav r" data-camstep="1" aria-label="' + esc(t("camNext")) + '">' + I("chev") + "</button>" : "");
+    el.className = "camview" + (v.baby ? " baby" + (isNight() ? " night" : "") : "");
+    el.innerHTML = '<video id="camvideo" autoplay playsinline' + (v.baby ? "" : " muted") + '></video><img id="camsnap" alt=""' + (S.camSnap && S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '>' +
+      '<div class="camtop"><span>' + esc(c) + "</span>" + (list.length > 1 && !v.baby ? "<span>" + (v.i + 1) + " / " + list.length + "</span>" : "") +
+      '<button class="pill' + (v.baby ? " on" : "") + '" data-baby="1">' + I("moon", 18) + " " + esc(v.baby ? t("babyEnd") : t("baby")) + '</button><button class="iconbtn" data-camclose="1">' + I("x") + "</button></div>" +
+      (v.baby ? babyHtml() : "") +
+      (list.length > 1 && !v.baby ? '<button class="camnav l" data-camstep="-1" aria-label="' + esc(t("camPrev")) + '">' + I("left") + '</button><button class="camnav r" data-camstep="1" aria-label="' + esc(t("camNext")) + '">' + I("chev") + "</button>" : "");
     camLive(c);
   }
   function camLive(stream) {
@@ -2957,6 +2962,43 @@
   }
   function closeCamLive() { if (camPc) { try { camPc.close(); } catch (e) { /* closed */ } camPc = null; } }
   function closeCam() { S.camView = null; renderCam(); }
+  // ---------- baby monitor: live picture with sound, no time limit, dark at night ----------
+  function babyRoomName() {
+    var name = store("dashBabyRoom") || (S.tablet && S.tablet.room) || "";
+    return roomByName(name) ? name : (S.rooms[0] ? S.rooms[0].name : "");
+  }
+  function roomClimate(name) {
+    var room = roomByName(name), temp = null, humid = null;
+    if (room) {
+      room.tiles.forEach(function (id) {
+        var tl = S.tiles[id]; if (!tl) { return; }
+        var c = climateOf(tl);
+        if (temp === null && c.temp !== undefined && c.temp !== null) { temp = c.temp; }
+        if (humid === null && tl.state.humidity !== undefined && tl.state.humidity !== null) { humid = tl.state.humidity; }
+      });
+    }
+    return { temp: temp, humid: humid };
+  }
+  function babyHtml() {
+    var name = babyRoomName(), c = roomClimate(name);
+    var opts = S.rooms.map(function (r) { return "<option" + (r.name === name ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
+    return '<div class="babybar"><b>' + clockText(new Date()) + "</b>" + (c.temp !== null ? "<span>" + I("thermo", 20) + " " + num(c.temp) + "°</span>" : "") + (c.humid !== null ? "<span>" + I("drop", 20) + " " + Math.round(c.humid) + " %</span>" : "") +
+      '<select id="babyroom" aria-label="' + esc(t("babyRoom")) + '">' + opts + "</select></div>";
+  }
+  function toggleBaby() {
+    var v = S.camView; if (!v) { return; }
+    v.baby = !v.baby;
+    if (v.baby && navigator.wakeLock && !lock) { navigator.wakeLock.request("screen").then(function (l) { lock = l; l.addEventListener("release", function () { lock = null; }); }).catch(function () { /* not allowed */ }); }
+    renderCam();
+  }
+  // clock, climate and night dimming stay current
+  function babyTick() {
+    var v = S.camView; if (!v || !v.baby) { return; }
+    var el = document.getElementById("camview"), bar = el && el.querySelector(".babybar");
+    if (el) { el.classList.toggle("night", isNight()); }
+    if (bar) { var sel = document.getElementById("babyroom"), open = sel && document.activeElement === sel; if (!open) { var tmp = document.createElement("div"); tmp.innerHTML = babyHtml(); bar.parentNode.replaceChild(tmp.firstChild, bar); } }
+  }
+  document.addEventListener("change", function (ev) { if (ev.target && ev.target.id === "babyroom") { store("dashBabyRoom", ev.target.value); babyTick(); } });
   // swipe in the live view
   document.addEventListener("pointerdown", function (ev) { if (S.camView && ev.target.closest && ev.target.closest("#camview")) { S.camView.sx = ev.clientX; } }, true);
   document.addEventListener("pointerup", function (ev) {
@@ -3094,6 +3136,7 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-camclose"))) { closeCam(); return; }
+    if ((el = closest(target, "data-baby"))) { toggleBaby(); return; }
     if ((el = closest(target, "data-camstep")) && S.camView) { openCam(S.camView.i + +el.getAttribute("data-camstep")); return; }
     if ((el = closest(target, "data-cam"))) { openCam(+el.getAttribute("data-cam")); return; }
     if ((el = closest(target, "data-camstart"))) { var lc = copyLayout(); lc.start = el.getAttribute("data-camstart") || undefined; if (!lc.start) { delete lc.start; } saveLayout(lc); return; }
@@ -3299,7 +3342,7 @@
   // ---------- start ----------
   function tick() {
     S.now = new Date();
-    renderHeader(); idleCheck(); loadSparks(); tickTimers();
+    renderHeader(); idleCheck(); loadSparks(); tickTimers(); babyTick();
     // a door which may be open by day warns again in the evening
     var mo = Object.keys(S.tiles).filter(function (id) { return mayOpenNow(S.tiles[id].may_open); }).join("\n");
     if (S.moKey !== undefined && mo !== S.moKey) { renderContent(); }
