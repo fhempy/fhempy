@@ -26,6 +26,8 @@
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     ntTitle: "Meldung auf Zuhause", ntHint: "Zeigt den Text auf Zuhause, solange das Gerät an, offen oder ausgelöst ist. Mit dem Haken wird es zurückgesetzt.", ntText: "Text, z. B. Post ist da", ntSave: "Speichern", ntDone: "Erledigt", ntSaved: "Gespeichert",
+    someone: "Jemand da", quietFor: "ruhig {t}",
+    moTitle: "Darf offen sein", moHint: "In dieser Zeit warnt das Dashboard nicht, wenn offen ist, z. B. ein Hoftor tagsüber. Gilt für alle Tablets.", moFrom: "von", moTo: "bis", moUntil: "darf offen sein bis {t}", moAllowed: "Darf gerade offen sein",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
@@ -62,6 +64,21 @@
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
     measure: "Nur messen", measureHint: "Für Kühlschrank oder Gefrierschrank: zeigt den Verbrauch, schaltet nie, auch nicht bei „Alles aus“. Gilt für alle Tablets.", measuring: "misst",
+    baby: "Babyfon", babyEnd: "Babyfon beenden", babyRoom: "Raum",
+    cameras: "Kameras", camStart: "Startseite", camStartAuto: "Automatisch", camStartCams: "Kameras", camNext: "Nächste Kamera", camPrev: "Vorherige Kamera",
+    floors: "Etagen", floorsLead: "Fasst die Räume auf Zuhause nach Etagen zusammen, mit „Licht aus“ und „Rollläden zu“ pro Etage. Gilt für alle Tablets.", floorsValue: "{n} Etagen", floorsNone: "keine", floorAdd: "Etage hinzufügen", floorName: "Name, z. B. EG", floorNone: "–", floorSave: "Speichern", floorSuggest: "Vorschlag aus den Raumnamen: {list}", floorTake: "Übernehmen", floorLights: "Licht aus", floorBlinds: "Rollläden zu", floorOther: "Weitere Räume",
+    tileSize: "Größe", headAdd: "Überschrift", headPlaceholder: "z. B. Decke, Fenster …", roomReset: "Raum zurücksetzen", editHint2: "1×1 neben dem × wechselt zwischen klein, breit, hoch und groß.",
+    accent: "Akzentfarbe", accentLamps: "wie die Lampen", accentHint: "Bunt: der Hintergrund leuchtet in der Farbe der eingeschalteten Lampen",
+    tourTitle: "So bedienst du das Dashboard", tourText: "Vier Handgriffe, mehr braucht es nicht.", tourGo: "Los geht’s", tourAgain: "So bedienst du das Dashboard",
+    tourTap: "Tippen", tourTapList: ["Das runde Symbol schaltet an und aus", "Die Kachel zeigt Details und Verlauf", "Oben Wetter, Personen und Offen antippen"],
+    tourDrag: "Ziehen", tourDragList: ["In den Details Helligkeit, Rollladen und Temperatur ziehen", "Im Raum-Popup ein Schieber für alle Rollläden"],
+    tourHold: "Halten", tourHoldList: ["Lampe oder Steckdose halten: Ausschalt-Timer", "Beim Bearbeiten Kacheln halten und verschieben"],
+    tourGear: "Einstellungen", tourGearList: ["Zahnrad oben rechts", "Design, Räume, Bildschirmschoner", "Kacheln bearbeiten und Räume ordnen"],
+    worthLook: "Einen Blick wert", wlNoRoom: "{n} Geräte ohne Raum", wlNoRoom1: "1 Gerät ohne Raum", wlNoRoomSub: "Werden erst angezeigt, wenn sie einen Raum haben", wlIdle: "{n} Geräte lange nicht benutzt", wlIdle1: "1 Gerät lange nicht benutzt", wlIdleSub: "Seit über einem Monat keine Meldung", wlMaint: "{n} Geräte brauchen Aufmerksamkeit", wlMaintSub: "Batterie, nicht erreichbar oder still",
+    setLead: "Oben gilt nur für dieses Tablet, unten für alle Tablets im Zuhause.", tabLead: "Gilt nur für dieses Tablet. Der Standort legt fest, womit es startet und ob es einen Bildschirmschoner hat.", showAll: "Alle zeigen ({n})",
+    bugInfo: "Info für Fehlerbericht", bugLead: "Versionen und Browser, ohne Namen und Adressen. Zum Einfügen ins Forum oder in ein GitHub-Issue.", bugCopy: "Kopieren", bugCopied: "Kopiert",
+    look: "Darstellung", lookAuto: "Automatisch", lookLite: "Einfach", lookFull: "Voll", lookHint: "Einfach: ohne Unschärfe, für ältere Tablets",
+    saver: "Bildschirmschoner", saverOff: "Aus", saverMin: "{n} min",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -93,6 +110,8 @@
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     ntTitle: "Notice on Home", ntHint: "Shows the text on Home while the device is on, open or triggered. The tick resets it.", ntText: "Text, e.g. Mail is here", ntSave: "Save", ntDone: "Done", ntSaved: "Saved",
+    someone: "Someone here", quietFor: "quiet {t}",
+    moTitle: "May be open", moHint: "During this time the dashboard does not warn when it is open, e.g. a yard gate by day. Applies to all tablets.", moFrom: "from", moTo: "to", moUntil: "may be open until {t}", moAllowed: "May be open now",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
@@ -129,6 +148,21 @@
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
     measure: "Only measure", measureHint: "For a fridge or freezer: shows the power, never switches, also not with “All off”. Applies to all tablets.", measuring: "measures",
+    baby: "Baby monitor", babyEnd: "End baby monitor", babyRoom: "Room",
+    cameras: "Cameras", camStart: "Start page", camStartAuto: "Automatic", camStartCams: "Cameras", camNext: "Next camera", camPrev: "Previous camera",
+    floors: "Floors", floorsLead: "Groups the rooms on Home by floor, with “Lights off” and “Blinds down” per floor. Applies to all tablets.", floorsValue: "{n} floors", floorsNone: "none", floorAdd: "Add floor", floorName: "Name, e.g. Ground floor", floorNone: "–", floorSave: "Save", floorSuggest: "Suggestion from the room names: {list}", floorTake: "Apply", floorLights: "Lights off", floorBlinds: "Blinds down", floorOther: "Other rooms",
+    tileSize: "Size", headAdd: "Heading", headPlaceholder: "e.g. Ceiling, Windows …", roomReset: "Reset room", editHint2: "1×1 next to the × switches between small, wide, tall and big.",
+    accent: "Accent colour", accentLamps: "like the lamps", accentHint: "Colourful: the background glows in the colour of the lamps which are on",
+    tourTitle: "How to use the dashboard", tourText: "Four moves, that is all it takes.", tourGo: "Let’s go", tourAgain: "How to use the dashboard",
+    tourTap: "Tap", tourTapList: ["The round icon switches on and off", "The tile shows details and history", "Tap weather, people and open at the top"],
+    tourDrag: "Drag", tourDragList: ["Drag brightness, blinds and temperature in the details", "One slider for all blinds in the room popup"],
+    tourHold: "Hold", tourHoldList: ["Hold a lamp or plug: switch-off timer", "While editing hold tiles to move them"],
+    tourGear: "Settings", tourGearList: ["Gear at the top right", "Design, rooms, screensaver", "Edit tiles and arrange rooms"],
+    worthLook: "Worth a look", wlNoRoom: "{n} devices without a room", wlNoRoom1: "1 device without a room", wlNoRoomSub: "They are shown once they have a room", wlIdle: "{n} devices not used for long", wlIdle1: "1 device not used for long", wlIdleSub: "No value for more than a month", wlMaint: "{n} devices need attention", wlMaintSub: "Battery, not reachable or silent",
+    setLead: "The top applies to this tablet only, the bottom to all tablets at home.", tabLead: "Applies to this tablet only. The place sets what it starts with and whether it has a screensaver.", showAll: "Show all ({n})",
+    bugInfo: "Info for a bug report", bugLead: "Versions and browser, without names and addresses. To paste into the forum or a GitHub issue.", bugCopy: "Copy", bugCopied: "Copied",
+    look: "Display", lookAuto: "Automatic", lookLite: "Simple", lookFull: "Full", lookHint: "Simple: without blur, for older tablets",
+    saver: "Screensaver", saverOff: "Off", saverMin: "{n} min",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -184,6 +218,7 @@
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
+    person: '<circle cx="12" cy="7" r="3.2"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
@@ -302,10 +337,15 @@
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); checkBuild(m.build); }
       render(); loadSparks(true); tapHint(); return;
     }
-    if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
+    if (m.type === "rooms_setup") {
+      var idle = 0; (m.rooms || []).forEach(function (r) { r.devices.forEach(function (d) { if (d.idle) { idle++; } }); });
+      S.setupHints = { noRoom: (m.unassigned || []).length, idle: idle };
+      if (!S.arrange && S.sheet && S.sheet.settings && !S.sheet.page) { renderSettings(); }
+      if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
+      if (layout().accent === "lamps" && isLight(m.tile)) { applyAccent(); }
       updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
@@ -314,6 +354,7 @@
       S.header = m.header; checkNotices();
       if (S.sheet && S.sheet.id && setupBefore !== JSON.stringify(m.header.notice_setup || {})) { renderSheet(); }
       renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "bug_info") { S.bugInfo = m.info; if (S.sheet && S.sheet.page === "buginfo") { renderSettings(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -334,6 +375,7 @@
   function place() { return (S.tablet && S.tablet.place) || "wall"; }
   function layout() { return (S.tablet && S.tablet.layout) || {}; }
   function startTab() {
+    if (layout().start === "cameras" && seesCameras()) { return "cameras"; }
     if (place() === "couch" && S.tablet.room && roomByName(S.tablet.room)) { return "room:" + S.tablet.room; }
     return "home";
   }
@@ -591,11 +633,11 @@
       sub = st.locked ? t("locked") : st.locked === false ? t("unlocked") : "–";
     } else if (k === "contact") {
       icon = tile.door ? "door" : "win";
-      if (st.closed === false) { cls = "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
+      if (st.closed === false) { cls = mayOpenNow(tile.may_open) ? "" : "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
     } else if (k === "smoke" || k === "water") {
       if (st.alarm) { cls = "alarm"; sub = t(k + "Now") + " " + since(st.since); } else { sub = t("calm"); }
     } else if (k === "motion") {
-      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion"); }
+      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion") + (since(st.since) ? " · " + since(st.since) : ""); }
     } else if (k === "temperature") {
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
@@ -612,7 +654,7 @@
 
   function tileHtml(id, editState) {
     var tile = S.tiles[id]; if (!tile) { return ""; }
-    var look = tileLook(tile), wide = tile.kind === "thermostat" || tile.kind === "media";
+    var look = tileLook(tile), size = tileSize(id), wide = size === "w" || size === "b", tall = size === "t" || size === "b";
     var body, climate = tile.kind === "thermostat" || tile.kind === "temperature" || tile.kind === "humidity";
     if (climate) {
       body = climateTileBody(id, tile, look, editState);
@@ -629,11 +671,37 @@
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
+      if (editState === "shown") { extra += '<div class="szbtn" data-size="' + esc(id) + '" aria-label="' + esc(t("tileSize")) + '">' + SIZE_LABEL[size] + "</div>"; }
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (tall ? " tall" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
+  // size of a tile on this tablet: s small, w wide, t tall, b big
+  var SIZES = ["s", "w", "t", "b"], SIZE_LABEL = { s: "1×1", w: "2×1", t: "1×2", b: "2×2" };
+  function tileSize(id) {
+    var size = (layout().tile_size || {})[id], tile = S.tiles[id];
+    if (SIZES.indexOf(size) >= 0) { return size; }
+    return tile && (tile.kind === "thermostat" || tile.kind === "media") ? "w" : "s";
+  }
+  // headings are entries "#Text" in the order of a room
+  function withHeadings(ids, order) {
+    var result = ids.slice();
+    (order || []).forEach(function (entry, i) {
+      if (entry.charAt(0) !== "#") { return; }
+      var next = null;
+      for (var j = i + 1; j < order.length; j++) { if (order[j].charAt(0) !== "#" && result.indexOf(order[j]) >= 0) { next = order[j]; break; } }
+      var at = next === null ? result.length : result.indexOf(next);
+      // headings right before this one stay in their order
+      while (at > 0 && result[at - 1].charAt(0) === "#" && order.indexOf(result[at - 1]) > i) { at--; }
+      result.splice(at, 0, entry);
+    });
+    return result;
+  }
+  function headHtml(entry, edit) {
+    return '<div class="gh' + (edit ? " tile" : "") + '" ' + (edit ? "data-tile" : "data-head") + '="' + esc(entry) + '"><span>' + esc(entry.slice(1)) + "</span>" + (edit ? '<div class="edit" data-delhead="' + esc(entry) + '">' + I("x") + "</div>" : "") + "</div>";
+  }
+  function gridItem(id, editState) { return id.charAt(0) === "#" ? headHtml(id, !!editState) : tileHtml(id, editState); }
   function updateTile(id) {
     if (S.sliding && press && press.id === id) { return; }
     var el = app.querySelector('[data-tile="' + cssEsc(id) + '"]');
@@ -724,6 +792,7 @@
     if (!S.token) { renderPair(); return; }
     if (!S.tablet) { app.innerHTML = '<div class="ob"><div class="empty">' + (S.connected ? "" : t("connLost")) + "</div></div>"; return; }
     if (!S.tablet.place) { renderSetup(); return; }
+    if (S.tour) { renderTour(); return; }
     if (!S.tab || (S.tab.indexOf("room:") === 0 && !roomByName(S.tab.slice(5)))) { S.tab = startTab(); }
     // drawing everything again must not jump back to the top
     var old = document.getElementById("content"), top = old ? old.scrollTop : 0, shownTab = S.shownTab;
@@ -769,7 +838,7 @@
     return (list || []).filter(function (x) { return !ids || ids[x.id]; });
   }
   function warningText() {
-    var open = shownList(S.header && S.header.open);
+    var open = warnOpen(S.header && S.header.open);
     if (!open.length) { return ""; }
     if (open.length <= 3) { return t("openNames", { names: open.map(function (o) { return shortName(o.name); }).join(", ") }); }
     return t("openCount", { n: open.length });
@@ -790,9 +859,10 @@
     var el = document.getElementById("tabs"); if (!el) { return; }
     var tabs = [{ id: "home", name: t("home") }];
     visibleRooms().forEach(function (r) {
-      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name; });
+      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name && !mayOpenNow(o.may_open); });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
+    if (seesCameras()) { tabs.push({ id: "cameras", name: t("cameras") }); } else if (S.tab === "cameras") { S.tab = "home"; }
     if (seesTimeline()) { tabs.push({ id: "history", name: t("history") }); } else if (S.tab === "history") { S.tab = "home"; }
     el.innerHTML = tabs.map(function (tb) {
       return '<button class="tab' + (tb.id === S.tab ? " on" : "") + '" data-tab="' + esc(tb.id) + '">' + esc(tb.name) + (tb.dot ? '<span class="dot"></span>' : "") + "</button>";
@@ -803,14 +873,14 @@
   function renderContent() {
     var el = document.getElementById("content"); if (!el) { return; }
     var top = el.scrollTop;
-    if (S.arrange) { el.innerHTML = arrangeHtml(); } else if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
+    if (S.arrange) { el.innerHTML = arrangeHtml(); } else if (S.tab === "home") { el.innerHTML = homeHtml(); } else if (S.tab === "history") { el.innerHTML = historyHtml(); } else if (S.tab === "cameras") { el.innerHTML = camerasHtml(); camSnaps(); } else { el.innerHTML = roomHtml(roomByName(S.tab.slice(5))); }
     el.scrollTop = top;
     S.shownTab = S.tab;
   }
 
   function leaveHtml() {
     // plugs which only measure (fridge) are always on: not worth a line
-    var h = S.header, open = shownList(h.open), running = shownList(h.running).filter(function (r) { return !r.measure; }), rows = "";
+    var h = S.header, open = warnOpen(h.open), running = shownList(h.running).filter(function (r) { return !r.measure; }), rows = "";
     open.forEach(function (o) {
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
@@ -880,9 +950,10 @@
     return rooms;
   }
   function roomCardHtml(room, editState) {
-    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null;
+    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null, motion = 0, someone = false, quiet = "";
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
+      if (tile.kind === "motion") { motion++; if (st.occupied) { someone = true; } else if (st.since && st.since > quiet) { quiet = st.since; } }
       if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
       if (humid === null && st.humidity !== undefined && st.humidity !== null) { humid = st.humidity; }
       if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on && !tile.measure) { other++; }
@@ -902,6 +973,8 @@
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
+    // somebody in the room: motion or presence sensors
+    if (someone) { facts += '<span class="fact pres">' + I("person", 14) + " " + esc(t("someone")) + "</span>"; } else if (motion && quiet && since(quiet)) { facts += '<span class="fact">' + esc(t("quietFor", { t: since(quiet) })) + "</span>"; }
     if (editState) {
       return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
         '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
@@ -921,9 +994,99 @@
         (gone.length ? '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (r) { return roomCardHtml(r, "hidden"); }).join("") + "</div>" : "") +
         '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
     } else {
-      right = '<div class="grid">' + homeRooms(false).map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
+      right = floorsHomeHtml(homeRooms(false));
     }
     return statusChipsHtml() + '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
+  }
+
+  // ---------- floors: room cards grouped by floor ----------
+  function floorList() { return (S.header && S.header.floors) || []; }
+  function floorsHomeHtml(rooms) {
+    var floors = floorList(), ro = S.tablet && S.tablet.readonly;
+    if (!floors.length) { return '<div class="grid">' + rooms.map(function (r) { return roomCardHtml(r); }).join("") + "</div>"; }
+    var used = {}, html = "";
+    floors.forEach(function (f, i) {
+      var here = rooms.filter(function (r) { return f.rooms.indexOf(r.name) >= 0; });
+      if (!here.length) { return; }
+      here.forEach(function (r) { used[r.name] = 1; });
+      html += '<div class="floorhead"><span>' + esc(f.name) + "</span>" + (ro ? "" : '<button class="pill sm" data-floor="' + i + '" data-floorwhat="lights">' + I("bulb", 16) + " " + esc(t("floorLights")) + '</button><button class="pill sm" data-floor="' + i + '" data-floorwhat="down">' + I("blind", 16) + " " + esc(t("floorBlinds")) + "</button>") + "</div>" +
+        '<div class="grid">' + here.map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
+    });
+    var rest = rooms.filter(function (r) { return !used[r.name]; });
+    if (rest.length) { html += '<div class="floorhead"><span>' + esc(t("floorOther")) + '</span></div><div class="grid">' + rest.map(function (r) { return roomCardHtml(r); }).join("") + "</div>"; }
+    return html;
+  }
+  function floorAll(index, what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var f = floorList()[index]; if (!f) { return; }
+    visibleRooms().filter(function (r) { return f.rooms.indexOf(r.name) >= 0; }).forEach(function (r) {
+      roomTiles(r).forEach(function (id) {
+        var tl = S.tiles[id];
+        if (what === "lights" && isLight(tl) && tl.state.on) { act(id, "off", null, { on: false }); }
+        if (what === "down" && tl.kind === "blind" && tl.state.position !== 0) { act(id, "position", 0, { position: 0 }); }
+      });
+    });
+  }
+  // floors from room names like "EG Küche" or "OG.Bad": only a suggestion
+  var FLOOR_RE = /^(UG|KG|EG|OG|DG|[0-9]\.?\s?OG|Keller|Erdgeschoss|Obergeschoss|Dachgeschoss|Basement|Ground|Upstairs|Attic)[\s._-]+/i;
+  function floorSuggestion() {
+    var result = [];
+    S.rooms.forEach(function (r) {
+      var m = FLOOR_RE.exec(r.name); if (!m) { return; }
+      var name = m[1].toUpperCase().length <= 3 ? m[1].toUpperCase() : m[1];
+      var f = result.filter(function (x) { return x.name === name; })[0];
+      if (!f) { f = { name: name, rooms: [] }; result.push(f); }
+      f.rooms.push(r.name);
+    });
+    return result;
+  }
+  function renderFloors() {
+    var d = S.sheet.floors || (S.sheet.floors = JSON.parse(JSON.stringify(floorList())));
+    var html = settingsHead(t("floors"), t("setHome"), true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("floorsLead")) + "</div>";
+    var sug = floorSuggestion();
+    if (!d.length && sug.length) {
+      html += '<div class="group"><div class="list"><div class="item"><span class="grow">' + esc(t("floorSuggest", { list: sug.map(function (f) { return f.name + " (" + f.rooms.length + ")"; }).join(", ") })) + '</span><button class="pill" data-floortake="1">' + esc(t("floorTake")) + "</button></div></div></div>";
+    }
+    html += '<div class="group"><div class="list">' + d.map(function (f, i) {
+      return '<div class="item"><input data-floorname="' + i + '" value="' + esc(f.name) + '" maxlength="40" style="flex:1"><button class="iconbtn" data-floordel="' + i + '">' + I("x") + "</button></div>";
+    }).join("") + '<div class="item ntrow"><input id="newfloor" maxlength="40" placeholder="' + esc(t("floorName")) + '" style="flex:1"><button class="pill" data-flooradd="1">' + I("plus", 18) + " " + esc(t("floorAdd")) + "</button></div></div></div>";
+    if (d.length) {
+      html += '<div class="group"><div class="list">' + allRoomsOrdered().map(function (r) {
+        var cur = -1; d.forEach(function (f, i) { if (f.rooms.indexOf(r.name) >= 0 && cur < 0) { cur = i; } });
+        return '<div class="item"><span class="grow">' + esc(r.name) + '</span><div class="seg">' + '<button class="' + (cur < 0 ? "on" : "") + '" data-floorroom="' + esc(r.name) + '" data-floorto="-1">' + esc(t("floorNone")) + "</button>" +
+          d.map(function (f, i) { return '<button class="' + (cur === i ? "on" : "") + '" data-floorroom="' + esc(r.name) + '" data-floorto="' + i + '">' + esc(f.name) + "</button>"; }).join("") + "</div></div>";
+      }).join("") + "</div></div>";
+    }
+    html += '<div class="actions"><button class="pill primary" data-floorsave="1">' + esc(t("floorSave")) + "</button></div>";
+    sheetShell(html);
+  }
+  function floorNames() {
+    var d = S.sheet && S.sheet.floors; if (!d) { return; }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-floorname]"), function (el) { var f = d[+el.getAttribute("data-floorname")]; if (f && el.value.trim()) { f.name = el.value.trim(); } });
+  }
+  function floorClick(target) {
+    var el, d = S.sheet && S.sheet.floors;
+    if ((el = closest(target, "data-floor")) && !S.sheet) { floorAll(+el.getAttribute("data-floor"), el.getAttribute("data-floorwhat")); return true; }
+    if (!d) { return false; }
+    floorNames();
+    if ((el = closest(target, "data-floortake"))) { S.sheet.floors = floorSuggestion(); renderFloors(); return true; }
+    if ((el = closest(target, "data-flooradd"))) {
+      var input = document.getElementById("newfloor"), name = input ? input.value.trim() : "";
+      if (name && !d.some(function (f) { return f.name === name; })) { d.push({ name: name, rooms: [] }); }
+      renderFloors(); return true;
+    }
+    if ((el = closest(target, "data-floordel"))) { d.splice(+el.getAttribute("data-floordel"), 1); renderFloors(); return true; }
+    if ((el = closest(target, "data-floorroom"))) {
+      var room = el.getAttribute("data-floorroom"), to = +el.getAttribute("data-floorto");
+      d.forEach(function (f) { f.rooms = f.rooms.filter(function (x) { return x !== room; }); });
+      if (to >= 0 && d[to]) { d[to].rooms.push(room); }
+      renderFloors(); return true;
+    }
+    if ((el = closest(target, "data-floorsave"))) {
+      if (!pinOk()) { askPin(null); return true; }
+      send({ type: "floors", floors: d }); S.sheet.floors = null; S.sheet.page = ""; renderSettings(); return true;
+    }
+    return false;
   }
 
   function scenesHtml(room) {
@@ -937,18 +1100,19 @@
   function roomHtml(room) {
     if (!room) { return ""; }
     var html = scenesHtml(room);
-    var ids = roomTiles(room, S.edit);
+    var ids = roomTiles(room, S.edit), order = (layout().tile_order || {})[room.name];
     if (S.edit) {
       var hidden = layout().hidden_tiles || [];
-      var shown = ids.filter(function (id) { return hidden.indexOf(id) < 0; });
+      var shown = withHeadings(ids.filter(function (id) { return hidden.indexOf(id) < 0; }), order);
       var gone = ids.filter(function (id) { return hidden.indexOf(id) >= 0; });
-      html += '<div class="edithint">' + esc(t("editHint")) + "</div>";
-      html += '<div class="grid">' + shown.map(function (id) { return tileHtml(id, "shown"); }).join("") + "</div>";
+      html += '<div class="edithint">' + esc(t("editHint")) + " " + esc(t("editHint2")) + "</div>";
+      html += '<div class="headadd"><input id="newhead" maxlength="40" placeholder="' + esc(t("headPlaceholder")) + '"><button class="pill" data-addhead="1">' + I("plus", 18) + " " + esc(t("headAdd")) + '</button><button class="linkbtn" data-roomreset="' + esc(room.name) + '">' + esc(t("roomReset")) + "</button></div>";
+      html += '<div class="grid tgrid">' + shown.map(function (id) { return gridItem(id, "shown"); }).join("") + "</div>";
       if (gone.length) { html += '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (id) { return tileHtml(id, "hidden"); }).join("") + "</div>"; }
       html += '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
       return html;
     }
-    html += '<div class="grid">' + ids.map(function (id) { return tileHtml(id); }).join("") + "</div>";
+    html += '<div class="grid tgrid">' + withHeadings(ids, order).map(function (id) { return gridItem(id); }).join("") + "</div>";
     html += happenedHtml(room.name);
     return html;
   }
@@ -1155,6 +1319,8 @@
       body += '<div class="tring">' + climateHtml(tile) + "</div>";
     } else if (k === "lock") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.locked ? " on" : "") + '" data-do="lock">' + I("lock", 20) + " " + esc(t("lock")) + '</button><button class="pill danger" data-do="unlock">' + I("unlock", 20) + " " + esc(t("unlock")) + "</button></div></div>";
+    } else if (k === "contact" && S.tablet && !S.tablet.readonly) {
+      body += mayOpenHtml(tile);
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
@@ -1175,11 +1341,14 @@
   function keepOnListHtml() {
     var ids = Object.keys(S.tiles).filter(function (id) { var tl = S.tiles[id]; return tl.kind === "switch" || tl.kind === "outlet" || tl.keep_on; });
     if (!ids.length) { return ""; }
-    ids.sort(function (a, b) { return S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    ids.sort(function (a, b) { var ka = S.tiles[a].keep_on ? 0 : 1, kb = S.tiles[b].keep_on ? 0 : 1; return ka - kb || S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    // long lists: the ones left on first, the rest on request
+    var all = ids.length, more = !S.sheet.all && all > 6 ? '<button class="linkbtn" data-showall="1">' + esc(t("showAll", { n: all })) + "</button>" : "";
+    if (more) { ids = ids.slice(0, 6); }
     return '<div class="group"><div class="label">' + esc(t("keepOnList")) + '</div><div class="hint" style="text-align:left;margin:0 0 6px">' + esc(t("keepOnHint")) + '</div><div class="list">' + ids.map(function (id) {
       var tl = S.tiles[id];
       return '<div class="item"><span class="grow">' + esc(tl.name) + '<span style="color:var(--mu)"> · ' + esc(tl.rooms[0] || "") + '</span></span><button class="tg' + (tl.keep_on ? "" : " off") + '" data-keepon="' + esc(id) + '"></button></div>';
-    }).join("") + "</div></div>";
+    }).join("") + "</div>" + more + "</div>";
   }
   function sheetHistoryHtml() {
     var hist = S.sheet && S.sheet.history; if (!hist || !hist.activity) { return ""; }
@@ -1652,7 +1821,26 @@
     return result;
   }
   function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
-  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false && !mayOpenNow(tl.may_open)) || (tl.kind === "lock" && tl.state.locked === false); }
+  // ---------- doors and gates which may be open at some times ----------
+  function mayOpenNow(win) {
+    var m = /^(\d\d):(\d\d)-(\d\d):(\d\d)$/.exec(win || ""); if (!m) { return false; }
+    var now = S.now || new Date(), n = now.getHours() * 60 + now.getMinutes(), a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4];
+    return a < b ? n >= a && n < b : n >= a || n < b;
+  }
+  function warnOpen(list) { return shownList(list).filter(function (o) { return !mayOpenNow(o.may_open); }); }
+  function mayOpenHtml(tile) {
+    var on = !!tile.may_open, parts = (tile.may_open || "07:00-20:00").split("-");
+    return '<div class="group ntedit"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("moTitle")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("moHint")) + "</div></div>" +
+      '<button class="tg' + (on ? "" : " off") + '" data-mayopen="' + esc(tile.id) + '" aria-label="' + esc(t("moTitle")) + '"></button></div>' +
+      (on ? '<div class="item ntrow"><span>' + esc(t("moFrom")) + '</span><input type="time" id="mofrom" value="' + esc(parts[0]) + '"><span>' + esc(t("moTo")) + '</span><input type="time" id="moto" value="' + esc(parts[1] === "24:00" ? "23:59" : parts[1]) + '"><button class="pill" data-mayopensave="' + esc(tile.id) + '">' + esc(t("ntSave")) + "</button></div>" : "") + "</div></div>";
+  }
+  function sendMayOpen(id, on) {
+    if (!pinOk()) { askPin(null); return; }
+    var from = document.getElementById("mofrom"), to = document.getElementById("moto");
+    var win = !on ? "" : from && to && from.value && to.value ? from.value + "-" + to.value : "07:00-20:00";
+    send({ type: "may_open", id: id, window: win });
+  }
   // devices which need attention: not reachable, a sensor without values for
   // two days, a low battery
   function maintenance() {
@@ -1776,6 +1964,10 @@
         if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
         return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
+      var allowed = all.filter(function (x) { return x.tile.kind === "contact" && x.tile.state.closed === false && mayOpenNow(x.tile.may_open); });
+      if (allowed.length) {
+        body += '<div class="section"><span>' + esc(t("moAllowed")) + "</span></div>" + byRoom(allowed, function (x) { return ovRow(x, x.tile.door ? "door" : "win", "#8E8E93", t("open") + " " + since(x.tile.state.since) + " · " + t("moUntil", { t: x.tile.may_open.split("-")[1] })); });
+      }
     }
     sheetShell('<div class="head"><div><h1>' + esc(title) + "</h1>" + (lead ? '<div class="subtitle">' + esc(lead) + "</div>" : "") + '</div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       '<div class="blist ovlist">' + body + "</div>" + (actions ? '<div class="actions">' + actions + "</div>" : ""));
@@ -1800,7 +1992,12 @@
     sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
-  function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
+  function openSettings() {
+    if (!pinOk()) { askPin(openSettings); return; }
+    S.sheet = { settings: true }; renderSettings();
+    // devices without a room or idle: only tablets which arrange rooms
+    if (S.tablet && S.tablet.arrange) { send({ type: "rooms_setup" }); }
+  }
 
   // ---------- own notices, e.g. "Mail is here" ----------
   function noticesHtml() {
@@ -1960,33 +2157,80 @@
   function renderSettings() {
     var tb = S.tablet, lay = layout(), page = S.sheet.page || "";
     if (page === "tablet") { renderSettingsTablet(); return; }
+    if (page === "floors") { renderFloors(); return; }
+    if (page === "buginfo") { renderBugInfo(); return; }
     if (page === "rooms") { renderSettingsRooms(); return; }
     if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var hidden = lay.hidden_rooms || [], shown = S.rooms.filter(function (r) { return hidden.indexOf(r.name) < 0; }).length;
     var kept = Object.keys(S.tiles).filter(function (id) { return S.tiles[id].keep_on; }).length;
     var html = settingsHead(t("settings"), tb.name + (tb.readonly ? " · " + t("readonly") : ""), false) +
+      '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("setLead")) + "</div>" + worthLookHtml() +
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
+      '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" + accentHtml() +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      (seesCameras() ? '<div class="mrow"><span class="mic">' + I("film", 20) + '</span><span class="ml"><b>' + esc(t("camStart")) + '</b></span><div class="seg"><button class="' + (lay.start !== "cameras" ? "on" : "") + '" data-camstart="">' + esc(t("camStartAuto")) + '</button><button class="' + (lay.start === "cameras" ? "on" : "") + '" data-camstart="cameras">' + esc(t("camStartCams")) + "</button></div></div>" : "") +
+      liteRowHtml(lay) +
+      '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
       html += '<div class="group"><div class="label">' + esc(t("setHome")) + '</div><div class="menu">' +
         settingsRow('data-arrange="1"', "home", t("arrange"), t("setArrangeValue")) +
-        settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) + "</div></div>";
+        settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) +
+        settingsRow('data-setpage="floors"', "stairs", t("floors"), floorList().length ? t("floorsValue", { n: floorList().length }) : t("floorsNone")) + "</div></div>";
     }
     if (tb.https && location.protocol !== "https:") {
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
     }
+    html += '<div class="group"><div class="menu">' + settingsRow('data-tour="1"', "star", t("tourAgain"), "") + "</div></div>";
+    html += '<div class="group"><div class="menu">' + settingsRow('data-buginfo="1"', "gear", t("bugInfo"), "") + "</div></div>";
     html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
     sheetShell(html);
+  }
+  // things to sort out: devices without a room, idle ones, maintenance
+  function worthLookHtml() {
+    var rows = "", h = S.setupHints, todo = maintenance().length;
+    if (h && h.noRoom) { rows += settingsRow('data-arrange="1"', "home", h.noRoom === 1 ? t("wlNoRoom1") : t("wlNoRoom", { n: h.noRoom }), t("wlNoRoomSub")); }
+    if (h && h.idle) { rows += settingsRow('data-arrange="1"', "clock", h.idle === 1 ? t("wlIdle1") : t("wlIdle", { n: h.idle }), t("wlIdleSub")); }
+    if (todo) { rows += settingsRow('data-overview="maintenance"', "battery", t("wlMaint", { n: todo }), t("wlMaintSub")); }
+    return rows ? '<div class="group"><div class="label">' + esc(t("worthLook")) + '</div><div class="menu">' + rows + "</div></div>" : "";
+  }
+  // ---------- info for a bug report ----------
+  function bugText() {
+    var i = S.bugInfo || {}, lay = layout(), lines = [
+      "fhempy " + (i.fhempy || "?") + " · dashboard " + (i.build || "?"),
+      "Python " + (i.python || "?") + " · " + (i.system || "?"),
+      "Devices " + i.devices + " · tiles " + i.tiles + " · rooms " + i.rooms,
+      "Kinds " + Object.keys(i.kinds || {}).map(function (k) { return k + " " + i.kinds[k]; }).join(", "),
+      "Tablets " + i.tablets + " · connected " + i.connected + " · https " + (i.https ? "on" : "off"),
+      "Attributes " + ((i.attrs || []).join(", ") || "none"),
+      "This tablet: " + place() + (S.tablet && S.tablet.readonly ? ", read-only" : "") + (S.tablet && S.tablet.rooms && S.tablet.rooms.length ? ", restricted" : "") + " · theme " + (lay.theme || "auto") + " · " + (document.body.classList.contains("lite") ? "simple" : "full") + " display · " + location.protocol.replace(":", ""),
+      "Browser " + navigator.userAgent,
+      "Screen " + screen.width + "×" + screen.height + " @" + (window.devicePixelRatio || 1) + " · window " + window.innerWidth + "×" + window.innerHeight + " · " + (navigator.language || "") + " · cores " + (navigator.hardwareConcurrency || "?")
+    ];
+    return lines.join("\n");
+  }
+  function renderBugInfo() {
+    sheetShell(settingsHead(t("bugInfo"), t("bugLead"), true) +
+      '<div class="group"><textarea id="bugtext" readonly rows="10" style="width:100%;font:13px/1.45 ui-monospace,monospace;user-select:text;-webkit-user-select:text">' + esc(S.bugInfo ? bugText() : "…") + "</textarea></div>" +
+      '<div class="actions"><button class="pill primary" data-bugcopy="1">' + esc(t("bugCopy")) + "</button></div>");
+  }
+  function copyBugInfo() {
+    var area = document.getElementById("bugtext"); if (!area) { return; }
+    var done = function () { showToast(t("bugCopied"), null, 2000); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(area.value).then(done, function () { area.select(); }); return; }
+    // http: the old way
+    area.removeAttribute("readonly"); area.select();
+    try { if (document.execCommand("copy")) { done(); } } catch (e) { /* select by hand */ }
+    area.setAttribute("readonly", "");
   }
   function renderSettingsTablet() {
     var tb = S.tablet;
     var places = ["wall", "couch", "door"].map(function (p) { return '<button class="' + (tb.place === p ? "on" : "") + '" data-place="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var roomOpts = '<option value="">' + esc(t("noRoom")) + "</option>" + S.rooms.map(function (r) { return '<option' + (r.name === tb.room ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
-    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) +
+    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("tabLead")) + "</div>" +
       '<div class="group"><div class="label">' + esc(t("name")) + '</div><input id="tabname" value="' + esc(tb.name) + '" maxlength="40" style="width:100%"></div>' +
       '<div class="group"><div class="label">' + esc(t("place")) + '</div><div class="seg">' + places + "</div></div>" +
       '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom" style="width:100%">' + roomOpts + "</select></div>");
@@ -2015,6 +2259,13 @@
     if (S.sheet && S.sheet.settings) { renderSettings(); }
   }
   function copyLayout() { return JSON.parse(JSON.stringify(layout())); }
+  // change the order of the room shown, starting from what is on screen
+  function editRoomOrder(fn) {
+    var room = S.tab.indexOf("room:") === 0 && roomByName(S.tab.slice(5)); if (!room) { return; }
+    var lay = copyLayout(), cur = (lay.tile_order || {})[room.name];
+    if (!cur || !cur.length) { cur = roomTiles(room, true); }
+    lay.tile_order = lay.tile_order || {}; lay.tile_order[room.name] = fn(cur.slice()); saveLayout(lay);
+  }
 
   // ---------- arranging rooms (FHEM attribute room, for all tablets) ----------
   function startArrange() {
@@ -2370,8 +2621,17 @@
       ' <select id="setuproom">' + roomOpts + '</select><button class="pill primary" data-setupdone="1">' + esc(t(S.rooms.length ? "next" : "pickDone")) + "</button></div></div></div>";
   }
   function setupSteps(step) {
-    if (!S.rooms.length) { return ""; }
-    return '<div class="steps"><span class="' + (step === 1 ? "on" : "done") + '"></span><span class="' + (step === 2 ? "on" : "") + '"></span></div>';
+    // place, rooms (only with rooms), how to use it
+    var steps = S.rooms.length ? [1, 2, 3] : [1, 3];
+    return '<div class="steps">' + steps.map(function (n) { return '<span class="' + (n === step ? "on" : n < step ? "done" : "") + '"></span>'; }).join("") + "</div>";
+  }
+  // third step of the setup, also from the settings: tap, drag, hold, gear
+  function renderTour() {
+    var cards = [["tourTap", "power"], ["tourDrag", "blind"], ["tourHold", "clock"], ["tourGear", "gear"]].map(function (c) {
+      return '<div class="pl tour"><div class="pi">' + I(c[1]) + "</div><h3>" + esc(t(c[0])) + "</h3><ul>" + T[c[0] + "List"].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    }).join("");
+    app.innerHTML = '<div class="ob"><div class="obbox"><div class="logo"><div class="m"></div>' + esc(t("home")) + "</div>" + (S.tour === "setup" ? setupSteps(3) : "") + "<h1>" + esc(t("tourTitle")) + '</h1><p class="l">' + esc(t("tourText")) +
+      '</p><div class="places tours">' + cards + '</div><div class="found"><button class="pill primary" data-tourdone="1">' + esc(t("tourGo")) + "</button></div></div></div>";
   }
   // icon from the room name, for the big room tiles of the setup
   var ROOM_ICONS = [
@@ -2405,17 +2665,26 @@
       var lay = copyLayout(); lay.hidden_rooms = S.setupHidden.slice();
       S.tablet.layout = lay; send({ type: "layout", layout: lay });
     }
-    S.tablet.place = pl; S.tablet.room = room; S.setupStep = null; S.tab = startTab(); render(); applyTheme(); wakeLock();
+    S.tablet.place = pl; S.tablet.room = room; S.setupStep = null; S.tab = startTab(); S.tour = "setup"; render(); applyTheme(); wakeLock();
   }
 
   // ---------- screensaver, idle, wake ----------
   function idleCheck() {
     var idle = (Date.now() - S.lastTouch) / 1000;
     if (S.ring || alarmList().length || !S.tablet || !S.tablet.place) { return; }
+    // a live picture left open on a normal tablet ends after two minutes
+    if (idle > 120 && S.camView && !S.camView.baby && layout().start !== "cameras") { closeCam(); }
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
-    if (idle > 300 && place() !== "couch" && !S.saver) { S.saver = true; renderSaver(); }
+    var after = saverMinutes();
+    if (after && idle > after * 60 && layout().start !== "cameras" && !(S.camView && S.camView.baby) && !S.saver) { S.saver = true; renderSaver(); }
+  }
+  // minutes until the screensaver, 0: never. Default 5, on the couch never
+  function saverMinutes() {
+    var m = layout().saver;
+    if (typeof m === "number") { return m; }
+    return place() === "couch" ? 0 : 5;
   }
   function wake() {
     S.lastTouch = Date.now();
@@ -2428,12 +2697,14 @@
     var now = new Date(), h = S.header || {}, w = h.weather, items = "";
     if (h.presence) { items += '<div class="x">' + I("home", 20) + " " + esc((h.presence.home || []).length ? t("atHome", { n: h.presence.home.length }) : t("nobody")) + "</div>"; }
     var inside = insideTemp(); if (inside !== null) { items += '<div class="x">' + I("thermo", 20) + " " + num(inside) + "°</div>"; }
-    var open = shownList(h.open);
+    var open = warnOpen(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
     binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
-    var nextCal = ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.allday && !e.now; })[0];
-    if (nextCal) { items += '<div class="x">' + I("clock", 20) + " " + esc(nextCal.at + " " + nextCal.summary) + "</div>"; }
+    // what is still coming today
+    ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.now; }).slice(0, 3).forEach(function (e) {
+      items += '<div class="x">' + I("clock", 20) + " " + esc((e.allday ? t("calAllDay") : e.at) + " " + e.summary) + "</div>";
+    });
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");
@@ -2462,6 +2733,74 @@
     var theme = layout().theme || "auto";
     var light = theme === "light" || (theme === "auto" && place() === "couch" && isDay());
     document.body.classList.toggle("light", !!light);
+    applyAccent();
+  }
+  // ---------- accent colour of a tablet, or the colour of the lamps ----------
+  var ACCENTS = { amber: "#FFB547", teal: "#3DDBB8", blue: "#5AA9FF", violet: "#9B8CFF", pink: "#FF7EB6", green: "#34D399" };
+  function rgbOf(hex) { var n = parseInt(String(hex).slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(","); }
+  // coloured lamps which are on, not white ones
+  function litColors() {
+    var result = [];
+    Object.keys(S.tiles).forEach(function (id) {
+      var tl = S.tiles[id], st = tl.state;
+      if (!isLight(tl) || !st.on || !st.rgb || st.rgb === "#000000") { return; }
+      var c = rgbOf(st.rgb).split(",").map(Number), max = Math.max.apply(null, c), min = Math.min.apply(null, c);
+      if (max - min < 40) { return; }
+      if (result.indexOf(st.rgb) < 0) { result.push(st.rgb); }
+    });
+    return result;
+  }
+  function applyAccent() {
+    var key = layout().accent || "amber", color = ACCENTS[key] || ACCENTS.amber, b = document.body.style;
+    var glow1 = "rgba(" + rgbOf(color) + ",.14)", glow2 = "rgba(90,140,255,.12)";
+    if (key === "amber") { glow1 = "rgba(255,170,90,.14)"; }
+    if (key === "lamps") {
+      var lit = litColors();
+      if (lit.length) { glow1 = "rgba(" + rgbOf(lit[0]) + ",.26)"; glow2 = "rgba(" + rgbOf(lit[1] || lit[0]) + ",.2)"; }
+    }
+    b.setProperty("--accent", color); b.setProperty("--accent-soft", "rgba(" + rgbOf(color) + ",.16)");
+    b.setProperty("--glow1", glow1); b.setProperty("--glow2", glow2);
+    if (ACCENTS[key] && key !== "amber") { b.setProperty("--tg", color); } else { b.removeProperty("--tg"); }
+  }
+  function accentHtml() {
+    var cur = layout().accent || "amber";
+    return '<div class="mrow"><span class="mic">' + I("star", 20) + '</span><span class="ml"><b>' + esc(t("accent")) + "</b>" + (cur === "lamps" ? "<span>" + esc(t("accentHint")) + "</span>" : "") + '</span><div class="swatches accent">' +
+      Object.keys(ACCENTS).map(function (k) { return '<button class="' + (cur === k ? "on" : "") + '" data-accent="' + k + '" style="background:' + ACCENTS[k] + '" aria-label="' + k + '"></button>'; }).join("") +
+      '<button class="lamps' + (cur === "lamps" ? " on" : "") + '" data-accent="lamps" aria-label="' + esc(t("accentLamps")) + '" title="' + esc(t("accentLamps")) + '"></button></div></div>';
+    var look = layout().lite || "auto";
+    document.body.classList.toggle("lite", look === "on" || (look === "auto" && store("dashSlow") === "1"));
+  }
+  // simple display for slow tablets (old wall tablets): few cores or a low
+  // frame rate while the page is idle. Measured once after each start.
+  function liteRowHtml(lay) {
+    var cur = lay.lite || "auto";
+    var opts = [["auto", "lookAuto"], ["on", "lookLite"], ["off", "lookFull"]];
+    var btns = opts.map(function (o) {
+      return '<button class="' + (cur === o[0] ? "on" : "") + '" data-lite="' + o[0] + '">' + esc(t(o[1])) + "</button>";
+    }).join("");
+    return '<div class="mrow"><span class="mic">' + I("frame", 20) + '</span><span class="ml"><b>' + esc(t("look")) +
+      "</b><span>" + esc(t("lookHint")) + '</span></span><div class="seg">' + btns + "</div></div>";
+  }
+  var speed = { frames: 0, first: 0 };
+  function speedFrame(ts) {
+    if (!speed.first) { speed.first = ts; }
+    speed.frames++;
+    if (ts - speed.first < 2000) { requestAnimationFrame(speedFrame); return; }
+    // hidden pages get no frames, then nothing is learned
+    if (document.hidden) { return; }
+    var fps = speed.frames * 1000 / (ts - speed.first);
+    store("dashSlow", fps < 30 ? "1" : "0");
+    applyTheme();
+  }
+  function measureSpeed() {
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) {
+      store("dashSlow", "1");
+      applyTheme();
+      return;
+    }
+    if (!window.requestAnimationFrame) { return; }
+    speed = { frames: 0, first: 0 };
+    requestAnimationFrame(speedFrame);
   }
 
   // ---------- banner ----------
@@ -2524,6 +2863,7 @@
   var pc = null, mic = null;
   function startRing(m) {
     wake();
+    if (S.camView) { closeCam(); }
     S.ring = { name: m.name, camera: m.camera, opener: m.opener, started: Date.now(), full: place() === "door" || place() === "wall", muted: false, talking: false };
     chime();
     render();
@@ -2570,6 +2910,115 @@
       '<button class="rb end" data-hangup="1"><span class="c">' + I("x") + "</span>" + esc(t("hangup")) + "</button></div>";
     if (r.camera) { startVideo(r.camera, r.talking); }
   }
+  // ---------- camera page: all cameras, tap for live, swipe to the next ----------
+  var camPc = null;
+  function cameraList() { return (S.header && S.header.door && S.header.door.cameras) || []; }
+  // restricted tablets (only some rooms) see no camera page
+  function seesCameras() { return cameraList().length > 0 && !(S.tablet && S.tablet.rooms && S.tablet.rooms.length); }
+  function camerasHtml() {
+    S.camSnap = S.camSnap || {};
+    return '<div class="camgrid">' + cameraList().map(function (c, i) {
+      return '<button class="camcard" data-cam="' + i + '"><img data-camimg="' + esc(c) + '" alt=""' + (S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '><span>' + esc(c) + "</span></button>";
+    }).join("") + "</div>";
+  }
+  // still pictures every 2 s while the page is shown, one camera after the other
+  function camSnaps() {
+    if (S.camTimer) { return; }
+    var list = cameraList(), i = 0;
+    function next() {
+      S.camTimer = null;
+      if (S.tab !== "cameras" || S.saver || S.camView || document.hidden || !list.length) { return; }
+      var c = list[i % list.length]; i++;
+      fetch("api/snapshot?stream=" + encodeURIComponent(c) + "&t=" + Date.now(), { headers: { Authorization: "Bearer " + S.token } })
+        .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); })
+        .then(function (b) {
+          var old = S.camSnap[c]; S.camSnap[c] = URL.createObjectURL(b);
+          var img = document.querySelector('[data-camimg="' + cssEsc(c) + '"]'); if (img) { img.src = S.camSnap[c]; }
+          if (old) { URL.revokeObjectURL(old); }
+        })
+        .catch(function () { /* camera offline */ })
+        .then(function () { S.camTimer = setTimeout(next, Math.max(300, 2000 / list.length)); });
+    }
+    S.camTimer = setTimeout(next, 10);
+  }
+  function openCam(i) {
+    var list = cameraList(); if (!list.length) { return; }
+    S.camView = { i: (i + list.length) % list.length }; renderCam();
+  }
+  function renderCam() {
+    var v = S.camView, list = cameraList(), el = document.getElementById("camview");
+    if (!v) { if (el) { el.parentNode.removeChild(el); } closeCamLive(); camSnaps(); return; }
+    if (!el) { el = document.createElement("div"); el.id = "camview"; el.className = "camview"; document.body.appendChild(el); }
+    var c = list[v.i];
+    el.className = "camview" + (v.baby ? " baby" + (isNight() ? " night" : "") : "");
+    el.innerHTML = '<video id="camvideo" autoplay playsinline' + (v.baby ? "" : " muted") + '></video><img id="camsnap" alt=""' + (S.camSnap && S.camSnap[c] ? ' src="' + S.camSnap[c] + '"' : "") + '>' +
+      '<div class="camtop"><span>' + esc(c) + "</span>" + (list.length > 1 && !v.baby ? "<span>" + (v.i + 1) + " / " + list.length + "</span>" : "") +
+      '<button class="pill' + (v.baby ? " on" : "") + '" data-baby="1">' + I("moon", 18) + " " + esc(v.baby ? t("babyEnd") : t("baby")) + '</button><button class="iconbtn" data-camclose="1">' + I("x") + "</button></div>" +
+      (v.baby ? babyHtml() : "") +
+      (list.length > 1 && !v.baby ? '<button class="camnav l" data-camstep="-1" aria-label="' + esc(t("camPrev")) + '">' + I("left") + '</button><button class="camnav r" data-camstep="1" aria-label="' + esc(t("camNext")) + '">' + I("chev") + "</button>" : "");
+    camLive(c);
+  }
+  function camLive(stream) {
+    closeCamLive();
+    var video = document.getElementById("camvideo");
+    if (!window.RTCPeerConnection || !video) { return; }
+    var conn = camPc = new RTCPeerConnection({ iceServers: [] });
+    conn.addTransceiver("video", { direction: "recvonly" });
+    conn.addTransceiver("audio", { direction: "recvonly" });
+    conn.ontrack = function (ev) { if (video.srcObject !== ev.streams[0]) { video.srcObject = ev.streams[0] || new MediaStream([ev.track]); video.classList.add("on"); } };
+    conn.createOffer().then(function (offer) { return conn.setLocalDescription(offer); }).then(function () { return waitIce(conn); }).then(function () {
+      return fetch("api/webrtc?stream=" + encodeURIComponent(stream), { method: "POST", headers: { Authorization: "Bearer " + S.token, "Content-Type": "application/sdp" }, body: conn.localDescription.sdp });
+    }).then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.text(); })
+      .then(function (sdp) { if (conn === camPc) { return conn.setRemoteDescription({ type: "answer", sdp: sdp }); } })
+      .catch(function () { /* the still picture stays */ });
+  }
+  function closeCamLive() { if (camPc) { try { camPc.close(); } catch (e) { /* closed */ } camPc = null; } }
+  function closeCam() { S.camView = null; renderCam(); }
+  // ---------- baby monitor: live picture with sound, no time limit, dark at night ----------
+  function babyRoomName() {
+    var name = store("dashBabyRoom") || (S.tablet && S.tablet.room) || "";
+    return roomByName(name) ? name : (S.rooms[0] ? S.rooms[0].name : "");
+  }
+  function roomClimate(name) {
+    var room = roomByName(name), temp = null, humid = null;
+    if (room) {
+      room.tiles.forEach(function (id) {
+        var tl = S.tiles[id]; if (!tl) { return; }
+        var c = climateOf(tl);
+        if (temp === null && c.temp !== undefined && c.temp !== null) { temp = c.temp; }
+        if (humid === null && tl.state.humidity !== undefined && tl.state.humidity !== null) { humid = tl.state.humidity; }
+      });
+    }
+    return { temp: temp, humid: humid };
+  }
+  function babyHtml() {
+    var name = babyRoomName(), c = roomClimate(name);
+    var opts = S.rooms.map(function (r) { return "<option" + (r.name === name ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
+    return '<div class="babybar"><b>' + clockText(new Date()) + "</b>" + (c.temp !== null ? "<span>" + I("thermo", 20) + " " + num(c.temp) + "°</span>" : "") + (c.humid !== null ? "<span>" + I("drop", 20) + " " + Math.round(c.humid) + " %</span>" : "") +
+      '<select id="babyroom" aria-label="' + esc(t("babyRoom")) + '">' + opts + "</select></div>";
+  }
+  function toggleBaby() {
+    var v = S.camView; if (!v) { return; }
+    v.baby = !v.baby;
+    if (v.baby && navigator.wakeLock && !lock) { navigator.wakeLock.request("screen").then(function (l) { lock = l; l.addEventListener("release", function () { lock = null; }); }).catch(function () { /* not allowed */ }); }
+    renderCam();
+  }
+  // clock, climate and night dimming stay current
+  function babyTick() {
+    var v = S.camView; if (!v || !v.baby) { return; }
+    var el = document.getElementById("camview"), bar = el && el.querySelector(".babybar");
+    if (el) { el.classList.toggle("night", isNight()); }
+    if (bar) { var sel = document.getElementById("babyroom"), open = sel && document.activeElement === sel; if (!open) { var tmp = document.createElement("div"); tmp.innerHTML = babyHtml(); bar.parentNode.replaceChild(tmp.firstChild, bar); } }
+  }
+  document.addEventListener("change", function (ev) { if (ev.target && ev.target.id === "babyroom") { store("dashBabyRoom", ev.target.value); babyTick(); } });
+  // swipe in the live view
+  document.addEventListener("pointerdown", function (ev) { if (S.camView && ev.target.closest && ev.target.closest("#camview")) { S.camView.sx = ev.clientX; } }, true);
+  document.addEventListener("pointerup", function (ev) {
+    var v = S.camView; if (!v || v.sx === undefined) { return; }
+    var dx = ev.clientX - v.sx; v.sx = undefined;
+    if (Math.abs(dx) > 60 && cameraList().length > 1) { openCam(v.i + (dx < 0 ? 1 : -1)); }
+  }, true);
+
   function startVideo(stream, withMic) {
     stopVideo();
     var video = document.getElementById("ringvideo");
@@ -2703,7 +3152,35 @@
       var mt = S.tiles[el.getAttribute("data-measure")]; if (!mt) { return; }
       send({ type: "measure_only", id: mt.id, measure: !mt.measure }); return;
     }
+    if ((el = closest(target, "data-camclose"))) { closeCam(); return; }
+    if ((el = closest(target, "data-baby"))) { toggleBaby(); return; }
+    if ((el = closest(target, "data-camstep")) && S.camView) { openCam(S.camView.i + +el.getAttribute("data-camstep")); return; }
+    if ((el = closest(target, "data-cam"))) { openCam(+el.getAttribute("data-cam")); return; }
+    if ((el = closest(target, "data-camstart"))) { var lc = copyLayout(); lc.start = el.getAttribute("data-camstart") || undefined; if (!lc.start) { delete lc.start; } saveLayout(lc); return; }
+    if (floorClick(target)) { return; }
+    if ((el = closest(target, "data-size"))) {
+      var sid = el.getAttribute("data-size"), ls = copyLayout(); ls.tile_size = ls.tile_size || {};
+      ls.tile_size[sid] = SIZES[(SIZES.indexOf(tileSize(sid)) + 1) % SIZES.length]; saveLayout(ls); return;
+    }
+    if ((el = closest(target, "data-delhead"))) { editRoomOrder(function (o) { return o.filter(function (x) { return x !== el.getAttribute("data-delhead"); }); }); return; }
+    if ((el = closest(target, "data-addhead"))) {
+      var input = document.getElementById("newhead"), text = input ? input.value.replace(/[\u0000-\u001f]/g, "").trim() : "";
+      if (text) { editRoomOrder(function (o) { return o.indexOf("#" + text) >= 0 ? o : ["#" + text].concat(o); }); }
+      return;
+    }
+    if ((el = closest(target, "data-roomreset"))) {
+      var rr = roomByName(el.getAttribute("data-roomreset")), lr = copyLayout();
+      if (rr) {
+        if (lr.tile_order) { delete lr.tile_order[rr.name]; }
+        if (lr.tile_size) { rr.tiles.forEach(function (x) { delete lr.tile_size[x]; }); }
+        lr.hidden_tiles = (lr.hidden_tiles || []).filter(function (x) { return rr.tiles.indexOf(x) < 0; });
+        saveLayout(lr);
+      }
+      return;
+    }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-mayopen"))) { sendMayOpen(el.getAttribute("data-mayopen"), el.classList.contains("off")); return; }
+    if ((el = closest(target, "data-mayopensave"))) { sendMayOpen(el.getAttribute("data-mayopensave"), true); showToast(t("ntSaved"), null, 2000); return; }
     if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }
     if ((el = closest(target, "data-noticesave"))) { sendNotice(el.getAttribute("data-noticesave"), true); showToast(t("ntSaved"), null, 2000); return; }
@@ -2822,6 +3299,12 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-accent"))) { var l5 = copyLayout(); l5.accent = el.getAttribute("data-accent"); saveLayout(l5); return; }
+    if ((el = closest(target, "data-showall")) && S.sheet) { S.sheet.all = true; renderSheet(); return; }
+    if ((el = closest(target, "data-buginfo"))) { S.sheet = { settings: true, page: "buginfo" }; send({ type: "bug_info" }); renderSettings(); return; }
+    if ((el = closest(target, "data-bugcopy"))) { copyBugInfo(); return; }
+    if ((el = closest(target, "data-lite"))) { var l3 = copyLayout(); l3.lite = el.getAttribute("data-lite"); saveLayout(l3); return; }
+    if ((el = closest(target, "data-saver"))) { var l2 = copyLayout(); l2.saver = +el.getAttribute("data-saver"); saveLayout(l2); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");
@@ -2836,6 +3319,8 @@
       if (!S.setupHidden) { S.setupHidden = (layout().hidden_rooms || []).slice(); }
       S.setupStep = "rooms"; renderSetup(); return;
     }
+    if ((el = closest(target, "data-tourdone"))) { S.tour = null; store("dashTapHint", "1"); render(); return; }
+    if ((el = closest(target, "data-tour"))) { closeSheet(); S.tour = "again"; render(); return; }
     if ((el = closest(target, "data-setupback"))) { S.setupStep = null; renderSetup(); return; }
     if ((el = closest(target, "data-pickroom"))) {
       var pr = el.getAttribute("data-pickroom"), sh = S.setupHidden || [];
@@ -2874,7 +3359,11 @@
   // ---------- start ----------
   function tick() {
     S.now = new Date();
-    renderHeader(); idleCheck(); loadSparks(); tickTimers();
+    renderHeader(); idleCheck(); loadSparks(); tickTimers(); babyTick();
+    // a door which may be open by day warns again in the evening
+    var mo = Object.keys(S.tiles).filter(function (id) { return mayOpenNow(S.tiles[id].may_open); }).join("\n");
+    if (S.moKey !== undefined && mo !== S.moKey) { renderContent(); }
+    S.moKey = mo;
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }
@@ -2887,6 +3376,7 @@
     if (hp.pair && !S.token) { render(); pair(hp.pair); } else { render(); connect(); }
     if (S.token && !hp.t) { history.replaceState(null, "", location.pathname + "#t=" + encodeURIComponent(S.token)); }
     setInterval(tick, 1000 * 15);
+    setTimeout(measureSpeed, 5000);
     setInterval(function () { var c = document.getElementById("ringclock"); if (c && S.ring) { tick(); } }, 1000);
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       navigator.serviceWorker.register("sw.js").catch(function () { /* optional */ });
