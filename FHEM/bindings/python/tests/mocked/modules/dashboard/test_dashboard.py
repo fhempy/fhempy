@@ -1788,6 +1788,14 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_motion_tile_knows_since_when():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    motion = next(t for t in tiles.values() if t["kind"] == "motion")
+    assert motion["state"]["occupied"] is False
+    assert motion["state"]["since"]
+
+
 def test_may_open_windows():
     assert model.clean_window("7:00-20:00") == "07:00-20:00"
     assert model.clean_window("22:00 - 6:30") == "22:00-06:30"
