@@ -490,3 +490,10 @@ body.light .tile .ic.sw { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.12); }
 #toast .pill { flex: none; height: 40px; }
 body.light #toast { background: #fff; color: #151922; border-color: rgba(0,0,0,.1); }
 body.light #toast.warn { border-color: rgba(214,110,30,.5); }
+/* time left of a "switch off in" timer */
+.tile .tbadge { position: absolute; right: 12px; top: 12px; display: flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 12px; background: rgba(0,0,0,.28); color: var(--tx); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+body.light .tile .tbadge { background: rgba(255,255,255,.75); color: #151922; }
+.sheet .label.tl { display: flex; align-items: center; gap: 6px; }
+.sheet .label .tleft { margin-left: auto; color: var(--tx); text-transform: none; letter-spacing: 0; }
+.actions.timers { flex-wrap: wrap; }
+.actions.timers .pill { flex: 1 1 22%; }

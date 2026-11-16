@@ -46,6 +46,7 @@
     hiddenTiles: "Ausgeblendet, + zum Zurückholen", days: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
     months: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
     weekdays: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+    timerOff: "Ausschalten in", timerOn: "Einschalten für", timerLeft: "noch {t}", timerUntil: "geht aus um {t}", timerStop: "Timer beenden", min15: "15 min", min30: "30 min", h1: "1 h", h2: "2 h",
     away: "Abwesend", quiet: "Keine Ereignisse an diesem Tag.", lastDays: "Tage", climate: "Klima", temperature: "Temperatur",
     now: "jetzt", wasOn: "Wann war es an"
   };
@@ -90,6 +91,7 @@
     hiddenTiles: "Hidden, + brings them back", days: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
     months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    timerOff: "Switch off in", timerOn: "Switch on for", timerLeft: "{t} left", timerUntil: "goes off at {t}", timerStop: "End timer", min15: "15 min", min30: "30 min", h1: "1 h", h2: "2 h",
     away: "Away", quiet: "Nothing happened on this day.", lastDays: "days", climate: "Climate",
     now: "now", wasOn: "When it was on"
   };
@@ -548,6 +550,7 @@
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
     if (tile.state.fan && tile.state.fan.mode && tile.state.fan.mode !== "off" && !editState) { extra += '<div class="fanbadge">' + I("fan", 18) + "</div>"; }
+    if (timerLeft(tile) && !editState) { extra += '<div class="tbadge">' + I("timer", 15) + " " + esc(timerText(timerLeft(tile))) + "</div>"; }
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
@@ -568,6 +571,39 @@
   }
   function cssEsc(s) { return String(s).replace(/["\\]/g, "\\$&"); }
   function editStateOf(id) { return (layout().hidden_tiles || []).indexOf(id) >= 0 ? "hidden" : "shown"; }
+
+  // ---------- timers: switch off in 15 min ... (FHEM runs them) ----------
+  function timerLeft(tile) {
+    if (!tile.timer || !tile.state.on) { return 0; }
+    var left = tile.timer * 1000 - Date.now();
+    return left > 0 ? left : 0;
+  }
+  function timerText(ms) {
+    var m = Math.max(1, Math.ceil(ms / 60000));
+    return m < 60 ? m + " min" : Math.floor(m / 60) + ":" + two(m % 60) + " h";
+  }
+  function timerHtml(tile) {
+    if (S.tablet && S.tablet.readonly) { return ""; }
+    var left = timerLeft(tile), opts = [[15, "min15"], [30, "min30"], [60, "h1"], [120, "h2"]];
+    var html = '<div class="group"><div class="label tl">' + I("timer", 16) + " " + esc(t(tile.state.on ? "timerOff" : "timerOn")) +
+      (left ? '<span class="tleft">' + esc(t("timerUntil", { t: clockText(new Date(tile.timer * 1000)) })) + "</span>" : "") + '</div><div class="actions timers">';
+    html += opts.map(function (o) { return '<button class="pill" data-timer="' + o[0] + '">' + esc(t(o[1])) + "</button>"; }).join("");
+    if (left) { html += '<button class="pill" data-timer="0">' + esc(t("timerStop")) + "</button>"; }
+    return html + "</div></div>";
+  }
+  function setTimer(id, minutes) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var tile = S.tiles[id]; if (!tile) { return; }
+    if (minutes > 0) { tile.timer = Math.round(Date.now() / 1000) + minutes * 60; tile.state.on = true; } else { delete tile.timer; }
+    send({ type: "action", action: "timer", id: id, value: minutes });
+    updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); }
+  }
+  function tickTimers() {
+    Object.keys(S.tiles).forEach(function (id) {
+      var tile = S.tiles[id];
+      if (tile.timer) { updateTile(id); if (!timerLeft(tile) && tile.timer * 1000 < Date.now() - 120000) { delete tile.timer; } }
+    });
+  }
 
   // optimistic: show the new state at once, the server confirms within 3 s
   function act(id, action, value, optimistic) {
@@ -1010,13 +1046,14 @@
       var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : k === "fan" ? (st.percent || 0) : (st.position || 0);
       left = '<div><div class="vs' + (k === "blind" || k === "fan" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : k === "fan" ? "fan" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : k === "fan" ? t("pullToFan") : t("pullToMove")) + "</div></div>";
     }
-    if (k === "fan") { body += fanHtml(st); }
+    if (k === "fan") { body += fanHtml(st) + timerHtml(tile); }
     if (k === "inputs") { body += inputsHtml(tile); }
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
       if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
+      body += timerHtml(tile);
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
     } else if (k === "blind") {
       body += '<div class="group"><div class="actions"><button class="pill" data-do="up">' + esc(t("up")) + "</button>" + (tile.stop ? '<button class="pill" data-do="stop">' + esc(t("stop")) + "</button>" : "") + '<button class="pill" data-do="down">' + esc(t("down")) + "</button></div></div>";
@@ -1909,6 +1946,7 @@
       }
       renderSheet(); return;
     }
+    if ((el = closest(target, "data-timer")) && S.sheet) { setTimer(S.sheet.id, Number(el.getAttribute("data-timer"))); return; }
     if ((el = closest(target, "data-preset"))) {
       var pn = Number(el.getAttribute("data-preset"));
       act(S.sheet.id, "preset", pn, { channel: pn, on: true }); renderSheet(); return;
@@ -2013,7 +2051,7 @@
   // ---------- start ----------
   function tick() {
     S.now = new Date();
-    renderHeader(); idleCheck(); loadSparks();
+    renderHeader(); idleCheck(); loadSparks(); tickTimers();
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }

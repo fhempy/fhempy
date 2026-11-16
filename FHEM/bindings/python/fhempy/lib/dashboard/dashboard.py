@@ -220,6 +220,8 @@ class dashboard(generic.FhemModule):
         self._head_infos = {}
         self._header_task = None
         self.tablets = {}
+        # device -> end of its "switch off in" timer (epoch seconds)
+        self.timers = {}
         self.codes = {}
         self.pair_fails = []
         self.clients = {}
@@ -309,6 +311,7 @@ class dashboard(generic.FhemModule):
         await self.set_icon("it_television")
         self._unique_id = await fhem.getUniqueId(hash)
         await self.load_tablets()
+        await self.load_timers()
         await self.load_preset_art()
         await self.update_set_config()
         self.ip = await utils.run_blocking(functools.partial(utils.get_local_ip))
@@ -729,6 +732,7 @@ class dashboard(generic.FhemModule):
         self._head_infos = {n: i for n, i in self.infos.items() if model.in_header(i)}
         before = (self.data, self.head)
         self.data = model.build(self.infos, keep_on=self.keep_on_names())
+        self.apply_timers()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
         self.head = self.make_header()
@@ -821,6 +825,9 @@ class dashboard(generic.FhemModule):
                 state["on"] = item["state"]["on"]
             if state != item["state"]:
                 item["state"] = state
+                if state.get("on") is False and device in self.timers:
+                    # switched off by hand or by the timer: the timer is done
+                    await self.cancel_timer(item, send=False)
                 await self.send_tile(item)
                 rooms = model.motion_rooms(item)
                 if rooms:
@@ -1064,6 +1071,7 @@ class dashboard(generic.FhemModule):
             "all_off": self.action_all_off,
             "open_door": self.action_open_door,
             "scene": self.action_scene,
+            "timer": self.action_timer,
         }.get(action)
         if special is not None:
             await special(tablet, message)
@@ -1100,6 +1108,93 @@ class dashboard(generic.FhemModule):
             )
             if error:
                 await self.send_failed(tablet, None, scene["name"], error)
+
+    # --- timers: switch off in 15 min ... ---
+
+    async def load_timers(self):
+        raw = await fhem.ReadingsVal(self.hash["NAME"], ".timers", "")
+        try:
+            timers = json.loads(raw) if raw else {}
+        except ValueError:
+            timers = {}
+        self.timers = model.running_timers(
+            timers if isinstance(timers, dict) else {}, time.time()
+        )
+
+    async def save_timers(self):
+        await fhem.readingsSingleUpdate(
+            self.hash, ".timers", json.dumps(self.timers, ensure_ascii=False), 0
+        )
+
+    def apply_timers(self):
+        self.timers = model.running_timers(self.timers, time.time())
+        for name, item in self.data["tiles"].items():
+            if name in self.timers:
+                item["timer"] = self.timers[name]
+
+    async def action_timer(self, tablet, message):
+        item = self.data["tiles"].get(str(message.get("id", "")))
+        if (
+            item is None
+            or item["kind"] not in model.TIMER_KINDS
+            or not self.allowed_tile(tablet, item)
+        ):
+            return
+        minutes = model.timer_minutes(message.get("value"))
+        if minutes <= 0:
+            await self.cancel_timer(item)
+            return
+        info = self.infos.get(item["id"], {})
+        off = model.command(item, info, "off")
+        if not off:
+            return
+        if not item["state"].get("on"):
+            # "on for 30 min"
+            for arg in model.command(item, info, "on"):
+                error = await self.fhem_set_error(tablet, item["id"], arg)
+                if error:
+                    await self.send_failed(tablet, item["id"], item["name"], error)
+                    await self.send_tile(item)
+                    return
+        definition = model.timer_definition(item["id"], minutes, off)
+        result = await fhem.sendCommandHash(
+            self.hash,
+            "{ my ($n, $d) = ("
+            + fhem.perlString(model.timer_name(item["id"]))
+            + ", "
+            + fhem.perlString(definition)
+            + "); CommandDelete(undef, $n) if ($defs{$n});"
+            " my $r = CommandDefine(undef, $d);"
+            " if (!$r && $defs{$n}) { $defs{$n}{TEMPORARY} = 1;"
+            " CommandAttr(undef, \"$n room hidden\") }"
+            " $r // '' }",
+        )
+        if result:
+            self.logger.error(f"timer {definition} failed: {result}")
+            await fhem.readingsSingleUpdate(
+                self.hash, "lastError", f"timer {definition}: {result}", 1
+            )
+            await self.send_failed(tablet, item["id"], item["name"], str(result))
+            return
+        self.logger.info(f"{tablet['name']}: {definition}")
+        self.timers[item["id"]] = round(time.time() + minutes * 60)
+        item["timer"] = self.timers[item["id"]]
+        await self.save_timers()
+        await self.send_tile(item)
+
+    async def cancel_timer(self, item, send=True):
+        had = self.timers.pop(item["id"], None) is not None
+        item.pop("timer", None)
+        await fhem.sendCommandHash(
+            self.hash,
+            "{ my $n = "
+            + fhem.perlString(model.timer_name(item["id"]))
+            + "; CommandDelete(undef, $n) if ($defs{$n}); '' }",
+        )
+        if had:
+            await self.save_timers()
+        if send:
+            await self.send_tile(item)
 
     async def action_tile(self, tablet, action, message):
         item = self.data["tiles"].get(str(message.get("id", "")))

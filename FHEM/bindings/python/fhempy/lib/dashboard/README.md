@@ -16,6 +16,7 @@ minute on the tablet itself.
 - *History* shows the [timeline](../timeline/README.md) of every day, if a timeline device exists; *Home* shows what happened last in the whole home (today, after a quiet day also yesterday)
 - scenes and unlocking need a second tap (*Tap again*), so nothing starts by accident
 - when a device doesn't react or FHEM refuses the command, the tablet says so with *Try again*
+- timers: the details of a light, switch or fan offer *Switch off in* 15 min, 30 min, 1 h or 2 h (*Switch on for* when it is off), the tile shows the time left. FHEM runs the timer (a temporary `at`), so it works with the tablet off too; switching off by hand ends it
 - push messages of the [push](../push/README.md) module are shown on the tablets as well
 - doorbell: the tablets show the camera live (WebRTC), you can talk to the visitor and open the door by sliding
 - every tablet keeps its own place, room, layout (order of rooms and tiles by dragging, hidden tiles; the room cards of *Home* have their own order and can be hidden there only) and theme

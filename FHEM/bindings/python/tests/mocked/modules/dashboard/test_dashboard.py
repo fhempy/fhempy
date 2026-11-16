@@ -1169,4 +1169,61 @@ async def test_failed_set_is_told_to_the_tablet(module):
         assert message["reason"] == "No answer from the device"
         # the real state follows
         assert (await next_of(ws, "tile"))["tile"]["id"] == switch["id"]
+def test_timer_definition():
+    assert model.timer_name("wz.Lamp-1") == "dashboard_timer_wz.Lamp_1"
+    assert model.timer_definition("lamp", 90, ["off"]) == (
+        "dashboard_timer_lamp at +01:30:00 set lamp off"
+    )
+    assert model.timer_definition("fan", 15, ["fan_mode off", "off"]).endswith(
+        "set fan fan_mode off; set fan off"
+    )
+    assert model.timer_minutes("30") == 30
+    assert model.timer_minutes("x") == 0
+    assert model.timer_minutes(99999) == 1440
+    assert model.running_timers({"a": 10, "b": 30, "c": "x"}, 20) == {"b": 30}
+
+
+@pytest.mark.asyncio
+async def test_timer_switches_off_later(module, mocker):
+    _, answer = await pair(module)
+    lamp = next(
+        t
+        for t in module.data["tiles"].values()
+        if t["kind"] == "light" and not t["state"].get("on")
+    )
+    sent = []
+    send = module.fake.send
+
+    async def spy(hash, code):
+        sent.append(code)
+        return await send(hash, code)
+
+    mocker.patch("fhempy.lib.fhem.sendCommandHash", spy)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json(
+            {"type": "action", "action": "timer", "id": lamp["id"], "value": 30}
+        )
+        while True:
+            tile = (await next_of(ws, "tile"))["tile"]
+            if tile["id"] == lamp["id"] and tile.get("timer"):
+                break
+        # off before: "on for 30 min" switches it on first
+        assert f"{lamp['id']} on" in module.fake.sets
+        assert any(
+            f"dashboard_timer_{lamp['id']} at +00:30:00 set {lamp['id']} off" in c
+            for c in sent
+        )
+        assert lamp["id"] in json.loads(mock_fhem.readings[NAME][".timers"])
+        # switching off by hand ends the timer
+        await ws.send_json({"type": "action", "action": "off", "id": lamp["id"]})
+        while True:
+            tile = (await next_of(ws, "tile"))["tile"]
+            if tile["id"] == lamp["id"] and not tile["state"].get("on"):
+                break
+        assert "timer" not in tile
+        assert lamp["id"] not in module.timers
+        assert any(
+            f"'dashboard_timer_{lamp['id']}'; CommandDelete" in c for c in sent
+        )
         await ws.close()
