@@ -1788,6 +1788,126 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def view_device(name, sets="", readings=None, **extra):
+    return {
+        "NAME": name,
+        "TYPE": extra.pop("TYPE", "MQTT2_DEVICE"),
+        "FHEMPYTYPE": extra.pop("FHEMPYTYPE", ""),
+        "alias": "",
+        "room": "Haus",
+        "sets": sets,
+        "readings": readings or {},
+        "attrs": extra.pop("attrs", {}),
+    }
+
+
+def test_device_views_found_by_commands_and_readings():
+    from fhempy.lib.dashboard import views
+
+    vacuum = view_device(
+        "robby",
+        "start stop pause dock locate fan_speed:quiet,balanced,turbo",
+        {"state": "cleaning", "batteryPercent": "81", "cleaned_area": "23.5"},
+    )
+    car = view_device(
+        "x1",
+        "lock unlock start_charging stop_charging update",
+        {"soc": "64", "range": "212 km", "mileage": "12345", "charging_status": "CHARGING", "locked": "true", "charging_power": "7.4"},
+    )
+    kia = view_device("ev", "", {"soc": "50"}, TYPE="fhempy", FHEMPYTYPE="kia_hyundai")
+    wallbox = view_device(
+        "wb",
+        "charge_mode:Fast,Eco,Eco+,Stop",
+        {"plug_status": "EV Connected", "charge_mode": "Eco", "power_ct": "3.7", "energy_today": "8.2"},
+    )
+    heatpump = view_device(
+        "wp",
+        "",
+        {"flow_temperature": "35.2", "return_temperature": "30.1", "outside_temperature": "4", "compressor": "on", "cop": "3.9"},
+    )
+    valve = view_device("garden", "on off", {"state": "off", "soil_moisture": "31"})
+    plug = view_device("plug", "on off", {"state": "on", "power": "12"})
+    # a name says nothing
+    named = view_device("Saugroboter_Auto_Wallbox", "on off", {"state": "on"})
+    assert views.detect(vacuum) == "vacuum"
+    assert views.detect(car) == "car"
+    assert views.detect(kia) == "car"
+    assert views.detect(wallbox) == "wallbox"
+    assert views.detect(heatpump) == "heatpump"
+    assert views.detect(valve) == "irrigation"
+    assert views.detect(plug) is None
+    assert views.detect(named) is None
+    assert views.detect(view_device("v", "", attrs={"genericDeviceType": "vacuum"})) == "vacuum"
+
+    assert views.state("vacuum", vacuum) == {"status": "cleaning", "battery": 81, "area": 23.5}
+    assert views.features("vacuum", vacuum) == {
+        "view": "vacuum",
+        "actions": ["start", "pause", "stop", "dock", "locate"],
+        "modes": ["quiet", "balanced", "turbo"],
+    }
+    state = views.state("car", car)
+    assert state["charging"] is True and state["locked"] is True
+    assert state["soc"] == 64 and state["range"] == 212 and state["mileage"] == 12345
+    assert state["power"] == 7400
+    assert views.state("wallbox", wallbox)["power"] == 3700
+    assert views.state("wallbox", wallbox)["mode"] == "Eco"
+    hp = views.state("heatpump", heatpump)
+    assert hp["compressor"] is True and hp["flow"] == 35.2 and hp["cop"] == 3.9
+    heatpump["readings"]["compressor"] = "62"
+    assert views.state("heatpump", heatpump)["compressor_pct"] == 62
+    heatpump["readings"]["compressor"] = "0"
+    assert views.state("heatpump", heatpump)["compressor"] is False
+    assert views.state("irrigation", valve) == {"moisture": 31, "on": False}
+
+    # only commands the device has, modes only from its list
+    assert views.command("vacuum", vacuum, "dock") == ["dock"]
+    assert views.command("vacuum", vacuum, "mode", "turbo") == ["fan_speed turbo"]
+    assert views.command("vacuum", vacuum, "mode", "rm -rf") == []
+    assert views.command("car", car, "unlock") == ["unlock"]
+    assert views.command("car", car, "climate_start") == []
+    assert views.command("wallbox", wallbox, "mode", "Eco+") == ["charge_mode Eco+"]
+    assert views.command("irrigation", valve, "toggle") == ["on"]
+    assert views.command("irrigation", valve, "shell") == []
+
+    assert views.parse_views("robby:vacuum, plug:none,bad:rocket,:car") == {
+        "robby": "vacuum",
+        "plug": "none",
+    }
+    assert views.format_views({"b": "car", "a": "none"}) == "a:none,b:car"
+
+    # in the model: own kind, 'none' keeps the normal tile, chosen wins
+    built = model.build(
+        {"robby": vacuum, "garden": valve, "plug": plug},
+        device_views={"garden": "none", "plug": "irrigation"},
+    )
+    tiles = built["tiles"]
+    assert tiles["robby"]["kind"] == "vacuum" and tiles["robby"]["detected"] is True
+    assert tiles["garden"]["kind"] == "switch"
+    assert tiles["plug"]["kind"] == "irrigation" and tiles["plug"]["detected"] is False
+    assert tiles["plug"]["state"]["on"] is True
+    assert model.command(tiles["robby"], vacuum, "start") == ["start"]
+    assert "irrigation" in model.TIMER_KINDS
+    assert "cleaned_area" in model.READINGS
+
+
+@pytest.mark.asyncio
+async def test_device_view_chosen_on_tablet(module):
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json(
+            {"type": "device_view", "id": "ku_Kaffeemaschine", "view": "irrigation"}
+        )
+        tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
+        assert tile["kind"] == "irrigation"
+        assert module._attr_device_views == "ku_Kaffeemaschine:irrigation"
+        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": "rocket"})
+        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": ""})
+        tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
+        assert tile["kind"] == "outlet"
+        assert module._attr_device_views == ""
+
+
 def test_energy_report_from_hourly_values():
     hour = 1_800_000_000
     now = hour + 3 * 3600 + 1800

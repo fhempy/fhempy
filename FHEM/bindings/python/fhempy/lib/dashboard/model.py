@@ -11,7 +11,7 @@ import datetime
 import re
 
 from ..matter_bridge import devices as kinds
-from . import inputs, media
+from . import inputs, media, views
 
 # FHEMWEB rooms which are no rooms of the home
 HIDDEN_ROOMS = {
@@ -49,7 +49,7 @@ KIND_ORDER = (
 )
 SWITCHABLE = ("light", "dimmer", "switch", "outlet")
 # tiles with "switch off in 15 min / 30 min / 1 h / 2 h"
-TIMER_KINDS = SWITCHABLE + ("fan",)
+TIMER_KINDS = SWITCHABLE + ("fan", "irrigation")
 TIMER_PREFIX = "dashboard_timer_"
 LIGHTS = ("light", "dimmer")
 DOOR_WORDS = ("tür", "tuer", "door", "tor", "gate", "garage", "eingang", "entrance")
@@ -153,6 +153,7 @@ DOORBELL_VALUES = (
 )
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
+READINGS = READINGS + tuple(r for r in views.READINGS if r not in READINGS)
 READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
 # CO2 of the air in ppm
 CO2_READINGS = ("co2", "CO2", "carbonDioxide", "carbon_dioxide")
@@ -308,11 +309,18 @@ WINDOW_WORDS = ("fenster", "window", "tür", "tuer", "door", "kontakt", "contact
 CONTACT_STATES = ("open", "opened", "closed", "tilted", "offen", "geschlossen", "gekippt")
 
 
-def kind_of(info):
+def kind_of(info, view=None):
+    """view: chosen on a tablet (attr device_views), 'none': no own view"""
     if inputs.has_inputs(info):
         return "inputs"
     if media.is_media(info):
         return "media"
+    if view in views.VIEWS:
+        return view
+    if view != "none":
+        found = views.detect(info)
+        if found is not None:
+            return found
     hazard = hazard_kind(info)
     if hazard is not None:
         return hazard
@@ -429,6 +437,8 @@ def tile_state(kind, info):
         state["fan"] = kinds.state("fan", info)
     if kind in LIGHTS and color_caps(info):
         state.update(color_state(info))
+    if kind in views.VIEWS:
+        return views.state(kind, info)
     if kind in ("switch", "outlet"):
         power = kinds.number(_reading(info, "power"))
         if power is not None:
@@ -542,8 +552,8 @@ def low_batteries(infos):
     return result
 
 
-def tile(info, room=None):
-    kind = kind_of(info)
+def tile(info, room=None, view=None):
+    kind = kind_of(info, view)
     if kind is None:
         return None
     result = {
@@ -567,6 +577,9 @@ def tile(info, room=None):
         result["media"] = media.features(info)
     if kind == "inputs":
         result["inputs"] = inputs.parse(info)
+    if kind in views.VIEWS:
+        result["view"] = views.features(kind, info)
+        result["detected"] = view not in views.VIEWS
     if kind == "fan" or kinds.has_fan_endpoint(kind, info):
         result["fan"] = True
     if kind in LIGHTS:
@@ -761,11 +774,13 @@ def keeps_on(info):
 MEASURE_KINDS = ("switch", "outlet")
 
 
-def build(infos, order=None, keep_on=None, measure=None):
+def build(infos, order=None, keep_on=None, measure=None, device_views=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)
     keep_on: devices 'All off' leaves on, None: found by their names
-    measure: plugs which only measure, the tablets never switch them"""
+    measure: plugs which only measure, the tablets never switch them
+    device_views: device -> own view or 'none', see views.parse_views"""
+    device_views = device_views or {}
     tiles = {}
     rooms = {}
     scenes = []
@@ -775,7 +790,11 @@ def build(infos, order=None, keep_on=None, measure=None):
             scenes.extend(_scene_items(name, info))
             continue
         device_rooms = rooms_of(info)
-        item = tile(info, device_rooms[0]) if device_rooms else None
+        item = (
+            tile(info, device_rooms[0], device_views.get(name))
+            if device_rooms
+            else None
+        )
         if item is None:
             continue
         if item["kind"] in SWITCHABLE:
@@ -1318,6 +1337,8 @@ def command(item, info, action, value=None):
         return []
     if item["kind"] == "media":
         return media.command(info, action, value)
+    if item["kind"] in views.VIEWS:
+        return views.command(item["kind"], info, action, value)
     if item["kind"] == "inputs":
         if action != "input" or not isinstance(value, dict):
             return []

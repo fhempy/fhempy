@@ -63,6 +63,12 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    vwStart: "Starten", vwPause: "Pause", vwStop: "Stopp", vwDock: "Zur Station", vwLocate: "Suchen", vwBattery: "Akku", vwArea: "Fläche", vwDuration: "Dauer", vwFan: "Saugstärke", vwError: "Fehler", vwCleaning: "Saugt",
+    vwSoc: "Akku", vwFuel: "Tank", vwRange: "Reichweite", vwCharging: "Lädt", vwNotCharging: "Lädt nicht", vwPlugged: "Eingesteckt", vwUnplugged: "Nicht eingesteckt", vwMileage: "Kilometerstand", vwLocked: "Verriegelt", vwUnlocked: "Offen",
+    vwChargeStart: "Laden starten", vwChargeStop: "Laden stoppen", vwClimateStart: "Klima an", vwClimateStop: "Klima aus", vwUpdate: "Aktualisieren", vwLock: "Verriegeln", vwUnlock: "Entriegeln", vwUnlockSure: "Nochmal tippen zum Entriegeln", vwRemaining: "Noch",
+    vwPower: "Ladeleistung", vwEnergy: "Geladen", vwMode: "Modus", vwFlow: "Vorlauf", vwReturn: "Rücklauf", vwOutside: "Außen", vwDhw: "Warmwasser", vwCompressor: "Verdichter", vwCop: "COP", vwHpPower: "Leistung", vwDhwBoost: "Warmwasser einmalig", vwCompOn: "läuft", vwCompOff: "aus",
+    vwMoisture: "Bodenfeuchte", vwNext: "Nächster Start", vwWatering: "Bewässert", vwDry: "Trocken",
+    vwViewAs: "Anzeigen als", vwViewLead: "Eigene Ansicht für Geräte, die mehr als ein Schalter sind. Erkannt an Befehlen und Readings, hier änderbar.", vwNormal: "Normal", vwvacuum: "Saugroboter", vwcar: "Auto", vwwallbox: "Wallbox", vwheatpump: "Wärmepumpe", vwirrigation: "Bewässerung", vwDetected: "erkannt",
     enTitle: "Energie", enDay: "Heute", enWeek: "7 Tage", enMonth: "30 Tage", enSolar: "Solar", enLoad: "Verbrauch", enImport: "Netzbezug", enExport: "Eingespeist", enAutarky: "Selbst versorgt", enCost: "Kosten", enRevenue: "Vergütung",
     enTop: "Größte Verbraucher", enTopLead: "Geräte, die ihre Leistung melden", enChart: "Verlauf", enNoTimeline: "Für Tage und Wochen braucht es das timeline-Modul in FHEM, es merkt sich die Leistung.", enEmpty: "Noch keine Werte für diesen Zeitraum.",
     enPrice: "Strompreis", enPriceLead: "Für die Kosten, in €/kWh. Ein Preis-Reading (z. B. tibber) hat Vorrang.", enFeedIn: "Einspeisung €/kWh (optional)", enPriceReading: "Preis vom Stromanbieter", enPriceSave: "Speichern", enPriceEdit: "Ändern", enPriceNone: "Kein Preis eingetragen", enFeedInShort: "Einspeisung",
@@ -150,6 +156,12 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    vwStart: "Start", vwPause: "Pause", vwStop: "Stop", vwDock: "Back to dock", vwLocate: "Locate", vwBattery: "Battery", vwArea: "Area", vwDuration: "Duration", vwFan: "Suction", vwError: "Error", vwCleaning: "Cleaning",
+    vwSoc: "Battery", vwFuel: "Fuel", vwRange: "Range", vwCharging: "Charging", vwNotCharging: "Not charging", vwPlugged: "Plugged in", vwUnplugged: "Not plugged in", vwMileage: "Mileage", vwLocked: "Locked", vwUnlocked: "Unlocked",
+    vwChargeStart: "Start charging", vwChargeStop: "Stop charging", vwClimateStart: "Climate on", vwClimateStop: "Climate off", vwUpdate: "Update", vwLock: "Lock", vwUnlock: "Unlock", vwUnlockSure: "Tap again to unlock", vwRemaining: "Left",
+    vwPower: "Charging power", vwEnergy: "Charged", vwMode: "Mode", vwFlow: "Flow", vwReturn: "Return", vwOutside: "Outside", vwDhw: "Hot water", vwCompressor: "Compressor", vwCop: "COP", vwHpPower: "Power", vwDhwBoost: "Hot water once", vwCompOn: "running", vwCompOff: "off",
+    vwMoisture: "Soil moisture", vwNext: "Next start", vwWatering: "Watering", vwDry: "Dry",
+    vwViewAs: "Show as", vwViewLead: "Own view for devices which are more than a switch. Found by their commands and readings, changed here.", vwNormal: "Normal", vwvacuum: "Robot vacuum", vwcar: "Car", vwwallbox: "Wallbox", vwheatpump: "Heat pump", vwirrigation: "Irrigation", vwDetected: "detected",
     enTitle: "Energy", enDay: "Today", enWeek: "7 days", enMonth: "30 days", enSolar: "Solar", enLoad: "Usage", enImport: "From grid", enExport: "Fed in", enAutarky: "Self-supplied", enCost: "Cost", enRevenue: "Feed-in pay",
     enTop: "Biggest consumers", enTopLead: "Devices which report their power", enChart: "History", enNoTimeline: "Days and weeks need the timeline module in FHEM, it remembers the power.", enEmpty: "No values for this period yet.",
     enPrice: "Electricity price", enPriceLead: "For the cost, in €/kWh. A price reading (e.g. tibber) wins.", enFeedIn: "Feed-in €/kWh (optional)", enPriceReading: "Price of the supplier", enPriceSave: "Save", enPriceEdit: "Change", enPriceNone: "No price set", enFeedInShort: "Feed-in",
@@ -245,6 +257,10 @@
     bath: '<path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2"/>',
     pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-6zM2 10h2M20 10h2M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
     desk: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    robot: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="8.5" r="2.2"/><path d="M6.5 15h11"/>',
+    evse: '<rect x="5" y="3" width="10" height="18" rx="2"/><path d="M10.5 7 8.5 11h3l-2 4M15 9h2.5a1 1 0 0 1 1 1v6.5a1.5 1.5 0 0 0 3 0V8"/>',
+    heatpump: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="10" cy="12" r="4"/><path d="M10 8v8M6 12h8M17 9h1.5M17 12h1.5M17 15h1.5"/>',
+    sprinkler: '<path d="M12 21v-8M8 21h8M12 13 6 7M12 13l6-6M12 13V4M4 9h.01M20 9h.01M7 3.5h.01M17 3.5h.01"/>',
     car: '<path d="M5 16V12l2-5h10l2 5v4M3 16h18v2H3zM5 12h14M7 18v2M17 18v2"/>',
     tree: '<path d="M12 3l6 9h-3l4 6H5l4-6H6l6-9zM12 18v3"/>',
     star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
@@ -457,8 +473,9 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan", inputs: "sliders", smoke: "smoke", water: "drop" };
-  var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1, fan: 1 };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan", inputs: "sliders", smoke: "smoke", water: "drop", vacuum: "robot", car: "car", wallbox: "evse", heatpump: "heatpump", irrigation: "sprinkler" };
+  var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1, fan: 1, irrigation: 1 };
+  var VIEWS = ["vacuum", "car", "wallbox", "heatpump", "irrigation"];
   var FAN_MODES = ["off", "low", "medium", "high"];
   function fanText(f) { return f && f.mode ? t("fan" + f.mode.charAt(0).toUpperCase() + f.mode.slice(1)) + (f.percent && f.mode !== "off" ? " · " + f.percent + " %" : "") : "–"; }
   function fanHtml(f) {
@@ -652,10 +669,121 @@
       sub = inputsLine(tile) || st.state || "";
     } else if (k === "fan") {
       icon = "fan"; if (st.on) { cls = "fanon"; } sub = st.on ? fanText(st) : t("off");
+    } else if (VIEWS.indexOf(k) >= 0) {
+      var vl = viewLook(tile); cls = vl.cls; sub = vl.sub;
     } else if (k === "media") {
       if (st.playing) { cls = "playing"; sub = mediaLine(st) || t("playing"); } else { sub = st.paused ? [t("paused"), mediaLine(st)].filter(Boolean).join(" · ") : st.on ? t("idle") : t("off"); }
     }
     return { cls: cls, sub: sub, icon: icon, bar: bar };
+  }
+
+  // ---------- own views: robot vacuum, car, wallbox, heat pump, irrigation ----------
+  function viewRunning(st) { return /clean|saug|running|spot|zone|room/i.test(st.status || "") && !/return|dock|charg|idle|pause/i.test(st.status || ""); }
+  function viewLook(tile) {
+    var st = tile.state || {}, k = tile.kind, cls = "", parts = [];
+    if (k === "vacuum") {
+      if (viewRunning(st)) { cls = "power"; }
+      if (st.status) { parts.push(st.status); }
+      if (has(st.battery)) { parts.push(Math.round(st.battery) + " %"); }
+    } else if (k === "car") {
+      if (st.charging) { cls = "power"; parts.push(t("vwCharging")); }
+      if (has(st.soc)) { parts.push(Math.round(st.soc) + " %"); } else if (has(st.fuel)) { parts.push(Math.round(st.fuel) + " %"); }
+      if (has(st.range)) { parts.push(Math.round(st.range) + " km"); }
+      if (st.locked === false) { cls = "warn"; parts.push(t("vwUnlocked")); }
+    } else if (k === "wallbox") {
+      if (st.power > 0) { cls = "power"; parts.push(watt(st.power)); }
+      if (st.plugged === true || st.plugged === false) { parts.push(t(st.plugged ? "vwPlugged" : "vwUnplugged")); } else if (st.plugged) { parts.push(st.plugged); }
+      if (!parts.length && st.status) { parts.push(st.status); }
+    } else if (k === "heatpump") {
+      if (st.compressor) { cls = "heat"; }
+      if (has(st.flow)) { parts.push(t("vwFlow") + " " + num(st.flow, 0) + "°"); }
+      if (has(st.dhw)) { parts.push(t("vwDhw") + " " + num(st.dhw, 0) + "°"); }
+      if (!parts.length && st.status) { parts.push(st.status); }
+    } else if (k === "irrigation") {
+      if (st.on) { cls = "cool"; parts.push(t("vwWatering")); } else { parts.push(t("off")); }
+      if (has(st.moisture)) { parts.push(Math.round(st.moisture) + " %"); }
+    }
+    return { cls: cls, sub: parts.join(" · ") || "–" };
+  }
+  function viewFacts(tile) {
+    var st = tile.state || {}, k = tile.kind, f = [];
+    function add(cond, value, label) { if (cond) { f.push([value, label]); } }
+    if (k === "vacuum") {
+      add(st.status, st.status, ""); add(has(st.battery), Math.round(st.battery) + " %", t("vwBattery"));
+      add(has(st.area), num(st.area, 0) + " m²", t("vwArea")); add(has(st.duration), Math.round(st.duration) + " min", t("vwDuration"));
+      add(st.fan && !(tile.view && tile.view.modes), st.fan, t("vwFan"));
+    } else if (k === "car") {
+      add(has(st.soc), Math.round(st.soc) + " %", t("vwSoc")); add(has(st.fuel), Math.round(st.fuel) + " %", t("vwFuel"));
+      add(has(st.range), Math.round(st.range) + " km", t("vwRange"));
+      add(st.charging === true || st.charging === false, t(st.charging ? "vwCharging" : "vwNotCharging"), st.power ? watt(st.power) : "");
+      add(has(st.remaining) && st.charging, Math.round(st.remaining) + " min", t("vwRemaining"));
+      add(st.plugged === true || st.plugged === false, t(st.plugged ? "vwPlugged" : "vwUnplugged"), "");
+      add(st.locked === true || st.locked === false, t(st.locked ? "vwLocked" : "vwUnlocked"), "");
+      add(has(st.mileage), Math.round(st.mileage).toLocaleString(GERMAN ? "de-DE" : "en-GB") + " km", t("vwMileage"));
+    } else if (k === "wallbox") {
+      add(has(st.power), watt(st.power), t("vwPower")); add(has(st.energy), num(st.energy, 1) + " kWh", t("vwEnergy"));
+      add(st.plugged !== undefined, st.plugged === true ? t("vwPlugged") : st.plugged === false ? t("vwUnplugged") : st.plugged, "");
+      add(st.status, st.status, ""); add(st.mode && !(tile.view && tile.view.modes), st.mode, t("vwMode"));
+    } else if (k === "heatpump") {
+      add(has(st.flow), num(st.flow, 1) + "°", t("vwFlow")); add(has(st.return), num(st.return, 1) + "°", t("vwReturn"));
+      add(has(st.outside), num(st.outside, 1) + "°", t("vwOutside")); add(has(st.dhw), num(st.dhw, 1) + "°", t("vwDhw"));
+      add(st.compressor !== undefined, has(st.compressor_pct) ? Math.round(st.compressor_pct) + " %" : t(st.compressor ? "vwCompOn" : "vwCompOff"), t("vwCompressor"));
+      add(has(st.cop), num(st.cop, 1), t("vwCop")); add(has(st.power), watt(st.power), t("vwHpPower"));
+      add(st.status && (!tile.view || !tile.view.modes || tile.view.modes.indexOf(st.status) < 0), st.status, "");
+    } else if (k === "irrigation") {
+      add(has(st.moisture), Math.round(st.moisture) + " %", t("vwMoisture")); add(st.next, st.next, t("vwNext"));
+      add(has(st.remaining) && st.on, Math.round(st.remaining) + " min", t("vwRemaining"));
+    }
+    add(st.error, st.error, t("vwError"));
+    return f;
+  }
+  var VIEW_ACTIONS = { start: ["vwStart", "play"], pause: ["vwPause", "pause"], stop: ["vwStop", "x"], dock: ["vwDock", "home"], locate: ["vwLocate", "bell"], lock: ["vwLock", "lock"], unlock: ["vwUnlock", "unlock"],
+    charge_start: ["vwChargeStart", "bolt"], charge_stop: ["vwChargeStop", "x"], climate_start: ["vwClimateStart", "fan"], climate_stop: ["vwClimateStop", "x"], update: ["vwUpdate", "clock"], dhw_boost: ["vwDhwBoost", "drop"] };
+  function viewSheetHtml(tile) {
+    var st = tile.state || {}, v = tile.view || {}, html = "", facts = viewFacts(tile), ro = S.tablet && S.tablet.readonly;
+    if (facts.length) { html += '<div class="group facts2 vfacts">' + facts.map(function (f) { return '<div class="fact2"><b>' + esc(f[0]) + "</b><span>" + esc(f[1]) + "</span></div>"; }).join("") + "</div>"; }
+    if (tile.kind === "irrigation" && !ro) {
+      html += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("drop", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>" + timerHtml(tile);
+    }
+    var acts = (v.actions || []).filter(function (a) { return VIEW_ACTIONS[a]; });
+    if (acts.length && !ro) {
+      html += '<div class="group"><div class="actions vacts">' + acts.map(function (a) {
+        return '<button class="pill' + (a === "unlock" ? " danger" : "") + '" data-vact="' + a + '">' + I(VIEW_ACTIONS[a][1], 20) + " " + esc(t(VIEW_ACTIONS[a][0])) + "</button>";
+      }).join("") + "</div></div>";
+    }
+    if (v.modes && v.modes.length && !ro) {
+      var cur = tile.kind === "vacuum" ? st.fan : st.mode || st.status;
+      html += '<div class="group"><div class="label">' + esc(t(tile.kind === "vacuum" ? "vwFan" : "vwMode")) + '</div><div class="seg">' + v.modes.map(function (m) {
+        return '<button class="' + (String(cur) === m ? "on" : "") + '" data-vmode="' + esc(m) + '">' + esc(m) + "</button>";
+      }).join("") + "</div></div>";
+    }
+    return html;
+  }
+  function viewChoiceHtml(tile) {
+    var cur = VIEWS.indexOf(tile.kind) >= 0 ? tile.kind : "";
+    var opts = [["", t("vwNormal")]].concat(VIEWS.map(function (v) { return [v, t("vw" + v)]; }));
+    return '<div class="group"><div class="label">' + esc(t("vwViewAs")) + (cur && tile.detected ? ' <span class="sub">(' + esc(t("vwDetected")) + ")</span>" : "") + '</div><div class="lead vlead">' + esc(t("vwViewLead")) + '</div><div class="seg vchoice">' + opts.map(function (o) {
+      return '<button class="' + (o[0] === cur ? "on" : "") + '" data-vview="' + o[0] + '">' + esc(o[1]) + "</button>";
+    }).join("") + "</div></div>";
+  }
+  function viewClick(target) {
+    var el, id = S.sheet && S.sheet.id; if (!id) { return false; }
+    if ((el = closest(target, "data-vact"))) {
+      var a = el.getAttribute("data-vact");
+      if (a === "unlock" && !armed(el, "vunlock:" + id, t("vwUnlockSure"))) { return true; }
+      act(id, a); return true;
+    }
+    if ((el = closest(target, "data-vmode"))) {
+      var m = el.getAttribute("data-vmode"), tile = S.tiles[id];
+      act(id, "mode", m, tile && tile.kind === "vacuum" ? { fan: m } : { mode: m }); renderSheet(); return true;
+    }
+    if ((el = closest(target, "data-vview"))) {
+      var view = el.getAttribute("data-vview"), tl = S.tiles[id];
+      // back to "Normal" on a detected device means: no own view
+      if (!view && tl && tl.detected && VIEWS.indexOf(tl.kind) >= 0) { view = "none"; }
+      send({ type: "device_view", id: id, view: view }); return true;
+    }
+    return false;
   }
 
   function tileHtml(id, editState) {
@@ -1331,6 +1459,8 @@
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
+    if (VIEWS.indexOf(k) >= 0) { body += viewSheetHtml(tile); }
+    if (S.tablet && S.tablet.arrange && (VIEWS.indexOf(k) >= 0 || k === "switch" || k === "outlet")) { body += viewChoiceHtml(tile); }
     if (tile.fan && k !== "fan") { body += fanHtml(st.fan); }
     if (S.tablet && !S.tablet.readonly && k !== "media") { body += noticeEditHtml(tile); }
     body += sheetTrendsHtml() + sheetHistoryHtml();
@@ -3391,6 +3521,7 @@
     if (target.id === "sheet") { closeSheet(); return; }
     if ((el = closest(target, "data-reload"))) { location.reload(); return; }
     if ((el = closest(target, "data-retry"))) { retry(el.getAttribute("data-retry")); return; }
+    if (viewClick(target)) { return; }
     if ((el = closest(target, "data-do"))) {
       var sid = S.sheet.id, what = el.getAttribute("data-do");
       if (what === "unlock" && !armed(el, "unlock:" + sid, t("unlockSure"))) { return; }

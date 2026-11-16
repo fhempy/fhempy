@@ -225,6 +225,23 @@ with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`h
 disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
 tile, so *All off* and *Leave home* never disarm it.
 
+## Robot vacuum, car, wallbox, heat pump and irrigation
+
+Devices which are more than a switch get their own view, found by their set commands and readings (never by their
+name):
+
+| View | Found by | Shows | Buttons |
+|------|----------|-------|---------|
+| Robot vacuum | a start and a dock command (`start`/`clean` and `dock`/`charge`/`return_to_base`) or genericDeviceType `vacuum` | status, battery, area, duration | start, pause, stop, back to dock, locate, suction from the set list |
+| Car | fhempy car modules (bmw, volvo, kia_hyundai, skoda_api, skodaconnect, seatconnect) or a mileage with range or charge | charge, range, charging, plugged in, locked, mileage | lock, unlock (tap twice), start/stop charging, climate, update |
+| Wallbox | zappi or a plug status with charge mode or charged energy | charging power, charged energy, plugged in | charge mode from the set list, start/stop |
+| Heat pump | two of flow and return temperature, compressor, COP | temperatures, compressor, COP, power | mode from the set list, hot water once |
+| Irrigation | an on/off device with soil moisture | soil moisture, next start | on, off, on for 15 min to 2 h |
+
+Only the commands the device has are offered. On a tablet which may arrange rooms the details have *Show as* to choose
+another view or *Normal* (also for plugs and switches, e.g. a valve without moisture sensor as irrigation). This is
+stored in `attr <dashboard> device_views` (`Robby:vacuum,Valve:irrigation,Plug:none`).
+
 ## Energy
 
 A tap on the energy card of *Home* opens the energy page: today by hour, the last 7 or 30 days by day. It shows how much
@@ -342,6 +359,8 @@ into the forum or a GitHub issue.
 | door_opener | Command of the door opener without `set` |
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
+| device_views | Own views of devices (`Device:vacuum`, `car`, `wallbox`, `heatpump`, `irrigation` or `none`), empty: found automatically |
+
 | energy_price | Price of electricity in €/kWh for the energy page, optionally with the feed-in tariff (`0.32,0.08`) |
 
 | measure_only | Plugs which only measure (fridge, freezer): power shown, never switched |
