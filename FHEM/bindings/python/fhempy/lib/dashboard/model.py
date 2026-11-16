@@ -714,6 +714,14 @@ def header(infos, tiles):
     }
 
 
+def clean_pin(value):
+    """the PIN of the settings: 4 to 8 digits, None: no PIN"""
+    pin = str(value or "").strip()
+    if re.fullmatch(r"\d{4,8}", pin):
+        return pin
+    return None
+
+
 # --- commands of the tablets ---
 
 

@@ -1271,3 +1271,43 @@ def test_colour_lights():
     plain = light("")
     assert "color" not in model.tile(plain)
     assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []
+
+
+def test_clean_pin():
+    assert model.clean_pin(" 1234 ") == "1234"
+    assert model.clean_pin("12345678") == "12345678"
+    assert model.clean_pin("123") is None
+    assert model.clean_pin("12a4") is None
+    assert model.clean_pin("") is None
+
+
+@pytest.mark.asyncio
+async def test_settings_pin(module):
+    _, answer = await pair(module)
+    tablet = next(iter(module.tablets.values()))
+    tablet["place"] = "wall"
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["tablet"]["pin"] is False
+        module._attr_settings_pin = "4711"
+        module.set_attr_settings_pin(module.hash)
+        assert (await next_of(ws, "tablet"))["tablet"]["pin"] is True
+        # locked: the layout does not change
+        await ws.send_json({"type": "layout", "layout": {"theme": "light"}})
+        await next_of(ws, "locked")
+        assert (tablet.get("layout") or {}).get("theme") != "light"
+        await ws.send_json({"type": "unlock", "pin": "0000"})
+        wrong = await next_of(ws, "unlocked")
+        assert wrong["ok"] is False and wrong["wait"] is False
+        await ws.send_json({"type": "unlock", "pin": "4711"})
+        assert (await next_of(ws, "unlocked"))["ok"] is True
+        await ws.send_json({"type": "layout", "layout": {"theme": "light"}})
+        assert (await next_of(ws, "tablet"))["tablet"]["layout"]["theme"] == "light"
+        # too many wrong PINs: even the right one waits
+        module.unlocked = {}
+        for _ in range(dash_module.PIN_TRIES):
+            await ws.send_json({"type": "unlock", "pin": "0000"})
+            last = await next_of(ws, "unlocked")
+        assert last["wait"] is True
+        await ws.send_json({"type": "unlock", "pin": "4711"})
+        assert (await next_of(ws, "unlocked"))["ok"] is False

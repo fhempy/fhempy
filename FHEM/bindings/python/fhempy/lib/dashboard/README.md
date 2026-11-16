@@ -92,6 +92,13 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+## PIN for the settings
+
+On a family tablet somebody may rearrange everything by accident. With `attr <dashboard> settings_pin 1234` the
+settings, arranging rooms, editing tiles and *Leave on* ask for the PIN first, then stay open for 10 minutes on that
+tablet. FHEM checks the PIN, the tablets never get it. After 5 wrong PINs a tablet waits 5 minutes. A new tablet is
+set up without the PIN.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
@@ -170,6 +177,7 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
 | go2rtc | Address of an existing go2rtc |
 | door_camera | Camera shown when somebody rings |
 | door_opener | Command of the door opener without `set` |
+| settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
 
 ## Set commands

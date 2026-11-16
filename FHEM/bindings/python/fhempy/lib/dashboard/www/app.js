@@ -19,6 +19,7 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
@@ -67,6 +68,7 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
@@ -262,6 +264,8 @@
       return;
     }
     if (m.type === "failed") { failed(m); return; }
+    if (m.type === "unlocked") { pinAnswer(m); return; }
+    if (m.type === "locked") { S.unlockedUntil = 0; showToast(t("pinLocked"), null, 4000); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -1027,7 +1031,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.pin !== undefined]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1046,6 +1050,7 @@
     if (S.sheet.people) { renderPeople(); return; }
     if (S.sheet.room) { renderRoomPop(); return; }
     if (S.sheet.overview) { renderOverview(); return; }
+    if (S.sheet.pin !== undefined) { renderPin(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1497,7 +1502,40 @@
     sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
-  function openSettings() { S.sheet = { settings: true }; renderSettings(); }
+  function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
+
+  // ---------- PIN for the settings ----------
+  function pinOk() { return !(S.tablet && S.tablet.pin) || Date.now() < (S.unlockedUntil || 0) * 1000; }
+  function askPin(then) {
+    S.pinReturn = S.sheet && !S.sheet.pin ? S.sheet : null; S.afterPin = then || null;
+    S.sheet = { pin: "", error: "" }; renderSheet();
+  }
+  function renderPin() {
+    var p = S.sheet, dots = "";
+    for (var i = 0; i < Math.max(4, p.pin.length); i++) { dots += '<i class="' + (i < p.pin.length ? "on" : "") + '"></i>'; }
+    var keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"].map(function (k) {
+      if (k === "del") { return '<button class="pkey fn" data-pinkey="del" aria-label="⌫">' + I("left", 22) + "</button>"; }
+      if (k === "ok") { return '<button class="pkey fn ok" data-pinkey="ok"' + (p.pin.length >= 4 ? "" : " disabled") + ">" + esc(t("pinOk")) + "</button>"; }
+      return '<button class="pkey" data-pinkey="' + k + '">' + k + "</button>";
+    }).join("");
+    sheetShell('<div class="head"><div><h1>' + esc(t("pinTitle")) + '</h1><div class="subtitle">' + esc(p.error || t("pinLead")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="pinpad"><div class="pdots' + (p.error ? " bad" : "") + '">' + dots + '</div><div class="pkeys">' + keys + "</div></div>", "pinsheet");
+  }
+  function pinKey(k) {
+    var p = S.sheet; if (!p || p.pin === undefined || p.busy) { return; }
+    if (k === "del") { p.pin = p.pin.slice(0, -1); }
+    else if (k === "ok") { if (p.pin.length >= 4) { p.busy = true; send({ type: "unlock", pin: p.pin }); } }
+    else if (p.pin.length < 8) { p.pin += k; p.error = ""; }
+    renderSheet();
+  }
+  function pinAnswer(m) {
+    if (!S.sheet || S.sheet.pin === undefined) { return; }
+    if (!m.ok) { S.sheet = { pin: "", error: t(m.wait ? "pinWait" : "pinWrong") }; renderSheet(); return; }
+    S.unlockedUntil = m.until;
+    var then = S.afterPin; S.sheet = S.pinReturn; S.afterPin = null; S.pinReturn = null;
+    if (then) { closeSheet(); then(); } else if (S.sheet) { renderSheet(); } else { closeSheet(); }
+    showToast(t("pinOpen"), null, 3000);
+  }
   function settingsRow(attr, icon, label, value, extra) {
     return '<button class="mrow" ' + attr + '><span class="mic">' + I(icon, 20) + '</span><span class="ml"><b>' + esc(label) + "</b>" + (value ? "<span>" + esc(value) + "</span>" : "") + "</span>" + (extra || I("chev", 18)) + "</button>";
   }
@@ -2236,7 +2274,9 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
     if ((el = closest(target, "data-keepon"))) {
+      if (!pinOk()) { askPin(null); return; }
       var kid = el.getAttribute("data-keepon"), kt = S.tiles[kid];
       if (kt) {
         kt.keep_on = !kt.keep_on; send({ type: "keep_on", id: kid, keep: kt.keep_on });

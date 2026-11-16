@@ -37,6 +37,11 @@ MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
 # the header (warnings, running devices, energy) is built at most this often
 HEADER_DELAY = 0.5
+# settings stay open this long after the PIN, wrong PINs: PIN_TRIES within
+# PIN_WAIT seconds, then no more tries until PIN_WAIT passed
+PIN_OPEN = 10 * 60
+PIN_TRIES = 5
+PIN_WAIT = 5 * 60
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -89,6 +94,8 @@ ARRANGE_MESSAGES = (
     "keep_on",
     "delete_device",
 )
+# changes of settings, layout and rooms: only with the PIN when one is set
+LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout")
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -223,6 +230,10 @@ class dashboard(generic.FhemModule):
         # device -> end of its "switch off in" timer (epoch seconds)
         self.timers = {}
         self.codes = {}
+        # tablet id -> end of the time the settings are open after the PIN
+        self.unlocked = {}
+        # tablet id -> times of wrong PINs
+        self.pin_fails = {}
         self.pair_fails = []
         self.clients = {}
         self._listening = []
@@ -298,6 +309,12 @@ class dashboard(generic.FhemModule):
                 "default": "",
                 "help": "Command of the door opener without set, e.g. "
                 "Door_opener on. The tablet at the door shows 'Slide to open'.",
+            },
+            "settings_pin": {
+                "default": "",
+                "help": "PIN of 4 to 8 digits for the settings, arranging rooms "
+                "and editing tiles on the tablets. After the PIN they stay open "
+                "for 10 minutes. Empty: no PIN.",
             },
             "keep_on": {
                 "default": "",
@@ -447,6 +464,7 @@ class dashboard(generic.FhemModule):
         result["https"] = self.https_url() if self.https_ready else ""
         result["arrange"] = self.can_arrange(tablet)
         result["timeline"] = self.sees_timeline(tablet)
+        result["pin"] = self.settings_pin() is not None
         return result
 
     @staticmethod
@@ -581,6 +599,17 @@ class dashboard(generic.FhemModule):
 
     def set_attr_door_opener(self, hash):
         self.schedule_reload()
+
+    def set_attr_settings_pin(self, hash):
+        # a new PIN closes the settings everywhere
+        self.unlocked = {}
+        self.pin_fails = {}
+        if self.ready:
+            self.create_async_task(self.send_all_tablets())
+
+    async def send_all_tablets(self):
+        for tablet in list(self.tablets.values()):
+            await self.send_tablet(tablet)
 
     # --- FHEM devices ---
 
@@ -1703,6 +1732,17 @@ class dashboard(generic.FhemModule):
 
     async def handle_message(self, tablet, message, ws=None):
         kind = message.get("type")
+        if kind == "unlock":
+            await self.unlock(tablet, message, ws)
+            return
+        if kind in LOCKED_MESSAGES and not self.is_unlocked(tablet):
+            if ws is not None:
+                await self.send(ws, {"type": "locked"})
+            return
+        if kind == "setup" and not tablet.get("place"):
+            # the first setup of a new tablet needs no PIN, also the layout
+            # right after it
+            self.unlocked[tablet["id"]] = time.time() + 60
         if kind in ARRANGE_MESSAGES:
             await self.arrange(tablet, message, ws)
         elif kind == "action":
@@ -1721,6 +1761,41 @@ class dashboard(generic.FhemModule):
             tablet["layout"] = clean_layout(message.get("layout"))
             await self.save_tablets()
             await self.send_tablet(tablet)
+
+    # --- PIN for the settings ---
+
+    def settings_pin(self):
+        return model.clean_pin(getattr(self, "_attr_settings_pin", ""))
+
+    def is_unlocked(self, tablet):
+        if self.settings_pin() is None:
+            return True
+        return self.unlocked.get(tablet["id"], 0) > time.time()
+
+    async def unlock(self, tablet, message, ws):
+        now = time.time()
+        fails = [t for t in self.pin_fails.get(tablet["id"], []) if t > now - PIN_WAIT]
+        pin = self.settings_pin()
+        ok = False
+        if pin is None:
+            ok = True
+        elif len(fails) < PIN_TRIES:
+            ok = hmac.compare_digest(str(message.get("pin", "")), pin)
+        if ok:
+            self.unlocked[tablet["id"]] = now + PIN_OPEN
+            self.pin_fails.pop(tablet["id"], None)
+        else:
+            fails.append(now)
+            self.pin_fails[tablet["id"]] = fails
+            self.logger.warning(f"{tablet['name']}: wrong PIN for the settings")
+        answer = {
+            "type": "unlocked",
+            "ok": ok,
+            "until": self.unlocked.get(tablet["id"], 0),
+            "wait": len(fails) >= PIN_TRIES,
+        }
+        if ws is not None:
+            await self.send(ws, answer)
 
     async def send_tablet(self, tablet, with_model=False):
         for ws, tablet_id in self.connected():
