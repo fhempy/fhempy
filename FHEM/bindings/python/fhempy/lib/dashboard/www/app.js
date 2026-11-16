@@ -25,6 +25,7 @@
     offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
+    valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
@@ -83,6 +84,7 @@
     offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
+    valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
@@ -173,6 +175,7 @@
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
+    flame: '<path d="M12 22a7 7 0 0 0 7-7c0-4-3-6.5-4-10-2 1.5-3 3.5-3 5.5C11 9 10 8 9.5 6.5 7 9 5 11.5 5 15a7 7 0 0 0 7 7z"/><path d="M12 22a3 3 0 0 0 3-3c0-2-1.5-3-3-5-1.5 2-3 3-3 5a3 3 0 0 0 3 3z"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12l5 5 9-10"/>',
@@ -553,7 +556,7 @@
       var p = st.position;
       sub = p === undefined ? "–" : p >= 99 ? t("open") : p <= 1 ? t("closed") : t("open") + " " + p + " %";
     } else if (k === "thermostat") {
-      var heat = st.target !== undefined && st.current !== undefined && st.target > st.current + 0.3;
+      var heat = heats(tile);
       cls = heat ? "heat" : "cool";
       sub = (st.current !== undefined ? num(st.current) + "° · " : "") + t("target") + " " + num(st.target) + "°";
     } else if (k === "lock") {
@@ -812,8 +815,8 @@
     var openRooms = shownList(S.header.open).map(function (o) { return o.room; }), result = [];
     visibleRooms().forEach(function (r) {
       if (openRooms.indexOf(r.name) < 0) { return; }
-      var heats = r.tiles.some(function (id) { var tl = S.tiles[id]; return tl && tl.kind === "thermostat" && tl.state.target > tl.state.current + 0.3; });
-      if (heats && result.indexOf(r.name) < 0) { result.push(r.name); }
+      var heating = r.tiles.some(function (id) { var tl = S.tiles[id]; return tl && tl.kind === "thermostat" && heats(tl); });
+      if (heating && result.indexOf(r.name) < 0) { result.push(r.name); }
     });
     return result;
   }
@@ -1111,8 +1114,7 @@
     } else if (k === "blind") {
       body += '<div class="group"><div class="actions"><button class="pill" data-do="up">' + esc(t("up")) + "</button>" + (tile.stop ? '<button class="pill" data-do="stop">' + esc(t("stop")) + "</button>" : "") + '<button class="pill" data-do="down">' + esc(t("down")) + "</button></div></div>";
     } else if (k === "thermostat") {
-      body += '<div class="target"><button class="round" data-step="-1">−</button><div class="val">' + num(st.target) + '°</div><button class="round" data-step="1">+</button></div>';
-      body += '<div class="facts2">' + (st.current !== undefined ? '<div class="fact2"><b>' + num(st.current) + "°</b><span>" + esc(t("room")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
+      body += '<div class="tring">' + climateHtml(tile) + "</div>";
     } else if (k === "lock") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.locked ? " on" : "") + '" data-do="lock">' + I("lock", 20) + " " + esc(t("lock")) + '</button><button class="pill danger" data-do="unlock">' + I("unlock", 20) + " " + esc(t("unlock")) + "</button></div></div>";
     } else if (k === "temperature" || k === "humidity") {
@@ -1226,7 +1228,16 @@
     });
     return g;
   }
-  var RING_MIN = 10, RING_MAX = 28, RING_SWEEP = 270;
+  var RING_SWEEP = 270;
+  // the thermostat really heats: valve open or "heating", else a guess
+  function heats(tl) {
+    var st = (tl && tl.state) || {};
+    if (st.heating !== undefined) { return !!st.heating; }
+    return st.target !== undefined && st.current !== undefined && st.target > st.current + 0.3;
+  }
+  // the ring shows the useful part of the range: no 4.5 (off) or 30.5 (on)
+  function ringLo(tl) { return Math.max(5, Math.min(15, tl && tl.min !== undefined ? tl.min : 10)); }
+  function ringHi(tl) { return Math.min(30, Math.max(ringLo(tl) + 5, tl && tl.max !== undefined ? tl.max : 28)); }
   function ringPoint(frac, r, c) {
     var a = (135 + frac * RING_SWEEP) * Math.PI / 180;
     return [c + r * Math.cos(a), c + r * Math.sin(a)];
@@ -1235,20 +1246,21 @@
     var p0 = ringPoint(f0, r, c), p1 = ringPoint(f1, r, c), large = (f1 - f0) * RING_SWEEP > 180 ? 1 : 0;
     return "M" + p0[0].toFixed(1) + " " + p0[1].toFixed(1) + " A" + r + " " + r + " 0 " + large + " 1 " + p1[0].toFixed(1) + " " + p1[1].toFixed(1);
   }
-  function ringFrac(v) { return Math.max(0, Math.min(1, (v - RING_MIN) / (RING_MAX - RING_MIN))); }
+  function ringFrac(v, tl) { var lo = ringLo(tl), hi = ringHi(tl); return Math.max(0, Math.min(1, (v - lo) / (hi - lo))); }
   function climateHtml(tl) {
     var st = tl.state;
     if (tl.kind !== "thermostat") {
       var cv = st.temperature;
       return '<div class="pclimate"><div class="pbig" style="color:' + tempColor(cv) + '">' + num(cv) + '°</div><div class="pctext">' + (st.humidity !== undefined ? "<b>" + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span>" : "") + "</div></div>";
     }
-    var cur = st.current, target = st.target, heats = target !== undefined && cur !== undefined && target > cur + 0.3, color = heats ? "#FF8A3D" : tempColor(cur);
-    var c = 90, r = 72, ft = ringFrac(target === undefined ? RING_MIN : target), knob = ringPoint(ft, r, c);
+    var cur = st.current, target = st.target, heating = heats(tl), color = heating ? "#FF8A3D" : tempColor(cur);
+    var c = 90, r = 72, ft = ringFrac(target === undefined ? ringLo(tl) : target, tl), knob = ringPoint(ft, r, c);
+    var valve = st.valve !== undefined ? (st.valve > 0 ? t("valveOpen", { n: Math.round(st.valve) }) : t("valveShut")) : "";
     var svg = '<svg viewBox="0 0 180 180" class="ringsvg"><path d="' + ringArc(0, 1, r, c) + '" class="rtrack"/>' +
       (target !== undefined ? '<path d="' + ringArc(0, Math.max(ft, 0.002), r, c) + '" class="rfill" style="stroke:' + color + '"/><circle cx="' + knob[0].toFixed(1) + '" cy="' + knob[1].toFixed(1) + '" r="11" class="rknob"/>' : "") + "</svg>";
-    var side = heats ? '<div class="pcs"><b>' + I("thermo", 18) + " " + esc(t("rpHeatsNow")) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>" : '<div class="pcs"><b>' + esc(cur !== undefined && target !== undefined && Math.abs(cur - target) <= 0.3 ? t("rpReached") : t("rpSetTo", { t: num(target) })) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>";
+    var side = heating ? '<div class="pcs"><b>' + I("flame", 18) + " " + esc(t("rpHeatsNow")) + "</b><span>" + esc(valve || t("rpHoldRing")) + "</span></div>" : st.heating === false && target !== undefined && cur !== undefined && target > cur + 0.3 ? '<div class="pcs"><b>' + esc(t("rpSetTo", { t: num(target) })) + "</b><span>" + esc([t("idleNow"), valve].filter(Boolean).join(" · ")) + "</span></div>" : '<div class="pcs"><b>' + esc(cur !== undefined && target !== undefined && Math.abs(cur - target) <= 0.3 ? t("rpReached") : t("rpSetTo", { t: num(target) })) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>";
     return '<div class="pclimate"><div class="ring" data-ring="' + esc(tl.id) + '">' + svg + '<div class="rval"><b style="color:' + tempColor(cur) + '">' + (cur !== undefined ? num(cur) + "°" : "–") + "</b><span>" + esc(t("rpSetTo", { t: num(target) })) + "</span></div></div>" +
-      '<div class="pcside' + (heats ? " heats" : "") + '">' + side + '<div class="target small"><button class="round" data-step="-1" data-sid="' + esc(tl.id) + '">−</button><button class="round" data-step="1" data-sid="' + esc(tl.id) + '">+</button></div>' +
+      '<div class="pcside' + (heating ? " heats" : "") + '">' + side + '<div class="target small"><button class="round" data-step="-1" data-sid="' + esc(tl.id) + '">−</button><button class="round" data-step="1" data-sid="' + esc(tl.id) + '">+</button></div>' +
       (st.humidity !== undefined ? '<div class="phum">' + I("drop", 16) + " " + Math.round(st.humidity) + " %</div>" : "") + "</div></div>";
   }
   function hslideHtml(kind, ids, value, teal) {
@@ -1337,7 +1349,10 @@
       var a = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
       var rel = ((a - 135) % 360 + 360) % 360;
       if (rel > RING_SWEEP) { rel = rel - RING_SWEEP < (360 - RING_SWEEP) / 2 ? RING_SWEEP : 0; }
-      value = Math.round((RING_MIN + rel / RING_SWEEP * (RING_MAX - RING_MIN)) / step) * step;
+      var lo = ringLo(tile), hi = ringHi(tile), before = value;
+      value = Math.round((lo + rel / RING_SWEEP * (hi - lo)) / step) * step;
+      value = Math.round(value * 10) / 10;
+      if (value !== before && navigator.vibrate) { try { navigator.vibrate(4); } catch (err) { /* not allowed */ } }
       tile.state.target = value;
       var box = document.querySelector("#sheet .pclimate"); if (box && box.parentNode) { var d = document.createElement("div"); d.innerHTML = climateHtml(tile); box.parentNode.replaceChild(d.firstChild, box); }
       if (e.cancelable) { e.preventDefault(); }
@@ -1579,7 +1594,7 @@
         if (tl.kind === "humidity" && c.humidity === undefined) { c.humidity = tl.state.humidity; }
       });
       if (c.thermostat) { c.id = c.thermostat; }
-      c.heats = c.target !== undefined && c.temp !== undefined && c.target > c.temp + 0.3;
+      c.heats = c.thermostat ? heats(S.tiles[c.thermostat]) : false;
       return c;
     }).filter(function (c) { return c.temp !== undefined; });
   }
@@ -2558,7 +2573,7 @@
     }
     if ((el = closest(target, "data-step"))) {
       var tile = S.tiles[el.getAttribute("data-sid") || S.sheet.id], step = (tile.step || 0.5) * Number(el.getAttribute("data-step"));
-      var next = Math.max(4.5, Math.min(30, (tile.state.target || 20) + step));
+      var next = Math.round(Math.max(tile.min !== undefined ? tile.min : 4.5, Math.min(tile.max !== undefined ? tile.max : 30, (tile.state.target || 20) + step)) * 10) / 10;
       tile.state.target = next; if (S.sheet) { renderSheet(); } updateTile(tile.id);
       clearTimeout(S.stepTimer); S.stepTimer = setTimeout(function () { act(tile.id, "target", next, { target: next }); }, 700);
       return;
