@@ -145,6 +145,8 @@ class FakeFhem:
         self.devices = copy.deepcopy(devices or DEVICES)
         self.sets = []
         self.module = None
+        # device name -> answer of FHEM to set (a failed command)
+        self.fail = {}
 
     def infos(self, names):
         result = {}
@@ -205,6 +207,8 @@ class FakeFhem:
             name, _, args = definition.partition(" ")
             if name not in self.devices:
                 return f"Please define {name} first"
+            if name in self.fail:
+                return self.fail[name]
             if self.module is not None:
                 await self.apply(name, args)
             return ""

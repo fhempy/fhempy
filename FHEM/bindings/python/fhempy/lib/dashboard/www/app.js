@@ -15,6 +15,7 @@
     allOffN: "Alles aus ({n})", beforeLeave: "Bevor du gehst", stillOpen: "Das ist noch offen oder an.",
     allClosed: "Alles zu, alles aus.", nowOn: "Gerade offen und an", lightsOn: "{n} Lichter an",
     lightOn: "1 Licht an", deviceOn: "1 Gerät an", devicesOn: "{n} Geräte an", humidity: "Luftfeuchte", atHome: "{n} zu Hause", nobody: "Niemand zu Hause",
+    chLight: "Licht", chClimate: "Klima", chBlinds: "Rollläden", chSecurity: "Sicherheit", chNOn: "{n} an", chAllOff: "alles aus", chNHeat: "{n} heizen", chOneHeat: "1 heizt", chNOpen: "{n} von {m} offen", chAllClosed: "alle zu", chSecOpen: "{n} offen", chSecOk: "alles zu", ovLight: "Was leuchtet", ovClimate: "Raumklima", ovBlinds: "Rollläden", ovSecurity: "Fenster, Türen und Schlösser", ovNoLight: "Alle Lichter sind aus.", ovSecOk: "Alles zu und verriegelt.", allUp: "Alle auf", allDown: "Alle zu", lightsOff: "Alle Lichter aus", heatsNow: "heizt",
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
@@ -27,6 +28,8 @@
     pickTitle: "Welche Räume soll dieses Tablet zeigen?", pickText: "Tippe die Räume an, die du hier brauchst. Du kannst das später in den Einstellungen ändern.",
     pickAll: "Alle", pickNone: "Keine", pickDone: "Fertig", pickCount: "{n} von {m} Räumen", pickDevices: "{n} Geräte", pickDevice: "1 Gerät", pickBack: "Zurück", roomsDragHint: "Zum Sortieren an ⠿ ziehen. Der Schalter blendet einen Raum auf diesem Tablet aus.",
     connLost: "Verbindung weg, versuche neu …", readonly: "Dieses Tablet darf nur anzeigen.",
+    tapHint: "Tipp auf das Symbol schaltet, Tipp auf die Kachel zeigt die Details.", confirmTap: "Nochmal tippen", unlockSure: "Nochmal tippen zum Entriegeln",
+    noReaction: "„{name}“ hat nicht reagiert.", failed: "„{name}“ ging nicht: {reason}", retry: "Nochmal",
     inputsHint: "Werte dieser Automatik", inputSet: "Übernehmen", inputRun: "Ausführen",
     fan: "Ventilator", fanOff: "Aus", fanLow: "Niedrig", fanMedium: "Mittel", fanHigh: "Hoch", pullToFan: "Ziehen für die Stufe",
     playing: "Spielt", paused: "Pausiert", idle: "Bereit", nothingPlays: "Gerade läuft nichts", volume: "Lautstärke", presets: "Senderspeicher", prevTrack: "Zurück", nextTrack: "Weiter", playPause: "Abspielen oder Pause",
@@ -40,11 +43,13 @@
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
+    rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
     switchHttps: "Zu https wechseln (für Sprechen)", energy: "Energie", solar: "Solar", usage: "Verbrauch",
     grid: "Netz", storage: "Speicher", price: "Preis", surplus: "Überschuss", fromGrid: "Netzbezug",
     hiddenTiles: "Ausgeblendet, + zum Zurückholen", days: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
     months: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
     weekdays: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+    timerOff: "Ausschalten in", timerOn: "Einschalten für", timerLeft: "noch {t}", timerUntil: "geht aus um {t}", timerStop: "Timer beenden", min15: "15 min", min30: "30 min", h1: "1 h", h2: "2 h",
     away: "Abwesend", quiet: "Keine Ereignisse an diesem Tag.", lastDays: "Tage", climate: "Klima", temperature: "Temperatur",
     now: "jetzt", wasOn: "Wann war es an"
   };
@@ -58,6 +63,7 @@
     allOffN: "All off ({n})", beforeLeave: "Before you leave", stillOpen: "Still open or on.",
     allClosed: "Everything closed and off.", nowOn: "Open and on right now", lightsOn: "{n} lights on", deviceOn: "1 device on", devicesOn: "{n} devices on", humidity: "Humidity", temperature: "Temperature",
     lightOn: "1 light on", atHome: "{n} at home", nobody: "Nobody at home",
+    chLight: "Light", chClimate: "Climate", chBlinds: "Blinds", chSecurity: "Security", chNOn: "{n} on", chAllOff: "all off", chNHeat: "{n} heating", chOneHeat: "1 heating", chNOpen: "{n} of {m} open", chAllClosed: "all closed", chSecOpen: "{n} open", chSecOk: "all closed", ovLight: "What is on", ovClimate: "Room climate", ovBlinds: "Blinds", ovSecurity: "Windows, doors and locks", ovNoLight: "All lights are off.", ovSecOk: "Everything closed and locked.", allUp: "All up", allDown: "All down", lightsOff: "All lights off", heatsNow: "heating",
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
@@ -70,6 +76,8 @@
     pickTitle: "Which rooms should this tablet show?", pickText: "Tap the rooms you need here. You can change this later in the settings.",
     pickAll: "All", pickNone: "None", pickDone: "Done", pickCount: "{n} of {m} rooms", pickDevices: "{n} devices", pickDevice: "1 device", pickBack: "Back", roomsDragHint: "Drag ⠿ to sort. The switch hides a room on this tablet.",
     connLost: "Connection lost, retrying …", readonly: "This tablet may only show.",
+    tapHint: "Tap the icon to switch, tap the tile for the details.", confirmTap: "Tap again", unlockSure: "Tap again to unlock",
+    noReaction: "“{name}” didn't react.", failed: "“{name}” didn't work: {reason}", retry: "Try again",
     inputsHint: "Values of this automation", inputSet: "Apply", inputRun: "Run",
     fan: "Fan", fanOff: "Off", fanLow: "Low", fanMedium: "Medium", fanHigh: "High", pullToFan: "Drag to set the speed",
     playing: "Playing", paused: "Paused", idle: "Ready", nothingPlays: "Nothing is playing", volume: "Volume", presets: "Presets", prevTrack: "Previous", nextTrack: "Next", playPause: "Play or pause",
@@ -83,11 +91,13 @@
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
+    rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
     switchHttps: "Switch to https (for talking)", energy: "Energy", solar: "Solar", usage: "Usage",
     grid: "Grid", storage: "Battery", price: "Price", surplus: "Surplus", fromGrid: "From grid",
     hiddenTiles: "Hidden, + brings them back", days: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
     months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    timerOff: "Switch off in", timerOn: "Switch on for", timerLeft: "{t} left", timerUntil: "goes off at {t}", timerStop: "End timer", min15: "15 min", min30: "30 min", h1: "1 h", h2: "2 h",
     away: "Away", quiet: "Nothing happened on this day.", lastDays: "days", climate: "Climate",
     now: "now", wasOn: "When it was on"
   };
@@ -138,6 +148,7 @@
     chev: '<path d="M9 6l6 6-6 6"/>',
     battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
@@ -192,7 +203,7 @@
   var S = {
     token: null, tablet: null, rooms: [], tiles: {}, scenes: [], header: {},
     tab: null, sheet: null, edit: false, ws: null, connected: false, retry: 0,
-    lastTouch: Date.now(), saver: false, ring: null, pending: {}, timeline: {},
+    lastTouch: Date.now(), saver: false, ring: null, pending: {}, last: {}, arm: null, timeline: {},
     history: null, historyDay: null, usage: {}, banner: null, now: new Date(), sparks: {}, sparksAt: 0
   };
   try { S.usage = JSON.parse(store("dashUsage") || "{}") || {}; } catch (e) { S.usage = {}; }
@@ -236,13 +247,13 @@
       S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {};
       S.pending = {};
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); }
-      render(); loadSparks(true); return;
+      render(); loadSparks(true); tapHint(); return;
     }
     if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && S.sheet.id === m.tile.id && !S.sliding && !chartActive) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
     if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
@@ -250,6 +261,7 @@
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
     }
+    if (m.type === "failed") { failed(m); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -539,11 +551,12 @@
     } else if (tile.kind === "media") {
       body = mediaTileBody(id, tile, look, editState);
     } else {
-      body = '<div class="ic">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
+      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] ? " sw" : "") + '">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
     if (tile.state.fan && tile.state.fan.mode && tile.state.fan.mode !== "off" && !editState) { extra += '<div class="fanbadge">' + I("fan", 18) + "</div>"; }
+    if (timerLeft(tile) && !editState) { extra += '<div class="tbadge">' + I("timer", 15) + " " + esc(timerText(timerLeft(tile))) + "</div>"; }
     if (tile.color && tile.state.on && (tile.state.rgb || tile.state.ct) && !editState) { extra += '<div class="cdot" style="background:' + lampColor(tile.state) + '"></div>'; }
     if (tile.state.battery_low && !editState) { extra += '<div class="badge">' + I("battery", 18) + "</div>"; }
     if (editState) {
@@ -566,15 +579,55 @@
   function cssEsc(s) { return String(s).replace(/["\\]/g, "\\$&"); }
   function editStateOf(id) { return (layout().hidden_tiles || []).indexOf(id) >= 0 ? "hidden" : "shown"; }
 
+  // ---------- timers: switch off in 15 min ... (FHEM runs them) ----------
+  function timerLeft(tile) {
+    if (!tile.timer || !tile.state.on) { return 0; }
+    var left = tile.timer * 1000 - Date.now();
+    return left > 0 ? left : 0;
+  }
+  function timerText(ms) {
+    var m = Math.max(1, Math.ceil(ms / 60000));
+    return m < 60 ? m + " min" : Math.floor(m / 60) + ":" + two(m % 60) + " h";
+  }
+  function timerHtml(tile) {
+    if (S.tablet && S.tablet.readonly) { return ""; }
+    var left = timerLeft(tile), opts = [[15, "min15"], [30, "min30"], [60, "h1"], [120, "h2"]];
+    var html = '<div class="group"><div class="label tl">' + I("timer", 16) + " " + esc(t(tile.state.on ? "timerOff" : "timerOn")) +
+      (left ? '<span class="tleft">' + esc(t("timerUntil", { t: clockText(new Date(tile.timer * 1000)) })) + "</span>" : "") + '</div><div class="actions timers">';
+    html += opts.map(function (o) { return '<button class="pill" data-timer="' + o[0] + '">' + esc(t(o[1])) + "</button>"; }).join("");
+    if (left) { html += '<button class="pill" data-timer="0">' + esc(t("timerStop")) + "</button>"; }
+    return html + "</div></div>";
+  }
+  function setTimer(id, minutes) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var tile = S.tiles[id]; if (!tile) { return; }
+    if (minutes > 0) { tile.timer = Math.round(Date.now() / 1000) + minutes * 60; tile.state.on = true; } else { delete tile.timer; }
+    send({ type: "action", action: "timer", id: id, value: minutes });
+    updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); }
+  }
+  function tickTimers() {
+    Object.keys(S.tiles).forEach(function (id) {
+      var tile = S.tiles[id];
+      if (tile.timer) { updateTile(id); if (!timerLeft(tile) && tile.timer * 1000 < Date.now() - 120000) { delete tile.timer; } }
+    });
+  }
+
   // optimistic: show the new state at once, the server confirms within 3 s
   function act(id, action, value, optimistic) {
     if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
     var tile = S.tiles[id];
+    S.last[id] = { action: action, value: value, optimistic: optimistic };
     if (tile && optimistic) {
       var before = JSON.parse(JSON.stringify(tile.state));
+      // thermostats on batteries take minutes, a value that was already set sends no event
+      var tell = tile.kind !== "thermostat" && Object.keys(optimistic).some(function (k) { return JSON.stringify(before[k]) !== JSON.stringify(optimistic[k]); });
+      clearTimeout(S.pending[id]);
       Object.keys(optimistic).forEach(function (k) { tile.state[k] = optimistic[k]; });
       S.pending[id] = setTimeout(function () {
-        if (S.pending[id]) { tile.state = before; delete S.pending[id]; updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); } }
+        if (S.pending[id]) {
+          tile.state = before; delete S.pending[id]; updateTile(id); if (S.sheet && S.sheet.id === id) { renderSheet(); }
+          if (tell) { showToast(t("noReaction", { name: tile.name }), id); }
+        }
       }, 4000);
       updateTile(id);
     }
@@ -779,7 +832,7 @@
       return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
         '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
     }
-    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-tab="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
+    return '<button class="tile roomcard' + (lights ? " light" : "") + '" data-roompop="' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div></button>";
   }
 
   function homeHtml() {
@@ -796,7 +849,7 @@
     } else {
       right = '<div class="grid">' + homeRooms(false).map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
     }
-    return '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
+    return statusChipsHtml() + '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
   }
 
   function scenesHtml(room) {
@@ -974,7 +1027,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -991,6 +1044,8 @@
     if (S.sheet.arrange) { renderPick(); return; }
     if (S.sheet.rename) { renderRename(); return; }
     if (S.sheet.people) { renderPeople(); return; }
+    if (S.sheet.room) { renderRoomPop(); return; }
+    if (S.sheet.overview) { renderOverview(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1000,7 +1055,7 @@
       var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : k === "fan" ? (st.percent || 0) : (st.position || 0);
       left = '<div><div class="vs' + (k === "blind" || k === "fan" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : k === "fan" ? "fan" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : k === "fan" ? t("pullToFan") : t("pullToMove")) + "</div></div>";
     }
-    if (k === "fan") { body += fanHtml(st); }
+    if (k === "fan") { body += fanHtml(st) + timerHtml(tile); }
     if (k === "inputs") { body += inputsHtml(tile); }
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
@@ -1008,6 +1063,7 @@
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
       if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
       if (tile.color) { body += colorHtml(tile); }
+      body += timerHtml(tile);
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
     } else if (k === "blind") {
       body += '<div class="group"><div class="actions"><button class="pill" data-do="up">' + esc(t("up")) + "</button>" + (tile.stop ? '<button class="pill" data-do="stop">' + esc(t("stop")) + "</button>" : "") + '<button class="pill" data-do="down">' + esc(t("down")) + "</button></div></div>";
@@ -1118,6 +1174,141 @@
     move(ev);
   }
 
+  // ---------- room popup: a tap on a room card on Home ----------
+  function roomGroups(room) {
+    var g = { light: [], switch: [], blind: [], climate: null, more: [] };
+    roomTiles(room).forEach(function (id) {
+      var tl = S.tiles[id];
+      if (tl.kind === "light" || tl.kind === "dimmer") { g.light.push(id); } else if (tl.kind === "switch" || tl.kind === "outlet") { g.switch.push(id); } else if (tl.kind === "blind") { g.blind.push(id); } else if (tl.kind === "thermostat" && (!g.climate || g.climate.kind !== "thermostat")) { if (g.climate) { g.more.push(g.climate.id); } g.climate = tl; } else if (tl.kind === "temperature" && !g.climate) { g.climate = tl; } else { g.more.push(id); }
+    });
+    return g;
+  }
+  var RING_MIN = 10, RING_MAX = 28, RING_SWEEP = 270;
+  function ringPoint(frac, r, c) {
+    var a = (135 + frac * RING_SWEEP) * Math.PI / 180;
+    return [c + r * Math.cos(a), c + r * Math.sin(a)];
+  }
+  function ringArc(f0, f1, r, c) {
+    var p0 = ringPoint(f0, r, c), p1 = ringPoint(f1, r, c), large = (f1 - f0) * RING_SWEEP > 180 ? 1 : 0;
+    return "M" + p0[0].toFixed(1) + " " + p0[1].toFixed(1) + " A" + r + " " + r + " 0 " + large + " 1 " + p1[0].toFixed(1) + " " + p1[1].toFixed(1);
+  }
+  function ringFrac(v) { return Math.max(0, Math.min(1, (v - RING_MIN) / (RING_MAX - RING_MIN))); }
+  function climateHtml(tl) {
+    var st = tl.state;
+    if (tl.kind !== "thermostat") {
+      var cv = st.temperature;
+      return '<div class="pclimate"><div class="pbig" style="color:' + tempColor(cv) + '">' + num(cv) + '°</div><div class="pctext">' + (st.humidity !== undefined ? "<b>" + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span>" : "") + "</div></div>";
+    }
+    var cur = st.current, target = st.target, heats = target !== undefined && cur !== undefined && target > cur + 0.3, color = heats ? "#FF8A3D" : tempColor(cur);
+    var c = 90, r = 72, ft = ringFrac(target === undefined ? RING_MIN : target), knob = ringPoint(ft, r, c);
+    var svg = '<svg viewBox="0 0 180 180" class="ringsvg"><path d="' + ringArc(0, 1, r, c) + '" class="rtrack"/>' +
+      (target !== undefined ? '<path d="' + ringArc(0, Math.max(ft, 0.002), r, c) + '" class="rfill" style="stroke:' + color + '"/><circle cx="' + knob[0].toFixed(1) + '" cy="' + knob[1].toFixed(1) + '" r="11" class="rknob"/>' : "") + "</svg>";
+    var side = heats ? '<div class="pcs"><b>' + I("thermo", 18) + " " + esc(t("rpHeatsNow")) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>" : '<div class="pcs"><b>' + esc(cur !== undefined && target !== undefined && Math.abs(cur - target) <= 0.3 ? t("rpReached") : t("rpSetTo", { t: num(target) })) + "</b><span>" + esc(t("rpHoldRing")) + "</span></div>";
+    return '<div class="pclimate"><div class="ring" data-ring="' + esc(tl.id) + '">' + svg + '<div class="rval"><b style="color:' + tempColor(cur) + '">' + (cur !== undefined ? num(cur) + "°" : "–") + "</b><span>" + esc(t("rpSetTo", { t: num(target) })) + "</span></div></div>" +
+      '<div class="pcside' + (heats ? " heats" : "") + '">' + side + '<div class="target small"><button class="round" data-step="-1" data-sid="' + esc(tl.id) + '">−</button><button class="round" data-step="1" data-sid="' + esc(tl.id) + '">+</button></div>' +
+      (st.humidity !== undefined ? '<div class="phum">' + I("drop", 16) + " " + Math.round(st.humidity) + " %</div>" : "") + "</div></div>";
+  }
+  function hslideHtml(kind, ids, value, teal) {
+    return '<div class="hslide' + (teal ? " teal" : "") + '" data-hslide="' + kind + '" data-ids="' + esc(ids.join("\n")) + '"><div class="hf" style="width:' + value + '%"></div><span class="hl">' + value + " %</span></div>";
+  }
+  function avg(list) { return list.length ? Math.round(list.reduce(function (a, b) { return a + b; }, 0) / list.length) : 0; }
+  function groupHtml(key, icon, title, ids, ro) {
+    var open = S.sheet.open[key], tiles = ids.map(function (id) { return S.tiles[id]; }), sub = "", head = "", rows = "", cls = "";
+    if (key === "blind") {
+      var pos = avg(tiles.map(function (tl) { return tl.state.position || 0; }));
+      sub = pos >= 99 ? t("open") : pos <= 1 ? t("closed") : t("open") + " " + pos + " %";
+      head = ro ? "" : hslideHtml("position", ids, pos, true) + '<button class="round sm" data-pgroup="up" aria-label="' + esc(t("up")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(-90deg)"') + '</button><button class="round sm" data-pgroup="down" aria-label="' + esc(t("down")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(90deg)"') + "</button>";
+      rows = tiles.map(function (tl) {
+        return '<div class="prow"><button class="pic teal" data-pdetail="' + esc(tl.id) + '">' + I("blind", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "</div>" + (ro ? "" : hslideHtml("position", [tl.id], tl.state.position || 0, true)) + "</div>";
+      }).join("");
+    } else {
+      var on = tiles.filter(function (tl) { return tl.state.on; });
+      var levels = on.filter(function (tl) { return tl.kind === "dimmer" && tl.state.level; }).map(function (tl) { return tl.state.level; });
+      sub = (on.length ? t("rpNofM", { n: on.length, m: tiles.length }) : t("off")) + (levels.length ? " · " + avg(levels) + " %" : "");
+      cls = on.length ? (key === "light" ? " lit" : " pow") : "";
+      head = ro ? "" : '<button class="round sm pwr' + (on.length ? " on" : "") + '" data-pgroup="' + key + '" aria-label="' + esc(on.length ? t("rpAllOffShort") : t("on")) + '">' + I("power", 18) + "</button>";
+      rows = tiles.map(function (tl) {
+        var lv = tl.kind === "dimmer" ? (tl.state.on ? tl.state.level || 0 : 0) : null;
+        return '<div class="prow"><button class="pic' + (tl.state.on ? (key === "light" ? " lit" : " pow") : "") + '" ' + (ro ? 'data-pdetail="' : 'data-ptoggle="') + esc(tl.id) + '">' + I(key === "light" ? "bulb" : tl.kind === "outlet" ? "plug" : "power", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "<span>" + esc(tileLook(tl).sub) + "</span></div>" +
+          (lv !== null && !ro ? hslideHtml("level", [tl.id], lv) : "") + "</div>";
+      }).join("");
+    }
+    return '<div class="pgroup' + cls + (open ? " open" : "") + '"><div class="phead"><span class="pgi">' + I(icon, 20) + '</span><button class="pgt" data-pexp="' + key + '"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></button>" + head +
+      '<button class="round sm exp" data-pexp="' + key + '">' + I("chev", 18) + "</button></div>" + (open ? '<div class="prows">' + rows + "</div>" : "") + "</div>";
+  }
+  function renderRoomPop() {
+    var room = roomByName(S.sheet.room); if (!room) { closeSheet(); return; }
+    var g = roomGroups(room), ro = S.tablet && S.tablet.readonly, body = "";
+    if (g.climate) { body += climateHtml(g.climate); }
+    if (g.light.length) { body += groupHtml("light", "bulb", t("rpLight"), g.light, ro); }
+    if (g.blind.length) { body += groupHtml("blind", "blind", t("rpBlinds"), g.blind, ro); }
+    if (g.switch.length) { body += groupHtml("switch", "plug", t("rpSwitches"), g.switch, ro); }
+    body += scenesHtml(room);
+    if (g.more.length) { body += '<div class="section">' + esc(t("rpMore")) + '</div><div class="grid pgrid">' + g.more.map(function (id) { return tileHtml(id); }).join("") + "</div>"; }
+    body += '<div class="actions"><button class="pill" data-gotab="room:' + esc(room.name) + '">' + esc(t("rpOpenRoom")) + "</button></div>";
+    sheetShell('<div class="head"><div><h1>' + esc(room.name) + '</h1></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" + '<div class="rpop">' + body + "</div>", "roompop");
+  }
+  function roomGroupAction(what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var g = roomGroups(roomByName(S.sheet.room));
+    if (what === "up" || what === "down") {
+      var v = what === "up" ? 100 : 0;
+      g.blind.forEach(function (id) { act(id, "position", v, { position: v }); });
+    } else {
+      var ids = g[what] || [], anyOn = ids.some(function (id) { return S.tiles[id].state.on; });
+      ids.forEach(function (id) { if (!!S.tiles[id].state.on === anyOn) { act(id, anyOn ? "off" : "on", null, { on: !anyOn }); } });
+    }
+    renderSheet();
+  }
+  function hslideDrag(el, ev) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var kind = el.getAttribute("data-hslide"), ids = el.getAttribute("data-ids").split("\n"), value = null, sx = ev.clientX, moved = false;
+    S.sliding = true;
+    function calc(x) { var r = el.getBoundingClientRect(); return Math.round(Math.max(0, Math.min(100, (x - r.left) / r.width * 100))); }
+    function move(e) {
+      if (Math.abs(e.clientX - sx) > 4) { moved = true; }
+      value = calc(e.clientX);
+      el.querySelector(".hf").style.width = value + "%"; el.querySelector(".hl").textContent = value + " %";
+      if (e.cancelable) { e.preventDefault(); }
+    }
+    function up(e) {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false; dragEnded = Date.now();
+      if (!moved) { value = calc(e.clientX); }
+      ids.forEach(function (id) {
+        if (!S.tiles[id]) { return; }
+        if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else { act(id, "position", value, { position: value }); }
+      });
+      renderSheet();
+    }
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+    ev.preventDefault();
+  }
+  function ringDrag(el, ev) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var id = el.getAttribute("data-ring"), tile = S.tiles[id]; if (!tile) { return; }
+    var step = tile.step || 0.5, value = tile.state.target;
+    S.sliding = true;
+    function move(e) {
+      var live = document.querySelector("#sheet [data-ring]") || el, r = live.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var a = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+      var rel = ((a - 135) % 360 + 360) % 360;
+      if (rel > RING_SWEEP) { rel = rel - RING_SWEEP < (360 - RING_SWEEP) / 2 ? RING_SWEEP : 0; }
+      value = Math.round((RING_MIN + rel / RING_SWEEP * (RING_MAX - RING_MIN)) / step) * step;
+      tile.state.target = value;
+      var box = document.querySelector("#sheet .pclimate"); if (box && box.parentNode) { var d = document.createElement("div"); d.innerHTML = climateHtml(tile); box.parentNode.replaceChild(d.firstChild, box); }
+      if (e.cancelable) { e.preventDefault(); }
+    }
+    function up() {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+      S.sliding = false; dragEnded = Date.now();
+      if (value !== undefined) { act(id, "target", value, { target: value }); }
+      renderSheet();
+    }
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+    ev.preventDefault();
+  }
+
   // ---------- colour and white of lights ----------
   function hx2(n) { return ("0" + n.toString(16)).slice(-2); }
   var SWATCHES = ["#ff3b30", "#ff8a3d", "#ffcc00", "#34c759", "#30d5c8", "#007aff", "#7d5cff", "#ff2d92"];
@@ -1180,6 +1371,120 @@
   }
 
   // ---------- settings ----------
+  // ---------- status chips on Home and their overviews ----------
+  // every device of the rooms this tablet shows, once, with the room it is shown in
+  function shownTiles() {
+    var seen = {}, result = [];
+    visibleRooms().forEach(function (room) {
+      room.tiles.forEach(function (id) { var tl = S.tiles[id]; if (tl && !seen[id]) { seen[id] = true; result.push({ id: id, tile: tl, room: room.name }); } });
+    });
+    return result;
+  }
+  function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
+  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  function roomClimates() {
+    return visibleRooms().map(function (room) {
+      var c = { room: room.name };
+      room.tiles.forEach(function (id) {
+        var tl = S.tiles[id]; if (!tl) { return; }
+        if (tl.kind === "thermostat" && c.thermostat === undefined) {
+          c.thermostat = id; c.target = tl.state.target;
+          if (tl.state.current !== undefined) { c.temp = tl.state.current; c.id = id; }
+          if (tl.state.humidity !== undefined && c.humidity === undefined) { c.humidity = tl.state.humidity; }
+        }
+        if (tl.kind === "temperature" && c.temp === undefined && tl.state.temperature !== undefined) { c.temp = tl.state.temperature; c.id = id; if (tl.state.humidity !== undefined) { c.humidity = tl.state.humidity; } }
+        if (tl.kind === "humidity" && c.humidity === undefined) { c.humidity = tl.state.humidity; }
+      });
+      if (c.thermostat) { c.id = c.thermostat; }
+      c.heats = c.target !== undefined && c.temp !== undefined && c.target > c.temp + 0.3;
+      return c;
+    }).filter(function (c) { return c.temp !== undefined; });
+  }
+  function statusChipsHtml() {
+    var all = shownTiles(), chips = "";
+    function chip(kind, icon, cls, title, sub) {
+      return '<button class="schip ' + cls + '" data-overview="' + kind + '"><span class="sic">' + I(icon, 20) + '</span><span class="st"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></span></button>";
+    }
+    var lights = all.filter(function (x) { return isLight(x.tile); });
+    if (lights.length) {
+      var on = lights.filter(function (x) { return x.tile.state.on; }).length;
+      chips += chip("light", "bulb", on ? "lit" : "", t("chLight"), on ? t("chNOn", { n: on }) : t("chAllOff"));
+    }
+    var climates = roomClimates();
+    if (climates.length) {
+      var heat = climates.filter(function (c) { return c.heats; }).length, temps = climates.map(function (c) { return c.temp; });
+      var lo = Math.min.apply(null, temps), hi = Math.max.apply(null, temps);
+      chips += chip("climate", "thermo", heat ? "heat" : "", t("chClimate"), heat ? (heat === 1 ? t("chOneHeat") : t("chNHeat", { n: heat })) : num(lo, 0) + (hi - lo >= 0.5 ? "–" + num(hi, 0) : "") + "°");
+    }
+    var blinds = all.filter(function (x) { return x.tile.kind === "blind"; });
+    if (blinds.length) {
+      var up = blinds.filter(function (x) { return (x.tile.state.position || 0) > 1; }).length;
+      chips += chip("blinds", "blind", "", t("chBlinds"), up ? t("chNOpen", { n: up, m: blinds.length }) : t("chAllClosed"));
+    }
+    var sec = all.filter(function (x) { return x.tile.kind === "contact" || x.tile.kind === "lock"; });
+    if (sec.length) {
+      var open = sec.filter(function (x) { return secOpen(x.tile); }).length;
+      chips += chip("security", "lock", open ? "warn" : "", t("chSecurity"), open ? t("chSecOpen", { n: open }) : t("chSecOk"));
+    }
+    return chips ? '<div class="schips">' + chips + "</div>" : "";
+  }
+  function ovRow(x, icon, color, sub, button) {
+    return '<div class="row tap" data-ovopen="' + esc(x.id) + '"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I(icon) + '</div><div class="t"><b>' + esc(x.tile.name) + "</b><span>" + esc(sub) + "</span></div>" + (button || I("chev")) + "</div>";
+  }
+  function byRoom(list, rowFn) {
+    var html = "", last = null;
+    list.forEach(function (x) {
+      if (x.room !== last) { html += '<div class="section ovroom">' + esc(x.room) + "</div>"; last = x.room; }
+      html += rowFn(x);
+    });
+    return html;
+  }
+  function renderOverview() {
+    var kind = S.sheet.overview, all = shownTiles(), title = "", lead = "", body = "", actions = "", ro = S.tablet && S.tablet.readonly;
+    if (kind === "light") {
+      var on = all.filter(function (x) { return isLight(x.tile) && x.tile.state.on; });
+      title = t("ovLight"); lead = on.length ? t("chNOn", { n: on.length }) : "";
+      body = on.length ? byRoom(on, function (x) {
+        return ovRow(x, "bulb", "#FFB547", x.tile.kind === "dimmer" && x.tile.state.level ? x.tile.state.level + " %" : t("on"), ro ? "" : '<button class="pill" data-off="' + esc(x.id) + '">' + esc(t("off")) + "</button>");
+      }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovNoLight")) + "</div>";
+      if (on.length > 1 && !ro) { actions = '<button class="pill primary" data-ovall="lights">' + I("power", 20) + " " + esc(t("lightsOff")) + "</button>"; }
+    } else if (kind === "climate") {
+      title = t("ovClimate");
+      body = roomClimates().map(function (c) {
+        var color = tempColor(c.temp), sub = [];
+        if (c.target !== undefined) { sub.push(t("target") + " " + num(c.target) + "°"); }
+        if (c.humidity !== undefined) { sub.push(Math.round(c.humidity) + " %"); }
+        if (c.heats) { sub.push(t("heatsNow")); }
+        return '<div class="row tap" data-ovopen="' + esc(c.id) + '"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I("thermo") + '</div><div class="t"><b>' + esc(c.room) + "</b><span>" + esc(sub.join(" · ")) + '</span></div><div class="ovtemp" style="color:' + color + '">' + num(c.temp) + "°</div>" + I("chev") + "</div>";
+      }).join("");
+    } else if (kind === "blinds") {
+      var blinds = all.filter(function (x) { return x.tile.kind === "blind"; });
+      title = t("ovBlinds");
+      body = byRoom(blinds, function (x) {
+        var p = x.tile.state.position;
+        var sub = p === undefined ? "–" : p >= 99 ? t("open") : p <= 1 ? t("closed") : t("open") + " " + p + " %";
+        return ovRow(x, "blind", "#3DDBB8", sub, ro ? "" : '<button class="pill" data-ovpos="' + esc(x.id) + '|100">' + esc(t("up")) + '</button><button class="pill" data-ovpos="' + esc(x.id) + '|0">' + esc(t("down")) + "</button>");
+      });
+      if (!ro) { actions = '<button class="pill" data-ovall="up">' + esc(t("allUp")) + '</button><button class="pill" data-ovall="down">' + esc(t("allDown")) + "</button>"; }
+    } else if (kind === "security") {
+      var sec = all.filter(function (x) { return secOpen(x.tile); });
+      title = t("ovSecurity");
+      body = sec.length ? byRoom(sec, function (x) {
+        if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
+        return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
+      }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
+    }
+    sheetShell('<div class="head"><div><h1>' + esc(title) + "</h1>" + (lead ? '<div class="subtitle">' + esc(lead) + "</div>" : "") + '</div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      '<div class="blist ovlist">' + body + "</div>" + (actions ? '<div class="actions">' + actions + "</div>" : ""));
+  }
+  function overviewAll(what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    shownTiles().forEach(function (x) {
+      var tl = x.tile;
+      if (what === "lights" && isLight(tl) && tl.state.on) { act(x.id, "off", null, { on: false }); }
+      if ((what === "up" || what === "down") && tl.kind === "blind") { var v = what === "up" ? 100 : 0; if (tl.state.position !== v) { act(x.id, "position", v, { position: v }); } }
+    });
+  }
   function openBatteries() { S.sheet = { batteries: true }; renderBatteries(); }
   function renderBatteries() {
     var list = (S.header && S.header.battery) || [];
@@ -1713,6 +2018,46 @@
     if (ms) { S.bannerTimer = setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, ms); }
   }
 
+  // a short message at the bottom, optionally with "Try again"
+  function showToast(text, retryId, ms) {
+    var el = document.getElementById("toast");
+    if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+    el.className = retryId ? "warn" : "";
+    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "");
+    clearTimeout(S.toastTimer);
+    S.toastTimer = setTimeout(hideToast, ms || 7000);
+  }
+  function hideToast() { var el = document.getElementById("toast"); if (el && el.parentNode) { el.parentNode.removeChild(el); } }
+  function failed(m) {
+    if (m.id && S.pending[m.id]) { clearTimeout(S.pending[m.id]); delete S.pending[m.id]; }
+    showToast(t("failed", { name: m.name || "", reason: m.reason || "" }), m.id && S.last[m.id] ? m.id : null, 10000);
+  }
+  function retry(id) {
+    hideToast();
+    var l = S.last[id]; if (!l || !S.tiles[id]) { return; }
+    act(id, l.action, l.value, l.optimistic);
+  }
+  function tapHint() {
+    if (!S.tablet || !S.tablet.place || S.tablet.readonly || store("dashTapHint")) { return; }
+    store("dashTapHint", "1"); showToast(t("tapHint"), null, 9000);
+  }
+  // scenes and unlocking need a second tap within 4 s
+  function armed(el, key, label) {
+    var a = S.arm;
+    if (a && a.key === key && Date.now() - a.at < 4000) { disarm(); return true; }
+    disarm();
+    S.arm = { key: key, at: Date.now(), el: el, html: el.innerHTML };
+    el.classList.add("arm"); el.innerHTML = I("check", 20) + " " + esc(label);
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+    S.arm.timer = setTimeout(disarm, 4000);
+    return false;
+  }
+  function disarm() {
+    var a = S.arm; if (!a) { return; }
+    S.arm = null; clearTimeout(a.timer);
+    if (a.el && a.el.isConnected) { a.el.classList.remove("arm"); a.el.innerHTML = a.html; }
+  }
+
   // ---------- doorbell ----------
   var pc = null, mic = null;
   function startRing(m) {
@@ -1834,6 +2179,8 @@
     if (dragStart(ev) || tileDragStart(ev) || roomDragStart(ev)) { return; }
     var slider = closest(ev.target, "data-slider"); if (slider) { sliderDrag(slider, ev); return; }
     var cs = closest(ev.target, "data-cstrip"); if (cs) { colorDrag(cs, ev); return; }
+    var hs = closest(ev.target, "data-hslide"); if (hs) { hslideDrag(hs, ev); return; }
+    var ring = closest(ev.target, "data-ring"); if (ring) { ringDrag(ring, ev); return; }
     var slide = closest(ev.target, "data-slide") || (ev.target.closest ? ev.target.closest("#slide") : null); if (slide) { slideDrag(slide, ev); return; }
     var tile = closest(ev.target, "data-tile");
     if (tile && !S.edit) {
@@ -1923,6 +2270,7 @@
       renderSheet(); return;
     }
     if ((el = closest(target, "data-swatch")) && S.sheet) { var sw = el.getAttribute("data-swatch"); act(S.sheet.id, "rgb", sw, { rgb: sw, on: true }); renderSheet(); return; }
+    if ((el = closest(target, "data-timer")) && S.sheet) { setTimer(S.sheet.id, Number(el.getAttribute("data-timer"))); return; }
     if ((el = closest(target, "data-preset"))) {
       var pn = Number(el.getAttribute("data-preset"));
       act(S.sheet.id, "preset", pn, { channel: pn, on: true }); renderSheet(); return;
@@ -1931,7 +2279,11 @@
       var id = el.getAttribute("data-tile");
       if (S.edit) { return; }
       if (press && press.long) { press = null; return; }
-      press = null; tap(id); return;
+      press = null;
+      // the icon switches, the rest of the tile opens the details
+      var tt = S.tiles[id];
+      if (tt && TAP_TOGGLES[tt.kind] && !(target.closest && target.closest(".ic"))) { openSheet(id); return; }
+      tap(id); return;
     }
     if ((el = closest(target, "data-edit"))) {
       var tileEl = closest(el, "data-tile");
@@ -1943,16 +2295,24 @@
       S.edit = true; closeSheet(); if (S.tab === "history") { var first = visibleRooms()[0]; if (first) { S.tab = "room:" + first.name; } } renderTabs(); renderContent(); return;
     }
     if ((el = closest(target, "data-editdone"))) { S.edit = false; renderContent(); return; }
+    if ((el = closest(target, "data-roompop"))) { if (S.edit) { return; } S.sheet = { room: el.getAttribute("data-roompop"), open: {} }; renderSheet(); return; }
+    if ((el = closest(target, "data-pexp")) && S.sheet && S.sheet.room) { var pg = el.getAttribute("data-pexp"); S.sheet.open[pg] = !S.sheet.open[pg]; renderSheet(); return; }
+    if ((el = closest(target, "data-pgroup")) && S.sheet && S.sheet.room) { roomGroupAction(el.getAttribute("data-pgroup")); return; }
+    if ((el = closest(target, "data-ptoggle"))) { tap(el.getAttribute("data-ptoggle")); return; }
+    if ((el = closest(target, "data-pdetail"))) { openSheet(el.getAttribute("data-pdetail")); return; }
+    if ((el = closest(target, "data-gotab"))) { closeSheet(); S.tab = el.getAttribute("data-gotab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-tab"))) { S.arrange = null; S.tab = el.getAttribute("data-tab"); renderTabs(); renderContent(); document.getElementById("content").scrollTop = 0; return; }
     if ((el = closest(target, "data-go"))) { S.tab = el.getAttribute("data-go"); renderTabs(); renderContent(); return; }
     if ((el = closest(target, "data-day"))) { S.historyDay = el.getAttribute("data-day"); renderContent(); return; }
-    if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
+    if ((el = closest(target, "data-scene"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } if (!armed(el, "scene:" + el.getAttribute("data-scene"), t("confirmTap"))) { return; } send({ type: "action", action: "scene", id: el.getAttribute("data-scene") }); el.classList.add("on"); setTimeout(function () { el.classList.remove("on"); }, 800); return; }
     if ((el = closest(target, "data-alloff"))) { if (S.tablet.readonly) { showBanner(t("readonly"), 3000); return; } var ids = el.getAttribute("data-ids"); send({ type: "action", action: "all_off", room: el.getAttribute("data-alloff") || null, ids: ids ? ids.split("\n") : null }); return; }
     if ((el = closest(target, "data-off"))) { act(el.getAttribute("data-off"), "off", null, { on: false }); return; }
     if ((el = closest(target, "data-close"))) { closeSheet(); return; }
     if (target.id === "sheet") { closeSheet(); return; }
+    if ((el = closest(target, "data-retry"))) { retry(el.getAttribute("data-retry")); return; }
     if ((el = closest(target, "data-do"))) {
       var sid = S.sheet.id, what = el.getAttribute("data-do");
+      if (what === "unlock" && !armed(el, "unlock:" + sid, t("unlockSure"))) { return; }
       if (what === "on") { act(sid, "on", null, { on: true }); } else if (what === "off") { act(sid, "off", null, { on: false }); } else if (what === "up") { act(sid, "position", 100, { position: 100 }); } else if (what === "down") { act(sid, "position", 0, { position: 0 }); } else if (what === "stop") { act(sid, "stop"); } else { act(sid, what, null, { locked: what === "lock" }); }
       renderSheet(); return;
     }
@@ -1966,6 +2326,11 @@
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-overview"))) { S.sheet = { overview: el.getAttribute("data-overview") }; renderSheet(); return; }
+    if ((el = closest(target, "data-ovpos"))) { var pv = el.getAttribute("data-ovpos").split("|"); act(pv[0], "position", Number(pv[1]), { position: Number(pv[1]) }); return; }
+    if ((el = closest(target, "data-ovall"))) { overviewAll(el.getAttribute("data-ovall")); return; }
+    if ((el = closest(target, "data-ovlock"))) { act(el.getAttribute("data-ovlock"), "lock", null, { locked: true }); return; }
+    if ((el = closest(target, "data-ovopen"))) { openSheet(el.getAttribute("data-ovopen")); return; }
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
@@ -2021,7 +2386,7 @@
   // ---------- start ----------
   function tick() {
     S.now = new Date();
-    renderHeader(); idleCheck(); loadSparks();
+    renderHeader(); idleCheck(); loadSparks(); tickTimers();
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }
