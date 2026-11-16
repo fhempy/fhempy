@@ -123,7 +123,16 @@ RELOAD_ATTRS = (
     "disable",
     "setList",
 )
-LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
+LAYOUT_KEYS = (
+    "room_order",
+    "hidden_rooms",
+    "hidden_tiles",
+    "tile_order",
+    "theme",
+    "tile_size",
+)
+# small, wide, tall, big
+TILE_SIZES = ("s", "w", "t", "b")
 SETTINGS_ATTRS = (
     "devices",
     "hidden_devices",
@@ -153,6 +162,12 @@ def clean_layout(layout):
                 str(room)[:100]: [str(v)[:200] for v in ids[:500]]
                 for room, ids in list(value.items())[:200]
                 if isinstance(ids, list)
+            }
+        elif key == "tile_size" and isinstance(value, dict):
+            result[key] = {
+                str(tile)[:200]: size
+                for tile, size in list(value.items())[:1000]
+                if size in TILE_SIZES
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
             result[key] = value

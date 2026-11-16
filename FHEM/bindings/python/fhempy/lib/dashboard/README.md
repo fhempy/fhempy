@@ -187,6 +187,12 @@ with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`h
 disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
 tile, so *All off* and *Leave home* never disarm it.
 
+## Editing tiles
+
+Settings → *Edit tiles* (per tablet): drag tiles to a new place, × hides them, the size button (*1×1*) switches
+between small, wide, tall and big. *Heading* adds a heading to the room, which can be dragged like a tile, and *Reset
+room* brings back the original order, sizes and hidden tiles of the room.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices

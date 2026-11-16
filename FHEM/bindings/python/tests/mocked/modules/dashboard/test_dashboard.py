@@ -1786,3 +1786,14 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_layout_tile_sizes_and_headings():
+    layout = clean_layout(
+        {
+            "tile_size": {"wz_Licht": "b", "wz_Tv": "huge"},
+            "tile_order": {"Wohnzimmer": ["#Decke", "wz_Licht"]},
+        }
+    )
+    assert layout["tile_size"] == {"wz_Licht": "b"}
+    assert layout["tile_order"] == {"Wohnzimmer": ["#Decke", "wz_Licht"]}
