@@ -44,6 +44,13 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+Old or slow tablets get a simple display without blur, shadows and animations. It switches on by itself when the
+tablet has only two cores or draws less than 30 frames per second, and can be set per tablet in the settings
+(*Display: Automatic, Simple, Full*).
+
+The screensaver starts after 2 to 30 minutes or never, set per tablet in the settings (*Screensaver*). Besides the clock
+and the weather of the next hours it shows what is still coming today from the calendars and the bins.
+
 ![Setting up a tablet: choose wall, couch or door and its room](screenshot-setup.png)
 
 Then it asks which rooms this tablet shows: every room is a big tile with an icon and its number of devices, tap to
@@ -138,6 +145,17 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
+
+A room card with a motion or presence sensor shows *Someone here* while it detects somebody, otherwise how long the room
+is quiet, e.g. *quiet for 40 min*.
+
+## Doors that may be open
+
+A yard gate or garage door may be open by day without a warning: in the details of a door or window switch on *May be
+open* and choose from and to. During that time it is not counted as open in the top bar, before leaving, at night and on
+the screensaver, the security overview lists it as *May be open now*. Outside the time it warns as usual. Attribute
+`may_open` holds the times, e.g. `Yard_gate=07:00-20:00,Garage=08:00-18:00` (over midnight like `22:00-06:00` works
+too).
 
 ## Own notices
 
@@ -258,6 +276,12 @@ Every settings page says whether it applies to this tablet or to all tablets. On
 sorting out: devices without a room (they are not shown before), devices not used for more than a month and devices
 which need attention (battery, not reachable, silent). Long lists show six entries and *Show all*.
 
+## Bug reports
+
+Settings → *Info for a bug report* shows versions (fhempy, Python, the dashboard), counts of devices and tiles, which
+attributes are set and the browser, without device names, addresses or PINs. *Copy* puts it on the clipboard to paste
+into the forum or a GitHub issue.
+
 ## Attributes
 
 | Attribute | Meaning |
@@ -273,6 +297,7 @@ which need attention (battery, not reachable, silent). Long lists show six entri
 | door_opener | Command of the door opener without `set` |
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
+| may_open | Doors and gates which may be open at some times without a warning, e.g. `Yard_gate=07:00-20:00` |
 
 ## Set commands
 
