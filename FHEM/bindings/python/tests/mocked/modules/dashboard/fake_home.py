@@ -124,6 +124,42 @@ DEVICES = {
             "cur_weather": "Leicht bewölkt",
             "next_days_0_max_temp": "13",
             "next_days_0_min_temp": "4",
+            **{
+                f"next_days_{i}_{key}": value
+                for i, (name, weather, high, low, rain) in enumerate(
+                    (
+                        ("Montag", "Leicht bewölkt", "13", "4", "30"),
+                        ("Dienstag", "Regen", "11", "6", "90"),
+                        ("Mittwoch", "Bedeckt", "10", "5", "40"),
+                        ("Donnerstag", "Sonnig", "14", "3", "0"),
+                        ("Freitag", "Sonnig", "15", "2", "5"),
+                        ("Samstag", "Schauer", "12", "6", "70"),
+                        ("Sonntag", "Leicht bewölkt", "13", "5", "20"),
+                    )
+                )
+                if i > 0
+                for key, value in (
+                    ("name", name),
+                    ("weather", weather),
+                    ("max_temp", high),
+                    ("min_temp", low),
+                    ("precipitation", rain),
+                )
+            },
+            "next_days_0_name": "Montag",
+            "next_days_0_weather": "Leicht bewölkt",
+            "next_days_0_precipitation": "30",
+            **{
+                f"next_hours_{i:02d}_{key}": value
+                for i in range(24)
+                for key, value in (
+                    ("time", f"Mo {(17 + i) % 24:02d}:00"),
+                    ("condition", "Regen" if 3 <= i < 8 else "Bewölkt"),
+                    ("precipitation", "80" if 3 <= i < 8 else "10"),
+                    ("temperature", str(9 - i // 3)),
+                    ("windspeed", "12"),
+                )
+            },
         },
         fhempytype="openmeteo_weather",
     ),

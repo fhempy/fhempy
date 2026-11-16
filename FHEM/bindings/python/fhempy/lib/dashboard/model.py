@@ -161,6 +161,27 @@ CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp
 COLOR_READINGS = ("rgb", "hex", "RGB", "Color", "color")
 CT_READINGS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
 READINGS = READINGS + COLOR_READINGS + CT_READINGS
+# the next hours of openmeteo_weather: warnings before the night or leaving
+# (WARN_HOURS) and the weather details (FORECAST_HOURS)
+WARN_HOURS = 12
+FORECAST_HOURS = 24
+FORECAST_DAYS = 7
+HOUR_KEYS = ("time", "condition", "precipitation", "temperature", "windspeed")
+FORECAST_READINGS = tuple(
+    f"next_hours_{i:02d}_{key}" for i in range(FORECAST_HOURS) for key in HOUR_KEYS
+)
+# days: openmeteo_weather next_days_N_*, FHEM Weather fcN_*
+DAY_READINGS = {
+    "openmeteo": ("next_days_{}_", ("name", "weather", "max_temp", "min_temp", "precipitation")),
+    "weather": ("fc{}_", ("day_of_week", "condition", "high_c", "low_c", "chOfRainDay")),
+}
+FORECAST_READINGS += tuple(
+    prefix.format(i) + key
+    for prefix, keys in DAY_READINGS.values()
+    for i in range(FORECAST_DAYS + 1)
+    for key in keys
+)
+READINGS = READINGS + tuple(r for r in FORECAST_READINGS if r not in READINGS)
 READING_SET = frozenset(READINGS)
 WEATHER_TYPES = ("Weather",)
 WEATHER_FHEMPY_TYPES = ("openmeteo_weather",)
@@ -629,6 +650,9 @@ def weather(infos):
                 "condition": str(_reading(info, "cur_weather") or ""),
                 "high": kinds.number(_reading(info, "next_days_0_max_temp")),
                 "low": kinds.number(_reading(info, "next_days_0_min_temp")),
+                "warn": weather_warning(info),
+                "hours": forecast_hours(info),
+                "days": forecast_days(info, "openmeteo"),
             }
         if info.get("TYPE") in WEATHER_TYPES:
             return {
@@ -636,8 +660,84 @@ def weather(infos):
                 "condition": str(_reading(info, "condition") or ""),
                 "high": kinds.number(_reading(info, "fc0_high_c", "fc1_high_c")),
                 "low": kinds.number(_reading(info, "fc0_low_c", "fc1_low_c")),
+                "warn": None,
+                "hours": [],
+                "days": forecast_days(info, "weather"),
             }
     return None
+
+
+# rain from this probability on, storm from this wind speed in km/h
+RAIN_PERCENT = 60
+STORM_KMH = 60
+_THUNDER_RE = re.compile(r"gewitter|thunder", re.I)
+
+
+def weather_warning(info):
+    """the first rain, storm or frost of the next hours: {"kind": "rain",
+    "at": "15:00"} or None. Only from the hourly forecast of
+    openmeteo_weather, found by its readings."""
+    for i in range(WARN_HOURS):
+        prefix = f"next_hours_{i:02d}_"
+        when = str(_reading(info, prefix + "time") or "")
+        if not when:
+            break
+        at = when[-5:]
+        wind = kinds.number(_reading(info, prefix + "windspeed"))
+        if _THUNDER_RE.search(str(_reading(info, prefix + "condition") or "")) or (
+            wind is not None and wind >= STORM_KMH
+        ):
+            return {"kind": "storm", "at": at}
+        rain = kinds.number(_reading(info, prefix + "precipitation"))
+        if rain is not None and rain >= RAIN_PERCENT:
+            return {"kind": "rain", "at": at}
+        temperature = kinds.number(_reading(info, prefix + "temperature"))
+        if temperature is not None and temperature <= 0:
+            return {"kind": "frost", "at": at}
+    return None
+
+
+def forecast_hours(info):
+    """the next 24 hours of openmeteo_weather: [{"at": "17:00", "temp": 7,
+    "rain": 10, "condition": "Bewölkt"}]"""
+    result = []
+    for i in range(FORECAST_HOURS):
+        prefix = f"next_hours_{i:02d}_"
+        when = str(_reading(info, prefix + "time") or "")
+        if not when:
+            break
+        result.append(
+            {
+                "at": when[-5:],
+                "temp": kinds.number(_reading(info, prefix + "temperature")),
+                "rain": kinds.number(_reading(info, prefix + "precipitation")),
+                "condition": str(_reading(info, prefix + "condition") or ""),
+            }
+        )
+    return result
+
+
+def forecast_days(info, source):
+    """the next days: [{"name": "Di", "condition": "Regen", "high": 12,
+    "low": 4, "rain": 80}], today first. The FHEM Weather module counts
+    from fc0 or fc1 depending on its API."""
+    prefix, keys = DAY_READINGS[source]
+    first = 0 if _reading(info, prefix.format(0) + keys[2]) is not None else 1
+    result = []
+    for i in range(first, first + FORECAST_DAYS):
+        values = [_reading(info, prefix.format(i) + key) for key in keys]
+        if values[2] is None and values[3] is None:
+            break
+        result.append(
+            {
+                "name": str(values[0] or ""),
+                "condition": str(values[1] or ""),
+                "high": kinds.number(values[2]),
+                "low": kinds.number(values[3]),
+                "rain": kinds.number(values[4]),
+            }
+        )
+    return result
 
 
 def is_weather(info):
@@ -955,6 +1055,41 @@ def all_off(tiles, room=None):
         and not t.get("keep_on")
         and (room is None or room in t["rooms"])
     ]
+
+
+# --- good night and leaving home ---
+
+ROUTINES = ("night", "away")
+UNDO_SECONDS = 10 * 60
+
+
+def routine_steps(tiles, mode, off_ids, close_ids):
+    """what good night / leaving home does, and how to undo it:
+    (steps, undo) with (device, action, value). Switches off the lights and
+    switches the tablet sends (not those left on with 'All off'); at night
+    also closes the blinds it sends. Undo restores what was before."""
+    steps, undo = [], []
+    for device in off_ids:
+        item = tiles.get(str(device))
+        if (
+            item is not None
+            and item["kind"] in SWITCHABLE
+            and item["state"].get("on")
+            and not item.get("keep_on")
+        ):
+            steps.append((item["id"], "off", None))
+            undo.append((item["id"], "on", None))
+    if mode == "night":
+        for device in close_ids:
+            item = tiles.get(str(device))
+            if item is None or item["kind"] != "blind":
+                continue
+            position = item["state"].get("position")
+            if position is None or position > 0:
+                steps.append((item["id"], "position", 0))
+                if position is not None:
+                    undo.append((item["id"], "position", position))
+    return steps, undo
 
 
 # --- energy ---

@@ -589,3 +589,39 @@ body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
 /* calendar */
 .cal .section + .lrow { border-top: 0; }
 .cal .section:not(:first-child) { margin-top: 10px; }
+/* good night and leaving home */
+.routines { display: flex; gap: 10px; flex-wrap: wrap; }
+.routine { flex: 1 1 40%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); font-size: 16px; font-weight: 600; color: var(--tx); }
+.routine:active { transform: scale(.97); }
+.routine[data-undo] { flex-basis: 100%; color: var(--amber); }
+.rtwarn { display: flex; align-items: center; gap: 14px; margin-top: 14px; padding: 14px 16px; border-radius: 18px; background: rgba(77,163,255,.14); border: 1px solid rgba(77,163,255,.4); color: #4DA3FF; }
+.rtwarn .t b { display: block; color: var(--tx); font-size: 16px; }
+.rtwarn .t span { color: var(--mu); font-size: 14px; }
+/* weather details */
+button.chip { color: var(--tx); }
+.wxnow { display: flex; align-items: center; gap: 18px; margin-top: 10px; color: var(--amber); flex-wrap: wrap; }
+.wxnow b { display: block; font-size: 44px; font-weight: 300; color: var(--tx); line-height: 1; }
+.wxnow span { color: var(--mu); font-size: 15px; }
+.wxsun { margin-left: auto; display: flex; flex-direction: column; gap: 6px; }
+.wxsun span { display: flex; align-items: center; gap: 8px; }
+.wxsun b { font-size: 15px; display: inline; color: var(--tx); font-weight: 600; }
+.wxscroll { overflow-x: auto; scrollbar-width: none; margin-top: 6px; }
+.wxscroll::-webkit-scrollbar { display: none; }
+.wxsvg { width: 100%; min-width: 600px; height: auto; display: block; }
+@media (max-width: 520px) { .wxday { gap: 8px; } .wxday b { width: 40px; flex: none; } .wxday .wxr { width: 50px; flex: none; } .wxday .wxl, .wxday .wxh { width: 30px; } }
+.wxline { fill: none; stroke: var(--amber); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.wxrain { fill: #4DA3FF; opacity: .55; }
+.wxat { fill: var(--mu); font-size: 13px; text-anchor: middle; }
+.wxt { fill: var(--tx); font-size: 15px; font-weight: 600; text-anchor: middle; }
+.wxdays { display: flex; flex-direction: column; }
+.wxday { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--mu); }
+.wxday b { width: 56px; color: var(--tx); font-weight: 600; }
+.wxday .wxr { width: 64px; color: #4DA3FF; font-size: 14px; display: flex; align-items: center; gap: 3px; }
+.wxday .wxl, .wxday .wxh { width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+.wxday .wxh { color: var(--tx); text-align: left; }
+.wxbar { flex: 1 1 60px; min-width: 50px; height: 6px; border-radius: 3px; background: var(--card2); position: relative; }
+.wxbar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, #4DA3FF, var(--amber)); }
+.ss .sh { position: absolute; right: 8%; top: calc(33% + 175px); display: flex; gap: 22px; color: #7b8494; }
+.ss .sh div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; }
+.ss .sh b { font-size: 20px; font-weight: 300; color: #c9cfd8; }
+.ss .sh i { font-style: normal; color: #4DA3FF; font-size: 13px; }
