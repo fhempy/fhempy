@@ -1786,3 +1786,44 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_may_open_windows():
+    assert model.clean_window("7:00-20:00") == "07:00-20:00"
+    assert model.clean_window("22:00 - 6:30") == "22:00-06:30"
+    for bad in ("", "7-20", "25:00-06:00", "08:00-08:00", "08:61-09:00", None):
+        assert model.clean_window(bad) is None
+    windows = model.parse_may_open("Hoftor=07:00-20:00, Garage=8:00-18:00,Tor=x")
+    assert windows == {"Hoftor": "07:00-20:00", "Garage": "08:00-18:00"}
+    assert model.parse_may_open(model.format_may_open(windows)) == windows
+    assert model.may_open_now("07:00-20:00", 7 * 60)
+    assert not model.may_open_now("07:00-20:00", 20 * 60)
+    # over midnight
+    assert model.may_open_now("22:00-06:00", 23 * 60)
+    assert model.may_open_now("22:00-06:00", 60)
+    assert not model.may_open_now("22:00-06:00", 12 * 60)
+
+
+@pytest.mark.asyncio
+async def test_may_open_set_on_tablet(module):
+    module._attr_may_open = "wz_Fenster=07:00-20:00,wz_Stehlampe=07:00-20:00"
+    await module.reload()
+    assert module.data["tiles"]["wz_Fenster"]["may_open"] == "07:00-20:00"
+    # only doors and windows
+    assert "may_open" not in module.data["tiles"]["wz_Stehlampe"]
+    window = next(o for o in module.head["open"] if o["id"] == "wz_Fenster")
+    assert window["may_open"] == "07:00-20:00"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "may_open", "id": "bad_Fenster", "window": "9:00-17:30"})
+        await asyncio.sleep(0.1)
+        assert module.data["tiles"]["bad_Fenster"]["may_open"] == "09:00-17:30"
+        await ws.send_json({"type": "may_open", "id": "wz_Fenster", "window": ""})
+        await asyncio.sleep(0.1)
+        assert "may_open" not in module.data["tiles"]["wz_Fenster"]
+        assert module.may_open() == {
+            "bad_Fenster": "09:00-17:30",
+            "wz_Stehlampe": "07:00-20:00",
+        }
+        await ws.close()
