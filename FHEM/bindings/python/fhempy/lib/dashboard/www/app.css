@@ -803,3 +803,11 @@ body.lite .tile.media .mcover { display: none; }
 .babybar b { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .babybar span { display: inline-flex; align-items: center; gap: 6px; }
 .babybar select { margin-left: auto; background: rgba(255,255,255,.12); color: #fff; border: 0; }
+.enday { margin-top: 12px; }
+.endaylbl { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mu); margin-bottom: 6px; flex-wrap: wrap; }
+.endaylbl span { margin-right: auto; }
+.endaylbl i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; background: #9B8CFF; margin-left: 8px; }
+.endaylbl i.sol { background: var(--green); }
+.endaysvg { width: 100%; height: 54px; display: block; }
+.endaysvg .sol { fill: var(--green); opacity: .35; stroke: var(--green); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.endaysvg .use { fill: none; stroke: #9B8CFF; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
