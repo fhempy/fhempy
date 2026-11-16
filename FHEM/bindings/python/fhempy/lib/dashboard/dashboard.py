@@ -67,6 +67,7 @@ ATTRS_TEXT = (
     "door_opener",
     "keep_on",
     "notices",
+    "floors",
     "appliances",
     "alarm_system",
     "alarm_pin",
@@ -112,6 +113,7 @@ ARRANGE_MESSAGES = (
     "rename_room",
     "keep_on",
     "delete_device",
+    "floors",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
 LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
@@ -363,6 +365,12 @@ class dashboard(generic.FhemModule):
                 "help": "PIN of 4 to 8 digits for the settings, arranging rooms "
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
+            },
+            "floors": {
+                "default": "",
+                "help": "Rooms grouped by floor on Home, e.g. "
+                "Ground floor=Kitchen,Living room;Upstairs=Bath,Bedroom. "
+                "Also set on the tablets in the settings.",
             },
             "notices": {
                 "default": "",
@@ -667,6 +675,10 @@ class dashboard(generic.FhemModule):
     def set_attr_notices(self, hash):
         self.schedule_reload()
 
+    def set_attr_floors(self, hash):
+        if self.ready:
+            self.schedule_header()
+
     def set_attr_appliances(self, hash):
         if self.ready:
             self.schedule_header()
@@ -932,6 +944,7 @@ class dashboard(generic.FhemModule):
         head["calendar"] = model.calendar(self.calendar_events, time.time())
         head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
+        head["floors"] = model.parse_floors(getattr(self, "_attr_floors", ""))
         head["notices"] = model.active_notices(
             self.notices(), self.infos, self.dismissed
         )
@@ -1315,6 +1328,26 @@ class dashboard(generic.FhemModule):
         self._attr_keep_on = value
         await self.reload()
 
+    # --- floors ---
+
+    async def set_floors(self, tablet, message):
+        floors = message.get("floors")
+        if not isinstance(floors, list):
+            return
+        value = model.format_floors([f for f in floors[:20] if isinstance(f, dict)])
+        self.logger.info(f"{tablet['name']}: floors {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} floors {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} floors"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_floors = value
+        await self.update_header()
+
     # --- arranging rooms ---
 
     def can_arrange(self, tablet):
@@ -1327,6 +1360,9 @@ class dashboard(generic.FhemModule):
         kind = message.get("type")
         if kind == "keep_on":
             await self.set_keep_on(tablet, message)
+            return
+        if kind == "floors":
+            await self.set_floors(tablet, message)
             return
         if kind == "move_device":
             await self.arrange_move(tablet, message)

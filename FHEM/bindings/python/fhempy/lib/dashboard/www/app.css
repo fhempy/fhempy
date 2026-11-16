@@ -708,3 +708,7 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
 .alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
 .alsysb { margin: 4px 0 14px; justify-content: flex-start; }
+.floorhead { display: flex; align-items: center; gap: 8px; margin: 18px 0 10px; font-size: 13px; color: var(--mu); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.floorhead:first-child { margin-top: 0; }
+.floorhead span { margin-right: auto; }
+.floorhead .pill.sm { height: 32px; padding: 0 12px; font-size: 13px; text-transform: none; letter-spacing: 0; gap: 6px; }

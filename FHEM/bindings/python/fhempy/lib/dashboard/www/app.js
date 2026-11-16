@@ -61,6 +61,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    floors: "Etagen", floorsLead: "Fasst die Räume auf Zuhause nach Etagen zusammen, mit „Licht aus“ und „Rollläden zu“ pro Etage. Gilt für alle Tablets.", floorsValue: "{n} Etagen", floorsNone: "keine", floorAdd: "Etage hinzufügen", floorName: "Name, z. B. EG", floorNone: "–", floorSave: "Speichern", floorSuggest: "Vorschlag aus den Raumnamen: {list}", floorTake: "Übernehmen", floorLights: "Licht aus", floorBlinds: "Rollläden zu", floorOther: "Weitere Räume",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +128,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    floors: "Floors", floorsLead: "Groups the rooms on Home by floor, with “Lights off” and “Blinds down” per floor. Applies to all tablets.", floorsValue: "{n} floors", floorsNone: "none", floorAdd: "Add floor", floorName: "Name, e.g. Ground floor", floorNone: "–", floorSave: "Save", floorSuggest: "Suggestion from the room names: {list}", floorTake: "Apply", floorLights: "Lights off", floorBlinds: "Blinds down", floorOther: "Other rooms",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -916,9 +918,99 @@
         (gone.length ? '<div class="section">' + esc(t("hiddenTiles")) + '</div><div class="grid">' + gone.map(function (r) { return roomCardHtml(r, "hidden"); }).join("") + "</div>" : "") +
         '<div class="actions"><button class="pill primary" data-editdone="1">' + I("check", 20) + " " + esc(t("editDone")) + "</button></div>";
     } else {
-      right = '<div class="grid">' + homeRooms(false).map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
+      right = floorsHomeHtml(homeRooms(false));
     }
     return statusChipsHtml() + '<div class="home split"><div style="display:flex;flex-direction:column;gap:16px">' + left + "</div><div>" + right + "</div></div>";
+  }
+
+  // ---------- floors: room cards grouped by floor ----------
+  function floorList() { return (S.header && S.header.floors) || []; }
+  function floorsHomeHtml(rooms) {
+    var floors = floorList(), ro = S.tablet && S.tablet.readonly;
+    if (!floors.length) { return '<div class="grid">' + rooms.map(function (r) { return roomCardHtml(r); }).join("") + "</div>"; }
+    var used = {}, html = "";
+    floors.forEach(function (f, i) {
+      var here = rooms.filter(function (r) { return f.rooms.indexOf(r.name) >= 0; });
+      if (!here.length) { return; }
+      here.forEach(function (r) { used[r.name] = 1; });
+      html += '<div class="floorhead"><span>' + esc(f.name) + "</span>" + (ro ? "" : '<button class="pill sm" data-floor="' + i + '" data-floorwhat="lights">' + I("bulb", 16) + " " + esc(t("floorLights")) + '</button><button class="pill sm" data-floor="' + i + '" data-floorwhat="down">' + I("blind", 16) + " " + esc(t("floorBlinds")) + "</button>") + "</div>" +
+        '<div class="grid">' + here.map(function (r) { return roomCardHtml(r); }).join("") + "</div>";
+    });
+    var rest = rooms.filter(function (r) { return !used[r.name]; });
+    if (rest.length) { html += '<div class="floorhead"><span>' + esc(t("floorOther")) + '</span></div><div class="grid">' + rest.map(function (r) { return roomCardHtml(r); }).join("") + "</div>"; }
+    return html;
+  }
+  function floorAll(index, what) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var f = floorList()[index]; if (!f) { return; }
+    visibleRooms().filter(function (r) { return f.rooms.indexOf(r.name) >= 0; }).forEach(function (r) {
+      roomTiles(r).forEach(function (id) {
+        var tl = S.tiles[id];
+        if (what === "lights" && isLight(tl) && tl.state.on) { act(id, "off", null, { on: false }); }
+        if (what === "down" && tl.kind === "blind" && tl.state.position !== 0) { act(id, "position", 0, { position: 0 }); }
+      });
+    });
+  }
+  // floors from room names like "EG Küche" or "OG.Bad": only a suggestion
+  var FLOOR_RE = /^(UG|KG|EG|OG|DG|[0-9]\.?\s?OG|Keller|Erdgeschoss|Obergeschoss|Dachgeschoss|Basement|Ground|Upstairs|Attic)[\s._-]+/i;
+  function floorSuggestion() {
+    var result = [];
+    S.rooms.forEach(function (r) {
+      var m = FLOOR_RE.exec(r.name); if (!m) { return; }
+      var name = m[1].toUpperCase().length <= 3 ? m[1].toUpperCase() : m[1];
+      var f = result.filter(function (x) { return x.name === name; })[0];
+      if (!f) { f = { name: name, rooms: [] }; result.push(f); }
+      f.rooms.push(r.name);
+    });
+    return result;
+  }
+  function renderFloors() {
+    var d = S.sheet.floors || (S.sheet.floors = JSON.parse(JSON.stringify(floorList())));
+    var html = settingsHead(t("floors"), t("setHome"), true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("floorsLead")) + "</div>";
+    var sug = floorSuggestion();
+    if (!d.length && sug.length) {
+      html += '<div class="group"><div class="list"><div class="item"><span class="grow">' + esc(t("floorSuggest", { list: sug.map(function (f) { return f.name + " (" + f.rooms.length + ")"; }).join(", ") })) + '</span><button class="pill" data-floortake="1">' + esc(t("floorTake")) + "</button></div></div></div>";
+    }
+    html += '<div class="group"><div class="list">' + d.map(function (f, i) {
+      return '<div class="item"><input data-floorname="' + i + '" value="' + esc(f.name) + '" maxlength="40" style="flex:1"><button class="iconbtn" data-floordel="' + i + '">' + I("x") + "</button></div>";
+    }).join("") + '<div class="item ntrow"><input id="newfloor" maxlength="40" placeholder="' + esc(t("floorName")) + '" style="flex:1"><button class="pill" data-flooradd="1">' + I("plus", 18) + " " + esc(t("floorAdd")) + "</button></div></div></div>";
+    if (d.length) {
+      html += '<div class="group"><div class="list">' + allRoomsOrdered().map(function (r) {
+        var cur = -1; d.forEach(function (f, i) { if (f.rooms.indexOf(r.name) >= 0 && cur < 0) { cur = i; } });
+        return '<div class="item"><span class="grow">' + esc(r.name) + '</span><div class="seg">' + '<button class="' + (cur < 0 ? "on" : "") + '" data-floorroom="' + esc(r.name) + '" data-floorto="-1">' + esc(t("floorNone")) + "</button>" +
+          d.map(function (f, i) { return '<button class="' + (cur === i ? "on" : "") + '" data-floorroom="' + esc(r.name) + '" data-floorto="' + i + '">' + esc(f.name) + "</button>"; }).join("") + "</div></div>";
+      }).join("") + "</div></div>";
+    }
+    html += '<div class="actions"><button class="pill primary" data-floorsave="1">' + esc(t("floorSave")) + "</button></div>";
+    sheetShell(html);
+  }
+  function floorNames() {
+    var d = S.sheet && S.sheet.floors; if (!d) { return; }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-floorname]"), function (el) { var f = d[+el.getAttribute("data-floorname")]; if (f && el.value.trim()) { f.name = el.value.trim(); } });
+  }
+  function floorClick(target) {
+    var el, d = S.sheet && S.sheet.floors;
+    if ((el = closest(target, "data-floor")) && !S.sheet) { floorAll(+el.getAttribute("data-floor"), el.getAttribute("data-floorwhat")); return true; }
+    if (!d) { return false; }
+    floorNames();
+    if ((el = closest(target, "data-floortake"))) { S.sheet.floors = floorSuggestion(); renderFloors(); return true; }
+    if ((el = closest(target, "data-flooradd"))) {
+      var input = document.getElementById("newfloor"), name = input ? input.value.trim() : "";
+      if (name && !d.some(function (f) { return f.name === name; })) { d.push({ name: name, rooms: [] }); }
+      renderFloors(); return true;
+    }
+    if ((el = closest(target, "data-floordel"))) { d.splice(+el.getAttribute("data-floordel"), 1); renderFloors(); return true; }
+    if ((el = closest(target, "data-floorroom"))) {
+      var room = el.getAttribute("data-floorroom"), to = +el.getAttribute("data-floorto");
+      d.forEach(function (f) { f.rooms = f.rooms.filter(function (x) { return x !== room; }); });
+      if (to >= 0 && d[to]) { d[to].rooms.push(room); }
+      renderFloors(); return true;
+    }
+    if ((el = closest(target, "data-floorsave"))) {
+      if (!pinOk()) { askPin(null); return true; }
+      send({ type: "floors", floors: d }); S.sheet.floors = null; S.sheet.page = ""; renderSettings(); return true;
+    }
+    return false;
   }
 
   function scenesHtml(room) {
@@ -1948,6 +2040,7 @@
   function renderSettings() {
     var tb = S.tablet, lay = layout(), page = S.sheet.page || "";
     if (page === "tablet") { renderSettingsTablet(); return; }
+    if (page === "floors") { renderFloors(); return; }
     if (page === "rooms") { renderSettingsRooms(); return; }
     if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
@@ -1962,7 +2055,8 @@
     if (tb.arrange) {
       html += '<div class="group"><div class="label">' + esc(t("setHome")) + '</div><div class="menu">' +
         settingsRow('data-arrange="1"', "home", t("arrange"), t("setArrangeValue")) +
-        settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) + "</div></div>";
+        settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) +
+        settingsRow('data-setpage="floors"', "stairs", t("floors"), floorList().length ? t("floorsValue", { n: floorList().length }) : t("floorsNone")) + "</div></div>";
     }
     if (tb.https && location.protocol !== "https:") {
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
@@ -2686,6 +2780,7 @@
     var target = ev.target, el;
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
+    if (floorClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
     if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }

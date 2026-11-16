@@ -1786,3 +1786,30 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_parse_floors():
+    floors = model.parse_floors("EG=Küche, Wohnzimmer;OG=Bad,Küche;EG=Flur; =x")
+    assert floors == [
+        {"name": "EG", "rooms": ["Küche", "Wohnzimmer"]},
+        {"name": "OG", "rooms": ["Bad"]},
+    ]
+    assert model.parse_floors(model.format_floors(floors)) == floors
+    assert model.format_floors([{"name": "A;B=", "rooms": ["x,y"]}]) == "A B=x y"
+
+
+@pytest.mark.asyncio
+async def test_floors_set_on_tablet(module):
+    _, answer = await pair(module)
+    module.tablets[answer["tablet"]["id"]]["rooms"] = []
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        floors = [{"name": "EG", "rooms": ["Küche", "Wohnzimmer"]}]
+        await ws.send_json({"type": "floors", "floors": floors})
+        await asyncio.sleep(0.1)
+        assert module._attr_floors == "EG=Küche,Wohnzimmer"
+        assert module.head["floors"] == floors
+        await ws.send_json({"type": "floors", "floors": []})
+        await asyncio.sleep(0.1)
+        assert module.head["floors"] == []
+        await ws.close()
