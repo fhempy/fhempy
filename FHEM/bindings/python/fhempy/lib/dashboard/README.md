@@ -95,6 +95,35 @@ in the settings. This is stored in attribute `keep_on` and applies to all tablet
 *All off* switches a few devices at a time with a short pause, so radio systems (433 MHz, HomeMatic duty cycle, Zigbee)
 don't lose commands. A few seconds later the tablet names the devices that are still on, with *Try again*.
 
+## PIN for the settings
+
+On a family tablet somebody may rearrange everything by accident. With `attr <dashboard> settings_pin 1234` the
+settings, arranging rooms, editing tiles and *Leave on* ask for the PIN first, then stay open for 10 minutes on that
+tablet. FHEM checks the PIN, the tablets never get it. After 5 wrong PINs a tablet waits 5 minutes. A new tablet is
+set up without the PIN.
+
+## Calendar and waste collection
+
+FHEM `Calendar` devices are read every 5 minutes. *Home* shows the entries of today and tomorrow. Pickups of waste get a
+chip on *Home* and a line in the screensaver on the day before and on the day itself (*Tomorrow: Yellow bin*). Pickups
+are found by what an entry says (bin, Tonne, Müll, Altpapier, Gelber Sack, recycling …), and every entry of a calendar
+that mostly holds pickups counts as one, also a bare *Gelb* or *Papier*. Devices with the readings `next_text` and
+`next_days` (e.g. ABFALL) work the same way.
+
+## Weather
+
+A tap on the weather in the header shows the next 24 hours as a curve with the chance of rain, the next days with
+rain and low/high, and sunrise and sunset. The screensaver shows the next hours under the weather. Hours come from
+`openmeteo_weather`, days also from the FHEM `Weather` module.
+
+## Good night and leaving home
+
+*Good night* and *Leave home* on *Home* first show what is still open or on: windows and doors, unlocked locks (lock
+them with one tap), lights and switches, and at night the open blinds. One tap switches off the lights and switches
+(not those left on with *All off*) and, at night, closes the blinds. *Undo* brings back how it was before, for 10
+minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
+forecast of `openmeteo_weather`).
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
@@ -173,6 +202,7 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
 | go2rtc | Address of an existing go2rtc |
 | door_camera | Camera shown when somebody rings |
 | door_opener | Command of the door opener without `set` |
+| settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
 
 ## Set commands
