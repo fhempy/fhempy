@@ -225,7 +225,10 @@ class openmeteo_weather(generic.FhemModule):
                     "temperature_2m,relative_humidity_2m,precipitation_probability,"
                     "weather_code,wind_speed_10m"
                 ),
-                "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+                "daily": (
+                    "weather_code,temperature_2m_max,temperature_2m_min,"
+                    "precipitation_probability_max"
+                ),
                 "wind_speed_unit": "kmh",
                 "timezone": "auto",
                 "forecast_days": FORECAST_DAYS,
@@ -288,6 +291,9 @@ class openmeteo_weather(generic.FhemModule):
                 await self._bulk(
                     f"next_days_{i}_min_temp", self._num(daily["temperature_2m_min"][i])
                 )
+                rain = daily.get("precipitation_probability_max")
+                if rain:
+                    await self._bulk(f"next_days_{i}_precipitation", self._num(rain[i]))
 
             for i, idx in enumerate(
                 range(start, min(start + NEXT_HOURS, len(hourly["time"])))

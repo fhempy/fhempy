@@ -92,6 +92,12 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+## Weather
+
+A tap on the weather in the header shows the next 24 hours as a curve with the chance of rain, the next days with
+rain and low/high, and sunrise and sunset. The screensaver shows the next hours under the weather. Hours come from
+`openmeteo_weather`, days also from the FHEM `Weather` module.
+
 ## Good night and leaving home
 
 *Good night* and *Leave home* on *Home* first show what is still open or on: windows and doors, unlocked locks (lock
