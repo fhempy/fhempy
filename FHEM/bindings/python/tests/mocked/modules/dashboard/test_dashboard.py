@@ -1786,3 +1786,9 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_layout_accent_colour():
+    for value in ("amber", "teal", "lamps"):
+        assert clean_layout({"accent": value}) == {"accent": value}
+    assert clean_layout({"accent": "#ff0000"}) == {}
