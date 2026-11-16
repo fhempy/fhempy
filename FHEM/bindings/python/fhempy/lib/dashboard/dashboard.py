@@ -187,6 +187,22 @@ def read_static(path):
         return file.read()
 
 
+BUILD_MARK = b"__DASHBOARD_BUILD__"
+
+
+def www_build():
+    """short hash of the app files: changes with every fhempy update that
+    changes the dashboard. app.js gets it built in, so a tablet running old
+    code from its cache notices the new version."""
+    digest = hashlib.sha256()
+    for name in ("app.js", "app.css"):
+        try:
+            digest.update(read_static(os.path.join(WWW_DIR, name)))
+        except OSError:
+            pass
+    return digest.hexdigest()[:12]
+
+
 def server_ssl_context(ca_key, ca_cert, ip):
     """certificate for all local names of this host, signed by the own CA"""
     from ..push import certs
@@ -223,6 +239,7 @@ class dashboard(generic.FhemModule):
         # device -> end of its "switch off in" timer (epoch seconds)
         self.timers = {}
         self.codes = {}
+        self.build = www_build()
         self.pair_fails = []
         self.clients = {}
         self._listening = []
@@ -1460,6 +1477,8 @@ class dashboard(generic.FhemModule):
         body = await utils.run_blocking(
             functools.partial(read_static, os.path.join(WWW_DIR, name))
         )
+        if name == "app.js":
+            body = body.replace(BUILD_MARK, self.build.encode())
         return web.Response(
             body=body,
             headers={
@@ -1695,6 +1714,7 @@ class dashboard(generic.FhemModule):
         await ws.send_json(
             {
                 "type": "welcome",
+                "build": self.build,
                 "tablet": self.public_tablet(tablet),
                 **self.model_message(tablet),
             }

@@ -586,3 +586,9 @@ body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
 .sheet .label.tl2 { display: flex; justify-content: space-between; }
 .sheet .label.tl2 span + span { color: var(--tx); text-transform: none; letter-spacing: 0; }
 .tile .cdot { position: absolute; right: 14px; bottom: 14px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 12px currentColor; }
+/* connection lost: old values look old */
+body.offline .tile, body.offline .leave, body.offline .schip { opacity: .55; filter: grayscale(.7); transition: opacity .4s, filter .4s; }
+/* new version after an update */
+.banner.update { display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px; background: rgba(20,32,48,.95); border-color: rgba(77,163,255,.5); color: #d6e8ff; }
+.banner.update .pill { height: 36px; }
+.banner + .banner.update { top: calc(64px + env(safe-area-inset-top)); }

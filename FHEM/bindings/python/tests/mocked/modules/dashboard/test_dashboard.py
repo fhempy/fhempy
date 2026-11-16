@@ -1271,3 +1271,18 @@ def test_colour_lights():
     plain = light("")
     assert "color" not in model.tile(plain)
     assert model.command(model.tile(plain), plain, "rgb", "ffffff") == []
+
+
+@pytest.mark.asyncio
+async def test_build_of_the_app_files(module):
+    build = module.build
+    assert len(build) == 12 and build == dash_module.www_build()
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "app.js") as resp:
+            code = await resp.text()
+        assert f'var BUILD = "{build}";' in code
+        assert "__DASHBOARD_BUILD__" not in code
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["build"] == build
+        await ws.close()

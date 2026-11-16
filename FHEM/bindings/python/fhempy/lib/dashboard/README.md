@@ -92,6 +92,12 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+## Connection and updates
+
+When the connection to fhempy is lost, the tablet says so at the top and greys out the values, so nobody trusts an old
+state. After an fhempy update that changes the dashboard, a tablet still running the old version shows *New version*
+with *Reload*. A wall tablet in the screensaver reloads by itself.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
