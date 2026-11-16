@@ -44,6 +44,19 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+Each tablet has an accent colour (settings: *Accent colour*) for the glow of the background, toggles and selections.
+The rainbow choice lets the background glow in the colour of the coloured lamps which are on.
+
+The last step of the setup shows how to use the dashboard: tap, drag, hold and the settings. It can be opened again in
+the settings (*How to use the dashboard*).
+
+Old or slow tablets get a simple display without blur, shadows and animations. It switches on by itself when the
+tablet has only two cores or draws less than 30 frames per second, and can be set per tablet in the settings
+(*Display: Automatic, Simple, Full*).
+
+The screensaver starts after 2 to 30 minutes or never, set per tablet in the settings (*Screensaver*). Besides the clock
+and the weather of the next hours it shows what is still coming today from the calendars and the bins.
+
 ![Setting up a tablet: choose wall, couch or door and its room](screenshot-setup.png)
 
 Then it asks which rooms this tablet shows: every room is a big tile with an icon and its number of devices, tap to
@@ -85,6 +98,16 @@ tablet, then tap *Switch to https* in the settings of the dashboard (port 8096).
 
 ![Somebody rings: live picture, talking and slide to open](screenshot-doorbell.png)
 
+## Camera page
+
+With cameras the tablets get a tab *Cameras*: all cameras as still pictures, refreshed every two seconds while the page
+is shown. A tap opens the live picture full screen, swipe or the arrows go to the next camera. A tablet only for
+cameras sets *Start page: Cameras* in its settings; it then starts with the cameras, comes back to them and has no
+screensaver. Tablets restricted to some rooms see no camera page.
+
+*Baby monitor* in the live view keeps the camera open with sound and without time limit or screensaver, dims it from
+22 to 6 o'clock and shows the clock with temperature and humidity of a room chosen at the bottom.
+
 ## All off
 
 *All off* switches off lights, switches and plugs, never thermostats. Plugs of heating, heat pumps, fridges, routers
@@ -94,6 +117,10 @@ in the settings. This is stored in attribute `keep_on` and applies to all tablet
 
 *All off* switches a few devices at a time with a short pause, so radio systems (433 MHz, HomeMatic duty cycle, Zigbee)
 don't lose commands. A few seconds later the tablet names the devices that are still on, with *Try again*.
+
+Plugs of a fridge or freezer can be set to *Only measure* in their details (tablets which arrange rooms) or with
+attribute `measure_only`: the tile shows the power, a tap opens the details, and neither the tablets, *All off*, timers
+nor routines switch them. They are not listed as *on*.
 
 ## PIN for the settings
 
@@ -138,6 +165,17 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
+
+A room card with a motion or presence sensor shows *Someone here* while it detects somebody, otherwise how long the room
+is quiet, e.g. *quiet for 40 min*.
+
+## Doors that may be open
+
+A yard gate or garage door may be open by day without a warning: in the details of a door or window switch on *May be
+open* and choose from and to. During that time it is not counted as open in the top bar, before leaving, at night and on
+the screensaver, the security overview lists it as *May be open now*. Outside the time it warns as usual. Attribute
+`may_open` holds the times, e.g. `Yard_gate=07:00-20:00,Garage=08:00-18:00` (over midnight like `22:00-06:00` works
+too).
 
 ## Own notices
 
@@ -198,6 +236,19 @@ The page needs a [timeline](../timeline/README.md) device: it keeps the power of
 from it. The price is set on the tablet or with `attr <dashboard> energy_price 0.32` (€/kWh, optionally with the
 feed-in tariff: `0.32,0.08`). A price reading like `current_price_total` of tibber wins and is taken for every hour.
 Without a grid meter the cost is only shown when there is no solar system either (then everything used was bought).
+
+## Floors
+
+FHEM knows no floors. Settings → *Floors* (tablets which arrange rooms) adds floors and puts each room on one; *Home*
+then groups the room cards by floor, each with *Lights off* and *Blinds down*. Room names like `EG Küche` or `OG.Bad`
+give a suggestion which is applied with one tap. Attribute `floors` holds them:
+`Ground floor=Kitchen,Living room;Upstairs=Bath,Bedroom`.
+
+## Editing tiles
+
+Settings → *Edit tiles* (per tablet): drag tiles to a new place, × hides them, the size button (*1×1*) switches
+between small, wide, tall and big. *Heading* adds a heading to the room, which can be dragged like a tile, and *Reset
+room* brings back the original order, sizes and hidden tiles of the room.
 
 ## Arranging rooms
 
@@ -264,6 +315,18 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
   initials are shown.
 * Covers are loaded through fhempy, so the tablets need no access to the players and https works too.
 
+## Settings
+
+Every settings page says whether it applies to this tablet or to all tablets. On top, *Worth a look* lists what needs
+sorting out: devices without a room (they are not shown before), devices not used for more than a month and devices
+which need attention (battery, not reachable, silent). Long lists show six entries and *Show all*.
+
+## Bug reports
+
+Settings → *Info for a bug report* shows versions (fhempy, Python, the dashboard), counts of devices and tiles, which
+attributes are set and the browser, without device names, addresses or PINs. *Copy* puts it on the clipboard to paste
+into the forum or a GitHub issue.
+
 ## Attributes
 
 | Attribute | Meaning |
@@ -280,6 +343,12 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
 | settings_pin | PIN of 4 to 8 digits for the settings, arranging rooms and editing tiles on the tablets, open for 10 minutes after the PIN. Empty: no PIN |
 | keep_on | Devices *All off* leaves on, `none`: all are switched off, empty: found by their name |
 | energy_price | Price of electricity in €/kWh for the energy page, optionally with the feed-in tariff (`0.32,0.08`) |
+
+| measure_only | Plugs which only measure (fridge, freezer): power shown, never switched |
+
+| floors | Rooms grouped by floor, e.g. `Ground floor=Kitchen,Living room;Upstairs=Bath` |
+
+| may_open | Doors and gates which may be open at some times without a warning, e.g. `Yard_gate=07:00-20:00` |
 
 ## Set commands
 

@@ -412,6 +412,9 @@ def tile_state(kind, info):
         state["since"] = _reading_time(info, "contact", "state")
     if kind == "thermostat":
         state.update(heating_state(info))
+    if kind == "motion":
+        # last change: since when somebody is there or the room is quiet
+        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
 
     if kind in HAZARD_READINGS:
         state["alarm"] = bool(hazard_alarm(kind, info))
@@ -754,10 +757,15 @@ def keeps_on(info):
     return any(w.lower() in KEEP_ON_WORDS for w in _split_words(text))
 
 
-def build(infos, order=None, keep_on=None):
+# plugs and switches which may only measure
+MEASURE_KINDS = ("switch", "outlet")
+
+
+def build(infos, order=None, keep_on=None, measure=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)
-    keep_on: devices 'All off' leaves on, None: found by their names"""
+    keep_on: devices 'All off' leaves on, None: found by their names
+    measure: plugs which only measure, the tablets never switch them"""
     tiles = {}
     rooms = {}
     scenes = []
@@ -774,6 +782,9 @@ def build(infos, order=None, keep_on=None):
             item["keep_on"] = (
                 keeps_on(info) if keep_on is None else name in keep_on
             )
+            if measure and name in measure and item["kind"] in MEASURE_KINDS:
+                item["measure"] = True
+                item["keep_on"] = True
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -949,10 +960,59 @@ def open_contacts(tiles):
                 "door": item.get("door", False),
                 "tilted": item["state"].get("tilted", False),
                 "since": item["state"].get("since"),
+                "may_open": item.get("may_open"),
             }
         )
     result.sort(key=lambda c: (c["since"] or "9999", c["name"].lower()))
     return result
+
+
+# --- doors and gates which may be open at some times, e.g. a yard gate by day ---
+
+_WINDOW_RE = re.compile(r"^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$")
+
+
+def clean_window(value):
+    """'7:00-20:00' -> '07:00-20:00', None when it is no time window"""
+    match = _WINDOW_RE.match(str(value or ""))
+    if not match:
+        return None
+    h1, m1, h2, m2 = (int(x) for x in match.groups())
+    if h1 > 23 or h2 > 24 or m1 > 59 or m2 > 59 or (h2 == 24 and m2):
+        return None
+    if (h1, m1) == (h2, m2):
+        return None
+    return f"{h1:02d}:{m1:02d}-{h2:02d}:{m2:02d}"
+
+
+def parse_may_open(value):
+    """attribute may_open: 'Yard_gate=07:00-20:00,Garage=08:00-18:00'
+    -> {device: '07:00-20:00'}"""
+    result = {}
+    for entry in re.split(r"[,;\s]+(?=[^,;\s]+=)", str(value or "").strip()):
+        name, _, window = entry.partition("=")
+        window = clean_window(window)
+        if name.strip() and window:
+            result[name.strip().rstrip(",;")] = window
+    return result
+
+
+def format_may_open(windows):
+    return ",".join(f"{n}={w}" for n, w in sorted(windows.items()))
+
+
+def may_open_now(window, minutes):
+    """window '07:00-20:00', minutes since midnight. Over midnight works too:
+    '22:00-06:00'"""
+    window = clean_window(window)
+    if window is None:
+        return False
+    start, end = (
+        int(part[:2]) * 60 + int(part[3:]) for part in window.split("-")
+    )
+    if start < end:
+        return start <= minutes < end
+    return minutes >= start or minutes < end
 
 
 def running(tiles):
@@ -968,6 +1028,7 @@ def running(tiles):
                     "room": (item["rooms"] or [""])[0],
                     "power": item["state"].get("power"),
                     "keep_on": bool(item.get("keep_on")),
+                    "measure": bool(item.get("measure")),
                 }
             )
     result.sort(key=lambda r: (r["kind"] not in LIGHTS, r["room"], r["name"].lower()))
@@ -1252,6 +1313,9 @@ def _fan_toggle(item, info, action):
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
+    if item.get("measure") and action in ("on", "off", "toggle", "timer"):
+        # e.g. the plug of a fridge: shows its power, never switched
+        return []
     if item["kind"] == "media":
         return media.command(info, action, value)
     if item["kind"] == "inputs":
@@ -1843,6 +1907,42 @@ def renamed_layout(layout, source, target):
         order[target] = order.pop(source)
         result["tile_order"] = order
     return result
+
+
+# --- floors: rooms grouped by floor, FHEM itself knows no floors ---
+
+
+def parse_floors(value):
+    """attribute floors: 'Ground floor=Kitchen,Living room;Upstairs=Bath'
+    -> [{name, rooms}]. A room belongs to the first floor naming it."""
+    result, seen = [], set()
+    for entry in re.split(r"[;\n]", str(value or "")):
+        name, _, rooms = entry.partition("=")
+        name = name.strip()[:40]
+        if not name or any(f["name"] == name for f in result):
+            continue
+        members = []
+        for room in rooms.split(","):
+            room = room.strip()
+            if room and room not in seen:
+                seen.add(room)
+                members.append(room)
+        result.append({"name": name, "rooms": members})
+    return result
+
+
+def format_floors(floors):
+    parts = []
+    for floor in floors:
+        name = re.sub(r"[;=,\n]", " ", str(floor.get("name") or "")).strip()[:40]
+        rooms = [
+            re.sub(r"[;,\n]", " ", str(r)).strip()
+            for r in floor.get("rooms") or []
+            if str(r).strip()
+        ]
+        if name:
+            parts.append(name + "=" + ",".join(rooms))
+    return ";".join(parts)
 
 
 # --- own notices: "Mail is here" while a device has a value ---
