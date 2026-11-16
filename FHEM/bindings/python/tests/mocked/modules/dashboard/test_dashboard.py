@@ -1603,4 +1603,103 @@ async def test_appliance_asked_then_done(module, mocker):
         await ws.send_json({"type": "appliance_seen", "id": "wz_Fernseher"})
         head = (await next_of(ws, "header"))["header"]
         assert head["appliances"]["done"] == []
+
+
+def test_smoke_and_water_detectors():
+    fake = FakeFhem()
+    tiles = model.build(fake.infos(fake.devices))["tiles"]
+    assert tiles["ku_Rauchmelder"]["kind"] == "smoke"
+    assert tiles["ku_Rauchmelder"]["state"]["alarm"] is False
+    assert tiles["ku_Wasser"]["kind"] == "water"
+    assert model.alarms(tiles) == []
+
+    def detector(readings, sets=""):
+        return {"NAME": "d", "TYPE": "dummy", "sets": sets, "readings": readings}
+
+    for readings in (
+        {"smoke": "true"},
+        {"smoke_detect": "Melder_Flur"},
+        {"fire": "ALARM"},
+        {"smoke": "on", "temperature": "21"},
+    ):
+        info = detector(readings)
+        assert model.kind_of(info) == "smoke"
+        assert model.hazard_alarm("smoke", info) is True
+    assert model.hazard_alarm("smoke", detector({"smoke_detect": "none"})) is False
+    assert model.hazard_alarm("water", detector({"water_leak": "wet"})) is True
+    assert model.hazard_alarm("water", detector({"moistureDetected": "no"})) is False
+    # a valve with a leak reading is no detector
+    assert model.kind_of(detector({"leak": "false"}, "on off")) != "water"
+
+
+def test_alarm_system_modes():
+    def system(state, sets="armAway armHome disarm"):
+        return {"NAME": "a", "TYPE": "dummy", "sets": sets, "readings": {"state": state}}
+
+    assert model.alarm_mode(system("disarmed")) == "off"
+    assert model.alarm_mode(system("armed_away")) == "away"
+    assert model.alarm_mode(system("armed home")) == "home"
+    assert model.alarm_mode(system("triggered")) == "triggered"
+    assert model.alarm_mode(system("Alarm")) == "triggered"
+    assert model.alarm_mode(system("on", "on off")) == "away"
+    assert model.alarm_commands(system("off")) == {
+        "away": "armAway",
+        "home": "armHome",
+        "off": "disarm",
+    }
+    assert model.alarm_commands(system("off", "on off")) == {"away": "on", "off": "off"}
+    found = model.alarm_system(system("triggered"))
+    assert found["modes"] == ["away", "home", "off"]
+    assert model.alarms({}, found)[0]["kind"] == "intrusion"
+    assert model.alarm_system(None) is None
+
+
+@pytest.mark.asyncio
+async def test_alarm_on_all_tablets(module):
+    _, answer = await pair(module)
+    tablet = next(iter(module.tablets.values()))
+    # a tablet of another room also gets the alarm
+    tablet["rooms"] = ["Bad"]
+    async with aiohttp.ClientSession() as session:
+        ws, welcome = await connect(session, module, answer["token"])
+        assert welcome["header"]["alarm"]["alarms"] == []
+        await module.handle_event("ku_Rauchmelder", "smoke", "true")
+        head = (await next_of(ws, "header"))["header"]
+        alarm = head["alarm"]["alarms"][0]
+        assert alarm["id"] == "ku_Rauchmelder" and alarm["kind"] == "smoke"
+        assert alarm["room"] == "Küche"
+        await module.handle_event("ku_Rauchmelder", "smoke", "false")
+        assert (await next_of(ws, "header"))["header"]["alarm"]["alarms"] == []
+        await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_arm_and_disarm_with_pin(module):
+    module._attr_alarm_system = "Alarmanlage"
+    module._attr_alarm_pin = "2580"
+    await module.reload()
+    # no tile, "All off" must never disarm it
+    assert "Alarmanlage" not in module.data["tiles"]
+    system = module.head["alarm"]["system"]
+    assert system["mode"] == "off" and system["pin"] is True
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "alarm_mode", "mode": "away"})
+        assert (await next_of(ws, "alarm_mode"))["ok"] is True
+        assert module.fake.sets == ["Alarmanlage armAway"]
+        await module.handle_event("Alarmanlage", "state", "triggered")
+        head = (await next_of(ws, "header"))["header"]
+        assert head["alarm"]["alarms"][0]["kind"] == "intrusion"
+        # disarming needs the PIN
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "alarm_mode", "mode": "off"})
+        wrong = await next_of(ws, "alarm_mode")
+        assert wrong["ok"] is False and wrong["wrong"] is True
+        await ws.send_json(
+            {"type": "action", "action": "alarm_mode", "mode": "off", "pin": "2580"}
+        )
+        assert (await next_of(ws, "alarm_mode"))["ok"] is True
+        assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()

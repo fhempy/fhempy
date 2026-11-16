@@ -27,6 +27,9 @@
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
     apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
+    smoke: "Rauchmelder", water: "Wassermelder", calm: "ruhig", smokeNow: "Rauch!", waterNow: "Wasser!", alSmoke: "Rauchalarm", alWater: "Wasseralarm", alIntrusion: "Einbruchalarm", alAlarm: "Alarm", alMute: "Ton aus", alSound: "Ton an", alHide: "Ausblenden", alShow: "Anzeigen", alSystemOff: "Alarmanlage aus",
+    alSmokeTip: "Alle raus, Türen schließen, 112 anrufen.", alWaterTip: "Wasser abdrehen, Strom in der Nähe abschalten.", alIntrusionTip: "Bleib ruhig und ruf im Zweifel 110 an.", alAllCalm: "{n} Melder, alle ruhig", alDetectors: "Rauch- und Wassermelder",
+    asOff: "Unscharf", asHome: "Scharf (zuhause)", asAway: "Scharf (abwesend)", asTriggered: "Alarm!", asGoOff: "Aus", asGoHome: "Zuhause", asGoAway: "Abwesend", asSure: "Wirklich aus?", asPinTitle: "Alarmanlage aus", asPinLead: "PIN der Alarmanlage", asDone: "Alarmanlage: {mode}",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
@@ -87,6 +90,9 @@
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
     apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
+    smoke: "Smoke detector", water: "Water detector", calm: "calm", smokeNow: "Smoke!", waterNow: "Water!", alSmoke: "Smoke alarm", alWater: "Water alarm", alIntrusion: "Intrusion alarm", alAlarm: "Alarm", alMute: "Sound off", alSound: "Sound on", alHide: "Hide", alShow: "Show", alSystemOff: "Alarm system off",
+    alSmokeTip: "Get everybody out, close the doors, call the fire brigade.", alWaterTip: "Turn off the water, switch off power nearby.", alIntrusionTip: "Stay calm and call the police if in doubt.", alAllCalm: "{n} detectors, all calm", alDetectors: "Smoke and water detectors",
+    asOff: "Disarmed", asHome: "Armed (home)", asAway: "Armed (away)", asTriggered: "Alarm!", asGoOff: "Off", asGoHome: "Home", asGoAway: "Away", asSure: "Really off?", asPinTitle: "Alarm system off", asPinLead: "PIN of the alarm system", asDone: "Alarm system: {mode}",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
@@ -178,6 +184,8 @@
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
     washer: '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="5"/><path d="M8 6h1M12 6h4M9.5 14.5c1.5-1 3.5 1 5-.5"/>',
+    smoke: '<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="2"/><path d="M8 20c1-1 2 1 3 0s2 1 3 0 2 1 3 0"/>',
+    shield: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M5 12l5 5 9-10"/>',
@@ -301,6 +309,7 @@
     if (m.type === "all_off") { allOffResult(m); return; }
     if (m.type === "appliance_done") { applianceDone(m); return; }
     if (m.type === "unlocked") { pinAnswer(m); return; }
+    if (m.type === "alarm_mode") { alarmModeAnswer(m); return; }
     if (m.type === "locked") { S.unlockedUntil = 0; showToast(t("pinLocked"), null, 4000); return; }
     if (m.type === "routine") { routineDone(m); return; }
     if (m.type === "undone") { showToast(m.failed && m.failed.length ? t("rtFailed", { names: m.failed.join(", ") }) : t("undone"), null, 5000); return; }
@@ -387,7 +396,7 @@
   }
 
   // ---------- tiles ----------
-  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan", inputs: "sliders" };
+  var KIND_ICON = { light: "bulb", dimmer: "bulb", switch: "power", outlet: "plug", blind: "blind", thermostat: "thermo", lock: "lock", contact: "win", motion: "walk", temperature: "thermo", humidity: "drop", media: "music", fan: "fan", inputs: "sliders", smoke: "smoke", water: "drop" };
   var TAP_TOGGLES = { light: 1, dimmer: 1, switch: 1, outlet: 1, blind: 1, fan: 1 };
   var FAN_MODES = ["off", "low", "medium", "high"];
   function fanText(f) { return f && f.mode ? t("fan" + f.mode.charAt(0).toUpperCase() + f.mode.slice(1)) + (f.percent && f.mode !== "off" ? " · " + f.percent + " %" : "") : "–"; }
@@ -568,6 +577,8 @@
     } else if (k === "contact") {
       icon = tile.door ? "door" : "win";
       if (st.closed === false) { cls = "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
+    } else if (k === "smoke" || k === "water") {
+      if (st.alarm) { cls = "alarm"; sub = t(k + "Now") + " " + since(st.since); } else { sub = t("calm"); }
     } else if (k === "motion") {
       if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion"); }
     } else if (k === "temperature") {
@@ -713,6 +724,7 @@
   }
 
   function renderHeader() {
+    checkAlarm();
     var el = document.getElementById("hdr"); if (!el) { return; }
     var h = S.header || {}, now = new Date(), chips = "";
     if (h.weather && h.weather.temperature !== null && h.weather.temperature !== undefined) {
@@ -1642,10 +1654,10 @@
       var up = blinds.filter(function (x) { return (x.tile.state.position || 0) > 1; }).length;
       chips += chip("blinds", "blind", "", t("chBlinds"), up ? t("chNOpen", { n: up, m: blinds.length }) : t("chAllClosed"));
     }
-    var sec = all.filter(function (x) { return x.tile.kind === "contact" || x.tile.kind === "lock"; });
-    if (sec.length) {
-      var open = sec.filter(function (x) { return secOpen(x.tile); }).length;
-      chips += chip("security", "lock", open ? "warn" : "", t("chSecurity"), open ? t("chSecOpen", { n: open }) : t("chSecOk"));
+    var sec = all.filter(function (x) { return SEC_KINDS[x.tile.kind]; }), sys = alarmInfo().system;
+    if (sec.length || sys) {
+      var open = sec.filter(function (x) { return secOpen(x.tile); }).length, alarms = alarmList().length;
+      chips += chip("security", sys ? "shield" : "lock", alarms ? "alarm" : open ? "warn" : "", t("chSecurity"), alarms ? t("alAlarm") + "!" : open ? t("chSecOpen", { n: open }) : sys && sys.mode ? alarmModeText(sys.mode) : t("chSecOk"));
     }
     // only when something needs to be done
     var todo = maintenance();
@@ -1698,9 +1710,16 @@
           x.why === "battery" ? t("mtBattery") : x.why === "silent" ? t("mtSilent", { t: since(x.since) }) : t("mtUnreachable"));
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("mtOk")) + "</div>";
     } else if (kind === "security") {
-      var sec = all.filter(function (x) { return secOpen(x.tile); });
-      title = t("ovSecurity");
-      body = sec.length ? byRoom(sec, function (x) {
+      var sec = all.filter(function (x) { return secOpen(x.tile); }), detectors = all.filter(function (x) { return x.tile.kind === "smoke" || x.tile.kind === "water"; });
+      var loud = detectors.filter(function (x) { return x.tile.state.alarm; });
+      title = alarmInfo().system || detectors.length ? t("chSecurity") : t("ovSecurity");
+      body = alarmSystemHtml(ro);
+      if (loud.length) {
+        body += byRoom(loud, function (x) { return ovRow(x, KIND_ICON[x.tile.kind], "#FF5A5F", t(x.tile.kind + "Now") + " " + since(x.tile.state.since)); });
+      } else if (detectors.length) {
+        body += '<div class="row"><div class="ic" style="background:#34D39926;color:#34D399">' + I("smoke") + '</div><div class="t"><b>' + esc(t("alDetectors")) + "</b><span>" + esc(t("alAllCalm", { n: detectors.length })) + "</span></div></div>";
+      }
+      body += sec.length ? byRoom(sec, function (x) {
         if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
         return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
@@ -1730,6 +1749,95 @@
   }
   function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
 
+  // ---------- smoke, water and the alarm system ----------
+  var SEC_KINDS = { contact: 1, lock: 1, smoke: 1, water: 1 };
+  function alarmInfo() { return (S.header && S.header.alarm) || { system: null, alarms: [] }; }
+  function alarmList() { return alarmInfo().alarms || []; }
+  function alarmModeText(mode) { return t({ off: "asOff", home: "asHome", away: "asAway", triggered: "asTriggered" }[mode] || "asOff"); }
+  function alarmSystemHtml(ro) {
+    var sys = alarmInfo().system; if (!sys) { return ""; }
+    var color = sys.mode === "triggered" ? "#FF5A5F" : sys.mode === "off" || !sys.mode ? "#8C95A5" : "#34D399";
+    var buttons = ro ? "" : sys.modes.filter(function (m) { return m !== sys.mode; }).map(function (m) {
+      return '<button class="pill' + (m === "off" ? "" : " primary") + '" data-alarmmode="' + m + '">' + esc(t({ off: "asGoOff", home: "asGoHome", away: "asGoAway" }[m])) + "</button>";
+    }).join("");
+    return '<div class="row alsys"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I("shield") + '</div><div class="t"><b>' + esc(sys.name) + "</b><span>" + esc([alarmModeText(sys.mode), since(sys.since)].filter(Boolean).join(" · ")) + "</span></div></div>" +
+      (buttons ? '<div class="actions alsysb">' + buttons + "</div>" : "");
+  }
+  function alarmMode(el, mode) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var sys = alarmInfo().system; if (!sys) { return; }
+    if (mode === "off" && sys.pin) {
+      S.pinReturn = S.sheet && S.sheet.pin === undefined ? S.sheet : null; S.afterPin = null;
+      S.sheet = { pin: "", error: "", alarm: mode }; renderSheet();
+      if (alarmList().length) { S.alarmHidden = true; renderAlarm(); }
+      return;
+    }
+    if (mode === "off" && el && !armed(el, "alarm:off", t("asSure"))) { return; }
+    send({ type: "action", action: "alarm_mode", mode: mode });
+  }
+  function alarmModeAnswer(m) {
+    var p = S.sheet;
+    if (p && p.alarm) {
+      if (m.wrong) { S.sheet = { pin: "", error: t(m.wait ? "pinWait" : "pinWrong"), alarm: p.alarm }; renderSheet(); return; }
+      S.sheet = S.pinReturn; S.pinReturn = null;
+      if (S.sheet) { renderSheet(); } else { closeSheet(); }
+    }
+    if (m.ok) { showToast(t("asDone", { mode: alarmModeText(m.mode) }), null, 3000); }
+  }
+  function checkAlarm() {
+    var list = alarmList(), keys = list.map(function (a) { return a.kind + ":" + a.id; }), old = S.alarmKeys || [];
+    if (!list.length) {
+      S.alarmKeys = []; S.alarmMuted = false; S.alarmHidden = false; stopSiren();
+      var el = document.getElementById("alarm"); if (el) { el.parentNode.removeChild(el); }
+      return;
+    }
+    // a new alarm sounds and shows again, also when the last one was muted
+    if (keys.some(function (k) { return old.indexOf(k) < 0; })) { S.alarmMuted = false; S.alarmHidden = false; wake(); }
+    S.alarmKeys = keys;
+    if (S.alarmMuted) { stopSiren(); } else { startSiren(); }
+    renderAlarm();
+  }
+  function renderAlarm() {
+    var list = alarmList(); if (!list.length) { return; }
+    var el = document.getElementById("alarm");
+    if (!el) { el = document.createElement("div"); el.id = "alarm"; document.body.appendChild(el); }
+    var kinds = []; list.forEach(function (a) { if (kinds.indexOf(a.kind) < 0) { kinds.push(a.kind); } });
+    var kind = kinds.length === 1 ? kinds[0] : "alarm", title = t({ smoke: "alSmoke", water: "alWater", intrusion: "alIntrusion" }[kind] || "alAlarm");
+    var where = list.map(function (a) { return [a.name, a.room].filter(Boolean).join(" · "); }).join(", ");
+    if (S.alarmHidden) {
+      el.className = "ringbanner alarmbanner";
+      el.innerHTML = '<span class="pulse"></span><b>' + esc(title) + "</b><span class=\"sub\">" + esc(where) + '</span><button class="pill primary" data-alarmshow="1">' + esc(t("alShow")) + "</button>";
+      return;
+    }
+    var sys = alarmInfo().system, ro = S.tablet && S.tablet.readonly;
+    var rows = list.map(function (a) {
+      return '<div class="alrow">' + I(a.kind === "intrusion" ? "shield" : KIND_ICON[a.kind] || "bell", 26) + "<div><b>" + esc(a.name) + "</b><span>" + esc([a.room, since(a.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
+    }).join("");
+    var tips = kinds.map(function (k) { return { smoke: t("alSmokeTip"), water: t("alWaterTip"), intrusion: t("alIntrusionTip") }[k]; }).filter(Boolean);
+    el.className = "alarmfull " + kind;
+    el.innerHTML = '<div class="alin"><div class="alic">' + I(kind === "intrusion" ? "shield" : kind === "water" ? "drop" : kind === "smoke" ? "smoke" : "bell", 72) + "</div><h1>" + esc(title) + '</h1><div class="allist">' + rows + "</div>" +
+      (tips.length ? '<div class="altip">' + esc(tips.join(" ")) + "</div>" : "") +
+      '<div class="alctrl"><button class="pill" data-alarmmute="1">' + I(S.alarmMuted ? "speaker" : "mute", 20) + " " + esc(S.alarmMuted ? t("alSound") : t("alMute")) + "</button>" +
+      (kinds.indexOf("intrusion") >= 0 && sys && sys.modes.indexOf("off") >= 0 && !ro ? '<button class="pill primary" data-alarmmode="off">' + I("shield", 20) + " " + esc(t("alSystemOff")) + "</button>" : "") +
+      '<button class="pill" data-alarmhide="1">' + esc(t("alHide")) + "</button></div></div>";
+  }
+  function siren() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) { return; }
+      var ctx = S.audio || (S.audio = new Ctx());
+      [[960, 0], [720, 0.45]].forEach(function (n) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "square"; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + n[1]);
+        g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + n[1] + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n[1] + 0.42);
+        o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime + n[1]); o.stop(ctx.currentTime + n[1] + 0.45);
+      });
+    } catch (e) { /* no sound */ }
+  }
+  function startSiren() { if (S.sirenTimer) { return; } siren(); S.sirenTimer = setInterval(siren, 1000); }
+  function stopSiren() { clearInterval(S.sirenTimer); S.sirenTimer = null; }
+
   // ---------- PIN for the settings ----------
   function pinOk() { return !(S.tablet && S.tablet.pin) || Date.now() < (S.unlockedUntil || 0) * 1000; }
   function askPin(then) {
@@ -1744,13 +1852,13 @@
       if (k === "ok") { return '<button class="pkey fn ok" data-pinkey="ok"' + (p.pin.length >= 4 ? "" : " disabled") + ">" + esc(t("pinOk")) + "</button>"; }
       return '<button class="pkey" data-pinkey="' + k + '">' + k + "</button>";
     }).join("");
-    sheetShell('<div class="head"><div><h1>' + esc(t("pinTitle")) + '</h1><div class="subtitle">' + esc(p.error || t("pinLead")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+    sheetShell('<div class="head"><div><h1>' + esc(t(p.alarm ? "asPinTitle" : "pinTitle")) + '</h1><div class="subtitle">' + esc(p.error || t(p.alarm ? "asPinLead" : "pinLead")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       '<div class="pinpad"><div class="pdots' + (p.error ? " bad" : "") + '">' + dots + '</div><div class="pkeys">' + keys + "</div></div>", "pinsheet");
   }
   function pinKey(k) {
     var p = S.sheet; if (!p || p.pin === undefined || p.busy) { return; }
     if (k === "del") { p.pin = p.pin.slice(0, -1); }
-    else if (k === "ok") { if (p.pin.length >= 4) { p.busy = true; send({ type: "unlock", pin: p.pin }); } }
+    else if (k === "ok") { if (p.pin.length >= 4) { p.busy = true; send(p.alarm ? { type: "action", action: "alarm_mode", mode: p.alarm, pin: p.pin } : { type: "unlock", pin: p.pin }); } }
     else if (p.pin.length < 8) { p.pin += k; p.error = ""; }
     renderSheet();
   }
@@ -2223,7 +2331,7 @@
   // ---------- screensaver, idle, wake ----------
   function idleCheck() {
     var idle = (Date.now() - S.lastTouch) / 1000;
-    if (S.ring || !S.tablet || !S.tablet.place) { return; }
+    if (S.ring || alarmList().length || !S.tablet || !S.tablet.place) { return; }
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
@@ -2516,6 +2624,10 @@
       var ap = el.getAttribute("data-appl").split("|"); send({ type: "appliance", id: ap[0], what: ap[1] }); el.closest(".apask").style.opacity = ".4"; return;
     }
     if ((el = closest(target, "data-applseen"))) { send({ type: "appliance_seen", id: el.getAttribute("data-applseen") }); el.closest(".row").style.opacity = ".4"; return; }
+    if ((el = closest(target, "data-alarmmode"))) { alarmMode(el, el.getAttribute("data-alarmmode")); return; }
+    if ((el = closest(target, "data-alarmmute"))) { S.alarmMuted = !S.alarmMuted; checkAlarm(); return; }
+    if ((el = closest(target, "data-alarmhide"))) { S.alarmHidden = true; renderAlarm(); return; }
+    if ((el = closest(target, "data-alarmshow"))) { S.alarmHidden = false; renderAlarm(); return; }
     if ((el = closest(target, "data-keepon"))) {
       if (!pinOk()) { askPin(null); return; }
       var kid = el.getAttribute("data-keepon"), kt = S.tiles[kid];

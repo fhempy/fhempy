@@ -67,6 +67,10 @@ ATTRS_TEXT = (
     "door_opener",
     "keep_on",
     "appliances",
+
+
+    "alarm_system",
+    "alarm_pin",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -366,6 +370,21 @@ class dashboard(generic.FhemModule):
                 "appliance). The tablets ask after the first program found by "
                 "the power, this is set by their answer.",
             },
+
+
+            "alarm_system": {
+                "default": "",
+                "help": "Alarm system the tablets arm and disarm, e.g. "
+                "Alarm_system. Its set commands are used: armAway/armed/arm/on, "
+                "armHome/home/night and disarm/disarmed/off. A state with "
+                "alarm or triggered shows the alarm on all tablets.",
+            },
+            "alarm_pin": {
+                "default": "",
+                "help": "PIN of 4 to 8 digits to disarm the alarm system on the "
+                "tablets. FHEM checks it, the tablets never get it. Empty: "
+                "disarming needs a second tap.",
+            },
             "keep_on": {
                 "default": "",
                 "help": "Devices which 'All off' leaves on, e.g. heating, heat "
@@ -657,6 +676,12 @@ class dashboard(generic.FhemModule):
     def set_attr_door_opener(self, hash):
         self.schedule_reload()
 
+    def set_attr_alarm_system(self, hash):
+        self.schedule_reload()
+
+    def set_attr_alarm_pin(self, hash):
+        self.schedule_reload()
+
     def set_attr_settings_pin(self, hash):
         # a new PIN closes the settings everywhere
         self.unlocked = {}
@@ -837,15 +862,25 @@ class dashboard(generic.FhemModule):
 
         self._reload_task = self.create_async_task(reload_later())
 
+    def alarm_system_name(self):
+        return (getattr(self, "_attr_alarm_system", "") or "").strip()
+
     async def reload(self):
         names = await self.resolve_devices()
+        alarm = self.alarm_system_name()
+        if alarm and alarm not in names:
+            names.append(alarm)
         self.infos = await self.fetch_infos(names)
         for name, info in self.infos.items():
             if media.is_media(info):
                 info["preset_art"] = self.preset_art.setdefault(name, {})
         self._head_infos = {n: i for n, i in self.infos.items() if model.in_header(i)}
         before = (self.data, self.head)
-        self.data = model.build(self.infos, keep_on=self.keep_on_names())
+        # the alarm system gets no tile: "All off" must not disarm it
+        self.data = model.build(
+            {n: i for n, i in self.infos.items() if n != alarm},
+            keep_on=self.keep_on_names(),
+        )
         self.apply_timers()
         self.doorbells = self.find_doorbells()
         self.sun = await self.fetch_sun()
@@ -882,6 +917,16 @@ class dashboard(generic.FhemModule):
         head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
         head["appliances"] = self.appliance_header()
+
+
+        system = model.alarm_system(
+            self.infos.get(self.alarm_system_name()),
+            pin=model.clean_pin(getattr(self, "_attr_alarm_pin", "")) is not None,
+        )
+        head["alarm"] = {
+            "system": system,
+            "alarms": model.alarms(self.data["tiles"], system),
+        }
         head["timeline"] = self.timeline_device() is not None
         return head
 
@@ -1343,6 +1388,7 @@ class dashboard(generic.FhemModule):
             "timer": self.action_timer,
             "routine": self.action_routine,
             "undo": self.action_undo,
+            "alarm_mode": self.action_alarm_mode,
         }.get(action)
         if special is not None:
             await special(tablet, message)
@@ -1447,6 +1493,29 @@ class dashboard(generic.FhemModule):
         for ws, tablet_id in self.connected():
             if tablet_id == tablet["id"]:
                 await self.send(ws, message)
+
+    async def action_alarm_mode(self, tablet, message):
+        """arm or disarm the alarm system, disarming needs the alarm PIN"""
+        info = self.infos.get(self.alarm_system_name())
+        mode = str(message.get("mode", ""))
+        command = model.alarm_commands(info).get(mode) if info else None
+        answer = {"type": "alarm_mode", "mode": mode, "ok": False, "wait": False}
+        if command is None:
+            await self.send_to_tablet(tablet, answer)
+            return
+        pin = model.clean_pin(getattr(self, "_attr_alarm_pin", ""))
+        if mode == "off" and pin is not None:
+            ok, wait = self.check_pin(tablet, pin, message.get("pin"), "alarm")
+            if not ok:
+                answer["wait"] = wait
+                answer["wrong"] = True
+                await self.send_to_tablet(tablet, answer)
+                return
+        error = await self.fhem_set_error(tablet, info["NAME"], command)
+        if error:
+            await self.send_failed(tablet, info["NAME"], model.display_name(info), error)
+        answer["ok"] = not error
+        await self.send_to_tablet(tablet, answer)
 
     async def action_open_door(self, tablet, message):
         opener = parse_opener(self._attr_door_opener)
@@ -2106,27 +2175,33 @@ class dashboard(generic.FhemModule):
             return True
         return self.unlocked.get(tablet["id"], 0) > time.time()
 
-    async def unlock(self, tablet, message, ws):
+    def check_pin(self, tablet, pin, given, what="settings"):
+        """(ok, wait): wait when there were too many wrong PINs. Wrong PINs
+        of the settings and of the alarm system count together."""
         now = time.time()
         fails = [t for t in self.pin_fails.get(tablet["id"], []) if t > now - PIN_WAIT]
-        pin = self.settings_pin()
         ok = False
         if pin is None:
             ok = True
         elif len(fails) < PIN_TRIES:
-            ok = hmac.compare_digest(str(message.get("pin", "")), pin)
+            ok = hmac.compare_digest(str(given or ""), pin)
         if ok:
-            self.unlocked[tablet["id"]] = now + PIN_OPEN
             self.pin_fails.pop(tablet["id"], None)
-        else:
-            fails.append(now)
-            self.pin_fails[tablet["id"]] = fails
-            self.logger.warning(f"{tablet['name']}: wrong PIN for the settings")
+            return True, False
+        fails.append(now)
+        self.pin_fails[tablet["id"]] = fails
+        self.logger.warning(f"{tablet['name']}: wrong PIN for the {what}")
+        return False, len(fails) >= PIN_TRIES
+
+    async def unlock(self, tablet, message, ws):
+        ok, wait = self.check_pin(tablet, self.settings_pin(), message.get("pin"))
+        if ok:
+            self.unlocked[tablet["id"]] = time.time() + PIN_OPEN
         answer = {
             "type": "unlocked",
             "ok": ok,
             "until": self.unlocked.get(tablet["id"], 0),
-            "wait": len(fails) >= PIN_TRIES,
+            "wait": wait,
         }
         if ws is not None:
             await self.send(ws, answer)

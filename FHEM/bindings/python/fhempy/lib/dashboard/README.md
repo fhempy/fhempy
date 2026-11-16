@@ -151,6 +151,18 @@ While a program runs, *Home* shows it with the time it runs and, after the first
 it is done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12
 hours pass.
 
+## Smoke, water and the alarm system
+
+Smoke and water detectors are found by their readings (`smoke`, `smoke_detect`, `fire`, `water_leak`, `leak`,
+`flood`, `moistureDetected` …). When one goes off, every tablet shows a full screen alarm with a siren sound, also
+tablets restricted to other rooms. *Sound off* and *Hide* only act on that tablet, a new alarm shows again.
+
+`attr <dashboard> alarm_system <device>` adds the alarm system to *Security*: arm when away, arm at home and disarm,
+with the set commands the device has (`armAway`/`armed`/`arm`/`on`, `armHome`/`home`/`night`, `disarm`/`disarmed`/
+`off`). A state with *alarm* or *triggered* is an intrusion alarm on all tablets. With `attr <dashboard> alarm_pin 2580`
+disarming asks for the PIN, FHEM checks it. Without a PIN, disarming needs a second tap. The alarm system gets no
+tile, so *All off* and *Leave home* never disarm it.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
