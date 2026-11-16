@@ -268,6 +268,8 @@ input:focus, select:focus { outline: 2px solid var(--amber); }
 .pl h3 { font-size: 19px; margin-top: 18px; }
 .pl ul { list-style: none; margin-top: 10px; color: var(--mu); font-size: 14px; line-height: 1.45; }
 .pl li { margin-bottom: 6px; }
+.places.tours { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.pl.tour { cursor: default; }
 .found { margin-top: 24px; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); font-size: 15px; flex-wrap: wrap; }
 .found .pill { margin-left: auto; }
 .code { display: flex; gap: 10px; margin-top: 28px; }

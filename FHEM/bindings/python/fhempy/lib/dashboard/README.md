@@ -44,6 +44,9 @@ shows a QR code. Scan it with the camera of the tablet (or open the address show
 | At the couch | Starts in its own room, lights, scenes and blinds first, no screensaver |
 | At the door | A ring takes over the screen with camera, talking and door opener, *Before you leave* shows what is still open |
 
+The last step of the setup shows how to use the dashboard: tap, drag, hold and the settings. It can be opened again in
+the settings (*How to use the dashboard*).
+
 Old or slow tablets get a simple display without blur, shadows and animations. It switches on by itself when the
 tablet has only two cores or draws less than 30 frames per second, and can be set per tablet in the settings
 (*Display: Automatic, Simple, Full*).
