@@ -644,3 +644,13 @@ button.chip { color: var(--tx); }
 .ss .sh div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; }
 .ss .sh b { font-size: 20px; font-weight: 300; color: #c9cfd8; }
 .ss .sh i { font-style: normal; color: #4DA3FF; font-size: 13px; }
+/* own notices */
+.notices { display: flex; flex-direction: column; gap: 10px; }
+.notice { display: flex; align-items: center; gap: 14px; padding: 14px 14px 14px 18px; border-radius: 22px; background: linear-gradient(135deg, rgba(90,169,255,.18), rgba(155,140,255,.14)); border: 1px solid rgba(90,169,255,.4); animation: pop .25s ease; }
+.notice .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(90,169,255,.25); color: #8cc4ff; flex: none; }
+.notice .t { flex: 1; min-width: 0; }
+.notice .t b { display: block; font-size: 18px; }
+.notice .t span { color: var(--mu); font-size: 14px; }
+.notice .round.sm { flex: none; }
+.ntedit .ntrow { gap: 10px; }
+.ntedit .ntrow input { flex: 1; min-width: 0; }

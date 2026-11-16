@@ -1408,3 +1408,107 @@ def renamed_layout(layout, source, target):
         order[target] = order.pop(source)
         result["tile_order"] = order
     return result
+
+
+# --- own notices: "Mail is here" while a device has a value ---
+
+# a notice without =value shows while the reading is one of these
+ACTIVE_VALUES = (
+    "on",
+    "open",
+    "opened",
+    "1",
+    "true",
+    "yes",
+    "motion",
+    "detected",
+    "present",
+    "alarm",
+    "an",
+    "ein",
+    "offen",
+    "ja",
+)
+_NOTICE_RE = re.compile(r"^([^\s:=;]+)(?::([^\s=;]+))?(?:=(\S+))?(?:\s+(.*))?$")
+
+
+def parse_notices(value):
+    """attribute notices, one per line or separated by ';':
+    'Mailbox Mail is here; Basement:water=wet Water in the basement'
+    -> [{device, reading, value, text}]"""
+    result = []
+    seen = set()
+    for entry in re.split(r"[;\n]", str(value or "")):
+        match = _NOTICE_RE.match(entry.strip())
+        if not match:
+            continue
+        device, reading, wanted, text = match.groups()
+        if device in seen:
+            continue
+        seen.add(device)
+        result.append(
+            {
+                "device": device,
+                "reading": reading or "state",
+                "value": wanted,
+                "text": (text or "").strip()[:80],
+            }
+        )
+    return result
+
+
+def format_notices(notices):
+    parts = []
+    for n in notices:
+        spec = n["device"]
+        if n.get("reading") and n["reading"] != "state":
+            spec += ":" + n["reading"]
+        if n.get("value"):
+            spec += "=" + n["value"]
+        text = re.sub(r"[;\n]", " ", n.get("text") or "").strip()
+        parts.append(f"{spec} {text}".strip())
+    return "; ".join(parts)
+
+
+def notice_active(notice, info):
+    value = (info.get("readings") or {}).get(notice["reading"])
+    if value is None:
+        return False
+    word = str(value).strip().lower()
+    if notice.get("value"):
+        return word == notice["value"].lower()
+    return word in ACTIVE_VALUES
+
+
+def active_notices(notices, infos, dismissed=None):
+    """notices whose device has the value now. dismissed: device -> time of
+    the reading when it was ticked off without a command to reset it"""
+    dismissed = dismissed or {}
+    result = []
+    for n in notices:
+        info = infos.get(n["device"])
+        if info is None or not notice_active(n, info):
+            continue
+        since = (info.get("times") or {}).get(n["reading"])
+        if n["device"] in dismissed and dismissed[n["device"]] == since:
+            continue
+        rooms = rooms_of(info)
+        result.append(
+            {
+                "id": n["device"],
+                "text": n["text"] or display_name(info),
+                "room": rooms[0] if rooms else "",
+                "since": since,
+                "reset": notice_reset(n, info) is not None,
+            }
+        )
+    result.sort(key=lambda x: x["since"] or "", reverse=True)
+    return result
+
+
+def notice_reset(notice, info):
+    """set command which takes the notice back, e.g. off of a dummy"""
+    sets = kinds.set_names(info.get("sets"))
+    if notice["reading"] != "state" or notice.get("value") not in (None, "on"):
+        return None
+    return "off" if "off" in sets else None

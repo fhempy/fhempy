@@ -1529,3 +1529,60 @@ def test_weather_forecast():
     days = model.weather({"w": info})["days"]
     assert [d["name"] for d in days] == ["Mo", "Di"]
     assert days[0]["rain"] is None
+
+
+def test_parse_notices():
+    notices = model.parse_notices(
+        "Briefkasten Post ist da; Keller:water=wet Wasser im Keller\nGarage"
+    )
+    assert notices == [
+        {"device": "Briefkasten", "reading": "state", "value": None, "text": "Post ist da"},
+        {"device": "Keller", "reading": "water", "value": "wet", "text": "Wasser im Keller"},
+        {"device": "Garage", "reading": "state", "value": None, "text": ""},
+    ]
+    assert model.parse_notices(model.format_notices(notices)) == notices
+
+    def info(readings, sets=""):
+        return {"NAME": "x", "sets": sets, "readings": readings, "times": {}}
+
+    assert model.notice_active(notices[0], info({"state": "on"}))
+    assert not model.notice_active(notices[0], info({"state": "off"}))
+    assert model.notice_active(notices[1], info({"water": "WET"}))
+    assert not model.notice_active(notices[1], info({"water": "on"}))
+    assert model.notice_reset(notices[0], info({}, "on off")) == "off"
+    assert model.notice_reset(notices[0], info({}, "")) is None
+    assert model.notice_reset(notices[1], info({}, "on off")) is None
+
+
+@pytest.mark.asyncio
+async def test_notice_shown_and_ticked_off(module):
+    module._attr_notices = "Briefkasten Post ist da; wz_Fenster:contact=open Fenster zu!"
+    await module.reload()
+    texts = [n["text"] for n in module.head["notices"]]
+    assert sorted(texts) == ["Fenster zu!", "Post ist da"]
+    mail = next(n for n in module.head["notices"] if n["id"] == "Briefkasten")
+    assert mail["reset"] is True
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        # the tick sets the dummy off, its event takes the notice away
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "notice_done", "id": "Briefkasten"})
+        await asyncio.sleep(0.1)
+        assert module.fake.sets == ["Briefkasten off"]
+        await module.handle_event("Briefkasten", "state", "off")
+        await module.update_header()
+        assert [n["id"] for n in module.head["notices"]] == ["wz_Fenster"]
+        # no command to reset a window: hidden until it reports again
+        await ws.send_json({"type": "action", "action": "notice_done", "id": "wz_Fenster"})
+        await asyncio.sleep(0.1)
+        assert module.head["notices"] == []
+        # a tablet adds a notice in the details of a device
+        await ws.send_json({"type": "notice", "id": "wz_Stehlampe", "on": True, "text": "Lampe an"})
+        await asyncio.sleep(0.1)
+        assert module.head["notice_setup"]["wz_Stehlampe"] == "Lampe an"
+        assert any(n["id"] == "wz_Stehlampe" for n in module.head["notices"])
+        await ws.send_json({"type": "notice", "id": "wz_Stehlampe", "on": False})
+        await asyncio.sleep(0.1)
+        assert "wz_Stehlampe" not in module.head["notice_setup"]
+        await ws.close()

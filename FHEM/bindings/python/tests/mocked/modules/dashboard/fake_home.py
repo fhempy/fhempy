@@ -105,6 +105,7 @@ DEVICES = {
     "fl_Haustuer": device(
         "dummy", "Flur", "lock unlock", {"lock": "locked"}, alias="Haustür"
     ),
+    "Briefkasten": device("dummy", "", "on off", {"state": "on"}),
     "fl_Klingel": device("dummy", "Flur", "", {"state": "idle"}, alias="Klingel"),
     "ga_Licht": device("dummy", "Garten", "on off", {"state": "off"}, alias="Licht Terrasse"),
     "ga_Pumpe": device(
