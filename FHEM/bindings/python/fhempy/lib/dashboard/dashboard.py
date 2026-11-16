@@ -123,7 +123,14 @@ RELOAD_ATTRS = (
     "disable",
     "setList",
 )
-LAYOUT_KEYS = ("room_order", "hidden_rooms", "hidden_tiles", "tile_order", "theme")
+LAYOUT_KEYS = (
+    "room_order",
+    "hidden_rooms",
+    "hidden_tiles",
+    "tile_order",
+    "theme",
+    "lite",
+)
 SETTINGS_ATTRS = (
     "devices",
     "hidden_devices",
@@ -155,6 +162,8 @@ def clean_layout(layout):
                 if isinstance(ids, list)
             }
         elif key == "theme" and value in ("auto", "dark", "light"):
+            result[key] = value
+        elif key == "lite" and value in ("auto", "on", "off"):
             result[key] = value
         elif isinstance(value, list):
             result[key] = [str(v)[:200] for v in value[:500]]

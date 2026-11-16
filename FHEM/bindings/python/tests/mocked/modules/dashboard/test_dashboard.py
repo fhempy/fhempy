@@ -1786,3 +1786,9 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+def test_layout_simple_display():
+    for value in ("auto", "on", "off"):
+        assert clean_layout({"lite": value}) == {"lite": value}
+    assert clean_layout({"lite": "fast"}) == {}

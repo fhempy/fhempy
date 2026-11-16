@@ -61,6 +61,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    look: "Darstellung", lookAuto: "Automatisch", lookLite: "Einfach", lookFull: "Voll", lookHint: "Einfach: ohne Unschärfe, für ältere Tablets",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +128,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    look: "Display", lookAuto: "Automatic", lookLite: "Simple", lookFull: "Full", lookHint: "Simple: without blur, for older tablets",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -1957,6 +1959,7 @@
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      '<div class="mrow"><span class="mic">' + I("frame", 20) + '</span><span class="ml"><b>' + esc(t("look")) + "</b><span>" + esc(t("lookHint")) + '</span></span><div class="seg">' + [["auto", "lookAuto"], ["on", "lookLite"], ["off", "lookFull"]].map(function (o) { return '<button class="' + ((lay.lite || "auto") === o[0] ? "on" : "") + '" data-lite="' + o[0] + '">' + esc(t(o[1])) + "</button>"; }).join("") + "</div></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -2450,6 +2453,25 @@
     var theme = layout().theme || "auto";
     var light = theme === "light" || (theme === "auto" && place() === "couch" && isDay());
     document.body.classList.toggle("light", !!light);
+    var look = layout().lite || "auto";
+    document.body.classList.toggle("lite", look === "on" || (look === "auto" && store("dashSlow") === "1"));
+  }
+  // simple display for slow tablets (old wall tablets): few cores or a low
+  // frame rate while the page is idle. Measured once after each start.
+  function measureSpeed() {
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) { store("dashSlow", "1"); applyTheme(); return; }
+    if (!window.requestAnimationFrame) { return; }
+    var frames = 0, first = 0;
+    function frame(ts) {
+      if (!first) { first = ts; }
+      frames++;
+      if (ts - first < 2000) { requestAnimationFrame(frame); return; }
+      // hidden pages get no frames, then nothing is learned
+      if (document.hidden) { return; }
+      var fps = frames * 1000 / (ts - first);
+      store("dashSlow", fps < 30 ? "1" : "0"); applyTheme();
+    }
+    requestAnimationFrame(frame);
   }
 
   // ---------- banner ----------
@@ -2805,6 +2827,7 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-lite"))) { var l3 = copyLayout(); l3.lite = el.getAttribute("data-lite"); saveLayout(l3); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");
@@ -2870,6 +2893,7 @@
     if (hp.pair && !S.token) { render(); pair(hp.pair); } else { render(); connect(); }
     if (S.token && !hp.t) { history.replaceState(null, "", location.pathname + "#t=" + encodeURIComponent(S.token)); }
     setInterval(tick, 1000 * 15);
+    setTimeout(measureSpeed, 5000);
     setInterval(function () { var c = document.getElementById("ringclock"); if (c && S.ring) { tick(); } }, 1000);
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       navigator.serviceWorker.register("sw.js").catch(function () { /* optional */ });
