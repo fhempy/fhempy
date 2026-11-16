@@ -1959,7 +1959,7 @@
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
-      '<div class="mrow"><span class="mic">' + I("frame", 20) + '</span><span class="ml"><b>' + esc(t("look")) + "</b><span>" + esc(t("lookHint")) + '</span></span><div class="seg">' + [["auto", "lookAuto"], ["on", "lookLite"], ["off", "lookFull"]].map(function (o) { return '<button class="' + ((lay.lite || "auto") === o[0] ? "on" : "") + '" data-lite="' + o[0] + '">' + esc(t(o[1])) + "</button>"; }).join("") + "</div></div>" +
+      liteRowHtml(lay) +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -2458,20 +2458,35 @@
   }
   // simple display for slow tablets (old wall tablets): few cores or a low
   // frame rate while the page is idle. Measured once after each start.
+  function liteRowHtml(lay) {
+    var cur = lay.lite || "auto";
+    var opts = [["auto", "lookAuto"], ["on", "lookLite"], ["off", "lookFull"]];
+    var btns = opts.map(function (o) {
+      return '<button class="' + (cur === o[0] ? "on" : "") + '" data-lite="' + o[0] + '">' + esc(t(o[1])) + "</button>";
+    }).join("");
+    return '<div class="mrow"><span class="mic">' + I("frame", 20) + '</span><span class="ml"><b>' + esc(t("look")) +
+      "</b><span>" + esc(t("lookHint")) + '</span></span><div class="seg">' + btns + "</div></div>";
+  }
+  var speed = { frames: 0, first: 0 };
+  function speedFrame(ts) {
+    if (!speed.first) { speed.first = ts; }
+    speed.frames++;
+    if (ts - speed.first < 2000) { requestAnimationFrame(speedFrame); return; }
+    // hidden pages get no frames, then nothing is learned
+    if (document.hidden) { return; }
+    var fps = speed.frames * 1000 / (ts - speed.first);
+    store("dashSlow", fps < 30 ? "1" : "0");
+    applyTheme();
+  }
   function measureSpeed() {
-    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) { store("dashSlow", "1"); applyTheme(); return; }
-    if (!window.requestAnimationFrame) { return; }
-    var frames = 0, first = 0;
-    function frame(ts) {
-      if (!first) { first = ts; }
-      frames++;
-      if (ts - first < 2000) { requestAnimationFrame(frame); return; }
-      // hidden pages get no frames, then nothing is learned
-      if (document.hidden) { return; }
-      var fps = frames * 1000 / (ts - first);
-      store("dashSlow", fps < 30 ? "1" : "0"); applyTheme();
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) {
+      store("dashSlow", "1");
+      applyTheme();
+      return;
     }
-    requestAnimationFrame(frame);
+    if (!window.requestAnimationFrame) { return; }
+    speed = { frames: 0, first: 0 };
+    requestAnimationFrame(speedFrame);
   }
 
   // ---------- banner ----------
