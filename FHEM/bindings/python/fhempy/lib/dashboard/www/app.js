@@ -19,6 +19,7 @@
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
+    calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
@@ -72,6 +73,7 @@
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
+    calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
@@ -156,6 +158,7 @@
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
     battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11v2"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
@@ -850,7 +853,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = routinesHtml() + leaveHtml() + energyHtml() + latelyHtml();
+    var left = routinesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
     var right;
     if (S.edit) {
       var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
@@ -1487,6 +1490,29 @@
   }
 
   // ---------- settings ----------
+  // ---------- calendar and waste collection ----------
+  function binTexts() {
+    var bins = (S.header && S.header.calendar && S.header.calendar.bins) || [], seen = {}, out = [];
+    bins.forEach(function (b) { var key = b.day + "|" + b.what; if (!seen[key]) { seen[key] = true; out.push(b); } });
+    out.sort(function (a, b) { return a.day - b.day; });
+    return out.map(function (b) { return t(b.day === 0 ? "binToday" : "binTomorrow", { what: b.what }); });
+  }
+  function binChipHtml() {
+    var texts = binTexts();
+    if (!texts.length) { return ""; }
+    return '<div class="schip warn"><span class="sic">' + I("trash", 20) + '</span><span class="st"><b>' + esc(t("binTitle")) + "</b><span>" + esc(texts.join(" · ")) + "</span></span></div>";
+  }
+  function calendarHtml() {
+    var entries = (S.header && S.header.calendar && S.header.calendar.entries) || [];
+    if (!entries.length) { return ""; }
+    var html = "", last = -1;
+    entries.forEach(function (e) {
+      if (e.day !== last) { html += '<div class="section">' + esc(e.day === 0 ? t("calTitle") : t("calTomorrow")) + "</div>"; last = e.day; }
+      html += '<div class="lrow"><span class="lt">' + esc(e.allday ? t("calAllDay") : e.now ? t("calNow") : e.at) + '</span><span class="ld" style="background:' + (e.now ? "var(--amber)" : "#5AA9FF") + '"></span><span class="lx">' + esc(e.summary) + "</span></div>";
+    });
+    return '<div class="leave lately cal">' + html + "</div>";
+  }
+
   // ---------- status chips on Home and their overviews ----------
   // every device of the rooms this tablet shows, once, with the room it is shown in
   function shownTiles() {
@@ -1517,7 +1543,7 @@
     }).filter(function (c) { return c.temp !== undefined; });
   }
   function statusChipsHtml() {
-    var all = shownTiles(), chips = "";
+    var all = shownTiles(), chips = binChipHtml();
     function chip(kind, icon, cls, title, sub) {
       return '<button class="schip ' + cls + '" data-overview="' + kind + '"><span class="sic">' + I(icon, 20) + '</span><span class="st"><b>' + esc(title) + "</b><span>" + esc(sub) + "</span></span></button>";
     }
@@ -2095,6 +2121,9 @@
     var open = shownList(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
+    binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
+    var nextCal = ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.allday && !e.now; })[0];
+    if (nextCal) { items += '<div class="x">' + I("clock", 20) + " " + esc(nextCal.at + " " + nextCal.summary) + "</div>"; }
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");

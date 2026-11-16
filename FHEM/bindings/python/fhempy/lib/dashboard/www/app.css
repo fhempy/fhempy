@@ -586,6 +586,9 @@ body.light .ringsvg .rtrack { stroke: rgba(0,0,0,.08); }
 .sheet .label.tl2 { display: flex; justify-content: space-between; }
 .sheet .label.tl2 span + span { color: var(--tx); text-transform: none; letter-spacing: 0; }
 .tile .cdot { position: absolute; right: 14px; bottom: 14px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 0 12px currentColor; }
+/* calendar */
+.cal .section + .lrow { border-top: 0; }
+.cal .section:not(:first-child) { margin-top: 10px; }
 /* good night and leaving home */
 .routines { display: flex; gap: 10px; flex-wrap: wrap; }
 .routine { flex: 1 1 40%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); font-size: 16px; font-weight: 600; color: var(--tx); }

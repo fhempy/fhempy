@@ -92,6 +92,14 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+## Calendar and waste collection
+
+FHEM `Calendar` devices are read every 5 minutes. *Home* shows the entries of today and tomorrow. Pickups of waste get a
+chip on *Home* and a line in the screensaver on the day before and on the day itself (*Tomorrow: Yellow bin*). Pickups
+are found by what an entry says (bin, Tonne, Müll, Altpapier, Gelber Sack, recycling …), and every entry of a calendar
+that mostly holds pickups counts as one, also a bare *Gelb* or *Papier*. Devices with the readings `next_text` and
+`next_days` (e.g. ABFALL) work the same way.
+
 ## Weather
 
 A tap on the weather in the header shows the next 24 hours as a curve with the chance of rain, the next days with

@@ -37,6 +37,8 @@ MAX_IMAGE_SIZE = 3 * 1024 * 1024
 IMAGE_CACHE = 40
 # the header (warnings, running devices, energy) is built at most this often
 HEADER_DELAY = 0.5
+# seconds between reading the calendars
+CALENDAR_INTERVAL = 300
 ATTRS_TEXT = (
     "devices",
     "hidden_devices",
@@ -236,6 +238,8 @@ class dashboard(generic.FhemModule):
         self.https_ready = False
         self.doorbells = []
         self.sun = None
+        # entries of the FHEM Calendar devices, see model.parse_calendar
+        self.calendar_events = []
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
@@ -321,6 +325,7 @@ class dashboard(generic.FhemModule):
         await self.start_server()
         self.ready = True
         self.create_async_task(self.start_cameras())
+        self.create_async_task(self.calendar_loop())
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -665,6 +670,34 @@ class dashboard(generic.FhemModule):
             self.logger.error(f"Failed to read FHEM devices: {result}")
             return {}
 
+    async def fetch_calendars(self):
+        """entries of the next days of all Calendar devices"""
+        code = (
+            "my @r; foreach my $c (devspec2array('TYPE=Calendar')) {"
+            " next if (!defined($defs{$c}) || $defs{$c}{TYPE} ne 'Calendar');"
+            " my $t = CommandGet(undef, \"$c events format:custom=\\\"\\$t1|\\$t2|\\$S\\\""
+            f" limit:from=0,to=+{model.CALENDAR_DAYS}d\") // '';"
+            " foreach my $l (split(/\\n/, $t)) { push(@r, \"$c|$l\") } }"
+            " join(\"\\n\", @r)"
+        )
+        try:
+            result = await fhem.sendCommandHash(self.hash, code)
+        except Exception as err:
+            self.logger.error(f"Failed to read the calendars: {err}")
+            return self.calendar_events
+        return model.parse_calendar(result)
+
+    async def calendar_loop(self):
+        """calendars change rarely and give no events for new entries: read
+        them every few minutes, the header follows the day by itself"""
+        while True:
+            self.calendar_events = await self.fetch_calendars()
+            head = self.make_header()
+            if head != self.head:
+                self.head = head
+                await self.broadcast({"type": "header", "header": head})
+            await asyncio.sleep(CALENDAR_INTERVAL)
+
     async def fetch_sun(self):
         """sunrise and sunset of today for the light/dark design"""
         result = await fhem.sendCommandHash(
@@ -766,6 +799,8 @@ class dashboard(generic.FhemModule):
     def make_header(self):
         head = model.header(self._head_infos, self.data["tiles"])
         head["sun"] = self.sun
+        head["calendar"] = model.calendar(self.calendar_events, time.time())
+        head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
         head["timeline"] = self.timeline_device() is not None
         return head

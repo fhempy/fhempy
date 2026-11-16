@@ -152,6 +152,9 @@ DOORBELL_VALUES = (
 READINGS = READINGS + tuple(r for names in ENERGY_READINGS.values() for r in names)
 READINGS = READINGS + tuple(r for r in media.READINGS if r not in READINGS)
 READINGS = READINGS + ("fan", "fan_pct", "fan_mode")
+# waste collection devices (e.g. ABFALL): text and days of the next pickup
+BIN_READINGS = ("next_text", "next_days")
+READINGS = READINGS + BIN_READINGS
 # colour lights: HUEDevice, zigbee2mqtt, Tasmota, Shelly, WLED, ...
 RGB_SETS = ("rgb", "hex", "RGB", "Color", "color")
 CT_SETS = ("ct", "color_temp", "colortemp", "colorTemperature", "CT", "ColorTemp")
@@ -800,6 +803,8 @@ def in_header(info):
     if info.get("FHEMPYTYPE") in PRESENCE_FHEMPY_TYPES:
         return True
     readings = info.get("readings") or {}
+    if all(r in readings for r in BIN_READINGS):
+        return True
     return any(r in readings for r in BATTERY_READINGS)
 
 
@@ -811,7 +816,108 @@ def header(infos, tiles):
         "open": open_contacts(tiles),
         "running": running(tiles),
         "battery": low_batteries(infos),
+        "bins": bin_devices(infos),
     }
+
+
+# --- calendars and waste collection ---
+
+CALENDAR_DAYS = 14
+# a pickup of waste, from the summary of a calendar entry
+_BIN_RE = re.compile(
+    r"(rest|bio|papier|wertstoff|plastik|verpackungs?)?(m(ü|ue)ll|tonne|abfall)"
+    r"|gelbe[rns]?\s*(sack|säcke|tonne)|altpapier|sperrm(ü|ue)ll|altglas"
+    r"|\b(garbage|trash|recycling|waste|compost|bin|bins)\b",
+    re.I,
+)
+
+
+def is_bin(summary):
+    return bool(_BIN_RE.search(str(summary or "")))
+
+
+def parse_calendar(text):
+    """lines 'calendar|start|end|summary' (seconds since the epoch) of
+    'get <calendar> events' -> [{"cal", "start", "end", "summary"}]"""
+    result = []
+    for line in str(text or "").splitlines():
+        parts = line.split("|", 3)
+        if len(parts) != 4:
+            continue
+        try:
+            start, end = int(float(parts[1])), int(float(parts[2]))
+        except ValueError:
+            continue
+        summary = parts[3].strip().replace("\\,", ",")
+        if summary:
+            result.append({"cal": parts[0], "start": start, "end": end, "summary": summary})
+    result.sort(key=lambda e: (e["start"], e["summary"].lower()))
+    return result
+
+
+def bin_calendars(events):
+    """calendars mostly holding pickups of waste: there every entry is a
+    pickup, also "Gelb" or "Papier" alone. Found by the entries, not by the
+    name of the calendar."""
+    counts = {}
+    for event in events:
+        total, bins = counts.get(event["cal"], (0, 0))
+        counts[event["cal"]] = (total + 1, bins + is_bin(event["summary"]))
+    return {cal for cal, (total, bins) in counts.items() if bins * 2 > total}
+
+
+def _day(epoch, now):
+    """0: today, 1: tomorrow, ... of a time, local time"""
+    then = datetime.datetime.fromtimestamp(epoch).date()
+    return (then - datetime.datetime.fromtimestamp(now).date()).days
+
+
+def calendar(events, now):
+    """what the tablets show of the calendars: the entries of today and
+    tomorrow and the pickups of waste of today and tomorrow"""
+    bin_cals = bin_calendars(events)
+    entries, bins = [], []
+    for event in events:
+        if event["end"] <= now:
+            continue
+        day = max(0, _day(event["start"], now))
+        if day > 1:
+            continue
+        allday = event["end"] - event["start"] >= 86400 and (
+            datetime.datetime.fromtimestamp(event["start"]).strftime("%H:%M")
+            == "00:00"
+        )
+        if event["cal"] in bin_cals or is_bin(event["summary"]):
+            if allday or day == 1 or event["start"] > now - 3600:
+                bins.append({"what": event["summary"], "day": day})
+            continue
+        entries.append(
+            {
+                "summary": event["summary"],
+                "day": day,
+                "allday": allday,
+                "at": ""
+                if allday
+                else datetime.datetime.fromtimestamp(event["start"]).strftime("%H:%M"),
+                "now": event["start"] <= now,
+            }
+        )
+    return {"entries": entries[:12], "bins": bins}
+
+
+def bin_devices(infos):
+    """pickups of waste of today and tomorrow from devices with the readings
+    next_text and next_days (e.g. ABFALL)"""
+    result = []
+    for info in infos.values():
+        readings = info.get("readings") or {}
+        if not all(r in readings for r in BIN_READINGS):
+            continue
+        days = kinds.number(readings.get("next_days"))
+        text = str(readings.get("next_text") or "").strip()
+        if days is not None and 0 <= days <= 1 and text:
+            result.append({"what": text, "day": int(days)})
+    return result
 
 
 # --- commands of the tablets ---
