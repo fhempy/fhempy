@@ -139,6 +139,17 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
 
+## Own notices
+
+A notice like *Mail is here* shows at the top of *Home* while a device is on, open or triggered, and chimes once on
+every tablet. Switch it on in the details of a device (*Notice on Home*) and type the text. The tick resets the device
+when it can be switched off (e.g. a dummy set by a mailbox sensor), otherwise it hides the notice until the device
+reports again.
+
+Attribute `notices` holds them, separated by `;`: `device[:reading][=value] text`, e.g.
+`Mailbox Mail is here; Basement:water=wet Water in the basement`. Without `=value` a notice shows while the reading is
+on, open, 1, true, motion or detected. The devices need no room.
+
 ## Blinds
 
 The details of a blind show a window whose blind moves like the real one: drag it down to close, up to open. Next to it

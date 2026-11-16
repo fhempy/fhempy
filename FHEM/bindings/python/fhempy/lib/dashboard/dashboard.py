@@ -66,9 +66,8 @@ ATTRS_TEXT = (
     "door_camera",
     "door_opener",
     "keep_on",
+    "notices",
     "appliances",
-
-
     "alarm_system",
     "alarm_pin",
 )
@@ -115,7 +114,7 @@ ARRANGE_MESSAGES = (
     "delete_device",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
-LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "appliance")
+LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
 RELOAD_ATTRS = (
     "room",
     "alias",
@@ -270,7 +269,6 @@ class dashboard(generic.FhemModule):
         self.codes = {}
         self.build = www_build()
 
-
         # tablet id -> end of the time the settings are open after the PIN
         self.unlocked = {}
         # tablet id -> times of wrong PINs
@@ -288,6 +286,9 @@ class dashboard(generic.FhemModule):
         self.sun = None
         # entries of the FHEM Calendar devices, see model.parse_calendar
         self.calendar_events = []
+        # device -> reading time of a notice ticked off on a tablet
+        self.dismissed = {}
+
         # device -> model.ApplianceWatch of plugs which report their power
         self.watches = {}
         # learned: durations of programs, done time, plugs to ask about
@@ -363,6 +364,14 @@ class dashboard(generic.FhemModule):
                 "and editing tiles on the tablets. After the PIN they stay open "
                 "for 10 minutes. Empty: no PIN.",
             },
+            "notices": {
+                "default": "",
+                "help": "Own notices on Home while a device has a value, "
+                "separated by ';': device[:reading][=value] text, e.g. "
+                "Mailbox Mail is here; Basement:water=wet Water in the basement. "
+                "Without =value: while it is on/open/1. Also set on the tablets "
+                "in the details of a device.",
+            },
             "appliances": {
                 "default": "",
                 "help": "Plugs of a washing machine, dryer or dishwasher, e.g. "
@@ -370,8 +379,6 @@ class dashboard(generic.FhemModule):
                 "appliance). The tablets ask after the first program found by "
                 "the power, this is set by their answer.",
             },
-
-
             "alarm_system": {
                 "default": "",
                 "help": "Alarm system the tablets arm and disarm, e.g. "
@@ -657,6 +664,9 @@ class dashboard(generic.FhemModule):
     def set_attr_devices(self, hash):
         self.schedule_reload()
 
+    def set_attr_notices(self, hash):
+        self.schedule_reload()
+
     def set_attr_appliances(self, hash):
         if self.ready:
             self.schedule_header()
@@ -744,7 +754,8 @@ class dashboard(generic.FhemModule):
         if not names:
             return {}
         names_perl = ",".join(fhem.perlString(n) for n in names)
-        wanted = ",".join(fhem.perlString(r) for r in model.READINGS)
+        readings = set(model.READINGS) | {n["reading"] for n in self.notices()}
+        wanted = ",".join(fhem.perlString(r) for r in sorted(readings))
         cmd = (
             "my %w = map { $_ => 1 } (" + wanted + "); my %r;"
             " foreach my $d (" + names_perl + ") {"
@@ -862,11 +873,16 @@ class dashboard(generic.FhemModule):
 
         self._reload_task = self.create_async_task(reload_later())
 
+    def notices(self):
+        return model.parse_notices(getattr(self, "_attr_notices", ""))
+
     def alarm_system_name(self):
         return (getattr(self, "_attr_alarm_system", "") or "").strip()
 
     async def reload(self):
         names = await self.resolve_devices()
+        # devices of notices may have no room
+        names += [n["device"] for n in self.notices() if n["device"] not in names]
         alarm = self.alarm_system_name()
         if alarm and alarm not in names:
             names.append(alarm)
@@ -916,8 +932,13 @@ class dashboard(generic.FhemModule):
         head["calendar"] = model.calendar(self.calendar_events, time.time())
         head["calendar"]["bins"] += head.pop("bins", [])
         head["door"] = self.door()
-        head["appliances"] = self.appliance_header()
+        head["notices"] = model.active_notices(
+            self.notices(), self.infos, self.dismissed
+        )
+        # which devices have a notice, for the switch in their details
+        head["notice_setup"] = {n["device"]: n["text"] for n in self.notices()}
 
+        head["appliances"] = self.appliance_header()
 
         system = model.alarm_system(
             self.infos.get(self.alarm_system_name()),
@@ -952,6 +973,8 @@ class dashboard(generic.FhemModule):
         needs: every event of global, doorbells and push devices, of the
         others only the readings the tiles and the header use and state"""
         everything = ["global"] + [b["id"] for b in self.doorbells]
+        # notices may use any reading
+        everything += [n["device"] for n in self.notices() if n["device"] in self.infos]
         everything += [
             name
             for name, info in self.infos.items()
@@ -972,6 +995,10 @@ class dashboard(generic.FhemModule):
             return
         await self.check_special_event(info, device, reading, value)
         if reading not in model.device_readings(info):
+            if any(n["device"] == device and n["reading"] == reading for n in self.notices()):
+                info.setdefault("readings", {})[reading] = value
+                info.setdefault("times", {})[reading] = now_text()
+                self.schedule_header()
             return
         info.setdefault("readings", {})[reading] = value
         info.setdefault("times", {})[reading] = now_text()
@@ -1388,6 +1415,7 @@ class dashboard(generic.FhemModule):
             "timer": self.action_timer,
             "routine": self.action_routine,
             "undo": self.action_undo,
+            "notice_done": self.action_notice_done,
             "alarm_mode": self.action_alarm_mode,
         }.get(action)
         if special is not None:
@@ -1493,6 +1521,53 @@ class dashboard(generic.FhemModule):
         for ws, tablet_id in self.connected():
             if tablet_id == tablet["id"]:
                 await self.send(ws, message)
+
+    async def action_notice_done(self, tablet, message):
+        """tick off a notice: reset the device (e.g. a dummy to off) or hide
+        it until the device reports again"""
+        name = str(message.get("id", ""))
+        notice = next((n for n in self.notices() if n["device"] == name), None)
+        info = self.infos.get(name)
+        if notice is None or info is None:
+            return
+        command = model.notice_reset(notice, info)
+        if command is not None:
+            error = await self.fhem_set_error(tablet, name, command)
+            if not error:
+                return
+            await self.send_failed(tablet, name, model.display_name(info), error)
+        self.dismissed[name] = (info.get("times") or {}).get(notice["reading"])
+        await self.update_header()
+
+    async def set_notice(self, tablet, message):
+        """the tablet adds, changes or removes the notice of a device"""
+        name = str(message.get("id", ""))
+        if name not in self.infos:
+            return
+        notices = [n for n in self.notices() if n["device"] != name]
+        if message.get("on"):
+            old = next((n for n in self.notices() if n["device"] == name), None)
+            notices.append(
+                {
+                    "device": name,
+                    "reading": old["reading"] if old else "state",
+                    "value": old["value"] if old else None,
+                    "text": str(message.get("text") or "").strip()[:80],
+                }
+            )
+        value = model.format_notices(notices)
+        self.logger.info(f"{tablet['name']}: notices {value}")
+        if value:
+            command = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} notices {value}"
+            )
+        else:
+            command = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} notices"
+            )
+        await fhem.sendCommandHash(self.hash, command + ")")
+        self._attr_notices = value
+        await self.update_header()
 
     async def action_alarm_mode(self, tablet, message):
         """arm or disarm the alarm system, disarming needs the alarm PIN"""
@@ -2146,6 +2221,9 @@ class dashboard(generic.FhemModule):
             await self.arrange(tablet, message, ws)
         elif kind == "action":
             await self.run_action(tablet, message)
+        elif kind == "notice" and not tablet.get("readonly"):
+            await self.set_notice(tablet, message)
+
         elif kind == "appliance" and not tablet.get("readonly"):
             await self.answer_appliance(tablet, message)
         elif kind == "appliance_seen" and not tablet.get("readonly"):

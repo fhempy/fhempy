@@ -25,6 +25,7 @@
     offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
+    ntTitle: "Meldung auf Zuhause", ntHint: "Zeigt den Text auf Zuhause, solange das Gerät an, offen oder ausgelöst ist. Mit dem Haken wird es zurückgesetzt.", ntText: "Text, z. B. Post ist da", ntSave: "Speichern", ntDone: "Erledigt", ntSaved: "Gespeichert",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
@@ -90,6 +91,7 @@
     offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
+    ntTitle: "Notice on Home", ntHint: "Shows the text on Home while the device is on, open or triggered. The tick resets it.", ntText: "Text, e.g. Mail is here", ntSave: "Save", ntDone: "Done", ntSaved: "Saved",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
@@ -293,7 +295,7 @@
     }
     if (m.type === "welcome" || m.type === "model") {
       if (m.tablet) { S.tablet = m.tablet; }
-      S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {};
+      S.rooms = m.rooms; S.tiles = m.tiles; S.scenes = m.scenes; S.header = m.header || {}; checkNotices();
       S.pending = {};
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); checkBuild(m.build); }
       render(); loadSparks(true); tapHint(); return;
@@ -305,7 +307,11 @@
       updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") {
+      var setupBefore = JSON.stringify((S.header && S.header.notice_setup) || {});
+      S.header = m.header; checkNotices();
+      if (S.sheet && S.sheet.id && setupBefore !== JSON.stringify(m.header.notice_setup || {})) { renderSheet(); }
+      renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -901,7 +907,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = routinesHtml() + appliancesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
+    var left = noticesHtml() + routinesHtml() + appliancesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
     var right;
     if (S.edit) {
       var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
@@ -1145,6 +1151,7 @@
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
     if (tile.fan && k !== "fan") { body += fanHtml(st.fan); }
+    if (S.tablet && !S.tablet.readonly && k !== "media") { body += noticeEditHtml(tile); }
     body += sheetTrendsHtml() + sheetHistoryHtml();
     var cols = !!left;
     sheetShell(cols ? left + "<div>" + head + body + "</div>" : head + body, cols ? "cols" + (k === "media" ? " msheet" : "") : "");
@@ -1783,6 +1790,33 @@
   }
   function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
 
+  // ---------- own notices, e.g. "Mail is here" ----------
+  function noticesHtml() {
+    var list = (S.header && S.header.notices) || [], ro = S.tablet && S.tablet.readonly;
+    if (!list.length) { return ""; }
+    return '<div class="notices">' + list.map(function (n) {
+      return '<div class="notice"><div class="ic">' + I("bell", 22) + '</div><div class="t"><b>' + esc(n.text) + "</b><span>" + esc([n.room, since(n.since)].filter(Boolean).join(" · ")) + "</span></div>" +
+        (ro ? "" : '<button class="round sm" data-noticedone="' + esc(n.id) + '" aria-label="' + esc(t("ntDone")) + '">' + I("check", 20) + "</button>") + "</div>";
+    }).join("") + "</div>";
+  }
+  // a new notice chimes once on every tablet
+  function checkNotices() {
+    var ids = ((S.header && S.header.notices) || []).map(function (n) { return n.id + "|" + n.since; });
+    if (S.noticeIds && ids.some(function (i) { return S.noticeIds.indexOf(i) < 0; })) { wake(); chime(); }
+    S.noticeIds = ids;
+  }
+  function noticeEditHtml(tile) {
+    var setup = (S.header && S.header.notice_setup) || {}, on = Object.prototype.hasOwnProperty.call(setup, tile.id);
+    return '<div class="group ntedit"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("ntTitle")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("ntHint")) + "</div></div>" +
+      '<button class="tg' + (on ? "" : " off") + '" data-notice="' + esc(tile.id) + '" aria-label="' + esc(t("ntTitle")) + '"></button></div>' +
+      (on ? '<div class="item ntrow"><input id="nttext" maxlength="80" placeholder="' + esc(t("ntText")) + '" value="' + esc(setup[tile.id] || "") + '"><button class="pill" data-noticesave="' + esc(tile.id) + '">' + esc(t("ntSave")) + "</button></div>" : "") + "</div></div>";
+  }
+  function sendNotice(id, on) {
+    if (!pinOk()) { askPin(null); return; }
+    var input = document.getElementById("nttext"), text = input ? input.value : "";
+    if (on && !input) { text = S.tiles[id] ? S.tiles[id].name : ""; }
+    send({ type: "notice", id: id, on: on, text: text });
+  }
   // ---------- smoke, water and the alarm system ----------
   var SEC_KINDS = { contact: 1, lock: 1, smoke: 1, water: 1 };
   function alarmInfo() { return (S.header && S.header.alarm) || { system: null, alarms: [] }; }
@@ -2653,6 +2687,9 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
+    if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }
+    if ((el = closest(target, "data-noticesave"))) { sendNotice(el.getAttribute("data-noticesave"), true); showToast(t("ntSaved"), null, 2000); return; }
     if ((el = closest(target, "data-half")) && S.sheet && S.tiles[S.sheet.id]) { act(S.sheet.id, "position", 50, { position: 50 }); renderSheet(); return; }
     if ((el = closest(target, "data-appl"))) {
       if (!pinOk()) { askPin(null); return; }
