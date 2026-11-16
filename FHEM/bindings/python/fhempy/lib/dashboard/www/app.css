@@ -708,3 +708,10 @@ body.light .win .wsky::after, body.light .win .wsky::before { background: #fff; 
 .alarmbanner { border-color: rgba(255,90,95,.8); background: rgba(90,16,20,.96); z-index: 45; }
 .alarmbanner .sub { color: #FFB3B5; font-size: 14px; }
 .alsysb { margin: 4px 0 14px; justify-content: flex-start; }
+
+/* own views of devices */
+.vfacts { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.vfacts .fact2 b { font-size: 21px; }
+.vacts .pill { flex: 0 1 auto; padding: 0 20px; }
+.vchoice button { padding: 0 12px; }
+.vlead { margin: 0 0 10px; }

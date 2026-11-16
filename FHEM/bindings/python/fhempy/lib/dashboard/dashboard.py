@@ -21,7 +21,7 @@ import tempfile
 import time
 
 from .. import fhem, generic, utils
-from . import go2rtc, media, model
+from . import go2rtc, media, model, views
 
 DEFAULT_PORT = 8095
 DEFAULT_HTTPS_PORT = 8096
@@ -70,6 +70,7 @@ ATTRS_TEXT = (
     "appliances",
     "alarm_system",
     "alarm_pin",
+    "device_views",
 )
 PLACES = ("wall", "couch", "door")
 PLACE_NAMES = {"wall": "Wall", "couch": "Couch", "door": "Door"}
@@ -112,6 +113,7 @@ ARRANGE_MESSAGES = (
     "rename_room",
     "keep_on",
     "delete_device",
+    "device_view",
 )
 # changes of settings, layout and rooms: only with the PIN when one is set
 LOCKED_MESSAGES = ARRANGE_MESSAGES + ("setup", "layout", "notice", "appliance")
@@ -371,6 +373,13 @@ class dashboard(generic.FhemModule):
                 "Mailbox Mail is here; Basement:water=wet Water in the basement. "
                 "Without =value: while it is on/open/1. Also set on the tablets "
                 "in the details of a device.",
+            },
+            "device_views": {
+                "default": "",
+                "help": "Own views of devices, e.g. Robby:vacuum,Valve_garden:"
+                "irrigation,Plug:none. Views: vacuum, car, wallbox, heatpump, "
+                "irrigation, none: a normal tile. Empty: found by their set "
+                "commands and readings. Also set on the tablet.",
             },
             "appliances": {
                 "default": "",
@@ -896,6 +905,7 @@ class dashboard(generic.FhemModule):
         self.data = model.build(
             {n: i for n, i in self.infos.items() if n != alarm},
             keep_on=self.keep_on_names(),
+            device_views=views.parse_views(self._attr_device_views),
         )
         self.apply_timers()
         self.doorbells = self.find_doorbells()
@@ -1315,6 +1325,31 @@ class dashboard(generic.FhemModule):
         self._attr_keep_on = value
         await self.reload()
 
+    # --- own views of vacuums, cars, wallboxes, heat pumps, irrigation ---
+
+    async def set_device_view(self, tablet, message):
+        device = str(message.get("id", ""))
+        view = str(message.get("view", ""))
+        if device not in self.data["tiles"] or view not in views.VIEWS + ("none", ""):
+            return
+        chosen = views.parse_views(self._attr_device_views)
+        if view:
+            chosen[device] = view
+        else:
+            # found automatically again
+            chosen.pop(device, None)
+        value = views.format_views(chosen)
+        name = self.hash["NAME"]
+        if value:
+            self.logger.info(f"{tablet['name']}: attr device_views {value}")
+            code = f"CommandAttr(undef, {fhem.perlString(name + ' device_views ' + value)})"
+        else:
+            self.logger.info(f"{tablet['name']}: deleteattr device_views")
+            code = f"CommandDeleteAttr(undef, {fhem.perlString(name + ' device_views')})"
+        await fhem.sendCommandHash(self.hash, code)
+        self._attr_device_views = value
+        await self.reload()
+
     # --- arranging rooms ---
 
     def can_arrange(self, tablet):
@@ -1327,6 +1362,9 @@ class dashboard(generic.FhemModule):
         kind = message.get("type")
         if kind == "keep_on":
             await self.set_keep_on(tablet, message)
+            return
+        if kind == "device_view":
+            await self.set_device_view(tablet, message)
             return
         if kind == "move_device":
             await self.arrange_move(tablet, message)
