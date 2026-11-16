@@ -25,6 +25,7 @@
     offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
+    half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
     apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
@@ -89,6 +90,7 @@
     offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
+    half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
     apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
@@ -607,7 +609,7 @@
     } else if (tile.kind === "media") {
       body = mediaTileBody(id, tile, look, editState);
     } else {
-      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] ? " sw" : "") + '">' + I(look.icon) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
+      body = '<div class="ic' + (TAP_TOGGLES[tile.kind] ? " sw" : "") + '">' + (tile.kind === "blind" ? winMini(tile.state.position) : I(look.icon)) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
     var extra = "";
     if (look.bar !== null && look.bar !== undefined) { extra += '<div class="bar" style="width:' + look.bar + '%"></div>'; }
@@ -1115,7 +1117,9 @@
     var st = tile.state, k = tile.kind, look = tileLook(tile);
     var head = '<div class="head"><div><h1>' + esc(tile.name) + '</h1><div class="subtitle">' + esc([tile.rooms[0], look.sub].filter(Boolean).join(" · ")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>";
     var left = "", body = "";
-    if (k === "dimmer" || k === "blind" || k === "fan") {
+    if (k === "blind") {
+      left = "<div>" + winHtml(st.position || 0) + '<div class="hint">' + esc(t("pullWindow")) + "</div></div>";
+    } else if (k === "dimmer" || k === "fan") {
       var value = k === "dimmer" ? (st.on ? (st.level || 0) : 0) : k === "fan" ? (st.percent || 0) : (st.position || 0);
       left = '<div><div class="vs' + (k === "blind" || k === "fan" ? " teal" : "") + '" data-slider="' + (k === "dimmer" ? "level" : k === "fan" ? "fan" : "position") + '"><div class="f" style="height:' + value + '%"></div><div class="k" style="bottom:' + value + '%"></div><div class="lbl">' + value + ' %</div></div><div class="hint">' + esc(k === "dimmer" ? t("pullToDim") : k === "fan" ? t("pullToFan") : t("pullToMove")) + "</div></div>";
     }
@@ -1130,7 +1134,9 @@
       body += timerHtml(tile);
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile); }
     } else if (k === "blind") {
-      body += '<div class="group"><div class="actions"><button class="pill" data-do="up">' + esc(t("up")) + "</button>" + (tile.stop ? '<button class="pill" data-do="stop">' + esc(t("stop")) + "</button>" : "") + '<button class="pill" data-do="down">' + esc(t("down")) + "</button></div></div>";
+      var bp = st.position;
+      body += '<div class="group"><div class="actions wbtns"><button class="pill' + (bp >= 99 ? " on" : "") + '" data-do="up">' + esc(t("up")) + '</button><button class="pill' + (bp >= 45 && bp <= 55 ? " on" : "") + '" data-half="1">' + esc(t("half")) + "</button>" +
+        '<button class="pill' + (bp !== undefined && bp <= 1 ? " on" : "") + '" data-do="down">' + esc(t("down")) + "</button>" + (tile.stop ? '<button class="pill" data-do="stop">' + esc(t("stop")) + "</button>" : "") + "</div></div>";
     } else if (k === "thermostat") {
       body += '<div class="tring">' + climateHtml(tile) + "</div>";
     } else if (k === "lock") {
@@ -1218,19 +1224,32 @@
       '<div class="hint" style="text-align:left;margin-top:4px">' + info + "</div></div>";
   }
 
-  // dragging the big slider of dimmers and blinds
+  // a window whose blind moves like the real one: 100 open, 0 closed
+  function posText(p) { return p >= 99 ? t("open") : p <= 1 ? t("closed") : p + " %"; }
+  function winHtml(pos) {
+    var hour = new Date().getHours(), night = hour < 7 || hour >= 19;
+    return '<div class="win' + (night ? " night" : "") + '" data-slider="position"><div class="wsky"></div><div class="wsill"></div><div class="wshut" style="height:' + (100 - pos) + '%"><i></i></div><div class="lbl">' + esc(posText(pos)) + "</div></div>";
+  }
+  function winMini(pos, size) {
+    var h = Math.round(16 * (100 - (pos || 0)) / 100), lines = "";
+    for (var y = 6; y < 3 + h; y += 3) { lines += "M6 " + y + "h12"; }
+    return '<svg class="i" viewBox="0 0 24 24"' + (size ? ' style="width:' + size + 'px;height:' + size + 'px"' : "") + '><rect x="4" y="3" width="16" height="18" rx="2"/>' +
+      (h > 0 ? '<rect x="4" y="3" width="16" height="' + h + '" rx="2" fill="currentColor" stroke="none" opacity=".35"/>' + (lines ? '<path d="' + lines + '" opacity=".7"/>' : "") : '<path d="M12 3v18M4 12h16" opacity=".5"/>') + "</svg>";
+  }
+  // dragging the big slider of dimmers and the window of blinds
   function sliderDrag(el, ev) {
-    var kind = el.getAttribute("data-slider"), id = S.sheet.id, value = 0;
+    var kind = el.getAttribute("data-slider"), id = S.sheet.id, value = 0, win = el.classList.contains("win");
     S.sliding = true;
+    if (win) { el.classList.add("drag"); }
     function move(e) {
       var r = el.getBoundingClientRect(), y = (e.touches ? e.touches[0].clientY : e.clientY);
       value = Math.round(Math.max(0, Math.min(100, (r.bottom - y) / r.height * 100)));
-      el.querySelector(".f").style.height = value + "%"; el.querySelector(".k").style.bottom = value + "%"; el.querySelector(".lbl").textContent = value + " %";
+      if (win) { el.querySelector(".wshut").style.height = (100 - value) + "%"; el.querySelector(".lbl").textContent = posText(value); } else { el.querySelector(".f").style.height = value + "%"; el.querySelector(".k").style.bottom = value + "%"; el.querySelector(".lbl").textContent = value + " %"; }
       e.preventDefault();
     }
     function up() {
       document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
-      S.sliding = false;
+      S.sliding = false; el.classList.remove("drag");
       if (kind === "level") { act(id, "level", value, value > 0 ? { on: true, level: value } : { on: false }); } else if (kind === "fan") { act(id, "fan_percent", value, { percent: value, on: value > 0, mode: fanModeOf(value) }); } else { act(id, "position", value, { position: value }); }
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
@@ -1292,7 +1311,7 @@
       sub = pos >= 99 ? t("open") : pos <= 1 ? t("closed") : t("open") + " " + pos + " %";
       head = ro ? "" : hslideHtml("position", ids, pos, true) + '<button class="round sm" data-pgroup="up" aria-label="' + esc(t("up")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(-90deg)"') + '</button><button class="round sm" data-pgroup="down" aria-label="' + esc(t("down")) + '">' + I("chev", 18).replace("<svg", '<svg style="transform:rotate(90deg)"') + "</button>";
       rows = tiles.map(function (tl) {
-        return '<div class="prow"><button class="pic teal" data-pdetail="' + esc(tl.id) + '">' + I("blind", 18) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "</div>" + (ro ? "" : hslideHtml("position", [tl.id], tl.state.position || 0, true)) + "</div>";
+        return '<div class="prow"><button class="pic teal" data-pdetail="' + esc(tl.id) + '">' + winMini(tl.state.position, 20) + '</button><div class="pn" data-pdetail="' + esc(tl.id) + '">' + esc(tl.name) + "</div>" + (ro ? "" : hslideHtml("position", [tl.id], tl.state.position || 0, true)) + "</div>";
       }).join("");
     } else {
       var on = tiles.filter(function (tl) { return tl.state.on; });
@@ -2634,6 +2653,7 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-half")) && S.sheet && S.tiles[S.sheet.id]) { act(S.sheet.id, "position", 50, { position: 50 }); renderSheet(); return; }
     if ((el = closest(target, "data-appl"))) {
       if (!pinOk()) { askPin(null); return; }
       var ap = el.getAttribute("data-appl").split("|"); send({ type: "appliance", id: ap[0], what: ap[1] }); el.closest(".apask").style.opacity = ".4"; return;

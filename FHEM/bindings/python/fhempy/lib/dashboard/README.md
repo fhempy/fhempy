@@ -139,6 +139,12 @@ sensor without new values for two days, or a low battery. A tap lists them by ro
 A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
 more, as long as no window of the room is open already.
 
+## Blinds
+
+The details of a blind show a window whose blind moves like the real one: drag it down to close, up to open. Next to it
+*Up*, *50 %*, *Down* and *Stop* (when the device knows `stop`). Tiles and the room popup show a small window with the
+current position, the room popup also has one slider for all blinds of the room.
+
 ## Thermostats
 
 The details of a thermostat show a ring: drag the knob to the wanted temperature, or use − and +. The range and steps
