@@ -130,6 +130,15 @@ When the connection to fhempy is lost, the tablet says so at the top and greys o
 state. After an fhempy update that changes the dashboard, a tablet still running the old version shows *New version*
 with *Reload*. A wall tablet in the screensaver reloads by itself.
 
+## Maintenance and fresh air
+
+A *Maintenance* chip on *Home* appears only when something needs to be done: a device that is not reachable (HomeMatic
+`Activity dead`, `availability offline` of zigbee2mqtt/MQTT, or a state like *unreachable*), a temperature or humidity
+sensor without new values for two days, or a low battery. A tap lists them by room.
+
+A room card says *Air out* when the humidity is 65 % or more, or the CO₂ (`co2`, `CO2`, `carbonDioxide`) is 1400 ppm or
+more, as long as no window of the room is open already.
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
