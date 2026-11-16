@@ -1788,6 +1788,123 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_energy_report_from_hourly_values():
+    hour = 1_800_000_000
+    now = hour + 3 * 3600 + 1800
+    buckets = [(hour + i * 3600, hour + (i + 1) * 3600) for i in range(4)]
+    sources = {"solar": ("PV", "pv", None), "grid": ("Meter", "grid", 1)}
+    series = {
+        # kW without unit: 2 kW all the time
+        ("PV", "pv"): {"carry": 2.5, "rows": [(hour, 1.5, 1, 1.5, 1.5)]},
+        # 1000 W from the grid, then 500 W fed in from the second hour on
+        ("Meter", "grid"): {"carry": 1000.0, "rows": [(hour + 3600, -500.0, 1, -500.0, -500.0)]},
+        ("Plug", "power"): {"carry": None, "rows": [(hour + 7200, 200.0, 1, 200.0, 200.0)]},
+    }
+    consumers = [("Plug", "Kaffee", "Plug", "power"), ("Quiet", "Quiet", "Quiet", "power")]
+    report = model.energy_report(series, sources, consumers, buckets, now, (0.3, 0.08))
+    totals = report["totals"]
+    # solar: 2 + 1.5 + 1.5 + 0.75 (half an hour so far)
+    assert totals["solar"] == pytest.approx(5.75)
+    # first hour average of 1000 W at the start and 1000 W: 1 kWh
+    assert totals["import"] == pytest.approx(1.25)
+    # 250 W import in the second hour, then 500 W and half an hour fed in
+    assert totals["export"] == pytest.approx(0.5 + 0.25)
+    assert totals["load"] == pytest.approx(5.75 + 1.25 - 0.75)
+    assert totals["cost"] == pytest.approx(1.25 * 0.3, abs=0.01)
+    assert totals["revenue"] == pytest.approx(0.75 * 0.08, abs=0.01)
+    assert totals["autarky"] == 80
+    assert [b["at"] for b in report["bars"]] == [b[0] for b in buckets]
+    assert report["bars"][0]["import"] == pytest.approx(1.0)
+    assert report["consumers"] == [
+        {"id": "Plug", "name": "Kaffee", "kwh": 0.3, "cost": pytest.approx(0.09)}
+    ]
+    assert report["price"] == "attr"
+    # a price reading wins over the attribute
+    sources["price"] = ("Meter", "price", 1)
+    series[("Meter", "price")] = {"carry": 0.4, "rows": []}
+    report = model.energy_report(series, sources, [], buckets, now, (0.3, None))
+    assert report["price"] == "reading"
+    assert report["totals"]["cost"] == pytest.approx(1.25 * 0.4, abs=0.01)
+    assert "revenue" not in report["totals"]
+    # without a grid meter the cost is what the house used
+    report = model.energy_report(
+        {("PV", "load"): {"carry": 1000.0, "rows": []}},
+        {"load": ("PV", "load", 1)},
+        [],
+        buckets,
+        now,
+        (0.3, None),
+    )
+    assert report["totals"]["cost"] == pytest.approx(3.5 * 0.3, abs=0.01)
+
+
+def test_energy_price_attribute():
+    assert model.parse_energy_price("0.32") == (0.32, None)
+    assert model.parse_energy_price("0.32,0.08") == (0.32, 0.08)
+    assert model.parse_energy_price("") is None
+    assert model.parse_energy_price("abc") is None
+    assert model.parse_energy_price("0.3,0.1,1") is None
+    assert model.parse_energy_price("20") is None
+    assert model.format_energy_price(0.32, 0.08) == "0.32,0.08"
+    infos = {"PV": {**fake_home.DEVICES["PV"], "NAME": "PV"}}
+    assert model.energy_sources(infos) == {
+        "solar": ("PV", "inverter_output_power", None),
+        "load": ("PV", "electrical_load", None),
+    }
+
+
+@pytest.mark.asyncio
+async def test_energy_page(module, mocker):
+    asked = []
+
+    class FakeTimeline:
+        async def hourly_values(self, readings, start, end):
+            asked.append((sorted(readings), start, end))
+            return {r: {"carry": 1.0, "rows": []} for r in readings}
+
+    mocker.patch.object(module, "timeline_device", return_value=FakeTimeline())
+    _, answer = await pair(module)
+    auth = {"Authorization": "Bearer " + answer["token"]}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "api/energy?range=week", headers=auth) as resp:
+            data = await resp.json()
+        assert len(data["bars"]) == 7
+        assert data["range"] == "week"
+        assert data["sources"] == ["load", "solar"]
+        assert ("ku_Kaffeemaschine", "power") in asked[0][0]
+        assert asked[0][2] - asked[0][1] >= 7 * 86400 - 3600
+        async with session.get(base(module) + "api/energy?range=year", headers=auth) as resp:
+            assert resp.status == 400
+        async with session.get(base(module) + "api/energy") as resp:
+            assert resp.status == 401
+
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "energy_price", "price": "0,32", "feed_in": "0,08"})
+        for _ in range(50):
+            if module._attr_energy_price:
+                break
+            await asyncio.sleep(0.02)
+        assert module._attr_energy_price == "0.32,0.08"
+        async with session.get(base(module) + "api/energy?range=day", headers=auth) as resp:
+            data = await resp.json()
+        assert len(data["bars"]) in (23, 24, 25)
+        assert data["price_attr"] == "0.32,0.08"
+        # nonsense is ignored, empty deletes
+        await ws.send_json({"type": "energy_price", "price": "viel"})
+        await ws.send_json({"type": "energy_price", "price": ""})
+        for _ in range(50):
+            if not module._attr_energy_price:
+                break
+            await asyncio.sleep(0.02)
+        assert module._attr_energy_price == ""
+        await ws.close()
+
+    mocker.patch.object(module, "timeline_device", return_value=None)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(base(module) + "api/energy", headers=auth) as resp:
+            assert (await resp.json()) == {"error": "no timeline"}
+
+
 def test_layout_start_page():
     assert clean_layout({"start": "cameras"}) == {"start": "cameras"}
     assert clean_layout({"start": "history"}) == {}
