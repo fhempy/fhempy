@@ -26,6 +26,8 @@
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
     ntTitle: "Meldung auf Zuhause", ntHint: "Zeigt den Text auf Zuhause, solange das Gerät an, offen oder ausgelöst ist. Mit dem Haken wird es zurückgesetzt.", ntText: "Text, z. B. Post ist da", ntSave: "Speichern", ntDone: "Erledigt", ntSaved: "Gespeichert",
+    someone: "Jemand da", quietFor: "ruhig {t}",
+    moTitle: "Darf offen sein", moHint: "In dieser Zeit warnt das Dashboard nicht, wenn offen ist, z. B. ein Hoftor tagsüber. Gilt für alle Tablets.", moFrom: "von", moTo: "bis", moUntil: "darf offen sein bis {t}", moAllowed: "Darf gerade offen sein",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
@@ -66,6 +68,11 @@
     tourDrag: "Ziehen", tourDragList: ["In den Details Helligkeit, Rollladen und Temperatur ziehen", "Im Raum-Popup ein Schieber für alle Rollläden"],
     tourHold: "Halten", tourHoldList: ["Lampe oder Steckdose halten: Ausschalt-Timer", "Beim Bearbeiten Kacheln halten und verschieben"],
     tourGear: "Einstellungen", tourGearList: ["Zahnrad oben rechts", "Design, Räume, Bildschirmschoner", "Kacheln bearbeiten und Räume ordnen"],
+    worthLook: "Einen Blick wert", wlNoRoom: "{n} Geräte ohne Raum", wlNoRoom1: "1 Gerät ohne Raum", wlNoRoomSub: "Werden erst angezeigt, wenn sie einen Raum haben", wlIdle: "{n} Geräte lange nicht benutzt", wlIdle1: "1 Gerät lange nicht benutzt", wlIdleSub: "Seit über einem Monat keine Meldung", wlMaint: "{n} Geräte brauchen Aufmerksamkeit", wlMaintSub: "Batterie, nicht erreichbar oder still",
+    setLead: "Oben gilt nur für dieses Tablet, unten für alle Tablets im Zuhause.", tabLead: "Gilt nur für dieses Tablet. Der Standort legt fest, womit es startet und ob es einen Bildschirmschoner hat.", showAll: "Alle zeigen ({n})",
+    bugInfo: "Info für Fehlerbericht", bugLead: "Versionen und Browser, ohne Namen und Adressen. Zum Einfügen ins Forum oder in ein GitHub-Issue.", bugCopy: "Kopieren", bugCopied: "Kopiert",
+    look: "Darstellung", lookAuto: "Automatisch", lookLite: "Einfach", lookFull: "Voll", lookHint: "Einfach: ohne Unschärfe, für ältere Tablets",
+    saver: "Bildschirmschoner", saverOff: "Aus", saverMin: "{n} min",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -97,6 +104,8 @@
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
     ntTitle: "Notice on Home", ntHint: "Shows the text on Home while the device is on, open or triggered. The tick resets it.", ntText: "Text, e.g. Mail is here", ntSave: "Save", ntDone: "Done", ntSaved: "Saved",
+    someone: "Someone here", quietFor: "quiet {t}",
+    moTitle: "May be open", moHint: "During this time the dashboard does not warn when it is open, e.g. a yard gate by day. Applies to all tablets.", moFrom: "from", moTo: "to", moUntil: "may be open until {t}", moAllowed: "May be open now",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
@@ -137,6 +146,11 @@
     tourDrag: "Drag", tourDragList: ["Drag brightness, blinds and temperature in the details", "One slider for all blinds in the room popup"],
     tourHold: "Hold", tourHoldList: ["Hold a lamp or plug: switch-off timer", "While editing hold tiles to move them"],
     tourGear: "Settings", tourGearList: ["Gear at the top right", "Design, rooms, screensaver", "Edit tiles and arrange rooms"],
+    worthLook: "Worth a look", wlNoRoom: "{n} devices without a room", wlNoRoom1: "1 device without a room", wlNoRoomSub: "They are shown once they have a room", wlIdle: "{n} devices not used for long", wlIdle1: "1 device not used for long", wlIdleSub: "No value for more than a month", wlMaint: "{n} devices need attention", wlMaintSub: "Battery, not reachable or silent",
+    setLead: "The top applies to this tablet only, the bottom to all tablets at home.", tabLead: "Applies to this tablet only. The place sets what it starts with and whether it has a screensaver.", showAll: "Show all ({n})",
+    bugInfo: "Info for a bug report", bugLead: "Versions and browser, without names and addresses. To paste into the forum or a GitHub issue.", bugCopy: "Copy", bugCopied: "Copied",
+    look: "Display", lookAuto: "Automatic", lookLite: "Simple", lookFull: "Full", lookHint: "Simple: without blur, for older tablets",
+    saver: "Screensaver", saverOff: "Off", saverMin: "{n} min",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -192,6 +206,7 @@
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
     home: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
+    person: '<circle cx="12" cy="7" r="3.2"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/>',
     walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M11 15l1-5 3 3h3M8 10l3-2"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
@@ -310,7 +325,11 @@
       if (m.type === "welcome") { S.connected = true; S.retry = 0; if (!S.tab) { S.tab = startTab(); } wakeLock(); checkBuild(m.build); }
       render(); loadSparks(true); tapHint(); return;
     }
-    if (m.type === "rooms_setup") { if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
+    if (m.type === "rooms_setup") {
+      var idle = 0; (m.rooms || []).forEach(function (r) { r.devices.forEach(function (d) { if (d.idle) { idle++; } }); });
+      S.setupHints = { noRoom: (m.unassigned || []).length, idle: idle };
+      if (!S.arrange && S.sheet && S.sheet.settings && !S.sheet.page) { renderSettings(); }
+      if (S.arrange) { S.arrange.data = m; renderContent(); if (S.sheet && (S.sheet.arrange || S.sheet.addto !== undefined)) { renderSheet(); } } return; }
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
@@ -322,6 +341,7 @@
       S.header = m.header; checkNotices();
       if (S.sheet && S.sheet.id && setupBefore !== JSON.stringify(m.header.notice_setup || {})) { renderSheet(); }
       renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "bug_info") { S.bugInfo = m.info; if (S.sheet && S.sheet.page === "buginfo") { renderSettings(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -597,11 +617,11 @@
       sub = st.locked ? t("locked") : st.locked === false ? t("unlocked") : "–";
     } else if (k === "contact") {
       icon = tile.door ? "door" : "win";
-      if (st.closed === false) { cls = "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
+      if (st.closed === false) { cls = mayOpenNow(tile.may_open) ? "" : "warn"; sub = (st.tilted ? t("tilted") : t("open")) + " " + since(st.since); } else { sub = st.closed ? t("closed") : "–"; }
     } else if (k === "smoke" || k === "water") {
       if (st.alarm) { cls = "alarm"; sub = t(k + "Now") + " " + since(st.since); } else { sub = t("calm"); }
     } else if (k === "motion") {
-      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion"); }
+      if (st.occupied) { cls = "move"; sub = t("motion"); } else { sub = t("nomotion") + (since(st.since) ? " · " + since(st.since) : ""); }
     } else if (k === "temperature") {
       sub = num(st.temperature) + "°" + (st.humidity !== undefined ? " · " + Math.round(st.humidity) + " %" : "");
     } else if (k === "humidity") {
@@ -776,7 +796,7 @@
     return (list || []).filter(function (x) { return !ids || ids[x.id]; });
   }
   function warningText() {
-    var open = shownList(S.header && S.header.open);
+    var open = warnOpen(S.header && S.header.open);
     if (!open.length) { return ""; }
     if (open.length <= 3) { return t("openNames", { names: open.map(function (o) { return shortName(o.name); }).join(", ") }); }
     return t("openCount", { n: open.length });
@@ -797,7 +817,7 @@
     var el = document.getElementById("tabs"); if (!el) { return; }
     var tabs = [{ id: "home", name: t("home") }];
     visibleRooms().forEach(function (r) {
-      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name; });
+      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name && !mayOpenNow(o.may_open); });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
     if (seesTimeline()) { tabs.push({ id: "history", name: t("history") }); } else if (S.tab === "history") { S.tab = "home"; }
@@ -816,7 +836,7 @@
   }
 
   function leaveHtml() {
-    var h = S.header, open = shownList(h.open), running = shownList(h.running), rows = "";
+    var h = S.header, open = warnOpen(h.open), running = shownList(h.running), rows = "";
     open.forEach(function (o) {
       rows += '<div class="row"><div class="ic" style="background:rgba(255,138,61,.16);color:var(--amber2)">' + I(o.door ? "door" : "win") + '</div><div class="t"><b>' + esc(o.name) + "</b><span>" +
         esc([o.room, (o.tilted ? t("tilted") : t("open")) + " " + since(o.since)].filter(Boolean).join(" · ")) + "</span></div></div>";
@@ -886,9 +906,10 @@
     return rooms;
   }
   function roomCardHtml(room, editState) {
-    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null;
+    var ids = roomTiles(room), lights = 0, temp = null, open = 0, other = 0, tempId = null, humid = null, co2 = null, motion = 0, someone = false, quiet = "";
     ids.forEach(function (id) {
       var tile = S.tiles[id], st = tile.state;
+      if (tile.kind === "motion") { motion++; if (st.occupied) { someone = true; } else if (st.since && st.since > quiet) { quiet = st.since; } }
       if (tempId === null && (tile.kind === "thermostat" || tile.kind === "temperature") && climateOf(tile).temp !== undefined) { tempId = id; }
       if (humid === null && st.humidity !== undefined && st.humidity !== null) { humid = st.humidity; }
       if ((tile.kind === "light" || tile.kind === "dimmer") && st.on) { lights++; } else if ((tile.kind === "switch" || tile.kind === "outlet") && st.on) { other++; }
@@ -908,6 +929,8 @@
     if (lights) { facts += '<span class="fact on">' + esc(lights === 1 ? t("lightOn") : t("lightsOn", { n: lights })) + "</span>"; }
     if (other) { facts += '<span class="fact on">' + esc(other === 1 ? t("deviceOn") : t("devicesOn", { n: other })) + "</span>"; }
     if (open) { facts += '<span class="fact warn">' + esc(t("doorsOpen", { n: open })) + "</span>"; }
+    // somebody in the room: motion or presence sensors
+    if (someone) { facts += '<span class="fact pres">' + I("person", 14) + " " + esc(t("someone")) + "</span>"; } else if (motion && quiet && since(quiet)) { facts += '<span class="fact">' + esc(t("quietFor", { t: since(quiet) })) + "</span>"; }
     if (editState) {
       return '<div class="tile roomcard' + (lights ? " light" : "") + (editState === "hidden" ? " hiddenTile" : "") + '" data-tile="room:' + esc(room.name) + '">' + climate + '<div class="n">' + esc(room.name) + '</div><div class="facts">' + facts + "</div>" +
         '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div></div>";
@@ -1158,6 +1181,8 @@
       body += '<div class="tring">' + climateHtml(tile) + "</div>";
     } else if (k === "lock") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.locked ? " on" : "") + '" data-do="lock">' + I("lock", 20) + " " + esc(t("lock")) + '</button><button class="pill danger" data-do="unlock">' + I("unlock", 20) + " " + esc(t("unlock")) + "</button></div></div>";
+    } else if (k === "contact" && S.tablet && !S.tablet.readonly) {
+      body += mayOpenHtml(tile);
     } else if (k === "temperature" || k === "humidity") {
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
@@ -1174,11 +1199,14 @@
   function keepOnListHtml() {
     var ids = Object.keys(S.tiles).filter(function (id) { var tl = S.tiles[id]; return tl.kind === "switch" || tl.kind === "outlet" || tl.keep_on; });
     if (!ids.length) { return ""; }
-    ids.sort(function (a, b) { return S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    ids.sort(function (a, b) { var ka = S.tiles[a].keep_on ? 0 : 1, kb = S.tiles[b].keep_on ? 0 : 1; return ka - kb || S.tiles[a].name.localeCompare(S.tiles[b].name); });
+    // long lists: the ones left on first, the rest on request
+    var all = ids.length, more = !S.sheet.all && all > 6 ? '<button class="linkbtn" data-showall="1">' + esc(t("showAll", { n: all })) + "</button>" : "";
+    if (more) { ids = ids.slice(0, 6); }
     return '<div class="group"><div class="label">' + esc(t("keepOnList")) + '</div><div class="hint" style="text-align:left;margin:0 0 6px">' + esc(t("keepOnHint")) + '</div><div class="list">' + ids.map(function (id) {
       var tl = S.tiles[id];
       return '<div class="item"><span class="grow">' + esc(tl.name) + '<span style="color:var(--mu)"> · ' + esc(tl.rooms[0] || "") + '</span></span><button class="tg' + (tl.keep_on ? "" : " off") + '" data-keepon="' + esc(id) + '"></button></div>';
-    }).join("") + "</div></div>";
+    }).join("") + "</div>" + more + "</div>";
   }
   function sheetHistoryHtml() {
     var hist = S.sheet && S.sheet.history; if (!hist || !hist.activity) { return ""; }
@@ -1651,7 +1679,26 @@
     return result;
   }
   function isLight(tl) { return tl.kind === "light" || tl.kind === "dimmer"; }
-  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false) || (tl.kind === "lock" && tl.state.locked === false); }
+  function secOpen(tl) { return (tl.kind === "contact" && tl.state.closed === false && !mayOpenNow(tl.may_open)) || (tl.kind === "lock" && tl.state.locked === false); }
+  // ---------- doors and gates which may be open at some times ----------
+  function mayOpenNow(win) {
+    var m = /^(\d\d):(\d\d)-(\d\d):(\d\d)$/.exec(win || ""); if (!m) { return false; }
+    var now = S.now || new Date(), n = now.getHours() * 60 + now.getMinutes(), a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4];
+    return a < b ? n >= a && n < b : n >= a || n < b;
+  }
+  function warnOpen(list) { return shownList(list).filter(function (o) { return !mayOpenNow(o.may_open); }); }
+  function mayOpenHtml(tile) {
+    var on = !!tile.may_open, parts = (tile.may_open || "07:00-20:00").split("-");
+    return '<div class="group ntedit"><div class="list"><div class="item"><div class="grow"><div>' + esc(t("moTitle")) + '</div><div class="hint" style="text-align:left;margin:2px 0 0">' + esc(t("moHint")) + "</div></div>" +
+      '<button class="tg' + (on ? "" : " off") + '" data-mayopen="' + esc(tile.id) + '" aria-label="' + esc(t("moTitle")) + '"></button></div>' +
+      (on ? '<div class="item ntrow"><span>' + esc(t("moFrom")) + '</span><input type="time" id="mofrom" value="' + esc(parts[0]) + '"><span>' + esc(t("moTo")) + '</span><input type="time" id="moto" value="' + esc(parts[1] === "24:00" ? "23:59" : parts[1]) + '"><button class="pill" data-mayopensave="' + esc(tile.id) + '">' + esc(t("ntSave")) + "</button></div>" : "") + "</div></div>";
+  }
+  function sendMayOpen(id, on) {
+    if (!pinOk()) { askPin(null); return; }
+    var from = document.getElementById("mofrom"), to = document.getElementById("moto");
+    var win = !on ? "" : from && to && from.value && to.value ? from.value + "-" + to.value : "07:00-20:00";
+    send({ type: "may_open", id: id, window: win });
+  }
   // devices which need attention: not reachable, a sensor without values for
   // two days, a low battery
   function maintenance() {
@@ -1775,6 +1822,10 @@
         if (x.tile.kind === "lock") { return ovRow(x, "unlock", "#FF8A3D", t("unlocked"), ro ? "" : '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); }
         return ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since));
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovSecOk")) + "</div>";
+      var allowed = all.filter(function (x) { return x.tile.kind === "contact" && x.tile.state.closed === false && mayOpenNow(x.tile.may_open); });
+      if (allowed.length) {
+        body += '<div class="section"><span>' + esc(t("moAllowed")) + "</span></div>" + byRoom(allowed, function (x) { return ovRow(x, x.tile.door ? "door" : "win", "#8E8E93", t("open") + " " + since(x.tile.state.since) + " · " + t("moUntil", { t: x.tile.may_open.split("-")[1] })); });
+      }
     }
     sheetShell('<div class="head"><div><h1>' + esc(title) + "</h1>" + (lead ? '<div class="subtitle">' + esc(lead) + "</div>" : "") + '</div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       '<div class="blist ovlist">' + body + "</div>" + (actions ? '<div class="actions">' + actions + "</div>" : ""));
@@ -1799,7 +1850,12 @@
     sheetShell('<div class="head"><div><h1>' + esc(t("batteriesTitle")) + '</h1><div class="subtitle">' + esc(list.length ? t("batteriesLead") : t("batteriesOk")) + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       (rows ? '<div class="blist">' + rows + "</div>" : '<div class="allclear">' + I("check", 26) + " " + esc(t("batteriesOk")) + "</div>"));
   }
-  function openSettings() { if (!pinOk()) { askPin(openSettings); return; } S.sheet = { settings: true }; renderSettings(); }
+  function openSettings() {
+    if (!pinOk()) { askPin(openSettings); return; }
+    S.sheet = { settings: true }; renderSettings();
+    // devices without a room or idle: only tablets which arrange rooms
+    if (S.tablet && S.tablet.arrange) { send({ type: "rooms_setup" }); }
+  }
 
   // ---------- own notices, e.g. "Mail is here" ----------
   function noticesHtml() {
@@ -1959,15 +2015,19 @@
   function renderSettings() {
     var tb = S.tablet, lay = layout(), page = S.sheet.page || "";
     if (page === "tablet") { renderSettingsTablet(); return; }
+    if (page === "buginfo") { renderBugInfo(); return; }
     if (page === "rooms") { renderSettingsRooms(); return; }
     if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var hidden = lay.hidden_rooms || [], shown = S.rooms.filter(function (r) { return hidden.indexOf(r.name) < 0; }).length;
     var kept = Object.keys(S.tiles).filter(function (id) { return S.tiles[id].keep_on; }).length;
     var html = settingsHead(t("settings"), tb.name + (tb.readonly ? " · " + t("readonly") : ""), false) +
+      '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("setLead")) + "</div>" + worthLookHtml() +
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
+      liteRowHtml(lay) +
+      '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -1979,14 +2039,52 @@
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
     }
     html += '<div class="group"><div class="menu">' + settingsRow('data-tour="1"', "star", t("tourAgain"), "") + "</div></div>";
+    html += '<div class="group"><div class="menu">' + settingsRow('data-buginfo="1"', "gear", t("bugInfo"), "") + "</div></div>";
     html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
     sheetShell(html);
+  }
+  // things to sort out: devices without a room, idle ones, maintenance
+  function worthLookHtml() {
+    var rows = "", h = S.setupHints, todo = maintenance().length;
+    if (h && h.noRoom) { rows += settingsRow('data-arrange="1"', "home", h.noRoom === 1 ? t("wlNoRoom1") : t("wlNoRoom", { n: h.noRoom }), t("wlNoRoomSub")); }
+    if (h && h.idle) { rows += settingsRow('data-arrange="1"', "clock", h.idle === 1 ? t("wlIdle1") : t("wlIdle", { n: h.idle }), t("wlIdleSub")); }
+    if (todo) { rows += settingsRow('data-overview="maintenance"', "battery", t("wlMaint", { n: todo }), t("wlMaintSub")); }
+    return rows ? '<div class="group"><div class="label">' + esc(t("worthLook")) + '</div><div class="menu">' + rows + "</div></div>" : "";
+  }
+  // ---------- info for a bug report ----------
+  function bugText() {
+    var i = S.bugInfo || {}, lay = layout(), lines = [
+      "fhempy " + (i.fhempy || "?") + " · dashboard " + (i.build || "?"),
+      "Python " + (i.python || "?") + " · " + (i.system || "?"),
+      "Devices " + i.devices + " · tiles " + i.tiles + " · rooms " + i.rooms,
+      "Kinds " + Object.keys(i.kinds || {}).map(function (k) { return k + " " + i.kinds[k]; }).join(", "),
+      "Tablets " + i.tablets + " · connected " + i.connected + " · https " + (i.https ? "on" : "off"),
+      "Attributes " + ((i.attrs || []).join(", ") || "none"),
+      "This tablet: " + place() + (S.tablet && S.tablet.readonly ? ", read-only" : "") + (S.tablet && S.tablet.rooms && S.tablet.rooms.length ? ", restricted" : "") + " · theme " + (lay.theme || "auto") + " · " + (document.body.classList.contains("lite") ? "simple" : "full") + " display · " + location.protocol.replace(":", ""),
+      "Browser " + navigator.userAgent,
+      "Screen " + screen.width + "×" + screen.height + " @" + (window.devicePixelRatio || 1) + " · window " + window.innerWidth + "×" + window.innerHeight + " · " + (navigator.language || "") + " · cores " + (navigator.hardwareConcurrency || "?")
+    ];
+    return lines.join("\n");
+  }
+  function renderBugInfo() {
+    sheetShell(settingsHead(t("bugInfo"), t("bugLead"), true) +
+      '<div class="group"><textarea id="bugtext" readonly rows="10" style="width:100%;font:13px/1.45 ui-monospace,monospace;user-select:text;-webkit-user-select:text">' + esc(S.bugInfo ? bugText() : "…") + "</textarea></div>" +
+      '<div class="actions"><button class="pill primary" data-bugcopy="1">' + esc(t("bugCopy")) + "</button></div>");
+  }
+  function copyBugInfo() {
+    var area = document.getElementById("bugtext"); if (!area) { return; }
+    var done = function () { showToast(t("bugCopied"), null, 2000); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(area.value).then(done, function () { area.select(); }); return; }
+    // http: the old way
+    area.removeAttribute("readonly"); area.select();
+    try { if (document.execCommand("copy")) { done(); } } catch (e) { /* select by hand */ }
+    area.setAttribute("readonly", "");
   }
   function renderSettingsTablet() {
     var tb = S.tablet;
     var places = ["wall", "couch", "door"].map(function (p) { return '<button class="' + (tb.place === p ? "on" : "") + '" data-place="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var roomOpts = '<option value="">' + esc(t("noRoom")) + "</option>" + S.rooms.map(function (r) { return '<option' + (r.name === tb.room ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join("");
-    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) +
+    sheetShell(settingsHead(t("setNamePlace"), tb.name, true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("tabLead")) + "</div>" +
       '<div class="group"><div class="label">' + esc(t("name")) + '</div><input id="tabname" value="' + esc(tb.name) + '" maxlength="40" style="width:100%"></div>' +
       '<div class="group"><div class="label">' + esc(t("place")) + '</div><div class="seg">' + places + "</div></div>" +
       '<div class="group"><div class="label">' + esc(t("room")) + '</div><select id="tabroom" style="width:100%">' + roomOpts + "</select></div>");
@@ -2424,7 +2522,14 @@
     if (idle > 120 && (S.sheet || S.edit || S.tab !== startTab())) {
       closeSheet(); S.edit = false; S.tab = startTab(); S.historyDay = null; renderTabs(); renderContent();
     }
-    if (idle > 300 && place() !== "couch" && !S.saver) { S.saver = true; renderSaver(); }
+    var after = saverMinutes();
+    if (after && idle > after * 60 && !S.saver) { S.saver = true; renderSaver(); }
+  }
+  // minutes until the screensaver, 0: never. Default 5, on the couch never
+  function saverMinutes() {
+    var m = layout().saver;
+    if (typeof m === "number") { return m; }
+    return place() === "couch" ? 0 : 5;
   }
   function wake() {
     S.lastTouch = Date.now();
@@ -2437,12 +2542,14 @@
     var now = new Date(), h = S.header || {}, w = h.weather, items = "";
     if (h.presence) { items += '<div class="x">' + I("home", 20) + " " + esc((h.presence.home || []).length ? t("atHome", { n: h.presence.home.length }) : t("nobody")) + "</div>"; }
     var inside = insideTemp(); if (inside !== null) { items += '<div class="x">' + I("thermo", 20) + " " + num(inside) + "°</div>"; }
-    var open = shownList(h.open);
+    var open = warnOpen(h.open);
     if (open.length) { items += '<div class="x o">' + I("win", 20) + " " + esc(open.length <= 3 ? open.map(function (o) { return o.name; }).join(", ") + " " + t("open").toLowerCase() : t("openCount", { n: open.length })) + "</div>"; }
     else { items += '<div class="x">' + I("lock", 20) + " " + esc(t("allClosed")) + "</div>"; }
     binTexts().forEach(function (b) { items += '<div class="x o">' + I("trash", 20) + " " + esc(b) + "</div>"; });
-    var nextCal = ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.allday && !e.now; })[0];
-    if (nextCal) { items += '<div class="x">' + I("clock", 20) + " " + esc(nextCal.at + " " + nextCal.summary) + "</div>"; }
+    // what is still coming today
+    ((h.calendar && h.calendar.entries) || []).filter(function (e) { return e.day === 0 && !e.now; }).slice(0, 3).forEach(function (e) {
+      items += '<div class="x">' + I("clock", 20) + " " + esc((e.allday ? t("calAllDay") : e.at) + " " + e.summary) + "</div>";
+    });
     if (h.energy && h.energy.solar) { items += '<div class="x" style="margin-left:auto">' + I("bolt", 20) + " " + watt(h.energy.solar) + " " + esc(t("solar")) + "</div>"; }
     var shift = (now.getMinutes() % 5) * 6 - 12;
     el.className = "ss" + (isNight() ? " night" : "");
@@ -2471,6 +2578,40 @@
     var theme = layout().theme || "auto";
     var light = theme === "light" || (theme === "auto" && place() === "couch" && isDay());
     document.body.classList.toggle("light", !!light);
+    var look = layout().lite || "auto";
+    document.body.classList.toggle("lite", look === "on" || (look === "auto" && store("dashSlow") === "1"));
+  }
+  // simple display for slow tablets (old wall tablets): few cores or a low
+  // frame rate while the page is idle. Measured once after each start.
+  function liteRowHtml(lay) {
+    var cur = lay.lite || "auto";
+    var opts = [["auto", "lookAuto"], ["on", "lookLite"], ["off", "lookFull"]];
+    var btns = opts.map(function (o) {
+      return '<button class="' + (cur === o[0] ? "on" : "") + '" data-lite="' + o[0] + '">' + esc(t(o[1])) + "</button>";
+    }).join("");
+    return '<div class="mrow"><span class="mic">' + I("frame", 20) + '</span><span class="ml"><b>' + esc(t("look")) +
+      "</b><span>" + esc(t("lookHint")) + '</span></span><div class="seg">' + btns + "</div></div>";
+  }
+  var speed = { frames: 0, first: 0 };
+  function speedFrame(ts) {
+    if (!speed.first) { speed.first = ts; }
+    speed.frames++;
+    if (ts - speed.first < 2000) { requestAnimationFrame(speedFrame); return; }
+    // hidden pages get no frames, then nothing is learned
+    if (document.hidden) { return; }
+    var fps = speed.frames * 1000 / (ts - speed.first);
+    store("dashSlow", fps < 30 ? "1" : "0");
+    applyTheme();
+  }
+  function measureSpeed() {
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) {
+      store("dashSlow", "1");
+      applyTheme();
+      return;
+    }
+    if (!window.requestAnimationFrame) { return; }
+    speed = { frames: 0, first: 0 };
+    requestAnimationFrame(speedFrame);
   }
 
   // ---------- banner ----------
@@ -2708,6 +2849,8 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-mayopen"))) { sendMayOpen(el.getAttribute("data-mayopen"), el.classList.contains("off")); return; }
+    if ((el = closest(target, "data-mayopensave"))) { sendMayOpen(el.getAttribute("data-mayopensave"), true); showToast(t("ntSaved"), null, 2000); return; }
     if ((el = closest(target, "data-noticedone"))) { send({ type: "action", action: "notice_done", id: el.getAttribute("data-noticedone") }); el.closest(".notice").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-notice"))) { sendNotice(el.getAttribute("data-notice"), el.classList.contains("off")); return; }
     if ((el = closest(target, "data-noticesave"))) { sendNotice(el.getAttribute("data-noticesave"), true); showToast(t("ntSaved"), null, 2000); return; }
@@ -2826,6 +2969,11 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-showall")) && S.sheet) { S.sheet.all = true; renderSheet(); return; }
+    if ((el = closest(target, "data-buginfo"))) { S.sheet = { settings: true, page: "buginfo" }; send({ type: "bug_info" }); renderSettings(); return; }
+    if ((el = closest(target, "data-bugcopy"))) { copyBugInfo(); return; }
+    if ((el = closest(target, "data-lite"))) { var l3 = copyLayout(); l3.lite = el.getAttribute("data-lite"); saveLayout(l3); return; }
+    if ((el = closest(target, "data-saver"))) { var l2 = copyLayout(); l2.saver = +el.getAttribute("data-saver"); saveLayout(l2); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");
@@ -2881,6 +3029,10 @@
   function tick() {
     S.now = new Date();
     renderHeader(); idleCheck(); loadSparks(); tickTimers();
+    // a door which may be open by day warns again in the evening
+    var mo = Object.keys(S.tiles).filter(function (id) { return mayOpenNow(S.tiles[id].may_open); }).join("\n");
+    if (S.moKey !== undefined && mo !== S.moKey) { renderContent(); }
+    S.moKey = mo;
     if (S.saver) { renderSaver(); }
     var clock = document.getElementById("ringclock");
     if (clock && S.ring) { var s = Math.round((Date.now() - S.ring.started) / 1000); clock.textContent = "· " + Math.floor(s / 60) + ":" + two(s % 60); }
@@ -2893,6 +3045,7 @@
     if (hp.pair && !S.token) { render(); pair(hp.pair); } else { render(); connect(); }
     if (S.token && !hp.t) { history.replaceState(null, "", location.pathname + "#t=" + encodeURIComponent(S.token)); }
     setInterval(tick, 1000 * 15);
+    setTimeout(measureSpeed, 5000);
     setInterval(function () { var c = document.getElementById("ringclock"); if (c && S.ring) { tick(); } }, 1000);
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       navigator.serviceWorker.register("sw.js").catch(function () { /* optional */ });
