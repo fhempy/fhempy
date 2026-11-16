@@ -20,6 +20,10 @@
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
+    rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus",
+    warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
+    rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
     wallList: ["Immer an, Bildschirmschoner mit Uhr", "Startet mit dem ganzen Zuhause", "Wacht auf bei Bewegung im Raum", "Warnungen groß oben"],
     couchList: ["Startet im eigenen Raum", "Licht, Szenen, Rollläden zuerst", "Kein Bildschirmschoner", "Tagsüber hell, abends dunkel"],
@@ -68,6 +72,10 @@
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
+    rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off",
+    warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
+    rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
     wallList: ["Always on, screensaver with clock", "Starts with the whole home", "Wakes up on motion in the room", "Warnings big at the top"],
     couchList: ["Starts in its own room", "Lights, scenes, blinds first", "No screensaver", "Bright by day, dark at night"],
@@ -253,15 +261,17 @@
     if (m.type === "tablet") { S.tablet = m.tablet; applyTheme(); render(); return; }
     if (m.type === "tile") {
       S.tiles[m.tile.id] = m.tile; delete S.pending[m.tile.id];
-      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview) && !S.sliding && !chartActive) { renderSheet(); }
+      updateTile(m.tile.id); if (S.sheet && (S.sheet.id === m.tile.id || S.sheet.room || S.sheet.overview || S.sheet.routine) && !S.sliding && !chartActive) { renderSheet(); }
       return;
     }
-    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "header") { S.header = m.header; renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
     }
     if (m.type === "failed") { failed(m); return; }
+    if (m.type === "routine") { routineDone(m); return; }
+    if (m.type === "undone") { showToast(m.failed && m.failed.length ? t("rtFailed", { names: m.failed.join(", ") }) : t("undone"), null, 5000); return; }
     if (m.type === "push") { showBanner(m.text, place() === "wall" ? 30 * 60000 : 10000); wake(); return; }
     if (m.type === "ring") { startRing(m); }
   }
@@ -838,7 +848,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = leaveHtml() + energyHtml() + latelyHtml();
+    var left = routinesHtml() + leaveHtml() + energyHtml() + latelyHtml();
     var right;
     if (S.edit) {
       var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
@@ -1027,7 +1037,7 @@
   function sheetShell(inner, cls) {
     var d = document.getElementById("sheet");
     if (!d) { d = document.createElement("div"); d.id = "sheet"; d.className = "dim"; document.body.appendChild(d); }
-    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview]);
+    var old = d.firstChild, top = old ? old.scrollTop : 0, key = JSON.stringify([S.sheet && S.sheet.id, S.sheet && S.sheet.settings, S.sheet && S.sheet.page, S.sheet && S.sheet.batteries, S.sheet && S.sheet.arrange, S.sheet && S.sheet.rename, S.sheet && S.sheet.addto, S.sheet && S.sheet.people, S.sheet && S.sheet.room, S.sheet && S.sheet.overview, S.sheet && S.sheet.routine]);
     if (d.getAttribute("data-key") === key && old) {
       // the same sheet again (new values): keep the box, so it doesn't pop up again and flicker
       old.className = "sheet " + (cls || ""); old.innerHTML = inner; old.scrollTop = top;
@@ -1046,6 +1056,7 @@
     if (S.sheet.people) { renderPeople(); return; }
     if (S.sheet.room) { renderRoomPop(); return; }
     if (S.sheet.overview) { renderOverview(); return; }
+    if (S.sheet.routine) { renderRoutine(); return; }
     if (S.sheet.addto !== undefined) { renderAdd(); return; }
     var tile = S.tiles[S.sheet.id]; if (!tile) { closeSheet(); return; }
     var st = tile.state, k = tile.kind, look = tileLook(tile);
@@ -1368,6 +1379,60 @@
     }
     document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
     move(ev);
+  }
+
+  // ---------- good night and leaving home ----------
+  function routinesHtml() {
+    if (S.tablet && S.tablet.readonly) { return ""; }
+    return '<div class="routines"><button class="routine" data-routine="night">' + I("moon", 22) + " " + esc(t("rtNight")) + '</button><button class="routine" data-routine="away">' + I("walk", 22) + " " + esc(t("rtAway")) + "</button>" +
+      (S.undoUntil && Date.now() < S.undoUntil * 1000 ? '<button class="routine" data-undo="1">' + I("left", 22) + " " + esc(t("undo")) + "</button>" : "") + "</div>";
+  }
+  // what the routine does: lights and switches off, at night the blinds down
+  function routinePlan(mode) {
+    var all = shownTiles();
+    var off = all.filter(function (x) { return ["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on; });
+    var blinds = mode === "night" ? all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; }) : [];
+    return { off: off, blinds: blinds, open: all.filter(function (x) { return secOpen(x.tile); }) };
+  }
+  function weatherWarn() {
+    var w = S.header && S.header.weather, warn = w && w.warn;
+    if (!warn) { return ""; }
+    var windows = routinePlan("away").open.filter(function (x) { return x.tile.kind === "contact" && !x.tile.door; });
+    if (!windows.length) { return ""; }
+    return '<div class="rtwarn">' + I(warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + warn.kind, { t: warn.at })) + "</b><span>" +
+      esc(t("warnWindows", { names: windows.map(function (x) { return x.tile.name; }).join(", ") })) + "</span></div></div>";
+  }
+  function renderRoutine() {
+    var mode = S.sheet.routine, p = routinePlan(mode), body = "";
+    p.open.forEach(function (x) {
+      if (x.tile.kind === "lock") { body += ovRow(x, "unlock", "#FF8A3D", [x.room, t("unlocked")].join(" · "), '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); return; }
+      body += ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", [x.room, (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since)].join(" · "));
+    });
+    p.off.forEach(function (x) {
+      body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", isLight(x.tile) ? "#FFB547" : "#9B8CFF", [x.room, x.tile.keep_on ? t("staysOn") : t("rtOff")].join(" · "));
+    });
+    if (p.blinds.length) {
+      var rooms = []; p.blinds.forEach(function (x) { if (rooms.indexOf(x.room) < 0) { rooms.push(x.room); } });
+      body += '<div class="row"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
+    }
+    var title = mode === "night" ? t("rtNight") : t("rtAway");
+    sheetShell('<div class="head"><div><h1>' + esc(title) + '</h1><div class="subtitle">' + esc(body ? t(mode === "night" ? "rtNightLead" : "rtAwayLead") : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+      weatherWarn() + '<div class="blist ovlist">' + (body || '<div class="allclear">' + I("check", 26) + " " + esc(t("rtAllFine")) + "</div>") + "</div>" +
+      '<div class="actions"><button class="pill primary" data-rtgo="' + mode + '">' + I(mode === "night" ? "moon" : "walk", 20) + " " + esc(t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</button></div>");
+  }
+  function routineGo(mode) {
+    if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
+    var p = routinePlan(mode);
+    send({ type: "action", action: "routine", mode: mode, off: p.off.filter(function (x) { return !x.tile.keep_on; }).map(function (x) { return x.id; }), close: p.blinds.map(function (x) { return x.id; }) });
+    closeSheet();
+  }
+  function routineDone(m) {
+    var text = m.done ? t(m.mode === "night" ? "rtDoneNight" : "rtDoneAway", { n: m.done }) : t("rtDoneNone");
+    if (m.failed && m.failed.length) { text += " " + t("rtFailed", { names: m.failed.join(", ") }); }
+    var ms = Math.max(5000, Math.min(60000, (m.until || 0) * 1000 - Date.now()));
+    S.undoUntil = m.undo ? m.until : 0;
+    if (S.tab === "home") { renderContent(); }
+    showToast(text, null, ms, m.undo ? '<button class="pill" data-undo="1">' + esc(t("undo")) + "</button>" : "");
   }
 
   // ---------- settings ----------
@@ -2019,11 +2084,11 @@
   }
 
   // a short message at the bottom, optionally with "Try again"
-  function showToast(text, retryId, ms) {
+  function showToast(text, retryId, ms, button) {
     var el = document.getElementById("toast");
     if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
     el.className = retryId ? "warn" : "";
-    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "");
+    el.innerHTML = "<span>" + esc(text) + "</span>" + (retryId ? '<button class="pill" data-retry="' + esc(retryId) + '">' + esc(t("retry")) + "</button>" : "") + (button || "");
     clearTimeout(S.toastTimer);
     S.toastTimer = setTimeout(hideToast, ms || 7000);
   }
@@ -2326,6 +2391,9 @@
     if ((el = closest(target, "data-settings"))) { openSettings(); return; }
     if ((el = closest(target, "data-setpage")) && S.sheet && S.sheet.settings) { S.sheet.page = el.getAttribute("data-setpage"); renderSettings(); return; }
     if ((el = closest(target, "data-batteries"))) { openBatteries(); return; }
+    if ((el = closest(target, "data-routine"))) { S.sheet = { routine: el.getAttribute("data-routine") }; renderSheet(); return; }
+    if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
+    if ((el = closest(target, "data-undo"))) { send({ type: "action", action: "undo" }); S.undoUntil = 0; hideToast(); if (S.tab === "home") { renderContent(); } return; }
     if ((el = closest(target, "data-overview"))) { S.sheet = { overview: el.getAttribute("data-overview") }; renderSheet(); return; }
     if ((el = closest(target, "data-ovpos"))) { var pv = el.getAttribute("data-ovpos").split("|"); act(pv[0], "position", Number(pv[1]), { position: Number(pv[1]) }); return; }
     if ((el = closest(target, "data-ovall"))) { overviewAll(el.getAttribute("data-ovall")); return; }

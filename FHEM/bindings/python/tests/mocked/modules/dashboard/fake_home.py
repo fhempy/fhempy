@@ -124,6 +124,17 @@ DEVICES = {
             "cur_weather": "Leicht bewölkt",
             "next_days_0_max_temp": "13",
             "next_days_0_min_temp": "4",
+            **{
+                f"next_hours_{i:02d}_{key}": value
+                for i in range(6)
+                for key, value in (
+                    ("time", f"Mo {17 + i}:00"),
+                    ("condition", "Regen" if i >= 3 else "Bewölkt"),
+                    ("precipitation", "80" if i >= 3 else "10"),
+                    ("temperature", "7"),
+                    ("windspeed", "12"),
+                )
+            },
         },
         fhempytype="openmeteo_weather",
     ),

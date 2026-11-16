@@ -92,6 +92,14 @@ and the like stay on: they are found by their name (e.g. *Heizstab*, *Kühlschra
 away: *Leave on* next to the device in *Now open and on* on *Home*, the switch in the details of a device or the list
 in the settings. This is stored in attribute `keep_on` and applies to all tablets.
 
+## Good night and leaving home
+
+*Good night* and *Leave home* on *Home* first show what is still open or on: windows and doors, unlocked locks (lock
+them with one tap), lights and switches, and at night the open blinds. One tap switches off the lights and switches
+(not those left on with *All off*) and, at night, closes the blinds. *Undo* brings back how it was before, for 10
+minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
+forecast of `openmeteo_weather`).
+
 ## Arranging rooms
 
 Devices in the wrong room or in no room at all? Tap the gear button and *Arrange rooms*. The tablet lists the devices
