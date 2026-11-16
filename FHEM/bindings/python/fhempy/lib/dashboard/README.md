@@ -252,6 +252,12 @@ tile, a tap opens previous/next, volume and the presets. The commands are taken 
   initials are shown.
 * Covers are loaded through fhempy, so the tablets need no access to the players and https works too.
 
+## Bug reports
+
+Settings → *Info for a bug report* shows versions (fhempy, Python, the dashboard), counts of devices and tiles, which
+attributes are set and the browser, without device names, addresses or PINs. *Copy* puts it on the clipboard to paste
+into the forum or a GitHub issue.
+
 ## Attributes
 
 | Attribute | Meaning |

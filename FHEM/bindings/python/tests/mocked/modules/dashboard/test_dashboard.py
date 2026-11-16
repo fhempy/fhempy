@@ -1786,3 +1786,24 @@ async def test_arm_and_disarm_with_pin(module):
         assert (await next_of(ws, "alarm_mode"))["ok"] is True
         assert module.fake.sets == ["Alarmanlage disarm"]
         await ws.close()
+
+
+@pytest.mark.asyncio
+async def test_bug_info_has_versions_but_no_names(module):
+    module._attr_alarm_pin = "1234"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await ws.send_json({"type": "bug_info"})
+        while True:
+            message = await ws.receive_json(timeout=2)
+            if message["type"] == "bug_info":
+                break
+        info = message["info"]
+        assert info["fhempy"] and info["python"]
+        assert info["tiles"] == len(module.data["tiles"])
+        assert "alarm_pin" in info["attrs"]
+        text = json.dumps(info)
+        # neither device names nor the PIN
+        assert "1234" not in text and "wz_" not in text
+        await ws.close()

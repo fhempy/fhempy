@@ -61,6 +61,7 @@
     talk: "Sprechen", mute: "Stumm", unmute: "Ton an", hangup: "Beenden", slideOpen: "Zum Öffnen schieben →",
     opened: "Tür geöffnet", view: "Ansehen", needHttps: "Sprechen geht nur über https, siehe Einstellungen.",
     noMic: "Kein Zugriff aufs Mikrofon.", noCamera: "Keine Kamera eingerichtet", camConnecting: "Kamera wird verbunden …",
+    bugInfo: "Info für Fehlerbericht", bugLead: "Versionen und Browser, ohne Namen und Adressen. Zum Einfügen ins Forum oder in ein GitHub-Issue.", bugCopy: "Kopieren", bugCopied: "Kopiert",
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
@@ -127,6 +128,7 @@
     talk: "Talk", mute: "Mute", unmute: "Sound on", hangup: "End", slideOpen: "Slide to open →",
     opened: "Door opened", view: "View", needHttps: "Talking needs https, see settings.",
     noMic: "No access to the microphone.", noCamera: "No camera set up", camConnecting: "Connecting camera …",
+    bugInfo: "Info for a bug report", bugLead: "Versions and browser, without names and addresses. To paste into the forum or a GitHub issue.", bugCopy: "Copy", bugCopied: "Copied",
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
@@ -312,6 +314,7 @@
       S.header = m.header; checkNotices();
       if (S.sheet && S.sheet.id && setupBefore !== JSON.stringify(m.header.notice_setup || {})) { renderSheet(); }
       renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
+    if (m.type === "bug_info") { S.bugInfo = m.info; if (S.sheet && S.sheet.page === "buginfo") { renderSettings(); } return; }
     if (m.type === "motion") {
       if (S.tablet && S.tablet.room && m.rooms.indexOf(S.tablet.room) >= 0) { wake(); }
       return;
@@ -1948,6 +1951,7 @@
   function renderSettings() {
     var tb = S.tablet, lay = layout(), page = S.sheet.page || "";
     if (page === "tablet") { renderSettingsTablet(); return; }
+    if (page === "buginfo") { renderBugInfo(); return; }
     if (page === "rooms") { renderSettingsRooms(); return; }
     if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
@@ -1967,8 +1971,38 @@
     if (tb.https && location.protocol !== "https:") {
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
     }
+    html += '<div class="group"><div class="menu">' + settingsRow('data-buginfo="1"', "gear", t("bugInfo"), "") + "</div></div>";
     html += '<div class="group"><button class="linkbtn" data-resetlayout="1">' + esc(t("resetView")) + "</button></div>";
     sheetShell(html);
+  }
+  // ---------- info for a bug report ----------
+  function bugText() {
+    var i = S.bugInfo || {}, lay = layout(), lines = [
+      "fhempy " + (i.fhempy || "?") + " · dashboard " + (i.build || "?"),
+      "Python " + (i.python || "?") + " · " + (i.system || "?"),
+      "Devices " + i.devices + " · tiles " + i.tiles + " · rooms " + i.rooms,
+      "Kinds " + Object.keys(i.kinds || {}).map(function (k) { return k + " " + i.kinds[k]; }).join(", "),
+      "Tablets " + i.tablets + " · connected " + i.connected + " · https " + (i.https ? "on" : "off"),
+      "Attributes " + ((i.attrs || []).join(", ") || "none"),
+      "This tablet: " + place() + (S.tablet && S.tablet.readonly ? ", read-only" : "") + (S.tablet && S.tablet.rooms && S.tablet.rooms.length ? ", restricted" : "") + " · theme " + (lay.theme || "auto") + " · " + (document.body.classList.contains("lite") ? "simple" : "full") + " display · " + location.protocol.replace(":", ""),
+      "Browser " + navigator.userAgent,
+      "Screen " + screen.width + "×" + screen.height + " @" + (window.devicePixelRatio || 1) + " · window " + window.innerWidth + "×" + window.innerHeight + " · " + (navigator.language || "") + " · cores " + (navigator.hardwareConcurrency || "?")
+    ];
+    return lines.join("\n");
+  }
+  function renderBugInfo() {
+    sheetShell(settingsHead(t("bugInfo"), t("bugLead"), true) +
+      '<div class="group"><textarea id="bugtext" readonly rows="10" style="width:100%;font:13px/1.45 ui-monospace,monospace;user-select:text;-webkit-user-select:text">' + esc(S.bugInfo ? bugText() : "…") + "</textarea></div>" +
+      '<div class="actions"><button class="pill primary" data-bugcopy="1">' + esc(t("bugCopy")) + "</button></div>");
+  }
+  function copyBugInfo() {
+    var area = document.getElementById("bugtext"); if (!area) { return; }
+    var done = function () { showToast(t("bugCopied"), null, 2000); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(area.value).then(done, function () { area.select(); }); return; }
+    // http: the old way
+    area.removeAttribute("readonly"); area.select();
+    try { if (document.execCommand("copy")) { done(); } } catch (e) { /* select by hand */ }
+    area.setAttribute("readonly", "");
   }
   function renderSettingsTablet() {
     var tb = S.tablet;
@@ -2805,6 +2839,8 @@
     if ((el = closest(target, "data-people"))) { S.sheet = { people: true }; renderSheet(); return; }
     if ((el = closest(target, "data-batt"))) { openSheet(el.getAttribute("data-batt")); return; }
     if ((el = closest(target, "data-place"))) { send({ type: "setup", place: el.getAttribute("data-place") }); S.tablet.place = el.getAttribute("data-place"); renderSettings(); return; }
+    if ((el = closest(target, "data-buginfo"))) { S.sheet = { settings: true, page: "buginfo" }; send({ type: "bug_info" }); renderSettings(); return; }
+    if ((el = closest(target, "data-bugcopy"))) { copyBugInfo(); return; }
     if ((el = closest(target, "data-theme"))) { var l1 = copyLayout(); l1.theme = el.getAttribute("data-theme"); saveLayout(l1); return; }
     if ((el = closest(target, "data-roomtoggle"))) {
       var l2 = copyLayout(), hr = l2.hidden_rooms || [], name = el.getAttribute("data-roomtoggle");

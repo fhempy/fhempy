@@ -14,6 +14,7 @@ import hmac
 import html
 import json
 import os
+import platform
 import re
 import secrets
 import ssl
@@ -21,6 +22,7 @@ import tempfile
 import time
 
 from .. import fhem, generic, utils
+from ..version import __version__
 from . import go2rtc, media, model
 
 DEFAULT_PORT = 8095
@@ -2221,6 +2223,8 @@ class dashboard(generic.FhemModule):
             await self.arrange(tablet, message, ws)
         elif kind == "action":
             await self.run_action(tablet, message)
+        elif kind == "bug_info" and ws is not None:
+            await self.send(ws, {"type": "bug_info", "info": self.bug_info()})
         elif kind == "notice" and not tablet.get("readonly"):
             await self.set_notice(tablet, message)
 
@@ -2299,6 +2303,29 @@ class dashboard(generic.FhemModule):
             await ws.send_json(message)
         except (ConnectionError, RuntimeError):
             self.clients.pop(ws, None)
+
+    def bug_info(self):
+        """versions and counts for a bug report, nothing personal: no names,
+        no addresses, only which attributes are set"""
+        kinds = {}
+        for item in self.data["tiles"].values():
+            kinds[item["kind"]] = kinds.get(item["kind"], 0) + 1
+        return {
+            "fhempy": __version__,
+            "build": self.build,
+            "python": platform.python_version(),
+            "system": f"{platform.system()} {platform.machine()}",
+            "devices": len(self.infos),
+            "tiles": len(self.data["tiles"]),
+            "rooms": len(self.data["rooms"]),
+            "kinds": dict(sorted(kinds.items())),
+            "tablets": len(self.tablets),
+            "connected": len(self.clients),
+            "https": bool(self._attr_https_port),
+            "attrs": sorted(
+                a for a in ATTRS_TEXT if (getattr(self, "_attr_" + a, "") or "")
+            ),
+        }
 
     def connected(self):
         """(websocket, tablet id) of the connected tablets, as a copy: sending
