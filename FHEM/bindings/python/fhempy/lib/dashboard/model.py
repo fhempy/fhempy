@@ -1582,3 +1582,106 @@ def renamed_layout(layout, source, target):
         order[target] = order.pop(source)
         result["tile_order"] = order
     return result
+
+
+# --- washing machine, dryer and dishwasher, found by their power ---
+
+APPLIANCES = ("washer", "dryer", "dishwasher")
+# above this the appliance runs
+APPLIANCE_RUN_W = 15
+# a program heats or spins: more than a TV, a lamp or a router ever draws
+APPLIANCE_PEAK_W = 300
+APPLIANCE_MIN_MINUTES = 20
+# below APPLIANCE_RUN_W this long: the program is done
+APPLIANCE_DONE_MINUTES = 10
+# durations of the last programs used for "about 20 min left"
+APPLIANCE_KEEP = 5
+# only a hint for the suggestion, the user confirms
+APPLIANCE_HINTS = {
+    "washer": ("wasch", "washer", "washing", "laundry"),
+    "dryer": ("trockn", "dryer", "tumble"),
+    "dishwasher": ("spülm", "spuelm", "geschirr", "dishwasher", "dish"),
+}
+
+
+def appliance_guess(name):
+    """washer/dryer/dishwasher from the name, None: no idea"""
+    text = str(name or "").lower()
+    for what, words in APPLIANCE_HINTS.items():
+        if any(w in text for w in words):
+            return what
+    return None
+
+
+def parse_appliances(value):
+    """attribute appliances 'Plug_A:washer,Plug_B:none' -> {device: what}"""
+    result = {}
+    for entry in re.split(r"[,\s]+", str(value or "")):
+        name, _, what = entry.partition(":")
+        if name and what in APPLIANCES + ("none",):
+            result[name] = what
+    return result
+
+
+def format_appliances(appliances):
+    return ",".join(f"{n}:{w}" for n, w in sorted(appliances.items()))
+
+
+def typical_seconds(durations):
+    """median of the last programs, None: none yet"""
+    values = sorted(d for d in durations or [] if isinstance(d, (int, float)) and d > 0)
+    if not values:
+        return None
+    return int(values[len(values) // 2])
+
+
+class ApplianceWatch:
+    """follows the power of a plug: a program starts above APPLIANCE_RUN_W
+    and is done after APPLIANCE_DONE_MINUTES below it. Only programs of at
+    least APPLIANCE_MIN_MINUTES with a peak of APPLIANCE_PEAK_W count, so a
+    coffee machine, a kettle or a TV are no washing machine."""
+
+    def __init__(self):
+        self.start = None
+        self.last_active = None
+        self.peak = 0
+        # last power and length of the last program
+        self.power = 0
+        self.seconds = 0
+
+    @property
+    def running(self):
+        return self.start is not None
+
+    def feed(self, power, now):
+        """'start', 'done', 'short' (no program) or None"""
+        if power is None:
+            return None
+        before, self.power = self.power, power
+        if power >= APPLIANCE_RUN_W:
+            started = self.start is None
+            if started:
+                self.start = now
+                self.peak = 0
+            self.last_active = now
+            self.peak = max(self.peak, power)
+            return "start" if started else None
+        if self.start is not None and before >= APPLIANCE_RUN_W:
+            # plugs report changes only: it ran until now
+            self.last_active = now
+        return self.tick(now)
+
+    def tick(self, now):
+        if self.start is None or self.power >= APPLIANCE_RUN_W:
+            return None
+        if now - self.last_active < APPLIANCE_DONE_MINUTES * 60:
+            return None
+        seconds = self.last_active - self.start
+        peak = self.peak
+        self.start = None
+        self.last_active = None
+        self.peak = 0
+        self.seconds = seconds
+        if seconds >= APPLIANCE_MIN_MINUTES * 60 and peak >= APPLIANCE_PEAK_W:
+            return "done"
+        return "short"

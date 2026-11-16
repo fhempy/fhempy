@@ -25,6 +25,8 @@
     offDone: "{n} Geräte aus.", offLeft: "Noch an: {names}", offAgain: "Nochmal",
     pinTitle: "PIN eingeben", pinLead: "Die Einstellungen sind mit einer PIN geschützt.", pinWrong: "Falsche PIN.", pinWait: "Zu viele Versuche. Bitte in 5 Minuten nochmal.", pinOpen: "Entsperrt für 10 Minuten.", pinLocked: "Gesperrt, bitte PIN eingeben.", pinOk: "OK",
     calTitle: "Heute", calTomorrow: "Morgen", calAllDay: "ganztags", calNow: "jetzt", binTitle: "Müll", binToday: "Heute: {what}", binTomorrow: "Morgen: {what}",
+    apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
+    apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
     smoke: "Rauchmelder", water: "Wassermelder", calm: "ruhig", smokeNow: "Rauch!", waterNow: "Wasser!", alSmoke: "Rauchalarm", alWater: "Wasseralarm", alIntrusion: "Einbruchalarm", alAlarm: "Alarm", alMute: "Ton aus", alSound: "Ton an", alHide: "Ausblenden", alShow: "Anzeigen", alSystemOff: "Alarmanlage aus",
     alSmokeTip: "Alle raus, Türen schließen, 112 anrufen.", alWaterTip: "Wasser abdrehen, Strom in der Nähe abschalten.", alIntrusionTip: "Bleib ruhig und ruf im Zweifel 110 an.", alAllCalm: "{n} Melder, alle ruhig", alDetectors: "Rauch- und Wassermelder",
     asOff: "Unscharf", asHome: "Scharf (zuhause)", asAway: "Scharf (abwesend)", asTriggered: "Alarm!", asGoOff: "Aus", asGoHome: "Zuhause", asGoAway: "Abwesend", asSure: "Wirklich aus?", asPinTitle: "Alarmanlage aus", asPinLead: "PIN der Alarmanlage", asDone: "Alarmanlage: {mode}",
@@ -86,6 +88,8 @@
     offDone: "{n} devices off.", offLeft: "Still on: {names}", offAgain: "Try again",
     pinTitle: "Enter PIN", pinLead: "The settings are protected by a PIN.", pinWrong: "Wrong PIN.", pinWait: "Too many tries. Please try again in 5 minutes.", pinOpen: "Unlocked for 10 minutes.", pinLocked: "Locked, please enter the PIN.", pinOk: "OK",
     calTitle: "Today", calTomorrow: "Tomorrow", calAllDay: "all day", calNow: "now", binTitle: "Bins", binToday: "Today: {what}", binTomorrow: "Tomorrow: {what}",
+    apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
+    apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
     smoke: "Smoke detector", water: "Water detector", calm: "calm", smokeNow: "Smoke!", waterNow: "Water!", alSmoke: "Smoke alarm", alWater: "Water alarm", alIntrusion: "Intrusion alarm", alAlarm: "Alarm", alMute: "Sound off", alSound: "Sound on", alHide: "Hide", alShow: "Show", alSystemOff: "Alarm system off",
     alSmokeTip: "Get everybody out, close the doors, call the fire brigade.", alWaterTip: "Turn off the water, switch off power nearby.", alIntrusionTip: "Stay calm and call the police if in doubt.", alAllCalm: "{n} detectors, all calm", alDetectors: "Smoke and water detectors",
     asOff: "Disarmed", asHome: "Armed (home)", asAway: "Armed (away)", asTriggered: "Alarm!", asGoOff: "Off", asGoHome: "Home", asGoAway: "Away", asSure: "Really off?", asPinTitle: "Alarm system off", asPinLead: "PIN of the alarm system", asDone: "Alarm system: {mode}",
@@ -179,6 +183,7 @@
     film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
+    washer: '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="5"/><path d="M8 6h1M12 6h4M9.5 14.5c1.5-1 3.5 1 5-.5"/>',
     smoke: '<circle cx="12" cy="10" r="7"/><circle cx="12" cy="10" r="2"/><path d="M8 20c1-1 2 1 3 0s2 1 3 0 2 1 3 0"/>',
     shield: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>',
     left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
@@ -302,6 +307,7 @@
     }
     if (m.type === "failed") { failed(m); return; }
     if (m.type === "all_off") { allOffResult(m); return; }
+    if (m.type === "appliance_done") { applianceDone(m); return; }
     if (m.type === "unlocked") { pinAnswer(m); return; }
     if (m.type === "alarm_mode") { alarmModeAnswer(m); return; }
     if (m.type === "locked") { S.unlockedUntil = 0; showToast(t("pinLocked"), null, 4000); return; }
@@ -890,7 +896,7 @@
   function homeHtml() {
     var rooms = visibleRooms();
     if (!rooms.length) { return '<div class="empty">' + esc(t("noDevices")) + "</div>"; }
-    var left = routinesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
+    var left = routinesHtml() + appliancesHtml() + leaveHtml() + calendarHtml() + energyHtml() + latelyHtml();
     var right;
     if (S.edit) {
       var hiddenT = layout().hidden_tiles || [], all = homeRooms(true);
@@ -1549,6 +1555,38 @@
       html += '<div class="lrow"><span class="lt">' + esc(e.allday ? t("calAllDay") : e.now ? t("calNow") : e.at) + '</span><span class="ld" style="background:' + (e.now ? "var(--amber)" : "#5AA9FF") + '"></span><span class="lx">' + esc(e.summary) + "</span></div>";
     });
     return '<div class="leave lately cal">' + html + "</div>";
+  }
+
+  // ---------- washing machine, dryer, dishwasher ----------
+  var AP_NAME = { washer: "apWasher", dryer: "apDryer", dishwasher: "apDishwasher" };
+  var AP_DONE = { washer: "apDoneWasher", dryer: "apDoneDryer", dishwasher: "apDoneDishwasher" };
+  function minutesText(sec) { var m = Math.max(1, Math.round(sec / 60)); return m >= 60 ? Math.floor(m / 60) + " h " + (m % 60 ? (m % 60) + " min" : "") : m + " min"; }
+  function appliancesHtml() {
+    var a = (S.header && S.header.appliances) || {}, now = Date.now() / 1000, rows = "", ro = S.tablet && S.tablet.readonly;
+    shownList(a.done).forEach(function (d) {
+      rows += '<div class="row apdone"><div class="ic" style="background:#34D39926;color:#34D399">' + I("washer") + '</div><div class="t"><b>' + esc(t(AP_DONE[d.what])) + "</b><span>" +
+        esc([d.name, t("apAgo", { t: minutesText(now - d.at) })].join(" · ")) + "</span></div>" + (ro ? "" : '<button class="pill" data-applseen="' + esc(d.id) + '">' + I("check", 18) + " " + esc(t("apSeen")) + "</button>") + "</div>";
+    });
+    shownList(a.running).forEach(function (r) {
+      var ran = now - r.since, frac = r.typical ? Math.min(0.97, ran / r.typical) : null, left = r.typical ? r.typical - ran : null;
+      rows += '<div class="row aprun"><div class="ic" style="background:#4DA3FF26;color:#4DA3FF">' + I("washer") + '</div><div class="t"><b>' + esc(t(AP_NAME[r.what])) + "</b><span>" +
+        esc([t("apRuns", { t: minutesText(ran) }), left === null ? "" : left > 120 ? t("apLeft", { t: minutesText(left) }) : t("apAlmost")].filter(Boolean).join(" · ")) + "</span>" +
+        (frac !== null ? '<div class="apbar"><i style="width:' + Math.round(frac * 100) + '%"></i></div>' : "") + "</div></div>";
+    });
+    if (!ro) {
+      shownList(a.ask).forEach(function (q) {
+        var order = ["washer", "dryer", "dishwasher"];
+        if (q.guess) { order.splice(order.indexOf(q.guess), 1); order.unshift(q.guess); }
+        rows += '<div class="apask"><div class="row"><div class="ic" style="background:#4DA3FF26;color:#4DA3FF">' + I("washer") + '</div><div class="t"><b>' + esc(t("apAsk", { name: q.name })) + "</b><span>" + esc(t("apAskLead")) + "</span></div></div>" +
+          '<div class="actions">' + order.map(function (w, i) { return '<button class="pill' + (i === 0 && q.guess ? " primary" : "") + '" data-appl="' + esc(q.id) + "|" + w + '">' + esc(t(AP_NAME[w])) + "</button>"; }).join("") +
+          '<button class="pill" data-appl="' + esc(q.id) + '|none">' + esc(t("apNone")) + "</button></div></div>";
+      });
+    }
+    return rows ? '<div class="leave appl">' + rows + "</div>" : "";
+  }
+  function applianceDone(m) {
+    wake(); chime();
+    showToast(t(AP_DONE[m.what] || "apDoneWasher") + " · " + m.name, null, 10000);
   }
 
   // ---------- status chips on Home and their overviews ----------
@@ -2581,6 +2619,11 @@
     if (Date.now() - dragEnded < 400) { return; }
     if (arrangeClick(target)) { return; }
     if ((el = closest(target, "data-pinkey"))) { pinKey(el.getAttribute("data-pinkey")); return; }
+    if ((el = closest(target, "data-appl"))) {
+      if (!pinOk()) { askPin(null); return; }
+      var ap = el.getAttribute("data-appl").split("|"); send({ type: "appliance", id: ap[0], what: ap[1] }); el.closest(".apask").style.opacity = ".4"; return;
+    }
+    if ((el = closest(target, "data-applseen"))) { send({ type: "appliance_seen", id: el.getAttribute("data-applseen") }); el.closest(".row").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-alarmmode"))) { alarmMode(el, el.getAttribute("data-alarmmode")); return; }
     if ((el = closest(target, "data-alarmmute"))) { S.alarmMuted = !S.alarmMuted; checkAlarm(); return; }
     if ((el = closest(target, "data-alarmhide"))) { S.alarmHidden = true; renderAlarm(); return; }
