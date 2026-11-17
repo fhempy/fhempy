@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75">
+      <stop offset="0" stop-color="#FF6B57"/>
+      <stop offset="0.55" stop-color="#E53935"/>
+      <stop offset="1" stop-color="#A31515"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="246" r="200" fill="url(#glow)"/>
+  <circle cx="256" cy="246" r="150" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="10"/>
+  <circle cx="256" cy="246" r="196" fill="none" stroke="#fff" stroke-opacity="0.10" stroke-width="8"/>
+  <!-- bell -->
+  <g fill="#fff">
+    <circle cx="256" cy="134" r="16"/>
+    <path d="M256 146 C204 146 172 184 172 236 L172 290 C172 306 162 318 146 330 L146 344 L366 344 L366 330 C350 318 340 306 340 290 L340 236 C340 184 308 146 256 146 Z"/>
+    <path d="M222 358 L290 358 C290 377 275 392 256 392 C237 392 222 377 222 358 Z"/>
+  </g>
+  <!-- ringing waves -->
+  <g fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round">
+    <path d="M124 186 C110 210 106 246 116 276"/>
+    <path d="M388 186 C402 210 406 246 396 276"/>
+    <path d="M92 158 C68 196 62 252 80 300" stroke-opacity="0.6"/>
+    <path d="M420 158 C444 196 450 252 432 300" stroke-opacity="0.6"/>
+  </g>
+</svg>
