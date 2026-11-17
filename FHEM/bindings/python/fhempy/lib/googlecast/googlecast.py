@@ -34,7 +34,7 @@ from ..core.zeroconf import zeroconf
 
 # Spotify
 from .spotcast.spotify_controller import SpotifyController
-from . import tts
+from . import alarm, tts
 
 # set commands which work without a connected cast device
 SET_WITHOUT_CAST = ("authcode",)
@@ -59,6 +59,8 @@ class googlecast(generic.FhemModule):
         self.spotify_access_token = None
         self.tts_server = None
         self.connection_update_lock = threading.Lock()
+        self._alarm_volume_task = None
+        self._alarm_old_volume = None
         # built here and not in Define: FHEM can send a Set while Define is
         # still waiting for FHEM (e.g. attributes), Set needs it right away
         self._set_conf = {
@@ -101,6 +103,17 @@ class googlecast(generic.FhemModule):
                 "args": ["text", "display"],
                 "help": "Speaks text and shows display on the screen,"
                 + ' e.g. set dev speakDisplay "long text" "short text"',
+            },
+            "alarm": {
+                "args": ["text"],
+                "argsh": ["text", "duration", "volume"],
+                "params": {
+                    "text": {"default": "Alarm"},
+                    "duration": {"default": alarm.DEFAULT_DURATION, "format": "int"},
+                    "volume": {"optional": True, "format": "int"},
+                },
+                "help": "Plays an alarm sound, devices with a screen show the text,"
+                + ' e.g. set dev alarm "Water in the basement" duration=60 volume=80',
             },
             "startApp": {"args": ["appid"]},
             "startSpotify": {},
@@ -294,6 +307,9 @@ class googlecast(generic.FhemModule):
 
     async def set_stop(self, hash, params):
         await utils.run_blocking(functools.partial(self.cast.media_controller.stop))
+        if self._alarm_volume_task and not self._alarm_volume_task.done():
+            self._alarm_volume_task.cancel()
+            await self.restore_alarm_volume()
 
     async def set_pause(self, hash, params):
         await utils.run_blocking(functools.partial(self.cast.media_controller.pause))
@@ -372,6 +388,67 @@ class googlecast(generic.FhemModule):
                 metadata=self.speak_metadata(display, base_url),
             )
         )
+
+    def set_alarm(self, hash, params):
+        duration = params["duration"]
+        if not 1 <= duration <= alarm.MAX_DURATION:
+            return f"duration must be between 1 and {alarm.MAX_DURATION} seconds"
+        volume = params.get("volume")
+        if volume is not None and not 0 <= volume <= 100:
+            return "volume must be between 0 and 100"
+        self.create_async_task(self.do_set_alarm(params["text"], duration, volume))
+
+    async def do_set_alarm(self, text, duration, volume=None):
+        try:
+            base_url = await self.start_tts_server()
+            wav = await utils.run_blocking(functools.partial(alarm.make_wav, duration))
+            url = base_url + await utils.run_blocking(
+                functools.partial(self.tts_server.add, wav, ".wav")
+            )
+            if volume is not None:
+                await self.set_alarm_volume(volume, duration)
+            await utils.run_blocking(
+                functools.partial(
+                    self.cast.play_media,
+                    url,
+                    "audio/wav",
+                    stream_type="BUFFERED",
+                    metadata=self.alarm_metadata(text, base_url),
+                )
+            )
+            await fhem.readingsSingleUpdate(self.hash, "alarm", text, 1)
+        except Exception:
+            self.logger.exception("Failed to play alarm")
+
+    def alarm_metadata(self, text, base_url):
+        text = tts.shorten(text)
+        now = time.strftime("%H:%M")
+        subtitle = f"fhempy · {now}" if text == "Alarm" else f"Alarm · {now}"
+        return {
+            "metadataType": 0,
+            "title": text,
+            "subtitle": subtitle,
+            "images": [{"url": base_url + alarm.IMAGE_PATH}],
+        }
+
+    async def set_alarm_volume(self, volume, duration):
+        """Set volume for the alarm and restore the old one afterwards."""
+        if self._alarm_volume_task and not self._alarm_volume_task.done():
+            # alarm still running: keep the volume from before the first one
+            self._alarm_volume_task.cancel()
+        else:
+            self._alarm_old_volume = self.cast.status.volume_level
+        await utils.run_blocking(functools.partial(self.cast.set_volume, volume / 100))
+        self._alarm_volume_task = self.create_async_task(
+            self.restore_alarm_volume(delay=duration + 5)
+        )
+
+    async def restore_alarm_volume(self, delay=0):
+        if delay:
+            await asyncio.sleep(delay)
+        old, self._alarm_old_volume = self._alarm_old_volume, None
+        if old is not None and self.cast:
+            await utils.run_blocking(functools.partial(self.cast.set_volume, old))
 
     async def start_tts_server(self):
         """Start the HTTP server if needed and return its URL for the cast device."""

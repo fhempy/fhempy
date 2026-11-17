@@ -107,7 +107,7 @@ def local_ip_for(host):
 
 
 class TTSServer:
-    """Serves generated MP3 files and the fhempy icon to cast devices."""
+    """Serves generated sound files and static images to cast devices."""
 
     def __init__(self):
         self.runner = None
@@ -147,10 +147,10 @@ class TTSServer:
         if runner is not None:
             await runner.cleanup()
 
-    def add(self, mp3):
-        """Store mp3 and return its path on the server. Blocking file I/O."""
-        name = secrets.token_urlsafe(16) + ".mp3"
-        (self.directory / name).write_bytes(mp3)
+    def add(self, data, suffix=".mp3"):
+        """Store data and return its path on the server. Blocking file I/O."""
+        name = secrets.token_urlsafe(16) + suffix
+        (self.directory / name).write_bytes(data)
         self.files.append(name)
         while len(self.files) > MAX_STORED_FILES:
             (self.directory / self.files.popleft()).unlink(missing_ok=True)
