@@ -202,3 +202,37 @@ async def test_readings_without_spaces(mocker):
     await dev.received_data({"battery low": 1, "temperature": 20.5})
     names = [call.args[1] for call in update.call_args_list]
     assert names == ["battery_low", "temperature"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cap_eff, euid, hint",
+    [
+        ("0000000000000000", 1000, True),
+        ("0000000000001000", 1000, True),  # only CAP_NET_ADMIN
+        ("0000000000003000", 1000, False),  # CAP_NET_RAW + CAP_NET_ADMIN
+        ("0000000000000000", 0, False),  # root
+    ],
+)
+async def test_hint_for_missing_net_raw(tmp_path, cap_eff, euid, hint):
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor.hcidump import missing_net_raw_hint
+
+    status = tmp_path / "status"
+    status.write_text(f"Name:\tpython3\nCapEff:\t{cap_eff}\n", encoding="ascii")
+    text = missing_net_raw_hint(str(status), euid, "/usr/bin/python3")
+    assert bool(text) is hint
+    if hint:
+        assert "CAP_NET_RAW" in text
+        assert "setcap 'cap_net_raw,cap_net_admin+eip' /usr/bin/python3" in text
+
+
+@pytest.mark.asyncio
+async def test_no_hint_if_capabilities_unknown(tmp_path):
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor.hcidump import missing_net_raw_hint
+
+    assert missing_net_raw_hint(str(tmp_path / "missing"), 1000) == ""
+    status = tmp_path / "status"
+    status.write_text("Name:\tpython3\n", encoding="ascii")
+    assert missing_net_raw_hint(str(status), 1000) == ""

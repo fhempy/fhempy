@@ -1,6 +1,8 @@
 """Passive BLE monitor integration."""
 
 import asyncio
+import os
+import sys
 from threading import Thread
 
 import aioblescan as aiobs
@@ -24,6 +26,41 @@ from .const import (
 
 from .parser import FhempyBleParser
 from .helper import dict_get_or_clean, dict_get_or, identifier_clean
+
+CAP_NET_RAW = 13
+
+
+def missing_net_raw_hint(status_file="/proc/self/status", euid=None, python=None):
+    """Hint how to fix it if the process lacks CAP_NET_RAW, "" otherwise.
+
+    Without CAP_NET_RAW the kernel only lets a raw HCI socket send a few
+    informational commands. LE commands (read LE features, scan parameters)
+    fail with EPERM, asyncio closes the transport without logging and
+    aioblescan never finishes its initialization.
+    """
+    if euid is None:
+        euid = os.geteuid() if hasattr(os, "geteuid") else 0
+    if euid == 0:
+        return ""
+    try:
+        with open(status_file, encoding="ascii") as status:
+            for line in status:
+                if line.startswith("CapEff:"):
+                    if int(line.split()[1], 16) & (1 << CAP_NET_RAW):
+                        return ""
+                    break
+            else:
+                return ""
+    except (OSError, ValueError):
+        return ""
+    real = os.path.realpath(python or sys.executable)
+    return (
+        " fhempy has no CAP_NET_RAW, which is needed to scan via hci. Run "
+        f"sudo setcap 'cap_net_raw,cap_net_admin+eip' {real} and restart "
+        "fhempy (needed again after every Python update), or add "
+        "AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW to the service which "
+        "starts fhempy (sudo systemctl edit fhem)."
+    )
 
 
 class HCIdump(Thread):
@@ -199,8 +236,9 @@ class HCIdump(Thread):
                             except asyncio.TimeoutError:
                                 self.logger.error(
                                     "HCIdump thread: Something wrong - interface hci%i not ready,"
-                                    " and will be skipped for current scan period.",
+                                    " and will be skipped for current scan period.%s",
                                     hci,
+                                    missing_net_raw_hint(),
                                 )
                             else:
                                 btctrl[hci].process = self.process_hci_events
