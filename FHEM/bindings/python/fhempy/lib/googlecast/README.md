@@ -17,7 +17,7 @@ set cast play url=https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
 
 ## Commands
  - addToQueue
- - alarm: Plays an alarm sound. Devices with a screen (e.g. Nest Hub, Chromecast) show the text with an alarm picture. All parameters are optional:
+ - alarm: Plays a siren like an alarm system. Devices with a screen (e.g. Nest Hub, Chromecast) show the text with an alarm picture. All parameters are optional:
    - text: Message to show, default "Alarm"
    - duration: Seconds the alarm sound plays (1-600), default 30
    - volume: Volume (0-100) for the alarm, the previous volume is restored afterwards

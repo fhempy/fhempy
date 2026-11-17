@@ -1,9 +1,10 @@
 """Alarm sound for googlecast.
 
-The sound is generated here (no download, no extra dependency): a classic
-alarm clock pattern of four short beeps followed by a short pause. One
-cycle is calculated once and repeated for the requested duration, so even
-long alarms are created quickly on small machines.
+The sound is generated here (no download, no extra dependency): a siren
+like an alarm system, the pitch sweeps up and down continuously. One sweep
+is calculated once and repeated for the requested duration, so even long
+alarms are created quickly on small machines. The sweep ends after a whole
+number of oscillations, so the repeated sweeps join without a click.
 """
 
 import array
@@ -12,45 +13,46 @@ import math
 import struct
 import sys
 
-SAMPLE_RATE = 16000
-BEEP_FREQ = 2000
-BEEP_LEN = 0.09
-BEEP_GAP = 0.06
-BEEPS = 4
-PAUSE_LEN = 0.45
-FADE_LEN = 0.005
-VOLUME = 0.7
+SAMPLE_RATE = 22050
+LOW_FREQ = 700
+HIGH_FREQ = 1700
+# one sweep up and down; (LOW_FREQ + HIGH_FREQ) / 2 * SWEEP_LEN must be a
+# whole number, then every sweep starts and ends at phase 0
+SWEEP_LEN = 0.5
+# odd harmonics make the tone sharp like a siren horn instead of a pure beep
+HARMONICS = ((1, 1.0), (3, 0.3), (5, 0.12))
+VOLUME = 0.75
 DEFAULT_DURATION = 30
 MAX_DURATION = 600
 IMAGE_PATH = "/static/alarm.png"
 
 
+def _phase(t):
+    """Phase in oscillations at time t within one sweep (frequency up, then down)."""
+    half = SWEEP_LEN / 2
+    slope = (HIGH_FREQ - LOW_FREQ) / half
+    if t <= half:
+        return LOW_FREQ * t + slope * t * t / 2
+    s = t - half
+    return LOW_FREQ * half + slope * half * half / 2 + HIGH_FREQ * s - slope * s * s / 2
+
+
 @functools.lru_cache(maxsize=1)
 def _cycle():
-    """PCM samples (16 bit signed, mono) of one beep cycle."""
-    beep = int(BEEP_LEN * SAMPLE_RATE)
-    fade = int(FADE_LEN * SAMPLE_RATE)
-    gap = int(BEEP_GAP * SAMPLE_RATE)
+    """PCM samples (16 bit signed, mono) of one siren sweep."""
+    norm = sum(amp for _, amp in HARMONICS)
     samples = array.array("h")
-    for idx in range(BEEPS):
-        for i in range(beep):
-            # soft start/end avoids clicks on the speaker
-            env = min(1.0, i / fade, (beep - i) / fade)
-            t = i / SAMPLE_RATE
-            # a bit of the 2nd harmonic sounds more like a real alarm clock
-            value = 0.8 * math.sin(2 * math.pi * BEEP_FREQ * t) + 0.2 * math.sin(
-                4 * math.pi * BEEP_FREQ * t
-            )
-            samples.append(int(32767 * VOLUME * env * value))
-        pause = gap if idx < BEEPS - 1 else int(PAUSE_LEN * SAMPLE_RATE)
-        samples.extend([0] * pause)
+    for i in range(round(SWEEP_LEN * SAMPLE_RATE)):
+        phase = 2 * math.pi * _phase(i / SAMPLE_RATE)
+        value = sum(amp * math.sin(n * phase) for n, amp in HARMONICS) / norm
+        samples.append(int(32767 * VOLUME * value))
     if sys.byteorder != "little":
         samples.byteswap()
     return samples.tobytes()
 
 
 def cycle_length():
-    """Length of one beep cycle in seconds."""
+    """Length of one siren sweep in seconds."""
     return len(_cycle()) / 2 / SAMPLE_RATE
 
 
