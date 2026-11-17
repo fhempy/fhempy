@@ -1,8 +1,10 @@
 import asyncio
 import datetime
+import json
 import logging
 import os
 import re
+import time
 from urllib.parse import parse_qs
 
 import pytest
@@ -337,4 +339,53 @@ async def test_login_wrong_password(mocker, mock_ring_requests):
         mock_fhem.readings["testdevicepw"]["state"]
         == "AccessDenied: wrong username or password"
     )
+    await fhempy_device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_ding_without_sip_data(mocker, mock_ring_requests):
+    """Dings without SIP data must not trigger a new login/session."""
+    mock_fhem.mock_module(mocker)
+    ding = {
+        "id": 555,
+        "id_str": "555",
+        "state": "ringing",
+        "doorbot_id": 987652,
+        "doorbot_description": "Front Door",
+        "device_kind": "lpd_v1",
+        "motion": False,
+        "kind": "ding",
+        "expires_in": 180,
+        "now": time.time(),
+    }
+    mock_ring_requests.get(
+        "https://api.ring.com/clients_api/dings/active", text=json.dumps([ding])
+    )
+    testhash = {"NAME": "testdeviceding", "FHEMPYTYPE": "ring"}
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import ring
+
+    fhempy_device = ring(logging.getLogger(__name__))
+    await fhempy_device.Define(
+        testhash,
+        ["testdeviceding", "fhempy", "ring", "test@test.com", "Front Door", "abc"],
+        {},
+    )
+    await fhempy_device.Set(
+        testhash, ["testdeviceding", "password", "asdfasdfasdf"], {}
+    )
+    await wait_for_state("testdeviceding", "ding")
+    readings = mock_fhem.readings["testdeviceding"]
+    assert readings["state"] == "ding"
+    assert readings["alert_id"] == 555
+    assert readings["alert_kind"] == "ding"
+    assert "alert_sip_to" not in readings
+    await asyncio.sleep(0.5)
+
+    session_requests = [
+        req
+        for req in mock_ring_requests.request_history
+        if req.url.startswith("https://api.ring.com/clients_api/session")
+    ]
+    assert len(session_requests) == 1
     await fhempy_device.Undefine(testhash)

@@ -229,6 +229,7 @@ class ring(FhemModule):
 
     def update_dings_loop_thread(self):
         alert_active = 0
+        failures = 0
         while True:
             try:
                 if self.stop_dings_loop.is_set():
@@ -237,7 +238,6 @@ class ring(FhemModule):
                 self.poll_dings()
                 # handle alerts
                 alerts = self._ring.active_alerts()
-                # alerts contain sip credentials, don't log them
                 self.logger.debug(f"Received {len(alerts)} dings")
                 if len(alerts) > 0:
                     for alert in alerts:
@@ -259,28 +259,51 @@ class ring(FhemModule):
                         self.update_readings(), self.loop
                     ).result()
                 self._errors.success(key="dings")
-            except Exception:
+                failures = 0
+            except Exception as ex:
                 if self.stop_dings_loop.is_set():
                     return
-                self._errors.failed("Failed to poll dings, login again", key="dings")
-                try:
-                    self.blocking_login()
-                except Exception:
-                    # retry with the next poll, the loop must not stop
-                    self.logger.debug("Login failed", exc_info=True)
-            time.sleep(self._attr_dingPollInterval)
+                failures += 1
+                self._handle_dings_error(ex)
+            time.sleep(self._dings_wait_time(failures))
+
+    def _dings_wait_time(self, failures):
+        # back off after errors, every new login creates a new Ring session
+        # and Ring answers too many session requests with 406
+        if failures == 0:
+            return self._attr_dingPollInterval
+        return min(self._attr_dingPollInterval * 2**failures, 300)
+
+    def _handle_dings_error(self, ex):
+        if isinstance(ex, AuthenticationError):
+            self._errors.failed("Failed to poll dings, login again", key="dings")
+            try:
+                self.blocking_login()
+            except Exception:
+                # retry with the next poll, the loop must not stop
+                self.logger.debug("Login failed", exc_info=True)
+        else:
+            self._errors.failed("Failed to poll dings", key="dings")
 
     async def update_alert_readings(self, alert):
         await fhem.readingsBeginUpdate(self.hash)
-        await fhem.readingsBulkUpdate(self.hash, "alert_id", alert["id"])
-        await fhem.readingsBulkUpdate(self.hash, "alert_kind", alert["kind"])
-        await fhem.readingsBulkUpdate(self.hash, "alert_sip_to", alert["sip_to"])
-        await fhem.readingsBulkUpdate(self.hash, "alert_sip_token", alert["sip_token"])
-        await fhem.readingsBulkUpdate(
-            self.hash, "alert_doorbot_id", alert["doorbot_id"]
-        )
-        await fhem.readingsBulkUpdate(self.hash, "state", alert["kind"])
-        await fhem.readingsEndUpdate(self.hash, 1)
+        try:
+            await fhem.readingsBulkUpdate(self.hash, "alert_id", alert["id"])
+            await fhem.readingsBulkUpdate(self.hash, "alert_kind", alert["kind"])
+            # Ring no longer sends SIP data with dings
+            for reading, key in (
+                ("alert_sip_to", "sip_to"),
+                ("alert_sip_token", "sip_token"),
+            ):
+                value = alert.get(key)
+                if value is not None:
+                    await fhem.readingsBulkUpdate(self.hash, reading, value)
+            await fhem.readingsBulkUpdate(
+                self.hash, "alert_doorbot_id", alert["doorbot_id"]
+            )
+            await fhem.readingsBulkUpdate(self.hash, "state", alert["kind"])
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
 
     async def update_history_readings(self, event, idx):
         await fhem.readingsBeginUpdate(self.hash)
