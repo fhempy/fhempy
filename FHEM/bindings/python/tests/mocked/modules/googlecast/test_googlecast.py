@@ -159,3 +159,15 @@ def test_alarm_wav():
     assert len(alarm.make_wav(10000)) <= 44 + 2 * alarm.SAMPLE_RATE * (
         alarm.MAX_DURATION + 1
     )
+
+
+def test_alarm_siren_loops_without_click():
+    from fhempy.lib.googlecast import alarm
+
+    # whole number of oscillations per sweep: last sample leads into the first
+    turns = alarm._phase(alarm.SWEEP_LEN)
+    assert abs(turns - round(turns)) < 1e-9
+    assert len(alarm._cycle()) == 2 * round(alarm.SWEEP_LEN * alarm.SAMPLE_RATE)
+    assert memoryview(alarm._cycle()).cast("h")[0] == 0
+    # highest harmonic stays below the Nyquist frequency (no aliasing)
+    assert alarm.HIGH_FREQ * alarm.HARMONICS[-1][0] < alarm.SAMPLE_RATE / 2
