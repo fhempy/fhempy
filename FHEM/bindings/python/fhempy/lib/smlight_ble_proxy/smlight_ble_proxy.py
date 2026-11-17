@@ -126,6 +126,9 @@ class smlight_ble_proxy(generic.FhemModule):
                 )
                 await asyncio.sleep(self._errors.next_delay(minimum=10, maximum=300))
         self._errors.success()
+        # import pysmlight (and aiohttp) in a thread before read_info, the
+        # first import takes seconds and would block the event loop
+        await utils.run_blocking(functools.partial(ble_proxy.load_smlight_libraries))
         info = None
         try:
             info = await read_info(ip)
@@ -150,7 +153,6 @@ class smlight_ble_proxy(generic.FhemModule):
         )
         if not source:
             source = f"smlight-{self._host}"
-        await utils.run_blocking(functools.partial(ble_proxy.load_smlight_libraries))
         self._drop_proxy()
         self._proxy = ble_proxy.register_smlight(
             self.logger,
