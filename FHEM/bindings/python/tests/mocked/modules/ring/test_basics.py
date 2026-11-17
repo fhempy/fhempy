@@ -9,6 +9,7 @@ from urllib.parse import parse_qs
 
 import aiohttp
 import pytest
+import pytest_asyncio
 import requests_mock
 from tests.utils import mock_fhem
 
@@ -190,8 +191,11 @@ class FakeApi:
         return FakeSession()
 
 
-@pytest.fixture(autouse=True)
-def mock_ring_requests(mocker):
+@pytest_asyncio.fixture(autouse=True)
+async def mock_ring_requests(mocker):
+    # CI installs module dependencies on demand, ring must be importable
+    # before its classes can be patched
+    await check_and_install_dependencies("ring")
     FakeListener.instances = []
     FakeListener.start_result = True
     mocker.patch("fhempy.lib.ring.ring.RingEventListener", FakeListener)
