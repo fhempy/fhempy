@@ -2,6 +2,165 @@
 
 <!-- version list -->
 
+## v2.20.0 (2026-11-17)
+
+### Bug Fixes
+
+- **googlecast**: Alarm sounds like an alarm system siren
+  ([#986](https://github.com/fhempy/fhempy/pull/986),
+  [`bd0cdd3`](https://github.com/fhempy/fhempy/commit/bd0cdd3320ab95c2a023627cadea4a9b0f104868))
+
+- **smlight_ble_proxy**: Import pysmlight in a thread before reading the device info
+  ([#985](https://github.com/fhempy/fhempy/pull/985),
+  [`22c0b38`](https://github.com/fhempy/fhempy/commit/22c0b38e18ffa6797fce9695b624d80ce57f2c39))
+
+- **tuya_smartlife**: Set colour_data on v1 devices
+  ([#945](https://github.com/fhempy/fhempy/pull/945),
+  [`8eb38aa`](https://github.com/fhempy/fhempy/commit/8eb38aa8ca547d4f997c700b459b599dd7be5030))
+
+### Features
+
+- Dashboard energy card shows the solar and usage curve of today
+  ([#979](https://github.com/fhempy/fhempy/pull/979),
+  [`afb1236`](https://github.com/fhempy/fhempy/commit/afb1236a8eef0de97c75008af98ca683f826d081))
+
+- Dashboard energy page with day/week/month, cost and biggest consumers
+  ([#977](https://github.com/fhempy/fhempy/pull/977),
+  [`2db5cc7`](https://github.com/fhempy/fhempy/commit/2db5cc7850c36bff74e777ceaa362adf04b8c42c))
+
+- Dashboard in French, Italian and Dutch, language chosen per tablet
+  ([#980](https://github.com/fhempy/fhempy/pull/980),
+  [`acf8c0b`](https://github.com/fhempy/fhempy/commit/acf8c0b2a87b6053c25d59938394440148d1bc1d))
+
+- Dashboard texts of the new pages in French, Italian and Dutch
+  ([#981](https://github.com/fhempy/fhempy/pull/981),
+  [`679f59d`](https://github.com/fhempy/fhempy/commit/679f59d0c280e1b0a0805ac10486f4f3e6ba07ed))
+
+- Dashboard views for robot vacuum, car, wallbox, heat pump and irrigation
+  ([#978](https://github.com/fhempy/fhempy/pull/978),
+  [`acf2585`](https://github.com/fhempy/fhempy/commit/acf2585ef9d1a78821ffcd59fae789afcd89d96b))
+
+- **dashboard**: Accent colour per tablet, background like the lamps
+  ([#971](https://github.com/fhempy/fhempy/pull/971),
+  [`6d2055c`](https://github.com/fhempy/fhempy/commit/6d2055c384393bd11e5cde7b007322226eaec833))
+
+- **dashboard**: All off in small groups, then name what stayed on
+  ([#956](https://github.com/fhempy/fhempy/pull/956),
+  [`b551ff2`](https://github.com/fhempy/fhempy/commit/b551ff2925c04c11f7ec67623bc2610dcfbef665))
+
+- **dashboard**: Baby monitor in the camera live view
+  ([#975](https://github.com/fhempy/fhempy/pull/975),
+  [`c5592f8`](https://github.com/fhempy/fhempy/commit/c5592f802f79f32ef146eba48f67f439487d59f5))
+
+- **dashboard**: Blinds as a window that moves with the real position
+  ([#962](https://github.com/fhempy/fhempy/pull/962),
+  [`3584bd7`](https://github.com/fhempy/fhempy/commit/3584bd7c03ec55978da1a714a0aa2df0247d98f4))
+
+- **dashboard**: Calendar entries and waste collection
+  ([#954](https://github.com/fhempy/fhempy/pull/954),
+  [`d28e5a0`](https://github.com/fhempy/fhempy/commit/d28e5a07f8184e71ceaaea006da819b4086d9f38))
+
+- **dashboard**: Camera page with live view and swiping
+  ([#974](https://github.com/fhempy/fhempy/pull/974),
+  [`8f89c4c`](https://github.com/fhempy/fhempy/commit/8f89c4c943e912e58b2f913adaa61a11385938a4))
+
+- **dashboard**: Colour and white temperature of lights
+  ([#950](https://github.com/fhempy/fhempy/pull/950),
+  [`b8fe205`](https://github.com/fhempy/fhempy/commit/b8fe2050d881bc2e0e7eab33010b6460c045714c))
+
+- **dashboard**: Doors and gates which may be open at some times
+  ([#964](https://github.com/fhempy/fhempy/pull/964),
+  [`fb3c22c`](https://github.com/fhempy/fhempy/commit/fb3c22c7ee3e67ca17a52a6a642d588a06a46930))
+
+- **dashboard**: Floors with lights off and blinds down per floor
+  ([#973](https://github.com/fhempy/fhempy/pull/973),
+  [`a452a3c`](https://github.com/fhempy/fhempy/commit/a452a3c121d4ff1cfba7942314aadb40f90b56c8))
+
+- **dashboard**: Good night and leave home with undo and weather warning
+  ([#952](https://github.com/fhempy/fhempy/pull/952),
+  [`726d250`](https://github.com/fhempy/fhempy/commit/726d250c703643dee514559181552b2f312995fe))
+
+- **dashboard**: Grey out old values offline, tell tablets about a new version
+  ([#957](https://github.com/fhempy/fhempy/pull/957),
+  [`c4b9301`](https://github.com/fhempy/fhempy/commit/c4b9301bd5cdf1e1ee56219fcf0ad1d07dd4452e))
+
+- **dashboard**: Icon switches, tile opens details, confirm scenes and unlock, tell when a command
+  fails ([#946](https://github.com/fhempy/fhempy/pull/946),
+  [`66046bd`](https://github.com/fhempy/fhempy/commit/66046bd7fbf6e5e339b57175439187ebb81468ee))
+
+- **dashboard**: Info for a bug report in the settings
+  ([#968](https://github.com/fhempy/fhempy/pull/968),
+  [`6472e27`](https://github.com/fhempy/fhempy/commit/6472e27d605b2100b9bc3c958ca25b8975ab1ae0))
+
+- **dashboard**: Maintenance chip and air out on high CO2
+  ([#958](https://github.com/fhempy/fhempy/pull/958),
+  [`a4a4023`](https://github.com/fhempy/fhempy/commit/a4a402381fc4e2a2ccbf5a3391e131a047e0dccd))
+
+- **dashboard**: Own notices on Home, e.g. mail is here
+  ([#963](https://github.com/fhempy/fhempy/pull/963),
+  [`fd819aa`](https://github.com/fhempy/fhempy/commit/fd819aa94fcd951dc689812f16750b739fa48b69))
+
+- **dashboard**: PIN for the settings ([#955](https://github.com/fhempy/fhempy/pull/955),
+  [`9931feb`](https://github.com/fhempy/fhempy/commit/9931feb26974cace510cfe400fd70e53ef49f1ee))
+
+- **dashboard**: Plugs which only measure ([#976](https://github.com/fhempy/fhempy/pull/976),
+  [`128d0b0`](https://github.com/fhempy/fhempy/commit/128d0b0113f2ffe0145360a49f3b9cf8c753d145))
+
+- **dashboard**: Presence in the room cards ([#965](https://github.com/fhempy/fhempy/pull/965),
+  [`ae6473b`](https://github.com/fhempy/fhempy/commit/ae6473b7ed8eeb55f8bfbdefd2cafba63b95cdee))
+
+- **dashboard**: Room popup with temperature ring and group sliders
+  ([#949](https://github.com/fhempy/fhempy/pull/949),
+  [`ec48c4f`](https://github.com/fhempy/fhempy/commit/ec48c4fa8ec36f0de7210982b9c40a556d991b77))
+
+- **dashboard**: Screensaver time per tablet, what is still coming today
+  ([#966](https://github.com/fhempy/fhempy/pull/966),
+  [`719881d`](https://github.com/fhempy/fhempy/commit/719881d657dce9325444680c0bac5a3e7b398046))
+
+- **dashboard**: Settings explain themselves and show what is worth a look
+  ([#969](https://github.com/fhempy/fhempy/pull/969),
+  [`b9a645a`](https://github.com/fhempy/fhempy/commit/b9a645a279415291f19e494d22067ab5bd9fcba7))
+
+- **dashboard**: Simple display for slow tablets ([#967](https://github.com/fhempy/fhempy/pull/967),
+  [`c707695`](https://github.com/fhempy/fhempy/commit/c70769550ef13127df5f7fc065d508911308371a))
+
+- **dashboard**: Smoke, water and alarm system with full screen alarm
+  ([#959](https://github.com/fhempy/fhempy/pull/959),
+  [`df7a7b4`](https://github.com/fhempy/fhempy/commit/df7a7b4bed88d7c152244d763c103d8d6e69fb82))
+
+- **dashboard**: Status chips on Home with overviews
+  ([#948](https://github.com/fhempy/fhempy/pull/948),
+  [`611bd00`](https://github.com/fhempy/fhempy/commit/611bd0039699d064b4138f404e2a4f8ca8bb8f54))
+
+- **dashboard**: Switch off timers for lights, switches and fans
+  ([#947](https://github.com/fhempy/fhempy/pull/947),
+  [`0cb7fc0`](https://github.com/fhempy/fhempy/commit/0cb7fc094a76f4468795069121d294e32e8131cd))
+
+- **dashboard**: Thermostat ring to drag, flame only when the valve is open
+  ([#961](https://github.com/fhempy/fhempy/pull/961),
+  [`83bd419`](https://github.com/fhempy/fhempy/commit/83bd419e216d960814c9d953bd909731ab1233a1))
+
+- **dashboard**: Tile sizes and headings in the edit mode
+  ([#972](https://github.com/fhempy/fhempy/pull/972),
+  [`c8eb5a4`](https://github.com/fhempy/fhempy/commit/c8eb5a4be05af8ff299d0a8496af2e1976409f34))
+
+- **dashboard**: Washing machine, dryer and dishwasher done from the power
+  ([#960](https://github.com/fhempy/fhempy/pull/960),
+  [`50b1b90`](https://github.com/fhempy/fhempy/commit/50b1b9093d80c53bcdffc2cecb22f208d0524941))
+
+- **dashboard**: Weather details with hours, days, sunrise and sunset
+  ([#953](https://github.com/fhempy/fhempy/pull/953),
+  [`741b2b0`](https://github.com/fhempy/fhempy/commit/741b2b01085374b8ed70b9a84ec8d7dab5c7d83c))
+
+- **dashboard**: Welcome tour as the last step of the setup
+  ([#970](https://github.com/fhempy/fhempy/pull/970),
+  [`9f63d9b`](https://github.com/fhempy/fhempy/commit/9f63d9be96b71a8638580284a8f83963d555bc7d))
+
+- **googlecast**: Add alarm command with sound and display message
+  ([#984](https://github.com/fhempy/fhempy/pull/984),
+  [`55835ab`](https://github.com/fhempy/fhempy/commit/55835abdc3ceb2ac1e960d64e973ddfb1c7d1808))
+
+
 ## v2.19.0 (2026-11-15)
 
 ### Bug Fixes
