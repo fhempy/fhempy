@@ -157,12 +157,18 @@ class HCIdump(Thread):
         if len(data) < 12:
             return
         try:
-            sensor_msg, tracker_msg = self.ble_parser.parse_raw_data(data)
+            # extended advertising events can hold several reports, each of
+            # them may come from another device
+            reports = self.ble_parser.parse_raw_data_reports(data)
         except Exception as exc:
             # bleparser expects well formed payloads, e.g. a too short
             # service data raises struct.error: skip the packet
             self.logger.debug(f"Ignored malformed advertisement: {exc!r}")
             return
+        for sensor_msg, tracker_msg in reports:
+            self._queue_report(sensor_msg, tracker_msg, gateway_id)
+
+    def _queue_report(self, sensor_msg, tracker_msg, gateway_id):
         if sensor_msg:
             measurements = list(sensor_msg.keys())
             device_type = sensor_msg["type"]

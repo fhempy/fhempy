@@ -79,7 +79,7 @@ async def test_malformed_advertisement_is_skipped(mocker):
     from fhempy.lib.ble_monitor import hcidump
 
     dump = mocker.MagicMock(evt_cnt=0)
-    dump.ble_parser.parse_raw_data.side_effect = struct.error(
+    dump.ble_parser.parse_raw_data_reports.side_effect = struct.error(
         "unpack requires a buffer of 6 bytes"
     )
     hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20, gateway_id="proxy")
@@ -97,7 +97,8 @@ async def test_sensor_type_missing_in_measurement_dict(mocker, device_type):
 
     msg = {"type": device_type, "mac": "AA:BB:CC:DD:EE:FF", "temperature": 21.5}
     dump = mocker.MagicMock(evt_cnt=0)
-    dump.ble_parser.parse_raw_data.return_value = (msg, None)
+    dump.ble_parser.parse_raw_data_reports.return_value = [(msg, None)]
+    dump._queue_report = lambda *args: hcidump.HCIdump._queue_report(dump, *args)
     dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
         dump, *args
     )
@@ -236,3 +237,47 @@ async def test_no_hint_if_capabilities_unknown(tmp_path):
     status = tmp_path / "status"
     status.write_text("Name:\tpython3\n", encoding="ascii")
     assert missing_net_raw_hint(str(status), 1000) == ""
+
+
+def _ext_report(mac, name, man_spec_data, rssi=-60):
+    """One report of an HCI LE extended advertising report event."""
+    name_bytes = name.encode()
+    payload = bytes([len(name_bytes) + 1, 0x09]) + name_bytes
+    payload += bytes([len(man_spec_data) + 1, 0xFF]) + man_spec_data
+    return (
+        bytes([0x13, 0x00, 0x00])  # legacy ADV_IND, public address
+        + bytes.fromhex(mac.replace(":", ""))[::-1]
+        + bytes([0x01, 0x00, 0xFF, 0x7F, rssi & 0xFF, 0x00, 0x00, 0x00])
+        + bytes(6)
+        + bytes([len(payload)])
+        + payload
+    )
+
+
+@pytest.mark.asyncio
+async def test_all_reports_of_an_extended_event_are_delivered(mocker):
+    """Adapters with extended scanning put several advertisements (of
+    different devices) into one HCI event, each of them is delivered."""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    first = bytes([0xC2, 0xD7, 0x00, 0x2D, 0x22, 0x2C])
+    second = bytes([0xC2, 0xDC, 0x00, 0x32, 0x22, 0x2C])
+    reports = _ext_report("AA:BB:CC:DD:EE:11", "TP357 (EE11)", first)
+    reports += _ext_report("AA:BB:CC:DD:EE:12", "TP357 (EE12)", second)
+    body = bytes([0x0D, 2]) + reports
+    event = bytes([0x04, 0x3E, len(body)]) + body
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    dump.ble_parser = FhempyBleParser()
+    dump._queue_report = lambda *args: hcidump.HCIdump._queue_report(dump, *args)
+    dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
+        dump, *args
+    )
+    hcidump.HCIdump.process_hci_events(dump, event)
+    delivered = [
+        call.args[0] for call in dump.dataqueue_meas.sync_q.put_nowait.call_args_list
+    ]
+    assert [msg["mac"] for msg in delivered] == ["AABBCCDDEE11", "AABBCCDDEE12"]
+    assert [msg["temperature"] for msg in delivered] == [21.5, 22.0]
