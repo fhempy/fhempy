@@ -305,7 +305,7 @@ async def test_trainer_erg_mode(module, mocker):
     )
     await settle()
     assert readings()["power"] == 180
-    assert readings()["cadence"] == 85.0
+    assert readings()["cadence"] == 85
     assert readings()["speed"] == 30.0
     assert readings()["state"] == "180 W"
 
@@ -392,3 +392,46 @@ async def test_bluetoothle_without_reconnect(mocker):
     conn._client = client
     await conn.async_disconnected(client)
     connect.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_trainer_uses_only_fitness_machine_data(module, mocker):
+    """KICKR CORE: Cycling Power and Indoor Bike Data at the same time, the
+    readings mustn't alternate between both (cadence 0 / 0.0)."""
+    from fhempy.lib.ble_fitness import parser
+
+    client = FakeClient(
+        [
+            parser.CYCLING_POWER_MEASUREMENT,
+            parser.INDOOR_BIKE_DATA,
+            parser.FITNESS_MACHINE_CONTROL_POINT,
+        ]
+    )
+    module._conn._client = client
+    await module._connected()
+    assert parser.INDOOR_BIKE_DATA in client.notify
+    assert parser.CYCLING_POWER_MEASUREMENT not in client.notify
+
+    # standing still: cadence 0 (resolution 0.5), speed 0
+    client.notify[parser.INDOOR_BIKE_DATA](
+        parser.INDOOR_BIKE_DATA, struct.pack("<HHHh", 0x0044, 0, 0, 0)
+    )
+    await settle()
+    assert repr(readings()["cadence"]) == "0"
+    assert repr(readings()["speed"]) == "0.0"
+    assert repr(readings()["power"]) == "0"
+
+    client.is_connected = False
+    await module._disconnected(client)
+    # the same text after the disconnect, no event
+    assert repr(readings()["cadence"]) == "0"
+    assert repr(readings()["speed"]) == "0.0"
+
+
+def test_normalize_fixed_decimals():
+    from fhempy.lib.ble_fitness import ble_fitness
+
+    assert ble_fitness.normalize(
+        {"cadence": 87.5, "speed": 30.12, "power": 210, "heart_rate": 140}
+    ) == {"cadence": 88, "speed": 30.1, "power": 210, "heart_rate": 140}
+    assert repr(ble_fitness.normalize({"speed": 0})["speed"]) == "0.0"
