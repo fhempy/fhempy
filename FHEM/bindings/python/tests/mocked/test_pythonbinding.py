@@ -753,3 +753,35 @@ def test_invalid_messages_are_ignored():
     assert pb.parse_message("no json") is None
     assert pb.parse_message("[1, 2]") is None
     assert pb.parse_message(b'{"a": 1}') == {"a": 1}
+
+
+@pytest.mark.asyncio
+async def test_detail_page_of_disabled_device(monkeypatch):
+    """Modules extend FW_detailFn with data set in Define (self.hash), a
+    disabled device only gets the generic 'disabled' page"""
+    from fhempy.lib import generic
+
+    class DetailModule(generic.FhemModule):
+        async def FW_detailFn(self, hash, args, argsh):
+            await super().FW_detailFn(hash, args, argsh)
+            return self.hash["NAME"]
+
+    pb = counting_binding(monkeypatch, {"value": "1"})
+    module = type("module", (), {"counting": DetailModule})
+
+    async def import_module(hash):
+        return module
+
+    monkeypatch.setattr(pb, "import_module", import_module)
+    replies = []
+
+    async def send_back(hash, ret):
+        replies.append(ret)
+
+    monkeypatch.setattr(pb, "sendBackReturn", send_back)
+    monkeypatch.setattr(pb, "sendBackError", send_back)
+    await pb.handle_function(function_hash("Define"), "")
+    await pb.handle_function(
+        function_hash("FW_detailFn", ["WEB", "counting_dev", "", {}]), ""
+    )
+    assert any("disabled" in str(reply) for reply in replies), replies
