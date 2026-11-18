@@ -1,11 +1,15 @@
 import asyncio
 import datetime
+import json
 import logging
 import os
 import re
+import time
 from urllib.parse import parse_qs
 
+import aiohttp
 import pytest
+import pytest_asyncio
 import requests_mock
 from tests.utils import mock_fhem
 
@@ -91,86 +95,158 @@ class FakeRingOAuth:
         return load_fixture("ring_oauth.json")
 
 
-@pytest.fixture(autouse=True)
-def mock_ring_requests():
+def api(path):
+    return re.compile(r"^https://api\.ring\.com/" + path + r"(\?.*)?$")
+
+
+class FakeListener:
+    """Replaces RingEventListener (Firebase push)."""
+
+    instances = []
+    start_result = True
+
+    def __init__(self, ring, credentials=None, credentials_updated_callback=None):
+        self.ring = ring
+        self.credentials = credentials
+        self.credentials_updated_callback = credentials_updated_callback
+        self.callbacks = []
+        self.stopped = False
+        FakeListener.instances.append(self)
+
+    async def start(self, *, timeout=10):
+        if FakeListener.start_result:
+            self.credentials_updated_callback({"fcm": "credentials"})
+        return FakeListener.start_result
+
+    def add_notification_callback(self, callback):
+        self.callbacks.append(callback)
+        return len(self.callbacks)
+
+    async def stop(self):
+        self.stopped = True
+
+    def push(self, event):
+        for callback in self.callbacks:
+            callback(event)
+
+
+class FakeResponse:
+    def __init__(self, status, body):
+        self.status = status
+        self._body = body.encode() if isinstance(body, str) else body
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        return False
+
+    def raise_for_status(self):
+        if self.status >= 400:
+            raise aiohttp.ClientResponseError(None, (), status=self.status)
+
+    async def read(self):
+        return self._body
+
+    async def text(self):
+        return self._body.decode()
+
+
+class FakeCall:
+    def __init__(self, method, url, kwargs):
+        self.method = method
+        self.url = url
+        self.kwargs = kwargs
+
+
+class FakeApi:
+    """Replaces aiohttp.ClientSession for the Ring API."""
+
+    def __init__(self):
+        self.routes = []
+        self.calls = []
+
+    def add(self, method, path, body, status=200):
+        # newer routes win
+        self.routes.insert(0, (method, api(path), status, body))
+
+    def session(self, headers=None, **kwargs):
+        fake_api = self
+
+        class FakeSession:
+            def __init__(self):
+                self.headers = dict(headers or {})
+                self.closed = False
+
+            async def request(self, method, url, **kwargs):
+                fake_api.calls.append(FakeCall(method, str(url), kwargs))
+                for route_method, pattern, status, body in fake_api.routes:
+                    if route_method == method and pattern.match(str(url)):
+                        return FakeResponse(status, body)
+                return FakeResponse(404, "not found")
+
+            async def close(self):
+                self.closed = True
+
+        return FakeSession()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def mock_ring_requests(mocker):
+    # CI installs module dependencies on demand, ring must be importable
+    # before its classes can be patched
+    await check_and_install_dependencies("ring")
+    FakeListener.instances = []
+    FakeListener.start_result = True
+    mocker.patch("fhempy.lib.ring.ring.RingEventListener", FakeListener)
+    fake_api = FakeApi()
+    mocker.patch("fhempy.lib.ring.ring.aiohttp.ClientSession", fake_api.session)
     with requests_mock.Mocker() as mock:
         mock.fake_oauth = FakeRingOAuth(mock)
-        mock.post(
-            "https://api.ring.com/clients_api/session",
-            text=load_fixture("ring_session.json"),
+        mock.api = fake_api
+        fake_api.add("POST", "clients_api/session", load_fixture("ring_session.json"))
+        fake_api.add(
+            "GET", "clients_api/ring_devices", load_fixture("ring_devices.json")
         )
-        mock.get(
-            "https://api.ring.com/clients_api/ring_devices",
-            text=load_fixture("ring_devices.json"),
+        fake_api.add(
+            "GET",
+            r"clients_api/chimes/\d+/health",
+            load_fixture("ring_chime_health_attrs.json"),
         )
-        mock.get(
-            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/chimes\/\d+\/health"),
-            text=load_fixture("ring_chime_health_attrs.json"),
+        fake_api.add(
+            "GET",
+            r"clients_api/doorbots/\d+/health",
+            load_fixture("ring_doorboot_health_attrs.json"),
         )
-        mock.get(
-            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/doorbots\/\d+\/health"),
-            text=load_fixture("ring_doorboot_health_attrs.json"),
+        fake_api.add(
+            "GET",
+            "clients_api/doorbots/987652/history",
+            load_fixture("ring_doorbots.json"),
         )
-        mock.get(
-            "https://api.ring.com/clients_api/doorbots/987652/history",
-            text=load_fixture("ring_doorbots.json"),
+        fake_api.add(
+            "GET", "clients_api/dings/active", load_fixture("ring_ding_active.json")
         )
-        mock.get(
-            "https://api.ring.com/clients_api/dings/active",
-            text=load_fixture("ring_ding_active.json"),
+        fake_api.add(
+            "GET",
+            "clients_api/dings/987654321/share/play",
+            '{"url":"https://api.ring.com/clients_api/dings/987654321/recording"}',
         )
-        mock.put(
-            "https://api.ring.com/clients_api/doorbots/987652/floodlight_light_off",
-            text="ok",
+        fake_api.add(
+            "GET",
+            "groups/v1/locations/mock-location-id/groups",
+            load_fixture("ring_groups.json"),
         )
-        mock.put(
-            "https://api.ring.com/clients_api/doorbots/987652/floodlight_light_on",
-            text="ok",
-        )
-        mock.put("https://api.ring.com/clients_api/doorbots/987652/siren_on", text="ok")
-        mock.put(
-            "https://api.ring.com/clients_api/doorbots/987652/siren_off", text="ok"
-        )
-        mock.get(
-            "https://api.ring.com/clients_api/dings/987654321/share/play",
-            text='{"url":"https://api.ring.com/clients_api/dings/987654321/recording"}',
-        )
-        mock.get(
-            "https://api.ring.com/clients_api/dings/987654321/recording",
-            text="ok",
-        )
-        mock.get(
-            "https://api.ring.com/groups/v1/locations/mock-location-id/groups",
-            text=load_fixture("ring_groups.json"),
-        )
-        mock.post(
-            "https://api.ring.com/groups/v1/locations/"
-            + "mock-location-id/groups/mock-group-id/devices",
-            text="ok",
-        )
-        mock.patch(
-            re.compile(
-                r"https:\/\/api\.ring\.com\/devices\/v1\/devices\/\d+\/settings"
-            ),
-            text="ok",
-        )
-        mock.get(
-            re.compile(r"https:\/\/api\.ring\.com\/clients_api\/dings\/\d+\/recording"),
-            # "https://api.ring.com/clients_api/dings/987654321/recording",
-            status_code=200,
-            content=b"123456",
-        )
-        mock.get(
-            "https://api.ring.com/clients_api/dings/9876543212/recording",
-            status_code=200,
-            content=b"123456",
-        )
-        mock.patch(
-            "https://api.ring.com/clients_api/device",
-            status_code=204,
-            content=b"",
-        )
+        fake_api.add("PUT", r"clients_api/doorbots/\d+", "")
         yield mock
+
+
+def api_requests(mock, method, path):
+    pattern = api(path)
+    return [
+        call
+        for call in mock.api.calls
+        if call.method == method and pattern.match(call.url)
+    ]
 
 
 @pytest.mark.asyncio
@@ -193,6 +269,7 @@ async def test_login(mocker, mock_ring_requests):
         ],
         {},
     )
+    await wait_for_state("testdevice", "please set password")
 
     await fhempy_device.Set(
         testhash,
@@ -216,9 +293,8 @@ async def test_login(mocker, mock_ring_requests):
         count += 1
         await asyncio.sleep(0.1)
 
-    # wait for the ding
-    await asyncio.sleep(1)
     assert mock_fhem.readings["testdevice"]["state"] == "connected"
+    assert fhempy_device._http_session.headers["Accept"] == "application/json"
     assert mock_fhem.readings["testdevice"]["address"] == "123 Main St"
     assert mock_fhem.readings["testdevice"]["family"] == "doorbots"
     assert mock_fhem.readings["testdevice"]["device_id"] == "aacdef123"
@@ -260,17 +336,19 @@ async def test_login(mocker, mock_ring_requests):
     assert token_form["grant_type"] == ["authorization_code"]
     assert token_headers["User-Agent"] == "android:com.ringapp"
     assert "hardware_id" in token_headers
-    session_requests = [
-        req
-        for req in mock_ring_requests.request_history
-        if req.url.startswith("https://api.ring.com/clients_api/session")
+    session_requests = api_requests(mock_ring_requests, "POST", "clients_api/session")
+    assert len(session_requests) == 1
+    headers = session_requests[0].kwargs["headers"]
+    assert headers["User-Agent"] == "android:com.ringapp"
+    assert headers["hardware_id"] == token_headers["hardware_id"]
+    assert headers["Authorization"].startswith("Bearer ")
+    # push events instead of polling dings
+    assert mock_fhem.readings["testdevice"]["events"] == "push"
+    assert api_requests(mock_ring_requests, "GET", "clients_api/dings/active") == [
+        api_requests(mock_ring_requests, "GET", "clients_api/dings/active")[0]
     ]
-    assert session_requests
-    for req in session_requests:
-        assert req.headers["Accept"] == "application/json"
-        assert req.headers["User-Agent"] == "android:com.ringapp"
-        assert req.headers["hardware_id"] == token_headers["hardware_id"]
-        assert req.headers["Authorization"].startswith("Bearer ")
+    assert FakeListener.instances[0].stopped
+    assert "fcm_credentials" in mock_fhem.readings["testdevice"]
     # identifier is stored, so the hardware id stays the same after restart
     assert len(mock_fhem.readings["testdevice"]["identifier"]) == 20
 
@@ -337,4 +415,150 @@ async def test_login_wrong_password(mocker, mock_ring_requests):
         mock_fhem.readings["testdevicepw"]["state"]
         == "AccessDenied: wrong username or password"
     )
+    await fhempy_device.Undefine(testhash)
+
+
+async def define_connected(mocker, name, connected_state="connected"):
+    mock_fhem.mock_module(mocker)
+    testhash = {"NAME": name, "FHEMPYTYPE": "ring"}
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import ring
+
+    fhempy_device = ring(logging.getLogger(__name__))
+    await fhempy_device.Define(
+        testhash,
+        [name, "fhempy", "ring", "test@test.com", "Front Door", "abc"],
+        {},
+    )
+    await wait_for_state(name, "please set password")
+    await fhempy_device.Set(testhash, [name, "password", "asdfasdfasdf"], {})
+    await wait_for_state(name, connected_state)
+    assert mock_fhem.readings[name]["state"] == connected_state
+    return fhempy_device, testhash
+
+
+@pytest.mark.asyncio
+async def test_push_event(mocker, mock_ring_requests):
+    """A push event for the device updates the alert readings."""
+    from ring_doorbell import RingEvent
+
+    fhempy_device, testhash = await define_connected(mocker, "testdevicepush")
+    listener = FakeListener.instances[-1]
+    event = RingEvent(
+        id=555,
+        doorbot_id=987652,
+        device_name="Front Door",
+        device_kind="lpd_v1",
+        now=time.time(),
+        expires_in=180,
+        kind="ding",
+        state="ringing",
+    )
+    # events of other devices are ignored
+    listener.push(
+        RingEvent(
+            id=556,
+            doorbot_id=1,
+            device_name="Other",
+            device_kind="lpd_v1",
+            now=time.time(),
+            expires_in=180,
+            kind="motion",
+            state="human",
+        )
+    )
+    listener.push(event)
+    await wait_for_state("testdevicepush", "ding")
+    readings = mock_fhem.readings["testdevicepush"]
+    assert readings["state"] == "ding"
+    assert readings["alert_id"] == 555
+    assert readings["alert_kind"] == "ding"
+    assert readings["alert_state"] == "ringing"
+    assert "alert_sip_to" not in readings
+    assert len(api_requests(mock_ring_requests, "POST", "clients_api/session")) == 1
+    await fhempy_device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_polling_fallback(mocker, mock_ring_requests):
+    """Without push events, dings are polled; no new session on each ding."""
+    FakeListener.start_result = False
+    ding = {
+        "id": 777,
+        "id_str": "777",
+        "state": "ringing",
+        "doorbot_id": 987652,
+        "doorbot_description": "Front Door",
+        "device_kind": "lpd_v1",
+        "motion": False,
+        "kind": "ding",
+        "expires_in": 180,
+        "now": time.time(),
+    }
+    mock_ring_requests.api.add("GET", "clients_api/dings/active", json.dumps([ding]))
+    fhempy_device, testhash = await define_connected(
+        mocker, "testdevicepoll", connected_state="ding"
+    )
+    readings = mock_fhem.readings["testdevicepoll"]
+    assert readings["events"] == "polling"
+    assert readings["state"] == "ding"
+    assert readings["alert_id"] == 777
+    assert len(api_requests(mock_ring_requests, "POST", "clients_api/session")) == 1
+    await fhempy_device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_token_refresh_headers(mock_ring_requests):
+    """Token refresh sends the headers of the Ring app."""
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import RingAuth
+
+    fake_api = mock_ring_requests.api
+    fake_api.routes.insert(
+        0,
+        (
+            "POST",
+            re.compile(r"^https://oauth\.ring\.com/oauth/token$"),
+            200,
+            load_fixture("ring_oauth.json"),
+        ),
+    )
+    updated = []
+    token = json.loads(load_fixture("ring_oauth.json"))
+    token["expires_at"] = time.time() - 10
+    auth = RingAuth(
+        "android:com.ringapp",
+        token,
+        updated.append,
+        "hw-id",
+        http_client_session=fake_api.session(),
+    )
+    await auth.async_query("https://api.ring.com/clients_api/ring_devices")
+    refresh = [c for c in fake_api.calls if "oauth.ring.com" in c.url]
+    assert len(refresh) == 1
+    headers = refresh[0].kwargs["headers"]
+    assert headers["User-Agent"] == "android:com.ringapp"
+    assert headers["hardware_id"] == "hw-id"
+    assert headers["Accept"] == "application/json"
+    assert updated and updated[0]["access_token"]
+
+
+@pytest.mark.asyncio
+async def test_device_not_found(mocker, mock_ring_requests):
+    mock_fhem.mock_module(mocker)
+    testhash = {"NAME": "testdevicenf", "FHEMPYTYPE": "ring"}
+    await check_and_install_dependencies("ring")
+    from fhempy.lib.ring.ring import ring
+
+    fhempy_device = ring(logging.getLogger(__name__))
+    await fhempy_device.Define(
+        testhash,
+        ["testdevicenf", "fhempy", "ring", "test@test.com", "Unknown Door", "abc"],
+        {},
+    )
+    await wait_for_state("testdevicenf", "please set password")
+    await fhempy_device.Set(testhash, ["testdevicenf", "password", "asdfasdfasdf"], {})
+    await wait_for_state("testdevicenf", "device not found")
+    assert mock_fhem.readings["testdevicenf"]["state"] == "device not found"
+    assert fhempy_device._http_session is None
     await fhempy_device.Undefine(testhash)
