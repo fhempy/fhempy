@@ -9,7 +9,7 @@ from fhempy.lib.ble_monitor.bt_helpers import (
 )
 from fhempy.lib.ble_monitor.hcidump import HCIdump
 
-from ..core import ble_proxy, hci_claims
+from ..core import ble_proxy, ble_scanner, hci_claims
 from .const import (
     CONF_DEVICE_ENCRYPTION_KEY,
     CONF_DISCOVERY,
@@ -42,6 +42,22 @@ from .const import (
 
 # devices register one after another at startup, restart the scan only once
 RESTART_DELAY = 3
+# scan attribute: the shared scan of core/ble_scanner (BlueZ) or an own raw
+# HCI scan, only for systems without BlueZ
+SCAN_SHARED = "shared"
+SCAN_HCI = "hci"
+# warn if the shared scan doesn't work after this time (s)
+SHARED_CHECK_DELAY = 120
+
+UUID16_SUFFIX = "-0000-1000-8000-00805f9b34fb"
+AD_NAME = 0x09
+AD_UUID16 = 0x03
+AD_UUID128 = 0x07
+AD_SERVICE_DATA16 = 0x16
+AD_SERVICE_DATA128 = 0x21
+AD_MANUFACTURER = 0xFF
+# length byte of the HCI report
+MAX_AD_LEN = 255
 
 
 def hci_packet(address, address_type, rssi, data):
@@ -51,6 +67,89 @@ def hci_packet(address, address_type, rssi, data):
     report = bytes([0x02, 0x01, 0x00, address_type & 0xFF]) + mac
     report += bytes([len(data)]) + bytes(data) + bytes([rssi & 0xFF])
     return bytes([0x04, 0x3E, len(report)]) + report
+
+
+def _ad(ad_type, payload):
+    payload = bytes(payload)[:254]
+    return bytes([len(payload) + 1, ad_type]) + payload
+
+
+def _uuid16(uuid):
+    """0xFE95 for 0000fe95-0000-1000-8000-00805f9b34fb, None for others."""
+    uuid = uuid.lower()
+    if uuid.endswith(UUID16_SUFFIX) and uuid.startswith("0000"):
+        return int(uuid[4:8], 16)
+    return None
+
+
+def _uuid128_bytes(uuid):
+    return bytes.fromhex(uuid.replace("-", ""))[::-1]
+
+
+def _changed_entries(service_data, manufacturer_data, previous):
+    """Only the entries which changed since previous, all if none changed."""
+    if previous is None:
+        return service_data, manufacturer_data
+    old_service, old_manufacturer = previous
+    changed_service = {k: v for k, v in service_data.items() if old_service.get(k) != v}
+    changed_manufacturer = {
+        k: v for k, v in manufacturer_data.items() if old_manufacturer.get(k) != v
+    }
+    if changed_service or changed_manufacturer:
+        return changed_service, changed_manufacturer
+    return service_data, manufacturer_data
+
+
+def _uuid_list_ads(service_uuids):
+    uuid16 = b""
+    uuid128 = b""
+    for uuid in service_uuids:
+        short = _uuid16(uuid)
+        if short is not None:
+            uuid16 += short.to_bytes(2, "little")
+        else:
+            uuid128 += _uuid128_bytes(uuid)
+    parts = []
+    if uuid16:
+        parts.append(_ad(AD_UUID16, uuid16))
+    if uuid128:
+        parts.append(_ad(AD_UUID128, uuid128))
+    return parts
+
+
+def _service_data_ad(uuid, data):
+    short = _uuid16(uuid)
+    if short is not None:
+        return _ad(AD_SERVICE_DATA16, short.to_bytes(2, "little") + data)
+    return _ad(AD_SERVICE_DATA128, _uuid128_bytes(uuid) + data)
+
+
+def advertisement_data(advertisement, previous=None):
+    """Raw advertising data (AD structures) rebuilt from bleak's
+    AdvertisementData, as the adapter received it. BlueZ merges all
+    advertisements of a device: with the (service_data, manufacturer_data) of
+    the previous call only the entries which changed since then are included,
+    so a value isn't parsed again. If nothing changed, all of them are."""
+    service_data, manufacturer_data = _changed_entries(
+        dict(advertisement.service_data or {}),
+        dict(advertisement.manufacturer_data or {}),
+        previous,
+    )
+    parts = []
+    if advertisement.local_name:
+        parts.append(_ad(AD_NAME, advertisement.local_name.encode("utf-8")))
+    parts += _uuid_list_ads(advertisement.service_uuids or [])
+    parts += [_service_data_ad(uuid, data) for uuid, data in service_data.items()]
+    parts += [
+        _ad(AD_MANUFACTURER, company.to_bytes(2, "little") + data)
+        for company, data in manufacturer_data.items()
+    ]
+    raw = b""
+    for part in parts:
+        if len(raw) + len(part) > MAX_AD_LEN:
+            break
+        raw += part
+    return raw
 
 
 class BLEmonitor:
@@ -91,6 +190,12 @@ class BLEmonitor:
             CONF_DISCOVERY: DEFAULT_DISCOVERY,
         }
         self.dumpthread = None
+        self._loop = asyncio.get_running_loop()
+        # shared scan: (service_data, manufacturer_data) per address
+        self._previous = {}
+        self._shared = False
+        self._shared_adapters = {}
+        self._shared_check = None
         self.fhem_devices = {}
         self._restart_requested = 0
         self._restart_task = None
@@ -107,6 +212,79 @@ class BLEmonitor:
             return
         self.logger.info(f"hci{adapter} is free again, restarting the scan")
         self.restart()
+
+    def scan_mode(self):
+        """SCAN_HCI if a device asks for the own raw HCI scan."""
+        for devices in self.fhem_devices.values():
+            for device in devices:
+                scan = getattr(device, "scan", None)
+                if scan is not None and scan() == SCAN_HCI:
+                    return SCAN_HCI
+        return SCAN_SHARED
+
+    def shared_advertisement(self, device, advertisement):
+        """Advertisement of a local adapter from the shared scan."""
+        dumpthread = self.dumpthread
+        if dumpthread is None or not self.fhem_devices:
+            return
+        address = device.address.upper()
+        previous = self._previous.get(address)
+        data = advertisement_data(advertisement, previous)
+        self._previous[address] = (
+            dict(advertisement.service_data or {}),
+            dict(advertisement.manufacturer_data or {}),
+        )
+        rssi = advertisement.rssi if advertisement.rssi is not None else -127
+        dumpthread.process_hci_events(
+            hci_packet(address, ble_scanner.address_type(device), rssi, data)
+        )
+
+    def _attach_shared(self):
+        """Registers at the shared scan, in the event loop."""
+        scanner = ble_scanner.BleScanner.get_instance(self.logger)
+        # proxies send their raw advertisements to proxy_advertisement
+        scanner.add_callback(self.shared_advertisement, proxies=False)
+        adapters = {
+            ble_scanner.normalize_adapter(hci)
+            for hci in self.config[CONF_HCI_INTERFACE]
+        }
+        adapters.discard(None)
+        for adapter in list(self._shared_adapters):
+            if adapter not in adapters:
+                scanner.remove_callback(self._shared_adapters.pop(adapter))
+        for adapter in adapters:
+            if adapter not in self._shared_adapters:
+                # only keeps the scan of the adapter running, the
+                # advertisements of all adapters go to shared_advertisement
+                def keep(device, advertisement):
+                    return None
+
+                self._shared_adapters[adapter] = keep
+                scanner.add_callback(keep, proxies=False, adapter=adapter)
+        if self._shared_check is None or self._shared_check.done():
+            self._shared_check = asyncio.create_task(self._check_shared())
+
+    def _detach_shared(self):
+        scanner = ble_scanner.BleScanner.instance
+        if scanner is None:
+            return
+        scanner.remove_callback(self.shared_advertisement)
+        for keep in self._shared_adapters.values():
+            scanner.remove_callback(keep)
+        self._shared_adapters.clear()
+        self._previous.clear()
+
+    async def _check_shared(self):
+        await asyncio.sleep(SHARED_CHECK_DELAY)
+        scanner = ble_scanner.BleScanner.instance
+        if not self._shared or scanner is None:
+            return
+        if scanner.scanning in ("no adapter", "failed") and not ble_proxy.active():
+            self.logger.warning(
+                "ble_monitor uses the shared Bluetooth scan of fhempy, which "
+                f"doesn't work ({scanner.scanning}). Without BlueZ set "
+                "attr <device> scan hci for an own HCI scan."
+            )
 
     def proxy_advertisement(self, address, address_type, rssi, data, proxy_name):
         dumpthread = self.dumpthread
@@ -192,18 +370,26 @@ class BLEmonitor:
         self.stop()
 
     def start(self):
-        """Start receiving broadcasts."""
-        self.logger.debug("Spawning HCIdump thread")
+        """Start receiving broadcasts. Can run in a thread (restart)."""
         self.dumpthread = HCIdump(
             self.logger,
             config=self.config,
             dataqueue=self.dataqueue,
         )
-        self.dumpthread.start()
+        if self.scan_mode() == SCAN_HCI:
+            self.logger.debug("Spawning HCIdump thread")
+            self.dumpthread.start()
+        elif self.fhem_devices:
+            # the HCIdump only parses, the shared scan delivers
+            self._shared = True
+            self._loop.call_soon_threadsafe(self._attach_shared)
 
     def stop(self):
         """Stop HCIdump thread(s)."""
         result = True
+        if self._shared:
+            self._shared = False
+            self._loop.call_soon_threadsafe(self._detach_shared)
         if self.dumpthread is None:
             self.logger.debug("BLE monitor stopped")
             return True

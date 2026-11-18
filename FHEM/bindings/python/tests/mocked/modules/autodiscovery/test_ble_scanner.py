@@ -215,3 +215,52 @@ async def test_busy_adapter_logs_error_without_traceback(ble_scanner, mocker, ca
     assert errors[0].exc_info is None
     assert "busy" in errors[0].getMessage()
     assert scanner.scanning == "busy"
+
+
+@pytest.mark.asyncio
+async def test_additional_adapters_are_scanned_once(ble_scanner, mocker):
+    """One scan per adapter, all callbacks share it. A failing additional
+    adapter doesn't stop the scan of the default adapter."""
+    started = []
+
+    class FakeBleakScanner:
+        def __init__(self, callback, scanning_mode="active", bluez=None, adapter=None):
+            self.adapter = adapter
+            self.mode = scanning_mode
+
+        async def start(self):
+            if self.adapter == "hci2":
+                raise OSError("no such adapter")
+            started.append((self.adapter, self.mode))
+
+        async def stop(self):
+            return
+
+    mocker.patch.object(ble_scanner, "BleakScanner", FakeBleakScanner)
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    mocker.patch.object(scanner, "_run", mocker.AsyncMock())
+    scanner.add_callback(lambda d, a: None)
+    first, second, third = (lambda d, a: None), (lambda d, a: None), (lambda d, a: None)
+    scanner.add_callback(first, adapter=1)
+    scanner.add_callback(second, adapter="hci1")
+    scanner.add_callback(third, adapter="hci2")
+    # hci0 is the default adapter
+    scanner.add_callback(lambda d, a: None, adapter="0")
+    assert scanner.adapters == ["hci1", "hci2"]
+    await scanner._scan(active=True, duration=0)
+    assert started == [(None, "active"), ("hci1", "active")]
+    scanner.remove_callback(first)
+    assert scanner.adapters == ["hci1", "hci2"]
+    scanner.remove_callback(second)
+    scanner.remove_callback(third)
+    assert scanner.adapters == []
+
+
+@pytest.mark.asyncio
+async def test_address_type(ble_scanner):
+    random = SimpleNamespace(details={"props": {"AddressType": "random"}})
+    public = SimpleNamespace(details={"props": {"AddressType": "public"}})
+    proxy = SimpleNamespace(details=None)
+    assert ble_scanner.address_type(random) == 1
+    assert ble_scanner.address_type(public) == 0
+    assert ble_scanner.address_type(proxy) == 0

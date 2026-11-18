@@ -169,9 +169,7 @@ async def test_other_devices_untouched():
 
     parser = FhempyBleParser()
     data = bytes([0xC2, 0xD7, 0x00, 0x2D, 0x22, 0x2C, 0x01])
-    sensor, _ = parser.parse_raw_data(
-        _hci_adv("AA:BB:CC:DD:EE:03", "Foo123", data)
-    )
+    sensor, _ = parser.parse_raw_data(_hci_adv("AA:BB:CC:DD:EE:03", "Foo123", data))
     assert sensor is None
 
 
@@ -405,3 +403,134 @@ async def test_scan_restarts_when_adapter_is_released(blemonitor, mocker):
     hci_claims.release(0, "matter")
     restart.assert_called_once()
     hci_claims.remove_listener(monitor.hci_claim_changed)
+
+
+def _parsing_dump(mocker):
+    from fhempy.lib.ble_monitor import hcidump
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    dump.ble_parser = FhempyBleParser()
+    dump._queue_report = lambda *args: hcidump.HCIdump._queue_report(dump, *args)
+    dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
+        dump, *args
+    )
+    dump.process_hci_events = lambda data, gateway_id="": (
+        hcidump.HCIdump.process_hci_events(dump, data, gateway_id)
+    )
+    return dump
+
+
+def _bleak_adv(name, manufacturer_data=None, service_data=None, rssi=-60):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        local_name=name,
+        manufacturer_data=manufacturer_data or {},
+        service_data=service_data or {},
+        service_uuids=[],
+        rssi=rssi,
+    )
+
+
+def _delivered(dump):
+    return [
+        call.args[0] for call in dump.dataqueue_meas.sync_q.put_nowait.call_args_list
+    ]
+
+
+@pytest.mark.asyncio
+async def test_advertisements_of_the_shared_scan_are_parsed(blemonitor, mocker):
+    """ble_monitor doesn't scan itself, it parses what the shared BlueZ scan
+    of core/ble_scanner receives."""
+    from types import SimpleNamespace
+
+    monitor, _ = blemonitor
+    monitor.fhem_devices = {"aabbccddee11": [mocker.Mock()]}
+    dump = _parsing_dump(mocker)
+    monitor.dumpthread = dump
+    device = SimpleNamespace(
+        address="AA:BB:CC:DD:EE:11", details={"props": {"AddressType": "public"}}
+    )
+    # 21.5 C, 45 %, like the raw bytes C2 D7 00 2D 22 2C
+    first = {0xD7C2: bytes([0x00, 0x2D, 0x22, 0x2C])}
+    monitor.shared_advertisement(device, _bleak_adv("TP357 (EE11)", first))
+    second = {0xDCC2: bytes([0x00, 0x32, 0x22, 0x2C])}
+    # BlueZ merges the advertisements: the old entry is still there
+    monitor.shared_advertisement(
+        device, _bleak_adv("TP357 (EE11)", {**first, **second})
+    )
+    delivered = _delivered(dump)
+    assert [msg["mac"] for msg in delivered] == ["AABBCCDDEE11"] * 2
+    # only the changed entry was parsed the second time
+    assert [msg["temperature"] for msg in delivered] == [21.5, 22.0]
+
+
+def test_advertisement_data_is_rebuilt():
+    asyncio.run(check_and_install_dependencies("ble_monitor"))
+    from fhempy.lib.ble_monitor.blemonitor import advertisement_data
+
+    adv = _bleak_adv(
+        "LYWSD03MMC",
+        manufacturer_data={0x0059: b"\x01\x02"},
+        service_data={
+            "0000fe95-0000-1000-8000-00805f9b34fb": b"\x30\x58",
+            "12345678-1234-5678-1234-56789abcdef0": b"\x07",
+        },
+    )
+    adv.service_uuids = ["0000181a-0000-1000-8000-00805f9b34fb"]
+    raw = advertisement_data(adv)
+    assert raw == (
+        bytes([11, 0x09])
+        + b"LYWSD03MMC"
+        + bytes([3, 0x03, 0x1A, 0x18])
+        + bytes([5, 0x16, 0x95, 0xFE, 0x30, 0x58])
+        + bytes([18, 0x21])
+        + bytes.fromhex("123456781234567812345678 9abcdef0".replace(" ", ""))[::-1]
+        + b"\x07"
+        + bytes([5, 0xFF, 0x59, 0x00, 0x01, 0x02])
+    )
+    # unchanged: everything again (presence of trackers)
+    previous = (dict(adv.service_data), dict(adv.manufacturer_data))
+    assert advertisement_data(adv, previous) == raw
+
+
+@pytest.mark.asyncio
+async def test_registers_at_the_shared_scan(blemonitor, mocker):
+    from fhempy.lib.core import ble_scanner
+
+    monitor, _ = blemonitor
+    scanner = mocker.Mock()
+    mocker.patch.object(ble_scanner.BleScanner, "get_instance", return_value=scanner)
+    mocker.patch.object(ble_scanner.BleScanner, "instance", scanner)
+    mocker.patch.object(monitor, "_check_shared", mocker.AsyncMock())
+    monitor.fhem_devices = {"aabbccddeeff": [mocker.Mock()]}
+    monitor.config["hci_interface"] = [0, 1]
+    monitor.start()
+    await asyncio.sleep(0)
+    assert monitor._shared
+    calls = scanner.add_callback.call_args_list
+    assert calls[0].args == (monitor.shared_advertisement,)
+    assert calls[0].kwargs == {"proxies": False}
+    # hci1 is scanned as well
+    assert calls[1].kwargs == {"proxies": False, "adapter": "hci1"}
+    monitor.stop()
+    await asyncio.sleep(0)
+    assert not monitor._shared
+    removed = [call.args[0] for call in scanner.remove_callback.call_args_list]
+    assert monitor.shared_advertisement in removed
+    assert len(removed) == 2
+
+
+@pytest.mark.asyncio
+async def test_own_hci_scan_only_on_request(blemonitor, mocker):
+    monitor, _ = blemonitor
+    device = mocker.Mock()
+    device.scan.return_value = "hci"
+    monitor.fhem_devices = {"aabbccddeeff": [device]}
+    attach = mocker.patch.object(monitor, "_attach_shared")
+    monitor.start()
+    await asyncio.sleep(0)
+    attach.assert_not_called()
+    assert monitor.dumpthread.is_alive()
+    assert not monitor._shared
