@@ -665,6 +665,8 @@ async def test_failed_pairing_explains_bluetooth_and_thread_route(mocker):
     controller.run_command = mocker.AsyncMock(
         side_effect=MatterServerError(1, "Commissioning failed")
     )
+    controller.restart_server = mocker.AsyncMock()
+    controller.wait_for_server = mocker.AsyncMock(return_value=True)
     await controller.commission('"MT:ABC"', network_only=False)
     readings = mock_fhem.readings["testmatter"]
     assert readings["bluetooth_check"].startswith("Bluetooth is blocked")
@@ -716,21 +718,41 @@ async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
     assert "sudo setcap" in readings["testmatter"]["pairing"]
     controller.run_command.assert_not_called()
 
-    # all fine: waits for the restarted server, then pairs
+    # all fine: restarts the server with Bluetooth, pairs, restarts it
+    # without Bluetooth
+    from fhempy.lib.core import hci_claims
+
     mocker.patch.object(system_check, "bluetooth_problems", return_value=[])
     mocker.patch.object(controller, "create_devices_for_node", mocker.AsyncMock())
 
-    async def restarted(hash, attrdef):
+    async def set_attr(hash, attrdef):
         mock_fhem.command_attr.append(attrdef)
         fhemdev._attr_bluetooth_adapter = attrdef.split()[-1]
+
+    mocker.patch("fhempy.lib.fhem.CommandAttr", set_attr)
+    restarts = []
+
+    async def restart_server():
+        restarts.append(controller._pairing_adapter)
         controller._started_with = controller.server_settings()
         controller.client = mocker.Mock(connected=True)
 
-    mocker.patch("fhempy.lib.fhem.CommandAttr", restarted)
+    controller.restart_server = restart_server
+    during = []
+
+    async def pairing(*args, **kwargs):
+        during.append((controller.server_settings()[1], hci_claims.is_claimed(1)))
+        return {"node_id": 3}
+
+    controller.run_command = mocker.AsyncMock(side_effect=pairing)
     fhemdev._attr_bluetooth_adapter = ""
     await controller.commission("MT:ABC", network_only=False)
     assert readings["testmatter"]["pairing"] == "successful, node 3"
     assert controller.run_command.call_args.kwargs["network_only"] is False
+    assert during == [(1, True)]
+    assert restarts == [1, None]
+    assert controller.server_settings()[1] is None
+    assert not hci_claims.is_claimed(1)
 
     # attribute set: no detection anymore
     detect = mocker.patch.object(system_check, "bluetooth_adapters")
@@ -878,3 +900,46 @@ async def test_thread_neighbor_list_reading(mocker):
         "Hallway sensor (router, -61 dBm), 000000000000012c (child, -70 dBm)"
     )
     mock_fhem.attributes["matter_11"].pop("alias")
+
+
+@pytest.mark.asyncio
+async def test_server_runs_without_bluetooth_outside_pairing(mocker):
+    """attr bluetooth_adapter only selects the adapter for pair_new_device,
+    the server resets the adapter when it starts with Bluetooth"""
+    mock_fhem.mock_module(mocker)
+    fhemdev = mocker.Mock(
+        _attr_bluetooth_adapter="0",
+        _attr_primary_interface="",
+        _attr_port=5580,
+        _attr_test_dcl=0,
+        _attr_time_sync=1,
+    )
+    controller = matter_controller(logger, fhemdev)
+    assert controller.server_settings()[1] is None
+    controller.proc = object()
+    controller._started_with = controller.server_settings()
+    controller.fhemdev.create_async_task = mocker.Mock()
+    fhemdev._attr_bluetooth_adapter = "1"
+    await controller._settings_changed({})
+    controller.fhemdev.create_async_task.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_failed_bluetooth_start_frees_adapter(mocker):
+    mock_fhem.mock_module(mocker)
+    from fhempy.lib.core import hci_claims
+
+    fhemdev = mocker.Mock(
+        _attr_bluetooth_adapter="0", _attr_primary_interface="", _attr_port=5580
+    )
+    controller = matter_controller(logger, fhemdev)
+    controller.hash = {"NAME": "testmatter"}
+    mocker.patch.object(system_check, "bluetooth_problems", return_value=[])
+    controller.restart_server = mocker.AsyncMock()
+    controller.wait_for_server = mocker.AsyncMock(return_value=False)
+    controller.run_command = mocker.AsyncMock()
+    await controller.commission("MT:ABC", network_only=False)
+    controller.run_command.assert_not_called()
+    assert "didn't start with Bluetooth" in mock_fhem.readings["testmatter"]["pairing"]
+    assert controller.restart_server.await_count == 2
+    assert not hci_claims.is_claimed(0)

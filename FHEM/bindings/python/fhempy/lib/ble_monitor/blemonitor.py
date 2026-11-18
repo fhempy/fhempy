@@ -9,7 +9,7 @@ from fhempy.lib.ble_monitor.bt_helpers import (
 )
 from fhempy.lib.ble_monitor.hcidump import HCIdump
 
-from ..core import ble_proxy
+from ..core import ble_proxy, hci_claims
 from .const import (
     CONF_DEVICE_ENCRYPTION_KEY,
     CONF_DISCOVERY,
@@ -97,6 +97,16 @@ class BLEmonitor:
         self.receive_from_queues()
         # advertisements of ESPHome Bluetooth proxies
         ble_proxy.add_raw_callback(self.proxy_advertisement)
+        # e.g. Matter pairing via Bluetooth resets the adapter
+        hci_claims.add_listener(self.hci_claim_changed)
+
+    def hci_claim_changed(self, adapter, claimed):
+        if claimed or adapter not in self.config[CONF_HCI_INTERFACE]:
+            return
+        if not self.fhem_devices:
+            return
+        self.logger.info(f"hci{adapter} is free again, restarting the scan")
+        self.restart()
 
     def proxy_advertisement(self, address, address_type, rssi, data, proxy_name):
         dumpthread = self.dumpthread

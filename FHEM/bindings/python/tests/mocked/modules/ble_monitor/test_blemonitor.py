@@ -281,3 +281,127 @@ async def test_all_reports_of_an_extended_event_are_delivered(mocker):
     ]
     assert [msg["mac"] for msg in delivered] == ["AABBCCDDEE11", "AABBCCDDEE12"]
     assert [msg["temperature"] for msg in delivered] == [21.5, 22.0]
+
+
+def _cmd_complete(opcode, status=0):
+    return bytes([0x04, 0x0E, 4, 1, opcode & 0xFF, opcode >> 8, status])
+
+
+def _dump_with_loop(mocker, hcidump):
+    import collections
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    for name in (
+        "process_local_hci_event",
+        "_foreign_command",
+        "_rearm",
+    ):
+        setattr(
+            dump,
+            name,
+            getattr(hcidump.HCIdump, name).__get__(dump),
+        )
+    dump._own_commands = {
+        0: collections.Counter(hcidump.OWN_SCAN_OPCODES[True]),
+    }
+    dump._rearm_handle = None
+    dump._rearms = collections.deque()
+    dump._rearm_warned = False
+    loop = asyncio.new_event_loop()
+    dump._event_loop = loop
+    return dump, loop
+
+
+def _run_loop(loop, seconds):
+    loop.call_later(seconds, loop.stop)
+    loop.run_forever()
+
+
+def test_scan_is_set_up_again_after_another_program_resets_the_adapter(
+    mocker,
+):
+    """e.g. the Matter server (noble) sends HCI_Reset, its own LE event mask
+    and disables the scan when it starts with Bluetooth"""
+    asyncio.run(check_and_install_dependencies("ble_monitor"))
+    from fhempy.lib.ble_monitor import hcidump
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.05)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop", wraps=loop.stop)
+    try:
+        # command complete of our own scan request: ignored
+        dump.process_local_hci_event(0, _cmd_complete(0x2041))
+        dump.process_local_hci_event(0, _cmd_complete(0x2042))
+        _run_loop(loop, 0.1)
+        assert stop.call_count == 1  # only _run_loop's stop
+
+        # another program: Reset, LE event mask, scan disabled
+        for opcode in (0x0C03, 0x2001, 0x2042):
+            dump.process_local_hci_event(0, _cmd_complete(opcode))
+        _run_loop(loop, 0.5)
+        # one restart of the scan after the whole sequence, it stops the
+        # loop before _run_loop does
+        assert stop.call_count == 2
+        dump.logger.info.assert_called_once()
+        assert len(dump._rearms) == 1
+        dump.process_hci_events.assert_not_called()
+
+        # advertisements still go to the parser
+        dump.process_local_hci_event(0, b"\x04\x3e\x0c" + bytes(12))
+        dump.process_hci_events.assert_called_once()
+    finally:
+        loop.close()
+
+
+def test_scan_is_left_alone_while_adapter_is_claimed(mocker):
+    asyncio.run(check_and_install_dependencies("ble_monitor"))
+    from fhempy.lib.ble_monitor import hcidump
+    from fhempy.lib.core import hci_claims
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.01)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop", wraps=loop.stop)
+    hci_claims.claim(0, "test")
+    try:
+        dump.process_local_hci_event(0, _cmd_complete(0x0C03))
+        _run_loop(loop, 0.05)
+        assert stop.call_count == 1
+    finally:
+        hci_claims.release(0, "test")
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_scan_takeover_is_limited(mocker):
+    """two programs must not take the scan from each other endlessly"""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.001)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop")
+    try:
+        for _ in range(hcidump.MAX_REARMS + 3):
+            dump._rearm(0, 0x200C)
+        assert stop.call_count == hcidump.MAX_REARMS
+        dump.logger.warning.assert_called_once()
+    finally:
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_scan_restarts_when_adapter_is_released(blemonitor, mocker):
+    from fhempy.lib.core import hci_claims
+
+    monitor, _ = blemonitor
+    monitor.config["hci_interface"] = [0]
+    monitor.fhem_devices = {"aabbccddeeff": [mocker.Mock()]}
+    restart = mocker.patch.object(monitor, "restart")
+    hci_claims.claim(0, "matter")
+    restart.assert_not_called()
+    hci_claims.claim(1, "matter")
+    hci_claims.release(1, "matter")
+    restart.assert_not_called()
+    hci_claims.release(0, "matter")
+    restart.assert_called_once()
+    hci_claims.remove_listener(monitor.hci_claim_changed)

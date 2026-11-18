@@ -39,15 +39,17 @@ Pairing takes up to a few minutes, the result is shown in the reading `pairing`.
 
 **Pair a brand-new device via Bluetooth (for advanced users)**
 1. Bluetooth adapter: on the first `set matter pair_new_device` fhempy sets the attribute
-   `bluetooth_adapter` to the first adapter of the computer (e.g. `0` for hci0) and restarts the Matter
-   server with Bluetooth. Set it yourself to use another adapter. fhempy then checks Bluetooth and shows the result in the reading `bluetooth_check`. If something
+   `bluetooth_adapter` to the first adapter of the computer (e.g. `0` for hci0). The Matter server
+   only uses Bluetooth while `pair_new_device` runs: it restarts with Bluetooth for the pairing and
+   without it afterwards, because it resets the adapter, which would stop the scan of other modules
+   (e.g. ble_monitor). Set it yourself to use another adapter. fhempy then checks Bluetooth and shows the result in the reading `bluetooth_check`. If something
    is missing, the reading `next_step` shows the command which fixes it, usually one of these:
    - Bluetooth is blocked: `sudo rfkill unblock bluetooth`
    - Node.js needs the rights for Bluetooth:
      `sudo setcap cap_net_raw,cap_net_admin+eip $(readlink -f $(which node))`.
      These rights are lost after every Node.js update, run the command again then.
 
-   Afterwards `set matter restart`.
+   Afterwards pair again.
 2. WiFi devices: `set matter wifi_credentials <WiFi name> <WiFi password>`.<br>
    Thread devices: `set matter thread_dataset <dataset>` (active dataset as hex string, the TLVs
    from your Thread border router).
@@ -139,7 +141,7 @@ the readings so the device can be supported.
 | Attribute | Description |
 |-----------|-------------|
 | `port` | Port of the Matter server, default 5580. Only reachable from this computer. |
-| `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0`. Set automatically on the first `pair_new_device` |
+| `bluetooth_adapter` | Bluetooth adapter number for `pair_new_device`, e.g. `0`. Set automatically on the first `pair_new_device`. Only used during `pair_new_device` |
 | `primary_interface` | Network interface for IPv6 (e.g. `eth0`), only if pairing fails on computers with several interfaces |
 | `test_dcl` | `1`: also pair devices with a test/development certificate (beta firmware). Only if you trust the vendor. Default `0` |
 | `time_sync` | `1` (default): set the time of devices with a clock (e.g. displays showing the time) from this computer, needs NTP. `0`: off |

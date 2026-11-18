@@ -1,14 +1,18 @@
 """Passive BLE monitor integration."""
 
 import asyncio
+import collections
+import functools
 import os
 import sys
+import time
 from threading import Thread
 
 import aioblescan as aiobs
 from datetime import datetime
 
 from fhempy.lib.ble_monitor.bt_helpers import reset_bluetooth, BT_INTERFACES
+from fhempy.lib.core import hci_claims
 
 from .const import (
     CONF_DEVICES,
@@ -28,6 +32,36 @@ from .parser import FhempyBleParser
 from .helper import dict_get_or_clean, dict_get_or, identifier_clean
 
 CAP_NET_RAW = 13
+
+HCI_EVENT_PKT = 0x04
+HCI_EV_CMD_COMPLETE = 0x0E
+# commands which reset or change the scan of the adapter. Another program
+# sending one of them (e.g. the Matter server resets the adapter when it
+# starts with Bluetooth, BlueZ enables its scan with duplicate filtering)
+# leaves ble_monitor without advertisements.
+SCAN_CHANGING_OPCODES = {
+    0x0C01: "Set Event Mask",
+    0x0C03: "Reset",
+    0x2001: "LE Set Event Mask",
+    0x200B: "LE Set Scan Parameters",
+    0x200C: "LE Set Scan Enable",
+    0x2041: "LE Set Extended Scan Parameters",
+    0x2042: "LE Set Extended Scan Enable",
+}
+# commands sent by aioblescan's send_scan_request
+OWN_SCAN_OPCODES = {True: (0x2041, 0x2042), False: (0x200B, 0x200C)}
+# wait for the other program to finish its command sequence
+REARM_DELAY = 2
+# protection against two programs taking over the scan from each other
+MAX_REARMS = 5
+REARM_PERIOD = 300
+
+
+def command_complete_opcode(data):
+    """Opcode of an HCI Command Complete event, None for other packets"""
+    if len(data) >= 6 and data[0] == HCI_EVENT_PKT and data[1] == HCI_EV_CMD_COMPLETE:
+        return data[4] | (data[5] << 8)
+    return None
 
 
 def missing_net_raw_hint(status_file="/proc/self/status", euid=None, python=None):
@@ -87,6 +121,11 @@ class HCIdump(Thread):
         self.tracker_whitelist = []
         self.report_unknown = False
         self.last_bt_reset = datetime.now()
+        # command complete events of our own scan request per hci
+        self._own_commands = {}
+        self._rearm_handle = None
+        self._rearms = collections.deque()
+        self._rearm_warned = False
         if self.config[CONF_REPORT_UNKNOWN]:
             self.report_unknown = self.config[CONF_REPORT_UNKNOWN]
             self.logger.info(
@@ -150,6 +189,67 @@ class HCIdump(Thread):
             tracker_whitelist=self.tracker_whitelist,
             aeskeys=self.aeskeys,
         )
+
+    def process_local_hci_event(self, hci, data):
+        """Packet of a local adapter: advertisement or command complete"""
+        opcode = command_complete_opcode(data)
+        if opcode is None:
+            self.process_hci_events(data)
+            return
+        own = self._own_commands.get(hci)
+        if own and own[opcode] > 0:
+            own[opcode] -= 1
+            return
+        if opcode in SCAN_CHANGING_OPCODES:
+            self._foreign_command(hci, opcode)
+
+    def _foreign_command(self, hci, opcode):
+        if hci_claims.is_claimed(hci):
+            # e.g. Matter pairing via Bluetooth, the scan is set up again
+            # when the adapter is released
+            return
+        self.logger.debug(
+            "HCIdump thread: hci%i: %s by another program",
+            hci,
+            SCAN_CHANGING_OPCODES[opcode],
+        )
+        if self._rearm_handle is not None:
+            self._rearm_handle.cancel()
+        self._rearm_handle = self._event_loop.call_later(
+            REARM_DELAY, functools.partial(self._rearm, hci, opcode)
+        )
+
+    def _rearm(self, hci, opcode):
+        self._rearm_handle = None
+        if hci_claims.is_claimed(hci):
+            return
+        now = time.monotonic()
+        while self._rearms and now - self._rearms[0] > REARM_PERIOD:
+            self._rearms.popleft()
+        if len(self._rearms) >= MAX_REARMS:
+            if self._rearm_warned:
+                return
+            self._rearm_warned = True
+            self.logger.warning(
+                "HCIdump thread: another program keeps changing the scan of "
+                "hci%i (%s), ble_monitor doesn't set it up again. Stop the "
+                "other program from using hci%i or give ble_monitor its own "
+                "adapter.",
+                hci,
+                SCAN_CHANGING_OPCODES[opcode],
+                hci,
+            )
+            return
+        self._rearms.append(now)
+        self._rearm_warned = False
+        self.logger.info(
+            "HCIdump thread: another program changed hci%i (%s), "
+            "setting up the scan again",
+            hci,
+            SCAN_CHANGING_OPCODES[opcode],
+        )
+        # run() starts the scan again
+        self._event_loop.stop()
 
     def process_hci_events(self, data, gateway_id=""):
         """Parse HCI events."""
@@ -247,7 +347,14 @@ class HCIdump(Thread):
                                     missing_net_raw_hint(),
                                 )
                             else:
-                                btctrl[hci].process = self.process_hci_events
+                                btctrl[hci].process = functools.partial(
+                                    self.process_local_hci_event, hci
+                                )
+                                self._own_commands[hci] = collections.Counter(
+                                    OWN_SCAN_OPCODES[
+                                        bool(getattr(btctrl[hci], "_use_ext_scan")())
+                                    ]
+                                )
                                 self.logger.debug(
                                     "HCIdump thread: connected to hci%i", hci
                                 )
@@ -296,6 +403,9 @@ class HCIdump(Thread):
                     self._event_loop.run_forever()
             finally:
                 self.logger.debug("HCIdump thread: main event_loop stopped, finishing.")
+                if self._rearm_handle is not None:
+                    self._rearm_handle.cancel()
+                    self._rearm_handle = None
                 if "disable" not in self.config[CONF_BT_INTERFACE]:
                     for hci in self._interfaces:
                         if interface_is_ok.get(hci) is True:
