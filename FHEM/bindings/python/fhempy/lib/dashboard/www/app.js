@@ -989,9 +989,26 @@
     visibleRooms().forEach(function (r) { r.tiles.forEach(function (id) { ids[id] = 1; }); });
     return ids;
   }
+  // also devices in several rooms belong to each of them
+  function inRoom(x, name) {
+    var tl = S.tiles[x.id];
+    return x.room === name || !!(tl && tl.rooms && tl.rooms.indexOf(name) >= 0);
+  }
   function shownList(list) {
     var ids = shownIds();
-    return (list || []).filter(function (x) { return !ids || ids[x.id]; });
+    if (!ids) { return list || []; }
+    var hidden = layout().hidden_rooms || [];
+    return (list || []).filter(function (x) { return ids[x.id]; }).map(function (x) {
+      // a device in several rooms is named by a room this tablet shows
+      var tl = S.tiles[x.id], rooms = (tl && tl.rooms) || [];
+      if (!x.room || hidden.indexOf(x.room) < 0) { return x; }
+      var room = rooms.filter(function (r) { return hidden.indexOf(r) < 0; })[0];
+      if (!room) { return x; }
+      var copy = {};
+      Object.keys(x).forEach(function (k) { copy[k] = x[k]; });
+      copy.room = room;
+      return copy;
+    });
   }
   function warningText() {
     var open = warnOpen(S.header && S.header.open);
@@ -1015,7 +1032,7 @@
     var el = document.getElementById("tabs"); if (!el) { return; }
     var tabs = [{ id: "home", name: t("home") }];
     visibleRooms().forEach(function (r) {
-      var openHere = (S.header.open || []).some(function (o) { return o.room === r.name && !mayOpenNow(o.may_open); });
+      var openHere = (S.header.open || []).some(function (o) { return inRoom(o, r.name) && !mayOpenNow(o.may_open); });
       tabs.push({ id: "room:" + r.name, name: r.name, dot: openHere });
     });
     if (seesCameras()) { tabs.push({ id: "cameras", name: t("cameras") }); } else if (S.tab === "cameras") { S.tab = "home"; }
