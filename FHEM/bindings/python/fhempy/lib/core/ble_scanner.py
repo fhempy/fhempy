@@ -10,6 +10,10 @@ get every advertisement:
     scanner.add_callback(callback)          # callback(device, advertisement)
     scanner.remove_callback(callback)
 
+It scans the default adapter, add_callback(..., adapter="hci1") scans that
+adapter as well. ble_monitor gets its advertisements from here too, no module
+opens its own scan (two scans on one adapter change each other's settings).
+
 The scan runs continuously, passive (only listening) where BlueZ supports
 advertisement monitors, active otherwise. A passive scan doesn't get the names
 some devices only send on request, therefore a short active scan runs every
@@ -119,6 +123,8 @@ class BleScanner:
         self.logger = logger
         self._callbacks = []
         self._local_only = set()
+        # callback -> additional adapter (e.g. "hci1") it needs
+        self._adapters = {}
         self._recent = {}
         self._task = None
         self._pause_count = 0
@@ -138,13 +144,24 @@ class BleScanner:
 
     # --- API for modules ---
 
-    def add_callback(self, callback, proxies=True):
+    def add_callback(self, callback, proxies=True, adapter=None):
         """proxies=False: only advertisements of the local adapters, for
-        libraries which connect via BlueZ themselves (aiohomekit)."""
+        libraries which connect via BlueZ themselves (aiohomekit).
+        adapter: scan this adapter (e.g. "hci1") as well, the default adapter
+        is always scanned. The callback gets the advertisements of all
+        adapters, see seen_by()."""
         if callback not in self._callbacks:
             self._callbacks.append(callback)
         if not proxies:
             self._local_only.add(callback)
+        adapter = normalize_adapter(adapter)
+        if self._adapters.get(callback) != adapter:
+            if adapter:
+                self._adapters[callback] = adapter
+            else:
+                self._adapters.pop(callback, None)
+            # restart the scan with the new adapters
+            self._changed.set()
         if self._task is None or self._task.done():
             self._task = asyncio.create_task(self._run(), name="ble_scanner")
 
@@ -152,6 +169,8 @@ class BleScanner:
         if callback in self._callbacks:
             self._callbacks.remove(callback)
         self._local_only.discard(callback)
+        if self._adapters.pop(callback, None):
+            self._changed.set()
         if not self._callbacks and self._task is not None:
             self._task.cancel()
             self._task = None
@@ -202,6 +221,11 @@ class BleScanner:
         """The Bluetooth recovery had to reset an adapter, scan less."""
         self._fallback_until = time.monotonic() + RECOVERY_FALLBACK
         self._changed.set()
+
+    @property
+    def adapters(self):
+        """Adapters scanned besides the default one, sorted."""
+        return sorted(set(self._adapters.values()))
 
     @property
     def interval(self):
@@ -323,19 +347,53 @@ class BleScanner:
                 )
         self._set_passive_problem(problem)
 
+    def _new_scanner(self, active, adapter):
+        kwargs = {"adapter": adapter} if adapter else {}
+        if active:
+            return BleakScanner(self._detection, scanning_mode="active", **kwargs)
+        return BleakScanner(
+            self._detection, scanning_mode="passive", bluez=_passive_args(), **kwargs
+        )
+
+    async def _start_extra(self, active, adapter):
+        """Scanner of an additional adapter, None if it can't scan (it
+        mustn't stop the scan of the default adapter)."""
+        try:
+            scanner = self._new_scanner(active, adapter)
+            await scanner.start()
+            return scanner
+        except Exception as exc:
+            if not active:
+                try:
+                    scanner = self._new_scanner(True, adapter)
+                    await scanner.start()
+                    return scanner
+                except Exception as exc2:
+                    exc = exc2
+            self._errors.failed(
+                f"Bluetooth scan on {adapter} failed: {exc}", traceback=False
+            )
+            return None
+
+    async def _start_extras(self, active, adapters):
+        extra = []
+        for adapter in adapters:
+            started = await self._start_extra(active, adapter)
+            if started is not None:
+                extra.append(started)
+        return extra
+
     async def _scan(self, active, duration):
         """Scans until duration is over, the mode changes or a pause starts."""
-        if active:
-            scanner = BleakScanner(self._detection, scanning_mode="active")
-        else:
-            try:
-                scanner = BleakScanner(
-                    self._detection, scanning_mode="passive", bluez=_passive_args()
-                )
-            except (BleakError, ImportError, ValueError) as exc:
-                self._passive_failed_with(exc)
-                return
+        try:
+            scanner = self._new_scanner(active, None)
+        except (BleakError, ImportError, ValueError) as exc:
+            if active:
+                raise
+            self._passive_failed_with(exc)
+            return
         mode = self.effective_mode
+        adapters = self.adapters
         try:
             await scanner.start()
         except BleakError as exc:
@@ -344,6 +402,7 @@ class BleScanner:
                 self._passive_failed_with(exc)
                 return
             raise
+        extra = await self._start_extras(active, adapters)
         if not active:
             self._set_passive_problem("")
         self.scanning = "active" if active else "passive"
@@ -356,13 +415,32 @@ class BleScanner:
                 time.monotonic() < end
                 and not self._pause_count
                 and self.effective_mode == mode
+                and self.adapters == adapters
             ):
                 await self._wait_changed(end - time.monotonic())
         finally:
-            try:
-                await scanner.stop()
-            except Exception:
-                self.logger.debug("Failed to stop Bluetooth scan", exc_info=True)
+            for running in [scanner] + extra:
+                try:
+                    await running.stop()
+                except Exception:
+                    self.logger.debug("Failed to stop Bluetooth scan", exc_info=True)
+
+
+def normalize_adapter(adapter):
+    """ "hci1" for 1, "1" or "hci1", None for the default adapter (hci0)."""
+    if adapter is None or adapter == "":
+        return None
+    name = str(adapter)
+    if name.isdigit():
+        name = f"hci{name}"
+    return None if name == "hci0" else name
+
+
+def address_type(device):
+    """1 for a random, 0 for a public address (BlueZ AddressType)."""
+    details = device.details if isinstance(device.details, dict) else {}
+    props = details.get("props") or {}
+    return 1 if props.get("AddressType") == "random" else 0
 
 
 def paused():

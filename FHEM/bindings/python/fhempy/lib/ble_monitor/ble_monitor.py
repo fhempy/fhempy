@@ -21,6 +21,17 @@ class ble_monitor(generic.FhemModule):
                 "help": f"{BT_INTERFACES}",
                 "function": "set_attr_generic",
             },
+            "scan": {
+                "default": "shared",
+                "options": "shared,hci",
+                "help": (
+                    "shared: advertisements of fhempy's shared Bluetooth scan "
+                    "(BlueZ), which all Bluetooth modules use.<br>"
+                    "hci: own raw HCI scan, only for systems without BlueZ, "
+                    "conflicts with the scan of other modules."
+                ),
+                "function": "set_attr_generic",
+            },
             "encryption_key": {
                 "default": "",
                 "help": (
@@ -45,6 +56,9 @@ class ble_monitor(generic.FhemModule):
 
     def hci(self):
         return self._attr_hci_interface
+
+    def scan(self):
+        return self._attr_scan
 
     def encryption_key(self):
         if self._attr_encryption_key == "":

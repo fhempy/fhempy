@@ -3,7 +3,8 @@
     "janus==2.0.0",
     "aioblescan==0.2.14",
     "btsocket==0.3.0",
-    "pyric==0.1.6.3"
+    "pyric==0.1.6.3",
+    "bleak==3.0.2"
   ],
   "installer": {
     "title": "BLE monitor",
