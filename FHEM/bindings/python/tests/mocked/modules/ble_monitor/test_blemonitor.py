@@ -79,7 +79,7 @@ async def test_malformed_advertisement_is_skipped(mocker):
     from fhempy.lib.ble_monitor import hcidump
 
     dump = mocker.MagicMock(evt_cnt=0)
-    dump.ble_parser.parse_raw_data.side_effect = struct.error(
+    dump.ble_parser.parse_raw_data_reports.side_effect = struct.error(
         "unpack requires a buffer of 6 bytes"
     )
     hcidump.HCIdump.process_hci_events(dump, b"\x00" * 20, gateway_id="proxy")
@@ -97,7 +97,8 @@ async def test_sensor_type_missing_in_measurement_dict(mocker, device_type):
 
     msg = {"type": device_type, "mac": "AA:BB:CC:DD:EE:FF", "temperature": 21.5}
     dump = mocker.MagicMock(evt_cnt=0)
-    dump.ble_parser.parse_raw_data.return_value = (msg, None)
+    dump.ble_parser.parse_raw_data_reports.return_value = [(msg, None)]
+    dump._queue_report = lambda *args: hcidump.HCIdump._queue_report(dump, *args)
     dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
         dump, *args
     )
@@ -236,3 +237,171 @@ async def test_no_hint_if_capabilities_unknown(tmp_path):
     status = tmp_path / "status"
     status.write_text("Name:\tpython3\n", encoding="ascii")
     assert missing_net_raw_hint(str(status), 1000) == ""
+
+
+def _ext_report(mac, name, man_spec_data, rssi=-60):
+    """One report of an HCI LE extended advertising report event."""
+    name_bytes = name.encode()
+    payload = bytes([len(name_bytes) + 1, 0x09]) + name_bytes
+    payload += bytes([len(man_spec_data) + 1, 0xFF]) + man_spec_data
+    return (
+        bytes([0x13, 0x00, 0x00])  # legacy ADV_IND, public address
+        + bytes.fromhex(mac.replace(":", ""))[::-1]
+        + bytes([0x01, 0x00, 0xFF, 0x7F, rssi & 0xFF, 0x00, 0x00, 0x00])
+        + bytes(6)
+        + bytes([len(payload)])
+        + payload
+    )
+
+
+@pytest.mark.asyncio
+async def test_all_reports_of_an_extended_event_are_delivered(mocker):
+    """Adapters with extended scanning put several advertisements (of
+    different devices) into one HCI event, each of them is delivered."""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+    from fhempy.lib.ble_monitor.parser import FhempyBleParser
+
+    first = bytes([0xC2, 0xD7, 0x00, 0x2D, 0x22, 0x2C])
+    second = bytes([0xC2, 0xDC, 0x00, 0x32, 0x22, 0x2C])
+    reports = _ext_report("AA:BB:CC:DD:EE:11", "TP357 (EE11)", first)
+    reports += _ext_report("AA:BB:CC:DD:EE:12", "TP357 (EE12)", second)
+    body = bytes([0x0D, 2]) + reports
+    event = bytes([0x04, 0x3E, len(body)]) + body
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    dump.ble_parser = FhempyBleParser()
+    dump._queue_report = lambda *args: hcidump.HCIdump._queue_report(dump, *args)
+    dump._queue_sensor_msg = lambda *args: hcidump.HCIdump._queue_sensor_msg(
+        dump, *args
+    )
+    hcidump.HCIdump.process_hci_events(dump, event)
+    delivered = [
+        call.args[0] for call in dump.dataqueue_meas.sync_q.put_nowait.call_args_list
+    ]
+    assert [msg["mac"] for msg in delivered] == ["AABBCCDDEE11", "AABBCCDDEE12"]
+    assert [msg["temperature"] for msg in delivered] == [21.5, 22.0]
+
+
+def _cmd_complete(opcode, status=0):
+    return bytes([0x04, 0x0E, 4, 1, opcode & 0xFF, opcode >> 8, status])
+
+
+def _dump_with_loop(mocker, hcidump):
+    import collections
+
+    dump = mocker.MagicMock(evt_cnt=0)
+    for name in (
+        "process_local_hci_event",
+        "_foreign_command",
+        "_rearm",
+    ):
+        setattr(
+            dump,
+            name,
+            getattr(hcidump.HCIdump, name).__get__(dump),
+        )
+    dump._own_commands = {
+        0: collections.Counter(hcidump.OWN_SCAN_OPCODES[True]),
+    }
+    dump._rearm_handle = None
+    dump._rearms = collections.deque()
+    dump._rearm_warned = False
+    loop = asyncio.new_event_loop()
+    dump._event_loop = loop
+    return dump, loop
+
+
+def _run_loop(loop, seconds):
+    loop.call_later(seconds, loop.stop)
+    loop.run_forever()
+
+
+def test_scan_is_set_up_again_after_another_program_resets_the_adapter(
+    mocker,
+):
+    """e.g. the Matter server (noble) sends HCI_Reset, its own LE event mask
+    and disables the scan when it starts with Bluetooth"""
+    asyncio.run(check_and_install_dependencies("ble_monitor"))
+    from fhempy.lib.ble_monitor import hcidump
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.05)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop", wraps=loop.stop)
+    try:
+        # command complete of our own scan request: ignored
+        dump.process_local_hci_event(0, _cmd_complete(0x2041))
+        dump.process_local_hci_event(0, _cmd_complete(0x2042))
+        _run_loop(loop, 0.1)
+        assert stop.call_count == 1  # only _run_loop's stop
+
+        # another program: Reset, LE event mask, scan disabled
+        for opcode in (0x0C03, 0x2001, 0x2042):
+            dump.process_local_hci_event(0, _cmd_complete(opcode))
+        _run_loop(loop, 0.5)
+        # one restart of the scan after the whole sequence, it stops the
+        # loop before _run_loop does
+        assert stop.call_count == 2
+        dump.logger.info.assert_called_once()
+        assert len(dump._rearms) == 1
+        dump.process_hci_events.assert_not_called()
+
+        # advertisements still go to the parser
+        dump.process_local_hci_event(0, b"\x04\x3e\x0c" + bytes(12))
+        dump.process_hci_events.assert_called_once()
+    finally:
+        loop.close()
+
+
+def test_scan_is_left_alone_while_adapter_is_claimed(mocker):
+    asyncio.run(check_and_install_dependencies("ble_monitor"))
+    from fhempy.lib.ble_monitor import hcidump
+    from fhempy.lib.core import hci_claims
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.01)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop", wraps=loop.stop)
+    hci_claims.claim(0, "test")
+    try:
+        dump.process_local_hci_event(0, _cmd_complete(0x0C03))
+        _run_loop(loop, 0.05)
+        assert stop.call_count == 1
+    finally:
+        hci_claims.release(0, "test")
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_scan_takeover_is_limited(mocker):
+    """two programs must not take the scan from each other endlessly"""
+    await check_and_install_dependencies("ble_monitor")
+    from fhempy.lib.ble_monitor import hcidump
+
+    mocker.patch.object(hcidump, "REARM_DELAY", 0.001)
+    dump, loop = _dump_with_loop(mocker, hcidump)
+    stop = mocker.patch.object(loop, "stop")
+    try:
+        for _ in range(hcidump.MAX_REARMS + 3):
+            dump._rearm(0, 0x200C)
+        assert stop.call_count == hcidump.MAX_REARMS
+        dump.logger.warning.assert_called_once()
+    finally:
+        loop.close()
+
+
+@pytest.mark.asyncio
+async def test_scan_restarts_when_adapter_is_released(blemonitor, mocker):
+    from fhempy.lib.core import hci_claims
+
+    monitor, _ = blemonitor
+    monitor.config["hci_interface"] = [0]
+    monitor.fhem_devices = {"aabbccddeeff": [mocker.Mock()]}
+    restart = mocker.patch.object(monitor, "restart")
+    hci_claims.claim(0, "matter")
+    restart.assert_not_called()
+    hci_claims.claim(1, "matter")
+    hci_claims.release(1, "matter")
+    restart.assert_not_called()
+    hci_claims.release(0, "matter")
+    restart.assert_called_once()
+    hci_claims.remove_listener(monitor.hci_claim_changed)

@@ -5,7 +5,7 @@ import functools
 import signal
 
 from .. import fhem, utils
-from ..core import child_process, fhemweb, pending_restore
+from ..core import child_process, fhemweb, hci_claims, pending_restore
 from . import clusters, server, system_check
 from .client import MatterClient, MatterServerError
 
@@ -67,6 +67,8 @@ class matter_controller:
         self._log_offset = 0
         # reasons why Bluetooth pairing won't work, see system_check
         self._ble_problems = []
+        # adapter the server was restarted with for pair_new_device
+        self._pairing_adapter = None
 
     async def Define(self, hash, args, argsh):
         self.hash = hash
@@ -132,9 +134,11 @@ class matter_controller:
                 "default": "",
                 "help": "Number of the Bluetooth adapter (0 for hci0) to pair "
                 "brand-new devices via Bluetooth. Set automatically to the "
-                "first adapter on the first 'set pair_new_device'. fhempy checks "
-                "Bluetooth when the Matter server starts, see reading "
-                "bluetooth_check.",
+                "first adapter on the first 'set pair_new_device'. The Matter "
+                "server only uses it while pair_new_device runs, otherwise "
+                "the adapter stays free for other modules (e.g. ble_monitor). "
+                "fhempy checks Bluetooth when the Matter server starts, see "
+                "reading bluetooth_check.",
             },
             "primary_interface": {
                 "default": "",
@@ -178,6 +182,9 @@ class matter_controller:
         if self.client is not None:
             await self.client.close()
         await self.stop_server()
+        if self._pairing_adapter is not None:
+            hci_claims.release(self._pairing_adapter, "matter")
+            self._pairing_adapter = None
 
     # --- server process ---
 
@@ -275,7 +282,7 @@ class matter_controller:
                 self.node,
                 self.node_env,
                 port,
-                bluetooth_adapter=self.bluetooth_adapter(),
+                bluetooth_adapter=self._pairing_adapter,
                 primary_interface=interface or None,
                 test_dcl=test_dcl == 1,
                 time_sync=time_sync != 0,
@@ -341,7 +348,10 @@ class matter_controller:
     def server_settings(self):
         return (
             self.fhemdev._attr_port,
-            self.fhemdev._attr_bluetooth_adapter,
+            # Bluetooth only while pair_new_device runs: the server resets
+            # the adapter when it starts with it, which stops the scans of
+            # other programs (e.g. ble_monitor)
+            self._pairing_adapter,
             self.fhemdev._attr_primary_interface,
             self.fhemdev._attr_test_dcl,
             self.fhemdev._attr_time_sync,
@@ -607,11 +617,21 @@ class matter_controller:
 
     async def commission(self, code, network_only):
         code = normalize_code(code)
-        if not network_only:
-            if not await self.enable_bluetooth():
-                return
-            # rfkill or a Node.js update might have changed since the start
-            await self.check_bluetooth()
+        if network_only:
+            await self.pair(code, network_only)
+            return
+        if not await self.enable_bluetooth():
+            return
+        # rfkill or a Node.js update might have changed since the start
+        await self.check_bluetooth()
+        if not await self.bluetooth_on():
+            return
+        try:
+            await self.pair(code, network_only)
+        finally:
+            await self.bluetooth_off()
+
+    async def pair(self, code, network_only):
         await fhem.readingsSingleUpdate(
             self.hash, "pairing", "running, this can take a few minutes", 1
         )
@@ -639,9 +659,8 @@ class matter_controller:
 
     async def enable_bluetooth(self):
         """Sets attr bluetooth_adapter to the adapter of this computer if it
-        isn't set yet and waits until the Matter server runs with it.
-        Bluetooth stays off until it is needed: the server takes over the
-        adapter and needs extra rights for it."""
+        isn't set yet. Bluetooth stays off until it is needed: the server
+        takes over the adapter and needs extra rights for it."""
         if self.external_url is not None or self.bluetooth_adapter() is not None:
             return True
         adapters = await utils.run_blocking(
@@ -660,12 +679,6 @@ class matter_controller:
             return False
         adapter = adapters[0]
         self.logger.info(f"Using Bluetooth adapter hci{adapter} for pairing")
-        await fhem.readingsSingleUpdate(
-            self.hash,
-            "pairing",
-            f"enabling Bluetooth adapter hci{adapter}, restarting Matter server",
-            1,
-        )
         problems = await utils.run_blocking(
             functools.partial(system_check.bluetooth_problems, adapter, self.node)
         )
@@ -679,10 +692,27 @@ class matter_controller:
                 "pairing",
                 "failed: Bluetooth isn't ready. "
                 + " ".join(str(p) for p in problems)
-                + f" Then 'set {self.hash['NAME']} restart' and pair again.",
+                + " Then pair again.",
                 1,
             )
             return False
+        return True
+
+    async def bluetooth_on(self):
+        """Restarts the own Matter server with Bluetooth for pairing, other
+        modules leave the adapter alone meanwhile"""
+        if self.external_url is not None:
+            return True
+        adapter = self.bluetooth_adapter()
+        await fhem.readingsSingleUpdate(
+            self.hash,
+            "pairing",
+            f"restarting Matter server with Bluetooth adapter hci{adapter}",
+            1,
+        )
+        self._pairing_adapter = adapter
+        hci_claims.claim(adapter, "matter")
+        await self.restart_server()
         if await self.wait_for_server():
             return True
         await fhem.readingsSingleUpdate(
@@ -692,7 +722,18 @@ class matter_controller:
             "reading bluetooth_check",
             1,
         )
+        await self.bluetooth_off()
         return False
+
+    async def bluetooth_off(self):
+        """Restarts the Matter server without Bluetooth after pairing and
+        frees the adapter"""
+        adapter = self._pairing_adapter
+        if adapter is None:
+            return
+        self._pairing_adapter = None
+        await self.restart_server()
+        hci_claims.release(adapter, "matter")
 
     async def wait_for_server(self):
         """Waits until the server runs with the current attributes and is
