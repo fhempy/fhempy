@@ -1075,8 +1075,9 @@
         '<button class="pill" data-off="' + esc(r.id) + '">' + esc(t("off")) + "</button></div>";
     });
     shownList(h.playing).forEach(function (r) {
-      var what = [r.title, r.artist].filter(Boolean).join(" · ");
-      rows += '<div class="row"><div class="ic" style="background:rgba(90,169,255,.16);color:var(--blue)">' + I("music") + '</div><div class="t"><b>' + esc(r.name) + "</b><span>" +
+      var what = [r.title, r.artist].filter(Boolean).join(" · "), mt = S.tiles[r.id], art = mt && mt.state.art;
+      // the cover of what is playing, the note until it is loaded
+      rows += '<div class="row"><div class="ic' + (art ? " rcover" : "") + '" style="background:rgba(90,169,255,.16);color:var(--blue)">' + I("music") + (art ? coverImg(r.id, art, "rimg") : "") + '</div><div class="t"><b>' + esc(r.name) + "</b><span>" +
         esc([r.room, what || t("playing")].filter(Boolean).join(" · ")) + "</span></div>" +
         '<button class="pill" data-mpause="' + esc(r.id) + '">' + I("pause", 18) + " " + esc(t("vwPause")) + "</button></div>";
     });
