@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v2.20.1 (2026-11-18)
+
+### Bug Fixes
+
+- Dashboard names devices in several rooms by a room the tablet shows
+  ([#992](https://github.com/fhempy/fhempy/pull/992),
+  [`976de27`](https://github.com/fhempy/fhempy/commit/976de27276e9b39f910690658f014d0701fb4f4b))
+
+- Show only the generic detail page for disabled devices
+  ([#991](https://github.com/fhempy/fhempy/pull/991),
+  [`48594de`](https://github.com/fhempy/fhempy/commit/48594de5b4f37e854407d092ef6e7999ffd0a627))
+
+- **ble_monitor**: Explain missing CAP_NET_RAW when hci is not ready
+  ([#988](https://github.com/fhempy/fhempy/pull/988),
+  [`3f9e73f`](https://github.com/fhempy/fhempy/commit/3f9e73f5dd6038508bc01d210232e0eda94a7492))
+
+- **ble_monitor**: Keep scanning when another program changes the adapter
+  ([#989](https://github.com/fhempy/fhempy/pull/989),
+  [`9ad3aea`](https://github.com/fhempy/fhempy/commit/9ad3aea83e6ebf1eee612eadd38a4636319257c0))
+
+- **ring**: Port to ring_doorbell 0.9 with push events, stop re-login loop
+  ([#990](https://github.com/fhempy/fhempy/pull/990),
+  [`a3567da`](https://github.com/fhempy/fhempy/commit/a3567dacebc9931385934b1428721ce5785b0ce8))
+
+
 ## v2.20.0 (2026-11-17)
 
 ### Bug Fixes
