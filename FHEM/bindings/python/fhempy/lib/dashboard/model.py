@@ -86,7 +86,6 @@ READINGS = (
     "occupancy",
     "lock",
     "lockState",
-    "power",
     "condition",
     "cur_temperature",
     "cur_weather",
@@ -230,6 +229,9 @@ FORECAST_READINGS += tuple(
     for i in range(FORECAST_DAYS + 1)
     for key in keys
 )
+# readings with the current power in W, the first one present is used
+POWER_READINGS = ("power", "cur_power", "current_power", "currentPower", "actPower")
+READINGS = READINGS + POWER_READINGS
 READINGS = READINGS + tuple(r for r in FORECAST_READINGS if r not in READINGS)
 READING_SET = frozenset(READINGS)
 WEATHER_TYPES = ("Weather",)
@@ -294,6 +296,15 @@ def _reading(info, *names):
     for name in names:
         if name in readings:
             return readings[name]
+    return None
+
+
+def power_reading(info):
+    """name of the reading with the current power in W, None if there is none"""
+    readings = info.get("readings") or {}
+    for name in POWER_READINGS:
+        if name in readings:
+            return name
     return None
 
 
@@ -440,7 +451,7 @@ def tile_state(kind, info):
     if kind in views.VIEWS:
         return views.state(kind, info)
     if kind in ("switch", "outlet"):
-        power = kinds.number(_reading(info, "power"))
+        power = kinds.number(_reading(info, *POWER_READINGS))
         if power is not None:
             state["power"] = power
     if battery_low(info):
