@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "greeclimate==4.2.2"
+    "greeclimate==4.3.0"
   ],
   "installer": {
     "title": "Gree air conditioner",
