@@ -2245,3 +2245,28 @@ def test_header_lists_playing_media():
     assert playing["room"] == "Wohnzimmer"
     # playing music is not switched off by "All off"
     assert "speaker" not in {r["id"] for r in head["running"]}
+
+
+def test_power_from_other_reading_names():
+    plug = {"NAME": "p", "TYPE": "dummy", "sets": "on off", "readings": {"state": "on", "cur_power": "650.5"}}
+    assert model.power_reading(plug) == "cur_power"
+    assert model.tile_state("outlet", plug)["power"] == 650.5
+    assert "cur_power" in model.READING_SET
+    # "power" wins when a device has both
+    plug["readings"]["power"] = "12"
+    assert model.power_reading(plug) == "power"
+    assert model.tile_state("outlet", plug)["power"] == 12
+    assert model.power_reading({"readings": {"state": "on"}}) is None
+
+
+@pytest.mark.asyncio
+async def test_cur_power_updates_tile_watch_and_energy(module):
+    info = module.infos["wz_Fernseher"]
+    info["readings"].pop("power")
+    info["readings"]["cur_power"] = "0"
+    await module.handle_event("wz_Fernseher", "cur_power", "1500")
+    item = module.data["tiles"]["wz_Fernseher"]
+    assert item["state"]["power"] == 1500
+    assert "wz_Fernseher" in module.watches
+    consumers = module.energy_consumers({})
+    assert ("wz_Fernseher", item["name"], "wz_Fernseher", "cur_power") in consumers

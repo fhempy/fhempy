@@ -1132,7 +1132,7 @@ class dashboard(generic.FhemModule):
         if reading in model.BATTERY_READINGS:
             self._head_infos[device] = info
         item = self.data["tiles"].get(device)
-        if reading == "power" and item is not None:
+        if item is not None and reading == model.power_reading(info):
             await self.watch_power(item, value)
         if item is not None and item["kind"] == "media":
             await self.learn_preset_art(device, info)
@@ -2070,8 +2070,9 @@ class dashboard(generic.FhemModule):
         for item in self.data["tiles"].values():
             if item["state"].get("power") is None:
                 continue
-            if self.allowed_tile(tablet, item):
-                result.append((item["id"], item["name"], item["id"], "power"))
+            reading = model.power_reading(self.infos.get(item["id"]) or {})
+            if reading is not None and self.allowed_tile(tablet, item):
+                result.append((item["id"], item["name"], item["id"], reading))
         return result
 
     async def energy_history(self, tablet, span):
