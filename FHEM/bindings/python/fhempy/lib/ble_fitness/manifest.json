@@ -1,0 +1,57 @@
+{
+  "requirements": [
+    "bleak==3.0.2",
+    "bluetooth-adapters==2.4.0"
+  ],
+  "installer": {
+    "title": "Fitness devices",
+    "description": "Bluetooth heart rate straps (Polar, Garmin, Wahoo), power meters and smart trainers (Wahoo KICKR, Tacx, Elite)",
+    "category": "bt",
+    "order": 115,
+    "name": "fitness",
+    "icon": "❤️",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  },
+  "discovery": [
+    {
+      "ble": [
+        {
+          "service_uuid": "0000180d-0000-1000-8000-00805f9b34fb"
+        }
+      ],
+      "title": "{name}",
+      "name": "{name}",
+      "model": "Heart rate sensor",
+      "unique": "{address}",
+      "define": [
+        "{address}"
+      ],
+      "hint": "Chest straps only advertise while they are worn."
+    },
+    {
+      "ble": [
+        {
+          "service_uuid": "00001826-0000-1000-8000-00805f9b34fb"
+        },
+        {
+          "service_uuid": "00001818-0000-1000-8000-00805f9b34fb"
+        },
+        {
+          "service_uuid": "00001816-0000-1000-8000-00805f9b34fb"
+        }
+      ],
+      "title": "{name}",
+      "name": "{name}",
+      "model": "Trainer / power meter",
+      "unique": "{address}",
+      "define": [
+        "{address}"
+      ],
+      "hint": "Trainers and power meters only advertise while they are awake (pedal once)."
+    }
+  ]
+}
