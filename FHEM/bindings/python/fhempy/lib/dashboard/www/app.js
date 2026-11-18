@@ -1074,6 +1074,13 @@
         (S.tablet && S.tablet.arrange ? '<button class="pill keep' + (r.keep_on ? " kept" : "") + '" data-keepon="' + esc(r.id) + '">' + (r.keep_on ? I("check", 18) + " " + esc(t("staysOn")) : esc(t("keepBtn"))) + "</button>" : "") +
         '<button class="pill" data-off="' + esc(r.id) + '">' + esc(t("off")) + "</button></div>";
     });
+    shownList(h.playing).forEach(function (r) {
+      var what = [r.title, r.artist].filter(Boolean).join(" · "), mt = S.tiles[r.id], art = mt && mt.state.art;
+      // the cover of what is playing, the note until it is loaded
+      rows += '<div class="row"><div class="ic' + (art ? " rcover" : "") + '" style="background:rgba(90,169,255,.16);color:var(--blue)">' + I("music") + (art ? coverImg(r.id, art, "rimg") : "") + '</div><div class="t"><b>' + esc(r.name) + "</b><span>" +
+        esc([r.room, what || t("playing")].filter(Boolean).join(" · ")) + "</span></div>" +
+        '<button class="pill" data-mpause="' + esc(r.id) + '">' + I("pause", 18) + " " + esc(t("vwPause")) + "</button></div>";
+    });
     var door = place() === "door";
     var title = door ? t("beforeLeave") : t("nowOn");
     if (!rows) {
@@ -3526,6 +3533,11 @@
         (S.header.running || []).forEach(function (r) { if (r.id === kid) { r.keep_on = kt.keep_on; } });
         renderContent(); if (S.sheet) { renderSheet(); }
       }
+      return;
+    }
+    if ((el = closest(target, "data-mpause"))) {
+      var pid = el.getAttribute("data-mpause");
+      if (S.tiles[pid]) { act(pid, "pause", null, { playing: false }); }
       return;
     }
     if ((el = closest(target, "data-mplay")) && !S.edit) {

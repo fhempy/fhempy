@@ -1054,6 +1054,26 @@ def running(tiles):
     return result
 
 
+def playing(tiles):
+    """music players and TVs which are playing right now"""
+    result = []
+    for item in tiles.values():
+        state = item["state"]
+        if item["kind"] != "media" or not state.get("playing"):
+            continue
+        result.append(
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "room": (item["rooms"] or [""])[0],
+                "title": state.get("title"),
+                "artist": state.get("artist") or state.get("station"),
+            }
+        )
+    result.sort(key=lambda r: (r["room"], r["name"].lower()))
+    return result
+
+
 def in_header(info):
     """devices the header needs: weather, energy, people and batteries.
     The header is built from these only, not from all devices."""
@@ -1076,6 +1096,7 @@ def header(infos, tiles):
         "presence": presence(infos),
         "open": open_contacts(tiles),
         "running": running(tiles),
+        "playing": playing(tiles),
         "battery": low_batteries(infos),
         "bins": bin_devices(infos),
     }
