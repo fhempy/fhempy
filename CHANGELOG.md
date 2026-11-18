@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.21.1 (2026-11-18)
+
+### Bug Fixes
+
+- **ble_fitness**: Cadence and speed no longer alternate between Cycling Power and Fitness Machine
+  data ([#998](https://github.com/fhempy/fhempy/pull/998),
+  [`d1fd79b`](https://github.com/fhempy/fhempy/commit/d1fd79bcc857e7b0f7d50adf32eb13eb07bf6605))
+
+### Features
+
+- Dashboard lines in "open and on" open the details
+  ([#999](https://github.com/fhempy/fhempy/pull/999),
+  [`2312ea3`](https://github.com/fhempy/fhempy/commit/2312ea3b906c9f5b6e07677e1790afb88c78bfec))
+
+
 ## v2.21.0 (2026-11-18)
 
 ### Bug Fixes
