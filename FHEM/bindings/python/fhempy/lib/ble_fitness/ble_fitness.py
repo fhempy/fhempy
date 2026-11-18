@@ -35,6 +35,18 @@ WORKOUT_END_IDLE = 300
 # readings set to 0 when the device disconnects
 LIVE_READINGS = ("heart_rate", "power", "cadence", "speed")
 DEFAULT_WHEEL_CIRCUMFERENCE = 2105
+# decimals of the readings: the same value always has the same text, FHEM
+# would see 0 and 0.0 as a change and trigger an event
+DECIMALS = {
+    "heart_rate": 0,
+    "power": 0,
+    "cadence": 0,
+    "speed": 1,
+    "resistance": 0,
+    "incline": 1,
+    "stroke_rate": 1,
+    "balance": 1,
+}
 # values of the parsers which become readings (calories only for the workout)
 MEASUREMENTS = (
     "heart_rate",
@@ -105,6 +117,19 @@ TRAINER_SETS = {
         "(Zwift, ...) can control the trainer again.",
     },
 }
+
+
+def normalize(values):
+    """Rounds the live values to their fixed number of decimals."""
+    for reading, decimals in DECIMALS.items():
+        value = values.get(reading)
+        if value is None:
+            continue
+        if decimals:
+            values[reading] = round(float(value), decimals)
+        else:
+            values[reading] = int(round(value))
+    return values
 
 
 class ble_fitness(generic.FhemModule):
@@ -241,9 +266,8 @@ class ble_fitness(generic.FhemModule):
             for characteristic in service.characteristics:
                 characteristics[characteristic.uuid.lower()] = characteristic
 
-        for uuid in parser.PARSERS:
-            if self._can_notify(characteristics.get(uuid)):
-                await self._start_notify(client, uuid)
+        for uuid in self._measurement_sources(characteristics):
+            await self._start_notify(client, uuid)
 
         await self._setup_battery(client, characteristics.get(parser.BATTERY_LEVEL))
         control = self._can_notify(
@@ -264,6 +288,23 @@ class ble_fitness(generic.FhemModule):
             self._workout_end_handle.cancel()
             self._workout_end_handle = None
         await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+
+    def _measurement_sources(self, characteristics):
+        """The measurement characteristics to subscribe. Trainers like the
+        KICKR send power and cadence via Cycling Power and the Fitness
+        Machine Service at the same time, the values differ slightly (cadence
+        from the crank revolutions vs. the trainer's own cadence): only the
+        Fitness Machine data is used then, otherwise the readings alternate."""
+        available = [
+            uuid
+            for uuid in parser.PARSERS
+            if self._can_notify(characteristics.get(uuid))
+        ]
+        if any(uuid in parser.FITNESS_MACHINE_DATA for uuid in available):
+            available = [
+                uuid for uuid in available if uuid not in parser.CYCLING_SENSOR_DATA
+            ]
+        return available
 
     async def _setup_battery(self, client, battery):
         if battery is None:
@@ -298,8 +339,9 @@ class ble_fitness(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "off")
             for reading in LIVE_READINGS:
                 if reading in self._readings:
-                    self._readings[reading] = 0
-                    await fhem.readingsBulkUpdateIfChanged(self.hash, reading, 0)
+                    value = normalize({reading: 0})[reading]
+                    self._readings[reading] = value
+                    await fhem.readingsBulkUpdateIfChanged(self.hash, reading, value)
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
         if self._workout is not None and self._workout_end_handle is None:
@@ -352,6 +394,7 @@ class ble_fitness(generic.FhemModule):
         self._revolutions(uuid, data, values, now)
         if uuid == parser.HEART_RATE_MEASUREMENT:
             self._heart_rate_details(data, values)
+        normalize(values)
         self._track_workout(now, values)
         self._pending.update(values)
         self._schedule_flush(now)
