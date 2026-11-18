@@ -10,9 +10,14 @@ so the blocking module is found even if the loop never recovers. A blockade
 >= THRESHOLD still runs >= POLL at one of the thread's checks, so its stack
 is always known. The former heartbeat woke the loop 10 times per second, on a
 Raspberry Pi this was the whole idle CPU usage of fhempy.
+
+The garbage collector runs within whatever callback allocates objects at that
+moment. Its time is measured separately: a blockade caused mostly by it names
+the collector instead of the callback's module (see core/memory for gc.freeze).
 """
 
 import asyncio
+import gc
 import logging
 import os
 import sys
@@ -28,6 +33,8 @@ POLL = 0.25
 # log the stack of a blocked loop at most this often
 LOG_INTERVAL = 60
 STACK_LIMIT = 8
+# garbage collection time is mentioned from this share of the blockade on
+GC_SHARE = 0.5
 
 
 def _module_of(stack):
@@ -61,6 +68,9 @@ class LoopWatchdog:
         self._last_log = None
         # called in the loop after a blockade: on_blocked(module, duration)
         self.on_blocked = None
+        # garbage collection in the loop thread: start, sum of the callback
+        self._gc_start = None
+        self._gc_time = 0.0
 
     def start(self):
         self._loop_thread_id = threading.get_ident()
@@ -72,6 +82,8 @@ class LoopWatchdog:
 
     def stop(self):
         self._stop.set()
+        if self._gc_callback in gc.callbacks:
+            gc.callbacks.remove(self._gc_callback)
         if self._original_run is not None:
             asyncio.events.Handle._run = self._original_run
             self._original_run = None
@@ -89,6 +101,7 @@ class LoopWatchdog:
                 return original(handle)
             start = monotonic()
             watchdog._running_since = start
+            watchdog._gc_time = 0.0
             try:
                 return original(handle)
             finally:
@@ -98,6 +111,16 @@ class LoopWatchdog:
                     watchdog.finished(start, duration)
 
         asyncio.events.Handle._run = _run
+        gc.callbacks.append(self._gc_callback)
+
+    def _gc_callback(self, phase, info):
+        if threading.get_ident() != self._loop_thread_id:
+            return
+        if phase == "start":
+            self._gc_start = time.monotonic()
+        elif self._gc_start is not None:
+            self._gc_time += time.monotonic() - self._gc_start
+            self._gc_start = None
 
     def _watch(self):
         while not self._stop.wait(self._interval):
@@ -118,13 +141,22 @@ class LoopWatchdog:
             self._seen = (since, traceback.extract_stack(frame))
         if lag >= self._threshold and self._logged_since != since:
             self._logged_since = since
-            self._report(lag, self._seen[1], still_blocked=True)
+            in_gc = self._gc_start is not None or self._gc_time >= lag * GC_SHARE
+            self._report(lag, self._seen[1], still_blocked=True, in_gc=in_gc)
 
     def finished(self, since, duration):
         """Called in the loop after a callback which ran >= threshold."""
         seen = self._seen
         stack = seen[1] if seen is not None and seen[0] == since else None
-        if self._logged_since == since:
+        gc_time = self._gc_time
+        if gc_time >= duration * GC_SHARE:
+            # not the module's fault, it only allocated the next object
+            logger.warning(
+                f"Event loop was blocked for {duration * 1000:.0f}ms, "
+                f"{gc_time * 1000:.0f}ms of it by Python's garbage collector"
+            )
+            stack = None
+        elif self._logged_since == since:
             logger.warning(f"Event loop was blocked for {duration * 1000:.0f}ms")
         else:
             self._report(duration, stack, still_blocked=False)
@@ -134,9 +166,12 @@ class LoopWatchdog:
             except Exception:
                 logger.exception("Failed to handle the blocked event loop")
 
-    def _report(self, duration, stack, still_blocked):
+    def _report(self, duration, stack, still_blocked, in_gc=False):
         module = _module_of(stack) if stack else None
-        where = f" in {module}" if module else ""
+        if in_gc:
+            where = " by Python's garbage collector"
+        else:
+            where = f" in {module}" if module else ""
         if still_blocked:
             text = f"Event loop blocked for >{duration * 1000:.0f}ms{where}"
         else:

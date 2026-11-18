@@ -146,7 +146,10 @@ async def test_every_blockade_above_threshold_is_logged_with_module(
         watchdog.stop()
     messages = [r.getMessage() for r in caplog.records]
     assert len(messages) >= 1
-    assert all("in fakemod" in m or m.startswith("Event loop was blocked for") for m in messages)
+    assert all(
+        "in fakemod" in m or m.startswith("Event loop was blocked for")
+        for m in messages
+    )
     assert any("in fakemod" in m for m in messages)
 
 
@@ -156,3 +159,30 @@ def test_short_callbacks_are_not_logged(caplog):
     watchdog._running_since = 100.0
     watchdog.check(100.1)
     assert caplog.records == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.allow_blocking
+async def test_garbage_collection_is_not_blamed_on_the_module(caplog, monkeypatch):
+    monkeypatch.setattr(loop_watchdog, "LOG_INTERVAL", 0)
+    caplog.set_level(logging.WARNING, logger="fhempy.lib.core.loop_watchdog")
+    watchdog = LoopWatchdog(asyncio.get_running_loop(), threshold=0.2, interval=0.05)
+    blamed = []
+    watchdog.on_blocked = lambda module, duration: blamed.append(module)
+    watchdog.start()
+    try:
+        await asyncio.sleep(0.05)
+        # like a full collection which starts while fakemod allocates
+        watchdog._gc_callback("start", {})
+        fake_block(0.4)
+        watchdog._gc_callback("stop", {})
+        await asyncio.sleep(0.1)
+    finally:
+        watchdog.stop()
+    import gc
+
+    assert watchdog._gc_callback not in gc.callbacks
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("garbage collector" in m for m in messages)
+    assert not any("in fakemod" in m for m in messages)
+    assert blamed == [None]

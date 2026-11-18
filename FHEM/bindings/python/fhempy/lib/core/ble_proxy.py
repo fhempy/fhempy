@@ -90,6 +90,20 @@ def load_smlight_libraries():
     import pysmlight  # noqa: F401
 
 
+_ble_scanner = None
+
+
+def _shared_scanner():
+    """BleScanner.instance, the import is resolved once (it runs for every
+    advertisement)."""
+    global _ble_scanner
+    if _ble_scanner is None:
+        from . import ble_scanner
+
+        _ble_scanner = ble_scanner
+    return _ble_scanner.BleScanner.instance
+
+
 def add_raw_callback(callback):
     if callback not in _raw_callbacks:
         _raw_callbacks.append(callback)
@@ -123,9 +137,7 @@ class _BaseProxy:
         if info is None:
             return
         self.advertisements += 1
-        from . import ble_scanner
-
-        scanner = ble_scanner.BleScanner.instance
+        scanner = _shared_scanner()
         if scanner is not None:
             scanner.proxy_detection(info.device, info.advertisement)
 
