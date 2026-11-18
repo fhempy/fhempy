@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v2.21.0 (2026-11-18)
+
+### Bug Fixes
+
+- Freeze startup objects for the garbage collector, show GC pauses in the loop watchdog
+  ([#995](https://github.com/fhempy/fhempy/pull/995),
+  [`eaeac16`](https://github.com/fhempy/fhempy/commit/eaeac1674f24907113db36caa0ec468db9e41f87))
+
+### Features
+
+- One shared Bluetooth scan, ble_monitor and miscale use the core scan
+  ([#997](https://github.com/fhempy/fhempy/pull/997),
+  [`3cfd0c0`](https://github.com/fhempy/fhempy/commit/3cfd0c0c42482bd4f828589c61ad20007600ed8a))
+
+- **ble_fitness**: Heart rate straps, power meters and smart trainers via Bluetooth
+  ([#996](https://github.com/fhempy/fhempy/pull/996),
+  [`4ea1512`](https://github.com/fhempy/fhempy/commit/4ea151239710dd47b1518da18ee06b6fd8b99ed4))
+
+
 ## v2.20.2 (2026-11-18)
 
 ### Features
