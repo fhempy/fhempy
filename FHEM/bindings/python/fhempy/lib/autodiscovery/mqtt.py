@@ -8,6 +8,8 @@ setList. Nothing is created without asking.
 """
 
 import asyncio
+import functools
+import importlib
 
 import ifaddr
 
@@ -166,7 +168,10 @@ class MqttDiscovery:
 
     async def _broker_loop(self, key):
         try:
-            import aiomqtt
+            # paho-mqtt takes over a second to import on a Raspberry Pi
+            aiomqtt = await utils.run_blocking(
+                functools.partial(importlib.import_module, "aiomqtt")
+            )
         except ImportError as exc:
             # e.g. aiomqtt 2 next to paho-mqtt 1.x, fhempy restart needed
             self.logger.error(f"MQTT discovery doesn't work, aiomqtt: {exc}")
