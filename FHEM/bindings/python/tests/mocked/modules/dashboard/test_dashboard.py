@@ -2229,3 +2229,19 @@ async def test_measure_only_plug_is_never_switched(module):
         await asyncio.sleep(0.1)
         assert "measure" not in module.data["tiles"]["ku_Kaffeemaschine"]
         await ws.close()
+
+
+def test_header_lists_playing_media():
+    speaker = bose()
+    speaker["NAME"] = "speaker"
+    paused = bose(state="paused", playStatus="PAUSE_STATE")
+    paused["NAME"] = "paused"
+    infos = {"speaker": speaker, "paused": paused}
+    data = model.build(infos)
+    head = model.header(infos, data["tiles"])
+    assert [p["id"] for p in head["playing"]] == ["speaker"]
+    playing = head["playing"][0]
+    assert playing["title"] == "Track" and playing["artist"] == "Artist"
+    assert playing["room"] == "Wohnzimmer"
+    # playing music is not switched off by "All off"
+    assert "speaker" not in {r["id"] for r in head["running"]}

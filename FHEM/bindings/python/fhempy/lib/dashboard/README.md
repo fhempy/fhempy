@@ -10,7 +10,7 @@ minute on the tablet itself.
   when only a few are open) and empty batteries
 - *Home* starts with status chips for light (how many are on), climate (rooms heating or the range of temperatures), blinds and security (open windows and doors, unlocked locks); a tap opens an overview of the rooms this tablet shows, e.g. every lamp that is on by room with *Off* and *All lights off*, every room's temperature with target and humidity, all blinds with *Up*/*Down* and *All up*/*All down*
 - a tap on a room card on *Home* opens the room at a glance: a temperature ring (drag it to set the target, or + and −), *Light* with one button for all lamps of the room, *Blinds* with one slider for all blinds and up/down, *Switches*, the scenes and the other devices; the arrow unfolds every lamp, blind or switch with its own slider. *Open the whole room* goes to the room tab
-- *Home* shows what is still open or on (with *All off*), energy (solar, usage, storage) and a card per room
+- *Home* shows what is still open or on (with *All off*), music players which are playing (with *Pause*), energy (solar, usage, storage) and a card per room
 - temperatures are shown big, coloured from cold (blue) to warm (orange), with the curve of the day and a rising/falling
   arrow, in the tiles and on the room cards (curves need a timeline device)
 - *Home* warns when a room is heated while its window is open, room cards suggest airing at high humidity
