@@ -24,7 +24,7 @@ SMLIGHT integration as Bluetooth proxy can't be used by fhempy at the same time.
 | Module | Via SMLIGHT proxy |
 |--------|-------------------|
 | Advertisements: autodiscovery (Bluetooth), ble_presence, ble_monitor | yes |
-| Connections: eq3bt, blue_connect, gfprobt, mitemp2, scooter | no, the SLZB-OS proxy only scans |
+| Connections: ble_fitness, eq3bt, blue_connect, gfprobt, mitemp2, scooter | no, the SLZB-OS proxy only scans |
 | Matter pairing via Bluetooth | no |
 
 For connections use a local adapter or an [ESPHome Bluetooth proxy](../esphome_ble_proxy/README.md).

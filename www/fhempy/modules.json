@@ -1119,6 +1119,21 @@
   ]
  },
  {
+  "id": "ble_fitness",
+  "title": "Fitness devices",
+  "description": "Bluetooth heart rate straps (Polar, Garmin, Wahoo), power meters and smart trainers (Wahoo KICKR, Tacx, Elite)",
+  "category": "bt",
+  "name": "fitness",
+  "icon": "❤️",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
+   }
+  ]
+ },
+ {
   "id": "ddnssde",
   "title": "ddnss.de",
   "description": "Dynamic DNS updater for the free ddnss.de service",

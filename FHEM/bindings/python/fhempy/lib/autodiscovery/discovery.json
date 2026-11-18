@@ -1,5 +1,49 @@
 [
  {
+  "module": "ble_fitness",
+  "title": "Fitness devices",
+  "name": "fitness",
+  "icon": "❤️",
+  "rules": [
+   {
+    "ble": [
+     {
+      "service_uuid": "0000180d-0000-1000-8000-00805f9b34fb"
+     }
+    ],
+    "title": "{name}",
+    "name": "{name}",
+    "model": "Heart rate sensor",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "Chest straps only advertise while they are worn."
+   },
+   {
+    "ble": [
+     {
+      "service_uuid": "00001826-0000-1000-8000-00805f9b34fb"
+     },
+     {
+      "service_uuid": "00001818-0000-1000-8000-00805f9b34fb"
+     },
+     {
+      "service_uuid": "00001816-0000-1000-8000-00805f9b34fb"
+     }
+    ],
+    "title": "{name}",
+    "name": "{name}",
+    "model": "Trainer / power meter",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "Trainers and power meters only advertise while they are awake (pedal once)."
+   }
+  ]
+ },
+ {
   "module": "ble_monitor",
   "title": "BLE monitor",
   "name": "ble_sensor",

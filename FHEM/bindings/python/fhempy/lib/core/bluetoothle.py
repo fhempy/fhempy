@@ -52,6 +52,7 @@ class BluetoothLE:
         name=None,
         pairing_required=False,
         pin="0000",
+        reconnect=True,
     ) -> None:
         self._disconnect_called = False
         self._device = None
@@ -61,6 +62,9 @@ class BluetoothLE:
 
         self.pairing_required = pairing_required
         self.pin = pin
+        # False: the module connects again itself (e.g. when the device
+        # advertises again), no connect loop after a disconnect
+        self.reconnect = reconnect
         self.disconnect_listener = None
         self.connected_listener = None
         self.notification_listener = None
@@ -669,7 +673,9 @@ class BluetoothLE:
             self._client = None
             self._device = None
 
-        if not self._disconnect_called:
+        if not self._disconnect_called and not self.reconnect:
+            self.logger.info("Device disconnected")
+        elif not self._disconnect_called:
             self.logger.error("Device disconnected, reconnect now")
             await self.connect()
         else:

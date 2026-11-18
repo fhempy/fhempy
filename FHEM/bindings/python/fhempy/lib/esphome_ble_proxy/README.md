@@ -29,7 +29,7 @@ api:
 ```
 
 `active: true` in `bluetooth_proxy` is needed for modules which connect to their
-devices (eq3bt, blue_connect, gfprobt, mitemp2, scooter). Without it the proxy only
+devices (ble_fitness, eq3bt, blue_connect, gfprobt, mitemp2, scooter). Without it the proxy only
 receives advertisements.
 
 ## What works
@@ -37,7 +37,7 @@ receives advertisements.
 | Module | Via proxy |
 |--------|-----------|
 | Advertisements: autodiscovery (Bluetooth), ble_presence, ble_monitor | yes, unlimited devices |
-| Connections: eq3bt, blue_connect, gfprobt, mitemp2, scooter | yes, with `active: true` |
+| Connections: ble_fitness, eq3bt, blue_connect, gfprobt, mitemp2, scooter | yes, with `active: true` |
 | homekit (Bluetooth), miflora, mitemp, nespresso_ble, bt_presence | no, only local adapters (own Bluetooth libraries or classic Bluetooth) |
 
 fhempy picks for every device the adapter with the best signal. A local adapter is
