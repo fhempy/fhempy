@@ -835,7 +835,16 @@ class fhempy:
             return ret
 
         # call Set/Attr/Define/...
-        func = getattr(nmInstance, hash["function"], "nofunction")
+        if (
+            hash["function"] == "FW_detailFn"
+            and not defined
+            and isinstance(nmInstance, generic.FhemModule)
+        ):
+            # disabled device: modules extend the detail page with data of
+            # Define (e.g. self.hash), only show that it is disabled
+            func = functools.partial(generic.FhemModule.FW_detailFn, nmInstance)
+        else:
+            func = getattr(nmInstance, hash["function"], "nofunction")
         if func != "nofunction":
             if hash["function"] == "Undefine":
                 try:
