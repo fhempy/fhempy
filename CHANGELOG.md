@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.20.2 (2026-11-18)
+
+### Features
+
+- Dashboard lists playing music in "open and on" ([#993](https://github.com/fhempy/fhempy/pull/993),
+  [`6044d18`](https://github.com/fhempy/fhempy/commit/6044d1890f317aa300869cbde42e14083b0aa13c))
+
+
 ## v2.20.1 (2026-11-18)
 
 ### Bug Fixes
