@@ -81,6 +81,23 @@ set vpn add_client Phone
 The QR codes of all devices are on the device page (click *QR code and configuration*). Keep them private, they are
 the key to your home network. A lost phone: `set vpn remove_client Phone`.
 
+### Internet only (e.g. for guests)
+
+```
+set vpn add_client Guest access=internet
+```
+
+The device gets the internet of your home, but it can't reach anything at home: not FHEM, not this computer, not
+the router admin page, no other device or site (the router is only reachable for DNS). Nobody at home can reach the
+device either. Everything of the device goes through the VPN (also with `attr client_traffic home`). In the form:
+*Internet only, no access to the devices at home*. To change it later remove the device and add it again (new QR
+code).
+
+The server blocks it with firewall rules (iptables): private networks (`10.0.0.0/8`, `172.16.0.0/12`,
+`192.168.0.0/16`, `100.64.0.0/10`, `169.254.0.0/16`) and this computer are dropped for the device. This needs
+helper version 2 (comes with this fhempy version): if the installed one is older, fhempy asks you to run the setup once more
+(`set vpn setup user=pi password=...`).
+
 ## Connect another site (site to site)
 
 A Raspberry Pi (or another Linux computer with Debian / Raspberry Pi OS) at another place, e.g. a holiday home or
@@ -144,6 +161,10 @@ stay separate: nothing from home reaches the site, phones don't get the network 
 `1.1.1.1` (through the VPN), because the address of your router at home is a local address at the site.
 `mode=networks` connects both networks (default if they don't collide).
 
+With `access=internet` (form: *Internet only, no access to the devices at home*) these devices get only the
+internet of your home: they can't reach FHEM, the router or any other device at home, and the devices at home can't
+reach the site. This needs `via_home` and uses `internet_only`.
+
 By hand instead: `set vpn add_client Holiday network=192.168.2.0/24`, the device page shows the configuration file
 for the Pi of the other site:
 
@@ -161,8 +182,8 @@ computer).
 
 | Command | |
 |---|---|
-| `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=all\|<ips>] [mode=networks\|internet_only]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for devices with the Pi as gateway, `internet_only`: networks stay separate |
+| `set <name> add_client <device> [access=internet]` | Add a device, shows its QR code. `access=internet`: only internet through home, no access to devices at home |
+| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=all\|<ips>] [mode=networks\|internet_only] [access=internet]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for devices with the Pi as gateway, `internet_only`: networks stay separate, `access=internet`: no access to devices at home |
 | `set <name> add_client <site> network=<network>` | Add another site by hand |
 | `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |

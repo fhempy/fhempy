@@ -848,3 +848,141 @@ async def test_site_internet_only(module, mocker):
         ),
     )
     await wait_for(lambda: "overlaps" in readings().get("Holiday_setup", ""))
+
+
+def test_helper_isolated_peer_rules():
+    data = valid_config()
+    data["peers"][0]["isolated"] = True
+    config = helper.check_config(data)
+    assert config["peers"][0]["isolated"] is True
+    text = helper.render(config, "eth0", "192.168.1.1")
+    up = [line[9:] for line in text.splitlines() if line.startswith("PostUp")]
+    src = "-s 10.99.7.2/32"
+    for net in helper.PRIVATE_NETWORKS:
+        assert f"iptables -I FORWARD -i %i {src} -d {net} -j DROP" in up
+    assert f"iptables -I INPUT -i %i {src} -j DROP" in up
+    assert (
+        "iptables -I FORWARD -o %i -d 10.99.7.2/32 -m conntrack --ctstate NEW -j DROP"
+    ) in up
+    dns = f"iptables -I FORWARD -i %i {src} -d 192.168.1.1 -p udp --dport 53 -j ACCEPT"
+    drop = f"iptables -I FORWARD -i %i {src} -d 192.168.0.0/16 -j DROP"
+    # -I: inserted later = checked first, DNS exception before the drops,
+    # all of them before the general accept
+    assert (
+        up.index(dns) > up.index(drop) > up.index("iptables -I FORWARD -i %i -j ACCEPT")
+    )
+    down = [line[11:] for line in text.splitlines() if line.startswith("PostDown")]
+    assert dns.replace(" -I ", " -D ") in down
+    # without router no DNS exception, other peers unaffected
+    text = helper.render(config, "eth0", None)
+    assert "--dport 53" not in text
+    data["peers"][0]["isolated"] = "yes"
+    with pytest.raises(helper.Invalid):
+        helper.check_config(data)
+
+
+def test_helper_router_address():
+    assert helper.router_address("default via 192.168.1.1 dev eth0".split()) == (
+        "192.168.1.1"
+    )
+    assert helper.router_address("default dev ppp0".split()) is None
+    assert helper.router_address("default via 8.8.8.8 dev eth0".split()) is None
+    assert helper.router_address("default via x;id dev eth0".split()) is None
+
+
+@pytest.mark.asyncio
+async def test_internet_only_device(module):
+    await wait_for(lambda: readings().get("state", "").startswith("running, add"))
+    ret = await module.set_add_client(
+        module.hash, {"name": "Guest", "access": "everything"}
+    )
+    assert ret == "access: internet or all"
+    page = await module.set_add_client(
+        module.hash, {"name": "Guest", "access": "internet"}
+    )
+    assert "<b>Internet only:</b>" in page
+    peer = module.fake.applied[-1]["peers"][0]
+    assert peer["isolated"] is True
+    conf = await module.get_client_config(module.hash, {"name": "Guest"})
+    assert "AllowedIPs = 0.0.0.0/0, ::/0" in conf
+    assert "DNS = 192.168.1.1" in conf
+    await module.set_add_client(module.hash, {"name": "Phone"})
+    peers = {p["ip"]: p for p in module.fake.applied[-1]["peers"]}
+    assert peers["10.99.7.3"]["isolated"] is False
+    page = module.detail_html()
+    assert "Device, internet only" in page
+    assert "name='access' value='internet'" in page
+
+
+@pytest.mark.asyncio
+async def test_internet_only_needs_new_helper(module):
+    await wait_for(lambda: readings().get("state", "").startswith("running, add"))
+    module.fake.version = "1"
+    module.helper_version = 1
+    ret = await module.set_add_client(
+        module.hash, {"name": "Guest", "access": "internet"}
+    )
+    assert ret.startswith("access=internet needs the new helper")
+    assert "Guest" not in module.config["clients"]
+    # an existing internet only device with an old helper: setup needed
+    module.helper_version = 2
+    await module.set_add_client(module.hash, {"name": "Guest", "access": "internet"})
+    assert not await module.check_helper()
+    assert module.helper_problem.startswith("helper is outdated")
+
+
+@pytest.mark.asyncio
+async def test_internet_only_site_needs_via_home(module):
+    params = {"name": "Holiday", "host": "h", "user": "pi", "password": "pw"}
+    ret = await module.set_add_site(module.hash, dict(params, access="internet"))
+    assert ret.startswith("access=internet needs via_home")
+    ret = await module.set_add_site(
+        module.hash,
+        dict(params, access="internet", via_home="all", mode="networks"),
+    )
+    assert "no mode=networks" in ret
+
+
+@pytest.mark.asyncio
+async def test_internet_only_site(module, mocker):
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn()
+
+    async def connect(host, user, password, port=22, log=None):
+        return conn
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    await module.set_add_site(
+        module.hash,
+        {
+            "name": "Holiday",
+            "host": "192.168.2.10",
+            "user": "pi",
+            "password": "secret",
+            "via_home": "all",
+            "access": "internet",
+        },
+    )
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert "no access to the devices at home" in readings()["Holiday_setup"]
+    client = module.config["clients"]["Holiday"]
+    assert client["access"] == "internet" and client["internet_only"]
+    peer = module.fake.applied[-1]["peers"][0]
+    assert peer["isolated"] is True and peer["networks"] == []
+    assert "Site, internet only" in module.detail_html()
+    # set up again without access: full access again
+    await module.set_readings(Holiday_setup="again")
+    await module.set_add_site(
+        module.hash,
+        {
+            "name": "Holiday",
+            "host": "192.168.2.10",
+            "user": "pi",
+            "password": "secret",
+            "via_home": "all",
+        },
+    )
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert "access" not in module.config["clients"]["Holiday"]
+    assert module.fake.applied[-1]["peers"][0]["isolated"] is False
