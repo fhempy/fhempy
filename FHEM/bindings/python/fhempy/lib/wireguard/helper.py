@@ -28,7 +28,16 @@ import subprocess
 import sys
 import tempfile
 
-HELPER_VERSION = 1
+HELPER_VERSION = 2
+# networks an "internet only" peer may not reach (home network, other
+# peers and sites, the router admin pages)
+PRIVATE_NETWORKS = (
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "100.64.0.0/10",
+    "169.254.0.0/16",
+)
 INSTALL_PATH = "/usr/local/sbin/fhempy-wireguard"
 SUDOERS_PATH = "/etc/sudoers.d/fhempy-wireguard"
 INTERFACE = "wgfhempy"
@@ -140,6 +149,9 @@ def check_config(data):
         public = check_key(peer.get("public_key"))
         if public in keys:
             raise Invalid("duplicate peer key")
+        isolated = peer.get("isolated", False)
+        if not isinstance(isolated, bool):
+            raise Invalid("invalid peer isolated")
         ips.add(ip)
         keys.add(public)
         checked.append(
@@ -148,6 +160,7 @@ def check_config(data):
                 "preshared_key": check_key(peer.get("preshared_key")),
                 "ip": str(ip),
                 "networks": networks,
+                "isolated": isolated,
             }
         )
     return {
@@ -159,8 +172,9 @@ def check_config(data):
     }
 
 
-def default_interface():
-    """network interface of the default route, NAT goes out there"""
+def default_route():
+    """network interface (NAT goes out there) and router of the default
+    route, the router is None if unknown"""
     code, out = output(["ip", "-4", "route", "show", "default"])
     if code == 0:
         for line in out.splitlines():
@@ -168,8 +182,18 @@ def default_interface():
             if "dev" in words[:-1]:
                 name = words[words.index("dev") + 1]
                 if IFNAME.match(name) and name != INTERFACE:
-                    return name
+                    return name, router_address(words)
     raise Invalid("no default route, is this computer connected to the router?")
+
+
+def router_address(words):
+    if "via" not in words[:-1]:
+        return None
+    try:
+        ip = ipaddress.IPv4Address(words[words.index("via") + 1])
+    except ValueError:
+        return None
+    return str(ip) if ip.is_private else None
 
 
 def nat_rules(action, networks, out):
@@ -191,7 +215,33 @@ def nat_rules(action, networks, out):
     return rules
 
 
-def render(config, out):
+def isolation_rules(action, peer, router):
+    """iptables commands for an "internet only" peer: it may go to the
+    internet, but not to private networks (home, other peers, sites) and not
+    to this computer, only DNS of the router. Nobody may open connections to
+    it. -I puts later rules first: the DNS exception before the drops."""
+    sources = [f"{peer['ip']}/32"] + peer["networks"]
+    rules = []
+    for src in sources:
+        rules += [
+            f"iptables -{action} FORWARD -i %i -s {src} -d {net} -j DROP"
+            for net in PRIVATE_NETWORKS
+        ]
+        rules += [
+            f"iptables -{action} INPUT -i %i -s {src} -j DROP",
+            f"iptables -{action} FORWARD -o %i -d {src} -m conntrack "
+            "--ctstate NEW -j DROP",
+        ]
+        if router:
+            rules += [
+                f"iptables -{action} FORWARD -i %i -s {src} -d {router} "
+                f"-p {proto} --dport 53 -j ACCEPT"
+                for proto in ("udp", "tcp")
+            ]
+    return rules
+
+
+def render(config, out, router=None):
     """wg-quick configuration, only from checked values"""
     lines = [
         "# written by fhempy (module wireguard), changes are overwritten",
@@ -206,6 +256,10 @@ def render(config, out):
         networks += peer["networks"]
     lines += ["PostUp = " + r for r in nat_rules("I", networks, out)]
     lines += ["PostDown = " + r for r in nat_rules("D", networks, out)]
+    for peer in config["peers"]:
+        if peer.get("isolated"):
+            lines += ["PostUp = " + r for r in isolation_rules("I", peer, router)]
+            lines += ["PostDown = " + r for r in isolation_rules("D", peer, router)]
     for peer in config["peers"]:
         lines += [
             "",
@@ -270,14 +324,14 @@ def cmd_apply(stdin):
     """writes the configuration and starts or updates the interface"""
     try:
         config = check_config(json.loads(stdin.read() or "null"))
-        out = default_interface()
+        out, router = default_route()
     except (Invalid, ValueError) as exc:
         sys.exit(f"invalid configuration: {exc}")
     for tool in PACKAGES:
         if shutil.which(tool, path=ENV["PATH"]) is None:
             sys.exit(f"{tool} is missing, run the install command again")
     old = read(CONFIG_PATH)
-    new = render(config, out)
+    new = render(config, out, router)
     write_private(CONFIG_PATH, new)
     if interface_up():
         if interface_section(old) != interface_section(new):

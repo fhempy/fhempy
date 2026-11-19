@@ -50,6 +50,13 @@ MAX_VIA_HOME = 16
 DEVICE_PREFIX = 24
 # via_home: every device which uses the Pi of the site as gateway
 VIA_HOME_ALL = "all"
+# access=internet: only the internet through home, no device at home
+ACCESS_INTERNET = "internet"
+ACCESS_OPTIONS = (ACCESS_INTERNET, "all")
+# the installed helper must be at least this version, internet only peers
+# need the firewall rules of version 2 (an older helper would ignore them)
+MIN_HELPER_VERSION = 1
+ISOLATION_HELPER_VERSION = 2
 CLIENT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
 RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
 # live log of the setup via SSH (reading setup_log, terminal on the page)
@@ -419,6 +426,7 @@ class wireguard(generic.FhemModule):
         self.running = False
         self.internet_ok = 0
         self.helper_problem = "not checked yet"
+        self.helper_version = 0
         self.user = current_user()
         self.router = network.Router(logger)
         self.session = None
@@ -476,10 +484,12 @@ class wireguard(generic.FhemModule):
             {
                 "add_client": {
                     "args": ["name"],
-                    "argsh": ["network"],
+                    "argsh": ["network", "access"],
                     "help": "Add a device (phone, laptop...), e.g. "
                     "<code>add_client Phone</code>. Shows the QR code for the "
-                    "WireGuard app.<br>Another site (e.g. a Raspberry Pi in a "
+                    "WireGuard app.<br>access=internet: only the internet "
+                    "goes through home, no access to the devices at home "
+                    "(e.g. for guests).<br>Another site (e.g. a Raspberry Pi in a "
                     "holiday home) with its home network: <code>add_client "
                     "Holiday network=192.168.2.0/24</code>",
                 },
@@ -497,6 +507,7 @@ class wireguard(generic.FhemModule):
                         "network",
                         "via_home",
                         "mode",
+                        "access",
                     ],
                     "help": "Connect another site automatically: fhempy logs "
                     "in to its Raspberry Pi via SSH, installs WireGuard and "
@@ -518,7 +529,10 @@ class wireguard(generic.FhemModule):
                     "via_home devices goes through home, the two home networks "
                     "aren't connected. For sites with the same network as "
                     "home (e.g. both 192.168.178.0/24), chosen automatically "
-                    "then. mode=networks: connect both networks (default).",
+                    "then. mode=networks: connect both networks (default)."
+                    "<br>access=internet: the via_home devices only get "
+                    "internet through home, no access to the devices at home "
+                    "(needs via_home, the networks aren't connected).",
                 },
                 "setup": {
                     "argsh": ["user", "password"],
@@ -685,9 +699,22 @@ class wireguard(generic.FhemModule):
             for net in client.get("networks", [])
         ]
 
+    def full_tunnel(self, name):
+        """the device sends everything through home"""
+        client = self.config["clients"][name]
+        if is_site(client):
+            return False
+        return self._attr_client_traffic == "all" or bool(client.get("access"))
+
+    def client_dns(self, name):
+        gateway = self.net.get("gateway")
+        if self.config["clients"][name].get("access"):
+            # internet only: the router at home (DNS allowed) or a public one
+            return gateway or "1.1.1.1"
+        return gateway
+
     def allowed_ips(self, name):
-        site = is_site(self.config["clients"][name])
-        if self._attr_client_traffic == "all" and not site:
+        if self.full_tunnel(name):
             return "0.0.0.0/0, ::/0"
         nets = [str(self.vpn_network)]
         if self.net.get("home_network"):
@@ -741,8 +768,8 @@ class wireguard(generic.FhemModule):
             f"Address = {client['ip']}/32",
         ]
         site = is_site(client)
-        if self._attr_client_traffic == "all" and self.net.get("gateway") and not site:
-            lines.append(f"DNS = {self.net['gateway']}")
+        if self.full_tunnel(name) and self.client_dns(name):
+            lines.append(f"DNS = {self.client_dns(name)}")
         if site:
             lines += self.site_lines(name)
         lines += [
@@ -920,10 +947,14 @@ class wireguard(generic.FhemModule):
             code, out = await self.run_helper("version", limit=30)
             if code != 0:
                 problem = "no sudo permission: " + last_line(out)
-            elif not out.strip().isdigit() or int(out) < helper.HELPER_VERSION:
+            elif not out.strip().isdigit() or int(out) < MIN_HELPER_VERSION:
                 problem = "helper is outdated"
             else:
+                self.helper_version = int(out)
                 problem = ""
+                if self.isolated_clients() and not self.supports_isolation():
+                    # an old helper would connect them without the firewall
+                    problem = "helper is outdated (needed for access=internet)"
         changed = problem != self.helper_problem
         self.helper_problem = problem
         if problem and changed:
@@ -937,6 +968,28 @@ class wireguard(generic.FhemModule):
             )
         return not problem
 
+    def isolated_clients(self):
+        return [
+            name
+            for name, c in self.config.get("clients", {}).items()
+            if c.get("access") == ACCESS_INTERNET
+        ]
+
+    def supports_isolation(self):
+        return is_root() or self.helper_version >= ISOLATION_HELPER_VERSION
+
+    def check_access(self, params):
+        """access parameter, error if invalid or the helper is too old"""
+        access = params.get("access") or "all"
+        if access not in ACCESS_OPTIONS:
+            return None, "access: internet or all"
+        if access == ACCESS_INTERNET and not self.supports_isolation():
+            return None, (
+                "access=internet needs the new helper, run the setup once "
+                f"more: set {self.hash['NAME']} setup user=pi password=..."
+            )
+        return (ACCESS_INTERNET if access == ACCESS_INTERNET else None), None
+
     def helper_config(self):
         return {
             "private_key": self.config["private_key"],
@@ -948,6 +1001,7 @@ class wireguard(generic.FhemModule):
                     "preshared_key": c["preshared_key"],
                     "ip": c["ip"],
                     "networks": c.get("networks", []),
+                    **({"isolated": True} if c.get("access") else {}),
                 }
                 for c in self.config["clients"].values()
             ],
@@ -1141,7 +1195,7 @@ class wireguard(generic.FhemModule):
             return f"{name} exists already"
         return None
 
-    async def create_client(self, name, networks):
+    async def create_client(self, name, networks, access=None):
         """new peer, None or the error"""
         ip = self.next_client_ip()
         if ip is None:
@@ -1153,6 +1207,7 @@ class wireguard(generic.FhemModule):
             "preshared_key": keys.preshared_key(),
             "ip": ip,
             "networks": networks,
+            **({"access": access} if access else {}),
             "created": int(time.time()),
             "endpoint": self.endpoint_host(),
         }
@@ -1170,13 +1225,16 @@ class wireguard(generic.FhemModule):
         error = self.check_name(name, exists=False)
         if error:
             return error
+        access, error = self.check_access(params)
+        if error:
+            return error
         networks = []
         if params.get("network"):
             net, error = self.check_site_network(params["network"], name)
             if error:
                 return error
             networks.append(net)
-        error = await self.create_client(name, networks)
+        error = await self.create_client(name, networks, access)
         if error:
             return error
         return "<html>" + self.client_html(name, open_qr=True) + "</html>"
@@ -1254,6 +1312,16 @@ class wireguard(generic.FhemModule):
         missing = [p for p in ("host", "user", "password") if not params.get(p)]
         if params.get("mode") not in (None, "", *SITE_MODES):
             return "mode: networks or internet_only"
+        access, error = self.check_access(params)
+        if error:
+            return error
+        if access and not params.get("via_home"):
+            return (
+                "access=internet needs via_home (e.g. via_home=all): only "
+                "those devices get internet through home"
+            )
+        if access and params.get("mode") == "networks":
+            return "access=internet doesn't connect the networks (no mode=networks)"
         if missing:
             return (
                 f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.1.77 [port=22] "
@@ -1294,7 +1362,10 @@ class wireguard(generic.FhemModule):
                 raise remote.RemoteError(
                     "home network of the site not found, enter it (network=...)"
                 )
-            internet_only = self.site_mode(name, params, net)
+            access, error = self.check_access(params)
+            if error:
+                raise remote.RemoteError(error)
+            internet_only = bool(access) or self.site_mode(name, params, net)
             net, error = self.check_site_network(net, name, internet_only)
             if error:
                 raise remote.RemoteError(error)
@@ -1305,7 +1376,13 @@ class wireguard(generic.FhemModule):
                 raise remote.RemoteError(error)
             existing = name in self.config["clients"]
             await self.store_site(
-                name, net, via_home, found.get("ip"), internet_only, found.get("dev")
+                name,
+                net,
+                via_home,
+                found.get("ip"),
+                internet_only,
+                found.get("dev"),
+                access,
             )
             await self.set_readings(
                 **{f"{name}_setup": f"installing WireGuard on {host} ({net})"}
@@ -1325,6 +1402,8 @@ class wireguard(generic.FhemModule):
                 f"connected, only the Pi is reachable (VPN address "
                 f"{self.config['clients'][name]['ip']}), see device page"
             )
+        elif access:
+            text += " (internet only, no access to the devices at home)"
         elif internet_only:
             text += " (internet only, networks not connected)"
         if via_home == VIA_HOME_ALL:
@@ -1347,13 +1426,20 @@ class wireguard(generic.FhemModule):
             return False
 
     async def store_site(
-        self, name, net, via_home, site_ip, internet_only=False, site_dev=None
+        self,
+        name,
+        net,
+        via_home,
+        site_ip,
+        internet_only=False,
+        site_dev=None,
+        access=None,
     ):
         """new site, or new settings of an existing one (keys stay)"""
         networks = [] if internet_only else [net]
         client = self.config["clients"].get(name)
         if client is None:
-            error = await self.create_client(name, networks)
+            error = await self.create_client(name, networks, access)
             if error:
                 raise remote.RemoteError(error)
             client = self.config["clients"][name]
@@ -1366,6 +1452,10 @@ class wireguard(generic.FhemModule):
             site_network=net,
             internet_only=internet_only,
         )
+        if access:
+            client["access"] = access
+        else:
+            client.pop("access", None)
         await self.save_config()
         async with self._lock:
             if not self.helper_problem:
@@ -1446,7 +1536,13 @@ class wireguard(generic.FhemModule):
         if is_site(client):
             nets = html.escape(site_network(client))
             filename = helper.INTERFACE + ".conf"
-            if client.get("internet_only") and not client.get("via_home"):
+            if client.get("access"):
+                kind = (
+                    "Site, internet only: the devices below use the internet "
+                    "of your home, but they can't reach any device at home."
+                )
+                together = ""
+            elif client.get("internet_only") and not client.get("via_home"):
                 kind = "Site, only the Pi is connected (see the note above)."
                 together = ""
             elif client.get("internet_only"):
@@ -1477,7 +1573,13 @@ class wireguard(generic.FhemModule):
                 "1. Install the <b>WireGuard</b> app (Android, iPhone, Windows, "
                 "macOS, Linux)<br>2. Tap <b>+</b> and <b>Scan from QR code</b>"
                 "<br>3. Switch the tunnel on: you are at home.<br><br>"
-                f"{download.format(html.escape(filename), data)} (for "
+                + (
+                    "<b>Internet only:</b> the device uses the internet of your "
+                    "home, but it can't reach any device at home.<br><br>"
+                    if client.get("access")
+                    else ""
+                )
+                + f"{download.format(html.escape(filename), data)} (for "
                 "computers: import tunnel from file)"
             )
             qr = f"<td style='vertical-align:top'>{qr_image(conf)}</td>"
@@ -1674,6 +1776,8 @@ class wireguard(generic.FhemModule):
             state = "connected" if self.connected(peer) else "disconnected"
             seen = format_time(peer["handshake"]) if peer.get("handshake") else "never"
             kind = "Site" if is_site(clients[name]) else "Device"
+            if clients[name].get("access"):
+                kind += ", internet only"
             rows.append(
                 f"<tbody class='wgDev'><tr><td><b>{esc}</b><small>{kind}</small>"
                 f"</td><td><span informId='{inform}_state'>{state}</span><small>"
@@ -1710,6 +1814,11 @@ class wireguard(generic.FhemModule):
             "you get a QR code for the WireGuard app.</p>"
             "<label>Name<input name='name' required pattern='[A-Za-z0-9_-]{1,24}'"
             " placeholder='Phone'></label>"
+            "<label class='wgCheck'><input type='checkbox' name='access' "
+            "value='internet'> Internet only, no access to the devices at "
+            "home</label>"
+            "<small>e.g. for guests: they use the internet of your home, but "
+            "can't reach FHEM, your router or any other device.</small>"
             "<button type='submit'>Add device</button></form>"
             "<form class='wgCard wgSite' onsubmit='return wgSend(this," + name + ","
             '"add_site")\'><h4>Add a site</h4><p>A Raspberry Pi at another '
@@ -1752,5 +1861,12 @@ class wireguard(generic.FhemModule):
             "<small>e.g. a TV: set the address of the Pi as gateway / router "
             "on the TV, its internet goes through your home. The Pi itself "
             "and all other devices stay direct.</small>"
+            "<label class='wgCheck'><input type='checkbox' name='access' "
+            "value='internet' onchange='if(this.checked)this.form.elements."
+            'namedItem("via_home").checked=true\'> Internet only, no access '
+            "to the devices at home</label>"
+            "<small>The site gets only the internet of your home, it can't "
+            "reach FHEM, your router or any other device here (and the devices "
+            "at home can't reach the site).</small>"
             "<button type='submit'>Set up site</button></form></div>"
         )
