@@ -56,6 +56,10 @@ RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
 LOG_LINES = 80
 LOG_LINE_LENGTH = 200
 LOG_DELAY = 0.3
+# live speed on the device page: it asks every TRAFFIC_POLL seconds, more
+# pages at the same time share one wg show within TRAFFIC_CACHE seconds
+TRAFFIC_POLL = 2
+TRAFFIC_CACHE = 1
 
 
 def is_root():
@@ -153,6 +157,14 @@ padding:12px 14px;box-sizing:border-box}
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
 .wgCard [hidden]{display:none}
+.wgDevices{border-collapse:collapse;margin:4px 0;min-width:min(100%,520px)}
+.wgDevices th,.wgDevices td{padding:4px 10px;text-align:left;vertical-align:top}
+.wgDevices thead th{border-bottom:1px solid #ccc}
+.wgDevices tbody.wgDev{border-bottom:1px solid #ccc}
+.wgDevices td.wgDown,.wgDevices td.wgUp,.wgDevices th.wgNum{text-align:right;font-family:monospace;white-space:nowrap}
+.wgDevices tfoot td{font-weight:bold;border-top:2px solid #ccc}
+.wgDevices small{display:block;opacity:.7}
+.wgDevices tr.wgMore td{padding-top:0}
 .wgWhere{border:1px solid #ccc;border-radius:6px;margin:10px 0 4px;padding:4px 10px 8px}
 .wgWhere legend{font-weight:bold;padding:0 4px}
 .wgNote{border:1px solid #c80;border-radius:6px;padding:6px 10px;margin:4px 0}
@@ -208,6 +220,51 @@ LOG_SCRIPT = """<script>
     }
     pre.scrollTop = pre.scrollHeight;
   }).observe(pre, {childList: true, characterData: true, subtree: true});
+})();
+</script>"""
+# live speed of the connected devices while the page is open and visible
+SPEED_SCRIPT = """<script>
+(function() {
+  var last = null;
+  function rate(bytes, seconds) {
+    var bit = bytes * 8 / seconds;
+    if (bit >= 1e6) return (bit / 1e6).toFixed(1) + " Mbit/s";
+    return Math.round(bit / 1e3) + " kbit/s";
+  }
+  function set(selector, text) {
+    var e = document.querySelector(selector);
+    if (e) e.textContent = text;
+  }
+  function show(data) {
+    var seconds = last ? data.time - last.time : 0;
+    var down = 0, up = 0, measured = false;
+    document.querySelectorAll(".wgDevices td.wgDown").forEach(function(e) {
+      var name = e.dataset.client, up_cell = e.nextElementSibling;
+      var now = data.clients[name], before = last && last.clients[name];
+      if (!now) { e.textContent = "\u2013"; up_cell.textContent = "\u2013"; return; }
+      if (!before || seconds <= 0) return;
+      var d = Math.max(0, now.down - before.down), u = Math.max(0, now.up - before.up);
+      down += d; up += u; measured = true;
+      e.textContent = rate(d, seconds);
+      up_cell.textContent = rate(u, seconds);
+    });
+    if (seconds > 0) {
+      set(".wgDevices .wgTotalDown", measured ? rate(down, seconds) : "\u2013");
+      set(".wgDevices .wgTotalUp", measured ? rate(up, seconds) : "\u2013");
+    }
+    if (!last || data.time > last.time) last = data;
+  }
+  function poll() {
+    if (!document.querySelector(".wgDevices")) return;
+    if (document.visibilityState == "visible") {
+      FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEVICE + " traffic")
+        + "&XHR=1", function(r) {
+          try { show(JSON.parse(r)); } catch (err) {}
+        });
+    }
+    setTimeout(poll, POLL);
+  }
+  poll();
 })();
 </script>"""
 # sends the form as set command, values with spaces in quotes, ; doubled
@@ -369,6 +426,7 @@ class wireguard(generic.FhemModule):
         self.setup_task = None
         self.setup_state = ""
         self.log_lines = collections.deque(maxlen=LOG_LINES)
+        self.traffic_time = 0
         self.log_pending = False
 
     # FHEM FUNCTION
@@ -481,7 +539,11 @@ class wireguard(generic.FhemModule):
                 "client_config": {
                     "args": ["name"],
                     "help": "WireGuard configuration of a device as text.",
-                }
+                },
+                "traffic": {
+                    "help": "Byte counters of the connected devices as JSON "
+                    "(for the live speed on the device page).",
+                },
             }
         )
         await self.set_icon(ICON)
@@ -1353,9 +1415,27 @@ class wireguard(generic.FhemModule):
         error = self.check_name(name, exists=True)
         return error or self.client_config(name)
 
+    async def get_traffic(self, hash, params):
+        """byte counters for the live speed on the device page: the page
+        asks every TRAFFIC_POLL seconds while it is open, nothing is stored"""
+        now = time.time()
+        if now - self.traffic_time >= TRAFFIC_CACHE and not self.helper_problem:
+            code, out = await self.run_helper("status", limit=10)
+            if code == 0:
+                self.peers = parse_dump(out)
+                self.traffic_time = now
+        clients = {}
+        for name, client in self.config.get("clients", {}).items():
+            peer = self.peers.get(client["public_key"])
+            if self.connected(peer):
+                # rx: received by the server = upload of the device
+                clients[name] = {"down": peer["tx"], "up": peer["rx"]}
+        return json.dumps({"time": self.traffic_time or now, "clients": clients})
+
     # --- FHEMWEB ---
 
-    def client_html(self, name, open_qr=False):
+    def client_setup(self, name):
+        """QR code cell and the instructions of one device"""
         client = self.config["clients"][name]
         conf = self.client_config(name)
         data = base64.b64encode(conf.encode()).decode()
@@ -1401,14 +1481,25 @@ class wireguard(generic.FhemModule):
                 "computers: import tunnel from file)"
             )
             qr = f"<td style='vertical-align:top'>{qr_image(conf)}</td>"
+        return qr, how
+
+    def client_html(self, name, open_qr=False):
         return (
             f"<div style='margin:4px 0'><b>{html.escape(name)}</b>"
+            f"{self.client_details(name, open_qr)}</div>"
+        )
+
+    def client_details(self, name, open_qr=False):
+        """note of the site and the collapsed QR code and configuration"""
+        client = self.config["clients"][name]
+        qr, how = self.client_setup(name)
+        return (
             f"{self.site_warning_html(name, client)}"
             f"<details{' open' if open_qr else ''}><summary>QR code and "
             f"configuration</summary><table><tr>{qr}"
             f"<td style='vertical-align:top;padding-left:12px'>{how}<br><br>"
             "Keep it private, it's the key to your home network."
-            "</td></tr></table></details></div>"
+            "</td></tr></table></details>"
         )
 
     def site_warning_html(self, name, client):
@@ -1543,9 +1634,7 @@ class wireguard(generic.FhemModule):
             )
         clients = self.config.get("clients", {})
         if clients:
-            parts.append("<div style='margin:8px 0'><b>Devices</b>")
-            parts += [self.client_html(name) for name in clients]
-            parts.append("</div>")
+            parts.append(self.devices_html(clients))
         parts.append(self.forms_html())
         parts.append(self.log_html())
         return "".join(parts)
@@ -1572,6 +1661,43 @@ class wireguard(generic.FhemModule):
             f"<pre class='wgShell' informId='{inform}'>"
             f"{html.escape(chr(10).join(self.log_lines))}</pre></div></div>"
             + LOG_SCRIPT
+        )
+
+    def devices_html(self, clients):
+        """table of the devices: status and live speed, total of all"""
+        rows = []
+        count = f"{len(clients)} device" + ("s" if len(clients) != 1 else "")
+        for name in clients:
+            peer = self.peers.get(clients[name]["public_key"]) or {}
+            esc = html.escape(name)
+            inform = html.escape(f"{self.hash['NAME']}-{name}")
+            state = "connected" if self.connected(peer) else "disconnected"
+            seen = format_time(peer["handshake"]) if peer.get("handshake") else "never"
+            kind = "Site" if is_site(clients[name]) else "Device"
+            rows.append(
+                f"<tbody class='wgDev'><tr><td><b>{esc}</b><small>{kind}</small>"
+                f"</td><td><span informId='{inform}_state'>{state}</span><small>"
+                f"last seen <span informId='{inform}_last_seen'>{seen}</span>"
+                f"</small></td><td class='wgDown' data-client='{esc}'>\u2013</td>"
+                f"<td class='wgUp' data-client='{esc}'>\u2013</td></tr>"
+                f"<tr class='wgMore'><td colspan='4'>{self.client_details(name)}"
+                "</td></tr></tbody>"
+            )
+        return (
+            "<div style='margin:8px 0'><b>Devices</b><table class='wgDevices'>"
+            "<thead><tr><th>Device</th><th>Status</th><th class='wgNum'>"
+            "\u2193 Download</th><th class='wgNum'>\u2191 Upload</th></tr></thead>"
+            + "".join(rows)
+            + f"<tfoot><tr><td colspan='2'>Total ({count})</td>"
+            "<td class='wgDown wgTotalDown'>\u2013</td>"
+            "<td class='wgUp wgTotalUp'>\u2013</td></tr></tfoot></table></div>"
+            + self.speed_script()
+        )
+
+    def speed_script(self):
+        device = json.dumps(self.hash["NAME"]).replace("<", "\\u003c")
+        return SPEED_SCRIPT.replace("DEVICE", device).replace(
+            "POLL", str(TRAFFIC_POLL * 1000)
         )
 
     def forms_html(self):
