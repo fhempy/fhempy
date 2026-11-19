@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v2.22.1 (2026-11-19)
+
+### Documentation
+
+- **readme**: Add missing modules and fix module count
+  ([#1003](https://github.com/fhempy/fhempy/pull/1003),
+  [`cb87761`](https://github.com/fhempy/fhempy/commit/cb87761e49f11de57d880dc2ef7069fb6f27efce))
+
+### Features
+
+- **wireguard**: Forms for devices and sites, SSH port
+  ([#1004](https://github.com/fhempy/fhempy/pull/1004),
+  [`aae4c36`](https://github.com/fhempy/fhempy/commit/aae4c363268ed900fdc8bf08d59c650982373c1d))
+
+- **wireguard**: Internet_only mode for sites with the same network
+  ([#1005](https://github.com/fhempy/fhempy/pull/1005),
+  [`abba4dd`](https://github.com/fhempy/fhempy/commit/abba4ddbaea82ee88c69bac46232190f62b5eab4))
+
+- **wireguard**: Live terminal view of the setup via SSH
+  ([#1006](https://github.com/fhempy/fhempy/pull/1006),
+  [`182383e`](https://github.com/fhempy/fhempy/commit/182383e5572e05c4a9b6eaddb7346176e9853250))
+
+
 ## v2.22.0 (2026-11-19)
 
 ### Bug Fixes
