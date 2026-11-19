@@ -25,8 +25,18 @@ Or use the *VPN server (WireGuard)* tile in *Install modules* of the fhempy devi
 ### One-time setup (root)
 
 A VPN server needs root rights (network interface, IP forwarding, iptables rules for forwarding, NAT and MSS
-clamping). fhempy runs as user `fhem`. The device page
-shows a command, run it **once** on the computer (e.g. via ssh as user `pi`):
+clamping). fhempy runs as user `fhem`, which normally can't do this. The device page asks once for a user of this
+computer which may use sudo (e.g. `pi`, the user you log in with):
+
+```
+set vpn setup user=pi password=secret
+```
+
+fhempy logs in to this computer via SSH with it and does the rest. The password is only used for this login, it's
+neither stored nor logged. SSH must be enabled (Raspberry Pi: it usually is, `sudo raspi-config` > Interface
+Options > SSH). If fhempy itself may already use sudo without password, nothing is asked.
+
+Without SSH, log in yourself and run the command shown on the device page once:
 
 ```
 sudo python3 /opt/fhem/.fhempy/.../fhempy/lib/wireguard/helper.py install fhem
@@ -73,16 +83,23 @@ the key to your home network. A lost phone: `set vpn remove_client Phone`.
 
 ## Connect another site (site to site)
 
-A Raspberry Pi (or another Linux computer) at another place, e.g. a holiday home or your parents' house, connects
-both home networks:
+A Raspberry Pi (or another Linux computer with Debian / Raspberry Pi OS) at another place, e.g. a holiday home or
+your parents' house, connects both home networks. fhempy sets it up by itself, you only need its address and a user
+with sudo rights:
 
 ```
-set vpn add_client Holiday network=192.168.2.0/24
+set vpn add_site Holiday host=192.168.2.10 user=pi password=secret
 ```
 
-`network` is the home network of the other site (see its router). Every site needs its own network: if both use
-`192.168.178.0/24`, change one of them in its router. The device page shows a configuration file for the Pi of the
-other site:
+fhempy logs in via SSH, finds the home network of that site, installs `wireguard-tools` and `iptables`, writes
+`/etc/wireguard/wgfhempy.conf` and starts it as system service (also after a reboot). Progress is in the reading
+`Holiday_setup`. The password isn't stored. `host` must be reachable from here, e.g. while the Pi is still in your
+home network or through the VPN of a phone. Another home network than the detected one: add `network=...`.
+
+Every site needs its own network: if both use `192.168.178.0/24`, change one of them in its router.
+
+By hand instead: `set vpn add_client Holiday network=192.168.2.0/24`, the device page shows the configuration file
+for the Pi of the other site:
 
 1. `sudo apt install wireguard-tools iptables`
 2. Save the file as `/etc/wireguard/wgfhempy.conf` (or `get vpn client_config Holiday`)
@@ -99,7 +116,9 @@ computer).
 | Command | |
 |---|---|
 | `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_client <site> network=<network>` | Add another site with its home network (site to site) |
+| `set <name> add_site <site> host=<ip> user=<user> password=<pw>` | Set up the Pi of another site via SSH (site to site) |
+| `set <name> add_client <site> network=<network>` | Add another site by hand |
+| `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |
 | `set <name> start` | Start the VPN server (again) |
 | `set <name> stop` | Stop the VPN server, also after a reboot. Run it before you delete the FHEM device |
@@ -123,6 +142,7 @@ computer).
   device), `<device>_received_mb`, `<device>_sent_mb`
 - `public_ip`, `endpoint`, `port`, `port_forwarding`, `home_network`, `vpn_network`
 - `problem`: what prevents connections from the internet, `none` if all is fine
+- `setup`, `<site>_setup`: progress of the setup via SSH
 
 WireGuard has no events for connects, fhempy reads the state of the interface every `interval` seconds (a local
 command, no network traffic). A device counts as connected if it sent a handshake within the last 3 minutes, the

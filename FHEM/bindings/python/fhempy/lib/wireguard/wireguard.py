@@ -26,7 +26,7 @@ import time
 import aiohttp
 
 from .. import fhem, fhem_pythonbinding, generic, utils
-from . import helper, keys, network
+from . import helper, keys, network, remote
 
 ICON = "secur_locked"
 DEFAULT_PORT = 51820
@@ -213,6 +213,8 @@ class wireguard(generic.FhemModule):
         self.router = network.Router(logger)
         self.session = None
         self._started = False
+        self.setup_task = None
+        self.setup_state = ""
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -271,6 +273,22 @@ class wireguard(generic.FhemModule):
                 "remove_client": {
                     "args": ["name"],
                     "help": "Remove a device, it can't connect anymore.",
+                },
+                "add_site": {
+                    "args": ["name"],
+                    "argsh": ["host", "user", "password", "network"],
+                    "help": "Connect another site automatically: fhempy logs "
+                    "in to its Raspberry Pi via SSH, installs WireGuard and "
+                    "connects it, e.g. <code>add_site Holiday "
+                    "host=192.168.2.10 user=pi password=secret</code>. Its "
+                    "home network is detected. The password is not stored.",
+                },
+                "setup": {
+                    "argsh": ["user", "password"],
+                    "help": "One-time setup of this computer without "
+                    "command line: <code>setup user=pi password=secret</code> "
+                    "(a user with sudo rights, SSH must be enabled). The "
+                    "password is not stored.",
                 },
                 "start": {"help": "Start the VPN server (again)."},
                 "stop": {
@@ -578,6 +596,8 @@ class wireguard(generic.FhemModule):
             clients=len(self.config["clients"]),
         )
         self._started = True
+        if not await self.check_helper():
+            await self.try_sudo_setup()
         while not await self.check_helper():
             await asyncio.sleep(SETUP_INTERVAL)
         if self.config.get("stopped"):
@@ -725,19 +745,8 @@ class wireguard(generic.FhemModule):
             return f"{name} exists already"
         return None
 
-    async def set_add_client(self, hash, params):
-        if not self.config:
-            return "Please wait, the VPN server is starting"
-        name = str(params["name"])
-        error = self.check_name(name, exists=False)
-        if error:
-            return error
-        networks = []
-        if params.get("network"):
-            net, error = self.check_site_network(params["network"], name)
-            if error:
-                return error
-            networks.append(net)
+    async def create_client(self, name, networks):
+        """new peer, None or the error"""
         ip = self.next_client_ip()
         if ip is None:
             return "No address left in the VPN network"
@@ -756,13 +765,150 @@ class wireguard(generic.FhemModule):
             if not self.helper_problem:
                 await self.apply()
         await self.update_status()
+        return None
+
+    async def set_add_client(self, hash, params):
+        if not self.config:
+            return "Please wait, the VPN server is starting"
+        name = str(params["name"])
+        error = self.check_name(name, exists=False)
+        if error:
+            return error
+        networks = []
+        if params.get("network"):
+            net, error = self.check_site_network(params["network"], name)
+            if error:
+                return error
+            networks.append(net)
+        error = await self.create_client(name, networks)
+        if error:
+            return error
         return "<html>" + self.client_html(name, open_qr=True) + "</html>"
+
+    # --- automatic setup via SSH ---
+
+    async def set_setup(self, hash, params):
+        if not params.get("user") or not params.get("password"):
+            return "Usage: set NAME setup user=pi password=..."
+        if self.setup_task and not self.setup_task.done():
+            return "The setup is already running"
+        self.setup_task = self.create_async_task(
+            self.setup_via_ssh(str(params["user"]), str(params["password"]))
+        )
+        return ""
+
+    async def setup_via_ssh(self, user, password):
+        await self.report_setup("connecting to this computer via SSH")
+        try:
+            await self.install_requirements()
+            await remote.install_helper(
+                "127.0.0.1", user, password, self.helper_source(), self.user
+            )
+        except remote.RemoteError as err:
+            await self.report_setup(f"failed: {err}")
+            return
+        await self.report_setup("done")
+        await self.check_helper()
+
+    async def report_setup(self, text):
+        self.setup_state = text
+        await self.set_readings(setup=text)
+
+    async def install_requirements(self):
+        from ..pkg_installer import check_and_install_dependencies
+
+        await check_and_install_dependencies("core/peer_installer")
+
+    async def try_sudo_setup(self):
+        """fhempy may already use sudo (or runs as root): no question"""
+        if self.helper_problem != "helper not installed" or tool("sudo") is None:
+            return
+        code, out = await run_command(
+            [
+                tool("sudo"),
+                "-n",
+                tool("python3"),
+                "-I",
+                self.helper_source(),
+                "install",
+                self.user,
+            ],
+            limit=remote.INSTALL_TIMEOUT,
+        )
+        if code == 0:
+            await self.report_setup("done (sudo)")
+        else:
+            self.logger.debug(f"automatic setup with sudo -n: {last_line(out)}")
+
+    async def set_add_site(self, hash, params):
+        if not self.config:
+            return "Please wait, the VPN server is starting"
+        name = str(params["name"])
+        error = self.check_name(name, exists=False)
+        if error:
+            return error
+        missing = [p for p in ("host", "user", "password") if not params.get(p)]
+        if missing:
+            return (
+                f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.2.10 "
+                "user=pi password=... [network=192.168.2.0/24]"
+            )
+        self.create_async_task(self.setup_site(name, params))
+        return (
+            f"Setting up {name}, this takes a few minutes. Progress: reading "
+            f"{name}_setup"
+        )
+
+    async def setup_site(self, name, params):
+        reading = f"{name}_setup"
+        user, password = str(params["user"]), str(params["password"])
+        host = str(params["host"])
+        try:
+            await self.set_readings(**{reading: f"connecting to {host}"})
+            await self.install_requirements()
+            conn = await remote.connect(host, user, password)
+            async with conn:
+                net = params.get("network") or await remote.site_network(conn)
+                if not net:
+                    raise remote.RemoteError(
+                        "home network of the site not found, add network=..."
+                    )
+                net, error = self.check_site_network(net, name)
+                if error:
+                    raise remote.RemoteError(error)
+                error = self.check_name(name, exists=False) or await self.create_client(
+                    name, [net]
+                )
+                if error:
+                    raise remote.RemoteError(error)
+                await self.set_readings(
+                    **{reading: f"installing WireGuard on {host} ({net})"}
+                )
+                try:
+                    await remote.setup_site(
+                        conn, user, password, self.client_config(name)
+                    )
+                except remote.RemoteError:
+                    await self.remove_client(name)
+                    raise
+        except remote.RemoteError as err:
+            await self.set_readings(**{reading: f"failed: {err}"})
+            return
+        except Exception as err:  # noqa: BLE001 asyncssh errors while running
+            self.logger.exception(f"Setup of site {name} failed")
+            await self.set_readings(**{reading: f"failed: {err}"})
+            return
+        await self.set_readings(**{reading: f"done, network {net}"})
 
     async def set_remove_client(self, hash, params):
         name = str(params["name"])
         error = self.check_name(name, exists=True)
         if error:
             return error
+        await self.remove_client(name)
+        return ""
+
+    async def remove_client(self, name):
         del self.config["clients"][name]
         await self.save_config()
         async with self._lock:
@@ -770,7 +916,6 @@ class wireguard(generic.FhemModule):
                 await self.apply()
         await fhem.CommandDeleteReading(self.hash, f"{self.hash['NAME']} {name}_.*")
         await self.update_status()
-        return ""
 
     async def set_start(self, hash, params):
         self.config["stopped"] = False
@@ -845,13 +990,27 @@ class wireguard(generic.FhemModule):
         )
 
     def setup_html(self):
+        name = json.dumps(self.hash["NAME"]).replace("<", "\\u003c")
+        form = (
+            '<form onsubmit=\'var f=this;FW_cmd(FW_root+"?cmd="+'
+            'encodeURIComponent("set "+' + html.escape(name) + '+" setup user="+'
+            'f.user.value+" password="+f.pw.value)+"&XHR=1",'
+            "function(r){if(r)FW_okDialog(r);});return false;'>"
+            "User <input name='user' value='pi' size='8'> Password "
+            "<input name='pw' type='password' size='12'> "
+            "<input type='submit' value='Set up'></form>"
+        )
         return (
             '<div style="border:1px solid #c80;padding:8px;margin:8px 0">'
             "<b>One-time setup needed</b> "
             f"({html.escape(self.helper_problem)})<br>A VPN server needs root "
-            "rights. Log in to this computer (e.g. with ssh) and run once:<br>"
+            "rights. Enter the user of this computer which may use sudo (e.g. "
+            "pi), fhempy logs in via SSH and does everything. The password is "
+            f"not stored.{form}"
+            f"Setup: {html.escape(str(self.setup_state or '-'))}<br><br>"
+            "Or log in yourself (e.g. with ssh) and run once:<br>"
             "<code style='user-select:all'>"
-            f"{html.escape(self.setup_command())}</code><br>It installs "
+            f"{html.escape(self.setup_command())}</code><br>Both install "
             "WireGuard and a small helper "
             f"({html.escape(helper.INSTALL_PATH)}), fhempy may only run this "
             "helper as root. fhempy continues by itself afterwards.</div>"

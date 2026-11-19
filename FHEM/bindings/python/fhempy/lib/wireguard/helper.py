@@ -54,6 +54,8 @@ class Invalid(Exception):
 
 
 def run(args, **kwargs):
+    # stdin may hold the sudo password line (NOPASSWD): never pass it on
+    kwargs.setdefault("stdin", subprocess.DEVNULL)
     return subprocess.run(args, env=ENV, check=False, **kwargs)
 
 

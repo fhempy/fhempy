@@ -12,7 +12,7 @@ from tests.utils import mock_fhem
 
 from fhempy.lib import fhem_pythonbinding
 from fhempy.lib.pkg_installer import check_and_install_dependencies
-from fhempy.lib.wireguard import helper, keys, network, wireguard
+from fhempy.lib.wireguard import helper, keys, network, remote, wireguard
 
 logger = logging.getLogger(__name__)
 
@@ -453,3 +453,155 @@ async def test_site_to_site(module):
     assert "overlaps" in await module.set_add_client(
         module.hash, {"name": "Other", "network": "192.168.2.128/25"}
     )
+
+
+ROUTE = "default via 192.168.2.1 dev wlan0 proto dhcp src 192.168.2.10 metric 600\n"
+ADDRESSES = (
+    "1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever\n"
+    "3: wlan0    inet 192.168.2.10/24 brd 192.168.2.255 scope global wlan0\n"
+)
+
+
+def test_parse_network():
+    assert remote.parse_network(ROUTE, ADDRESSES) == "192.168.2.0/24"
+    assert remote.parse_network("", ADDRESSES) is None
+
+
+class Result:
+    def __init__(self, stdout="", exit_status=0):
+        self.stdout = stdout
+        self.exit_status = exit_status
+
+
+class FakeConn:
+    """asyncssh connection to the Pi of another site"""
+
+    def __init__(self, sudo_output="started\n", sudo_status=0):
+        self.commands = []
+        self.uploads = {}
+        self.sudo_output = sudo_output
+        self.sudo_status = sudo_status
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        return False
+
+    async def run(self, cmd, input=None, check=False, **kwargs):
+        self.commands.append((cmd, input))
+        if cmd.endswith("mktemp"):
+            return Result("/tmp/tmp.abc\n")
+        if cmd.startswith("umask 077; cat > "):
+            self.uploads[cmd.rsplit(" ", 1)[1]] = input
+            return Result()
+        if cmd.startswith("ip -4 -o route"):
+            return Result(ROUTE)
+        if cmd.startswith("ip -4 -o addr"):
+            return Result(ADDRESSES)
+        if cmd.startswith("sudo -S -p ''"):
+            return Result(self.sudo_output, self.sudo_status)
+        return Result()
+
+
+@pytest.mark.asyncio
+async def test_add_site_via_ssh(module, mocker):
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn()
+
+    async def connect(host, user, password):
+        assert (host, user, password) == ("192.168.2.10", "pi", "secret")
+        return conn
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    ret = await module.set_add_site(
+        module.hash,
+        {"name": "Holiday", "host": "192.168.2.10", "user": "pi", "password": "secret"},
+    )
+    assert "Holiday_setup" in ret
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert module.config["clients"]["Holiday"]["networks"] == ["192.168.2.0/24"]
+    uploaded = conn.uploads["/tmp/tmp.abc"].decode()
+    assert uploaded == module.client_config("Holiday")
+    sudo_cmd, sudo_input = next(c for c in conn.commands if c[0].startswith("sudo"))
+    assert sudo_input == "secret\n"
+    assert "wireguard-tools" in sudo_cmd and "wg-quick@wgfhempy" in sudo_cmd
+    assert "secret" not in str(module.config)
+    peers = module.fake.applied[-1]["peers"]
+    assert peers[0]["networks"] == ["192.168.2.0/24"]
+
+
+@pytest.mark.asyncio
+async def test_add_site_fails(module, mocker):
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn("Sorry, try again.\nsudo: 1 incorrect password attempt\n", 1)
+
+    async def connect(host, user, password):
+        return conn
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    await module.set_add_site(
+        module.hash,
+        {"name": "Holiday", "host": "h", "user": "pi", "password": "wrong"},
+    )
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("failed"))
+    assert "no sudo rights" in readings()["Holiday_setup"]
+    assert "Holiday" not in module.config["clients"]
+    # the site uses the home network of this side
+    conn = FakeConn()
+    conn_net = "192.168.1.0/24"
+    await module.set_add_site(
+        module.hash,
+        {
+            "name": "Holiday",
+            "host": "h",
+            "user": "pi",
+            "password": "x",
+            "network": conn_net,
+        },
+    )
+    await wait_for(lambda: "overlaps" in readings().get("Holiday_setup", ""))
+    assert "Usage" in await module.set_add_site(module.hash, {"name": "Other"})
+
+
+@pytest.mark.asyncio
+async def test_setup_via_ssh(mocker, tmp_path, monkeypatch):
+    await check_and_install_dependencies("core/peer_installer")
+    mock_fhem.mock_module(mocker)
+    mock_fhem.readings.pop(NAME, None)
+    monkeypatch.chdir(tmp_path)
+    fake = FakeHelper()
+    missing = tmp_path / "fhempy-wireguard"
+    mocker.patch.object(helper, "INSTALL_PATH", str(missing))
+    mocker.patch.object(wireguard, "run_command", fake.run)
+    mocker.patch.object(wireguard, "is_root", lambda: False)
+    mocker.patch.object(wireguard, "tool", lambda name: "/usr/bin/" + name)
+    mocker.patch.object(wireguard, "free_port", lambda: 51820)
+    mocker.patch.object(wireguard, "SETUP_INTERVAL", 0.02)
+    mocker.patch.object(network, "detect", lambda: dict(NET))
+    mocker.patch.object(network, "Router", FakeRouter)
+    mocker.patch("fhempy.lib.fhem.sendCommandHash", fake_send)
+    conn = FakeConn("Installed\n")
+
+    async def connect(host, user, password):
+        assert host == "127.0.0.1"
+        missing.write_text("")
+        return conn
+
+    mocker.patch.object(remote, "connect", connect)
+    mod = wireguard.wireguard(logger)
+    mocker.patch.object(mod, "install_requirements", mocker.AsyncMock())
+    await mod.Define({"NAME": NAME, "FHEMPYTYPE": "wireguard"}, [], {})
+    await wait_for(lambda: readings().get("setup_problem") == "helper not installed")
+    assert "type='password'" in mod.detail_html()
+    assert "Usage" in await mod.set_setup(mod.hash, {"user": "pi"})
+    await mod.set_setup(mod.hash, {"user": "pi", "password": "secret"})
+    await wait_for(lambda: fake.running)
+    sudo_cmd, sudo_input = next(c for c in conn.commands if c[0].startswith("sudo"))
+    assert sudo_input == "secret\n"
+    assert "/tmp/tmp.abc install" in sudo_cmd
+    assert conn.uploads["/tmp/tmp.abc"] == open(helper.__file__, "rb").read()
+    assert readings()["setup"] == "done"
+    await mod.Undefine(mod.hash)
