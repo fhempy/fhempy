@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>71 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>76 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -197,8 +197,8 @@ For Bluetooth and Matter (both ways):
 |[miio](FHEM/bindings/python/fhempy/lib/miio/README.md)|Control Xiaomi WiFi devices|
 |[mqtt_ha_discovery](FHEM/bindings/python/fhempy/lib/mqtt_ha_discovery/)|Support Home Assistant MQTT discovery|
 |[nefit](FHEM/bindings/python/fhempy/lib/nefit/README.md)|Control Nefit devices|
-|[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
 |[pyit600](FHEM/bindings/python/fhempy/lib/pyit600/README.md)|Control Salus iT600 devices|
+|[ring](FHEM/bindings/python/fhempy/lib/ring/README.md)|Ring doorbell/chime/cam|
 |[tuya](FHEM/bindings/python/fhempy/lib/tuya/README.md)|Recommended: control Tuya devices locally incl. real-time updates (only WiFi devices)|
 |[tuya_cloud](FHEM/bindings/python/fhempy/lib/tuya_cloud/README.md)|Control Tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
 |[tuya_smartlife](FHEM/bindings/python/fhempy/lib/tuya_smartlife/README.md)|Recommended: control Tuya devices via cloud incl. real-time updates (WiFi & ZigBee)|
@@ -213,18 +213,20 @@ For Bluetooth and Matter (both ways):
 |[ble_fitness](FHEM/bindings/python/fhempy/lib/ble_fitness/README.md)|Heart rate straps (Polar, Garmin, Wahoo), power meters and smart trainers (Wahoo KICKR, Tacx, Elite): live values, workout summary, ERG mode|
 |[ble_monitor](FHEM/bindings/python/fhempy/lib/ble_monitor/README.md)|Supports a lot of BLE devices|
 |[ble_presence](FHEM/bindings/python/fhempy/lib/ble_presence/README.md)|Presence detection incl. RSSI for Bluetooth Low Energy|
+|[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth adapters every few hours|
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
 |[esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md)|ESPHome Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules|
-|[smlight_ble_proxy](FHEM/bindings/python/fhempy/lib/smlight_ble_proxy/README.md)|Bluetooth of SMLIGHT SLZB gateways (SLZB-OS) as additional receiver for the Bluetooth modules|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
 |[mantra_ble](FHEM/bindings/python/fhempy/lib/mantra_ble/README.md)|mAntra ceiling fan lamps|
 |[miflora](FHEM/bindings/python/fhempy/lib/miflora/README.md)|Xiaomi BLE plant sensor|
 |[miscale](FHEM/bindings/python/fhempy/lib/miscale/README.md)|Xiaomi Mi Scale V1/2 support|
 |[mitemp](FHEM/bindings/python/fhempy/lib/mitemp/README.md)|Xiaomi BLE temperature/humidity sensor|
+|[mitemp2](FHEM/bindings/python/fhempy/lib/mitemp2/README.md)|Xiaomi BLE temperature/humidity sensor v2|
 |[nespresso_ble](FHEM/bindings/python/fhempy/lib/nespresso_ble/README.md)|Nespresso Bluetooth coffee machine|
 |[scooter](FHEM/bindings/python/fhempy/lib/scooter/README.md)|Xiaomi and Ninebot e-scooters (also with Scooter Hacking Utility firmware): battery, range, mileage, connects automatically when nearby|
+|[smlight_ble_proxy](FHEM/bindings/python/fhempy/lib/smlight_ble_proxy/README.md)|Bluetooth of SMLIGHT SLZB gateways (SLZB-OS) as additional receiver for the Bluetooth modules|
 
 ### 🎵 Media
 |Module | Description|
@@ -247,6 +249,7 @@ For Bluetooth and Matter (both ways):
 |-------|------------|
 |[dashboard](FHEM/bindings/python/fhempy/lib/dashboard/README.md)|Modern dashboard for wall, couch and door tablets: set up on the tablet in a minute, doorbell with live video, talking and door opener|
 |[ddnssde](FHEM/bindings/python/fhempy/lib/ddnssde/)|Dynamic DNS updater for the free ddnss.de service|
+|[fhem_forum](FHEM/bindings/python/fhempy/lib/fhem_forum/README.md)|Notifies about unread replies and posts in the FHEM forum, with filter for terms|
 |[geizhals](FHEM/bindings/python/fhempy/lib/geizhals/README.md)|Retrieve prices from geizhals|
 |[github_backup](FHEM/bindings/python/fhempy/lib/github_backup/)|Backup FHEM config to GitHub|
 |[github_restore](FHEM/bindings/python/fhempy/lib/github_restore/)|Restore FHEM config from GitHub|
@@ -262,6 +265,7 @@ For Bluetooth and Matter (both ways):
 |[timeline](FHEM/bindings/python/fhempy/lib/timeline/README.md)|What happened at home, e.g. during the holidays: all events as readable story per day, without technical noise|
 |[websitetests](FHEM/bindings/python/fhempy/lib/websitetests/)|Do some basic website checks|
 |[wienerlinien](FHEM/bindings/python/fhempy/lib/wienerlinien/README.md)|Wiener Linien departure times|
+|[wireguard](FHEM/bindings/python/fhempy/lib/wireguard/README.md)|Your own VPN server into the home network: QR code for the WireGuard app, port forwarding via UPnP, also connects other sites|
 |[helloworld](FHEM/bindings/python/fhempy/lib/helloworld/)|Hello World example for developers to start writing their own module|
 
 ## 🩺 Troubleshooting
