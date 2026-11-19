@@ -755,17 +755,21 @@ async def test_add_site_port_and_home_network(module, mocker):
     conf = module.client_config("Holiday")
     assert f"AllowedIPs = {module.vpn_network}\n" in conf
     assert "MASQUERADE" not in conf and "ip rule" not in conf
-    assert "Warning:" in module.client_html("Holiday")
-    # entered by hand (e.g. the network at the site), connected networks
+    page = module.client_html("Holiday")
+    assert "Only the Pi is connected so far" in page
+    assert "wgFillSite.apply(null,[&quot;Holiday&quot;, &quot;10.99.7.2&quot;])" in page
+    # address of a device at the site entered by hand: its /24 network
     readings()["Holiday_setup"] = ""
     await module.set_add_site(
-        module.hash, dict(login, name="Holiday", network="192.168.2.0/24")
+        module.hash, dict(login, name="Holiday", network="192.168.2.34")
     )
     await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
     assert ports == [2222, 22]
     assert "warning" not in readings()["Holiday_setup"]
     assert module.config["clients"]["Holiday"]["networks"] == ["192.168.2.0/24"]
-    assert "Warning:" not in module.client_html("Holiday")
+    assert "Only the Pi is connected" not in module.client_html("Holiday")
+    form = module.forms_html()
+    assert "Where is the Pi right now?" in form and "name='network'" in form
 
 
 def test_known_hosts_name():

@@ -45,6 +45,9 @@ NETWORK_INTERVAL = 3600
 VIA_TABLE = 51820
 VIA_PRIORITY = 5180
 MAX_VIA_HOME = 16
+# an address of a device at another site instead of its network: home
+# routers give out /24 networks
+DEVICE_PREFIX = 24
 # via_home: every device which uses the Pi of the site as gateway
 VIA_HOME_ALL = "all"
 CLIENT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
@@ -149,6 +152,11 @@ padding:12px 14px;box-sizing:border-box}
 .wgCard input,.wgCard select{display:block;width:100%;box-sizing:border-box;margin-top:3px;
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
+.wgCard [hidden]{display:none}
+.wgWhere{border:1px solid #ccc;border-radius:6px;margin:10px 0 4px;padding:4px 10px 8px}
+.wgWhere legend{font-weight:bold;padding:0 4px}
+.wgNote{border:1px solid #c80;border-radius:6px;padding:6px 10px;margin:4px 0}
+.wgNote button{margin-left:6px;cursor:pointer}
 .wgCard label.wgCheck{font-weight:bold;display:flex;gap:6px;align-items:center}
 .wgCard label.wgCheck input{display:inline;width:auto;margin:0}
 .wgRow{display:flex;gap:8px}
@@ -204,12 +212,30 @@ LOG_SCRIPT = """<script>
 </script>"""
 # sends the form as set command, values with spaces in quotes, ; doubled
 FORM_SCRIPT = """<script>
+function wgWhere(radio) {
+  var form = radio.form, home = radio.value == "home";
+  form.querySelectorAll(".wgHome").forEach(function(e) { e.hidden = !home; });
+  form.querySelectorAll(".wgThere").forEach(function(e) { e.hidden = home; });
+  if (!home) form.elements.namedItem("network").value = "";
+}
+function wgFillSite(name, host) {
+  var form = document.querySelector("form.wgSite");
+  if (!form) return;
+  form.elements.namedItem("name").value = name;
+  form.elements.namedItem("host").value = host;
+  var there = form.querySelector("input[name=wg_where][value=there]");
+  there.checked = true;
+  wgWhere(there);
+  form.scrollIntoView({block: "center"});
+  form.elements.namedItem("password").focus();
+}
 function wgSend(form, dev, cmd) {
   var parts = ["set", dev, cmd, form.elements.namedItem("name").value];
   for (var i = 0; i < form.elements.length; i++) {
     var e = form.elements[i];
     if (!e.name || e.name == "name" || !e.value) continue;
     if (e.type == "checkbox" && !e.checked) continue;
+    if (/^wg_/.test(e.name)) continue;
     var v = e.value.replace(/;/g, ";;");
     if (/[\\s"]/.test(v)) v = '"' + v.replace(/"/g, '\\\\"') + '"';
     parts.push(e.name + "=" + v);
@@ -616,11 +642,18 @@ class wireguard(generic.FhemModule):
 
     def check_site_network(self, value, name, internet_only=False):
         """the home network of another site, None if invalid. With
-        internet_only it isn't routed, it may be the same as at home."""
+        internet_only it isn't routed, it may be the same as at home. The
+        address of a device there means its /24 network (home routers)."""
+        text = str(value).strip()
+        if "/" not in text:
+            text += f"/{DEVICE_PREFIX}"
         try:
-            net = ipaddress.IPv4Network(str(value), strict=False)
+            net = ipaddress.IPv4Network(text, strict=False)
         except ValueError:
-            return None, f"Invalid network {value}, e.g. 192.168.2.0/24"
+            return None, (
+                f"Invalid address or network {value}, e.g. 192.168.2.34 (a "
+                "device at the other place) or 192.168.2.0/24"
+            )
         if not net.is_private or net.prefixlen < 8:
             return None, f"{net} is not a private home network"
         other = self.vpn_network if net.overlaps(self.vpn_network) else None
@@ -1334,17 +1367,7 @@ class wireguard(generic.FhemModule):
             nets = html.escape(site_network(client))
             filename = helper.INTERFACE + ".conf"
             if client.get("internet_only") and not client.get("via_home"):
-                kind = (
-                    "<div style='border:1px solid #c80;padding:6px;margin:4px 0'>"
-                    f"<b>Warning:</b> the site has the same network as your "
-                    f"home ({nets}), the networks can't be connected. Only the "
-                    "Pi is connected, at its VPN address "
-                    f"<b>{html.escape(client['ip'])}</b>. Is the Pi still at "
-                    "home? Bring it to the site and use the form again with "
-                    "this VPN address as address of the Pi. Or tick "
-                    "<i>Internet through home</i>, then the network doesn't "
-                    "matter.</div>"
-                )
+                kind = "Site, only the Pi is connected (see the note above)."
                 together = ""
             elif client.get("internet_only"):
                 kind = (
@@ -1380,11 +1403,32 @@ class wireguard(generic.FhemModule):
             qr = f"<td style='vertical-align:top'>{qr_image(conf)}</td>"
         return (
             f"<div style='margin:4px 0'><b>{html.escape(name)}</b>"
+            f"{self.site_warning_html(name, client)}"
             f"<details{' open' if open_qr else ''}><summary>QR code and "
             f"configuration</summary><table><tr>{qr}"
             f"<td style='vertical-align:top;padding-left:12px'>{how}<br><br>"
             "Keep it private, it's the key to your home network."
             "</td></tr></table></details></div>"
+        )
+
+    def site_warning_html(self, name, client):
+        """the network of the site was the home network (Pi set up at home):
+        only the Pi is connected, explains the second step"""
+        if not client.get("internet_only") or client.get("via_home"):
+            return ""
+        args = html.escape(json.dumps([name, client["ip"]]))
+        return (
+            "<div class='wgNote'>Only the Pi is connected so far: it was in "
+            f"the same network as your home ({html.escape(site_network(client))})"
+            ", e.g. because it was set up here at home. <b>When the Pi is at "
+            "the other place</b> and shows <i>connected</i> here, set it up "
+            "again with its VPN address "
+            f"<b>{html.escape(client['ip'])}</b>, then fhempy detects the "
+            "network there and connects both networks. "
+            f"<button type='button' onclick='wgFillSite.apply(null,{args})'>"
+            "Set up again</button><br><small>If both places really use the "
+            "same network, they can't be connected: then only "
+            "<i>internet through home</i> is possible.</small></div>"
         )
 
     def via_home_html(self, client):
@@ -1541,23 +1585,41 @@ class wireguard(generic.FhemModule):
             "<label>Name<input name='name' required pattern='[A-Za-z0-9_-]{1,24}'"
             " placeholder='Phone'></label>"
             "<button type='submit'>Add device</button></form>"
-            "<form class='wgCard' onsubmit='return wgSend(this," + name + ","
+            "<form class='wgCard wgSite' onsubmit='return wgSend(this," + name + ","
             '"add_site")\'><h4>Add a site</h4><p>A Raspberry Pi at another '
             "place (e.g. holiday home): fhempy logs in via SSH, installs "
             "WireGuard and connects both home networks. The password is not "
             "stored.</p>"
             "<label>Name<input name='name' required pattern='[A-Za-z0-9_-]{1,24}'"
             " placeholder='Holiday'></label>"
+            "<fieldset class='wgWhere'><legend>Where is the Pi right now?"
+            "</legend><label class='wgCheck'><input type='radio' "
+            "name='wg_where' value='home' checked onchange='wgWhere(this)'> "
+            "Here at home, I'll bring it to the other place later</label>"
+            "<label class='wgCheck'><input type='radio' name='wg_where' "
+            "value='there' onchange='wgWhere(this)'> Already at the other "
+            "place and connected (set up again)</label></fieldset>"
             "<div class='wgRow'><label class='wgGrow'>Address of the Pi<input "
             "name='host' required placeholder='192.168.1.77'></label>"
             "<label class='wgPort'>SSH port<input name='port' type='number' "
             "min='1' max='65535' value='22'></label></div>"
-            "<small>How fhempy reaches the Pi now. Its network is detected."
+            "<small class='wgHome'>Its address here at home, e.g. from the "
+            "list of devices in your router.</small>"
+            "<small class='wgThere' hidden>Its VPN address (10.x.x.x), shown "
+            "above at the site. fhempy detects the network there by itself."
             "</small>"
             "<div class='wgRow'><label class='wgGrow'>User<input name='user' "
             "required value='pi' autocomplete='off'></label>"
             "<label class='wgGrow'>Password<input name='password' "
             "type='password' required autocomplete='new-password'></label></div>"
+            "<div class='wgHome'><label>Address of a device at the other place"
+            "<input name='network' placeholder='e.g. 192.168.2.34'></label>"
+            "<small>Here at home fhempy can't see the network of the other "
+            "place. Look at any phone, laptop or TV connected to the WiFi "
+            "there: its network settings show its IP address, e.g. "
+            "192.168.2.34. Enter it here. Don't know it? Leave it empty and "
+            "use <i>Set up again</i> once the Pi is there. Not needed if you "
+            "only want internet through home.</small></div>"
             "<label class='wgCheck'><input type='checkbox' name='via_home' "
             "value='all'> Internet through home for devices which use the Pi "
             "as gateway</label>"

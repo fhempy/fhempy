@@ -98,7 +98,9 @@ set vpn add_site Holiday host=192.168.1.77 user=pi password=secret
   give out e.g. `192.168.178.x`, or the Pi is still at home), the networks can't be connected: the setup finishes
   with a warning, only the Pi itself is connected (at its VPN address), unless *internet through home* is used (see
   below), then the network doesn't matter. A Pi set up at home: bring it to the site and run the setup again with
-  its VPN address as `host` to connect the networks. `network=192.168.2.0/24` sets the network by hand.
+  its VPN address as `host` to connect the networks (button *Set up again* on the device page).
+  `network=192.168.2.34` (the address of any device at the other place, or `192.168.2.0/24`) sets the network by
+  hand, e.g. while the Pi is still at home: the form asks *Where is the Pi right now?* for this.
 
 fhempy logs in via SSH, finds the home network of that site, installs `wireguard-tools` and `iptables`, writes
 `/etc/wireguard/wgfhempy.conf` and starts it as system service (also after a reboot). Progress is in the reading
