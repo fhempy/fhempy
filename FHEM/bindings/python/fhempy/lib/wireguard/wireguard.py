@@ -139,7 +139,7 @@ padding:12px 14px;box-sizing:border-box}
 .wgCard h4{margin:0 0 4px}
 .wgCard p{margin:0 0 10px;opacity:.8}
 .wgCard label{display:block;margin:8px 0 2px;font-weight:bold}
-.wgCard input{display:block;width:100%;box-sizing:border-box;margin-top:3px;
+.wgCard input,.wgCard select{display:block;width:100%;box-sizing:border-box;margin-top:3px;
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
 .wgRow{display:flex;gap:8px}
@@ -170,6 +170,18 @@ function wgSend(form, dev, cmd) {
   return false;
 }
 </script>"""
+
+
+SITE_MODES = ("networks", "internet_only")
+
+
+def is_site(client):
+    return bool(client.get("networks") or client.get("internet_only"))
+
+
+def site_network(client):
+    """network of a site, also when it isn't routed (internet_only)"""
+    return client.get("site_network") or client["networks"][0]
 
 
 def ssh_port(value):
@@ -340,6 +352,7 @@ class wireguard(generic.FhemModule):
                         "password",
                         "network",
                         "via_home",
+                        "mode",
                     ],
                     "help": "Connect another site automatically: fhempy logs "
                     "in to its Raspberry Pi via SSH, installs WireGuard and "
@@ -353,7 +366,12 @@ class wireguard(generic.FhemModule):
                     "on the device page."
                     "<br>via_home=192.168.2.50,192.168.2.51: these devices "
                     "(e.g. a TV) use the Pi as router, their internet goes "
-                    "through your home. Run add_site again to change it.",
+                    "through your home. Run add_site again to change it."
+                    "<br>mode=internet_only: only the internet of the "
+                    "via_home devices goes through home, the two home networks "
+                    "aren't connected. For sites with the same network as "
+                    "home (e.g. both 192.168.178.0/24), chosen automatically "
+                    "then. mode=networks: connect both networks (default).",
                 },
                 "setup": {
                     "argsh": ["user", "password"],
@@ -490,7 +508,7 @@ class wireguard(generic.FhemModule):
         ]
 
     def allowed_ips(self, name):
-        site = bool(self.config["clients"][name].get("networks"))
+        site = is_site(self.config["clients"][name])
         if self._attr_client_traffic == "all" and not site:
             return "0.0.0.0/0, ::/0"
         nets = [str(self.vpn_network)]
@@ -498,25 +516,33 @@ class wireguard(generic.FhemModule):
             nets.append(self.net["home_network"])
         return ", ".join(nets + self.site_networks(exclude=name))
 
-    def check_site_network(self, value, name):
-        """the home network of another site, None if invalid"""
+    def overlapping_network(self, net, name):
+        """home network or network of another site which collides with net"""
+        others = [ipaddress.IPv4Network(n) for n in self.site_networks(exclude=name)]
+        if self.net.get("home_network"):
+            others.insert(0, ipaddress.IPv4Network(self.net["home_network"]))
+        net = ipaddress.IPv4Network(str(net), strict=False)
+        return next((other for other in others if net.overlaps(other)), None)
+
+    def check_site_network(self, value, name, internet_only=False):
+        """the home network of another site, None if invalid. With
+        internet_only it isn't routed, it may be the same as at home."""
         try:
             net = ipaddress.IPv4Network(str(value), strict=False)
         except ValueError:
             return None, f"Invalid network {value}, e.g. 192.168.2.0/24"
         if not net.is_private or net.prefixlen < 8:
             return None, f"{net} is not a private home network"
-        others = [self.vpn_network] + [
-            ipaddress.IPv4Network(n) for n in self.site_networks(exclude=name)
-        ]
-        if self.net.get("home_network"):
-            others.append(ipaddress.IPv4Network(self.net["home_network"]))
-        for other in others:
-            if net.overlaps(other):
-                return None, (
-                    f"{net} overlaps {other}: every site needs its own "
-                    "network, change it in the router of that site"
-                )
+        other = self.vpn_network if net.overlaps(self.vpn_network) else None
+        if other is None and not internet_only:
+            other = self.overlapping_network(net, name)
+        if other is not None:
+            return None, (
+                f"{net} overlaps {other}: every site needs its own network, "
+                "change it in the router of that site (or mode=internet_only "
+                "with via_home devices, if only their internet goes through "
+                "home)"
+            )
         return str(net), None
 
     def client_config(self, name):
@@ -529,7 +555,7 @@ class wireguard(generic.FhemModule):
             f"PrivateKey = {client['private_key']}",
             f"Address = {client['ip']}/32",
         ]
-        site = bool(client.get("networks"))
+        site = is_site(client)
         if self._attr_client_traffic == "all" and self.net.get("gateway") and not site:
             lines.append(f"DNS = {self.net['gateway']}")
         if site:
@@ -552,6 +578,8 @@ class wireguard(generic.FhemModule):
         client = self.config["clients"][name]
         out = "$(ip -4 route show default | awk '{print $5; exit}')"
         via_home = client.get("via_home") or []
+        if client.get("internet_only"):
+            return self.internet_only_lines(name)
         lines = []
         if via_home:
             # no default route for the Pi itself, only for these devices
@@ -579,6 +607,26 @@ class wireguard(generic.FhemModule):
                 lines += self.via_home_lines(name, action, word)
         return lines
 
+    def internet_only_lines(self, name):
+        """the networks aren't connected: the Pi of the site sends the
+        traffic of the via_home devices with its own VPN address (NAT), the
+        VPN server doesn't need to know the network of the site"""
+        lines = ["Table = off"]
+        for action, word in (("A", "PostUp"), ("D", "PostDown")):
+            if action == "A":
+                lines.append(f"{word} = sysctl -q -w net.ipv4.ip_forward=1")
+            lines += [
+                # nothing from home into the network of the site, only answers
+                f"{word} = iptables -{action} FORWARD -i %i -m conntrack "
+                "--ctstate RELATED,ESTABLISHED -j ACCEPT",
+                f"{word} = iptables -{action} FORWARD -o %i -j ACCEPT",
+                f"{word} = iptables -t nat -{action} POSTROUTING -o %i -j MASQUERADE",
+                f"{word} = iptables -t mangle -{action} FORWARD -p tcp "
+                "--tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu",
+            ]
+            lines += self.via_home_lines(name, action, word)
+        return lines
+
     def via_home_lines(self, name, action, word):
         client = self.config["clients"][name]
         lines = []
@@ -588,7 +636,11 @@ class wireguard(generic.FhemModule):
                 f"{word} = sysctl -q -w net.ipv4.conf.all.rp_filter=2 "
                 "net.ipv4.conf.%i.rp_filter=2"
             )
-            nets = self.allowed_ips(name).split(", ")
+            if client.get("internet_only"):
+                # the home network may be the network of the site itself
+                nets = [str(self.vpn_network)]
+            else:
+                nets = self.allowed_ips(name).split(", ")
             lines += [f"{word} = ip route add {net} dev %i" for net in nets]
             lines.append(f"{word} = ip route add default dev %i table {VIA_TABLE}")
             for ip in client["via_home"]:
@@ -999,16 +1051,19 @@ class wireguard(generic.FhemModule):
             return "Please wait, the VPN server is starting"
         name = str(params["name"])
         client = self.config["clients"].get(name)
-        if client is not None and not client.get("networks"):
+        if client is not None and not is_site(client):
             return f"{name} is a device, not a site"
         error = None if client else self.check_name(name, exists=False)
         if error:
             return error
         missing = [p for p in ("host", "user", "password") if not params.get(p)]
+        if params.get("mode") not in (None, "", *SITE_MODES):
+            return "mode: networks or internet_only"
         if missing:
             return (
                 f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.1.77 [port=22] "
-                "user=pi password=... [network=192.168.2.0/24]"
+                "user=pi password=... [network=192.168.2.0/24] "
+                "[via_home=192.168.2.50] [mode=networks|internet_only]"
             )
         self.create_async_task(self.setup_site(name, params))
         return (
@@ -1036,8 +1091,12 @@ class wireguard(generic.FhemModule):
         conn = await remote.connect(host, user, password, port)
         async with conn:
             found = await remote.site_info(conn)
-            net = params.get("network") or self.detected_site_network(found)
-            net, error = self.check_site_network(net, name)
+            internet_only = self.site_mode(name, params, found)
+            net = params.get("network")
+            if not net:
+                net = found.get("network") if internet_only else None
+                net = net or self.detected_site_network(found)
+            net, error = self.check_site_network(net, name, internet_only)
             if error:
                 raise remote.RemoteError(error)
             via_home, error = self.check_via_home(
@@ -1045,8 +1104,13 @@ class wireguard(generic.FhemModule):
             )
             if error:
                 raise remote.RemoteError(error)
+            if internet_only and not via_home:
+                raise remote.RemoteError(
+                    "internet_only needs the devices whose internet goes "
+                    "through home (via_home=...)"
+                )
             existing = name in self.config["clients"]
-            await self.store_site(name, net, via_home, found.get("ip"))
+            await self.store_site(name, net, via_home, found.get("ip"), internet_only)
             await self.set_readings(
                 **{f"{name}_setup": f"installing WireGuard on {host} ({net})"}
             )
@@ -1057,19 +1121,46 @@ class wireguard(generic.FhemModule):
                     await self.remove_client(name)
                 raise
         text = f"done, network {net}"
+        if internet_only:
+            text += " (internet only, networks not connected)"
         if via_home:
             text += f", internet through home for {', '.join(via_home)}"
         return text
 
-    async def store_site(self, name, net, via_home, site_ip):
+    def site_mode(self, name, params, found):
+        """True for internet_only. Without mode: internet_only if the
+        network of the site collides with home or another site and the
+        via_home devices are in it (e.g. both sites use 192.168.178.0/24)"""
+        mode = params.get("mode")
+        if mode:
+            return mode == "internet_only"
+        net = params.get("network") or found.get("network")
+        if not net or not params.get("via_home"):
+            return False
+        try:
+            if self.overlapping_network(net, name) is None:
+                return False
+        except ValueError:
+            return False
+        _, error = self.check_via_home(params["via_home"], net, found.get("ip"))
+        return error is None
+
+    async def store_site(self, name, net, via_home, site_ip, internet_only=False):
         """new site, or new settings of an existing one (keys stay)"""
+        networks = [] if internet_only else [net]
         client = self.config["clients"].get(name)
         if client is None:
-            error = await self.create_client(name, [net])
+            error = await self.create_client(name, networks)
             if error:
                 raise remote.RemoteError(error)
             client = self.config["clients"][name]
-        client.update(networks=[net], via_home=via_home, site_ip=site_ip)
+        client.update(
+            networks=networks,
+            via_home=via_home,
+            site_ip=site_ip,
+            site_network=net,
+            internet_only=internet_only,
+        )
         await self.save_config()
         async with self._lock:
             if not self.helper_problem:
@@ -1129,20 +1220,29 @@ class wireguard(generic.FhemModule):
             '<a download="{0}" href="data:application/octet-stream;base64,{1}">'
             "Download {0}</a>"
         )
-        if client.get("networks"):
-            nets = html.escape(", ".join(client["networks"]))
+        if is_site(client):
+            nets = html.escape(site_network(client))
             filename = helper.INTERFACE + ".conf"
+            if client.get("internet_only"):
+                kind = (
+                    f"Site with network <b>{nets}</b>, internet only: the "
+                    "networks aren't connected, only the devices below use "
+                    "the internet of your home."
+                )
+                together = ""
+            else:
+                kind = f"Site with home network <b>{nets}</b>."
+                together = "The devices of both sites reach each other, "
             how = (
-                f"Site with home network <b>{nets}</b>. On the Raspberry Pi "
+                f"{kind} On the Raspberry Pi "
                 "(Linux) of that site:<br>1. <code>sudo apt install "
                 "wireguard-tools iptables</code><br>2. "
                 f"{download.format(filename, data)} and copy it to "
                 f"<code>/etc/wireguard/{filename}</code> (or <code>get "
                 f"{html.escape(self.hash['NAME'])} client_config "
                 f"{html.escape(name)}</code>)<br>3. <code>sudo systemctl "
-                f"enable --now wg-quick@{helper.INTERFACE}</code><br>The "
-                "devices of both sites reach each other, also after a reboot."
-                + self.via_home_html(client)
+                f"enable --now wg-quick@{helper.INTERFACE}</code><br>{together}"
+                "also after a reboot." + self.via_home_html(client)
             )
             qr = ""
         else:
@@ -1168,9 +1268,13 @@ class wireguard(generic.FhemModule):
     def via_home_html(self, client):
         if not client.get("via_home"):
             return ""
-        net = ipaddress.IPv4Network(client["networks"][0])
+        net = ipaddress.IPv4Network(site_network(client))
         gateway = html.escape(client.get("site_ip") or "IP of the Pi")
-        dns = html.escape(self.net.get("gateway") or "1.1.1.1")
+        dns = self.net.get("gateway") or "1.1.1.1"
+        if client.get("internet_only") and ipaddress.IPv4Address(dns) in net:
+            # the router at home has an address of the site itself
+            dns = "1.1.1.1"
+        dns = html.escape(dns)
         rows = "".join(
             f"<li><b>{html.escape(ip)}</b></li>" for ip in client["via_home"]
         )
@@ -1289,5 +1393,12 @@ class wireguard(generic.FhemModule):
             "placeholder='optional, e.g. 192.168.2.50 (TV)'></label>"
             "<small>Addresses of devices at the site whose internet goes "
             "through your home. Use the form again to change it.</small>"
+            "<label>Connect<select name='mode'><option value=''>automatic"
+            "</option><option value='networks'>both home networks</option>"
+            "<option value='internet_only'>only internet through home"
+            "</option></select></label>"
+            "<small>Only internet: the networks stay separate, possible also "
+            "if both sites use the same network (e.g. 192.168.178.x). "
+            "Automatic chooses it then.</small>"
             "<button type='submit'>Set up site</button></form></div>"
         )
