@@ -158,8 +158,50 @@ padding:6px 8px;font-weight:normal}
 .wgShell{background:#1e1e1e;color:#d4d4d4;font:12px/1.4 monospace;padding:8px 10px;
 border-radius:6px;max-height:320px;overflow:auto;white-space:pre-wrap;
 word-break:break-all;margin:12px 0;max-width:932px;box-sizing:border-box}
-.wgShell:empty{display:none}
+.wgLogBack{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;
+display:none;align-items:center;justify-content:center}
+.wgLogBack.wgOpen{display:flex}
+.wgLogBox{background:#1e1e1e;border-radius:8px;width:min(920px,94vw);
+box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden}
+.wgLogHead{display:flex;align-items:center;gap:8px;padding:8px 12px;
+background:#333;color:#eee;font:bold 13px sans-serif}
+.wgLogHead span{flex:1}
+.wgLogHead button{background:none;border:0;color:#eee;font-size:20px;
+line-height:1;cursor:pointer;padding:0 4px}
+.wgLogBox .wgShell{margin:0;border-radius:0;max-height:70vh;min-height:200px;
+max-width:none}
+.wgLogBtn{margin:8px 0;padding:5px 12px;cursor:pointer}
+.wgShell pre{margin:0;font:inherit;white-space:pre-wrap}
 </style>"""
+# popup with the live log: opens when a setup starts (form) or when new
+# lines arrive, closed it stays closed until the next setup (new first line)
+LOG_SCRIPT = """<script>
+(function() {
+  var back = document.querySelector(".wgLogBack");
+  if (!back) return;
+  var pre = back.querySelector("pre.wgShell");
+  var closedRun = null;
+  function firstLine() { return pre.textContent.split("\\n")[0]; }
+  window.wgLogOpen = function() {
+    closedRun = null;
+    back.classList.add("wgOpen");
+    pre.scrollTop = pre.scrollHeight;
+  };
+  window.wgLogClose = function() {
+    closedRun = firstLine();
+    back.classList.remove("wgOpen");
+  };
+  document.addEventListener("keydown", function(e) {
+    if (e.key == "Escape" && back.classList.contains("wgOpen")) wgLogClose();
+  });
+  new MutationObserver(function() {
+    if (closedRun === null || firstLine() != closedRun) {
+      back.classList.add("wgOpen");
+    }
+    pre.scrollTop = pre.scrollHeight;
+  }).observe(pre, {childList: true, characterData: true, subtree: true});
+})();
+</script>"""
 # sends the form as set command, values with spaces in quotes, ; doubled
 FORM_SCRIPT = """<script>
 function wgSend(form, dev, cmd) {
@@ -174,9 +216,8 @@ function wgSend(form, dev, cmd) {
   }
   FW_cmd(FW_root + "?cmd=" + encodeURIComponent(parts.join(" ")) + "&XHR=1",
     function(r) {
-      var log = document.querySelector("pre.wgShell");
-      if (r && /^Setting up/.test(r) && log) {
-        log.scrollIntoView({block: "nearest"});
+      if (r && /^Setting up/.test(r) && window.wgLogOpen) {
+        wgLogOpen();
       } else if (r) {
         if (!/^<html>/.test(r)) r = "<pre>" + FW_htmlQuote(r) + "</pre>";
         FW_okDialog(r);
@@ -1456,16 +1497,23 @@ class wireguard(generic.FhemModule):
         it live (informId of the reading setup_log)"""
         name = self.hash["NAME"]
         inform = html.escape(f"{name}-setup_log")
+        button = (
+            "<button type='button' class='wgLogBtn' onclick='wgLogOpen()'>"
+            "Show setup log</button>"
+            if self.log_lines
+            else ""
+        )
         return (
             # the reading itself is shown here, not in the readings table
             f"<style>table.readings tr:has([informId='{inform}'])"
             "{display:none}</style>"
+            f"{button}<div class='wgLogBack' onclick='if(event.target==this)"
+            "wgLogClose()'><div class='wgLogBox'><div class='wgLogHead'><span>"
+            "Setup log</span><button type='button' title='Close' "
+            "onclick='wgLogClose()'>&times;</button></div>"
             f"<pre class='wgShell' informId='{inform}'>"
-            f"{html.escape(chr(10).join(self.log_lines))}</pre>"
-            "<script>document.querySelectorAll('pre.wgShell').forEach("
-            "function(p){p.scrollTop=p.scrollHeight;new MutationObserver("
-            "function(){p.scrollTop=p.scrollHeight;}).observe(p,{childList:"
-            "true,characterData:true,subtree:true});});</script>"
+            f"{html.escape(chr(10).join(self.log_lines))}</pre></div></div>"
+            + LOG_SCRIPT
         )
 
     def forms_html(self):

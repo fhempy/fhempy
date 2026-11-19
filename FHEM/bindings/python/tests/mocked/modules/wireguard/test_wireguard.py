@@ -570,6 +570,9 @@ async def test_add_site_via_ssh(module, mocker):
     assert "secret" not in log and "PrivateKey" not in log
     page = module.detail_html()
     assert "informId='vpn-setup_log'" in page and "$ sudo wg show wgfhempy" in page
+    # popup with the log, opens by itself when lines arrive
+    assert "class='wgLogBack'" in page and "wgLogOpen" in page
+    assert "Show setup log" in page
     peers = module.fake.applied[-1]["peers"]
     assert peers[0]["networks"] == ["192.168.2.0/24"]
 
