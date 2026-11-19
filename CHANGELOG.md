@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.22.3 (2026-11-19)
+
+### Features
+
+- **wireguard**: Device table with live speed and total of all devices
+  ([#1009](https://github.com/fhempy/fhempy/pull/1009),
+  [`967504c`](https://github.com/fhempy/fhempy/commit/967504ce80dd804a30b760c88319a8037e8bd1f4))
+
+- **wireguard**: Setup popup, guided site form, site network detected
+  ([#1008](https://github.com/fhempy/fhempy/pull/1008),
+  [`ae63e58`](https://github.com/fhempy/fhempy/commit/ae63e587d33bd4180ba3cc586a6b7d1d236d4ffc))
+
+
 ## v2.22.2 (2026-11-19)
 
 ### Features
