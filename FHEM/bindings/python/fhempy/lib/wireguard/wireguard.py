@@ -56,6 +56,10 @@ RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
 LOG_LINES = 80
 LOG_LINE_LENGTH = 200
 LOG_DELAY = 0.3
+# live speed on the device page: it asks every TRAFFIC_POLL seconds, more
+# pages at the same time share one wg show within TRAFFIC_CACHE seconds
+TRAFFIC_POLL = 2
+TRAFFIC_CACHE = 1
 
 
 def is_root():
@@ -153,6 +157,7 @@ padding:12px 14px;box-sizing:border-box}
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
 .wgCard [hidden]{display:none}
+.wgSpeed{font:12px monospace;opacity:.8;white-space:pre;margin-left:8px}
 .wgWhere{border:1px solid #ccc;border-radius:6px;margin:10px 0 4px;padding:4px 10px 8px}
 .wgWhere legend{font-weight:bold;padding:0 4px}
 .wgNote{border:1px solid #c80;border-radius:6px;padding:6px 10px;margin:4px 0}
@@ -208,6 +213,40 @@ LOG_SCRIPT = """<script>
     }
     pre.scrollTop = pre.scrollHeight;
   }).observe(pre, {childList: true, characterData: true, subtree: true});
+})();
+</script>"""
+# live speed of the connected devices while the page is open and visible
+SPEED_SCRIPT = """<script>
+(function() {
+  var last = null;
+  function rate(bytes, seconds) {
+    var bit = bytes * 8 / seconds;
+    if (bit >= 1e6) return (bit / 1e6).toFixed(1) + " Mbit/s";
+    return Math.round(bit / 1e3) + " kbit/s";
+  }
+  function show(data) {
+    document.querySelectorAll(".wgSpeed").forEach(function(e) {
+      var now = data.clients[e.dataset.client];
+      var before = last && last.clients[e.dataset.client];
+      var seconds = last ? data.time - last.time : 0;
+      if (!now) { e.textContent = ""; return; }
+      if (!before || seconds <= 0) return;
+      e.textContent = "\u2193 " + rate(Math.max(0, now.down - before.down), seconds)
+        + "  \u2191 " + rate(Math.max(0, now.up - before.up), seconds);
+    });
+    if (!last || data.time > last.time) last = data;
+  }
+  function poll() {
+    if (!document.querySelector(".wgSpeed")) return;
+    if (document.visibilityState == "visible") {
+      FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEVICE + " traffic")
+        + "&XHR=1", function(r) {
+          try { show(JSON.parse(r)); } catch (err) {}
+        });
+    }
+    setTimeout(poll, POLL);
+  }
+  poll();
 })();
 </script>"""
 # sends the form as set command, values with spaces in quotes, ; doubled
@@ -369,6 +408,7 @@ class wireguard(generic.FhemModule):
         self.setup_task = None
         self.setup_state = ""
         self.log_lines = collections.deque(maxlen=LOG_LINES)
+        self.traffic_time = 0
         self.log_pending = False
 
     # FHEM FUNCTION
@@ -481,7 +521,11 @@ class wireguard(generic.FhemModule):
                 "client_config": {
                     "args": ["name"],
                     "help": "WireGuard configuration of a device as text.",
-                }
+                },
+                "traffic": {
+                    "help": "Byte counters of the connected devices as JSON "
+                    "(for the live speed on the device page).",
+                },
             }
         )
         await self.set_icon(ICON)
@@ -1353,6 +1397,23 @@ class wireguard(generic.FhemModule):
         error = self.check_name(name, exists=True)
         return error or self.client_config(name)
 
+    async def get_traffic(self, hash, params):
+        """byte counters for the live speed on the device page: the page
+        asks every TRAFFIC_POLL seconds while it is open, nothing is stored"""
+        now = time.time()
+        if now - self.traffic_time >= TRAFFIC_CACHE and not self.helper_problem:
+            code, out = await self.run_helper("status", limit=10)
+            if code == 0:
+                self.peers = parse_dump(out)
+                self.traffic_time = now
+        clients = {}
+        for name, client in self.config.get("clients", {}).items():
+            peer = self.peers.get(client["public_key"])
+            if self.connected(peer):
+                # rx: received by the server = upload of the device
+                clients[name] = {"down": peer["tx"], "up": peer["rx"]}
+        return json.dumps({"time": self.traffic_time or now, "clients": clients})
+
     # --- FHEMWEB ---
 
     def client_html(self, name, open_qr=False):
@@ -1402,7 +1463,8 @@ class wireguard(generic.FhemModule):
             )
             qr = f"<td style='vertical-align:top'>{qr_image(conf)}</td>"
         return (
-            f"<div style='margin:4px 0'><b>{html.escape(name)}</b>"
+            f"<div style='margin:4px 0'><b>{html.escape(name)}</b> "
+            f"<span class='wgSpeed' data-client='{html.escape(name)}'></span>"
             f"{self.site_warning_html(name, client)}"
             f"<details{' open' if open_qr else ''}><summary>QR code and "
             f"configuration</summary><table><tr>{qr}"
@@ -1545,7 +1607,7 @@ class wireguard(generic.FhemModule):
         if clients:
             parts.append("<div style='margin:8px 0'><b>Devices</b>")
             parts += [self.client_html(name) for name in clients]
-            parts.append("</div>")
+            parts.append("</div>" + self.speed_script())
         parts.append(self.forms_html())
         parts.append(self.log_html())
         return "".join(parts)
@@ -1572,6 +1634,12 @@ class wireguard(generic.FhemModule):
             f"<pre class='wgShell' informId='{inform}'>"
             f"{html.escape(chr(10).join(self.log_lines))}</pre></div></div>"
             + LOG_SCRIPT
+        )
+
+    def speed_script(self):
+        device = json.dumps(self.hash["NAME"]).replace("<", "\\u003c")
+        return SPEED_SCRIPT.replace("DEVICE", device).replace(
+            "POLL", str(TRAFFIC_POLL * 1000)
         )
 
     def forms_html(self):

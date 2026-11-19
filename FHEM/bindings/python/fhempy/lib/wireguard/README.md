@@ -180,6 +180,12 @@ computer).
 | `port_forwarding` | `upnp` | `upnp`: fhempy asks the router, `manual`: you set it up in the router |
 | `interval` | `30` | Seconds between the updates of the connected devices |
 
+## Live speed
+
+While the device page is open, it shows the current download and upload of every connected device next to its
+name (updated every 2 seconds, from the byte counters of WireGuard via `get <name> traffic`). Nothing is stored and
+no events are created, the page asks only while it is visible.
+
 ## Readings
 
 - `state`: e.g. `2 of 3 connected`, `running, no device connected`, `setup needed: ...`

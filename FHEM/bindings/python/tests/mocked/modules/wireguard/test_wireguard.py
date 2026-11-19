@@ -310,7 +310,14 @@ async def test_add_and_monitor_client(module):
     assert str(readings()["Phone_from"]) == "198.51.100.7"
     assert readings()["Phone_received_mb"] == 2.5
     assert readings()["connected"] == "Phone"
-    assert "VPN works from outside" in module.detail_html()
+    page = module.detail_html()
+    assert "VPN works from outside" in page
+    # live speed: byte counters for the page, only connected devices
+    assert "data-client='Phone'" in page
+    assert 'encodeURIComponent("get " + "vpn" + " traffic")' in page
+    traffic = json.loads(await module.get_traffic(module.hash, {}))
+    assert traffic["clients"] == {"Phone": {"down": 900000, "up": 2500000}}
+    assert traffic["time"] > 0
 
     assert "exists already" in await module.set_add_client(
         module.hash, {"name": "Phone"}
