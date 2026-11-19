@@ -462,9 +462,12 @@ ADDRESSES = (
 )
 
 
-def test_parse_network():
-    assert remote.parse_network(ROUTE, ADDRESSES) == "192.168.2.0/24"
-    assert remote.parse_network("", ADDRESSES) is None
+def test_parse_site():
+    assert remote.parse_site(ROUTE, ADDRESSES) == {
+        "network": "192.168.2.0/24",
+        "ip": "192.168.2.10",
+    }
+    assert remote.parse_site("", ADDRESSES) == {}
 
 
 class Result:
@@ -605,3 +608,56 @@ async def test_setup_via_ssh(mocker, tmp_path, monkeypatch):
     assert conn.uploads["/tmp/tmp.abc"] == open(helper.__file__, "rb").read()
     assert readings()["setup"] == "done"
     await mod.Undefine(mod.hash)
+
+
+@pytest.mark.asyncio
+async def test_site_via_home(module, mocker):
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn()
+
+    async def connect(host, user, password):
+        return conn
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    login = {"host": "192.168.2.10", "user": "pi", "password": "secret"}
+    for bad, error in (
+        ("192.168.3.5", "not in the network"),
+        ("192.168.2.10", "Pi of the site itself"),
+        ("tv", "Invalid address"),
+    ):
+        await module.set_add_site(
+            module.hash, dict(login, name="Holiday", via_home=bad)
+        )
+        await wait_for(lambda: error in readings().get("Holiday_setup", ""))
+        assert "Holiday" not in module.config["clients"]
+    await module.set_add_site(module.hash, dict(login, name="Holiday"))
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    key = module.config["clients"]["Holiday"]["public_key"]
+    assert "Table = off" not in module.client_config("Holiday")
+    # again with via_home: same keys, new configuration on the Pi
+    readings()["Holiday_setup"] = ""
+    await module.set_add_site(
+        module.hash, dict(login, name="Holiday", via_home="192.168.2.50")
+    )
+    await wait_for(lambda: "internet through home" in readings()["Holiday_setup"])
+    client = module.config["clients"]["Holiday"]
+    assert client["public_key"] == key
+    assert client["via_home"] == ["192.168.2.50"]
+    conf = module.client_config("Holiday")
+    assert conf == list(conn.uploads.values())[-1].decode()
+    assert "Table = off" in conf and "AllowedIPs = 0.0.0.0/0" in conf
+    assert "PostUp = ip route add 192.168.1.0/24 dev %i" in conf
+    assert "PostUp = ip route add default dev %i table 51820" in conf
+    assert "ip rule add from 192.168.2.50 table 51820 priority 5181" in conf
+    assert "PostDown = ip rule del from 192.168.2.50 table 51820" in conf
+    page = module.client_html("Holiday")
+    assert "gateway / router <b>192.168.2.10</b>" in page
+    assert "DNS <b>192.168.1.1</b>" in page
+    # the server routes the whole network of the site
+    peers = {p["ip"]: p for p in module.fake.applied[-1]["peers"]}
+    assert peers[client["ip"]]["networks"] == ["192.168.2.0/24"]
+    await module.set_add_client(module.hash, {"name": "Phone"})
+    assert "is a device" in await module.set_add_site(
+        module.hash, dict(login, name="Phone")
+    )

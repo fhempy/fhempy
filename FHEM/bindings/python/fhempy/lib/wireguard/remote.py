@@ -112,9 +112,9 @@ async def install_helper(host, user, password, helper_path, fhempy_user):
             await conn.run(f"rm -f {shlex.quote(path)}")
 
 
-def parse_network(route, addresses):
-    """home network of a computer from ip -4 -o route show default and
-    ip -4 -o addr"""
+def parse_site(route, addresses):
+    """home network and address of a computer from ip -4 -o route show
+    default and ip -4 -o addr show"""
     dev = None
     for line in route.splitlines():
         words = line.split()
@@ -128,14 +128,14 @@ def parse_network(route, addresses):
                 iface = ipaddress.IPv4Interface(words[words.index("inet") + 1])
             except ValueError:
                 continue
-            return str(iface.network)
-    return None
+            return {"network": str(iface.network), "ip": str(iface.ip)}
+    return {}
 
 
-async def site_network(conn):
+async def site_info(conn):
     route = await conn.run("ip -4 -o route show default")
     addresses = await conn.run("ip -4 -o addr show")
-    return parse_network(str(route.stdout or ""), str(addresses.stdout or ""))
+    return parse_site(str(route.stdout or ""), str(addresses.stdout or ""))
 
 
 async def setup_site(conn, user, password, config):

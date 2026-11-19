@@ -98,6 +98,23 @@ home network or through the VPN of a phone. Another home network than the detect
 
 Every site needs its own network: if both use `192.168.178.0/24`, change one of them in its router.
 
+### Internet through home for single devices (e.g. a TV)
+
+Only the traffic to the home network goes through the VPN, the internet of the other site stays direct. For single
+devices of the site the internet can go through your home instead, e.g. so that a TV in the holiday home streams with
+your home connection:
+
+```
+set vpn add_site Holiday host=192.168.2.10 user=pi password=secret via_home=192.168.2.50
+```
+
+`via_home`: addresses of the devices, comma separated. Running `add_site` again for an existing site changes its
+settings, the keys stay. The device page then shows what to set on the TV (network settings, manual / static):
+its fixed address, gateway / router = the Pi of the site, DNS = your router at home. The Pi of the site routes only
+these devices through the VPN (policy routing, `Table = off`), its own traffic and all other devices stay direct. If
+the VPN is down, the TV uses the internet of the site directly. Streaming uses the upload of your home connection
+(HD needs about 5-8 Mbit/s).
+
 By hand instead: `set vpn add_client Holiday network=192.168.2.0/24`, the device page shows the configuration file
 for the Pi of the other site:
 
@@ -116,7 +133,7 @@ computer).
 | Command | |
 |---|---|
 | `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_site <site> host=<ip> user=<user> password=<pw>` | Set up the Pi of another site via SSH (site to site) |
+| `set <name> add_site <site> host=<ip> user=<user> password=<pw> [via_home=<ips>]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices |
 | `set <name> add_client <site> network=<network>` | Add another site by hand |
 | `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |

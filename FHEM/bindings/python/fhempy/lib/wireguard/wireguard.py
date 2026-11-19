@@ -39,6 +39,11 @@ KEEPALIVE = 25
 SETUP_INTERVAL = 10
 # public address, DynDNS and port forwarding
 NETWORK_INTERVAL = 3600
+# devices of another site with internet through home: routing table and
+# priority of the ip rules on the Pi of that site
+VIA_TABLE = 51820
+VIA_PRIORITY = 5180
+MAX_VIA_HOME = 16
 CLIENT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
 RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
 
@@ -276,12 +281,15 @@ class wireguard(generic.FhemModule):
                 },
                 "add_site": {
                     "args": ["name"],
-                    "argsh": ["host", "user", "password", "network"],
+                    "argsh": ["host", "user", "password", "network", "via_home"],
                     "help": "Connect another site automatically: fhempy logs "
                     "in to its Raspberry Pi via SSH, installs WireGuard and "
                     "connects it, e.g. <code>add_site Holiday "
                     "host=192.168.2.10 user=pi password=secret</code>. Its "
-                    "home network is detected. The password is not stored.",
+                    "home network is detected. The password is not stored."
+                    "<br>via_home=192.168.2.50,192.168.2.51: these devices "
+                    "(e.g. a TV) use the Pi as router, their internet goes "
+                    "through your home. Run add_site again to change it.",
                 },
                 "setup": {
                     "argsh": ["user", "password"],
@@ -461,37 +469,104 @@ class wireguard(generic.FhemModule):
         if self._attr_client_traffic == "all" and self.net.get("gateway") and not site:
             lines.append(f"DNS = {self.net['gateway']}")
         if site:
-            # the Pi of the other site forwards into its home network
-            out = "$(ip -4 route show default | awk '{print $5; exit}')"
-            vpn = self.vpn_network
-            for action, word in (("A", "PostUp"), ("D", "PostDown")):
-                if action == "A":
-                    lines.append(f"{word} = sysctl -q -w net.ipv4.ip_forward=1")
-                lines += [
-                    f"{word} = iptables -{action} FORWARD -i %i -j ACCEPT",
-                    f"{word} = iptables -{action} FORWARD -o %i -j ACCEPT",
-                    f"{word} = iptables -t nat -{action} POSTROUTING -s {vpn} "
-                    f"-o {out} -j MASQUERADE",
-                ]
-                if self.net.get("home_network"):
-                    lines.append(
-                        f"{word} = iptables -t nat -{action} POSTROUTING -s "
-                        f"{self.net['home_network']} -o {out} -j MASQUERADE"
-                    )
-                lines.append(
-                    f"{word} = iptables -t mangle -{action} FORWARD -p tcp "
-                    "--tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
-                )
+            lines += self.site_lines(name)
         lines += [
             "",
             "[Peer]",
             f"PublicKey = {keys.public_key(self.config['private_key'])}",
             f"PresharedKey = {client['preshared_key']}",
             f"Endpoint = {host}:{self.port}",
-            f"AllowedIPs = {self.allowed_ips(name)}",
+            "AllowedIPs = "
+            + ("0.0.0.0/0" if client.get("via_home") else self.allowed_ips(name)),
             f"PersistentKeepalive = {KEEPALIVE}",
         ]
         return "\n".join(lines) + "\n"
+
+    def site_lines(self, name):
+        """the Pi of the other site forwards into its home network, devices
+        in via_home use it as router: their internet goes through home"""
+        client = self.config["clients"][name]
+        out = "$(ip -4 route show default | awk '{print $5; exit}')"
+        via_home = client.get("via_home") or []
+        lines = []
+        if via_home:
+            # no default route for the Pi itself, only for these devices
+            lines.append("Table = off")
+        sources = [str(self.vpn_network)]
+        if self.net.get("home_network"):
+            sources.append(self.net["home_network"])
+        for action, word in (("A", "PostUp"), ("D", "PostDown")):
+            if action == "A":
+                lines.append(f"{word} = sysctl -q -w net.ipv4.ip_forward=1")
+            lines += [
+                f"{word} = iptables -{action} FORWARD -i %i -j ACCEPT",
+                f"{word} = iptables -{action} FORWARD -o %i -j ACCEPT",
+            ]
+            lines += [
+                f"{word} = iptables -t nat -{action} POSTROUTING -s {net} "
+                f"-o {out} -j MASQUERADE"
+                for net in sources
+            ]
+            lines.append(
+                f"{word} = iptables -t mangle -{action} FORWARD -p tcp "
+                "--tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+            )
+            if via_home:
+                lines += self.via_home_lines(name, action, word)
+        return lines
+
+    def via_home_lines(self, name, action, word):
+        client = self.config["clients"][name]
+        lines = []
+        if action == "A":
+            # answers from the internet come in on the VPN (loose reverse path)
+            lines.append(
+                f"{word} = sysctl -q -w net.ipv4.conf.all.rp_filter=2 "
+                "net.ipv4.conf.%i.rp_filter=2"
+            )
+            nets = self.allowed_ips(name).split(", ")
+            lines += [f"{word} = ip route add {net} dev %i" for net in nets]
+            lines.append(f"{word} = ip route add default dev %i table {VIA_TABLE}")
+            for ip in client["via_home"]:
+                lines += [
+                    f"{word} = ip rule add from {ip} lookup main "
+                    f"suppress_prefixlength 0 priority {VIA_PRIORITY}",
+                    f"{word} = ip rule add from {ip} table {VIA_TABLE} "
+                    f"priority {VIA_PRIORITY + 1}",
+                ]
+        else:
+            for ip in client["via_home"]:
+                lines += [
+                    f"{word} = ip rule del from {ip} lookup main "
+                    f"suppress_prefixlength 0 priority {VIA_PRIORITY}",
+                    f"{word} = ip rule del from {ip} table {VIA_TABLE} "
+                    f"priority {VIA_PRIORITY + 1}",
+                ]
+        return lines
+
+    def check_via_home(self, value, network, site_ip):
+        """devices of the other site whose internet goes through home"""
+        if not value:
+            return [], None
+        net = ipaddress.IPv4Network(network)
+        ips = []
+        for part in str(value).replace(";", ",").split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                ip = ipaddress.IPv4Address(part)
+            except ValueError:
+                return None, f"Invalid address {part} in via_home"
+            if ip not in net or ip in (net.network_address, net.broadcast_address):
+                return None, f"{ip} is not in the network {net} of the site"
+            if site_ip and str(ip) == site_ip:
+                return None, f"{ip} is the Pi of the site itself"
+            if str(ip) not in ips:
+                ips.append(str(ip))
+        if len(ips) > MAX_VIA_HOME:
+            return None, f"At most {MAX_VIA_HOME} devices in via_home"
+        return ips, None
 
     # --- helper ---
 
@@ -844,7 +919,10 @@ class wireguard(generic.FhemModule):
         if not self.config:
             return "Please wait, the VPN server is starting"
         name = str(params["name"])
-        error = self.check_name(name, exists=False)
+        client = self.config["clients"].get(name)
+        if client is not None and not client.get("networks"):
+            return f"{name} is a device, not a site"
+        error = None if client else self.check_name(name, exists=False)
         if error:
             return error
         missing = [p for p in ("host", "user", "password") if not params.get(p)]
@@ -861,44 +939,65 @@ class wireguard(generic.FhemModule):
 
     async def setup_site(self, name, params):
         reading = f"{name}_setup"
-        user, password = str(params["user"]), str(params["password"])
-        host = str(params["host"])
         try:
-            await self.set_readings(**{reading: f"connecting to {host}"})
+            await self.set_readings(**{reading: f"connecting to {params['host']}"})
             await self.install_requirements()
-            conn = await remote.connect(host, user, password)
-            async with conn:
-                net = params.get("network") or await remote.site_network(conn)
-                if not net:
-                    raise remote.RemoteError(
-                        "home network of the site not found, add network=..."
-                    )
-                net, error = self.check_site_network(net, name)
-                if error:
-                    raise remote.RemoteError(error)
-                error = self.check_name(name, exists=False) or await self.create_client(
-                    name, [net]
-                )
-                if error:
-                    raise remote.RemoteError(error)
-                await self.set_readings(
-                    **{reading: f"installing WireGuard on {host} ({net})"}
-                )
-                try:
-                    await remote.setup_site(
-                        conn, user, password, self.client_config(name)
-                    )
-                except remote.RemoteError:
-                    await self.remove_client(name)
-                    raise
+            text = await self.connect_and_setup_site(name, params)
         except remote.RemoteError as err:
-            await self.set_readings(**{reading: f"failed: {err}"})
-            return
+            text = f"failed: {err}"
         except Exception as err:  # noqa: BLE001 asyncssh errors while running
             self.logger.exception(f"Setup of site {name} failed")
-            await self.set_readings(**{reading: f"failed: {err}"})
-            return
-        await self.set_readings(**{reading: f"done, network {net}"})
+            text = f"failed: {err}"
+        await self.set_readings(**{reading: text})
+
+    async def connect_and_setup_site(self, name, params):
+        user, password = str(params["user"]), str(params["password"])
+        host = str(params["host"])
+        conn = await remote.connect(host, user, password)
+        async with conn:
+            found = await remote.site_info(conn)
+            net = params.get("network") or found.get("network")
+            if not net:
+                raise remote.RemoteError(
+                    "home network of the site not found, add network=..."
+                )
+            net, error = self.check_site_network(net, name)
+            if error:
+                raise remote.RemoteError(error)
+            via_home, error = self.check_via_home(
+                params.get("via_home"), net, found.get("ip")
+            )
+            if error:
+                raise remote.RemoteError(error)
+            existing = name in self.config["clients"]
+            await self.store_site(name, net, via_home, found.get("ip"))
+            await self.set_readings(
+                **{f"{name}_setup": f"installing WireGuard on {host} ({net})"}
+            )
+            try:
+                await remote.setup_site(conn, user, password, self.client_config(name))
+            except remote.RemoteError:
+                if not existing:
+                    await self.remove_client(name)
+                raise
+        text = f"done, network {net}"
+        if via_home:
+            text += f", internet through home for {', '.join(via_home)}"
+        return text
+
+    async def store_site(self, name, net, via_home, site_ip):
+        """new site, or new settings of an existing one (keys stay)"""
+        client = self.config["clients"].get(name)
+        if client is None:
+            error = await self.create_client(name, [net])
+            if error:
+                raise remote.RemoteError(error)
+            client = self.config["clients"][name]
+        client.update(networks=[net], via_home=via_home, site_ip=site_ip)
+        await self.save_config()
+        async with self._lock:
+            if not self.helper_problem:
+                await self.apply()
 
     async def set_remove_client(self, hash, params):
         name = str(params["name"])
@@ -967,6 +1066,7 @@ class wireguard(generic.FhemModule):
                 f"{html.escape(name)}</code>)<br>3. <code>sudo systemctl "
                 f"enable --now wg-quick@{helper.INTERFACE}</code><br>The "
                 "devices of both sites reach each other, also after a reboot."
+                + self.via_home_html(client)
             )
             qr = ""
         else:
@@ -987,6 +1087,25 @@ class wireguard(generic.FhemModule):
             f"<td style='vertical-align:top;padding-left:12px'>{how}<br><br>"
             "Keep it private, it's the key to your home network."
             "</td></tr></table></details></div>"
+        )
+
+    def via_home_html(self, client):
+        if not client.get("via_home"):
+            return ""
+        net = ipaddress.IPv4Network(client["networks"][0])
+        gateway = html.escape(client.get("site_ip") or "IP of the Pi")
+        dns = html.escape(self.net.get("gateway") or "1.1.1.1")
+        rows = "".join(
+            f"<li><b>{html.escape(ip)}</b></li>" for ip in client["via_home"]
+        )
+        return (
+            "<br><br><b>Internet through home</b> for:<ul>"
+            f"{rows}</ul>Set these devices (e.g. TV: network settings, manual "
+            f"/ static) to: subnet mask <b>{net.netmask}</b>, gateway / router "
+            f"<b>{gateway}</b>, DNS <b>{dns}</b>. Or give them this address as "
+            "fixed DHCP address in the router of the site and set gateway and "
+            "DNS on the device. If the VPN is down they use the internet of "
+            "the site directly."
         )
 
     def setup_html(self):
