@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.22.0 (2026-11-19)
+
+### Bug Fixes
+
+- **dashboard**: Detect power from cur_power and similar readings
+  ([#1000](https://github.com/fhempy/fhempy/pull/1000),
+  [`fe1ebb0`](https://github.com/fhempy/fhempy/commit/fe1ebb0e08783a0a9c5ee98ea5216cbbaf0a3de7))
+
+### Features
+
+- **wireguard**: Own VPN server into the home network
+  ([#1002](https://github.com/fhempy/fhempy/pull/1002),
+  [`2c198e4`](https://github.com/fhempy/fhempy/commit/2c198e4088d8dc4cd63bcedc94abad7c0baf6be7))
+
+
 ## v2.21.1 (2026-11-18)
 
 ### Bug Fixes
