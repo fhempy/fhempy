@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import hashlib
 import json
 import os
 import shutil
@@ -28,6 +29,55 @@ DEFAULT_CONFIG = (
     "frontend:\n"
     "  port: 8080\n"
 )
+
+
+# pnpm asks before it removes node_modules (e.g. after a pnpm major update),
+# without a terminal it aborts. CI=true and confirmModulesPurge=false make
+# it reinstall without asking.
+PNPM_INSTALL = "pnpm install --frozen-lockfile --config.confirm-modules-purge=false"
+PNPM_BUILD = "pnpm run build"
+# written after dependencies were installed and built successfully, holds
+# the state of the checkout they were installed for
+INSTALL_MARKER = "node_modules/.fhempy_installed"
+OUTPUT_TAIL_LINES = 30
+
+
+def install_signature(z2m_directory):
+    """Fingerprint of the files the installed node_modules depend on."""
+    digest = hashlib.sha256()
+    for name in ["package.json", "pnpm-lock.yaml"]:
+        path = os.path.join(z2m_directory, name)
+        digest.update(name.encode())
+        if os.path.exists(path):
+            with open(path, "rb") as file:
+                digest.update(file.read())
+    return digest.hexdigest()
+
+
+def dependencies_up_to_date(z2m_directory):
+    """True if node_modules was installed for the current checkout."""
+    marker = os.path.join(z2m_directory, INSTALL_MARKER)
+    if not os.path.exists(marker):
+        return False
+    with open(marker) as file:
+        return file.read().strip() == install_signature(z2m_directory)
+
+
+def write_install_marker(z2m_directory):
+    marker = os.path.join(z2m_directory, INSTALL_MARKER)
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
+    with open(marker, "w") as file:
+        file.write(install_signature(z2m_directory) + "\n")
+
+
+def remove_install_marker(z2m_directory):
+    marker = os.path.join(z2m_directory, INSTALL_MARKER)
+    if os.path.exists(marker):
+        os.remove(marker)
+
+
+def remove_node_modules(z2m_directory):
+    shutil.rmtree(os.path.join(z2m_directory, "node_modules"), ignore_errors=True)
 
 
 def write_default_config(conf_file):
@@ -66,6 +116,82 @@ class zigbee2mqtt(FhemModule):
                 **kwargs,
             )
         )
+
+    async def _run_step(self, command, cwd):
+        """Run command, log its output and raise if it fails."""
+        env = dict(await self._get_shell_env())
+        env["CI"] = "true"
+        self.logger.info(f"zigbee2mqtt: running '{command}'")
+        result = await utils.run_blocking(
+            functools.partial(
+                subprocess.run,
+                ["bash", "-c", command],
+                env=env,
+                cwd=cwd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        )
+        output = result.stdout.decode(errors="replace").strip().splitlines()
+        tail = "\n".join(output[-OUTPUT_TAIL_LINES:])
+        if result.returncode != 0:
+            self.logger.error(
+                f"zigbee2mqtt: '{command}' failed with exit code "
+                f"{result.returncode}:\n{tail}"
+            )
+            raise RuntimeError(f"'{command}' failed with exit code {result.returncode}")
+        self.logger.info(f"zigbee2mqtt: '{command}' finished")
+        if tail:
+            self.logger.debug(tail)
+
+    async def install_dependencies(self, z2m_directory, reading):
+        """Install node_modules and build zigbee2mqtt like its update.sh."""
+        # an interrupted install must not look like a finished one
+        await utils.run_blocking(
+            functools.partial(remove_install_marker, z2m_directory)
+        )
+        await fhem.readingsSingleUpdate(
+            self.hash, reading, "installing dependencies, may take a few minutes", 1
+        )
+        try:
+            await self._run_step(PNPM_INSTALL, z2m_directory)
+        except RuntimeError:
+            # a broken or incompatible node_modules can't always be
+            # repaired in place, start from scratch once
+            self.logger.warning(
+                "zigbee2mqtt: removing node_modules and installing again"
+            )
+            await utils.run_blocking(
+                functools.partial(remove_node_modules, z2m_directory)
+            )
+            await self._run_step(PNPM_INSTALL, z2m_directory)
+        await fhem.readingsSingleUpdate(
+            self.hash, reading, "building zigbee2mqtt, may take a few minutes", 1
+        )
+        await self._run_step(PNPM_BUILD, z2m_directory)
+        await utils.run_blocking(functools.partial(write_install_marker, z2m_directory))
+        self.logger.info("zigbee2mqtt: dependencies installed and built")
+
+    async def pull_z2m(self, z2m_directory):
+        rep = Repo(z2m_directory)
+        old = rep.head.commit.hexsha
+        try:
+            await utils.run_blocking(functools.partial(rep.remotes.origin.pull))
+        except Exception:
+            # local changes to tracked files (e.g. a lockfile written by an
+            # older install) block the pull, data/ is not tracked by git
+            self.logger.exception(
+                "zigbee2mqtt: git pull failed, resetting to the remote branch"
+            )
+            await utils.run_blocking(functools.partial(rep.remotes.origin.fetch))
+            await utils.run_blocking(functools.partial(rep.git.reset, "--hard", "@{u}"))
+        new = rep.head.commit.hexsha
+        if old == new:
+            self.logger.info(f"zigbee2mqtt: already up to date ({new[:8]})")
+        else:
+            self.logger.info(f"zigbee2mqtt: updated {old[:8]} -> {new[:8]}")
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -135,14 +261,12 @@ class zigbee2mqtt(FhemModule):
                     )
                 )
 
-            rep = Repo(z2m_directory)
-            o = rep.remotes.origin
-            await utils.run_blocking(functools.partial(o.pull))
-
-            await self._shell(
-                subprocess.call, "pnpm i --frozen-lockfile", cwd=z2m_directory
+            await fhem.readingsSingleUpdate(
+                self.hash, "update", "downloading zigbee2mqtt", 1
             )
-            await self._shell(subprocess.call, "pnpm run build", cwd=z2m_directory)
+            await self.pull_z2m(z2m_directory)
+            # always reinstall, the new version might need other node_modules
+            await self.install_dependencies(z2m_directory, "update")
 
             source_folder = z2m_directory + "/data-backup"
             destination_folder = z2m_directory + "/data"
@@ -163,6 +287,24 @@ class zigbee2mqtt(FhemModule):
             # start zigbee2mqtt again, also if the update failed
             await self._wait_for_port_release()
             await self.start_process()
+
+    async def _install_needed(self, z2m_directory, clone_needed):
+        # a fresh clone always needs to be installed
+        if clone_needed:
+            return True
+        # an interrupted or failed update leaves node_modules that don't
+        # fit the checkout
+        if not await utils.run_blocking(
+            functools.partial(dependencies_up_to_date, z2m_directory)
+        ):
+            self.logger.warning(
+                "zigbee2mqtt: node_modules doesn't match the installed "
+                "version, installing dependencies again"
+            )
+            return True
+        # the installation reading might come from a restored fhem.save
+        installation = await fhem.ReadingsVal(self.hash["NAME"], "installation", "nok")
+        return installation != "successful"
 
     async def install_z2m(self):
         GIT_URL = "https://github.com/Koenkk/zigbee2mqtt.git"
@@ -194,23 +336,8 @@ class zigbee2mqtt(FhemModule):
                     functools.partial(Repo.clone_from, GIT_URL, z2m_directory)
                 )
 
-            # the installation reading might come from a restored fhem.save,
-            # a fresh clone always needs to be installed
-            if (
-                clone_needed
-                or await fhem.ReadingsVal(self.hash["NAME"], "installation", "nok")
-                != "successful"
-            ):
-                await fhem.readingsSingleUpdate(
-                    self.hash,
-                    "installation",
-                    "installing dependencies, might take some minutes",
-                    1,
-                )
-                await self._shell(
-                    subprocess.call, "pnpm i --frozen-lockfile", cwd=z2m_directory
-                )
-                await self._shell(subprocess.call, "pnpm run build", cwd=z2m_directory)
+            if await self._install_needed(z2m_directory, clone_needed):
+                await self.install_dependencies(z2m_directory, "installation")
 
                 # never replace an existing configuration, it holds the
                 # network key and PAN ID of the paired zigbee network

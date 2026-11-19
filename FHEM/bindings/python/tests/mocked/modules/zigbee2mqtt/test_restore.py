@@ -108,12 +108,18 @@ async def test_fresh_clone_installs_even_if_restored_reading_says_successful(
     # no git repository yet
     repo = mocker.patch.object(z2m_module, "Repo", side_effect=Exception)
     repo.clone_from = clone
-    calls = mocker.patch.object(z2m_module.subprocess, "call")
+    calls = mocker.patch.object(
+        z2m_module.subprocess, "run", return_value=mocker.Mock(returncode=0, stdout=b"")
+    )
     mocker.patch.object(device, "create_weblink", mocker.AsyncMock())
 
     assert await device.install_z2m()
 
-    assert calls.call_count == 2
+    commands = [c.args[0][-1] for c in calls.call_args_list]
+    assert [c for c in commands if c.startswith("pnpm")] == [
+        z2m_module.PNPM_INSTALL,
+        z2m_module.PNPM_BUILD,
+    ]
     data = tmp_path / ".fhempy/zigbee2mqtt/data"
     assert (data / "configuration.yaml").exists()
 
@@ -131,7 +137,7 @@ async def test_reinstall_keeps_existing_configuration(mocker, tmp_path, monkeypa
     existing = "advanced:\n  pan_id: 6753\n  network_key: [209, 137]\n"
     (data / "configuration.yaml").write_text(existing)
     mocker.patch.object(z2m_module, "Repo")
-    mocker.patch.object(device, "_shell", mocker.AsyncMock())
+    mocker.patch.object(device, "_run_step", mocker.AsyncMock())
     mocker.patch.object(device, "create_weblink", mocker.AsyncMock())
 
     assert await device.install_z2m() is True
@@ -148,7 +154,7 @@ async def test_install_writes_default_configuration(mocker, tmp_path, monkeypatc
 
     (tmp_path / ".fhempy/zigbee2mqtt/data").mkdir(parents=True)
     mocker.patch.object(z2m_module, "Repo")
-    mocker.patch.object(device, "_shell", mocker.AsyncMock())
+    mocker.patch.object(device, "_run_step", mocker.AsyncMock())
     mocker.patch.object(device, "create_weblink", mocker.AsyncMock())
 
     assert await device.install_z2m() is True
