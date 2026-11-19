@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.22.2 (2026-11-19)
+
+### Features
+
+- **wireguard**: Internet through home for every device with the site Pi as gateway
+  ([#1007](https://github.com/fhempy/fhempy/pull/1007),
+  [`ae63692`](https://github.com/fhempy/fhempy/commit/ae63692c47151d4a93314cd16b2d3691de81a7b8))
+
+
 ## v2.22.1 (2026-11-19)
 
 ### Documentation
