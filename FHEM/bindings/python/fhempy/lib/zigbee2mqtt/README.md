@@ -38,6 +38,13 @@ set z2m stop
 ```
 set z2m update
 ```
+The update stops Zigbee2MQTT, pulls the new version, always reinstalls the
+dependencies (`pnpm install --frozen-lockfile`), builds it (`pnpm run build`)
+and starts it again. The reading "update" shows the current step, the fhempy
+log shows the pnpm output if a step fails.
+
+If `node_modules` doesn't fit the installed version (e.g. after an
+interrupted update), the dependencies are installed again on the next start.
 
 ## Logging
 
