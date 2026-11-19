@@ -469,8 +469,12 @@ def test_parse_site():
     assert remote.parse_site(ROUTE, ADDRESSES) == {
         "network": "192.168.2.0/24",
         "ip": "192.168.2.10",
+        "dev": "wlan0",
     }
     assert remote.parse_site("", ADDRESSES) == {}
+    # a strange interface name never goes into the configuration
+    route = ROUTE.replace("wlan0", "wl;rm")
+    assert "dev" not in remote.parse_site(route, ADDRESSES.replace("wlan0", "wl;rm"))
 
 
 class Result:
@@ -695,6 +699,21 @@ async def test_site_via_home(module, mocker):
     # the server routes the whole network of the site
     peers = {p["ip"]: p for p in module.fake.applied[-1]["peers"]}
     assert peers[client["ip"]]["networks"] == ["192.168.2.0/24"]
+    # every device with the Pi as gateway, by the network interface
+    readings()["Holiday_setup"] = ""
+    await module.set_add_site(module.hash, dict(login, name="Holiday", via_home="all"))
+    await wait_for(lambda: "Pi as gateway" in readings()["Holiday_setup"])
+    assert client["via_home"] == "all" and client["site_dev"] == "wlan0"
+    conf = module.client_config("Holiday")
+    assert "ip rule add from" not in conf
+    assert (
+        "PostUp = ip rule add iif wlan0 lookup main suppress_prefixlength 0 "
+        "priority 5180" in conf
+    )
+    assert "PostUp = ip rule add iif wlan0 table 51820 priority 5181" in conf
+    assert "PostDown = ip rule del iif wlan0 table 51820 priority 5181" in conf
+    assert "every device which" in module.client_html("Holiday")
+    assert "checkbox" in module.forms_html()
     await module.set_add_client(module.hash, {"name": "Phone"})
     assert "is a device" in await module.set_add_site(
         module.hash, dict(login, name="Phone")
@@ -766,9 +785,13 @@ async def test_site_internet_only(module, mocker):
     )
     await wait_for(lambda: "needs the devices" in readings().get("Holiday_setup", ""))
     assert "Holiday" not in module.config["clients"]
+    # detected home network: the Pi may still be at home, ask for the network
+    await module.set_add_site(module.hash, dict(login, name="Holiday", via_home="all"))
+    await wait_for(lambda: "right now" in readings().get("Holiday_setup", ""))
     # automatic: the networks overlap, via_home is set
     await module.set_add_site(
-        module.hash, dict(login, name="Holiday", via_home="192.168.1.50")
+        module.hash,
+        dict(login, name="Holiday", via_home="192.168.1.50", network="192.168.1.0/24"),
     )
     await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
     assert "internet only" in readings()["Holiday_setup"]

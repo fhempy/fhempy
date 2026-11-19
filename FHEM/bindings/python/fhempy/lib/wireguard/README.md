@@ -108,28 +108,30 @@ Every site needs its own network: if both use `192.168.178.0/24`, change one of 
 
 ### Internet through home for single devices (e.g. a TV)
 
-Only the traffic to the home network goes through the VPN, the internet of the other site stays direct. For single
-devices of the site the internet can go through your home instead, e.g. so that a TV in the holiday home streams with
-your home connection:
+Only the traffic to the home network goes through the VPN, the internet of the other site stays direct. Devices of
+the site can use your home connection instead, e.g. so that a TV in the holiday home streams with your home
+connection. Tick *Internet through home for devices which use the Pi as gateway* in the form, or:
 
 ```
-set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24 via_home=192.168.2.50
+set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24 via_home=all
 ```
 
-`via_home`: addresses of the devices, comma separated. Running `add_site` again for an existing site changes its
-settings, the keys stay. The device page then shows what to set on the TV (network settings, manual / static):
-its fixed address, gateway / router = the Pi of the site, DNS = your router at home. The Pi of the site routes only
-these devices through the VPN (policy routing, `Table = off`), its own traffic and all other devices stay direct. If
-the VPN is down, the TV uses the internet of the site directly. Streaming uses the upload of your home connection
-(HD needs about 5-8 Mbit/s).
+Then set on the TV (network settings, manual / static): a free address of the site network, gateway / router = the
+address of the Pi of the site, DNS = your router at home (the device page shows the values). Which device uses the
+internet of your home is decided only on the device: every device with the Pi as gateway goes through the VPN, the Pi
+itself and all devices which keep the router of the site as gateway stay direct (policy routing by the network
+interface the traffic comes in, `Table = off`). Instead of `all`, `via_home=192.168.2.50,192.168.2.51` limits it to
+these addresses. Running `add_site` again for an existing site changes its settings, the keys stay. If the VPN
+service of the Pi is stopped, these devices use the internet of the site directly. Streaming uses the upload of your
+home connection (HD needs about 5-8 Mbit/s).
 
 ### Internet only (same network at both sites)
 
 If the other site uses the same network as your home (e.g. both routers give out `192.168.178.x`),
-the two networks can't be connected. The devices in `via_home` can still use the internet of your home:
+the two networks can't be connected. The devices with the Pi as gateway can still use the internet of your home:
 
 ```
-set vpn add_site Holiday host=192.168.178.77 user=pi password=secret via_home=192.168.178.50 mode=internet_only
+set vpn add_site Holiday host=192.168.178.77 user=pi password=secret network=192.168.178.0/24 via_home=all mode=internet_only
 ```
 
 fhempy chooses `mode=internet_only` by itself if the networks collide and `via_home` is set. The Pi of the site
@@ -156,7 +158,7 @@ computer).
 | Command | |
 |---|---|
 | `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=<ips>] [mode=networks\|internet_only]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices, `internet_only`: networks stay separate |
+| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=all\|<ips>] [mode=networks\|internet_only]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for devices with the Pi as gateway, `internet_only`: networks stay separate |
 | `set <name> add_client <site> network=<network>` | Add another site by hand |
 | `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |
