@@ -507,7 +507,26 @@ class FakeConn:
             return Result(ADDRESSES)
         if cmd.startswith("sudo -S -p ''"):
             return Result(self.sudo_output, self.sudo_status)
+        if cmd.startswith("command -v"):
+            # WireGuard isn't installed yet
+            return Result("/usr/sbin/iptables\n", 1)
         return Result()
+
+    async def create_process(self, cmd, input=None, **kwargs):
+        return FakeProcess(await self.run(cmd, input))
+
+
+class FakeProcess:
+    def __init__(self, result):
+        self.result = result
+        self.stdout = self.lines()
+
+    async def lines(self):
+        for line in str(self.result.stdout or "").splitlines(keepends=True):
+            yield line
+
+    async def wait(self):
+        return self.result
 
 
 @pytest.mark.asyncio
@@ -515,7 +534,7 @@ async def test_add_site_via_ssh(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn()
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         assert (host, user, password) == ("192.168.2.10", "pi", "secret")
         return conn
 
@@ -530,10 +549,23 @@ async def test_add_site_via_ssh(module, mocker):
     assert module.config["clients"]["Holiday"]["networks"] == ["192.168.2.0/24"]
     uploaded = conn.uploads["/tmp/tmp.abc"].decode()
     assert uploaded == module.client_config("Holiday")
-    sudo_cmd, sudo_input = next(c for c in conn.commands if c[0].startswith("sudo"))
-    assert sudo_input == "secret\n"
-    assert "wireguard-tools" in sudo_cmd and "wg-quick@wgfhempy" in sudo_cmd
+    sudo = [c for c in conn.commands if c[0].startswith("sudo")]
+    assert all(stdin == "secret\n" for _, stdin in sudo)
+    sudo_cmds = " ".join(cmd for cmd, _ in sudo)
+    assert "wireguard-tools" in sudo_cmds and "restart wg-quick@wgfhempy" in sudo_cmds
+    assert "exec </dev/null" in sudo[0][0]
     assert "secret" not in str(module.config)
+    # live log: commands and output, never the password
+    log = readings()["setup_log"]
+    assert log.startswith("# Setup of site Holiday")
+    assert "$ ip -4 -o route show default" in log
+    assert "$ sudo env DEBIAN_FRONTEND=noninteractive apt-get -y -q install" in log
+    assert "$ sudo systemctl restart wg-quick@wgfhempy" in log
+    assert "default via 192.168.2.1" in log
+    assert log.endswith("# done, network 192.168.2.0/24")
+    assert "secret" not in log and "PrivateKey" not in log
+    page = module.detail_html()
+    assert "informId='vpn-setup_log'" in page and "$ sudo wg show wgfhempy" in page
     peers = module.fake.applied[-1]["peers"]
     assert peers[0]["networks"] == ["192.168.2.0/24"]
 
@@ -543,7 +575,7 @@ async def test_add_site_fails(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn("Sorry, try again.\nsudo: 1 incorrect password attempt\n", 1)
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         return conn
 
     mocker.patch.object(remote, "connect", connect)
@@ -591,7 +623,7 @@ async def test_setup_via_ssh(mocker, tmp_path, monkeypatch):
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake_send)
     conn = FakeConn("Installed\n")
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         assert host == "127.0.0.1"
         missing.write_text("")
         return conn
@@ -610,6 +642,9 @@ async def test_setup_via_ssh(mocker, tmp_path, monkeypatch):
     assert "/tmp/tmp.abc install" in sudo_cmd
     assert conn.uploads["/tmp/tmp.abc"] == open(helper.__file__, "rb").read()
     assert readings()["setup"] == "done"
+    log = readings()["setup_log"]
+    assert "$ sudo python3 -I /tmp/tmp.abc install" in log and "Installed" in log
+    assert "secret" not in log
     await mod.Undefine(mod.hash)
 
 
@@ -618,7 +653,7 @@ async def test_site_via_home(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn()
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         return conn
 
     mocker.patch.object(remote, "connect", connect)
@@ -672,11 +707,11 @@ async def test_add_site_port_and_home_network(module, mocker):
     conn = FakeConn()
     ports = []
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         ports.append(port)
         return conn
 
-    async def site_info(conn):
+    async def site_info(conn, log=None):
         # the Pi is still in the home network of the VPN server
         return {"network": "192.168.1.0/24", "ip": "192.168.1.77"}
 
@@ -711,10 +746,10 @@ async def test_site_internet_only(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn()
 
-    async def connect(host, user, password, port=22):
+    async def connect(host, user, password, port=22, log=None):
         return conn
 
-    async def site_info(conn):
+    async def site_info(conn, log=None):
         # same network as the home network of the VPN server
         return {"network": "192.168.1.0/24", "ip": "192.168.1.77"}
 

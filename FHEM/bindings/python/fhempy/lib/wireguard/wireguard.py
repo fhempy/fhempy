@@ -12,6 +12,7 @@ helper.py, installed once with sudo (command on the device page).
 
 import asyncio
 import base64
+import collections
 import functools
 import html
 import ipaddress
@@ -46,6 +47,10 @@ VIA_PRIORITY = 5180
 MAX_VIA_HOME = 16
 CLIENT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
 RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
+# live log of the setup via SSH (reading setup_log, terminal on the page)
+LOG_LINES = 80
+LOG_LINE_LENGTH = 200
+LOG_DELAY = 0.3
 
 
 def is_root():
@@ -146,6 +151,10 @@ padding:6px 8px;font-weight:normal}
 .wgGrow{flex:1}
 .wgPort{width:90px}
 .wgCard button{margin-top:12px;padding:7px 16px;cursor:pointer}
+.wgShell{background:#1e1e1e;color:#d4d4d4;font:12px/1.4 monospace;padding:8px 10px;
+border-radius:6px;max-height:320px;overflow:auto;white-space:pre-wrap;
+word-break:break-all;margin:12px 0;max-width:932px;box-sizing:border-box}
+.wgShell:empty{display:none}
 </style>"""
 # sends the form as set command, values with spaces in quotes, ; doubled
 FORM_SCRIPT = """<script>
@@ -160,7 +169,10 @@ function wgSend(form, dev, cmd) {
   }
   FW_cmd(FW_root + "?cmd=" + encodeURIComponent(parts.join(" ")) + "&XHR=1",
     function(r) {
-      if (r) {
+      var log = document.querySelector("pre.wgShell");
+      if (r && /^Setting up/.test(r) && log) {
+        log.scrollIntoView({block: "nearest"});
+      } else if (r) {
         if (!/^<html>/.test(r)) r = "<pre>" + FW_htmlQuote(r) + "</pre>";
         FW_okDialog(r);
       }
@@ -284,6 +296,8 @@ class wireguard(generic.FhemModule):
         self._started = False
         self.setup_task = None
         self.setup_state = ""
+        self.log_lines = collections.deque(maxlen=LOG_LINES)
+        self.log_pending = False
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -432,6 +446,33 @@ class wireguard(generic.FhemModule):
 
     def state_file(self):
         return os.path.join(data_directory(), self.hash["NAME"] + ".json")
+
+    async def load_log(self):
+        text = await fhem.ReadingsVal(self.hash["NAME"], "setup_log", "")
+        self.log_lines.extend(str(text or "").splitlines())
+
+    def start_log(self, title):
+        """new live log, returns the function which adds a line"""
+        self.log_lines.clear()
+        self.log_lines.append(f"# {title} ({time.strftime('%Y-%m-%d %H:%M:%S')})")
+        self.schedule_log()
+        return self.log_line
+
+    def log_line(self, line):
+        self.log_lines.append(str(line)[:LOG_LINE_LENGTH])
+        self.schedule_log()
+
+    def schedule_log(self):
+        """at most one reading update every LOG_DELAY seconds"""
+        if not self.log_pending:
+            self.log_pending = True
+            self.create_async_task(self.flush_log(LOG_DELAY))
+
+    async def flush_log(self, delay=0):
+        if delay:
+            await asyncio.sleep(delay)
+        self.log_pending = False
+        await self.set_readings(setup_log="\n".join(self.log_lines))
 
     async def load_config(self):
         config = await utils.run_blocking(
@@ -794,6 +835,7 @@ class wireguard(generic.FhemModule):
         self.session = aiohttp.ClientSession()
         self.net = await utils.run_blocking(functools.partial(network.detect))
         await self.load_config()
+        await self.load_log()
         await self.set_readings(
             "starting",
             vpn_network=str(self.vpn_network),
@@ -1005,14 +1047,19 @@ class wireguard(generic.FhemModule):
 
     async def setup_via_ssh(self, user, password):
         await self.report_setup("connecting to this computer via SSH")
+        log = self.start_log("One-time setup of this computer")
         try:
             await self.install_requirements()
             await remote.install_helper(
-                "127.0.0.1", user, password, self.helper_source(), self.user
+                "127.0.0.1", user, password, self.helper_source(), self.user, log
             )
         except remote.RemoteError as err:
+            log(f"# failed: {err}")
+            await self.flush_log()
             await self.report_setup(f"failed: {err}")
             return
+        log("# done")
+        await self.flush_log()
         await self.report_setup("done")
         await self.check_helper()
 
@@ -1073,24 +1120,27 @@ class wireguard(generic.FhemModule):
 
     async def setup_site(self, name, params):
         reading = f"{name}_setup"
+        log = self.start_log(f"Setup of site {name}")
         try:
             await self.set_readings(**{reading: f"connecting to {params['host']}"})
             await self.install_requirements()
-            text = await self.connect_and_setup_site(name, params)
+            text = await self.connect_and_setup_site(name, params, log)
         except remote.RemoteError as err:
             text = f"failed: {err}"
         except Exception as err:  # noqa: BLE001 asyncssh errors while running
             self.logger.exception(f"Setup of site {name} failed")
             text = f"failed: {err}"
+        log(f"# {text}")
+        await self.flush_log()
         await self.set_readings(**{reading: text})
 
-    async def connect_and_setup_site(self, name, params):
+    async def connect_and_setup_site(self, name, params, log=remote.nolog):
         user, password = str(params["user"]), str(params["password"])
         host = str(params["host"])
         port = ssh_port(params.get("port"))
-        conn = await remote.connect(host, user, password, port)
+        conn = await remote.connect(host, user, password, port, log)
         async with conn:
-            found = await remote.site_info(conn)
+            found = await remote.site_info(conn, log)
             internet_only = self.site_mode(name, params, found)
             net = params.get("network")
             if not net:
@@ -1115,7 +1165,9 @@ class wireguard(generic.FhemModule):
                 **{f"{name}_setup": f"installing WireGuard on {host} ({net})"}
             )
             try:
-                await remote.setup_site(conn, user, password, self.client_config(name))
+                await remote.setup_site(
+                    conn, user, password, self.client_config(name), log
+                )
             except remote.RemoteError:
                 if not existing:
                     await self.remove_client(name)
@@ -1313,6 +1365,8 @@ class wireguard(generic.FhemModule):
             "WireGuard and a small helper "
             f"({html.escape(helper.INSTALL_PATH)}), fhempy may only run this "
             "helper as root. fhempy continues by itself afterwards.</div>"
+            + FORM_STYLE
+            + self.log_html()
         )
 
     def router_html(self):
@@ -1355,7 +1409,25 @@ class wireguard(generic.FhemModule):
             parts += [self.client_html(name) for name in clients]
             parts.append("</div>")
         parts.append(self.forms_html())
+        parts.append(self.log_html())
         return "".join(parts)
+
+    def log_html(self):
+        """terminal with the commands of the setup via SSH, FHEMWEB updates
+        it live (informId of the reading setup_log)"""
+        name = self.hash["NAME"]
+        inform = html.escape(f"{name}-setup_log")
+        return (
+            # the reading itself is shown here, not in the readings table
+            f"<style>table.readings tr:has([informId='{inform}'])"
+            "{display:none}</style>"
+            f"<pre class='wgShell' informId='{inform}'>"
+            f"{html.escape(chr(10).join(self.log_lines))}</pre>"
+            "<script>document.querySelectorAll('pre.wgShell').forEach("
+            "function(p){p.scrollTop=p.scrollHeight;new MutationObserver("
+            "function(){p.scrollTop=p.scrollHeight;}).observe(p,{childList:"
+            "true,characterData:true,subtree:true});});</script>"
+        )
 
     def forms_html(self):
         """forms for add_client and add_site, they send the set command"""

@@ -101,7 +101,8 @@ set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.1
 
 fhempy logs in via SSH, finds the home network of that site, installs `wireguard-tools` and `iptables`, writes
 `/etc/wireguard/wgfhempy.conf` and starts it as system service (also after a reboot). Progress is in the reading
-`Holiday_setup`. The password isn't stored. Afterwards bring the Pi to the other site, it connects by itself.
+`Holiday_setup`. The device page shows every command and its output live, like a terminal (reading `setup_log`, the
+password is never shown), the same for `set vpn setup`. The password isn't stored. Afterwards bring the Pi to the other site, it connects by itself.
 
 Every site needs its own network: if both use `192.168.178.0/24`, change one of them in its router.
 
@@ -182,6 +183,7 @@ computer).
 - `public_ip`, `endpoint`, `port`, `port_forwarding`, `home_network`, `vpn_network`
 - `problem`: what prevents connections from the internet, `none` if all is fine
 - `setup`, `<site>_setup`: progress of the setup via SSH
+- `setup_log`: commands and output of the last setup via SSH (shown live on the device page)
 
 WireGuard has no events for connects, fhempy reads the state of the interface every `interval` seconds (a local
 command, no network traffic). A device counts as connected if it sent a handshake within the last 3 minutes, the
