@@ -1,0 +1,14 @@
+{
+  "requirements": [
+    "segno==1.6.6"
+  ],
+  "installer": {
+    "title": "VPN server (WireGuard)",
+    "description": "Your own VPN into the home network: devices get a QR code for the WireGuard app, port forwarding via UPnP, connected devices as readings",
+    "category": "tools",
+    "order": 6,
+    "name": "vpn",
+    "single": true,
+    "icon": "🔐"
+  }
+}

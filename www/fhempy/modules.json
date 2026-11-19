@@ -27,6 +27,15 @@
   "icon": "🔔"
  },
  {
+  "id": "wireguard",
+  "title": "VPN server (WireGuard)",
+  "description": "Your own VPN into the home network: devices get a QR code for the WireGuard app, port forwarding via UPnP, connected devices as readings",
+  "category": "tools",
+  "name": "vpn",
+  "single": true,
+  "icon": "🔐"
+ },
+ {
   "id": "dashboard",
   "title": "Tablet dashboard",
   "description": "A modern dashboard for wall, couch and door tablets: set up in one minute on the tablet, doorbell with live video",
