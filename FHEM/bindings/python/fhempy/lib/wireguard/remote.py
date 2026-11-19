@@ -1,7 +1,10 @@
 """SSH with user and password: the one-time setup on this computer and the
 automatic setup of the Raspberry Pi of another site. The password is only
 used for the connection, it's neither stored nor logged. SSH host keys are
-trusted on first use (same known_hosts as the peer installer)."""
+trusted on first use (same known_hosts as the peer installer).
+
+Every command and its output go live to log (a callable with one line), the
+device page shows them like a terminal."""
 
 import asyncio
 import ipaddress
@@ -12,14 +15,27 @@ from pathlib import Path
 from ..core.peer_installer import peer_installer
 
 CONNECT_TIMEOUT = 30
+COMMAND_TIMEOUT = 120
 DEFAULT_SSH_PORT = 22
 # apt-get update + install wireguard-tools on a Raspberry Pi
 INSTALL_TIMEOUT = 900
 SITE_INTERFACE = "wgfhempy"
+# shorter passwords would hide too much of the output
+MIN_MASK_LENGTH = 3
 
 
 class RemoteError(Exception):
     pass
+
+
+def nolog(line):
+    """default log: nothing is shown"""
+
+
+def mask(text, password):
+    if password and len(password) >= MIN_MASK_LENGTH:
+        return text.replace(password, "***")
+    return text
 
 
 def known_hosts_name(host, port):
@@ -27,7 +43,7 @@ def known_hosts_name(host, port):
     return host if port == DEFAULT_SSH_PORT else f"[{host}]:{port}"
 
 
-async def trust_host_key(asyncssh, host, port=DEFAULT_SSH_PORT):
+async def trust_host_key(asyncssh, host, port=DEFAULT_SSH_PORT, log=nolog):
     name = known_hosts_name(host, port)
     known = await asyncio.to_thread(peer_installer._known_host_lines)
     if any(line.split(" ", 1)[0] == name for line in known):
@@ -40,14 +56,16 @@ async def trust_host_key(asyncssh, host, port=DEFAULT_SSH_PORT):
         raise RemoteError(f"{host} didn't send an SSH host key")
     key_line = key.export_public_key("openssh").decode().strip()
     await asyncio.to_thread(peer_installer._remember_host_key, name, key_line)
+    log(f"# new SSH host key of {name} remembered: {key.get_fingerprint()}")
 
 
-async def connect(host, user, password, port=DEFAULT_SSH_PORT):
+async def connect(host, user, password, port=DEFAULT_SSH_PORT, log=nolog):
     import asyncssh
 
+    log(f"# ssh {user}@{host}" + ("" if port == DEFAULT_SSH_PORT else f" -p {port}"))
     try:
-        await trust_host_key(asyncssh, host, port)
-        return await asyncio.wait_for(
+        await trust_host_key(asyncssh, host, port, log)
+        conn = await asyncio.wait_for(
             asyncssh.connect(
                 host,
                 port=port,
@@ -71,51 +89,90 @@ async def connect(host, user, password, port=DEFAULT_SSH_PORT):
             f"SSH connection to {host}:{port} failed ({err or type(err).__name__}), "
             "is SSH enabled?"
         ) from None
+    log("# connected")
+    return conn
 
 
-async def upload(conn, data):
+async def execute(
+    conn,
+    command,
+    log=nolog,
+    show=None,
+    stdin=None,
+    password=None,
+    limit=COMMAND_TIMEOUT,
+):
+    """runs command, shows "$ show" and each line of the output while it
+    runs. Returns exit status and output (stdout and stderr)."""
+    import asyncssh
+
+    log(f"$ {show or command}")
+    lines = []
+    try:
+        async with asyncio.timeout(limit):
+            process = await conn.create_process(
+                command, input=stdin or "", stderr=asyncssh.STDOUT, errors="replace"
+            )
+            async for line in process.stdout:
+                if not line:
+                    # end of the output
+                    continue
+                line = mask(line.rstrip("\r\n"), password)
+                lines.append(line)
+                log(line)
+            result = await process.wait()
+    except asyncio.TimeoutError:
+        log("# took too long, stopped")
+        raise RemoteError("took too long") from None
+    return result.exit_status, "\n".join(lines)
+
+
+async def upload(conn, data, log=nolog, what="file"):
     """private temporary file on the remote computer, returns its path"""
     result = await conn.run("umask 077; mktemp", check=True)
     path = result.stdout.strip()
     await conn.run(
         f"umask 077; cat > {shlex.quote(path)}", input=data, encoding=None, check=True
     )
+    log(f"# {what} copied to {path} ({len(data)} bytes)")
     return path
 
 
-async def sudo(conn, user, password, command, limit=INSTALL_TIMEOUT):
-    """runs command (a list) as root, output of the command. Nothing else is
-    sent to stdin: with NOPASSWD sudo doesn't read the password line."""
-    import asyncssh
-
+async def sudo(conn, user, password, command, log=nolog, limit=INSTALL_TIMEOUT):
+    """runs command (a list) as root, output of the command. stdin of the
+    command is /dev/null: with NOPASSWD sudo doesn't read the password line."""
     line = " ".join(shlex.quote(str(a)) for a in command)
-    try:
-        async with asyncio.timeout(limit):
-            result = await conn.run(
-                f"sudo -S -p '' {line}",
-                input=password + "\n",
-                stderr=asyncssh.STDOUT,
-            )
-    except asyncio.TimeoutError:
-        raise RemoteError("took too long") from None
-    out = str(result.stdout or "")
-    if result.exit_status != 0:
+    inner = shlex.quote(f"exec </dev/null; {line}")
+    status, out = await execute(
+        conn,
+        f"sudo -S -p '' sh -c {inner}",
+        log,
+        show=f"sudo {line}",
+        stdin=password + "\n",
+        password=password,
+        limit=limit,
+    )
+    if status != 0:
         if "incorrect password" in out or "not in the sudoers" in out:
             raise RemoteError(f"user {user} has no sudo rights")
         lines = [x for x in out.splitlines() if x.strip()]
-        raise RemoteError(lines[-1] if lines else f"exit code {result.exit_status}")
+        raise RemoteError(lines[-1] if lines else f"exit code {status}")
     return out
 
 
-async def install_helper(host, user, password, helper_path, fhempy_user):
+async def install_helper(host, user, password, helper_path, fhempy_user, log=nolog):
     """one-time setup on this computer via SSH to itself"""
-    conn = await connect(host, user, password)
+    conn = await connect(host, user, password, log=log)
     async with conn:
         source = await asyncio.to_thread(Path(helper_path).read_bytes)
-        path = await upload(conn, source)
+        path = await upload(conn, source, log, "helper")
         try:
             return await sudo(
-                conn, user, password, ["python3", "-I", path, "install", fhempy_user]
+                conn,
+                user,
+                password,
+                ["python3", "-I", path, "install", fhempy_user],
+                log,
             )
         finally:
             await conn.run(f"rm -f {shlex.quote(path)}")
@@ -141,29 +198,43 @@ def parse_site(route, addresses):
     return {}
 
 
-async def site_info(conn):
-    route = await conn.run("ip -4 -o route show default")
-    addresses = await conn.run("ip -4 -o addr show")
-    return parse_site(str(route.stdout or ""), str(addresses.stdout or ""))
+async def site_info(conn, log=nolog):
+    _, route = await execute(conn, "ip -4 -o route show default", log)
+    _, addresses = await execute(conn, "ip -4 -o addr show", log)
+    return parse_site(route, addresses)
 
 
-async def setup_site(conn, user, password, config):
+async def setup_site(conn, user, password, config, log=nolog):
     """installs WireGuard on the other site and starts the tunnel"""
-    path = await upload(conn, config.encode())
+    status, _ = await execute(conn, "command -v wg && command -v iptables", log)
+    path = await upload(conn, config.encode(), log, "configuration")
     target = f"/etc/wireguard/{SITE_INTERFACE}.conf"
     unit = f"wg-quick@{SITE_INTERFACE}"
-    script = (
-        # with NOPASSWD sudo leaves the password line on stdin
-        "exec </dev/null; set -e; "
-        "if ! command -v wg >/dev/null || ! command -v iptables >/dev/null; then "
-        "export DEBIAN_FRONTEND=noninteractive; apt-get -q update >/dev/null; "
-        "apt-get -y -q install wireguard-tools iptables >/dev/null; fi; "
-        f"mkdir -p -m 700 /etc/wireguard; install -m 600 {shlex.quote(path)} "
-        f"{target}; rm -f {shlex.quote(path)}; "
-        f"systemctl enable --quiet {unit}; systemctl restart {unit}; "
-        "echo started"
-    )
+    steps = []
+    if status != 0:
+        steps += [
+            ["env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "-q", "update"],
+            [
+                "env",
+                "DEBIAN_FRONTEND=noninteractive",
+                "apt-get",
+                "-y",
+                "-q",
+                "install",
+                "wireguard-tools",
+                "iptables",
+            ],
+        ]
+    steps += [
+        ["mkdir", "-p", "-m", "700", "/etc/wireguard"],
+        ["install", "-m", "600", path, target],
+        ["systemctl", "enable", "--quiet", unit],
+        ["systemctl", "restart", unit],
+        ["wg", "show", SITE_INTERFACE],
+    ]
     try:
-        return await sudo(conn, user, password, ["sh", "-c", script])
+        for step in steps:
+            await sudo(conn, user, password, step, log)
     finally:
         await conn.run(f"rm -f {shlex.quote(path)}")
+    return "started"
