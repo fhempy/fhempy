@@ -87,14 +87,21 @@ A Raspberry Pi (or another Linux computer with Debian / Raspberry Pi OS) at anot
 your parents' house, connects both home networks. fhempy sets it up by itself, you only need its address and a user
 with sudo rights:
 
+The easiest way is the form *Add a site* on the device page. As command:
+
 ```
-set vpn add_site Holiday host=192.168.2.10 user=pi password=secret
+set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24
 ```
+
+- `host`: the address under which fhempy reaches that Pi **now**, usually while it's still in your home network
+  (then `network` is needed, see below). `port=2222` if SSH doesn't use port 22.
+- `network`: the home network of the other site, i.e. the addresses its router gives out (e.g. `192.168.2.0/24` if
+  the devices there get `192.168.2.x`). Without it, fhempy reads it from the Pi, which only works when the Pi is
+  already at the other site.
 
 fhempy logs in via SSH, finds the home network of that site, installs `wireguard-tools` and `iptables`, writes
 `/etc/wireguard/wgfhempy.conf` and starts it as system service (also after a reboot). Progress is in the reading
-`Holiday_setup`. The password isn't stored. `host` must be reachable from here, e.g. while the Pi is still in your
-home network or through the VPN of a phone. Another home network than the detected one: add `network=...`.
+`Holiday_setup`. The password isn't stored. Afterwards bring the Pi to the other site, it connects by itself.
 
 Every site needs its own network: if both use `192.168.178.0/24`, change one of them in its router.
 
@@ -105,7 +112,7 @@ devices of the site the internet can go through your home instead, e.g. so that 
 your home connection:
 
 ```
-set vpn add_site Holiday host=192.168.2.10 user=pi password=secret via_home=192.168.2.50
+set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24 via_home=192.168.2.50
 ```
 
 `via_home`: addresses of the devices, comma separated. Running `add_site` again for an existing site changes its
@@ -133,7 +140,7 @@ computer).
 | Command | |
 |---|---|
 | `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_site <site> host=<ip> user=<user> password=<pw> [via_home=<ips>]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices |
+| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=<ips>]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices |
 | `set <name> add_client <site> network=<network>` | Add another site by hand |
 | `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |
