@@ -279,7 +279,10 @@ async def test_starts_without_clients(module, tmp_path):
     assert readings()["problem"] == "none"
     state_file = tmp_path / ".fhempy" / "wireguard" / "vpn.json"
     assert state_file.stat().st_mode & 0o077 == 0
-    assert "add_client Phone" in module.detail_html()
+    page = module.detail_html()
+    assert "Add a device" in page and "Set up site" in page
+    assert 'wgSend(this,&quot;vpn&quot;,"add_site")' in page
+    assert "name='port' type='number'" in page
 
 
 @pytest.mark.asyncio
@@ -512,7 +515,7 @@ async def test_add_site_via_ssh(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn()
 
-    async def connect(host, user, password):
+    async def connect(host, user, password, port=22):
         assert (host, user, password) == ("192.168.2.10", "pi", "secret")
         return conn
 
@@ -540,7 +543,7 @@ async def test_add_site_fails(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn("Sorry, try again.\nsudo: 1 incorrect password attempt\n", 1)
 
-    async def connect(host, user, password):
+    async def connect(host, user, password, port=22):
         return conn
 
     mocker.patch.object(remote, "connect", connect)
@@ -588,7 +591,7 @@ async def test_setup_via_ssh(mocker, tmp_path, monkeypatch):
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake_send)
     conn = FakeConn("Installed\n")
 
-    async def connect(host, user, password):
+    async def connect(host, user, password, port=22):
         assert host == "127.0.0.1"
         missing.write_text("")
         return conn
@@ -615,7 +618,7 @@ async def test_site_via_home(module, mocker):
     await check_and_install_dependencies("core/peer_installer")
     conn = FakeConn()
 
-    async def connect(host, user, password):
+    async def connect(host, user, password, port=22):
         return conn
 
     mocker.patch.object(remote, "connect", connect)
@@ -661,3 +664,41 @@ async def test_site_via_home(module, mocker):
     assert "is a device" in await module.set_add_site(
         module.hash, dict(login, name="Phone")
     )
+
+
+@pytest.mark.asyncio
+async def test_add_site_port_and_home_network(module, mocker):
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn()
+    ports = []
+
+    async def connect(host, user, password, port=22):
+        ports.append(port)
+        return conn
+
+    async def site_info(conn):
+        # the Pi is still in the home network of the VPN server
+        return {"network": "192.168.1.0/24", "ip": "192.168.1.77"}
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(remote, "site_info", site_info)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    login = {"host": "192.168.1.77", "user": "pi", "password": "secret"}
+    await module.set_add_site(module.hash, dict(login, name="Holiday", port="2222"))
+    await wait_for(
+        lambda: "in your home network right now" in readings().get("Holiday_setup", "")
+    )
+    assert ports == [2222]
+    await module.set_add_site(module.hash, dict(login, name="Holiday", port="99999"))
+    await wait_for(lambda: "invalid SSH port" in readings().get("Holiday_setup", ""))
+    await module.set_add_site(
+        module.hash, dict(login, name="Holiday", network="192.168.2.0/24")
+    )
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert ports == [2222, 22]
+    assert module.config["clients"]["Holiday"]["networks"] == ["192.168.2.0/24"]
+
+
+def test_known_hosts_name():
+    assert remote.known_hosts_name("1.2.3.4", 22) == "1.2.3.4"
+    assert remote.known_hosts_name("1.2.3.4", 2222) == "[1.2.3.4]:2222"

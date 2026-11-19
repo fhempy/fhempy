@@ -132,6 +132,58 @@ def format_time(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
 
 
+FORM_STYLE = """<style>
+.wgForms{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;margin:12px 0}
+.wgCard{flex:1 1 300px;max-width:460px;border:1px solid #ccc;border-radius:8px;
+padding:12px 14px;box-sizing:border-box}
+.wgCard h4{margin:0 0 4px}
+.wgCard p{margin:0 0 10px;opacity:.8}
+.wgCard label{display:block;margin:8px 0 2px;font-weight:bold}
+.wgCard input{display:block;width:100%;box-sizing:border-box;margin-top:3px;
+padding:6px 8px;font-weight:normal}
+.wgCard small{display:block;opacity:.7}
+.wgRow{display:flex;gap:8px}
+.wgGrow{flex:1}
+.wgPort{width:90px}
+.wgCard button{margin-top:12px;padding:7px 16px;cursor:pointer}
+</style>"""
+# sends the form as set command, values with spaces in quotes, ; doubled
+FORM_SCRIPT = """<script>
+function wgSend(form, dev, cmd) {
+  var parts = ["set", dev, cmd, form.elements.namedItem("name").value];
+  for (var i = 0; i < form.elements.length; i++) {
+    var e = form.elements[i];
+    if (!e.name || e.name == "name" || !e.value) continue;
+    var v = e.value.replace(/;/g, ";;");
+    if (/[\\s"]/.test(v)) v = '"' + v.replace(/"/g, '\\\\"') + '"';
+    parts.push(e.name + "=" + v);
+  }
+  FW_cmd(FW_root + "?cmd=" + encodeURIComponent(parts.join(" ")) + "&XHR=1",
+    function(r) {
+      if (r) {
+        if (!/^<html>/.test(r)) r = "<pre>" + FW_htmlQuote(r) + "</pre>";
+        FW_okDialog(r);
+      }
+      var pw = form.elements.namedItem("password");
+      if (pw) pw.value = "";
+    });
+  return false;
+}
+</script>"""
+
+
+def ssh_port(value):
+    if value in (None, ""):
+        return remote.DEFAULT_SSH_PORT
+    try:
+        port = int(str(value))
+    except ValueError:
+        raise remote.RemoteError(f"invalid SSH port {value}") from None
+    if not 1 <= port <= 65535:
+        raise remote.RemoteError(f"invalid SSH port {value}")
+    return port
+
+
 def valid_port(value):
     value = str(value or "").strip()
     if not value:
@@ -281,12 +333,24 @@ class wireguard(generic.FhemModule):
                 },
                 "add_site": {
                     "args": ["name"],
-                    "argsh": ["host", "user", "password", "network", "via_home"],
+                    "argsh": [
+                        "host",
+                        "port",
+                        "user",
+                        "password",
+                        "network",
+                        "via_home",
+                    ],
                     "help": "Connect another site automatically: fhempy logs "
                     "in to its Raspberry Pi via SSH, installs WireGuard and "
                     "connects it, e.g. <code>add_site Holiday "
-                    "host=192.168.2.10 user=pi password=secret</code>. Its "
-                    "home network is detected. The password is not stored."
+                    "host=192.168.1.77 user=pi password=secret</code>.<br>"
+                    "host: address of that Pi from here (e.g. while it is "
+                    "still in your home network), port: SSH port (22).<br>"
+                    "network: home network of the other site, e.g. "
+                    "192.168.2.0/24, needed if the Pi is still in your home "
+                    "network. The password is not stored. Easier: the form "
+                    "on the device page."
                     "<br>via_home=192.168.2.50,192.168.2.51: these devices "
                     "(e.g. a TV) use the Pi as router, their internet goes "
                     "through your home. Run add_site again to change it.",
@@ -543,6 +607,21 @@ class wireguard(generic.FhemModule):
                     f"priority {VIA_PRIORITY + 1}",
                 ]
         return lines
+
+    def detected_site_network(self, found):
+        net = found.get("network")
+        if not net:
+            raise remote.RemoteError(
+                "home network of the site not found, enter it (network=...)"
+            )
+        home = self.net.get("home_network")
+        if home and ipaddress.IPv4Network(net).overlaps(ipaddress.IPv4Network(home)):
+            raise remote.RemoteError(
+                f"the Pi ({found.get('ip')}) is in your home network right now: "
+                "enter the home network of the other site (network=..., e.g. "
+                "192.168.2.0/24, see its router)"
+            )
+        return net
 
     def check_via_home(self, value, network, site_ip):
         """devices of the other site whose internet goes through home"""
@@ -928,7 +1007,7 @@ class wireguard(generic.FhemModule):
         missing = [p for p in ("host", "user", "password") if not params.get(p)]
         if missing:
             return (
-                f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.2.10 "
+                f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.1.77 [port=22] "
                 "user=pi password=... [network=192.168.2.0/24]"
             )
         self.create_async_task(self.setup_site(name, params))
@@ -953,14 +1032,11 @@ class wireguard(generic.FhemModule):
     async def connect_and_setup_site(self, name, params):
         user, password = str(params["user"]), str(params["password"])
         host = str(params["host"])
-        conn = await remote.connect(host, user, password)
+        port = ssh_port(params.get("port"))
+        conn = await remote.connect(host, user, password, port)
         async with conn:
             found = await remote.site_info(conn)
-            net = params.get("network") or found.get("network")
-            if not net:
-                raise remote.RemoteError(
-                    "home network of the site not found, add network=..."
-                )
+            net = params.get("network") or self.detected_site_network(found)
             net, error = self.check_site_network(net, name)
             if error:
                 raise remote.RemoteError(error)
@@ -1174,10 +1250,44 @@ class wireguard(generic.FhemModule):
             parts.append("<div style='margin:8px 0'><b>Devices</b>")
             parts += [self.client_html(name) for name in clients]
             parts.append("</div>")
-        else:
-            parts.append(
-                "<div style='margin:8px 0'>Add your first device: "
-                f"<code>set {html.escape(self.hash['NAME'])} add_client Phone"
-                "</code></div>"
-            )
+        parts.append(self.forms_html())
         return "".join(parts)
+
+    def forms_html(self):
+        """forms for add_client and add_site, they send the set command"""
+        name = html.escape(json.dumps(self.hash["NAME"]).replace("<", "\\u003c"))
+        return (
+            FORM_STYLE + FORM_SCRIPT + "<div class='wgForms'>"
+            "<form class='wgCard' onsubmit='return wgSend(this," + name + ","
+            '"add_client")\'><h4>Add a device</h4><p>Phone, tablet or laptop: '
+            "you get a QR code for the WireGuard app.</p>"
+            "<label>Name<input name='name' required pattern='[A-Za-z0-9_-]{1,24}'"
+            " placeholder='Phone'></label>"
+            "<button type='submit'>Add device</button></form>"
+            "<form class='wgCard' onsubmit='return wgSend(this," + name + ","
+            '"add_site")\'><h4>Add a site</h4><p>A Raspberry Pi at another '
+            "place (e.g. holiday home): fhempy logs in via SSH, installs "
+            "WireGuard and connects both home networks. The password is not "
+            "stored.</p>"
+            "<label>Name<input name='name' required pattern='[A-Za-z0-9_-]{1,24}'"
+            " placeholder='Holiday'></label>"
+            "<div class='wgRow'><label class='wgGrow'>Address of the Pi<input "
+            "name='host' required placeholder='192.168.1.77'></label>"
+            "<label class='wgPort'>SSH port<input name='port' type='number' "
+            "min='1' max='65535' value='22'></label></div>"
+            "<small>How fhempy reaches the Pi now, e.g. while it is still in "
+            "your home network.</small>"
+            "<div class='wgRow'><label class='wgGrow'>User<input name='user' "
+            "required value='pi' autocomplete='off'></label>"
+            "<label class='wgGrow'>Password<input name='password' "
+            "type='password' required autocomplete='new-password'></label></div>"
+            "<label>Home network of the site<input name='network' "
+            "placeholder='detected, e.g. 192.168.2.0/24'></label>"
+            "<small>Needed if the Pi is still in your home network: the network "
+            "of the router at the other site.</small>"
+            "<label>Internet through home for<input name='via_home' "
+            "placeholder='optional, e.g. 192.168.2.50 (TV)'></label>"
+            "<small>Addresses of devices at the site whose internet goes "
+            "through your home. Use the form again to change it.</small>"
+            "<button type='submit'>Set up site</button></form></div>"
+        )

@@ -12,6 +12,7 @@ from pathlib import Path
 from ..core.peer_installer import peer_installer
 
 CONNECT_TIMEOUT = 30
+DEFAULT_SSH_PORT = 22
 # apt-get update + install wireguard-tools on a Raspberry Pi
 INSTALL_TIMEOUT = 900
 SITE_INTERFACE = "wgfhempy"
@@ -21,27 +22,35 @@ class RemoteError(Exception):
     pass
 
 
-async def trust_host_key(asyncssh, host):
+def known_hosts_name(host, port):
+    """host name in known_hosts, [host]:port for other ports than 22"""
+    return host if port == DEFAULT_SSH_PORT else f"[{host}]:{port}"
+
+
+async def trust_host_key(asyncssh, host, port=DEFAULT_SSH_PORT):
+    name = known_hosts_name(host, port)
     known = await asyncio.to_thread(peer_installer._known_host_lines)
-    if any(line.split(" ", 1)[0] == host for line in known):
+    if any(line.split(" ", 1)[0] == name for line in known):
         return
     key = await asyncio.wait_for(
-        asyncssh.get_server_host_key(host, family=socket.AF_INET), CONNECT_TIMEOUT
+        asyncssh.get_server_host_key(host, port=port, family=socket.AF_INET),
+        CONNECT_TIMEOUT,
     )
     if key is None:
         raise RemoteError(f"{host} didn't send an SSH host key")
     key_line = key.export_public_key("openssh").decode().strip()
-    await asyncio.to_thread(peer_installer._remember_host_key, host, key_line)
+    await asyncio.to_thread(peer_installer._remember_host_key, name, key_line)
 
 
-async def connect(host, user, password):
+async def connect(host, user, password, port=DEFAULT_SSH_PORT):
     import asyncssh
 
     try:
-        await trust_host_key(asyncssh, host)
+        await trust_host_key(asyncssh, host, port)
         return await asyncio.wait_for(
             asyncssh.connect(
                 host,
+                port=port,
                 username=user,
                 password=password,
                 known_hosts=peer_installer.KNOWN_HOSTS,
@@ -59,7 +68,7 @@ async def connect(host, user, password):
         ) from None
     except (OSError, asyncio.TimeoutError, asyncssh.Error) as err:
         raise RemoteError(
-            f"SSH connection to {host} failed ({err or type(err).__name__}), "
+            f"SSH connection to {host}:{port} failed ({err or type(err).__name__}), "
             "is SSH enabled?"
         ) from None
 
