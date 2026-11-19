@@ -90,14 +90,15 @@ with sudo rights:
 The easiest way is the form *Add a site* on the device page. As command:
 
 ```
-set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24
+set vpn add_site Holiday host=192.168.1.77 user=pi password=secret
 ```
 
-- `host`: the address under which fhempy reaches that Pi **now**, usually while it's still in your home network
-  (then `network` is needed, see below). `port=2222` if SSH doesn't use port 22.
-- `network`: the home network of the other site, i.e. the addresses its router gives out (e.g. `192.168.2.0/24` if
-  the devices there get `192.168.2.x`). Without it, fhempy reads it from the Pi, which only works when the Pi is
-  already at the other site.
+- `host`: the address under which fhempy reaches that Pi now. `port=2222` if SSH doesn't use port 22.
+- The home network of the other site is detected on the Pi. If it's the same as your home network (both routers
+  give out e.g. `192.168.178.x`, or the Pi is still at home), the networks can't be connected: the setup finishes
+  with a warning, only the Pi itself is connected (at its VPN address), unless *internet through home* is used (see
+  below), then the network doesn't matter. A Pi set up at home: bring it to the site and run the setup again with
+  its VPN address as `host` to connect the networks. `network=192.168.2.0/24` sets the network by hand.
 
 fhempy logs in via SSH, finds the home network of that site, installs `wireguard-tools` and `iptables`, writes
 `/etc/wireguard/wgfhempy.conf` and starts it as system service (also after a reboot). Progress is in the reading
@@ -113,7 +114,7 @@ the site can use your home connection instead, e.g. so that a TV in the holiday 
 connection. Tick *Internet through home for devices which use the Pi as gateway* in the form, or:
 
 ```
-set vpn add_site Holiday host=192.168.1.77 user=pi password=secret network=192.168.2.0/24 via_home=all
+set vpn add_site Holiday host=192.168.1.77 user=pi password=secret via_home=all
 ```
 
 Then set on the TV (network settings, manual / static): a free address of the site network, gateway / router = the
@@ -131,10 +132,11 @@ If the other site uses the same network as your home (e.g. both routers give out
 the two networks can't be connected. The devices with the Pi as gateway can still use the internet of your home:
 
 ```
-set vpn add_site Holiday host=192.168.178.77 user=pi password=secret network=192.168.178.0/24 via_home=all mode=internet_only
+set vpn add_site Holiday host=192.168.178.77 user=pi password=secret via_home=all
 ```
 
-fhempy chooses `mode=internet_only` by itself if the networks collide and `via_home` is set. The Pi of the site
+fhempy chooses `mode=internet_only` by itself if the networks collide (no warning then, the network doesn't matter
+for the internet). The Pi of the site
 sends the traffic of these devices with its own VPN address (NAT), the home network and the network of the site
 stay separate: nothing from home reaches the site, phones don't get the network of the site. The TV uses DNS
 `1.1.1.1` (through the VPN), because the address of your router at home is a local address at the site.
