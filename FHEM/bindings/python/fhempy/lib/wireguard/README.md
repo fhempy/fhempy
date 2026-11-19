@@ -122,6 +122,21 @@ these devices through the VPN (policy routing, `Table = off`), its own traffic a
 the VPN is down, the TV uses the internet of the site directly. Streaming uses the upload of your home connection
 (HD needs about 5-8 Mbit/s).
 
+### Internet only (same network at both sites)
+
+If the other site uses the same network as your home (e.g. both routers give out `192.168.178.x`),
+the two networks can't be connected. The devices in `via_home` can still use the internet of your home:
+
+```
+set vpn add_site Holiday host=192.168.178.77 user=pi password=secret via_home=192.168.178.50 mode=internet_only
+```
+
+fhempy chooses `mode=internet_only` by itself if the networks collide and `via_home` is set. The Pi of the site
+sends the traffic of these devices with its own VPN address (NAT), the home network and the network of the site
+stay separate: nothing from home reaches the site, phones don't get the network of the site. The TV uses DNS
+`1.1.1.1` (through the VPN), because the address of your router at home is a local address at the site.
+`mode=networks` connects both networks (default if they don't collide).
+
 By hand instead: `set vpn add_client Holiday network=192.168.2.0/24`, the device page shows the configuration file
 for the Pi of the other site:
 
@@ -140,7 +155,7 @@ computer).
 | Command | |
 |---|---|
 | `set <name> add_client <device>` | Add a device, shows its QR code |
-| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=<ips>]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices |
+| `set <name> add_site <site> host=<ip> [port=<ssh port>] user=<user> password=<pw> [network=<network>] [via_home=<ips>] [mode=networks\|internet_only]` | Set up (or change) the Pi of another site via SSH (site to site), optionally internet through home for some devices, `internet_only`: networks stay separate |
 | `set <name> add_client <site> network=<network>` | Add another site by hand |
 | `set <name> setup user=<user> password=<pw>` | One-time setup of this computer via SSH |
 | `set <name> remove_client <device>` | Remove a device, it can't connect anymore |

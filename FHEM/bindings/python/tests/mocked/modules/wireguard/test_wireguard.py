@@ -702,3 +702,71 @@ async def test_add_site_port_and_home_network(module, mocker):
 def test_known_hosts_name():
     assert remote.known_hosts_name("1.2.3.4", 22) == "1.2.3.4"
     assert remote.known_hosts_name("1.2.3.4", 2222) == "[1.2.3.4]:2222"
+
+
+@pytest.mark.asyncio
+async def test_site_internet_only(module, mocker):
+    """both sites use the same network: only the internet of the via_home
+    devices goes through home, the networks aren't connected"""
+    await check_and_install_dependencies("core/peer_installer")
+    conn = FakeConn()
+
+    async def connect(host, user, password, port=22):
+        return conn
+
+    async def site_info(conn):
+        # same network as the home network of the VPN server
+        return {"network": "192.168.1.0/24", "ip": "192.168.1.77"}
+
+    mocker.patch.object(remote, "connect", connect)
+    mocker.patch.object(remote, "site_info", site_info)
+    mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
+    login = {"host": "192.168.1.77", "user": "pi", "password": "secret"}
+    assert "mode:" in await module.set_add_site(
+        module.hash, dict(login, name="Holiday", mode="x")
+    )
+    # internet_only without devices makes no sense
+    await module.set_add_site(
+        module.hash, dict(login, name="Holiday", mode="internet_only")
+    )
+    await wait_for(lambda: "needs the devices" in readings().get("Holiday_setup", ""))
+    assert "Holiday" not in module.config["clients"]
+    # automatic: the networks overlap, via_home is set
+    await module.set_add_site(
+        module.hash, dict(login, name="Holiday", via_home="192.168.1.50")
+    )
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert "internet only" in readings()["Holiday_setup"]
+    client = module.config["clients"]["Holiday"]
+    assert client["networks"] == [] and client["internet_only"]
+    assert client["site_network"] == "192.168.1.0/24"
+    conf = module.client_config("Holiday")
+    assert conf == list(conn.uploads.values())[-1].decode()
+    assert "Table = off" in conf and "AllowedIPs = 0.0.0.0/0" in conf
+    assert "PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE" in conf
+    assert "--ctstate RELATED,ESTABLISHED" in conf
+    # no route into the own network through the VPN
+    assert "ip route add 192.168.1.0/24" not in conf
+    assert f"PostUp = ip route add {module.vpn_network} dev %i" in conf
+    assert "ip rule add from 192.168.1.50 table 51820 priority 5181" in conf
+    # the server routes only the VPN address of the Pi
+    peers = {p["ip"]: p for p in module.fake.applied[-1]["peers"]}
+    assert peers[client["ip"]]["networks"] == []
+    page = module.client_html("Holiday")
+    assert "internet only" in page and "DNS <b>1.1.1.1</b>" in page
+    # phones don't get the network of the site
+    await module.set_add_client(module.hash, {"name": "Phone"})
+    assert module.client_config("Phone").count("192.168.1.0/24") == 1
+    # explicitly networks: overlap is an error
+    readings()["Holiday_setup"] = ""
+    await module.set_add_site(
+        module.hash,
+        dict(
+            login,
+            name="Holiday",
+            via_home="192.168.1.50",
+            mode="networks",
+            network="192.168.1.0/24",
+        ),
+    )
+    await wait_for(lambda: "overlaps" in readings().get("Holiday_setup", ""))
