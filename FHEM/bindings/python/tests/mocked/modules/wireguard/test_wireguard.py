@@ -570,6 +570,9 @@ async def test_add_site_via_ssh(module, mocker):
     assert "secret" not in log and "PrivateKey" not in log
     page = module.detail_html()
     assert "informId='vpn-setup_log'" in page and "$ sudo wg show wgfhempy" in page
+    # popup with the log, opens by itself when lines arrive
+    assert "class='wgLogBack'" in page and "wgLogOpen" in page
+    assert "Show setup log" in page
     peers = module.fake.applied[-1]["peers"]
     assert peers[0]["networks"] == ["192.168.2.0/24"]
 
@@ -602,6 +605,7 @@ async def test_add_site_fails(module, mocker):
             "user": "pi",
             "password": "x",
             "network": conn_net,
+            "mode": "networks",
         },
     )
     await wait_for(lambda: "overlaps" in readings().get("Holiday_setup", ""))
@@ -738,19 +742,34 @@ async def test_add_site_port_and_home_network(module, mocker):
     mocker.patch.object(remote, "site_info", site_info)
     mocker.patch.object(module, "install_requirements", mocker.AsyncMock())
     login = {"host": "192.168.1.77", "user": "pi", "password": "secret"}
-    await module.set_add_site(module.hash, dict(login, name="Holiday", port="2222"))
-    await wait_for(
-        lambda: "in your home network right now" in readings().get("Holiday_setup", "")
-    )
-    assert ports == [2222]
     await module.set_add_site(module.hash, dict(login, name="Holiday", port="99999"))
     await wait_for(lambda: "invalid SSH port" in readings().get("Holiday_setup", ""))
+    # the network is detected: the same as home gives only a warning, the
+    # Pi itself is connected
+    await module.set_add_site(module.hash, dict(login, name="Holiday", port="2222"))
+    await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
+    assert ports == [2222]
+    assert "warning: same network as at home" in readings()["Holiday_setup"]
+    client = module.config["clients"]["Holiday"]
+    assert client["internet_only"] and client["networks"] == []
+    conf = module.client_config("Holiday")
+    assert f"AllowedIPs = {module.vpn_network}\n" in conf
+    assert "MASQUERADE" not in conf and "ip rule" not in conf
+    page = module.client_html("Holiday")
+    assert "Only the Pi is connected so far" in page
+    assert "wgFillSite.apply(null,[&quot;Holiday&quot;, &quot;10.99.7.2&quot;])" in page
+    # address of a device at the site entered by hand: its /24 network
+    readings()["Holiday_setup"] = ""
     await module.set_add_site(
-        module.hash, dict(login, name="Holiday", network="192.168.2.0/24")
+        module.hash, dict(login, name="Holiday", network="192.168.2.34")
     )
     await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
     assert ports == [2222, 22]
+    assert "warning" not in readings()["Holiday_setup"]
     assert module.config["clients"]["Holiday"]["networks"] == ["192.168.2.0/24"]
+    assert "Only the Pi is connected" not in module.client_html("Holiday")
+    form = module.forms_html()
+    assert "Where is the Pi right now?" in form and "name='network'" in form
 
 
 def test_known_hosts_name():
@@ -779,19 +798,9 @@ async def test_site_internet_only(module, mocker):
     assert "mode:" in await module.set_add_site(
         module.hash, dict(login, name="Holiday", mode="x")
     )
-    # internet_only without devices makes no sense
+    # automatic: the detected network is the home network, via_home is set
     await module.set_add_site(
-        module.hash, dict(login, name="Holiday", mode="internet_only")
-    )
-    await wait_for(lambda: "needs the devices" in readings().get("Holiday_setup", ""))
-    assert "Holiday" not in module.config["clients"]
-    # detected home network: the Pi may still be at home, ask for the network
-    await module.set_add_site(module.hash, dict(login, name="Holiday", via_home="all"))
-    await wait_for(lambda: "right now" in readings().get("Holiday_setup", ""))
-    # automatic: the networks overlap, via_home is set
-    await module.set_add_site(
-        module.hash,
-        dict(login, name="Holiday", via_home="192.168.1.50", network="192.168.1.0/24"),
+        module.hash, dict(login, name="Holiday", via_home="192.168.1.50")
     )
     await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
     assert "internet only" in readings()["Holiday_setup"]
