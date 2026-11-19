@@ -45,6 +45,8 @@ NETWORK_INTERVAL = 3600
 VIA_TABLE = 51820
 VIA_PRIORITY = 5180
 MAX_VIA_HOME = 16
+# via_home: every device which uses the Pi of the site as gateway
+VIA_HOME_ALL = "all"
 CLIENT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,24}$")
 RESERVED_NAMES = {"state", "clients", "port", "endpoint", "public"}
 # live log of the setup via SSH (reading setup_log, terminal on the page)
@@ -147,6 +149,8 @@ padding:12px 14px;box-sizing:border-box}
 .wgCard input,.wgCard select{display:block;width:100%;box-sizing:border-box;margin-top:3px;
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
+.wgCard label.wgCheck{font-weight:bold;display:flex;gap:6px;align-items:center}
+.wgCard label.wgCheck input{display:inline;width:auto;margin:0}
 .wgRow{display:flex;gap:8px}
 .wgGrow{flex:1}
 .wgPort{width:90px}
@@ -163,6 +167,7 @@ function wgSend(form, dev, cmd) {
   for (var i = 0; i < form.elements.length; i++) {
     var e = form.elements[i];
     if (!e.name || e.name == "name" || !e.value) continue;
+    if (e.type == "checkbox" && !e.checked) continue;
     var v = e.value.replace(/;/g, ";;");
     if (/[\\s"]/.test(v)) v = '"' + v.replace(/"/g, '\\\\"') + '"';
     parts.push(e.name + "=" + v);
@@ -378,9 +383,11 @@ class wireguard(generic.FhemModule):
                     "192.168.2.0/24, needed if the Pi is still in your home "
                     "network. The password is not stored. Easier: the form "
                     "on the device page."
-                    "<br>via_home=192.168.2.50,192.168.2.51: these devices "
-                    "(e.g. a TV) use the Pi as router, their internet goes "
-                    "through your home. Run add_site again to change it."
+                    "<br>via_home=all: every device which uses the Pi as "
+                    "gateway / router (e.g. a TV) gets its internet through "
+                    "your home, the Pi itself and all other devices stay "
+                    "direct. Or only some addresses: via_home=192.168.2.50,"
+                    "192.168.2.51. Run add_site again to change it."
                     "<br>mode=internet_only: only the internet of the "
                     "via_home devices goes through home, the two home networks "
                     "aren't connected. For sites with the same network as "
@@ -684,22 +691,28 @@ class wireguard(generic.FhemModule):
                 nets = self.allowed_ips(name).split(", ")
             lines += [f"{word} = ip route add {net} dev %i" for net in nets]
             lines.append(f"{word} = ip route add default dev %i table {VIA_TABLE}")
-            for ip in client["via_home"]:
-                lines += [
-                    f"{word} = ip rule add from {ip} lookup main "
-                    f"suppress_prefixlength 0 priority {VIA_PRIORITY}",
-                    f"{word} = ip rule add from {ip} table {VIA_TABLE} "
-                    f"priority {VIA_PRIORITY + 1}",
-                ]
-        else:
-            for ip in client["via_home"]:
-                lines += [
-                    f"{word} = ip rule del from {ip} lookup main "
-                    f"suppress_prefixlength 0 priority {VIA_PRIORITY}",
-                    f"{word} = ip rule del from {ip} table {VIA_TABLE} "
-                    f"priority {VIA_PRIORITY + 1}",
-                ]
+        verb = "add" if action == "A" else "del"
+        for match in self.via_home_matches(client):
+            # local destinations (network of the site) stay in the main table
+            lines += [
+                f"{word} = ip rule {verb} {match} lookup main "
+                f"suppress_prefixlength 0 priority {VIA_PRIORITY}",
+                f"{word} = ip rule {verb} {match} table {VIA_TABLE} "
+                f"priority {VIA_PRIORITY + 1}",
+            ]
         return lines
+
+    @staticmethod
+    def via_home_matches(client):
+        """ip rule selectors: all = everything the Pi forwards from its home
+        network (comes in on its network interface, its own traffic doesn't),
+        else the addresses of single devices"""
+        if client["via_home"] == VIA_HOME_ALL:
+            dev = client.get("site_dev") or (
+                "$(ip -4 route show default | awk '{print $5; exit}')"
+            )
+            return [f"iif {dev}"]
+        return [f"from {ip}" for ip in client["via_home"]]
 
     def detected_site_network(self, found):
         net = found.get("network")
@@ -712,7 +725,8 @@ class wireguard(generic.FhemModule):
             raise remote.RemoteError(
                 f"the Pi ({found.get('ip')}) is in your home network right now: "
                 "enter the home network of the other site (network=..., e.g. "
-                "192.168.2.0/24, see its router)"
+                "192.168.2.0/24, see its router, also if it's the same network "
+                "as at home)"
             )
         return net
 
@@ -720,6 +734,8 @@ class wireguard(generic.FhemModule):
         """devices of the other site whose internet goes through home"""
         if not value:
             return [], None
+        if str(value).strip().lower() in ("all", "yes", "on", "1", "true"):
+            return VIA_HOME_ALL, None
         net = ipaddress.IPv4Network(network)
         ips = []
         for part in str(value).replace(";", ",").split(","):
@@ -1110,7 +1126,7 @@ class wireguard(generic.FhemModule):
             return (
                 f"Usage: set {self.hash['NAME']} add_site {name} host=192.168.1.77 [port=22] "
                 "user=pi password=... [network=192.168.2.0/24] "
-                "[via_home=192.168.2.50] [mode=networks|internet_only]"
+                "[via_home=all|192.168.2.50] [mode=networks|internet_only]"
             )
         self.create_async_task(self.setup_site(name, params))
         return (
@@ -1160,7 +1176,9 @@ class wireguard(generic.FhemModule):
                     "through home (via_home=...)"
                 )
             existing = name in self.config["clients"]
-            await self.store_site(name, net, via_home, found.get("ip"), internet_only)
+            await self.store_site(
+                name, net, via_home, found.get("ip"), internet_only, found.get("dev")
+            )
             await self.set_readings(
                 **{f"{name}_setup": f"installing WireGuard on {host} ({net})"}
             )
@@ -1175,7 +1193,9 @@ class wireguard(generic.FhemModule):
         text = f"done, network {net}"
         if internet_only:
             text += " (internet only, networks not connected)"
-        if via_home:
+        if via_home == VIA_HOME_ALL:
+            text += ", internet through home for devices with the Pi as gateway"
+        elif via_home:
             text += f", internet through home for {', '.join(via_home)}"
         return text
 
@@ -1190,14 +1210,20 @@ class wireguard(generic.FhemModule):
         if not net or not params.get("via_home"):
             return False
         try:
-            if self.overlapping_network(net, name) is None:
-                return False
+            other = self.overlapping_network(net, name)
         except ValueError:
+            return False
+        home = self.net.get("home_network")
+        if other is None or (not params.get("network") and str(other) == home):
+            # detected the home network: the Pi may still be at home, the
+            # network of the site has to be entered
             return False
         _, error = self.check_via_home(params["via_home"], net, found.get("ip"))
         return error is None
 
-    async def store_site(self, name, net, via_home, site_ip, internet_only=False):
+    async def store_site(
+        self, name, net, via_home, site_ip, internet_only=False, site_dev=None
+    ):
         """new site, or new settings of an existing one (keys stay)"""
         networks = [] if internet_only else [net]
         client = self.config["clients"].get(name)
@@ -1206,6 +1232,8 @@ class wireguard(generic.FhemModule):
             if error:
                 raise remote.RemoteError(error)
             client = self.config["clients"][name]
+        if site_dev:
+            client["site_dev"] = site_dev
         client.update(
             networks=networks,
             via_home=via_home,
@@ -1327,17 +1355,28 @@ class wireguard(generic.FhemModule):
             # the router at home has an address of the site itself
             dns = "1.1.1.1"
         dns = html.escape(dns)
-        rows = "".join(
-            f"<li><b>{html.escape(ip)}</b></li>" for ip in client["via_home"]
-        )
+        if client["via_home"] == VIA_HOME_ALL:
+            which = (
+                "<br><br><b>Internet through home</b> for every device which "
+                "uses the Pi as gateway. Set such a device (e.g. TV: network "
+                "settings, manual / static) to: a free address of the network "
+                f"{html.escape(str(net))}, subnet mask <b>{net.netmask}</b>, "
+            )
+        else:
+            rows = "".join(
+                f"<li><b>{html.escape(ip)}</b></li>" for ip in client["via_home"]
+            )
+            which = (
+                "<br><br><b>Internet through home</b> for:<ul>"
+                f"{rows}</ul>Set these devices (e.g. TV: network settings, "
+                f"manual / static) to: subnet mask <b>{net.netmask}</b>, "
+            )
         return (
-            "<br><br><b>Internet through home</b> for:<ul>"
-            f"{rows}</ul>Set these devices (e.g. TV: network settings, manual "
-            f"/ static) to: subnet mask <b>{net.netmask}</b>, gateway / router "
-            f"<b>{gateway}</b>, DNS <b>{dns}</b>. Or give them this address as "
-            "fixed DHCP address in the router of the site and set gateway and "
-            "DNS on the device. If the VPN is down they use the internet of "
-            "the site directly."
+            f"{which}gateway / router <b>{gateway}</b>, DNS <b>{dns}</b>. Use "
+            "an address the router of the site doesn't give out, or a fixed "
+            "DHCP address. Devices which keep the router of the site as "
+            "gateway stay direct. If the VPN service of the Pi is stopped, "
+            "they use the internet of the site directly."
         )
 
     def setup_html(self):
@@ -1461,10 +1500,12 @@ class wireguard(generic.FhemModule):
             "placeholder='detected, e.g. 192.168.2.0/24'></label>"
             "<small>Needed if the Pi is still in your home network: the network "
             "of the router at the other site.</small>"
-            "<label>Internet through home for<input name='via_home' "
-            "placeholder='optional, e.g. 192.168.2.50 (TV)'></label>"
-            "<small>Addresses of devices at the site whose internet goes "
-            "through your home. Use the form again to change it.</small>"
+            "<label class='wgCheck'><input type='checkbox' name='via_home' "
+            "value='all'> Internet through home for devices which use the Pi "
+            "as gateway</label>"
+            "<small>e.g. a TV: set the address of the Pi as gateway / router "
+            "on the TV, its internet goes through your home. The Pi itself "
+            "and all other devices stay direct.</small>"
             "<label>Connect<select name='mode'><option value=''>automatic"
             "</option><option value='networks'>both home networks</option>"
             "<option value='internet_only'>only internet through home"

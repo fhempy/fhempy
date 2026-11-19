@@ -8,6 +8,7 @@ device page shows them like a terminal."""
 
 import asyncio
 import ipaddress
+import re
 import shlex
 import socket
 from pathlib import Path
@@ -178,6 +179,9 @@ async def install_helper(host, user, password, helper_path, fhempy_user, log=nol
             await conn.run(f"rm -f {shlex.quote(path)}")
 
 
+INTERFACE_NAME = re.compile(r"^[A-Za-z0-9_.@-]{1,15}$")
+
+
 def parse_site(route, addresses):
     """home network and address of a computer from ip -4 -o route show
     default and ip -4 -o addr show"""
@@ -194,7 +198,11 @@ def parse_site(route, addresses):
                 iface = ipaddress.IPv4Interface(words[words.index("inet") + 1])
             except ValueError:
                 continue
-            return {"network": str(iface.network), "ip": str(iface.ip)}
+            found = {"network": str(iface.network), "ip": str(iface.ip)}
+            if INTERFACE_NAME.match(dev):
+                # goes into the PostUp lines of the configuration
+                found["dev"] = dev
+            return found
     return {}
 
 
