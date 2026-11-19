@@ -157,7 +157,14 @@ padding:12px 14px;box-sizing:border-box}
 padding:6px 8px;font-weight:normal}
 .wgCard small{display:block;opacity:.7}
 .wgCard [hidden]{display:none}
-.wgSpeed{font:12px monospace;opacity:.8;white-space:pre;margin-left:8px}
+.wgDevices{border-collapse:collapse;margin:4px 0;min-width:min(100%,520px)}
+.wgDevices th,.wgDevices td{padding:4px 10px;text-align:left;vertical-align:top}
+.wgDevices thead th{border-bottom:1px solid #ccc}
+.wgDevices tbody.wgDev{border-bottom:1px solid #ccc}
+.wgDevices td.wgDown,.wgDevices td.wgUp,.wgDevices th.wgNum{text-align:right;font-family:monospace;white-space:nowrap}
+.wgDevices tfoot td{font-weight:bold;border-top:2px solid #ccc}
+.wgDevices small{display:block;opacity:.7}
+.wgDevices tr.wgMore td{padding-top:0}
 .wgWhere{border:1px solid #ccc;border-radius:6px;margin:10px 0 4px;padding:4px 10px 8px}
 .wgWhere legend{font-weight:bold;padding:0 4px}
 .wgNote{border:1px solid #c80;border-radius:6px;padding:6px 10px;margin:4px 0}
@@ -224,20 +231,31 @@ SPEED_SCRIPT = """<script>
     if (bit >= 1e6) return (bit / 1e6).toFixed(1) + " Mbit/s";
     return Math.round(bit / 1e3) + " kbit/s";
   }
+  function set(selector, text) {
+    var e = document.querySelector(selector);
+    if (e) e.textContent = text;
+  }
   function show(data) {
-    document.querySelectorAll(".wgSpeed").forEach(function(e) {
-      var now = data.clients[e.dataset.client];
-      var before = last && last.clients[e.dataset.client];
-      var seconds = last ? data.time - last.time : 0;
-      if (!now) { e.textContent = ""; return; }
+    var seconds = last ? data.time - last.time : 0;
+    var down = 0, up = 0, measured = false;
+    document.querySelectorAll(".wgDevices td.wgDown").forEach(function(e) {
+      var name = e.dataset.client, up_cell = e.nextElementSibling;
+      var now = data.clients[name], before = last && last.clients[name];
+      if (!now) { e.textContent = "\u2013"; up_cell.textContent = "\u2013"; return; }
       if (!before || seconds <= 0) return;
-      e.textContent = "\u2193 " + rate(Math.max(0, now.down - before.down), seconds)
-        + "  \u2191 " + rate(Math.max(0, now.up - before.up), seconds);
+      var d = Math.max(0, now.down - before.down), u = Math.max(0, now.up - before.up);
+      down += d; up += u; measured = true;
+      e.textContent = rate(d, seconds);
+      up_cell.textContent = rate(u, seconds);
     });
+    if (seconds > 0) {
+      set(".wgDevices .wgTotalDown", measured ? rate(down, seconds) : "\u2013");
+      set(".wgDevices .wgTotalUp", measured ? rate(up, seconds) : "\u2013");
+    }
     if (!last || data.time > last.time) last = data;
   }
   function poll() {
-    if (!document.querySelector(".wgSpeed")) return;
+    if (!document.querySelector(".wgDevices")) return;
     if (document.visibilityState == "visible") {
       FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEVICE + " traffic")
         + "&XHR=1", function(r) {
@@ -1416,7 +1434,8 @@ class wireguard(generic.FhemModule):
 
     # --- FHEMWEB ---
 
-    def client_html(self, name, open_qr=False):
+    def client_setup(self, name):
+        """QR code cell and the instructions of one device"""
         client = self.config["clients"][name]
         conf = self.client_config(name)
         data = base64.b64encode(conf.encode()).decode()
@@ -1462,15 +1481,25 @@ class wireguard(generic.FhemModule):
                 "computers: import tunnel from file)"
             )
             qr = f"<td style='vertical-align:top'>{qr_image(conf)}</td>"
+        return qr, how
+
+    def client_html(self, name, open_qr=False):
         return (
-            f"<div style='margin:4px 0'><b>{html.escape(name)}</b> "
-            f"<span class='wgSpeed' data-client='{html.escape(name)}'></span>"
+            f"<div style='margin:4px 0'><b>{html.escape(name)}</b>"
+            f"{self.client_details(name, open_qr)}</div>"
+        )
+
+    def client_details(self, name, open_qr=False):
+        """note of the site and the collapsed QR code and configuration"""
+        client = self.config["clients"][name]
+        qr, how = self.client_setup(name)
+        return (
             f"{self.site_warning_html(name, client)}"
             f"<details{' open' if open_qr else ''}><summary>QR code and "
             f"configuration</summary><table><tr>{qr}"
             f"<td style='vertical-align:top;padding-left:12px'>{how}<br><br>"
             "Keep it private, it's the key to your home network."
-            "</td></tr></table></details></div>"
+            "</td></tr></table></details>"
         )
 
     def site_warning_html(self, name, client):
@@ -1605,9 +1634,7 @@ class wireguard(generic.FhemModule):
             )
         clients = self.config.get("clients", {})
         if clients:
-            parts.append("<div style='margin:8px 0'><b>Devices</b>")
-            parts += [self.client_html(name) for name in clients]
-            parts.append("</div>" + self.speed_script())
+            parts.append(self.devices_html(clients))
         parts.append(self.forms_html())
         parts.append(self.log_html())
         return "".join(parts)
@@ -1634,6 +1661,37 @@ class wireguard(generic.FhemModule):
             f"<pre class='wgShell' informId='{inform}'>"
             f"{html.escape(chr(10).join(self.log_lines))}</pre></div></div>"
             + LOG_SCRIPT
+        )
+
+    def devices_html(self, clients):
+        """table of the devices: status and live speed, total of all"""
+        rows = []
+        count = f"{len(clients)} device" + ("s" if len(clients) != 1 else "")
+        for name in clients:
+            peer = self.peers.get(clients[name]["public_key"]) or {}
+            esc = html.escape(name)
+            inform = html.escape(f"{self.hash['NAME']}-{name}")
+            state = "connected" if self.connected(peer) else "disconnected"
+            seen = format_time(peer["handshake"]) if peer.get("handshake") else "never"
+            kind = "Site" if is_site(clients[name]) else "Device"
+            rows.append(
+                f"<tbody class='wgDev'><tr><td><b>{esc}</b><small>{kind}</small>"
+                f"</td><td><span informId='{inform}_state'>{state}</span><small>"
+                f"last seen <span informId='{inform}_last_seen'>{seen}</span>"
+                f"</small></td><td class='wgDown' data-client='{esc}'>\u2013</td>"
+                f"<td class='wgUp' data-client='{esc}'>\u2013</td></tr>"
+                f"<tr class='wgMore'><td colspan='4'>{self.client_details(name)}"
+                "</td></tr></tbody>"
+            )
+        return (
+            "<div style='margin:8px 0'><b>Devices</b><table class='wgDevices'>"
+            "<thead><tr><th>Device</th><th>Status</th><th class='wgNum'>"
+            "\u2193 Download</th><th class='wgNum'>\u2191 Upload</th></tr></thead>"
+            + "".join(rows)
+            + f"<tfoot><tr><td colspan='2'>Total ({count})</td>"
+            "<td class='wgDown wgTotalDown'>\u2013</td>"
+            "<td class='wgUp wgTotalUp'>\u2013</td></tr></tfoot></table></div>"
+            + self.speed_script()
         )
 
     def speed_script(self):

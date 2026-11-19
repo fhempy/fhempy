@@ -313,7 +313,11 @@ async def test_add_and_monitor_client(module):
     page = module.detail_html()
     assert "VPN works from outside" in page
     # live speed: byte counters for the page, only connected devices
-    assert "data-client='Phone'" in page
+    assert "<table class='wgDevices'>" in page
+    assert "<td class='wgDown' data-client='Phone'>" in page
+    assert "informId='vpn-Phone_state'>connected<" in page
+    assert "Total (1 device)" in page
+    assert "wgTotalDown" in page and "wgTotalUp" in page
     assert 'encodeURIComponent("get " + "vpn" + " traffic")' in page
     traffic = json.loads(await module.get_traffic(module.hash, {}))
     assert traffic["clients"] == {"Phone": {"down": 900000, "up": 2500000}}

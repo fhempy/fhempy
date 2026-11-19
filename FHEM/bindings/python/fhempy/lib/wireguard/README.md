@@ -182,9 +182,10 @@ computer).
 
 ## Live speed
 
-While the device page is open, it shows the current download and upload of every connected device next to its
-name (updated every 2 seconds, from the byte counters of WireGuard via `get <name> traffic`). Nothing is stored and
-no events are created, the page asks only while it is visible.
+The device page lists all devices in a table: name, status (connected or disconnected, last seen), current
+download and upload, and a **Total** row with the sum of all devices. The speed is updated every 2 seconds while
+the page is open and visible, from the byte counters of WireGuard via `get <name> traffic`. Nothing is stored and
+no events are created. QR code and configuration of each device are below its row.
 
 ## Readings
 
