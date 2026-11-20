@@ -195,8 +195,15 @@ background:#333;color:#eee;font:bold 13px sans-serif}
 .wgLogHead span{flex:1}
 .wgLogHead button{background:none;border:0;color:#eee;font-size:20px;
 line-height:1;cursor:pointer;padding:0 4px}
-.wgLogBox .wgShell{margin:0;border-radius:0;max-height:70vh;min-height:200px;
-max-width:none}
+.wgLogBox .wgShell{margin:0;border-radius:0;height:min(480px,70vh);
+max-height:none;max-width:none;overflow-y:scroll}
+.wgShell>span{display:block}
+.wgShell .wgCmd{color:#fff;font-weight:bold;background:#2a2d2e;
+border-left:3px solid #4ec94e;margin:6px -10px 2px;padding:1px 10px 1px 7px}
+.wgShell .wgPrompt{color:#4ec94e}
+.wgShell .wgInfo{color:#6a9fb5;font-style:italic}
+.wgShell .wgOk{color:#4ec94e;font-weight:bold}
+.wgShell .wgErr{color:#f14c4c;font-weight:bold}
 .wgLogBtn{margin:8px 0;padding:5px 12px;cursor:pointer}
 .wgShell pre{margin:0;font:inherit;white-space:pre-wrap}
 </style>"""
@@ -207,8 +214,33 @@ LOG_SCRIPT = """<script>
   var back = document.querySelector(".wgLogBack");
   if (!back) return;
   var pre = back.querySelector("pre.wgShell");
-  var closedRun = null;
-  function firstLine() { return pre.textContent.split("\\n")[0]; }
+  var closedRun = null, text = pre.textContent;
+  function firstLine() { return text.split("\\n")[0]; }
+  function esc(t) {
+    return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  /* commands like in a terminal: prompt user@host:~$ in green, command bold
+     on a highlighted line, comments of fhempy (#) blue, done green, errors red */
+  function render() {
+    var prompt = "$";
+    pre.innerHTML = text.split("\\n").map(function(line) {
+      var ssh = /^# ssh (\\S+)/.exec(line), kind = "", body = esc(line) || " ";
+      if (ssh) prompt = ssh[1] + ":~$";
+      if (line.slice(0, 2) == "$ ") {
+        kind = "wgCmd";
+        body = "<span class='wgPrompt'>" + esc(prompt) + "</span> "
+          + esc(line.slice(2));
+      } else if (/^# (done|connected)/.test(line)) {
+        kind = "wgOk";
+      } else if (/^# (failed|took too long)|^(E:|error|Error)/.test(line)) {
+        kind = "wgErr";
+      } else if (line.charAt(0) == "#") {
+        kind = "wgInfo";
+      }
+      return "<span class='" + kind + "'>" + body + "</span>";
+    }).join("");
+    pre.scrollTop = pre.scrollHeight;
+  }
   window.wgLogOpen = function() {
     closedRun = null;
     back.classList.add("wgOpen");
@@ -221,12 +253,16 @@ LOG_SCRIPT = """<script>
   document.addEventListener("keydown", function(e) {
     if (e.key == "Escape" && back.classList.contains("wgOpen")) wgLogClose();
   });
-  new MutationObserver(function() {
+  /* FHEMWEB hands new values of the reading to setValueFn (newlines as
+     U+2424) instead of replacing the content */
+  pre.setValueFn = function(value) {
+    text = String(value).replace(/\\u2424/g, "\\n");
+    render();
     if (closedRun === null || firstLine() != closedRun) {
       back.classList.add("wgOpen");
     }
-    pre.scrollTop = pre.scrollHeight;
-  }).observe(pre, {childList: true, characterData: true, subtree: true});
+  };
+  render();
 })();
 </script>"""
 # live speed of the connected devices while the page is open and visible

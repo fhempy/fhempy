@@ -584,6 +584,9 @@ async def test_add_site_via_ssh(module, mocker):
     # popup with the log, opens by itself when lines arrive
     assert "class='wgLogBack'" in page and "wgLogOpen" in page
     assert "Show setup log" in page
+    # terminal of fixed size, commands highlighted with prompt
+    assert "height:min(480px,70vh)" in page
+    assert "pre.setValueFn" in page and "wgCmd" in page and "wgPrompt" in page
     peers = module.fake.applied[-1]["peers"]
     assert peers[0]["networks"] == ["192.168.2.0/24"]
 
