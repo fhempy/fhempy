@@ -538,3 +538,10 @@ async def test_structured_command_message(monkeypatch):
     assert msg["readings"] == [["a", "1", None, 0]]
     pb._msg_listeners.pop(msg["awaitId"])({"awaitId": msg["awaitId"], "result": ""})
     assert (await task)["result"] == ""
+
+
+def test_slow_fhem_replies_after_connect_are_warnings(monkeypatch):
+    # FHEM handles the Define of all devices right after connecting
+    monkeypatch.setattr(fhem, "connected_at", 1000.0)
+    assert fhem._slow_fhem_log(1000.0 + 100) == fhem.logger.warning
+    assert fhem._slow_fhem_log(1000.0 + fhem.STARTUP_PHASE + 1) == fhem.logger.error
