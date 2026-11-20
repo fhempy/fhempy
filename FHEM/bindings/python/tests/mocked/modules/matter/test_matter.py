@@ -523,6 +523,22 @@ def test_server_sets_time_of_devices_by_default(mocker):
     assert start.call_args[1]["env"]["ENABLE_TIME_SYNC"] == "false"
 
 
+def test_server_log_level(mocker):
+    start = mocker.patch.object(server.child_process, "start")
+    server.start("/usr/bin/node", {}, 5580)
+    args = start.call_args[0][0]
+    assert args[args.index("--log-level") + 1] == "info"
+
+    server.start("/usr/bin/node", {}, 5580, log_level="warning")
+    args = start.call_args[0][0]
+    assert args[args.index("--log-level") + 1] == "warning"
+
+    # invalid values (e.g. typo in the attribute) don't stop the server
+    server.start("/usr/bin/node", {}, 5580, log_level="quiet")
+    args = start.call_args[0][0]
+    assert args[args.index("--log-level") + 1] == "info"
+
+
 def test_pairing_error_tells_how_to_pair_test_certificates():
     exc = MatterServerError(
         1,
@@ -698,6 +714,7 @@ async def test_pair_new_device_detects_bluetooth_adapter(mocker, tmp_path):
         _attr_port=5580,
         _attr_test_dcl=0,
         _attr_time_sync=1,
+        _attr_server_log_level="info",
     )
     controller = matter_controller(logger, fhemdev)
     controller.hash = {"NAME": "testmatter"}
@@ -913,6 +930,7 @@ async def test_server_runs_without_bluetooth_outside_pairing(mocker):
         _attr_port=5580,
         _attr_test_dcl=0,
         _attr_time_sync=1,
+        _attr_server_log_level="info",
     )
     controller = matter_controller(logger, fhemdev)
     assert controller.server_settings()[1] is None

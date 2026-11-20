@@ -146,6 +146,7 @@ the readings so the device can be supported.
 | `test_dcl` | `1`: also pair devices with a test/development certificate (beta firmware). Only if you trust the vendor. Default `0` |
 | `time_sync` | `1` (default): set the time of devices with a clock (e.g. displays showing the time) from this computer, needs NTP. `0`: off |
 | `autocreate` | `1` (default): create FHEM devices automatically |
+| `server_log_level` | Log level of `.fhempy/matter_server/matter_server.log`: `error`, `warning`, `notice`, `info` (default), `debug`. `verbose` doesn't change this log. `warning` hides the hourly time sync messages of every device |
 
 ## Use an existing Matter server
 
