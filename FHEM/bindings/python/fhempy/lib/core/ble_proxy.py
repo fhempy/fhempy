@@ -21,6 +21,7 @@ adapters, they stay with core/ble_scanner and bt_recovery.
     ble_proxy.unregister(proxy)
 """
 
+import re
 import time
 
 # devices seen by a proxy within this time are connected through it
@@ -347,12 +348,29 @@ def unregister(proxy):
     proxy.close()
 
 
-def best_device(address, connectable=True):
+def option_name(proxy):
+    """Name of the proxy for attribute options ("proxy:<name>"), no spaces."""
+    return re.sub(r"[\s,]+", "_", str(proxy.name or proxy.source))
+
+
+def matches(proxy, name):
+    """name is the proxy's option_name, name or source (MAC)"""
+    wanted = str(name).lower()
+    return wanted in (
+        option_name(proxy).lower(),
+        str(proxy.name).lower(),
+        str(proxy.source).lower(),
+    )
+
+
+def best_device(address, connectable=True, proxy_name=None):
     """(BLEDevice, rssi, proxy) of the proxy with the best signal, None if no
-    proxy saw the device recently."""
+    proxy saw the device recently. proxy_name: only this proxy."""
     best = None
     for proxy in _proxies.values():
         if connectable and not proxy.connectable:
+            continue
+        if proxy_name and not matches(proxy, proxy_name):
             continue
         found = proxy.recent_device(address)
         if found is not None and (best is None or found[1] > best[1]):

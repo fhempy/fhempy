@@ -125,9 +125,16 @@ class BleScanner:
         self._local_only = set()
         # callback -> additional adapter (e.g. "hci1") it needs
         self._adapters = {}
+        # address -> {adapter: (BLEDevice, rssi, time)}
         self._recent = {}
+        # adapters the running scan listens on, None is the default adapter
+        self._listening = set()
+        # find_device() calls waiting for an advertisement
+        self._waiters = []
         self._task = None
         self._pause_count = 0
+        # counts the pauses, a waiter knows if the scan paused meanwhile
+        self._pauses = 0
         self._changed = asyncio.Event()
         self._mode = MODE_CONTINUOUS
         self._interval = DEFAULT_INTERVAL
@@ -199,17 +206,71 @@ class BleScanner:
         self._interval = max(INTERVAL_SCAN_TIME, interval)
         self._changed.set()
 
-    def recent_device(self, address, max_age=RECENT_MAX_AGE):
-        """(BLEDevice, rssi) seen within max_age seconds, otherwise None."""
-        found = self._recent.get(address.upper())
-        if found is None or time.monotonic() - found[2] > max_age:
+    def recent_device(self, address, max_age=RECENT_MAX_AGE, adapter=None):
+        """(BLEDevice, rssi) seen within max_age seconds, otherwise None.
+        adapter (e.g. "hci1"): only what this adapter received, None: the
+        adapter with the best signal."""
+        per_adapter = self._recent.get(address.upper()) or {}
+        if adapter:
+            entries = [per_adapter.get(adapter_name(adapter))]
+        else:
+            entries = list(per_adapter.values())
+        limit = time.monotonic() - max_age
+        fresh = [e for e in entries if e is not None and e[2] >= limit]
+        if not fresh:
             return None
-        return found[0], found[1]
+        best = max(fresh, key=lambda e: (e[1] if e[1] is not None else -999, e[2]))
+        return best[0], best[1]
+
+    def listens_on(self, adapter):
+        """True if the shared scan receives the advertisements of this local
+        adapter right now (None: the default adapter). A module then waits
+        for the advertisement (wait_for_device) instead of scanning itself."""
+        if self._task is None or self._task.done() or self._pause_count:
+            return False
+        return normalize_adapter(adapter) in self._listening
+
+    def scans_adapter(self, adapter):
+        """True if the shared scan uses this adapter (when it isn't paused),
+        a scan of its own would disturb it."""
+        if self._task is None or self._task.done():
+            return False
+        name = normalize_adapter(adapter)
+        return name is None or name in self.adapters
+
+    async def wait_for_device(self, address, adapter=None, timeout=30):
+        """Waits for an advertisement of address received by adapter (None:
+        any local adapter) through the shared scan, no second scan.
+        Returns ((BLEDevice, rssi) or None, adapter_quiet): adapter_quiet is
+        True only if the adapter was scanned all the time and received
+        nothing at all, a hint that the adapter doesn't work."""
+        loop = asyncio.get_running_loop()
+        waiter = {
+            "address": address.upper(),
+            "adapter": adapter_name(adapter) if adapter else None,
+            "future": loop.create_future(),
+            "heard": False,
+        }
+        pauses = self._pauses
+        self._waiters.append(waiter)
+        try:
+            found = await asyncio.wait_for(asyncio.shield(waiter["future"]), timeout)
+            return found, False
+        except asyncio.TimeoutError:
+            quiet = (
+                not waiter["heard"]
+                and self._pauses == pauses
+                and self.listens_on(adapter)
+            )
+            return None, quiet
+        finally:
+            self._waiters.remove(waiter)
 
     @contextlib.asynccontextmanager
     async def paused(self):
         """Stops the scan while connecting, some adapters can't do both."""
         self._pause_count += 1
+        self._pauses += 1
         self._changed.set()
         try:
             yield
@@ -240,11 +301,19 @@ class BleScanner:
     # --- scanning ---
 
     def _detection(self, device, advertisement):
-        self._recent[device.address.upper()] = (
+        address = device.address.upper()
+        adapter = adapter_of(device)
+        self._recent.setdefault(address, {})[adapter] = (
             device,
             advertisement.rssi,
             time.monotonic(),
         )
+        for waiter in self._waiters:
+            if waiter["adapter"] and waiter["adapter"] != adapter:
+                continue
+            waiter["heard"] = True
+            if waiter["address"] == address and not waiter["future"].done():
+                waiter["future"].set_result((device, advertisement.rssi))
         for callback in list(self._callbacks):
             try:
                 callback(device, advertisement)
@@ -265,8 +334,11 @@ class BleScanner:
 
     def _cleanup_recent(self):
         limit = time.monotonic() - 10 * RECENT_MAX_AGE
-        for address in [a for a, v in self._recent.items() if v[2] < limit]:
-            del self._recent[address]
+        for address, per_adapter in list(self._recent.items()):
+            for adapter in [a for a, v in per_adapter.items() if v[2] < limit]:
+                del per_adapter[adapter]
+            if not per_adapter:
+                del self._recent[address]
 
     async def _wait_changed(self, timeout):
         """Waits for a change (pause, mode) or the timeout, the caller checks
@@ -376,12 +448,15 @@ class BleScanner:
             return None
 
     async def _start_extras(self, active, adapters):
+        """The started scanners and the adapters they scan."""
         extra = []
+        listening = []
         for adapter in adapters:
             started = await self._start_extra(active, adapter)
             if started is not None:
                 extra.append(started)
-        return extra
+                listening.append(adapter)
+        return extra, listening
 
     async def _scan(self, active, duration):
         """Scans until duration is over, the mode changes or a pause starts."""
@@ -402,7 +477,8 @@ class BleScanner:
                 self._passive_failed_with(exc)
                 return
             raise
-        extra = await self._start_extras(active, adapters)
+        extra, listening = await self._start_extras(active, adapters)
+        self._listening = {None} | {normalize_adapter(a) for a in listening}
         if not active:
             self._set_passive_problem("")
         self.scanning = "active" if active else "passive"
@@ -419,6 +495,7 @@ class BleScanner:
             ):
                 await self._wait_changed(end - time.monotonic())
         finally:
+            self._listening = set()
             for running in [scanner] + extra:
                 try:
                     await running.stop()
@@ -434,6 +511,19 @@ def normalize_adapter(adapter):
     if name.isdigit():
         name = f"hci{name}"
     return None if name == "hci0" else name
+
+
+def adapter_name(adapter):
+    """ "hci0" for None, 0, "0" or "hci0", like the names of the adapters."""
+    return normalize_adapter(adapter) or "hci0"
+
+
+def adapter_of(device):
+    """The local adapter (e.g. "hci0") which received the device, from its
+    BlueZ object path /org/bluez/hci0/dev_..., "hci0" if unknown."""
+    details = device.details if isinstance(device.details, dict) else {}
+    match = re.search(r"/(hci\d+)(/|$)", str(details.get("path", "")))
+    return match.group(1) if match else "hci0"
 
 
 def address_type(device):
