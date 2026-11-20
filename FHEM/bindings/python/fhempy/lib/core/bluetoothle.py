@@ -4,6 +4,7 @@ Handles reconnection
 """
 
 import asyncio
+import contextlib
 import functools
 import getpass
 import os
@@ -32,6 +33,23 @@ PAIRING_DISCOVERY_TIMEOUT = 30
 PROXY_CHECK_INTERVAL = 5
 
 
+def adapter_mode(adapter):
+    """None for "auto" (best signal), otherwise "local", "proxy",
+    "proxy:<name>" or the local adapter "hciX" (also from "X")."""
+    if adapter is None:
+        return None
+    mode = str(adapter).strip()
+    if mode.lower() in ("", "auto"):
+        return None
+    if mode.lower() in ("local", "proxy"):
+        return mode.lower()
+    if mode.lower().startswith("proxy:"):
+        return "proxy:" + mode[len("proxy:") :]
+    if mode.isdigit():
+        return f"hci{mode}"
+    return mode.lower()
+
+
 def _is_auth_error(exc):
     """GATT error 5/15: the device needs an encrypted (paired) connection."""
     text = str(exc).lower()
@@ -53,6 +71,7 @@ class BluetoothLE:
         pairing_required=False,
         pin="0000",
         reconnect=True,
+        adapter=None,
     ) -> None:
         self._disconnect_called = False
         self._device = None
@@ -72,6 +91,11 @@ class BluetoothLE:
         self.logger = logger
         self.addr = address
         self.name = name
+        # None/"auto": best signal, "local": local adapters only, "proxy":
+        # Bluetooth proxies only, "proxy:<name>": only this proxy, "hciX":
+        # only this local adapter, see adapter_mode()
+        self.adapter_mode = adapter_mode(adapter)
+        self._scan_registered = False
 
         self.conf_checked = False
         self.paired = False
@@ -177,6 +201,42 @@ class BluetoothLE:
         adapters = bluetooth_adapters.get_adapters()
         await adapters.refresh()
         self.adapter_details = adapters.adapters
+        if self._proxy_only():
+            self.adapters = []
+        elif self._fixed_adapter():
+            self.adapters = [a for a in self.adapters if a == self.adapter_mode]
+
+    def _proxy_only(self):
+        return self.adapter_mode is not None and self.adapter_mode.startswith("proxy")
+
+    def _fixed_adapter(self):
+        """The local adapter (e.g. "hci1") the device is fixed to, or None."""
+        if self.adapter_mode is not None and self.adapter_mode.startswith("hci"):
+            return self.adapter_mode
+        return None
+
+    def _register_scan(self):
+        """A device fixed to a local adapter: the shared scan listens on that
+        adapter too, so the device is found without a scan of its own."""
+        adapter = self._fixed_adapter()
+        if adapter is None or self._scan_registered:
+            return
+        self._scan_registered = True
+        ble_scanner.BleScanner.get_instance(self.logger).add_callback(
+            self._scan_callback, proxies=False, adapter=adapter
+        )
+
+    def _unregister_scan(self):
+        if not self._scan_registered:
+            return
+        self._scan_registered = False
+        scanner = ble_scanner.BleScanner.instance
+        if scanner is not None:
+            scanner.remove_callback(self._scan_callback)
+
+    def _scan_callback(self, device, advertisement):
+        # nothing to do, find_device() waits for the advertisement
+        pass
 
     @staticmethod
     def _bluez_args(adapter):
@@ -189,12 +249,22 @@ class BluetoothLE:
         self._rssi = None
         adapter_working = False
 
-        # the shared scan of autodiscovery saw the device a moment ago
+        # the shared scan saw the device a moment ago
         scanner = ble_scanner.BleScanner.running_instance()
-        recent = scanner.recent_device(self.addr) if scanner else None
-        if recent is not None and ble_scanner.seen_by(recent[0], adapter):
+        recent = scanner.recent_device(self.addr, adapter=adapter) if scanner else None
+        if recent is not None:
             self._device, self._rssi = recent
             return True
+
+        if scanner is not None and scanner.listens_on(adapter):
+            # only one scan per adapter: wait for the advertisement
+            found, quiet = await scanner.wait_for_device(
+                self.addr, adapter=adapter, timeout=timeout
+            )
+            if found is not None:
+                self._device, self._rssi = found
+                self.logger.info(f"Device found via adapter {adapter}")
+            return not quiet
 
         def match_address(device, adv):
             nonlocal adapter_working
@@ -205,7 +275,14 @@ class BluetoothLE:
                 return True
             return False
 
-        async with BluetoothLE.bluetoothctl_lock:
+        # the shared scan doesn't listen right now (paused, interval mode) or
+        # not on this adapter: scan briefly, but never next to the shared
+        # scan on the same adapter
+        if scanner is not None and scanner.scans_adapter(adapter):
+            pause = scanner.paused()
+        else:
+            pause = contextlib.nullcontext()
+        async with BluetoothLE.bluetoothctl_lock, pause:
             try:
                 self._device = await BleakScanner.find_device_by_filter(
                     match_address, timeout=timeout, bluez=self._bluez_args(adapter)
@@ -265,6 +342,7 @@ class BluetoothLE:
         if self._client and self._client.is_connected:
             return
 
+        self._register_scan()
         if self.connection_task is None or self.connection_task.done():
             self.connection_task = asyncio.create_task(
                 self.connect_loop(timeout, max_retries)
@@ -446,15 +524,23 @@ class BluetoothLE:
         an ESPHome Bluetooth proxy, None for the local adapters."""
         if self.addr is None or not ble_proxy.active(connectable=True):
             return None
-        found = ble_proxy.best_device(self.addr)
+        if self.adapter_mode is not None and not self._proxy_only():
+            # fixed to the local adapter(s)
+            return None
+        proxy_name = None
+        if self.adapter_mode and self.adapter_mode.startswith("proxy:"):
+            proxy_name = self.adapter_mode[len("proxy:") :]
+        found = ble_proxy.best_device(self.addr, proxy_name=proxy_name)
         if found is None:
             return None
         if self._proxy_auth_failed:
             # needs an encrypted (PIN) connection, see _connect_via_proxy
             return None
         # a device the shared scan doesn't see locally goes through the proxy
-        if not self._local_failed and not ble_proxy.use_proxy(
-            found[1], self._local_rssi()
+        if (
+            not self._proxy_only()
+            and not self._local_failed
+            and not ble_proxy.use_proxy(found[1], self._local_rssi())
         ):
             return None
         return found
@@ -652,6 +738,7 @@ class BluetoothLE:
 
     async def disconnect(self):
         self._disconnect_called = True
+        self._unregister_scan()
 
         if self.connection_task:
             self.connection_task.cancel()

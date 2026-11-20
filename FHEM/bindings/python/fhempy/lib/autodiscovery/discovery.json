@@ -75,6 +75,27 @@
   ]
  },
  {
+  "module": "chefbbq",
+  "title": "CHEFBBQ thermometer",
+  "name": "bbq",
+  "logo": "bluetooth.svg",
+  "rules": [
+   {
+    "ble": [
+     {
+      "name": "CHEFBBQ"
+     }
+    ],
+    "title": "CHEFBBQ thermometer",
+    "name": "bbq",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ]
+   }
+  ]
+ },
+ {
   "module": "dlna_dmr",
   "title": "DLNA renderer",
   "name": "dlna",

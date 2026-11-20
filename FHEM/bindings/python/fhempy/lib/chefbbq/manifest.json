@@ -1,0 +1,32 @@
+{
+  "requirements": [
+    "bleak==3.0.2",
+    "bluetooth-adapters==2.4.0"
+  ],
+  "installer": {
+    "title": "CHEFBBQ thermometer",
+    "description": "CHEFBBQ Bluetooth BBQ thermometer with 4 probes",
+    "category": "bt",
+    "order": 100,
+    "name": "bbq",
+    "logo": "bluetooth.svg",
+    "params": [
+      {
+        "type": "mac"
+      }
+    ]
+  },
+  "discovery": {
+    "ble": [
+      {
+        "name": "CHEFBBQ"
+      }
+    ],
+    "title": "CHEFBBQ thermometer",
+    "name": "bbq",
+    "unique": "{address}",
+    "define": [
+      "{address}"
+    ]
+  }
+}

@@ -1047,6 +1047,21 @@
   ]
  },
  {
+  "id": "chefbbq",
+  "title": "CHEFBBQ thermometer",
+  "description": "CHEFBBQ Bluetooth BBQ thermometer with 4 probes",
+  "category": "bt",
+  "name": "bbq",
+  "logo": "bluetooth.svg",
+  "params": [
+   {
+    "label": "Bluetooth address (MAC)",
+    "placeholder": "AA:BB:CC:DD:EE:FF",
+    "help": "Bluetooth address, e.g. A4:C1:38:12:34:56. Autodiscovery finds most devices on its own."
+   }
+  ]
+ },
+ {
   "id": "gfprobt",
   "title": "GF Pro irrigation",
   "description": "Control GF Pro Bluetooth irrigation control",

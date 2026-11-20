@@ -264,3 +264,131 @@ async def test_address_type(ble_scanner):
     assert ble_scanner.address_type(random) == 1
     assert ble_scanner.address_type(public) == 0
     assert ble_scanner.address_type(proxy) == 0
+
+
+@pytest.mark.asyncio
+async def test_recent_device_per_adapter(ble_scanner):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    near = device("AA:BB:CC:DD:EE:FF", "/org/bluez/hci1/dev_AA_BB_CC_DD_EE_FF")
+    far = device("AA:BB:CC:DD:EE:FF", "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_FF")
+    scanner._detection(near, advertisement(-50))
+    # the last advertisement doesn't hide the one of the other adapter
+    scanner._detection(far, advertisement(-80))
+    assert scanner.recent_device("AA:BB:CC:DD:EE:FF", adapter="hci1") == (near, -50)
+    assert scanner.recent_device("AA:BB:CC:DD:EE:FF", adapter="hci0") == (far, -80)
+    assert scanner.recent_device("AA:BB:CC:DD:EE:FF", adapter="hci2") is None
+    # without adapter: the best signal
+    assert scanner.recent_device("AA:BB:CC:DD:EE:FF") == (near, -50)
+
+
+@pytest.mark.asyncio
+async def test_cleanup_recent_per_adapter(ble_scanner):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    scanner._detection(device("AA", "/org/bluez/hci0/dev_AA"), advertisement(-50))
+    scanner._detection(device("AA", "/org/bluez/hci1/dev_AA"), advertisement(-60))
+    scanner._detection(device("BB", "/org/bluez/hci0/dev_BB"), advertisement(-60))
+    old = ble_scanner.time.monotonic() - 11 * ble_scanner.RECENT_MAX_AGE
+    scanner._recent["AA"]["hci0"] = scanner._recent["AA"]["hci0"][:2] + (old,)
+    scanner._recent["BB"]["hci0"] = scanner._recent["BB"]["hci0"][:2] + (old,)
+    scanner._cleanup_recent()
+    assert list(scanner._recent["AA"]) == ["hci1"]
+    assert "BB" not in scanner._recent
+
+
+@pytest.mark.asyncio
+async def test_listens_on(ble_scanner, mocker):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    assert not scanner.listens_on("hci0")
+    scanner._task = mocker.MagicMock(done=mocker.MagicMock(return_value=False))
+    scanner._listening = {None, "hci1"}
+    assert scanner.listens_on(None)
+    assert scanner.listens_on("hci0")
+    assert scanner.listens_on("hci1")
+    assert not scanner.listens_on("hci2")
+    scanner._pause_count = 1
+    assert not scanner.listens_on("hci0")
+
+
+@pytest.mark.asyncio
+async def test_scans_adapter(ble_scanner, mocker):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    assert not scanner.scans_adapter("hci0")
+    scanner._task = mocker.MagicMock(done=mocker.MagicMock(return_value=False))
+    scanner._adapters = {print: "hci1"}
+    assert scanner.scans_adapter("hci0")
+    assert scanner.scans_adapter("hci1")
+    assert not scanner.scans_adapter("hci2")
+
+
+@pytest.mark.asyncio
+async def test_wait_for_device(ble_scanner, mocker):
+    import asyncio
+
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    scanner._task = mocker.MagicMock(done=mocker.MagicMock(return_value=False))
+    scanner._listening = {None, "hci1"}
+    dev = device("AA:BB", "/org/bluez/hci1/dev_AA_BB")
+
+    async def advertise():
+        await asyncio.sleep(0.01)
+        # another adapter: not what we wait for
+        scanner._detection(
+            device("AA:BB", "/org/bluez/hci0/dev_AA_BB"), advertisement(-90)
+        )
+        scanner._detection(dev, advertisement(-40))
+
+    task = asyncio.create_task(advertise())
+    found, quiet = await scanner.wait_for_device("aa:bb", adapter="hci1", timeout=1)
+    await task
+    assert found == (dev, -40)
+    assert not quiet
+    assert scanner._waiters == []
+
+
+@pytest.mark.asyncio
+async def test_wait_for_device_quiet_adapter(ble_scanner, mocker):
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    scanner._task = mocker.MagicMock(done=mocker.MagicMock(return_value=False))
+    scanner._listening = {None}
+    found, quiet = await scanner.wait_for_device("AA:BB", timeout=0.01)
+    assert found is None
+    # the adapter received nothing at all
+    assert quiet
+
+
+@pytest.mark.asyncio
+async def test_wait_for_device_other_devices_or_pause_not_quiet(ble_scanner, mocker):
+    import asyncio
+
+    scanner = ble_scanner.BleScanner(logging.getLogger(__name__))
+    scanner._task = mocker.MagicMock(done=mocker.MagicMock(return_value=False))
+    scanner._listening = {None}
+
+    async def other_device():
+        await asyncio.sleep(0.005)
+        scanner._detection(
+            device("CC:DD", "/org/bluez/hci0/dev_CC_DD"), advertisement(-60)
+        )
+
+    task = asyncio.create_task(other_device())
+    found, quiet = await scanner.wait_for_device("AA:BB", timeout=0.05)
+    await task
+    assert found is None and not quiet
+
+    async def pause():
+        async with scanner.paused():
+            await asyncio.sleep(0.005)
+
+    task = asyncio.create_task(pause())
+    found, quiet = await scanner.wait_for_device("AA:BB", timeout=0.05)
+    await task
+    # the scan paused meanwhile, that's no hint for a broken adapter
+    assert found is None and not quiet
+
+
+@pytest.mark.asyncio
+async def test_adapter_of(ble_scanner):
+    assert ble_scanner.adapter_of(device("AA", "/org/bluez/hci2/dev_AA")) == "hci2"
+    assert ble_scanner.adapter_of(device("AA")) == "hci0"
+    assert ble_scanner.adapter_name(None) == "hci0"
+    assert ble_scanner.adapter_name("1") == "hci1"

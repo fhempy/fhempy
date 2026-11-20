@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>76 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>77 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -216,6 +216,7 @@ For Bluetooth and Matter (both ways):
 |[ble_reset](FHEM/bindings/python/fhempy/lib/ble_reset/README.md)|Resets all Bluetooth adapters every few hours|
 |[blue_connect](FHEM/bindings/python/fhempy/lib/blue_connect/README.md)|Blue Connect pool sensor|
 |[bt_presence](FHEM/bindings/python/fhempy/lib/bt_presence/README.md)|Presence detection incl. RSSI for Bluetooth|
+|[chefbbq](FHEM/bindings/python/fhempy/lib/chefbbq/README.md)|CHEFBBQ Bluetooth BBQ thermometer with 4 probes|
 |[eq3bt](FHEM/bindings/python/fhempy/lib/eq3bt/README.md)|Control EQ3 Bluetooth thermostats|
 |[esphome_ble_proxy](FHEM/bindings/python/fhempy/lib/esphome_ble_proxy/README.md)|ESPHome Bluetooth proxies as additional Bluetooth adapters for all Bluetooth modules|
 |[gfprobt](FHEM/bindings/python/fhempy/lib/gfprobt/)|Control GF Pro Bluetooth irrigation control|
