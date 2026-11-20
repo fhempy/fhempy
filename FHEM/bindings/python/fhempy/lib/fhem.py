@@ -26,6 +26,11 @@ update_lock_owners = {}
 # they are sent to FHEM in one roundtrip on readingsEndUpdate
 bulk_updates = {}
 wsconnection = None
+# time of the FHEM connection: right after connecting FHEM handles the Define
+# of all fhempy devices (slow on small computers), replies sent meanwhile are
+# expected to be slow and only logged as warning
+connected_at = 0.0
+STARTUP_PHASE = 300
 release_check_lock = asyncio.Lock()
 # callbacks for events of other FHEM devices: {device name: [callback]}
 event_listeners = {}
@@ -56,8 +61,9 @@ class _Readings(list):
 
 
 def updateConnection(ws):
-    global wsconnection, structured_readings, operations
+    global wsconnection, structured_readings, operations, connected_at
     wsconnection = ws
+    connected_at = time.time()
     # FHEM might have been updated or downgraded meanwhile
     structured_readings = False
     operations = False
@@ -804,6 +810,15 @@ def describeCommand(cmd, fields=None):
     return cmd.split("(", 1)[0].split(" ", 1)[0][:50]
 
 
+def _slow_fhem_log(sent_time):
+    """Logger function for a slow FHEM reply: warning for commands sent in
+    the startup phase after connecting (FHEM is still busy then), error
+    otherwise"""
+    if sent_time - connected_at < STARTUP_PHASE:
+        return logger.warning
+    return logger.error
+
+
 async def send_and_wait(name, cmd, fields=None):
     """cmd: Perl code, None if fields contains a structured command"""
     fut = asyncio.get_running_loop().create_future()
@@ -828,7 +843,7 @@ async def send_and_wait(name, cmd, fields=None):
             fhem_time = (recv_time - sent_time) * 1000
             if fhem_time > 5000:
                 # log error message if fhem took too long to handle cmd
-                logger.error(
+                _slow_fhem_log(sent_time)(
                     f"FHEM took {fhem_time:.0f}ms for {describeCommand(cmd, fields)} "
                     + f"of {name}"
                 )
@@ -863,13 +878,13 @@ async def send_and_wait(name, cmd, fields=None):
 async def sendCommandName(name, cmd, hash=None, fields=None):
     ret = ""
     timeout = 180
+    start = time.time()
     try:
-        start = time.time()
         await waitForFunction(name)
         end = time.time()
         duration = end - start
         if duration > 5:
-            logger.error(
+            _slow_fhem_log(start)(
                 f"{name}: waited {duration:.0f}s for FHEM before sending "
                 + describeCommand(cmd, fields)
             )
@@ -880,7 +895,7 @@ async def sendCommandName(name, cmd, hash=None, fields=None):
             jsonmsg = await asyncio.wait_for(send_and_wait(name, cmd, fields), timeout)
         ret = jsonmsg["result"]
     except asyncio.TimeoutError:
-        logger.error(
+        _slow_fhem_log(start)(
             f"{name}: no response from FHEM since {timeout}s for "
             + describeCommand(cmd, fields)
         )
