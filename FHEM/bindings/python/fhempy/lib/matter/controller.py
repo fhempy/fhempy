@@ -170,6 +170,14 @@ class matter_controller:
                 "help": "1: create a FHEM device for each paired Matter device "
                 "automatically (default). 0: only via 'set create_devices'.",
             },
+            "server_log_level": {
+                "default": "info",
+                "options": ",".join(server.LOG_LEVELS),
+                "help": "Log level of the Matter server log "
+                ".fhempy/matter_server/matter_server.log (independent of "
+                "verbose). info (default) also logs e.g. every time sync of "
+                "a device, warning only logs problems.",
+            },
         }
         await self.fhemdev.set_attr_config(attr_config)
         await fhem.readingsSingleUpdate(self.hash, "state", "starting", 1)
@@ -269,7 +277,7 @@ class matter_controller:
             return await self.install_server() and await self.start_server()
         await self.apply_restored_backup()
         settings = self.server_settings()
-        port, _, interface, test_dcl, time_sync = settings
+        port, _, interface, test_dcl, time_sync, log_level = settings
         if test_dcl == 1:
             self.logger.warning(
                 "Matter server accepts devices with test certificates "
@@ -286,6 +294,7 @@ class matter_controller:
                 primary_interface=interface or None,
                 test_dcl=test_dcl == 1,
                 time_sync=time_sync != 0,
+                log_level=log_level,
                 logger=self.logger,
             )
             self._started_with = settings
@@ -355,6 +364,7 @@ class matter_controller:
             self.fhemdev._attr_primary_interface,
             self.fhemdev._attr_test_dcl,
             self.fhemdev._attr_time_sync,
+            self.fhemdev._attr_server_log_level,
         )
 
     async def _settings_changed(self, hash):
@@ -370,6 +380,7 @@ class matter_controller:
     set_attr_primary_interface = _settings_changed
     set_attr_test_dcl = _settings_changed
     set_attr_time_sync = _settings_changed
+    set_attr_server_log_level = _settings_changed
 
     async def stop_server(self):
         if self.proc is None:

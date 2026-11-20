@@ -26,6 +26,9 @@ NODE_MIN_VERSION = (22, 13)
 # (--default-fabric-label of matter-server 1.4.0 isn't used for pairing)
 FABRIC_LABEL = "FHEM"
 NODE_WHEEL_MACHINES = ("x86_64", "amd64", "aarch64", "arm64")
+# --log-level of matter-server (applies to the log file)
+LOG_LEVELS = ("error", "warning", "notice", "info", "debug")
+DEFAULT_LOG_LEVEL = "info"
 
 
 class NodeNotFound(Exception):
@@ -205,6 +208,7 @@ def start(
     primary_interface=None,
     test_dcl=False,
     time_sync=True,
+    log_level=DEFAULT_LOG_LEVEL,
     logger=None,
 ):
     env = dict(env)
@@ -223,6 +227,8 @@ def start(
         "127.0.0.1",
         "--log-file",
         log_file(),
+        "--log-level",
+        log_level if log_level in LOG_LEVELS else DEFAULT_LOG_LEVEL,
     ]
     if bluetooth_adapter is not None:
         args += ["--bluetooth-adapter", str(bluetooth_adapter)]
