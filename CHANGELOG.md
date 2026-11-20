@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.23.0 (2026-11-20)
+
+### Features
+
+- **chefbbq**: CHEFBBQ BBQ thermometer, fixed Bluetooth adapter without own scan
+  ([#1018](https://github.com/fhempy/fhempy/pull/1018),
+  [`5b732d8`](https://github.com/fhempy/fhempy/commit/5b732d819411f6c68ae07feb61b4e060f09dcfd8))
+
+- **wireguard**: Setup terminal with fixed size and highlighted commands
+  ([#1016](https://github.com/fhempy/fhempy/pull/1016),
+  [`c2ac42a`](https://github.com/fhempy/fhempy/commit/c2ac42aa27534493b9c4af365998bbd895af929e))
+
+
 ## v2.22.4 (2026-11-20)
 
 ### Bug Fixes
