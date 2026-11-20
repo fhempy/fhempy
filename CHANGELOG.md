@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v2.22.4 (2026-11-20)
+
+### Bug Fixes
+
+- **core**: Slow FHEM replies right after connecting are warnings
+  ([#1015](https://github.com/fhempy/fhempy/pull/1015),
+  [`28ccb9a`](https://github.com/fhempy/fhempy/commit/28ccb9a765da8c760226d9bd3111268e3961a1a9))
+
+- **matter**: Attribute server_log_level for the Matter server log
+  ([#1013](https://github.com/fhempy/fhempy/pull/1013),
+  [`397f032`](https://github.com/fhempy/fhempy/commit/397f03291ba2622caab95826323c9135804afacd))
+
+- **zigbee2mqtt**: Always reinstall node_modules on update
+  ([#1010](https://github.com/fhempy/fhempy/pull/1010),
+  [`fdcd7db`](https://github.com/fhempy/fhempy/commit/fdcd7db46570e509e0308e0db9cf280e10d1a20a))
+
+### Features
+
+- **wireguard**: Internet only access for devices and sites
+  ([#1011](https://github.com/fhempy/fhempy/pull/1011),
+  [`9bd243d`](https://github.com/fhempy/fhempy/commit/9bd243d6bd4173fb2ae60dac5483c04163641eee))
+
+
 ## v2.22.3 (2026-11-19)
 
 ### Features
