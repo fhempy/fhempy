@@ -111,7 +111,7 @@ def fhem_devices(mocker, devices):
             names = [n.strip("'\"") for n in cmd.rsplit(" (", 1)[1][:-2].split(", ")]
             return " ".join(n for n in names if n not in devices)
         if "return '';;" in cmd:
-            unique = cmd.split("my $u = lc(")[1].split(")")[0].strip("'\"").lower()
+            unique = cmd.split("my $u = (")[1].split(" =~")[0].strip("'\"").lower()
             for name, definition in devices.items():
                 if unique in definition.lower():
                     return name
@@ -403,3 +403,47 @@ async def test_create_tag_returns_device_name(fhem_mock, mocker):
     ret = await residents.create_tag({"NAME": "x"}, "Keys", "AA:BB")
     assert ret == ("", "presence_Keys")
     assert fhem_mock[1] == ["presence_Keys fhempy ble_presence AA:BB"]
+
+
+# runs the exists command like BindingsIo: the command comes as JSON from
+# fhempy (decoded in non-utf8 mode), DEF are UTF-8 bytes like in FHEM
+_PERL_EXISTS_HARNESS = r"""
+use strict; use warnings; use JSON;
+our %defs = (
+  cast1 => { FHEMPYTYPE => 'googlecast', DEF => "googlecast K\xc3\xbcche" },
+  cast2 => { FHEMPYTYPE => 'googlecast', DEF => 'googlecast "Living Room"' },
+);
+sub main::ReadingsVal { return "" }
+%main::defs = %defs;
+local $/; my $msg = JSON->new->allow_nonref->decode(<STDIN>);
+my $ret = eval $msg->{command}; die $@ if $@;
+print $ret;
+"""
+
+
+def _perl_exists(value):
+    import shutil
+    import subprocess
+
+    if shutil.which("perl") is None:
+        pytest.skip("perl not installed")
+    msg = json.dumps(
+        {"command": engine_module.exists_cmd("googlecast", value)},
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return subprocess.run(
+        ["perl", "-e", _PERL_EXISTS_HARNESS],
+        input=msg,
+        capture_output=True,
+        check=True,
+    ).stdout.decode("utf-8")
+
+
+def test_exists_finds_device_with_umlaut_in_definition():
+    assert _perl_exists("Küche") == "cast1"
+    assert _perl_exists("KüCHE") == "cast1"
+
+
+def test_exists_is_case_insensitive():
+    assert _perl_exists("living room") == "cast2"
+    assert _perl_exists("Bedroom") == ""
