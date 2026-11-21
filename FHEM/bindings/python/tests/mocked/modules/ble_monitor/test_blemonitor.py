@@ -466,6 +466,48 @@ async def test_advertisements_of_the_shared_scan_are_parsed(blemonitor, mocker):
     assert [msg["temperature"] for msg in delivered] == [21.5, 22.0]
 
 
+@pytest.mark.asyncio
+async def test_many_merged_entries_fit_into_one_hci_report(blemonitor, mocker):
+    """BlueZ keeps every manufacturer id a ThermoPro ever sent: the rebuilt
+    report must still fit into one HCI event and contain the newest value,
+    also when the same advertisement is received again."""
+    from types import SimpleNamespace
+
+    from fhempy.lib.ble_monitor.blemonitor import hci_packet
+
+    monitor, _ = blemonitor
+    monitor.fhem_devices = {"aabbccddee11": [mocker.Mock()]}
+    dump = _parsing_dump(mocker)
+    packets = []
+    parse = dump.process_hci_events
+
+    def process(data, gateway_id=""):
+        packets.append(data)
+        parse(data, gateway_id)
+
+    dump.process_hci_events = process
+    monitor.dumpthread = dump
+    device = SimpleNamespace(
+        address="AA:BB:CC:DD:EE:11", details={"props": {"AddressType": "public"}}
+    )
+    # 40 old values, 8 bytes each in the report
+    merged = {
+        0xC2 | (temp << 8): bytes([0x00, 0x2D, 0x22, 0x2C])
+        for temp in range(0x90, 0xB8)
+    }
+    monitor.shared_advertisement(device, _bleak_adv("TP357 (EE11)", merged))
+    # 22.0 C
+    newest = {0xDCC2: bytes([0x00, 0x32, 0x22, 0x2C])}
+    merged.update(newest)
+    monitor.shared_advertisement(device, _bleak_adv("TP357 (EE11)", merged))
+    # received again, nothing changed
+    monitor.shared_advertisement(device, _bleak_adv("TP357 (EE11)", merged))
+    assert all(packet[2] == len(packet) - 3 <= 255 for packet in packets)
+    assert [msg["temperature"] for msg in _delivered(dump)][-2:] == [22.0, 22.0]
+    # too long data is cut to one HCI event
+    assert len(hci_packet("AA:BB:CC:DD:EE:11", 0, -60, bytes(300))) == 258
+
+
 def test_advertisement_data_is_rebuilt():
     asyncio.run(check_and_install_dependencies("ble_monitor"))
     from fhempy.lib.ble_monitor.blemonitor import advertisement_data
