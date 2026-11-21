@@ -118,6 +118,11 @@ async def latest_version(session, arch):
     return match.group(0)
 
 
+class DownloadError(RuntimeError):
+    """Tailscale isn't installed and can't be downloaded right now, e.g.
+    no internet yet right after a reboot"""
+
+
 async def install(logger):
     """Download Tailscale if it's missing or outdated, returns the version.
     Without internet the installed version is used."""
@@ -142,7 +147,7 @@ async def install(logger):
         if installed:
             logger.warning(f"Can't check for a new Tailscale version: {err}")
             return installed
-        raise RuntimeError(f"Tailscale download failed: {err}") from err
+        raise DownloadError(f"Tailscale download failed: {err}") from err
     await utils.run_blocking(functools.partial(extract, data, version))
     return version
 
