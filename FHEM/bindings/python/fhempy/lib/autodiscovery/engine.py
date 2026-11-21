@@ -53,6 +53,26 @@ STATUS_CREATED = "created"
 STATUS_IGNORED = "ignored"
 
 
+def exists_cmd(module, value):
+    """Perl code which returns the device of the module with the value in its
+    DEF or reading address (case insensitive), '' if none.
+
+    Only A-Z is lowercased: lc() would change the UTF-8 bytes of umlauts
+    when Perl flagged the string as UTF-8 (strings from the fhempy JSON
+    are, DEF isn't), e.g. 'Küche' wouldn't be found anymore."""
+    return (
+        f"my $m = {fhem.perlString(module)};; "
+        f"my $u = ({fhem.perlString(value)} =~ tr/A-Z/a-z/r);; "
+        "foreach my $d (keys %main::defs) { "
+        "next if (($main::defs{$d}{FHEMPYTYPE} // '') ne $m);; "
+        "return $d if ($u eq '');; "
+        "return $d if (index("
+        "(($main::defs{$d}{DEF} // '') =~ tr/A-Z/a-z/r), $u) >= 0);; "
+        "return $d if ((ReadingsVal($d, 'address', '') =~ tr/A-Z/a-z/r) eq $u);; "
+        "} return '';;"
+    )
+
+
 def perl_json(value):
     return fhem.perlString(json.dumps(value, ensure_ascii=False))
 
@@ -476,17 +496,12 @@ class Engine:
         if rule.get("exists") is False:
             return ""
         value = "" if rule.get("single") else candidate["exists"]
-        cmd = (
-            f"my $m = {fhem.perlString(candidate['module'])};; "
-            f"my $u = lc({fhem.perlString(value)});; "
-            "foreach my $d (keys %main::defs) { "
-            "next if (($main::defs{$d}{FHEMPYTYPE} // '') ne $m);; "
-            "return $d if ($u eq '');; "
-            "return $d if (index(lc($main::defs{$d}{DEF} // ''), $u) >= 0);; "
-            "return $d if (lc(ReadingsVal($d, 'address', '')) eq $u);; "
-            "} return '';;"
-        )
-        return str(await fhem.sendCommandHash(self.hash, cmd) or "").strip()
+        return str(
+            await fhem.sendCommandHash(
+                self.hash, exists_cmd(candidate["module"], value)
+            )
+            or ""
+        ).strip()
 
     # --- devices deleted in FHEM ---
 
