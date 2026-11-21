@@ -157,15 +157,25 @@ def find_login_url(text):
     return match.group(0) if match else None
 
 
-def funnel_ports(serve_config):
-    """Ports of this computer which Funnel forwards to the internet"""
+def funnel_ports(serve_config, host=None):
+    """Ports of this computer which Funnel forwards to the internet. With
+    host only the ports of this name: the entries are "<name>:<port>" and
+    keep the old name after a change of the hostname."""
     allow = (serve_config or {}).get("AllowFunnel") or {}
-    return {int(k.rsplit(":", 1)[1]) for k, v in allow.items() if v and ":" in k}
+    ports = set()
+    for key, value in allow.items():
+        if not value or ":" not in key:
+            continue
+        name, port = key.rsplit(":", 1)
+        if host is None or name.rstrip(".").lower() == host.rstrip(".").lower():
+            ports.add(int(port))
+    return ports
 
 
-def funnel_active(serve_config):
-    """True if Funnel forwards port 443 of this computer to the internet"""
-    return 443 in funnel_ports(serve_config)
+def funnel_active(serve_config, host=None):
+    """True if Funnel forwards port 443 of this computer (with host: of
+    this name) to the internet"""
+    return 443 in funnel_ports(serve_config, host)
 
 
 def pid_path():
