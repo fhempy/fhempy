@@ -351,22 +351,8 @@ class remote_access(generic.FhemModule):
     # --- main loop ---
 
     async def run(self):
-        # FHEM, FHEMWEB or the internet aren't ready yet (e.g. FHEM busy
-        # right after its start): try again later instead of giving up
-        while True:
-            try:
-                await self.start()
-                self._errors.success()
-                break
-            except asyncio.CancelledError:
-                raise
-            except (TemporaryError, tailscale.DownloadError) as err:
-                self._errors.failed("Remote access can't start yet", expected=True)
-                await self.wait_for_retry(err)
-            except Exception as err:
-                self.logger.error(f"Remote access can't start: {err}")
-                await self.update_status("error", str(err))
-                return
+        if not await self.start_with_retry():
+            return
         while True:
             # clear before the check: a logout or hostname change during the
             # check wakes the next one instead of waiting ONLINE_INTERVAL
@@ -388,6 +374,25 @@ class remote_access(generic.FhemModule):
                 self.logger.exception("Remote access check failed")
                 await self.update_status("error", str(err))
             await self.sleep(delay)
+
+    async def start_with_retry(self):
+        """FHEM, FHEMWEB or the internet aren't ready yet (e.g. FHEM busy
+        right after its start): try again later instead of giving up.
+        False if a problem needs the user."""
+        while True:
+            try:
+                await self.start()
+                self._errors.success()
+                return True
+            except asyncio.CancelledError:
+                raise
+            except (TemporaryError, tailscale.DownloadError) as err:
+                self._errors.failed("Remote access can't start yet", expected=True)
+                await self.wait_for_retry(err)
+            except Exception as err:
+                self.logger.error(f"Remote access can't start: {err}")
+                await self.update_status("error", str(err))
+                return False
 
     async def start(self):
         """Tailscale and FHEMWEB with password, raises TemporaryError or
