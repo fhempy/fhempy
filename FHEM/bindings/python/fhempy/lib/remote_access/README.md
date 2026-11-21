@@ -36,8 +36,8 @@ every start). The password is created randomly, the user name is `fhem`. The pho
 login for 30 days (attribute `basicAuthExpiry` of the allowed device).
 
 Only this password opens the remote access. If another `allowed` device (e.g. the one with the
-password of `WEB`) lists `WEBremote` in `validFor`, the module removes `WEBremote` there on
-every start and logs a warning. `WEB` keeps its own password.
+password of `WEB`) lists the FHEMWEB of the remote access (`WEB<device name>`, e.g.
+`WEBremote`) in `validFor`, the module removes it there on every start and logs a warning. `WEB` keeps its own password.
 
 Before the address is switched on, the module checks that FHEMWEB refuses requests without
 password. If it doesn't, the remote access stays off.
