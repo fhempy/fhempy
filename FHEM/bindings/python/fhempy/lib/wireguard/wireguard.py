@@ -50,6 +50,8 @@ MAX_VIA_HOME = 16
 DEVICE_PREFIX = 24
 # via_home: every device which uses the Pi of the site as gateway
 VIA_HOME_ALL = "all"
+# seconds to collect the events of a ddnssde update before refreshing
+DDNS_EVENT_DELAY = 1
 # access=internet: only the internet through home, no device at home
 ACCESS_INTERNET = "internet"
 ACCESS_OPTIONS = (ACCESS_INTERNET, "all")
@@ -471,6 +473,10 @@ class wireguard(generic.FhemModule):
         self.setup_state = ""
         self.log_lines = collections.deque(maxlen=LOG_LINES)
         self.traffic_time = 0
+        # ddnssde devices: name -> DynDNS name of their attribute hostname
+        self.ddns_hosts = {}
+        self.ddns_watched = []
+        self.ddns_refresh = None
         self.log_pending = False
 
     # FHEM FUNCTION
@@ -604,6 +610,7 @@ class wireguard(generic.FhemModule):
         # the VPN keeps running: Undefine also happens on every restart of
         # fhempy, clients must not lose the connection
         await super().Undefine(hash)
+        self.unwatch_ddns()
         if self.session is not None:
             await self.session.close()
             self.session = None
@@ -709,8 +716,10 @@ class wireguard(generic.FhemModule):
         return None
 
     def ddns_hostname(self):
-        """hostname of a ddnssde device of fhempy which points to us"""
-        names = []
+        """hostname of a ddnssde device of fhempy which points to us. Its
+        attribute hostname counts already before ddnss.de answered (after a
+        restart the list of hostnames takes a while)."""
+        names = [(2, host) for host in self.ddns_hosts.values()]
         for inst in fhem_pythonbinding.loadedModuleInstances.copy().values():
             if getattr(inst, "hash", {}).get("FHEMPYTYPE") != "ddnssde":
                 continue
@@ -721,8 +730,69 @@ class wireguard(generic.FhemModule):
                 score = 2 if host.replace(".", "_") == selected else 0
                 score += 1 if ip and ip == self.public_ip else 0
                 names.append((score, host))
+            if not hostnames and selected not in ("", "-"):
+                names.append((2, selected.replace("_", ".")))
         names.sort(reverse=True)
         return names[0][1] if names else None
+
+    # --- DynDNS (ddnssde): events instead of polling ---
+
+    async def watch_ddns(self):
+        """finds the ddnssde devices and their hostname attribute, gets the
+        events of them (new IP, hostnames from ddnss.de) and of global (new,
+        renamed, deleted devices, attribute changes)"""
+        try:
+            out = await fhem.CommandList(self.hash, "FHEMPYTYPE=ddnssde FHEMPYTYPE")
+            names = sorted(
+                {
+                    words[0]
+                    for words in (line.split() for line in str(out or "").splitlines())
+                    if len(words) >= 2 and words[-1] == "ddnssde"
+                }
+            )
+            hosts = {}
+            for name in names:
+                host = str(await fhem.AttrVal(name, "hostname", "-") or "-")
+                if host != "-":
+                    hosts[name] = host.replace("_", ".")
+            self.ddns_hosts = hosts
+            if names + ["global"] != self.ddns_watched:
+                self.unwatch_ddns()
+                for name in names:
+                    fhem.register_event_listener(name, self.ddns_event)
+                fhem.register_event_listener("global", self.global_event)
+                self.ddns_watched = names + ["global"]
+                await fhem.setEventDevices(self.hash, self.ddns_watched)
+        except Exception:  # noqa: BLE001 only the DynDNS name is missing
+            self.logger.exception("Failed to find the ddnssde devices")
+
+    def unwatch_ddns(self):
+        for name in self.ddns_watched:
+            fhem.unregister_event_listener(name, self.ddns_event)
+            fhem.unregister_event_listener(name, self.global_event)
+        self.ddns_watched = []
+
+    def ddns_event(self, device, reading, value):
+        self.schedule_ddns_refresh()
+
+    def global_event(self, device, reading, value):
+        words = str(value).split()
+        if words and words[0] in ("DEFINED", "DELETED", "RENAMED"):
+            self.schedule_ddns_refresh()
+        elif len(words) >= 3 and words[0] in ("ATTR", "DELETEATTR"):
+            if words[1] in self.ddns_watched and words[2] == "hostname":
+                self.schedule_ddns_refresh()
+
+    def schedule_ddns_refresh(self):
+        """several events at once (all readings of an update): one refresh"""
+        if self.ddns_refresh is None or self.ddns_refresh.done():
+            self.ddns_refresh = self.create_async_task(self.refresh_ddns())
+
+    async def refresh_ddns(self):
+        await asyncio.sleep(DDNS_EVENT_DELAY)
+        await self.watch_ddns()
+        if self._started:
+            await self.update_problem()
 
     def endpoint_host(self):
         return self._attr_endpoint or self.ddns_hostname() or self.public_ip
@@ -1074,6 +1144,7 @@ class wireguard(generic.FhemModule):
         self.net = await utils.run_blocking(functools.partial(network.detect))
         await self.load_config()
         await self.load_log()
+        await self.watch_ddns()
         await self.set_readings(
             "starting",
             vpn_network=str(self.vpn_network),

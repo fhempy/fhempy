@@ -11,7 +11,8 @@ WiFi. You reach FHEM, the router, the NAS, cameras... No network know-how needed
   it, the device page tells you exactly what to set up.
 - **Internet address**: the public IP address is found automatically, or the name of a [ddnssde](../ddnssde/)
   device. fhempy warns if your connection can't be reached from the internet (carrier grade NAT / DS-Lite) or if the
-  DynDNS name points somewhere else.
+  DynDNS name points somewhere else. The name of the ddnssde device (its attribute `hostname`) is used right away,
+  also before it got the list from ddnss.de, and its events update it (no waiting for the next check).
 - **Monitoring**: which device is connected, since when, from where, how much traffic.
 
 ## Set up
