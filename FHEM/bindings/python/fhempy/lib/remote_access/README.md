@@ -35,6 +35,10 @@ password. It looks like your FHEMWEB `WEB` (room icons, style, hidden rooms... a
 every start). The password is created randomly, the user name is `fhem`. The phone remembers the
 login for 30 days (attribute `basicAuthExpiry` of the allowed device).
 
+Only this password opens the remote access. If another `allowed` device (e.g. the one with the
+password of `WEB`) lists the FHEMWEB of the remote access (`WEB<device name>`, e.g.
+`WEBremote`) in `validFor`, the module removes it there on every start and logs a warning. `WEB` keeps its own password.
+
 Before the address is switched on, the module checks that FHEMWEB refuses requests without
 password. If it doesn't, the remote access stays off.
 

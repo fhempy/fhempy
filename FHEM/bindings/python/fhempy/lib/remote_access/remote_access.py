@@ -262,6 +262,20 @@ class remote_access(generic.FhemModule):
             ' CommandAttr(undef, "$al basicAuthExpiry 30")'
             " if (AttrVal($al, 'basicAuthExpiry', '') eq '');"
             ' CommandAttr(undef, "$al comment $comment");'
+            # only our password opens the remote access: no other allowed
+            # device may be valid for it. FHEM accepts a login as soon as one
+            # allowed device accepts it (e.g. the password of WEB), and one
+            # without basicAuth drops the 401 answer of the others
+            " my @freed;"
+            " foreach my $o (devspec2array('TYPE=allowed')) {"
+            " next if ($o eq $al || !defined($defs{$o})"
+            " || $defs{$o}{TYPE} ne 'allowed');"
+            " my @vf = split(',', AttrVal($o, 'validFor', ''));"
+            " my @keep = grep { $_ ne $web } @vf;"
+            " next if (@keep == @vf);"
+            ' if (@keep) { CommandAttr(undef, "$o validFor " . join(",", @keep)); }'
+            ' else { CommandDeleteAttr(undef, "$o validFor"); }'
+            " push @freed, $o; }"
             " my $err = '';"
             " if (!defined($defs{$web})) {"
             f" foreach my $p ({FIRST_PORT}..{LAST_PORT}) {{"
@@ -279,15 +293,20 @@ class remote_access(generic.FhemModule):
             " if (defined($attr{$web}{$an})); }"
             " elsif (AttrVal($web, $an, '') ne $v) {"
             ' CommandAttr(undef, "$web $an $v"); } } }'
-            " 'port ' . $defs{$web}{PORT}",
+            " 'port ' . $defs{$web}{PORT} . (@freed ? ' freed ' . join(',', @freed) : '')",
         )
         if not result:
             # no reply: FHEM is busy or the connection to FHEM is gone
             raise TemporaryError("FHEM doesn't answer")
-        match = re.match(r"port (\d+)", str(result))
+        match = re.match(r"port (\d+)(?: freed (\S+))?", str(result))
         if not match:
             raise RuntimeError(str(result))
         self.port = int(match.group(1))
+        if match.group(2):
+            self.logger.warning(
+                f"Removed {self.web_name} from validFor of {match.group(2)}: "
+                f"only the password of {self.allowed_name} opens the remote access"
+            )
         if (
             await fhem.ReadingsVal(self.hash["NAME"], ".auth", "")
             != self.credentials_hash()

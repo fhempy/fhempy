@@ -191,6 +191,8 @@ class FakeFhem:
         self.rewrites = []
         # FHEM too busy to answer (sendCommand returns "" after its timeout)
         self.busy = False
+        # allowed devices the setup removed the FHEMWEB from (validFor)
+        self.freed = ""
 
     async def send(self, hash, code):
         self.commands.append(code)
@@ -202,7 +204,8 @@ class FakeFhem:
             self.rewrites.append(code)
             return ""
         if "FHEMWEB $p" in code:
-            return f"port {self.fhemweb.port}"
+            freed = f" freed {self.freed}" if self.freed else ""
+            return f"port {self.fhemweb.port}{freed}"
         if "'basicAuth', '')" in code:
             return "yes" if self.fhemweb.credentials else "no"
         match = re.search(r"CommandSet\(undef, '(\S+) basicAuth (\S+) (\S+)'\)", code)
@@ -291,6 +294,22 @@ async def test_setup_flow(module):
     assert "roomIcons" in setup and "HTTPS" not in setup
     # the detail page reloads for every step
     assert any("location.reload()" in js for _, js in mock_fhem.javascript)
+
+
+@pytest.mark.asyncio
+async def test_other_passwords_dont_open_remote_access(module, caplog):
+    # e.g. the allowed device with the password of WEB is also valid for the
+    # FHEMWEB of the remote access: FHEM would accept that password too
+    module.fake.freed = "allowed_WEB"
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    with caplog.at_level(logging.WARNING):
+        await define(module)
+        await wait_for(lambda: state() == f"online: https://{DNS}")
+    assert "from validFor of allowed_WEB" in caplog.text
+    setup = next(c for c in module.fake.commands if "FHEMWEB $p" in c)
+    # every other allowed device loses the FHEMWEB of the remote access
+    assert "devspec2array('TYPE=allowed')" in setup
+    assert "grep { $_ ne $web } @vf" in setup
 
 
 @pytest.mark.asyncio
