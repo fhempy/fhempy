@@ -65,9 +65,11 @@ elif args[:1] == ["up"]:
     while load()["backend"] != "Running":
         time.sleep(0.05)
 elif args[:2] == ["funnel", "status"]:
-    allow = {"%s:443" % state["dns"]: True} if state.get("target") else {}
+    # like tailscale: the entries keep the name they were created with
+    host = state.get("funnel_dns") or state["dns"]
+    allow = {"%s:443" % host: True} if state.get("target") else {}
     for port in state.get("ports", {}):
-        allow["%s:%s" % (state["dns"], port)] = True
+        allow["%s:%s" % (host, port)] = True
     print(json.dumps({"AllowFunnel": allow}))
 elif args[:1] == ["funnel"] and any(a.startswith("--https=") for a in args):
     port = [a for a in args if a.startswith("--https=")][0].split("=")[1]
@@ -86,6 +88,11 @@ elif args[:1] == ["funnel"]:
         print("Success.")
     with change() as state:
         state["target"] = args[-1]
+        state["funnel_dns"] = state["dns"]
+elif args[:1] == ["set"]:
+    hostname = [a for a in args if a.startswith("--hostname=")][0].split("=")[1]
+    with change() as state:
+        state["dns"] = hostname + "." + state["dns"].split(".", 1)[1]
 elif args[:2] == ["serve", "reset"]:
     with change() as state:
         state["target"] = None
@@ -382,6 +389,24 @@ async def test_retry_while_download_fails(module, mocker):
 
 
 @pytest.mark.asyncio
+async def test_hostname_change_without_logout(module):
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    await define(module)
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+
+    # Tailscale renames the node, Funnel still has the old name
+    module._attr_hostname = "myhome"
+    await module.set_attr_hostname(module.hash)
+    new_dns = "myhome." + DNS.split(".", 1)[1]
+    await wait_for(lambda: state() == f"online: https://{new_dns}")
+    assert mock_fhem.readings[NAME]["url"] == f"https://{new_dns}"
+    fake = module.fake_ts.load()
+    assert fake["funnel_dns"] == new_dns
+    assert ["set", "--hostname=myhome"] in fake["calls"]
+    assert fake["backend"] == "Running"
+
+
+@pytest.mark.asyncio
 async def test_password_and_logout(module):
     module.fake_ts.update(backend="Running", funnel_enabled=True)
     await define(module)
@@ -617,6 +642,10 @@ def test_extract(tmp_path, monkeypatch):
 def test_helpers():
     assert tailscale.version_of("tailscale_1.90.6_arm64.tgz") == "1.90.6"
     assert tailscale.funnel_active({"AllowFunnel": {"a.ts.net:443": True}})
+    assert tailscale.funnel_active({"AllowFunnel": {"a.ts.net:443": True}}, "a.ts.net")
+    assert not tailscale.funnel_active(
+        {"AllowFunnel": {"a.ts.net:443": True}}, "b.ts.net"
+    )
     assert not tailscale.funnel_active({"AllowFunnel": {}})
     assert not tailscale.funnel_active(None)
     assert tailscale.find_login_url(f"To enable, visit:\n\n  {ENABLE_URL}\n") == (

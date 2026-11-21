@@ -497,7 +497,8 @@ class remote_access(generic.FhemModule):
                 "enable funnel" if self.enable_url else "enabling funnel"
             )
             return False
-        if tailscale.funnel_active(await self.ts.funnel_status()):
+        funnel = await self.ts.funnel_status()
+        if tailscale.funnel_active(funnel, dns):
             self.enable_url = ""
             self.url = f"https://{dns}"
             await fhem.readingsSingleUpdateIfChanged(self.hash, "url", self.url, 1)
@@ -507,6 +508,9 @@ class remote_access(generic.FhemModule):
             except Exception:
                 self.logger.exception("Web pages of the home network failed")
             return True
+        if tailscale.funnel_active(funnel):
+            # new hostname: Funnel still forwards the old name only
+            self.logger.info(f"Hostname changed, starting Funnel for {dns}")
         output = self.ts.funnel_output.strip()
         if output and self.ts.funnel_proc is not None:
             self.logger.info(f"tailscale funnel: {output}")
