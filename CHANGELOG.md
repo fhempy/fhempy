@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.23.1 (2026-11-21)
+
+### Bug Fixes
+
+- **ble_monitor**: Advertisements with many merged BlueZ entries no longer fail
+  ([#1021](https://github.com/fhempy/fhempy/pull/1021),
+  [`dad59f9`](https://github.com/fhempy/fhempy/commit/dad59f91c48901a1c11e3aec8c37da4483ee9757))
+
+- **remote_access**: Retry the start when FHEM or FHEMWEB don't answer yet
+  ([#1019](https://github.com/fhempy/fhempy/pull/1019),
+  [`93410fc`](https://github.com/fhempy/fhempy/commit/93410fc55470e15f0115ac014bac879db601db37))
+
+
 ## v2.23.0 (2026-11-20)
 
 ### Features
