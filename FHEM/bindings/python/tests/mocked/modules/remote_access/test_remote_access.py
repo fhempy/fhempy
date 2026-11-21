@@ -189,9 +189,13 @@ class FakeFhem:
         self.commands = []
         self.weblinks = {}
         self.rewrites = []
+        # FHEM too busy to answer (sendCommand returns "" after its timeout)
+        self.busy = False
 
     async def send(self, hash, code):
         self.commands.append(code)
+        if self.busy:
+            return ""
         if "TYPE=weblink" in code:
             return json.dumps(self.weblinks)
         if "fhempy_remote_access" in code:
@@ -228,6 +232,8 @@ async def module(mocker, tmp_path, monkeypatch):
     mock_fhem.attributes.pop(NAME, None)
     mocker.patch.object(ra, "WAIT_INTERVAL", 0.05)
     mocker.patch.object(ra, "ONLINE_INTERVAL", 0.1)
+    mocker.patch.object(ra, "RETRY_FIRST", 0.1)
+    mocker.patch.object(ra, "RETRY_MAX", 0.4)
     fake_ts = FakeTailscale()
 
     async def install(logger):
@@ -301,6 +307,59 @@ async def test_no_funnel_without_password(module):
     module.fhemweb.protected = True
     await module.set_restart(module.hash, {})
     await wait_for(lambda: state() == f"online: https://{DNS}")
+
+
+@pytest.mark.asyncio
+async def test_retry_while_fhem_is_busy(module):
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    module.fake.busy = True
+    await define(module)
+    await wait_for(lambda: (state() or "").startswith("waiting: FHEM doesn't answer"))
+    assert "next try in" in state()
+    assert "tries again by itself" in module.setup_html()
+    # tries again with growing delay instead of giving up
+    tries = len(module.fake.commands)
+    await wait_for(lambda: len(module.fake.commands) > tries)
+    assert module.fake_ts.load().get("target") is None
+
+    module.fake.busy = False
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+
+
+@pytest.mark.asyncio
+async def test_retry_while_fhemweb_is_unreachable(module):
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    port = module.fhemweb.port
+    await module.fhemweb.stop()
+    await define(module)
+    await wait_for(lambda: "is not reachable" in (state() or ""))
+    assert state().startswith("waiting: FHEMWEB")
+    assert module.fake_ts.load().get("target") is None
+
+    # FHEMWEB answers again on the same port
+    app = web.Application()
+    app.router.add_get("/{path:.*}", module.fhemweb.handle)
+    module.fhemweb.runner = web.AppRunner(app)
+    await module.fhemweb.runner.setup()
+    await web.TCPSite(module.fhemweb.runner, "127.0.0.1", port).start()
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+
+
+@pytest.mark.asyncio
+async def test_retry_while_download_fails(module, mocker):
+    calls = []
+
+    async def install(logger):
+        calls.append(1)
+        if len(calls) < 3:
+            raise tailscale.DownloadError("Tailscale download failed: no internet")
+        return "1.90.0"
+
+    mocker.patch.object(tailscale, "install", install)
+    module.fake_ts.update(backend="Running", funnel_enabled=True)
+    await define(module)
+    await wait_for(lambda: state() == f"online: https://{DNS}")
+    assert len(calls) == 3
 
 
 @pytest.mark.asyncio

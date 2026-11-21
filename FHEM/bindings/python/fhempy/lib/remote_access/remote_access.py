@@ -28,6 +28,10 @@ ICON = "it_internet"
 WAIT_INTERVAL = 3
 ONLINE_INTERVAL = 60
 SOCKET_TIMEOUT = 30
+# FHEM or FHEMWEB not reachable (e.g. FHEM busy right after its start):
+# try again after 10s, 20s, 40s... at most every 5 minutes
+RETRY_FIRST = 10
+RETRY_MAX = 300
 # look of the FHEMWEB "WEB" (icons, style, hidden rooms...), copied to the
 # FHEMWEB of the remote access. Not copied: HTTPS, csrfToken, allowfrom...
 LOOK_ATTRIBUTES = (
@@ -43,6 +47,11 @@ LOGIN_HELP = (
     "Log in with Google, Microsoft, Apple or GitHub, a free Tailscale account "
     "is created automatically."
 )
+
+
+class TemporaryError(RuntimeError):
+    """FHEM, FHEMWEB or the internet aren't reachable right now, the remote
+    access tries again later by itself"""
 
 
 def valid_hostname(name):
@@ -97,6 +106,8 @@ class remote_access(generic.FhemModule):
         # start Funnel again right after the logout stopped it
         self._check_lock = asyncio.Lock()
         self._run_task = None
+        # quiet log while FHEM or FHEMWEB aren't reachable, retry backoff
+        self._errors = utils.ErrorLogger(logger)
         self.sites = sites.Sites(self)
 
     # FHEM FUNCTION
@@ -270,9 +281,12 @@ class remote_access(generic.FhemModule):
             ' CommandAttr(undef, "$web $an $v"); } } }'
             " 'port ' . $defs{$web}{PORT}",
         )
-        match = re.match(r"port (\d+)", str(result or ""))
+        if not result:
+            # no reply: FHEM is busy or the connection to FHEM is gone
+            raise TemporaryError("FHEM doesn't answer")
+        match = re.match(r"port (\d+)", str(result))
         if not match:
-            raise RuntimeError(str(result or "FHEMWEB could not be created"))
+            raise RuntimeError(str(result))
         self.port = int(match.group(1))
         if (
             await fhem.ReadingsVal(self.hash["NAME"], ".auth", "")
@@ -323,7 +337,7 @@ class remote_access(generic.FhemModule):
                 async with session.get(url, headers=auth) as resp:
                     with_password = resp.status
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise RuntimeError(f"FHEMWEB {url} is not reachable: {err}") from err
+            raise TemporaryError(f"FHEMWEB {url} is not reachable: {err}") from err
         if without != 401:
             raise RuntimeError(
                 f"{self.web_name} doesn't ask for a password, remote access "
@@ -337,39 +351,78 @@ class remote_access(generic.FhemModule):
     # --- main loop ---
 
     async def run(self):
-        try:
-            await self.update_status("installing Tailscale")
-            version = await tailscale.install(self.logger)
-            self.version = version
-            await fhem.readingsSingleUpdateIfChanged(
-                self.hash, "tailscale_version", version, 1
-            )
-            await self.update_status("preparing FHEMWEB with password")
-            await self.setup_fhemweb()
-            await self.check_password_protection()
-        except Exception as err:
-            self.logger.error(f"Remote access can't start: {err}")
-            await self.update_status("error", str(err))
+        if not await self.start_with_retry():
             return
         while True:
             # clear before the check: a logout or hostname change during the
             # check wakes the next one instead of waiting ONLINE_INTERVAL
             self._wakeup.clear()
+            delay = WAIT_INTERVAL
             try:
                 async with self._check_lock:
                     online = await self.step()
+                self._errors.success()
+                if online:
+                    delay = ONLINE_INTERVAL
             except asyncio.CancelledError:
                 raise
+            except TemporaryError as err:
+                # FHEMWEB busy: don't ask it every few seconds
+                self._errors.failed("Remote access check failed", expected=True)
+                delay = await self.retry_status(err)
             except Exception as err:
                 self.logger.exception("Remote access check failed")
                 await self.update_status("error", str(err))
-                online = False
+            await self.sleep(delay)
+
+    async def start_with_retry(self):
+        """FHEM, FHEMWEB or the internet aren't ready yet (e.g. FHEM busy
+        right after its start): try again later instead of giving up.
+        False if a problem needs the user."""
+        while True:
             try:
-                await asyncio.wait_for(
-                    self._wakeup.wait(), ONLINE_INTERVAL if online else WAIT_INTERVAL
-                )
-            except asyncio.TimeoutError:
-                pass
+                await self.start()
+                self._errors.success()
+                return True
+            except asyncio.CancelledError:
+                raise
+            except (TemporaryError, tailscale.DownloadError) as err:
+                self._errors.failed("Remote access can't start yet", expected=True)
+                await self.wait_for_retry(err)
+            except Exception as err:
+                self.logger.error(f"Remote access can't start: {err}")
+                await self.update_status("error", str(err))
+                return False
+
+    async def start(self):
+        """Tailscale and FHEMWEB with password, raises TemporaryError or
+        tailscale.DownloadError if it's worth trying again later"""
+        await self.update_status("installing Tailscale")
+        version = await tailscale.install(self.logger)
+        self.version = version
+        await fhem.readingsSingleUpdateIfChanged(
+            self.hash, "tailscale_version", version, 1
+        )
+        await self.update_status("preparing FHEMWEB with password")
+        await self.setup_fhemweb()
+        await self.check_password_protection()
+
+    async def wait_for_retry(self, err):
+        self._wakeup.clear()
+        await self.sleep(await self.retry_status(err))
+
+    async def retry_status(self, err):
+        """state shows why it waits, returns the delay until the next try"""
+        delay = self._errors.next_delay(minimum=RETRY_FIRST, maximum=RETRY_MAX)
+        await self.update_status("waiting", f"{err}, next try in {delay:.0f}s")
+        return delay
+
+    async def sleep(self, delay):
+        """wait delay seconds, set restart, logout... wake up earlier"""
+        try:
+            await asyncio.wait_for(self._wakeup.wait(), delay)
+        except asyncio.TimeoutError:
+            pass
 
     async def ensure_daemon(self):
         if self.ts.daemon_running():
@@ -530,6 +583,12 @@ class remote_access(generic.FhemModule):
                 "<b style='color:#c00'>Remote access is off:</b> "
                 f"{html.escape(self.problem)}<br>Fix the problem and use "
                 "<i>set restart</i>."
+            )
+        if status == "waiting":
+            return (
+                "<b>Remote access starts soon:</b> "
+                f"{html.escape(self.problem)}<br>It tries again by itself, "
+                "<i>set restart</i> tries right now."
             )
         if status == "login required":
             if not self.login_url:
