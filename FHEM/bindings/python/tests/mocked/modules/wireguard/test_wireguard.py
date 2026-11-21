@@ -10,7 +10,7 @@ import pytest
 import pytest_asyncio
 from tests.utils import mock_fhem
 
-from fhempy.lib import fhem_pythonbinding
+from fhempy.lib import fhem, fhem_pythonbinding
 from fhempy.lib.pkg_installer import check_and_install_dependencies
 from fhempy.lib.wireguard import helper, keys, network, remote, wireguard
 
@@ -234,6 +234,22 @@ async def fake_send(hash, cmd):
     return ""
 
 
+class FakeFhem:
+    """list of ddnssde devices and the event devices"""
+
+    def __init__(self):
+        self.ddns = []
+        self.event_devices = []
+
+    async def command_list(self, hash, listcmd):
+        assert listcmd == "FHEMPYTYPE=ddnssde FHEMPYTYPE"
+        return "".join(f"{name:<20} ddnssde\n" for name in self.ddns)
+
+    async def set_event_devices(self, hash, devices):
+        self.event_devices = list(devices)
+        return True
+
+
 @pytest_asyncio.fixture
 async def module(mocker, tmp_path, monkeypatch):
     # segno for the QR code
@@ -260,9 +276,14 @@ async def module(mocker, tmp_path, monkeypatch):
 
     mocker.patch.object(network, "public_ip", public_ip)
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake_send)
+    fake_fhem = FakeFhem()
+    mocker.patch("fhempy.lib.fhem.CommandList", fake_fhem.command_list)
+    mocker.patch("fhempy.lib.fhem.setEventDevices", fake_fhem.set_event_devices)
     mocker.patch.dict(fhem_pythonbinding.loadedModuleInstances, {}, clear=True)
+    mocker.patch.object(wireguard, "DDNS_EVENT_DELAY", 0)
     mod = wireguard.wireguard(logger)
     mod.fake = fake
+    mod.fake_fhem = fake_fhem
     await mod.Define({"NAME": NAME, "FHEMPYTYPE": "wireguard"}, [], {})
     await wait_for(lambda: readings().get("port_forwarding") == "router (UPnP)")
     yield mod
@@ -989,3 +1010,44 @@ async def test_internet_only_site(module, mocker):
     await wait_for(lambda: readings().get("Holiday_setup", "").startswith("done"))
     assert "access" not in module.config["clients"]["Holiday"]
     assert module.fake.applied[-1]["peers"][0]["isolated"] is False
+
+
+@pytest.mark.asyncio
+async def test_ddns_hostname_before_ddnss_answered(module):
+    """after a restart the ddnssde device doesn't know its hostnames yet:
+    its attribute hostname is used, not the IP"""
+
+    class Ddns:
+        hash = {"NAME": "ddns", "FHEMPYTYPE": "ddnssde"}
+        hostnames = None
+        _attr_hostname = "home_ddnss_de"
+
+    fhem_pythonbinding.loadedModuleInstances["ddns"] = Ddns()
+    assert module.endpoint_host() == "home.ddnss.de"
+    Ddns._attr_hostname = "-"
+    assert module.endpoint_host() == "203.0.113.9"
+
+
+@pytest.mark.asyncio
+async def test_ddns_events(module, mocker):
+    """ddnssde in another process: found via FHEM, updated by its events"""
+    await wait_for(lambda: readings().get("endpoint") == "203.0.113.9:51820")
+    assert module.fake_fhem.event_devices == ["global"]
+    mocker.patch.object(wireguard, "resolve", lambda host: {"203.0.113.9"})
+    # a ddnssde device is defined: event of global
+    module.fake_fhem.ddns = ["myddns"]
+    mock_fhem.attributes.setdefault("myddns", {})["hostname"] = "home_ddnss_de"
+    await fhem.dispatch_event("global", "DEFINED myddns")
+    await wait_for(lambda: readings().get("endpoint") == "home.ddnss.de:51820")
+    assert module.fake_fhem.event_devices == ["myddns", "global"]
+    # another hostname selected
+    mock_fhem.attributes["myddns"]["hostname"] = "vpn_ddnss_de"
+    await fhem.dispatch_event("global", "ATTR myddns hostname vpn_ddnss_de")
+    await wait_for(lambda: readings().get("endpoint") == "vpn.ddnss.de:51820")
+    # events of the ddnssde device refresh it, also without global
+    mock_fhem.attributes["myddns"]["hostname"] = "home_ddnss_de"
+    await fhem.dispatch_event("myddns", "host_home_ddnss_de_ip: 203.0.113.9")
+    await wait_for(lambda: readings().get("endpoint") == "home.ddnss.de:51820")
+    mock_fhem.attributes.pop("myddns", None)
+    await module.Undefine(module.hash)
+    assert "myddns" not in fhem.event_listeners
