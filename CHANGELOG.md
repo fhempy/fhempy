@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.23.2 (2026-11-21)
+
+### Bug Fixes
+
+- **autodiscovery**: Find existing devices with umlauts in their definition
+  ([#1023](https://github.com/fhempy/fhempy/pull/1023),
+  [`b7a82be`](https://github.com/fhempy/fhempy/commit/b7a82be9d055382e9c67e5e7ab06ff0baeea3979))
+
+- **remote_access**: Only the own password opens the remote FHEMWEB
+  ([#1024](https://github.com/fhempy/fhempy/pull/1024),
+  [`602fd2d`](https://github.com/fhempy/fhempy/commit/602fd2de3225f31571c6c2c3d2342c7997e8d4ce))
+
+
 ## v2.23.1 (2026-11-21)
 
 ### Bug Fixes
