@@ -1618,16 +1618,23 @@ def test_appliance_watch():
     watch = model.ApplianceWatch()
     minute = 60
     assert watch.feed(2, 0) is None
-    assert watch.feed(2100, 0) == "start"
+    assert watch.feed(2100, 0) is None
+    # shown as running after a few minutes: no kettle, no drum against creases
+    assert not watch.running
+    assert watch.next_check() == model.APPLIANCE_CONFIRM_SECONDS
+    assert watch.tick(3 * minute) == "start" and watch.running
     assert watch.feed(150, 30 * minute) is None
     assert watch.feed(3, 45 * minute) is None
+    # nothing learned yet: a pause may follow, wait
     assert watch.tick(50 * minute) is None
-    # still running: plugs report changes only
-    assert watch.tick(44 * minute) is None
+    assert watch.next_check() == 55 * minute
     assert watch.tick(56 * minute) == "done" and watch.seconds == 45 * minute
+    assert watch.runs[0]["seconds"] == 45 * minute
+    assert len(watch.runs[0]["bins"]) == 45
+    assert watch.runs[0]["bins"][0] == 2100 and watch.runs[0]["bins"][40] == 150
     # a coffee machine: high power, but short
-    assert watch.feed(1200, 0) == "start"
-    assert watch.feed(1200, 4 * minute) is None
+    assert watch.feed(1200, 0) is None
+    assert watch.feed(1200, 4 * minute) == "start"
     assert watch.feed(1, 6 * minute) is None
     assert watch.tick(20 * minute) == "short"
     # a TV: long, but never much power
@@ -1635,12 +1642,173 @@ def test_appliance_watch():
     watch.feed(110, 120 * minute)
     watch.feed(2, 125 * minute)
     assert watch.tick(140 * minute) == "short"
+    assert len(watch.runs) == 1
     assert model.parse_appliances("A:washer, B:none,C:toaster") == {"A": "washer", "B": "none"}
     assert model.format_appliances({"B": "none", "A": "washer"}) == "A:washer,B:none"
     assert model.typical_seconds([3000, 3600, 4000]) == 3600
     assert model.typical_seconds([]) is None
     assert model.appliance_guess("Steckdose Waschmaschine") == "washer"
     assert model.appliance_guess("Plug 3") is None
+
+
+MINUTE = 60
+# a 40 °C program: water, heating, washing, a pause, rinsing, spinning
+PROGRAM_SHORT = [(5, 8), (10, 2000), (15, 120), (4, 3), (20, 150), (3, 4), (15, 150), (3, 500)]
+# a 60 °C program: longer heating, a longer pause in the middle
+PROGRAM_LONG = [(5, 8), (25, 2100), (30, 130), (6, 3), (40, 140), (10, 600), (4, 3), (6, 700)]
+
+
+def run_program(watch, program, start, scale=1.0, wobble=0, every=20, until=None):
+    """feeds a program, every seconds a value; returns the time of its end"""
+    t = start
+    n = 0
+    for minutes, power in program:
+        end = t + int(minutes * MINUTE * scale)
+        while t < end:
+            if until is not None and t >= until:
+                return t
+            n += 1
+            # some noise on the motor and heater
+            value = power + (wobble * (n % 3 - 1) if power > 20 else 0)
+            watch.feed(value, t)
+            t += every
+    return t
+
+
+def finish(watch, end, power=1.0):
+    """the power drops: seconds until done"""
+    assert watch.feed(power, end) is None
+    t = end
+    while watch.start is not None:
+        t += 1
+        result = watch.tick(t)
+        if result is not None:
+            assert result == "done"
+            return t - end
+        assert t - end < 4 * 3600
+    return None
+
+
+def learned_washer():
+    watch = model.ApplianceWatch("washer", [])
+    t = 0
+    for program, scale in (
+        (PROGRAM_SHORT, 1.0),
+        (PROGRAM_LONG, 1.0),
+        (PROGRAM_SHORT, 0.97),
+        (PROGRAM_LONG, 1.03),
+    ):
+        end = run_program(watch, program, t, scale, wobble=100)
+        finish(watch, end)
+        t = end + 7200
+    return watch, t
+
+
+def test_appliance_first_program_waits():
+    watch = model.ApplianceWatch("washer", [])
+    end = run_program(watch, PROGRAM_SHORT, 0)
+    # nothing learned: the pauses of a washer are unknown
+    assert finish(watch, end) == model.APPLIANCE_DONE_MINUTES * 60
+    run = watch.runs[0]
+    # the start: above APPLIANCE_RUN_W, after taking in water
+    assert run["seconds"] == 70 * MINUTE
+    # both pauses are learned, with their power
+    assert [(g[0] // MINUTE, g[1] // MINUTE, g[2]) for g in run["gaps"]] == [
+        (25, 4, 3),
+        (49, 3, 4),
+    ]
+
+
+def test_appliance_end_within_30_seconds():
+    watch, t = learned_washer()
+    assert len(watch.runs) == 4
+    for program in (PROGRAM_SHORT, PROGRAM_LONG):
+        end = run_program(watch, program, t, 1.02, wobble=80)
+        assert finish(watch, end) <= model.APPLIANCE_QUICK_SECONDS + 1
+        t = end + 7200
+    # the plug stays at 1 W: the pauses of the programs never were that low
+    assert len(watch.runs) == 6
+
+
+def test_appliance_pause_is_no_end():
+    watch, t = learned_washer()
+    # the long program pauses 6 minutes after 60 minutes at 3 W
+    pause = t + 60 * MINUTE
+    run_program(watch, PROGRAM_LONG, t, until=pause)
+    assert watch.feed(3, pause) is None
+    assert watch.deadline - pause > 6 * MINUTE
+    assert watch.tick(pause + 5 * MINUTE) is None
+    assert watch.running
+
+
+def test_appliance_predicts_the_program():
+    watch, t = learned_washer()
+    for program, total in ((PROGRAM_SHORT, 75), (PROGRAM_LONG, 126)):
+        run_program(watch, program, t, until=t + 40 * MINUTE)
+        guess = watch.predict(t + 40 * MINUTE)
+        # after 40 minutes the program is clear: a few minutes off at most
+        assert abs(guess["end"] - (t + total * MINUTE)) <= 6 * MINUTE
+        assert abs(guess["like"]["seconds"] - total * MINUTE) <= 5 * MINUTE
+        end = run_program(watch, program, t)
+        finish(watch, end)
+        t = end + 7200
+
+
+def test_appliance_new_program_waits():
+    watch, t = learned_washer()
+    # a program not learned yet: a long heater only
+    end = run_program(watch, [(5, 8), (50, 2300)], t)
+    assert watch.predict(end) is None
+    assert watch.feed(3, end) is None
+    assert watch.deadline == end + model.APPLIANCE_DONE_MINUTES * 60
+
+
+def test_appliance_dryer():
+    watch = model.ApplianceWatch("dryer", [])
+    # a dryer: no pauses, ends quickly even without learned programs
+    end = run_program(watch, [(60, 700), (10, 250)], 0)
+    assert finish(watch, end, power=2) == model.APPLIANCE_QUICK_SECONDS
+    # turning the drum against creases afterwards is no program
+    t = end + 60
+    for _ in range(5):
+        assert watch.feed(200, t) is None
+        assert watch.feed(2, t + 20) is None
+        assert not watch.running
+        assert watch.tick(watch.next_check()) == "short"
+        t += 3 * MINUTE
+    assert watch.start is None and len(watch.runs) == 1
+
+
+def test_appliance_trims_creases():
+    # waited long (nothing learned): drum bursts after the end are cut off
+    watch = model.ApplianceWatch(None, [])
+    end = run_program(watch, [(60, 700)], 0)
+    t = end
+    for _ in range(3):
+        watch.feed(2, t)
+        watch.feed(200, t + 3 * MINUTE)
+        t += 3 * MINUTE + 20
+    assert finish(watch, t, power=2) == model.APPLIANCE_DONE_MINUTES * 60
+    assert watch.runs[0]["seconds"] == 60 * MINUTE
+
+
+@pytest.mark.asyncio
+async def test_appliance_done_without_polling(module, mocker):
+    mocker.patch.object(model, "APPLIANCE_QUICK_SECONDS", 0.2)
+    mocker.patch.object(model, "APPLIANCE_MIN_MINUTES", 0)
+    mocker.patch.object(model, "APPLIANCE_CONFIRM_SECONDS", 0.1)
+    module._attr_appliances = "wz_Fernseher:dryer"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        await module.handle_event("wz_Fernseher", "power", "800")
+        await asyncio.sleep(0.3)
+        assert module.watches["wz_Fernseher"].running
+        await module.handle_event("wz_Fernseher", "power", "1")
+        # no further event: the timer reports the end
+        done = await asyncio.wait_for(next_of(ws, "appliance_done"), 5)
+        assert done["what"] == "dryer"
+        assert module.appliance_data["runs"]["wz_Fernseher"][0]["bins"] == []
 
 
 @pytest.mark.asyncio

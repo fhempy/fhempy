@@ -204,14 +204,31 @@ thermostat really heats: its valve is open (`actuator`, `ValvePosition`, `valve`
 ## Washing machine, dryer and dishwasher
 
 Plugs which report their power are watched. A long program (at least 20 minutes, with a peak of 300 W or more for
-heating or spinning) followed by 10 minutes without power is a finished program. After the first one the tablets ask
-once what is plugged in: *Washing machine*, *Dryer*, *Dishwasher* or *None of these*. The name of the plug is only used
-to put the likely answer first. The answer is stored in attribute `appliances` (e.g. `Plug_basement:washer`), which
-can also be set by hand.
+heating or spinning) is a finished program when the power stays low. After the first one the tablets ask once what is
+plugged in: *Washing machine*, *Dryer*, *Dishwasher* or *None of these*. The name of the plug is only used to put the
+likely answer first. The answer is stored in attribute `appliances` (e.g. `Plug_basement:washer`), which can also be
+set by hand.
 
-While a program runs, *Home* shows it with the time it runs and, after the first programs, about how long it takes. When
-it is done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12
-hours pass.
+Every program is learned as a power profile: the average power per minute and its pauses (the last 12 programs of
+each plug). A running program is compared with the learned ones by dynamic time warping, which allows a program to
+run a bit faster or slower than last time. This is a few additions per minute, no extra libraries, so it runs well on
+a Raspberry Pi. It tells
+
+- **the end within 30 seconds**: when the learned programs end where the power drops, or the power is lower than in
+  any learned pause (switched off, standby). When the learned program pauses there (soaking, cooling, drying), the end
+  waits for that pause plus a margin. A dryer turns its drum all the time and ends after 30 seconds from the first
+  program on. Only the very first program of a washer or dishwasher, and programs which look like none learned so
+  far, still wait 10 minutes.
+- **the remaining time and the end** of the program which runs, e.g. a short 40 °C wash against a long 60 °C one. In
+  the first minutes, while all programs look alike, it is an average of the learned ones, after the heating phase it
+  usually is a few minutes off at most. A program not learned yet shows *New program, learning it*.
+
+The end is event based: there is no polling, each plug wakes up exactly when its program may be done. Short bursts
+afterwards, like a dryer turning the drum against creases, start no new program.
+
+While a program runs, *Home* shows it with the time it runs, the remaining time and when it will be done. When it is
+done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12 hours
+pass.
 
 ## Smoke, water and the alarm system
 
