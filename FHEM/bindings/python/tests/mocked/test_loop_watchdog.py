@@ -186,3 +186,29 @@ async def test_garbage_collection_is_not_blamed_on_the_module(caplog, monkeypatc
     assert any("garbage collector" in m for m in messages)
     assert not any("in fakemod" in m for m in messages)
     assert blamed == [None]
+
+
+@pytest.mark.asyncio
+@pytest.mark.allow_blocking
+async def test_planned_collection_is_no_warning(caplog, monkeypatch):
+    """The full check of core/memory after removed devices is planned."""
+    import time
+
+    from fhempy.lib.core import memory
+
+    monkeypatch.setattr(loop_watchdog, "LOG_INTERVAL", 0)
+    caplog.set_level(logging.WARNING, logger="fhempy.lib.core.loop_watchdog")
+    watchdog = LoopWatchdog(asyncio.get_running_loop(), threshold=0.2, interval=0.05)
+    watchdog.start()
+    try:
+        await asyncio.sleep(0.05)
+        monkeypatch.setattr(memory, "collecting", True)
+        monkeypatch.setattr(memory, "last_collection_start", time.monotonic())
+        watchdog._gc_callback("start", {})
+        fake_block(0.4)
+        watchdog._gc_callback("stop", {})
+        monkeypatch.setattr(memory, "collecting", False)
+        await asyncio.sleep(0.1)
+    finally:
+        watchdog.stop()
+    assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []

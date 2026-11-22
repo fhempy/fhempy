@@ -248,6 +248,8 @@ async def undefine_local(name):
     finally:
         if isinstance(instance, generic.FhemModule):
             await generic.FhemModule.Undefine(instance, dev_hash)
+        # its frozen objects become garbage
+        memory.device_removed()
 
 
 class fhempy:
@@ -856,6 +858,8 @@ class fhempy:
                         # cancel tasks even if the module's Undefine failed
                         # or didn't call FhemModule.Undefine
                         await generic.FhemModule.Undefine(nmInstance, hash)
+                    # its frozen objects become garbage
+                    memory.device_removed()
             else:
                 ret = await asyncio.wait_for(
                     func(hash, hash["args"], hash["argsh"]),

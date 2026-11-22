@@ -14,6 +14,7 @@ Raspberry Pi this was the whole idle CPU usage of fhempy.
 The garbage collector runs within whatever callback allocates objects at that
 moment. Its time is measured separately: a blockade caused mostly by it names
 the collector instead of the callback's module (see core/memory for gc.freeze).
+The planned collections of core/memory are logged there, not as a warning.
 """
 
 import asyncio
@@ -24,6 +25,8 @@ import sys
 import threading
 import time
 import traceback
+
+from . import memory
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +144,9 @@ class LoopWatchdog:
             self._seen = (since, traceback.extract_stack(frame))
         if lag >= self._threshold and self._logged_since != since:
             self._logged_since = since
+            if memory.collecting:
+                # planned full check, core/memory logs its duration
+                return
             in_gc = self._gc_start is not None or self._gc_time >= lag * GC_SHARE
             self._report(lag, self._seen[1], still_blocked=True, in_gc=in_gc)
 
@@ -149,7 +155,14 @@ class LoopWatchdog:
         seen = self._seen
         stack = seen[1] if seen is not None and seen[0] == since else None
         gc_time = self._gc_time
-        if gc_time >= duration * GC_SHARE:
+        if gc_time >= duration * GC_SHARE and memory.collection_started_since(since):
+            # planned full check, core/memory logs its duration
+            logger.debug(
+                f"Event loop was blocked for {duration * 1000:.0f}ms by a planned "
+                "garbage collection"
+            )
+            stack = None
+        elif gc_time >= duration * GC_SHARE:
             # not the module's fault, it only allocated the next object
             logger.warning(
                 f"Event loop was blocked for {duration * 1000:.0f}ms, "
