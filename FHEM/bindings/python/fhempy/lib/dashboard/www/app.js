@@ -549,6 +549,13 @@
       '<path d="' + area + '" fill="url(#' + id + ')"/><path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
       '<circle cx="' + (end[0] / 23 * w).toFixed(1) + '" cy="' + (h - (end[1] - lo) / (hi - lo) * h).toFixed(1) + '" r="3" fill="' + color + '" vector-effect="non-scaling-stroke"/></svg>';
   }
+  // plugs which only measure: no switch, the power large
+  function measureTileBody(tile) {
+    var p = tile.state.power, w = p === undefined ? ["–", ""] : watt(p).split(" ");
+    return '<div class="n">' + esc(tile.name) + "</div>" +
+      '<div class="cval"><span class="big">' + esc(w[0]) + (w[1] ? "<small>" + esc(w[1]) + "</small>" : "") + "</span></div>" +
+      '<div class="s">' + I(KIND_ICON[tile.kind] || "plug", 14) + " " + esc(t("usage")) + "</div>";
+  }
   function climateTileBody(id, tile, look, editState) {
     var c = climateOf(tile), st = tile.state, humidOnly = c.temp === undefined;
     var main = humidOnly ? (c.humidity === undefined ? "–" : Math.round(c.humidity) + "<small>%</small>") : num(c.temp) + "<small>°</small>";
@@ -816,6 +823,8 @@
       body = climateTileBody(id, tile, look, editState);
     } else if (tile.kind === "media") {
       body = mediaTileBody(id, tile, look, editState);
+    } else if (tile.measure) {
+      body = measureTileBody(tile);
     } else {
       body = '<div class="ic' + (TAP_TOGGLES[tile.kind] && !tile.measure ? " sw" : "") + '">' + (tile.kind === "blind" ? winMini(tile.state.position) : I(look.icon)) + '</div><div><div class="n">' + esc(tile.name) + '</div><div class="s">' + esc(look.sub) + "</div></div>";
     }
@@ -829,7 +838,7 @@
       extra += '<div class="edit" data-edit="' + (editState === "hidden" ? "show" : "hide") + '">' + I(editState === "hidden" ? "plus" : "x") + "</div>";
       if (editState === "shown") { extra += '<div class="szbtn" data-size="' + esc(id) + '" aria-label="' + esc(t("tileSize")) + '">' + SIZE_LABEL[size] + "</div>"; }
     }
-    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (tall ? " tall" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
+    return '<button class="tile ' + look.cls + (climate ? " climate" : "") + (tile.measure && !climate && tile.kind !== "media" ? " measure" : "") + (tile.kind === "media" ? " media" + (tile.state.art ? " hascover" : "") : "") + (tile.kind === "dimmer" || tile.kind === "blind" || tile.kind === "fan" ? " slidable" : "") + (wide ? " wide" : "") + (tall ? " tall" : "") + (S.pending[id] ? " pending" : "") + (editState === "hidden" ? " hiddenTile" : "") +
       '" data-tile="' + esc(id) + '">' + body + extra + "</button>";
   }
 
@@ -1545,7 +1554,7 @@
       body += '<div class="group facts2">' + (st.temperature !== undefined ? '<div class="fact2"><b>' + num(st.temperature) + "°</b><span>" + esc(t("temperature")) + "</span></div>" : "") + (st.humidity !== undefined ? '<div class="fact2"><b>' + Math.round(st.humidity) + " %</b><span>" + esc(t("humidity")) + "</span></div>" : "") + "</div>";
     }
     if (VIEWS.indexOf(k) >= 0) { body += viewSheetHtml(tile); }
-    if (S.tablet && S.tablet.arrange && (VIEWS.indexOf(k) >= 0 || k === "switch" || k === "outlet")) { body += viewChoiceHtml(tile); }
+    if (S.tablet && S.tablet.arrange && (VIEWS.indexOf(k) >= 0 || ((k === "switch" || k === "outlet") && !tile.measure))) { body += viewChoiceHtml(tile); }
     if (tile.fan && k !== "fan") { body += fanHtml(st.fan); }
     if (S.tablet && !S.tablet.readonly && k !== "media") { body += noticeEditHtml(tile); }
     body += sheetTrendsHtml() + sheetHistoryHtml();
@@ -1671,7 +1680,7 @@
     var g = { light: [], switch: [], blind: [], climate: null, more: [] };
     roomTiles(room).forEach(function (id) {
       var tl = S.tiles[id];
-      if (tl.kind === "light" || tl.kind === "dimmer") { g.light.push(id); } else if (tl.kind === "switch" || tl.kind === "outlet") { g.switch.push(id); } else if (tl.kind === "blind") { g.blind.push(id); } else if (tl.kind === "thermostat" && (!g.climate || g.climate.kind !== "thermostat")) { if (g.climate) { g.more.push(g.climate.id); } g.climate = tl; } else if (tl.kind === "temperature" && !g.climate) { g.climate = tl; } else { g.more.push(id); }
+      if (tl.kind === "light" || tl.kind === "dimmer") { g.light.push(id); } else if ((tl.kind === "switch" || tl.kind === "outlet") && !tl.measure) { g.switch.push(id); } else if (tl.kind === "blind") { g.blind.push(id); } else if (tl.kind === "thermostat" && (!g.climate || g.climate.kind !== "thermostat")) { if (g.climate) { g.more.push(g.climate.id); } g.climate = tl; } else if (tl.kind === "temperature" && !g.climate) { g.climate = tl; } else { g.more.push(id); }
     });
     return g;
   }

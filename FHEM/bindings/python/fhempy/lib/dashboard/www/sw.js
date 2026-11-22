@@ -1,6 +1,6 @@
 // Starts the dashboard also while fhempy restarts: the app shell comes from
 // the cache when the network fails, live values always come over the WebSocket.
-var CACHE = "dashboard-v68";
+var CACHE = "dashboard-v69";
 var SHELL = ["./", "lang.js", "app.js", "app.css", "manifest.webmanifest", "icon.svg", "icon-192.png"];
 
 self.addEventListener("install", function (event) {
