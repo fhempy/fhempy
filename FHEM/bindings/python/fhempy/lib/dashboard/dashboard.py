@@ -55,8 +55,6 @@ PIN_WAIT = 5 * 60
 
 # seconds between reading the calendars
 CALENDAR_INTERVAL = 300
-# seconds between the checks if a washing machine is done
-APPLIANCE_INTERVAL = 60
 # "Laundry done" stays this long on Home unless somebody ticks it off
 APPLIANCE_DONE_HOURS = 12
 ATTRS_TEXT = (
@@ -372,7 +370,11 @@ class dashboard(generic.FhemModule):
         # device -> model.ApplianceWatch of plugs which report their power
         self.watches = {}
         # learned: durations of programs, done time, plugs to ask about
-        self.appliance_data = {"cycles": {}, "done": {}, "ask": []}
+        # runs: learned power profiles of the programs, see model.ApplianceWatch
+        self.appliance_data = {"cycles": {}, "done": {}, "ask": [], "runs": {}}
+        # device -> event which wakes its watch_timer up
+        self._watch_wakes = {}
+        self._done_task = None
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
@@ -527,7 +529,7 @@ class dashboard(generic.FhemModule):
         self.ready = True
         self.create_async_task(self.start_cameras())
         self.create_async_task(self.calendar_loop())
-        self.create_async_task(self.appliance_loop())
+        self.arm_done_expiry()
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -1164,7 +1166,7 @@ class dashboard(generic.FhemModule):
         except ValueError:
             data = {}
         if isinstance(data, dict):
-            for key, empty in (("cycles", {}), ("done", {}), ("ask", [])):
+            for key, empty in (("cycles", {}), ("done", {}), ("ask", []), ("runs", {})):
                 if isinstance(data.get(key), type(empty)):
                     self.appliance_data[key] = data[key]
 
@@ -1178,9 +1180,43 @@ class dashboard(generic.FhemModule):
             return
         if self.appliances().get(item["id"]) == "none":
             return
-        watch = self.watches.setdefault(item["id"], model.ApplianceWatch())
+        name = item["id"]
+        watch = self.watches.get(name)
+        if watch is None:
+            runs = self.appliance_data["runs"].setdefault(name, [])
+            watch = self.watches[name] = model.ApplianceWatch(runs=runs)
+        watch.what = self.appliances().get(name)
+        minutes = len(watch.bins)
         result = watch.feed(model.kinds.number(value), time.time())
-        await self.appliance_result(item["id"], watch, result)
+        await self.appliance_result(name, watch, result)
+        if watch.running and len(watch.bins) != minutes:
+            # a new minute of the profile: the remaining time may change
+            self.schedule_header()
+        self.arm_watch(name, watch)
+
+    def arm_watch(self, name, watch):
+        """done is "no power for a while", which sends no event: one task per
+        plug sleeps until the watch has something to tell"""
+        wake = self._watch_wakes.get(name)
+        if wake is not None:
+            wake.set()
+            return
+        wake = self._watch_wakes[name] = asyncio.Event()
+        self.create_async_task(self.watch_timer(name, watch, wake))
+
+    async def watch_timer(self, name, watch, wake):
+        try:
+            while self.watches.get(name) is watch:
+                at = watch.next_check()
+                wake.clear()
+                timeout = None if at is None else max(0.0, at - time.time()) + 0.1
+                try:
+                    await asyncio.wait_for(wake.wait(), timeout)
+                except TimeoutError:
+                    await self.appliance_result(name, watch, watch.tick(time.time()))
+        finally:
+            if self._watch_wakes.get(name) is wake:
+                del self._watch_wakes[name]
 
     async def appliance_result(self, name, watch, result):
         if result is None:
@@ -1200,6 +1236,7 @@ class dashboard(generic.FhemModule):
             cycles.append(int(watch.seconds))
             del cycles[: -model.APPLIANCE_KEEP]
             data["done"][name] = time.time()
+            self.arm_done_expiry()
             item = self.data["tiles"].get(name)
             await self.broadcast(
                 {
@@ -1216,20 +1253,30 @@ class dashboard(generic.FhemModule):
         await self.save_appliances()
         self.schedule_header()
 
-    async def appliance_loop(self):
-        """done is "no power for a while", which sends no event"""
-        while True:
-            await asyncio.sleep(APPLIANCE_INTERVAL)
+    def arm_done_expiry(self):
+        """a done appliance is shown APPLIANCE_DONE_HOURS at most"""
+        if self._done_task is not None and not self._done_task.done():
+            if self._done_task is not asyncio.current_task():
+                self._done_task.cancel()
+        done = self.appliance_data["done"]
+        if not done:
+            return
+
+        async def later():
+            await asyncio.sleep(
+                max(0.0, min(done.values()) + APPLIANCE_DONE_HOURS * 3600 - time.time())
+                + 1
+            )
             now = time.time()
-            for name, watch in list(self.watches.items()):
-                await self.appliance_result(name, watch, watch.tick(now))
-            done = self.appliance_data["done"]
-            old = [n for n, t in done.items() if now - t > APPLIANCE_DONE_HOURS * 3600]
+            old = [n for n, t in done.items() if now - t >= APPLIANCE_DONE_HOURS * 3600]
             for name in old:
                 done.pop(name)
             if old:
                 await self.save_appliances()
                 self.schedule_header()
+            self.arm_done_expiry()
+
+        self._done_task = self.create_async_task(later())
 
     def appliance_header(self):
         """running and done appliances, plugs to ask about"""
@@ -1249,13 +1296,20 @@ class dashboard(generic.FhemModule):
             }
             watch = self.watches.get(name)
             if watch is not None and watch.running:
-                result["running"].append(
-                    {
-                        **base,
-                        "since": int(watch.start),
-                        "typical": model.typical_seconds(data["cycles"].get(name)),
-                    }
-                )
+                running = {
+                    **base,
+                    "since": int(watch.start),
+                    "typical": model.typical_seconds(data["cycles"].get(name)),
+                }
+                guess = watch.predict(time.time())
+                if guess is not None:
+                    running["end"] = guess["end"]
+                    running["like"] = guess["like"]
+                elif watch.runs:
+                    # programs are learned, but none is like this one
+                    running["typical"] = None
+                    running["new"] = True
+                result["running"].append(running)
             elif name in data["done"]:
                 result["done"].append({**base, "at": int(data["done"][name])})
         for name in data["ask"]:
@@ -1293,7 +1347,11 @@ class dashboard(generic.FhemModule):
             self.appliance_data["ask"].remove(name)
         if what == "none":
             self.watches.pop(name, None)
+            wake = self._watch_wakes.get(name)
+            if wake is not None:
+                wake.set()
             self.appliance_data["cycles"].pop(name, None)
+            self.appliance_data["runs"].pop(name, None)
         await self.save_appliances()
         await self.update_header()
 

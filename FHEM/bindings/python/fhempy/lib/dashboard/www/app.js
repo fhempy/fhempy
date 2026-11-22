@@ -30,7 +30,7 @@
     moTitle: "Darf offen sein", moHint: "In dieser Zeit warnt das Dashboard nicht, wenn offen ist, z. B. ein Hoftor tagsüber. Gilt für alle Tablets.", moFrom: "von", moTo: "bis", moUntil: "darf offen sein bis {t}", moAllowed: "Darf gerade offen sein",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
-    apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
+    apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apEnd: "fertig um {t}", apNew: "neues Programm, wird gelernt", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
     apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
     smoke: "Rauchmelder", water: "Wassermelder", calm: "ruhig", smokeNow: "Rauch!", waterNow: "Wasser!", alSmoke: "Rauchalarm", alWater: "Wasseralarm", alIntrusion: "Einbruchalarm", alAlarm: "Alarm", alMute: "Ton aus", alSound: "Ton an", alHide: "Ausblenden", alShow: "Anzeigen", alSystemOff: "Alarmanlage aus",
     alSmokeTip: "Alle raus, Türen schließen, 112 anrufen.", alWaterTip: "Wasser abdrehen, Strom in der Nähe abschalten.", alIntrusionTip: "Bleib ruhig und ruf im Zweifel 110 an.", alAllCalm: "{n} Melder, alle ruhig", alDetectors: "Rauch- und Wassermelder",
@@ -124,7 +124,7 @@
     moTitle: "May be open", moHint: "During this time the dashboard does not warn when it is open, e.g. a yard gate by day. Applies to all tablets.", moFrom: "from", moTo: "to", moUntil: "may be open until {t}", moAllowed: "May be open now",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
-    apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
+    apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apEnd: "done at {t}", apNew: "new program, learning it", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
     apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
     smoke: "Smoke detector", water: "Water detector", calm: "calm", smokeNow: "Smoke!", waterNow: "Water!", alSmoke: "Smoke alarm", alWater: "Water alarm", alIntrusion: "Intrusion alarm", alAlarm: "Alarm", alMute: "Sound off", alSound: "Sound on", alHide: "Hide", alShow: "Show", alSystemOff: "Alarm system off",
     alSmokeTip: "Get everybody out, close the doors, call the fire brigade.", alWaterTip: "Turn off the water, switch off power nearby.", alIntrusionTip: "Stay calm and call the police if in doubt.", alAllCalm: "{n} detectors, all calm", alDetectors: "Smoke and water detectors",
@@ -2134,9 +2134,11 @@
         esc([d.name, t("apAgo", { t: minutesText(now - d.at) })].join(" · ")) + "</span></div>" + (ro ? "" : '<button class="pill" data-applseen="' + esc(d.id) + '">' + I("check", 18) + " " + esc(t("apSeen")) + "</button>") + "</div>";
     });
     shownList(a.running).forEach(function (r) {
-      var ran = now - r.since, frac = r.typical ? Math.min(0.97, ran / r.typical) : null, left = r.typical ? r.typical - ran : null;
+      // end: predicted from the learned programs, typical: median of the last ones
+      var ran = now - r.since, total = r.end ? r.end - r.since : r.typical, frac = total ? Math.min(0.97, ran / total) : null, left = total ? total - ran : null;
+      var leftText = r.new ? t("apNew") : left === null ? "" : left > 120 ? t("apLeft", { t: minutesText(left) }) + " · " + t("apEnd", { t: clockText(new Date((r.since + total) * 1000)) }) : t("apAlmost");
       rows += '<div class="row aprun"><div class="ic" style="background:#4DA3FF26;color:#4DA3FF">' + I("washer") + '</div><div class="t"><b>' + esc(t(AP_NAME[r.what])) + "</b><span>" +
-        esc([t("apRuns", { t: minutesText(ran) }), left === null ? "" : left > 120 ? t("apLeft", { t: minutesText(left) }) : t("apAlmost")].filter(Boolean).join(" · ")) + "</span>" +
+        esc([t("apRuns", { t: minutesText(ran) }), leftText].filter(Boolean).join(" · ")) + "</span>" +
         (frac !== null ? '<div class="apbar"><i style="width:' + Math.round(frac * 100) + '%"></i></div>' : "") + "</div></div>";
     });
     if (!ro) {

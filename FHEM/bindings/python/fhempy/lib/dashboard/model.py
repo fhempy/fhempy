@@ -8,6 +8,7 @@ attrs (dict)
 """
 
 import datetime
+import math
 import re
 
 from ..matter_bridge import devices as kinds
@@ -2110,8 +2111,30 @@ APPLIANCE_RUN_W = 15
 # a program heats or spins: more than a TV, a lamp or a router ever draws
 APPLIANCE_PEAK_W = 300
 APPLIANCE_MIN_MINUTES = 20
-# below APPLIANCE_RUN_W this long: the program is done
+# below APPLIANCE_RUN_W this long: the program is done, used only while
+# nothing is learned about a plug yet
 APPLIANCE_DONE_MINUTES = 10
+# the end is reported this long after the power dropped, when the learned
+# programs say that the program ends here
+APPLIANCE_QUICK_SECONDS = 30
+# a pause the learned programs know may take this long at most
+APPLIANCE_MAX_PAUSE = 90 * 60
+# shorter dips below APPLIANCE_RUN_W are no pause
+APPLIANCE_GAP_SECONDS = 30
+# a program shows as running after this, a dryer turning its drum against
+# creases or a kettle do not
+APPLIANCE_CONFIRM_SECONDS = 180
+APPLIANCE_BURST_SECONDS = 90
+# power profiles: average power per APPLIANCE_BIN seconds, the last
+# APPLIANCE_RUNS programs of each plug are kept
+APPLIANCE_BIN = 60
+APPLIANCE_RUNS = 12
+# mean difference per minute (in square roots of W) up to which a learned
+# program is the same program: 1800 against 2000 W is 2.3
+APPLIANCE_MATCH = 3.0
+# cost of a minute faster or slower than the learned program: while the
+# power stays the same, the time since the start tells the position
+APPLIANCE_WARP = 0.5
 # durations of the last programs used for "about 20 min left"
 APPLIANCE_KEEP = 5
 # only a hint for the suggestion, the user confirms
@@ -2155,51 +2178,314 @@ def typical_seconds(durations):
 
 class ApplianceWatch:
     """follows the power of a plug: a program starts above APPLIANCE_RUN_W
-    and is done after APPLIANCE_DONE_MINUTES below it. Only programs of at
-    least APPLIANCE_MIN_MINUTES with a peak of APPLIANCE_PEAK_W count, so a
-    coffee machine, a kettle or a TV are no washing machine."""
+    and ends when the power stays below it. Only programs of at least
+    APPLIANCE_MIN_MINUTES with a peak of APPLIANCE_PEAK_W count, so a coffee
+    machine, a kettle or a TV are no washing machine.
 
-    def __init__(self):
-        self.start = None
-        self.last_active = None
-        self.peak = 0
+    Every program is learned as a power profile (average power per minute
+    and its pauses). A running program is compared with the learned ones
+    (dynamic time warping, a few additions per minute), which gives the
+    remaining time of this program and tells a pause of the program from
+    its end: when the learned programs end where the power drops, the end
+    is reported APPLIANCE_QUICK_SECONDS later."""
+
+    def __init__(self, what=None, runs=None):
+        # washer, dryer, dishwasher or None: not known yet
+        self.what = what
+        # learned programs of this plug, oldest first, see profile()
+        self.runs = runs if runs is not None else []
         # last power and length of the last program
         self.power = 0
         self.seconds = 0
+        # the last finished program
+        self.profile = None
+        self._reset()
+
+    def _reset(self):
+        self.start = None
+        self.last_active = None
+        self.peak = 0
+        # time when the program is done if the power stays low
+        self.deadline = None
+        self.confirmed = False
+        # average power per APPLIANCE_BIN seconds
+        self.bins = []
+        self._acc = 0.0
+        self._time = None
+        # pauses: [seconds after start, length, lowest power]
+        self.gaps = []
+        self._gap_start = None
+        self._gap_min = None
+        # dynamic time warping against the learned programs
+        self._refs = []
+        self._rows = []
+        self._fed = 0
 
     @property
     def running(self):
-        return self.start is not None
+        """a program runs, shown on the tablets"""
+        return self.start is not None and self.confirmed
 
     def feed(self, power, now):
         """'start', 'done', 'short' (no program) or None"""
         if power is None:
             return None
+        if self.start is not None:
+            self._advance(now)
         before, self.power = self.power, power
         if power >= APPLIANCE_RUN_W:
-            started = self.start is None
-            if started:
-                self.start = now
-                self.peak = 0
+            if self.start is None:
+                self._begin(now)
+            elif self._gap_start is not None:
+                if now - self._gap_start >= APPLIANCE_GAP_SECONDS:
+                    self.gaps.append(
+                        [
+                            int(self._gap_start - self.start),
+                            int(now - self._gap_start),
+                            round(self._gap_min, 1),
+                        ]
+                    )
+            self._gap_start = None
+            self.deadline = None
             self.last_active = now
             self.peak = max(self.peak, power)
-            return "start" if started else None
-        if self.start is not None and before >= APPLIANCE_RUN_W:
-            # plugs report changes only: it ran until now
-            self.last_active = now
+        elif self.start is not None:
+            if before >= APPLIANCE_RUN_W or self._gap_start is None:
+                # plugs report changes only: it ran until now
+                self.last_active = now
+                self._gap_start = now
+                self._gap_min = power
+            else:
+                self._gap_min = min(self._gap_min, power)
+            self._learn()
+            # every new low value may tell more: decide again
+            self.deadline = self.last_active + self.done_wait(power)
         return self.tick(now)
 
     def tick(self, now):
-        if self.start is None or self.power >= APPLIANCE_RUN_W:
+        """the same results as feed, without a new power value"""
+        if self.start is None:
             return None
-        if now - self.last_active < APPLIANCE_DONE_MINUTES * 60:
+        if not self.confirmed and (
+            self.last_active - self.start >= APPLIANCE_CONFIRM_SECONDS
+            or (
+                self.power >= APPLIANCE_RUN_W
+                and now - self.start >= APPLIANCE_CONFIRM_SECONDS
+            )
+        ):
+            self.confirmed = True
+            return "start"
+        if self.power >= APPLIANCE_RUN_W or self.deadline is None:
             return None
-        seconds = self.last_active - self.start
+        if now < self.deadline:
+            return None
+        return self._finish()
+
+    def next_check(self):
+        """time when tick has something to tell without a new power value"""
+        if self.start is None:
+            return None
+        times = []
+        if not self.confirmed and self.power >= APPLIANCE_RUN_W:
+            times.append(self.start + APPLIANCE_CONFIRM_SECONDS)
+        if self.deadline is not None and self.power < APPLIANCE_RUN_W:
+            times.append(self.deadline)
+        return min(times) if times else None
+
+    # --- the profile of the running program ---
+
+    def _begin(self, now):
+        self._reset()
+        self.start = now
+        self._time = now
+        # programs of this plug which look like a program: at least 3 minutes
+        self._refs = [
+            r
+            for r in self.runs
+            if isinstance(r, dict) and len(r.get("bins") or []) >= 3
+        ]
+        self._refs = [(r, [_level(b) for b in r["bins"]]) for r in self._refs]
+        self._rows = [None] * len(self._refs)
+        self._fed = 0
+
+    def _advance(self, now):
+        """the power stays the same until the next value"""
+        t = self._time
+        if t is None or now <= t:
+            return
+        while t < now:
+            bin_end = self.start + (len(self.bins) + 1) * APPLIANCE_BIN
+            step = min(now, bin_end) - t
+            self._acc += self.power * step
+            t += step
+            if t >= bin_end:
+                self.bins.append(int(round(self._acc / APPLIANCE_BIN)))
+                self._acc = 0.0
+        self._time = now
+        self._learn()
+
+    def _learn(self):
+        """compare every new full minute with the learned programs: one row
+        of the dynamic time warping per minute and learned program"""
+        while self._fed < len(self.bins):
+            i = self._fed
+            q = _level(self.bins[i])
+            for k, (_, ref) in enumerate(self._refs):
+                self._rows[k] = _dtw_row(self._rows[k], i, q, ref)
+            self._fed += 1
+
+    def matches(self):
+        """learned programs like the running one, best first:
+        (program, position in seconds, weight from 0 to 1)"""
+        if self.start is None or not self._refs:
+            return []
+        partial = (self._time or self.start) - self.start - self._fed * APPLIANCE_BIN
+        partial = max(0, partial)
+        if self._fed == 0:
+            return [(r, partial, 1.0) for r, _ in self._refs]
+        found = []
+        for (run, _), row in zip(self._refs, self._rows):
+            if not row or not row[1]:
+                continue
+            lo, costs = row
+            j = min(range(len(costs)), key=costs.__getitem__)
+            found.append(
+                (costs[j] / self._fed, run, (lo + j + 1) * APPLIANCE_BIN + partial)
+            )
+        found = [f for f in found if f[0] <= APPLIANCE_MATCH]
+        if not found:
+            return []
+        found.sort(key=lambda f: f[0])
+        best = found[0][0]
+        scale = max(1.0, best)
+        result = []
+        for distance, run, position in found[:5]:
+            weight = math.exp(-(distance - best) / scale)
+            if weight >= 0.2:
+                result.append((run, position, weight))
+        return result
+
+    def predict(self, now=None):
+        """{'end': time, 'like': learned program} of the running program,
+        None: nothing learned yet"""
+        found = self.matches()
+        if not found:
+            return None
+        now = self._time if now is None else now
+        ran = (self._time or now) - self.start
+        total = sum(w for _, _, w in found)
+        left = sum(max(0, r["seconds"] - p) * w for r, p, w in found) / total
+        # time since the last value: the program went on meanwhile
+        left = max(0, left - max(0, now - (self._time or now)))
+        best = found[0][0]
+        return {
+            "end": int(now + left),
+            "ran": int(ran),
+            "like": {"at": int(best.get("start", 0)), "seconds": int(best["seconds"])},
+        }
+
+    def done_wait(self, power):
+        """seconds after the power dropped until the program is done"""
+        if not self._refs:
+            if self.what == "dryer":
+                # a dryer turns its drum all the time, there are no pauses
+                return APPLIANCE_QUICK_SECONDS
+            return APPLIANCE_DONE_MINUTES * 60
+        levels = [g[2] for r, _ in self._refs for g in r.get("gaps", []) if len(g) > 2]
+        if levels and min(levels) >= 1.0 and power < 0.6 * min(levels):
+            # less than in any pause of the learned programs: off or standby
+            return APPLIANCE_QUICK_SECONDS
+        found = self.matches()
+        if not found:
+            # a program not learned yet
+            return APPLIANCE_DONE_MINUTES * 60
+        total = sum(w for _, _, w in found)
+        ending = 0.0
+        pauses = []
+        for run, position, weight in found:
+            near = max(300, 0.1 * run["seconds"])
+            here = [g[1] for g in run.get("gaps", []) if abs(g[0] - position) <= near]
+            if here:
+                pauses.extend(here)
+            elif run["seconds"] - position <= max(180, 0.05 * run["seconds"]):
+                ending += weight
+        if ending > total / 2:
+            return APPLIANCE_QUICK_SECONDS
+        if pauses:
+            # the learned program pauses here
+            return min(APPLIANCE_MAX_PAUSE, max(pauses) * 1.3 + 60)
+        # an unknown pause: as long as the longest learned one
+        longest = [g[1] for r, _ in self._refs for g in r.get("gaps", [])]
+        return min(
+            APPLIANCE_DONE_MINUTES * 60,
+            max(60, 1.5 * max(longest) if longest else 60),
+        )
+
+    def _finish(self):
+        self._advance(self.last_active)
+        seconds = _trim_tail(self.last_active - self.start, self.gaps)
         peak = self.peak
-        self.start = None
-        self.last_active = None
-        self.peak = 0
+        bins = self.bins[: max(1, -(-int(seconds) // APPLIANCE_BIN))]
+        profile = {
+            "start": int(self.start),
+            "seconds": int(seconds),
+            "bins": bins,
+            "gaps": [g for g in self.gaps if g[0] + g[1] <= seconds],
+        }
+        self._reset()
         self.seconds = seconds
         if seconds >= APPLIANCE_MIN_MINUTES * 60 and peak >= APPLIANCE_PEAK_W:
+            self.profile = profile
+            self.runs.append(profile)
+            del self.runs[:-APPLIANCE_RUNS]
             return "done"
         return "short"
+
+
+def _level(power):
+    """the difference of 2000 and 2100 W matters less than of 0 and 100 W"""
+    return math.sqrt(max(0.0, float(power)))
+
+
+def _dtw_row(prev, i, q, ref):
+    """row i of the open end dynamic time warping of the running program
+    against a learned one, within a band: (first column, costs). Each step
+    which is not diagonal costs APPLIANCE_WARP."""
+    last = len(ref) - 1
+    band = max(5, (i + 1) // 4)
+    hi = min(last, i + band)
+    lo = min(max(0, i - band), hi)
+    costs = []
+    for j in range(lo, hi + 1):
+        if prev is None:
+            best = 0.0 if j == 0 else math.inf
+        else:
+            plo, pcosts = prev
+            best = math.inf
+            if plo <= j < plo + len(pcosts):
+                best = pcosts[j - plo] + APPLIANCE_WARP
+            if plo <= j - 1 < plo + len(pcosts):
+                best = min(best, pcosts[j - 1 - plo])
+        if costs:
+            best = min(best, costs[-1] + APPLIANCE_WARP)
+        costs.append(abs(q - ref[j]) + best)
+    return lo, costs
+
+
+def _trim_tail(seconds, gaps):
+    """a dryer turns the drum for a few seconds every few minutes after the
+    program against creases: two or more short bursts at the end are no part
+    of the program"""
+    bursts = []
+    end = seconds
+    for offset, length, *_ in reversed(gaps):
+        gap_end = offset + length
+        if gap_end > end:
+            continue
+        if end - gap_end > APPLIANCE_BURST_SECONDS:
+            break
+        bursts.append(offset)
+        end = offset
+    if len(bursts) >= 2:
+        return end
+    return seconds
