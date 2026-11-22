@@ -74,6 +74,9 @@
       ".fhempyDiscovery .fdDone{font-size:12px;color:#3fa34d;font-weight:600}" +
       ".fhempyDiscovery .fdDone a{color:inherit;text-decoration:underline}" +
       ".fhempyDiscovery .fdErr{font-size:12px;color:#d64545;white-space:pre-wrap}" +
+      ".fhempyDiscovery .fdZigbee{margin:0 0 12px;padding:10px 14px;border-radius:12px;border:1px solid rgba(75,139,190,0.6);background:rgba(75,139,190,0.12)}" +
+      ".fhempyDiscovery .fdZigbee.fdOn{border-color:#e0a000;background:rgba(224,160,0,0.14)}" +
+      ".fhempyDiscovery .fdZigbee .fdZbText{margin-bottom:4px}" +
       ".fhempyDiscovery .fdEmpty{opacity:0.75;margin:16px 0;text-align:center}" +
       ".fhempyDiscovery input.fdSearch{margin:0 0 10px}" +
       ".fhempyDiscovery details.fdMore{margin-top:12px}" +
@@ -221,6 +224,56 @@
     if (!d.dialog("instance")) return;
     d.dialog("option", "buttons", list);
     d.dialog("option", "position", { my: "center", at: "center", of: window });
+  }
+
+  /* --- Zigbee2MQTT pairing, shown only while Zigbee2MQTT is running --- */
+
+  var german = /^de/i.test((navigator.languages && navigator.languages[0]) || navigator.language || "");
+  function tr(en, de) { return german ? de : en; }
+
+  function zigbee(box) {
+    if (!box.length || !document.body.contains(box[0])) return;
+    cmd("get " + dev + " zigbee", function (r) {
+      var z;
+      try { z = JSON.parse(r || "{}"); } catch (e) { z = {}; }
+      drawZigbee(box, z);
+    });
+  }
+
+  function drawZigbee(box, z) {
+    clearInterval(box.data("timer"));
+    if (!z.running) { box.hide().empty(); return; }
+    var on = !!z.pairing;
+    box.addClass("fdZigbee").toggleClass("fdOn", on).show().html(
+      '<div class="fdZbText"></div><div class="fdBtns">' +
+      '<span class="fdBtn ' + (on ? "fdGrey " : "") + 'fdZbBtn"></span></div><div class="fdErr"></div>');
+    var text = box.find(".fdZbText"), btn = box.find(".fdZbBtn");
+    if (!on) {
+      text.html("&#128029; <b>Zigbee2MQTT</b> " + tr("is running. Add new Zigbee devices:", "läuft. Neue Zigbee-Geräte anlernen:"));
+      btn.text(tr("Start pairing", "Anlernen starten"));
+    } else {
+      btn.text(tr("Stop pairing", "Anlernen beenden"));
+      var tick = function () {
+        var left = z.until ? Math.max(0, Math.round(z.until - Date.now() / 1000)) : null;
+        var time = left === null ? "" : " (" + Math.floor(left / 60) + ":" + ("0" + left % 60).slice(-2) + ")";
+        text.html("&#128029; <b>" + tr("Pairing is on", "Anlernen läuft") + esc(time) + "</b><br>" +
+          tr("Now put the Zigbee device into pairing mode (often: press its button for a few seconds or switch it on and off several times). " +
+            "It shows up here as new device.",
+            "Jetzt das Zigbee-Gerät in den Pairing-Modus bringen (oft: Knopf einige Sekunden drücken oder mehrmals ein- und ausschalten). " +
+            "Es erscheint dann hier als neues Gerät."));
+        if (left === 0) { clearInterval(box.data("timer")); setTimeout(function () { zigbee(box); }, 2000); }
+      };
+      tick();
+      box.data("timer", setInterval(tick, 1000));
+    }
+    btn.click(function () {
+      btn.attr("disabled", true);
+      cmd("set " + dev + " zigbeePairing " + (on ? "off" : "on"), function (r) {
+        if (r) { btn.attr("disabled", false); box.find(".fdErr").text(r); return; }
+        /* Zigbee2MQTT confirms with its new state */
+        setTimeout(function () { zigbee(box); }, 1500);
+      });
+    });
   }
 
   /* --- found devices --- */
@@ -449,6 +502,9 @@
         var typing = container.find(".fdParam").filter(function () { return $(this).val(); }).length ||
           container.find(".fdSearch").is(":focus");
         if (changed && !typing) render(container, empty);
+        /* Zigbee2MQTT started or stopped meanwhile */
+        var zb = d.find(".fdZigbee");
+        if (zb.length && !zb.find(".fdBtn[disabled]").length) zigbee(zb);
         refreshDetails(d, container, empty);
       });
     }, 10000);
@@ -459,7 +515,10 @@
     var d = dialog("fhempyDiscoveryList", title);
     var container = $('<div class="fdIntro"></div>');
     d.html('<div class="fdIntro">These devices were found in your network and via Bluetooth. ' +
-      'A click on Create sets them up in FHEM.</div>').append(container);
+      'A click on Create sets them up in FHEM.</div>');
+    var zb = $('<div class="fdZigbee" style="display:none"></div>');
+    d.append(zb).append(container);
+    zigbee(zb);
     render(container, empty);
     refreshDetails(d, container, empty);
     var list = [{ text: "Later", click: function () { $(this).dialog("close"); } }];
@@ -469,6 +528,13 @@
   }
 
   var api = {};
+
+  /* Zigbee2MQTT pairing on the detail page */
+  api.zigbee = function (name, selector) {
+    dev = name;
+    css();
+    zigbee($(selector));
+  };
 
   api.popup = function (name, found) {
     dev = name;

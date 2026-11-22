@@ -10,6 +10,8 @@ setList. Nothing is created without asking.
 import asyncio
 import functools
 import importlib
+import json
+import time
 
 import ifaddr
 
@@ -27,6 +29,12 @@ BIRTH_TOPIC = "homeassistant/status"
 LOGO = "mqtt_ha_discovery.png"
 # Zigbee2MQTT publishes its devices (description, power source) retained here
 BRIDGE_DEVICES_TOPIC = "+/bridge/devices"
+# Zigbee2MQTT bridge: online/offline (retained, last will) and its info with
+# permit_join (retained, sent again on every change)
+BRIDGE_STATE_TOPIC = "+/bridge/state"
+BRIDGE_INFO_TOPIC = "+/bridge/info"
+# longest pairing time Zigbee2MQTT allows
+PERMIT_JOIN_TIME = 254
 # new devices offered within this time share one request for their states
 STATES_DELAY = 5
 # candidate status of a device not in FHEM (engine.STATUS_NEW)
@@ -71,6 +79,8 @@ class MqttDiscovery:
         self._topics = {}
         # ieee address -> Zigbee2MQTT description and power source
         self.bridge = {}
+        # (broker, base topic) -> online, info (z2m info seen), pairing, until
+        self.zigbee = {}
         self._states_task = None
         self._watch_tasks = set()
         self.mode = "auto"
@@ -115,6 +125,7 @@ class MqttDiscovery:
         for task in self._brokers.values():
             task.cancel()
         self._brokers = {}
+        self._zigbee_lost()
         self._clients = {}
         self._topics = {}
         if self._states_task is not None:
@@ -186,6 +197,8 @@ class MqttDiscovery:
                     messages = client.messages
                     await client.subscribe(mqtt_ha.DISCOVERY_TOPIC)
                     await client.subscribe(BRIDGE_DEVICES_TOPIC)
+                    await client.subscribe(BRIDGE_STATE_TOPIC)
+                    await client.subscribe(BRIDGE_INFO_TOPIC)
                     # ESPHome, Zigbee2MQTT... send their discovery again
                     await client.publish(BIRTH_TOPIC, "online")
                     self._clients[key] = client
@@ -204,6 +217,8 @@ class MqttDiscovery:
                                 f"{message.topic}"
                             )
             except aiomqtt.MqttError as exc:
+                # running again with the retained messages after a reconnect
+                self._zigbee_lost(key)
                 self._clients.pop(key, None)
                 # MqttError isn't an OSError, log it without traceback
                 self._errors.failed(
@@ -215,6 +230,78 @@ class MqttDiscovery:
                 )
                 await asyncio.sleep(RECONNECT_DELAY)
 
+    # --- Zigbee2MQTT pairing ---
+
+    def handle_bridge(self, broker, topic, payload):
+        """bridge/state and bridge/info of Zigbee2MQTT: running and pairing
+        are known without polling, z2m sends both again on every change"""
+        base, _, kind = topic.rpartition("/bridge/")
+        key = (tuple(broker), base)
+        before = self.zigbee_status()
+        bridge = self.zigbee.setdefault(
+            key, {"online": False, "info": False, "pairing": False, "until": None}
+        )
+        if kind == "state":
+            bridge["online"] = bridge_online(payload)
+        else:
+            info = parse_json(payload)
+            # only Zigbee2MQTT sends its info with permit_join
+            if not isinstance(info, dict) or "permit_join" not in info:
+                return
+            bridge["info"] = True
+            bridge["pairing"] = bool(info["permit_join"])
+            bridge["until"] = pairing_end(info) if bridge["pairing"] else None
+        if not bridge["online"] and not bridge["info"]:
+            del self.zigbee[key]
+        if self.zigbee_status() != before:
+            self.engine.zigbee_changed()
+
+    def _zigbee_lost(self, broker=None):
+        """No connection to the broker: the state of its bridges is unknown"""
+        before = self.zigbee_status()
+        for key in list(self.zigbee):
+            if broker is None or key[0] == tuple(broker):
+                del self.zigbee[key]
+        if self.zigbee_status() != before:
+            self.engine.zigbee_changed()
+
+    def running_bridges(self):
+        return [
+            key
+            for key, bridge in self.zigbee.items()
+            if bridge["online"] and bridge["info"] and key[0] in self._clients
+        ]
+
+    def zigbee_status(self):
+        """running: a Zigbee2MQTT is online, pairing: one of them lets new
+        devices join, until: end of the pairing (epoch seconds) or None"""
+        running = [self.zigbee[key] for key in self.running_bridges()]
+        pairing = [b for b in running if b["pairing"]]
+        ends = [b["until"] for b in pairing if b["until"]]
+        return {
+            "running": bool(running),
+            "pairing": bool(pairing),
+            "until": max(ends) if ends else None,
+        }
+
+    async def permit_join(self, on=True, seconds=PERMIT_JOIN_TIME):
+        """Starts or stops the pairing on all running Zigbee2MQTT, returns an
+        error text or ''. The new state arrives with bridge/info."""
+        bridges = self.running_bridges()
+        if not bridges:
+            return "Zigbee2MQTT isn't running"
+        # "value" for Zigbee2MQTT 1.x, 2.x only uses "time" (0 stops)
+        payload = json.dumps({"value": bool(on), "time": int(seconds) if on else 0})
+        errors = []
+        for broker, base in bridges:
+            try:
+                await self._clients[broker].publish(
+                    f"{base}/bridge/request/permit_join", payload
+                )
+            except Exception as exc:
+                errors.append(f"{base}: {exc}")
+        return "\n".join(errors)
+
     # --- discovery messages ---
 
     async def handle_message(self, broker, topic, payload):
@@ -222,6 +309,9 @@ class MqttDiscovery:
             self.handle_state(topic, payload)
         if topic.endswith("/bridge/devices"):
             self.bridge.update(details_module.bridge_devices(payload))
+            return
+        if topic.endswith("/bridge/state") or topic.endswith("/bridge/info"):
+            self.handle_bridge(broker, topic, payload)
             return
         if topic.startswith("homeassistant/"):
             await self._handle_discovery(broker, topic, payload)
@@ -460,3 +550,34 @@ class MqttDiscovery:
                 f"fhem({fhem.perlString(f'set {name} password {password}')}, 1)",
             )
         return ""
+
+
+def parse_json(payload):
+    try:
+        return json.loads(payload)
+    except (ValueError, TypeError):
+        return None
+
+
+def bridge_online(payload):
+    """Zigbee2MQTT 1.x sends online/offline, 2.x {"state": "online"}"""
+    value = parse_json(payload)
+    if isinstance(value, dict):
+        value = value.get("state")
+    elif value is None:
+        if isinstance(payload, (bytes, bytearray)):
+            payload = payload.decode("utf-8", "replace")
+        value = str(payload).strip()
+    return value == "online"
+
+
+def pairing_end(info):
+    """End of the pairing: permit_join_end (2.x, ms) or permit_join_timeout
+    (1.x, seconds left), None without time limit"""
+    end = info.get("permit_join_end")
+    if isinstance(end, (int, float)) and end > 0:
+        return end / 1000
+    left = info.get("permit_join_timeout")
+    if isinstance(left, (int, float)) and left > 0:
+        return time.time() + left
+    return None

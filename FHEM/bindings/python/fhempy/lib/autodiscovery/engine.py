@@ -154,6 +154,17 @@ class Engine:
             except Exception:
                 self.logger.exception("Failed to update autodiscovery device")
 
+    def zigbee_changed(self):
+        """A Zigbee2MQTT started or stopped, or its pairing changed"""
+        self._run_later(self._zigbee_frontends())
+
+    async def _zigbee_frontends(self):
+        for frontend in list(self.frontends):
+            try:
+                await frontend.zigbee_changed()
+            except Exception:
+                self.logger.exception("Failed to update the Zigbee2MQTT state")
+
     # --- start/stop ---
 
     async def start(self):
