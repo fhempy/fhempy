@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v2.23.3 (2026-11-22)
+
+### Bug Fixes
+
+- **core**: Full garbage check only after removed devices, not daily
+  ([#1028](https://github.com/fhempy/fhempy/pull/1028),
+  [`a842227`](https://github.com/fhempy/fhempy/commit/a842227f04ec4b795d31f1eb6ab6700c04fa58e3))
+
+- **dashboard**: No switch for measure-only plugs, power shown large
+  ([#1029](https://github.com/fhempy/fhempy/pull/1029),
+  [`b981d99`](https://github.com/fhempy/fhempy/commit/b981d993b6897199b06846edfa8033380464a8fa))
+
+- **remote_access**: Restart Funnel after a change of the hostname
+  ([#1025](https://github.com/fhempy/fhempy/pull/1025),
+  [`8f86a9f`](https://github.com/fhempy/fhempy/commit/8f86a9f39f40d3a2161db1228257dafb7e53bc39))
+
+- **wireguard**: DynDNS name instead of the IP while ddnssde is updating
+  ([#1022](https://github.com/fhempy/fhempy/pull/1022),
+  [`1272851`](https://github.com/fhempy/fhempy/commit/12728511f3e916c99c80cc92743cb7df51485dd4))
+
+### Features
+
+- **autodiscovery**: Start Zigbee2MQTT pairing while it is running
+  ([#1026](https://github.com/fhempy/fhempy/pull/1026),
+  [`829a378`](https://github.com/fhempy/fhempy/commit/829a37882834a8e491da58fc0a3b33d58cdd3d66))
+
+- **dashboard**: Appliance end within 30 s, learned programs predict the end
+  ([#1030](https://github.com/fhempy/fhempy/pull/1030),
+  [`12c8d11`](https://github.com/fhempy/fhempy/commit/12c8d11a3a693e15a2f8a4717a05c33908d842aa))
+
+
 ## v2.23.2 (2026-11-21)
 
 ### Bug Fixes
