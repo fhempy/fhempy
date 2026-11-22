@@ -19,6 +19,9 @@ class FakeFrontend:
     async def candidates_changed(self):
         self.changes += 1
 
+    async def zigbee_changed(self):
+        self.zigbee_changes = getattr(self, "zigbee_changes", 0) + 1
+
     def popup_enabled(self):
         return True
 

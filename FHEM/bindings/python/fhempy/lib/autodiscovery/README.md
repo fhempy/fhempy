@@ -50,6 +50,16 @@ Assistant does, so the devices send their discovery messages again.
 
 Zigbee2MQTT needs `homeassistant: true` in its configuration.yaml to send them.
 
+### Zigbee pairing
+
+While a Zigbee2MQTT is running on one of these brokers, the detail page and the
+*Found devices* dialog show *Start pairing*: Zigbee2MQTT lets new Zigbee devices join
+for 254 seconds (countdown, *Stop pairing* ends it earlier). New devices show up as
+found devices. "Running" is known from the retained messages `<base_topic>/bridge/state`
+(online/offline, last will) and `<base_topic>/bridge/info` (only Zigbee2MQTT sends
+`permit_join` there), no polling. Readings: `zigbee2mqtt` (running/not running),
+`zigbee_pairing` (on/off/unavailable), `zigbee_pairing_until`.
+
 ## Residents
 
 *Add resident* searches the phones in your network and via Bluetooth. Pick the phone
@@ -102,6 +112,9 @@ Pi, it starts BlueZ with `--experimental`, also after a reboot.
   keep working.
   In the dialog: *Set up again* in *Already in FHEM*.
 - `set fhempy_discovery ignore <id>` / `unignore <id>`
+- `set fhempy_discovery zigbeePairing [on|off]`: pairing of Zigbee2MQTT for 254s,
+  only available while Zigbee2MQTT is running
+- `get fhempy_discovery zigbee`: Zigbee2MQTT running, pairing and its end as JSON
 - `get fhempy_discovery candidates`: all found devices as JSON (new, in FHEM, ignored)
 
 ## For developers

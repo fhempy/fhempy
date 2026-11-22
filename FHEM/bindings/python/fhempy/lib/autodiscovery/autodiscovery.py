@@ -1,6 +1,7 @@
 import html
 import json
 import logging
+import time
 
 from .. import fhem, generic
 from . import residents
@@ -8,6 +9,13 @@ from .engine import STATUS_CHECKING, Engine
 
 USAGE = "Usage: define fhempy_discovery fhempy autodiscovery"
 MAX_PARAMS = 6
+ZIGBEE_PAIRING_SET = {
+    "args": ["mode"],
+    "options": "on,off",
+    "params": {"mode": {"default": "on"}},
+    "help": "Zigbee2MQTT lets new Zigbee devices join for 254s (on, default) or "
+    "stops it (off). Only available while Zigbee2MQTT is running.",
+}
 
 
 def js_value(value):
@@ -31,6 +39,9 @@ class autodiscovery(generic.FhemModule):
         self._search = {}
         # devices created by the resident and tag dialogs, for the link
         self._created = {}
+        # set commands, zigbeePairing only while a Zigbee2MQTT is running
+        self._set_config = {}
+        self._zigbee_running = None
 
     @staticmethod
     def validate_define(args, argsh):
@@ -88,53 +99,50 @@ class autodiscovery(generic.FhemModule):
                 },
             }
         )
-        await self.set_set_config(
-            {
-                "scan": {"help": "Search for devices right now."},
-                "create": {
-                    "args": ["id"],
-                    "argsh": ["name"] + [f"p{i}" for i in range(MAX_PARAMS)],
-                    "help": "Creates a found device: create &lt;id&gt; "
-                    "[name=&lt;device name&gt;] [p0=&lt;value&gt;...]",
-                },
-                "createAll": {"help": "Creates all found devices which need no input."},
-                "recreate": {
-                    "args": ["id"],
-                    "help": "Sets up a device in FHEM again like a new one "
-                    "(readings, commands, state), the name stays.",
-                },
-                "recreateAll": {
-                    "help": "Sets up all MQTT devices in FHEM again like new "
-                    "ones, the names stay."
-                },
-                "ignore": {"args": ["id"], "help": "Don't offer this device again."},
-                "unignore": {
-                    "args": ["id"],
-                    "help": "Offer an ignored device again.",
-                },
-                "searchPhones": {
-                    "help": "Searches the phones in the network, see Add resident."
-                },
-                "searchBluetooth": {
-                    "help": "Searches visible Bluetooth phones for 20s."
-                },
-                "searchTag": {
-                    "help": "Searches the Bluetooth tag held next to the "
-                    "Raspberry Pi for 15s."
-                },
-                "addResident": {
-                    "argsh": ["person", "mac", "bt"],
-                    "help": "addResident person=&lt;name&gt; [mac=&lt;MAC&gt;] "
-                    "[bt=&lt;Bluetooth address&gt;]: creates a ROOMMATE "
-                    "with the phone in the network and via Bluetooth.",
-                },
-                "addTag": {
-                    "argsh": ["title", "address"],
-                    "help": "addTag title=&lt;name&gt; address=&lt;address&gt;: "
-                    "presence of a Bluetooth tag.",
-                },
-            }
-        )
+        self._set_config = {
+            "scan": {"help": "Search for devices right now."},
+            "create": {
+                "args": ["id"],
+                "argsh": ["name"] + [f"p{i}" for i in range(MAX_PARAMS)],
+                "help": "Creates a found device: create &lt;id&gt; "
+                "[name=&lt;device name&gt;] [p0=&lt;value&gt;...]",
+            },
+            "createAll": {"help": "Creates all found devices which need no input."},
+            "recreate": {
+                "args": ["id"],
+                "help": "Sets up a device in FHEM again like a new one "
+                "(readings, commands, state), the name stays.",
+            },
+            "recreateAll": {
+                "help": "Sets up all MQTT devices in FHEM again like new "
+                "ones, the names stay."
+            },
+            "ignore": {"args": ["id"], "help": "Don't offer this device again."},
+            "unignore": {
+                "args": ["id"],
+                "help": "Offer an ignored device again.",
+            },
+            "searchPhones": {
+                "help": "Searches the phones in the network, see Add resident."
+            },
+            "searchBluetooth": {"help": "Searches visible Bluetooth phones for 20s."},
+            "searchTag": {
+                "help": "Searches the Bluetooth tag held next to the "
+                "Raspberry Pi for 15s."
+            },
+            "addResident": {
+                "argsh": ["person", "mac", "bt"],
+                "help": "addResident person=&lt;name&gt; [mac=&lt;MAC&gt;] "
+                "[bt=&lt;Bluetooth address&gt;]: creates a ROOMMATE "
+                "with the phone in the network and via Bluetooth.",
+            },
+            "addTag": {
+                "argsh": ["title", "address"],
+                "help": "addTag title=&lt;name&gt; address=&lt;address&gt;: "
+                "presence of a Bluetooth tag.",
+            },
+        }
+        await self.set_set_config(self._set_config)
         await self.set_get_config(
             {
                 "candidates": {"help": "Found devices as JSON."},
@@ -142,6 +150,10 @@ class autodiscovery(generic.FhemModule):
                     "args": ["id"],
                     "help": "Name of the FHEM device created for a found device "
                     "(id), or the last added resident or tag.",
+                },
+                "zigbee": {
+                    "help": "Zigbee2MQTT as JSON: running, pairing and its end "
+                    "(epoch seconds)."
                 },
                 "search": {
                     "args": ["kind"],
@@ -152,7 +164,9 @@ class autodiscovery(generic.FhemModule):
         )
         await self.set_icon("rc_SEARCH")
         self.engine = Engine.get_instance(self.logger)
+        self._zigbee_running = None
         await self.engine.add_frontend(self)
+        await self.zigbee_changed()
 
     # FHEM FUNCTION
     async def Undefine(self, hash):
@@ -194,6 +208,38 @@ class autodiscovery(generic.FhemModule):
             await fhem.readingsBulkUpdateIfChanged(self.hash, "bluetooth", ble)
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, "bluetooth_warning", self.ble_warning() or "none"
+            )
+        finally:
+            await fhem.readingsEndUpdate(self.hash, 1)
+
+    async def zigbee_changed(self):
+        """Readings of Zigbee2MQTT, set zigbeePairing only while it runs"""
+        status = self.engine.mqtt.zigbee_status()
+        if status["running"] != self._zigbee_running:
+            self._zigbee_running = status["running"]
+            config = dict(self._set_config)
+            if status["running"]:
+                config["zigbeePairing"] = ZIGBEE_PAIRING_SET
+            await self.set_set_config(config)
+        if not status["running"]:
+            pairing = "unavailable"
+        elif status["pairing"]:
+            pairing = "on"
+        else:
+            pairing = "off"
+        until = ""
+        if status["pairing"] and status["until"]:
+            until = time.strftime("%H:%M:%S", time.localtime(status["until"]))
+        await fhem.readingsBeginUpdate(self.hash)
+        try:
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash,
+                "zigbee2mqtt",
+                "running" if status["running"] else "not running",
+            )
+            await fhem.readingsBulkUpdateIfChanged(self.hash, "zigbee_pairing", pairing)
+            await fhem.readingsBulkUpdateIfChanged(
+                self.hash, "zigbee_pairing_until", until or "-"
             )
         finally:
             await fhem.readingsEndUpdate(self.hash, 1)
@@ -332,6 +378,11 @@ class autodiscovery(generic.FhemModule):
                 errors.append(f"{candidate['title']}: {ret}")
         return "\n".join(errors)
 
+    async def set_zigbeePairing(self, hash, params):
+        """Zigbee2MQTT lets new devices join for 254s (on) or stops (off),
+        they show up as new devices"""
+        return await self.engine.mqtt.permit_join(params["mode"] != "off")
+
     async def set_ignore(self, hash, params):
         await self.engine.ignore(params["id"])
 
@@ -409,6 +460,9 @@ class autodiscovery(generic.FhemModule):
         candidate = self.engine.candidates.get(params["id"]) or {}
         return candidate.get("device") or self._created.get(params["id"], "")
 
+    async def get_zigbee(self, hash, params):
+        return json.dumps(self.engine.mqtt.zigbee_status())
+
     async def get_search(self, hash, params):
         entry = self._search.get(params["kind"])
         if entry is None:
@@ -442,8 +496,21 @@ class autodiscovery(generic.FhemModule):
         )
         return (
             self.ble_warning_html()
+            + self.zigbee_html()
             + f'<div id="fhempyDiscoveryButtons">{ret}</div>'
             + str(detail)
+        )
+
+    def zigbee_html(self):
+        """Pairing of Zigbee2MQTT, only while one is running. The browser
+        draws it in its language."""
+        if self.engine is None or not self.engine.mqtt.zigbee_status()["running"]:
+            return ""
+        return (
+            '<div class="fhempyDiscovery"><div id="fhempyZigbee" '
+            'class="fdZigbee" style="display:none"></div></div><script>'
+            + self.popup_javascript("zigbee", "#fhempyZigbee")
+            + "</script>"
         )
 
 

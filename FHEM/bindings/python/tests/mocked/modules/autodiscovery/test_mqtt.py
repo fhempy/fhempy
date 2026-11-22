@@ -348,3 +348,124 @@ async def test_mqtt_ha_discovery_leaves_new_devices_to_autodiscovery(
     await device.handle_ha_msg(Msg(*z2m_entity("0x01", "Temperature")))
     assert mock_fhem.command_define == []
     assert added == [("10.0.0.2", 1883, "u", "p")]
+
+
+class FakeClient:
+    def __init__(self):
+        self.published = []
+
+    async def publish(self, topic, payload):
+        self.published.append((topic, payload))
+
+
+def z2m_bridge(engine, base="zigbee2mqtt", **info):
+    """A connected broker with a running Zigbee2MQTT 2.x"""
+    client = engine.mqtt._clients.setdefault(BROKER, FakeClient())
+    engine.mqtt.handle_bridge(BROKER, f"{base}/bridge/state", b'{"state":"online"}')
+    payload = {"version": "2.1.0", "permit_join": False, **info}
+    engine.mqtt.handle_bridge(BROKER, f"{base}/bridge/info", json.dumps(payload))
+    return client
+
+
+@pytest.mark.asyncio
+async def test_zigbee2mqtt_pairing_only_while_running(engine, mocker):
+    changed = mocker.patch.object(engine, "zigbee_changed")
+    assert engine.mqtt.zigbee_status()["running"] is False
+    assert await engine.mqtt.permit_join() == "Zigbee2MQTT isn't running"
+
+    client = z2m_bridge(engine)
+    assert engine.mqtt.zigbee_status() == {
+        "running": True,
+        "pairing": False,
+        "until": None,
+    }
+    changed.assert_called_once()
+
+    assert await engine.mqtt.permit_join() == ""
+    assert client.published == [
+        ("zigbee2mqtt/bridge/request/permit_join", '{"value": true, "time": 254}')
+    ]
+    # Zigbee2MQTT confirms with its info
+    await engine.mqtt.handle_message(
+        BROKER,
+        "zigbee2mqtt/bridge/info",
+        json.dumps({"permit_join": True, "permit_join_end": 1_800_000_000_000}),
+    )
+    assert engine.mqtt.zigbee_status() == {
+        "running": True,
+        "pairing": True,
+        "until": 1_800_000_000,
+    }
+    assert await engine.mqtt.permit_join(False) == ""
+    assert client.published[-1][1] == '{"value": false, "time": 0}'
+
+    # stopped (last will): no pairing offered anymore
+    await engine.mqtt.handle_message(
+        BROKER, "zigbee2mqtt/bridge/state", b'{"state":"offline"}'
+    )
+    assert engine.mqtt.zigbee_status()["running"] is False
+    assert await engine.mqtt.permit_join() == "Zigbee2MQTT isn't running"
+
+
+def test_zigbee2mqtt_1x_and_lost_broker(engine, mocker):
+    mocker.patch.object(engine, "zigbee_changed")
+    engine.mqtt._clients[BROKER] = FakeClient()
+    engine.mqtt.handle_bridge(BROKER, "z2m/bridge/state", b"online")
+    # not running before its info proves it is Zigbee2MQTT
+    assert engine.mqtt.zigbee_status()["running"] is False
+    engine.mqtt.handle_bridge(
+        BROKER,
+        "z2m/bridge/info",
+        json.dumps({"permit_join": True, "permit_join_timeout": 100}),
+    )
+    status = engine.mqtt.zigbee_status()
+    assert status["running"] and status["pairing"]
+    assert status["until"] > 0
+    # connection to the broker lost: state unknown
+    engine.mqtt._zigbee_lost(BROKER)
+    assert engine.mqtt.zigbee_status()["running"] is False
+
+
+def test_other_bridge_topics_are_no_zigbee2mqtt(engine, mocker):
+    mocker.patch.object(engine, "zigbee_changed")
+    engine.mqtt._clients[BROKER] = FakeClient()
+    engine.mqtt.handle_bridge(BROKER, "other/bridge/state", b"online")
+    engine.mqtt.handle_bridge(BROKER, "other/bridge/info", b'{"version": 1}')
+    assert engine.mqtt.zigbee_status()["running"] is False
+
+
+@pytest.mark.asyncio
+async def test_zigbee_pairing_set_only_while_running(mocker):
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+
+    await check_and_install_dependencies("autodiscovery")
+    mock_fhem.mock_module(mocker)
+    device = autodiscovery(logging.getLogger(__name__))
+    device.hash = {"NAME": "fhempy_discovery"}
+    device._set_config = {"scan": {}}
+    device.engine = mocker.MagicMock()
+    sets = mocker.patch.object(device, "set_set_config", mocker.AsyncMock())
+    readings = mocker.patch(
+        "fhempy.lib.fhem.readingsBulkUpdateIfChanged", mocker.AsyncMock()
+    )
+    status = {"running": False, "pairing": False, "until": None}
+    device.engine.mqtt.zigbee_status.return_value = status
+
+    await device.zigbee_changed()
+    assert "zigbeePairing" not in sets.await_args.args[0]
+    assert device.zigbee_html() == ""
+    readings.assert_any_await(device.hash, "zigbee_pairing", "unavailable")
+
+    status.update(running=True, pairing=True, until=1_800_000_000)
+    await device.zigbee_changed()
+    assert "zigbeePairing" in sets.await_args.args[0]
+    assert "fhempyDiscovery.zigbee" in device.zigbee_html()
+    readings.assert_any_await(device.hash, "zigbee_pairing", "on")
+
+    # set list sent only when running changes
+    await device.zigbee_changed()
+    assert sets.await_count == 2
+
+    device.engine.mqtt.permit_join = mocker.AsyncMock(return_value="")
+    await device.set_zigbeePairing(device.hash, {"mode": "off"})
+    device.engine.mqtt.permit_join.assert_awaited_once_with(False)
