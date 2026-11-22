@@ -115,6 +115,11 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .tile.climate .arrow, .roomcard .arrow { font-size: 18px; color: var(--mu); font-weight: 600; }
 .tile.climate .tgt { display: none; font-size: 13px; color: var(--mu); }
 .tile.climate .tsteps { top: 50%; transform: translateY(-50%); align-items: center; gap: 10px; }
+.tile.measure { justify-content: flex-start; gap: 8px; padding-top: 18px; }
+.tile.measure .n { font-size: 16px; -webkit-line-clamp: 1; }
+.tile.measure .s { display: flex; align-items: center; gap: 4px; }
+.tile.measure .big { font-size: 40px; line-height: 1; font-weight: 600; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.tile.measure .big small { font-size: 22px; font-weight: 500; margin-left: 4px; letter-spacing: 0; }
 .tile .tsteps .tval { min-width: 64px; text-align: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .tile .tsteps .tval small { display: block; font-size: 12px; font-weight: 500; color: var(--mu); }
 .arrhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
@@ -402,7 +407,7 @@ body.light .banner.push { background: #fff; color: #151922; }
   .arrfree .row { flex-wrap: wrap; }
   .arrgrid { grid-template-columns: 1fr; }
   .tile.climate.wide .cside { display: none; }
-  .tile.climate .big { font-size: 34px; }
+  .tile.climate .big, .tile.measure .big { font-size: 34px; }
 }
 
 /* no movement for people who asked their system for less motion */
