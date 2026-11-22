@@ -114,10 +114,10 @@ def freeze_objects(check_all=False):
     )
 
 
-async def _wait_removed(timeout):
-    """True if a device was removed within timeout."""
+async def _wait_removed(seconds):
+    """True if a device was removed within the given seconds."""
     try:
-        await asyncio.wait_for(_removed.wait(), max(timeout, 0))
+        await asyncio.wait_for(_removed.wait(), max(seconds, 0))
         return True
     except asyncio.TimeoutError:
         return False
