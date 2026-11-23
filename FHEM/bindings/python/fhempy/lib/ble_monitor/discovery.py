@@ -7,23 +7,23 @@ recognized from the content of the advertisement, the name the device
 sends is only the fallback.
 """
 
+import functools
 import logging
 
 from . import describe
 from .advertisement import advertisement_data, hci_packet
 
 _LOGGER = logging.getLogger(__name__)
-_parser = None
+# generic beacons (phones, tags, ...) aren't a model which can be named
+GENERIC_TYPES = ("iBeacon", "AltBeacon", "Eddystone-TLM")
 
 
+@functools.lru_cache(maxsize=1)
 def _get_parser():
-    global _parser
-    if _parser is None:
-        from .parser import FhempyBleParser
+    from .parser import FhempyBleParser
 
-        # discovery: every device is parsed, no whitelist
-        _parser = FhempyBleParser(discovery=True)
-    return _parser
+    # discovery: every device is parsed, no whitelist
+    return FhempyBleParser(discovery=True)
 
 
 def describe_ble(address, advertisement):
@@ -47,7 +47,7 @@ def describe_ble(address, advertisement):
     except Exception:
         _LOGGER.debug("Parsing the advertisement of %s failed", address, exc_info=True)
         return values
-    if not sensor or not sensor.get("type"):
+    if not sensor or not sensor.get("type") or sensor["type"] in GENERIC_TYPES:
         return values
     values.update(
         {

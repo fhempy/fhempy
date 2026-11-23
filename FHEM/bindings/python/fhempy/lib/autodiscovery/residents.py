@@ -162,9 +162,7 @@ async def find_phones(hash, logger):
     for _ in range(PROBE_ROUNDS):
         await utils.run_blocking(functools.partial(_probe, networks))
         await asyncio.sleep(PROBE_WAIT)
-        neighbours = await utils.run_blocking(
-            functools.partial(Host.find_with_netlink)
-        )
+        neighbours = await utils.run_blocking(functools.partial(Host.find_with_netlink))
         phones.update(known_neighbours(neighbours))
     mdns_names = await names_task
     used = await used_addresses(hash)
@@ -209,9 +207,7 @@ async def find_bluetooth_phones(hash, logger, scanner, seconds=20):
             found[device.address.upper()] = name
 
     async def scan():
-        async with BleakScanner(
-            detected, bluez={"filters": {"Transport": "bredr"}}
-        ):
+        async with BleakScanner(detected, bluez={"filters": {"Transport": "bredr"}}):
             await asyncio.sleep(seconds)
 
     if scanner is not None:
@@ -257,7 +253,12 @@ async def find_tag(hash, scanner, seconds=15):
         return None
     rssi, address, name = ranked[0]
     used = await used_addresses(hash)
-    return {"address": address, "name": name, "rssi": rssi, "used": address.lower() in used}
+    return {
+        "address": address,
+        "name": name,
+        "rssi": rssi,
+        "used": address.lower() in used,
+    }
 
 
 async def residents_device(hash):

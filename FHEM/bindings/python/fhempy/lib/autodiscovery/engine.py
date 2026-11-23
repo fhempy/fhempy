@@ -47,6 +47,8 @@ MDNS_INFO_TIMEOUT = 3000
 BLE_FORGET = 3600
 # try to recognize the model of a found Bluetooth device again after (s)
 DESCRIBE_RETRY = 30
+# devices remembered for DESCRIBE_RETRY before old entries are dropped
+DESCRIBE_TRIED_MAX = 2000
 
 STATUS_CHECKING = "checking"
 STATUS_NEW = "new"
@@ -123,6 +125,9 @@ class Engine:
         self._ble = None
         # module: describe_ble() of its discovery.py (rule "describe": true)
         self._describers = {}
+        # candidate id: time of the last describe_ble() of a rule with
+        # described_only, the model of most devices around isn't known
+        self._describe_tried = {}
         self._popup_queue = []
         self._popup_task = None
         self._mdns_pending = set()
@@ -402,11 +407,31 @@ class Engine:
                     self._describe_known(known, entry, rule, advertisement, values)
                 continue
             if rule.get("describe"):
+                if rule.get("described_only") and not self._may_describe(found["id"]):
+                    continue
                 described = self._describe(entry, rule, advertisement, values)
+                if rule.get("described_only") and not described.get("described"):
+                    continue
                 found = catalog.candidate(entry, rule, described, "ble")
                 found["described"] = bool(described.get("described"))
             # the callback mustn't wait
             self._run_later(self.found(found, rule))
+
+    def _may_describe(self, candidate_id):
+        """Every device around is checked, but at most every DESCRIBE_RETRY
+        seconds."""
+        now = time.monotonic()
+        tried = self._describe_tried.get(candidate_id)
+        if tried is not None and now - tried < DESCRIBE_RETRY:
+            return False
+        if len(self._describe_tried) > DESCRIBE_TRIED_MAX:
+            self._describe_tried = {
+                key: when
+                for key, when in self._describe_tried.items()
+                if now - when < DESCRIBE_RETRY
+            }
+        self._describe_tried[candidate_id] = now
+        return True
 
     def _describe_known(self, known, entry, rule, advertisement, values):
         """The first advertisement didn't tell the model (e.g. a toothbrush

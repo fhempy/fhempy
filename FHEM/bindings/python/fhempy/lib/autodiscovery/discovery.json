@@ -72,7 +72,25 @@
     "define": [
      "{address}"
     ],
-    "hint": "E.g. Oral-B toothbrushes only send while they are used."
+    "hint": "Devices like toothbrushes or scales only send while they are used."
+   },
+   {
+    "ble": [
+     {
+      "any": true
+     }
+    ],
+    "describe": true,
+    "described_only": true,
+    "fallback": true,
+    "title": "{label}",
+    "name": "{label}",
+    "model": "{kind}",
+    "unique": "{address}",
+    "define": [
+     "{address}"
+    ],
+    "hint": "Devices like toothbrushes or scales only send while they are used."
    }
   ]
  },

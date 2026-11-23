@@ -80,6 +80,10 @@ its `manifest.json`. One rule or a list of rules:
     `def describe_ble(address, advertisement)` which returns more values, e.g. the
     model recognized from the advertisement's data for a meaningful device name
     (ble_monitor: `{label}`, `{kind}`). It runs in the event loop, keep it fast.
+    `described_only: true` offers a device only if `describe_ble()` recognized it
+    (value `described`), with the matcher `{"any": true}` every device around is
+    checked (at most every 30s). `fallback: true`: the rule steps back if a rule of
+    another module matches the device too.
   - `search: true`: `lib/<module>/discovery.py` has `async def search(ctx)`, for
     devices with their own protocol (e.g. a UDP broadcast). It runs every 10 minutes
     and must only import packages fhempy always has.
