@@ -321,6 +321,9 @@ class heating_control(generic.FhemModule):
         super().__init__(logger)
         self.infos = {}
         self.numeric_devices = []
+        # read before: while FHEM waits for FW_detailFn it answers no
+        # command of another device (e.g. global), the page would time out
+        self.language = "EN"
         self.found = discover.discover({})
         self.values = {}
         self.rooms = {}
@@ -386,8 +389,8 @@ class heating_control(generic.FhemModule):
 
     async def FW_detailFn(self, hash, args, argsh):
         detail = await super().FW_detailFn(hash, args, argsh)
-        language = await fhem.AttrVal("global", "language", "EN")
-        return render.page(self.view(), language) + str(detail)
+        # no command to FHEM here, it waits for this answer (deadlock)
+        return render.page(self.view(), self.language) + str(detail)
 
     # --- attributes: any device change reloads ---
 
@@ -454,6 +457,12 @@ class heating_control(generic.FhemModule):
             await utils.run_blocking(functools.partial(save))
         except OSError as exc:
             self.logger.error(f"Failed to save the history: {exc}")
+
+    async def read_language(self):
+        result = await fhem.sendCommandHash(
+            self.hash, "AttrVal('global', 'language', 'EN')"
+        )
+        return str(result or "EN")
 
     async def own_readings(self):
         name = fhem.perlString(self.hash["NAME"])
@@ -579,6 +588,7 @@ class heating_control(generic.FhemModule):
         if self._stopping:
             return
         self._reload_handle = None
+        self.language = await self.read_language()
         self.numeric_devices = await self.read_numeric_devices()
         self.infos = await self.read_infos()
         self.found = discover.discover(self.infos, self.hash["NAME"])
@@ -677,6 +687,8 @@ class heating_control(generic.FhemModule):
             self.schedule_reload()
         elif words[0] in ("ATTR", "DELETEATTR") and len(words) > 2:
             if words[2] == "room" and words[1] in self.infos:
+                self.schedule_reload()
+            elif words[1] == "global" and words[2] == "language":
                 self.schedule_reload()
 
     def thermostat_changed(self, device, value):
