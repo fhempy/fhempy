@@ -324,7 +324,7 @@ class heating_control(generic.FhemModule):
         self._eval_handle = None
         self._eval_task = None
         self._reload_handle = None
-        self._timer_task = None
+        self._timer_changed = asyncio.Event()
         self._stopping = False
         self._ready = False
 
@@ -672,23 +672,21 @@ class heating_control(generic.FhemModule):
         return min(future) if future else now + 3600
 
     def schedule_timer(self):
-        if self._timer_task is not None and not self._timer_task.done():
-            self._timer_task.cancel()
-        self._timer_task = None
+        """the schedule changed: compute the next wakeup again"""
+        self._timer_changed.set()
 
     async def timer_loop(self):
         while not self._stopping:
             wake = self.next_wakeup(time.time())
-            self._timer_task = asyncio.ensure_future(
-                asyncio.sleep(max(wake - time.time(), 1) + 0.5)
-            )
-            self.track_async_task(self._timer_task)
+            self._timer_changed.clear()
             try:
-                await self._timer_task
-            except asyncio.CancelledError:
-                if self._stopping:
-                    return
+                await asyncio.wait_for(
+                    self._timer_changed.wait(), max(wake - time.time(), 1) + 0.5
+                )
+                # woken by a change, not by the time
                 continue
+            except asyncio.TimeoutError:
+                pass
             self.request_evaluation(0)
 
     # --- the control step ---
