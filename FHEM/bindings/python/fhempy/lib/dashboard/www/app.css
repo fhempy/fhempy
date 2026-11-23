@@ -820,6 +820,52 @@ body.lite .tile.media .mcover { display: none; }
 .row .ic.rcover { position: relative; overflow: hidden; }
 .row .ic.rcover .rimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s; }
 .row .ic.rcover .rimg.ok { opacity: 1; }
+
+/* washing machine, dryer, dishwasher done: big for 10 minutes */
+.apfull { position: fixed; inset: 0; z-index: 35; display: flex; align-items: center; justify-content: center; padding: 24px 16px; color: #fff; background: radial-gradient(circle at 50% 30%, #1f6f62, #0b2a33 72%); overflow-y: auto; animation: fade .4s ease; }
+.apin { max-width: 640px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.aparts { display: flex; justify-content: center; gap: 8px; }
+.apart { width: min(46vh, 300px); animation: apin .6s cubic-bezier(.2,1.4,.4,1) both; }
+.aparts.n2 .apart { width: min(34vh, 220px); }
+.aparts.n3 .apart { width: min(26vh, 170px); }
+.apart svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); }
+@keyframes apin { from { transform: scale(.6) translateY(30px); opacity: 0; } }
+.apin h1 { margin: 0; font-size: clamp(32px, 6vw, 52px); font-weight: 700; letter-spacing: -.5px; line-height: 1.1; }
+.aptip { font-size: 19px; color: rgba(255,255,255,.88); }
+.aplist { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 8px; }
+.aprow { display: flex; align-items: baseline; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-radius: 16px; background: rgba(0,0,0,.22); }
+.aprow b { font-size: 18px; }
+.aprow span { color: rgba(255,255,255,.75); font-size: 15px; }
+.apbtn { margin-top: 6px; min-width: min(420px, 100%); height: 92px; padding: 0 40px; border-radius: 46px; background: #fff; color: #0f5b4f; font-size: 32px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.35); animation: apglow 2.4s ease-in-out infinite; }
+.apbtn:active { transform: scale(.97); }
+@keyframes apglow { 50% { box-shadow: 0 16px 40px rgba(0,0,0,.35), 0 0 0 12px rgba(255,255,255,.12); } }
+.apby { font-size: 15px; color: rgba(255,255,255,.7); max-width: 480px; }
+.apcheck { transform-origin: 176px 186px; animation: apcheck .7s .35s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes apcheck { from { transform: scale(0); } }
+.apspark, .apspark.s2, .apspark.s3 { transform-box: fill-box; transform-origin: center; animation: apspark 2.2s ease-in-out infinite; }
+.apspark.s2 { animation-delay: .7s; }
+.apspark.s3 { animation-delay: 1.4s; }
+@keyframes apspark { 0%, 100% { transform: scale(.4); opacity: .3; } 50% { transform: scale(1.1); opacity: 1; } }
+.apwave { animation: apwave 3s linear infinite; }
+@keyframes apwave { to { transform: translateX(-60px); } }
+.apbub { animation: apbub 2.6s ease-in infinite; }
+.apbub.b2 { animation-delay: .9s; }
+.apbub.b3 { animation-delay: 1.7s; }
+@keyframes apbub { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .9; } 100% { transform: translateY(-70px); opacity: 0; } }
+.apswirl { transform-origin: 110px 128px; animation: apswirl 6s linear infinite; }
+@keyframes apswirl { to { transform: rotate(360deg); } }
+.applate { animation: apbob 3s ease-in-out infinite; }
+.applate.p2 { animation-delay: 1.2s; }
+@keyframes apbob { 50% { transform: translateY(-4px); } }
+.list .item.apset { align-items: flex-start; gap: 12px; }
+.apset .mic { margin-top: 2px; }
+.apset .grow b { display: block; }
+.apset .grow > span { display: block; color: var(--mu); font-size: 14px; }
+.aplabel { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 13px; color: var(--mu); }
+.aplabel select { width: 100%; }
+body.lite .apfull { animation: none; }
+body.lite .apart, body.lite .apbtn, body.lite .apfull * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .apfull * { animation: none !important; } }
 /* leaving home / good night: what goes off comes first and stands out */
 .ovlist .section.rtsec { display: flex; align-items: center; gap: 8px; }
 .ovlist .section.rtsec.off { color: var(--accent); }

@@ -231,8 +231,23 @@ The end is event based: there is no polling, each plug wakes up exactly when its
 afterwards, like a dryer turning the drum against creases, start no new program.
 
 While a program runs, *Home* shows it with the time it runs, the remaining time and when it will be done. When it is
-done, all tablets chime and *Home* says *Laundry done* until somebody taps *Done*, the next program starts or 12 hours
-pass.
+done, all tablets chime and show a big full screen message with a picture of the appliance and a large *Done* button
+for 10 minutes. Tapping *Done* on one tablet clears it on all tablets. After the 10 minutes *Home* still says
+*Laundry done* until somebody taps *Done*, the next program starts or 12 hours pass. Read-only tablets only close the
+message on their own screen.
+
+![Appliance done](screenshot-appliance-done.png)
+
+**Done by a device**: in the settings, *Washing machine & co.* chooses a device per appliance which sets it to done
+by itself, e.g. the door contact of the washing machine or a motion sensor in the laundry room. Contacts and motion
+sensors in the room of the appliance are suggested first. A contact counts when it opens or closes, a motion sensor
+when it sees somebody, any other device on any change. When the device reports somebody between the end of the
+program and the moment the end is sure, there is no message at all. This is stored in attribute
+`appliance_done_by` (e.g. `Plug_basement:Washer_door,Plug_kitchen:Motion_kitchen`), event based like everything else.
+
+**Announcement**: *Announcement* in the settings of a tablet says *The washing machine is done.* out loud with the
+voice of the browser, in the language of the tablet. *Test* plays it once; browsers only speak after the page was
+touched once, which a wall tablet usually was.
 
 ## Smoke, water and the alarm system
 

@@ -2168,6 +2168,39 @@ def format_appliances(appliances):
     return ",".join(f"{n}:{w}" for n, w in sorted(appliances.items()))
 
 
+def parse_done_by(value):
+    """attribute appliance_done_by 'Plug_A:Door_contact,Plug_B:Motion' ->
+    {plug: device which sets the done appliance to seen}"""
+    result = {}
+    for entry in re.split(r"[,\s]+", str(value or "")):
+        name, _, device = entry.partition(":")
+        if name and device:
+            result[name] = device
+    return result
+
+
+def format_done_by(done_by):
+    return ",".join(f"{n}:{d}" for n, d in sorted(done_by.items()) if d)
+
+
+# kinds offered first on the tablet as "done by": somebody at the appliance
+DONE_BY_KINDS = ("contact", "motion")
+
+
+def done_by_triggers(kind, before, after):
+    """a change of the "done by" device which means somebody is at the
+    appliance: motion detected, the door opened or closed, a button pressed
+    or any other change of the device"""
+    if kind == "motion":
+        return bool(after.get("occupied")) and not before.get("occupied")
+    if kind == "contact":
+        return "closed" in after and after.get("closed") != before.get("closed")
+    keys = set(before) | set(after)
+    keys.discard("since")
+    keys.discard("battery_low")
+    return any(before.get(k) != after.get(k) for k in keys)
+
+
 def typical_seconds(durations):
     """median of the last programs, None: none yet"""
     values = sorted(d for d in durations or [] if isinstance(d, (int, float)) and d > 0)
@@ -2197,6 +2230,7 @@ class ApplianceWatch:
         # last power and length of the last program
         self.power = 0
         self.seconds = 0
+        self.ended = None
         # the last finished program
         self.profile = None
         self._reset()
@@ -2432,8 +2466,12 @@ class ApplianceWatch:
             "bins": bins,
             "gaps": [g for g in self.gaps if g[0] + g[1] <= seconds],
         }
+        ended = self.last_active
         self._reset()
         self.seconds = seconds
+        # the last time with power: somebody at the appliance after this has
+        # seen it is done
+        self.ended = ended
         if seconds >= APPLIANCE_MIN_MINUTES * 60 and peak >= APPLIANCE_PEAK_W:
             self.profile = profile
             self.runs.append(profile)
