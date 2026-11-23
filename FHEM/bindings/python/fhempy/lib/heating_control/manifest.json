@@ -1,0 +1,12 @@
+{
+  "requirements": [],
+  "installer": {
+    "title": "Heating control",
+    "description": "Controls mixer and circulation pump of a heating circuit and all room thermostats: very simple schedules, vacation in one tap, learns the right flow temperature with the weather forecast",
+    "category": "home",
+    "order": 30,
+    "name": "heizung",
+    "single": true,
+    "icon": "🔥"
+  }
+}
