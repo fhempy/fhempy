@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.24.1 (2026-11-23)
+
+### Bug Fixes
+
+- **heating_control**: Detail page loads again ([#1037](https://github.com/fhempy/fhempy/pull/1037),
+  [`14ca06d`](https://github.com/fhempy/fhempy/commit/14ca06d3e25ac15beec989bf4c04266e61790a85))
+
+
 ## v2.24.0 (2026-11-23)
 
 ### Bug Fixes
