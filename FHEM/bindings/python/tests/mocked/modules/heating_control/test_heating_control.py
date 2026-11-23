@@ -88,6 +88,14 @@ class FakeFhem:
     async def send(self, hash, code):
         if "my %r; my $re" in code:
             return json.dumps(self.devices)
+        if "my @r; foreach" in code:
+            return json.dumps([[name, ""] for name in sorted(self.devices)])
+        match = re.search(
+            r"my \$h = \$defs\{'([^']+)'\}; my %r; if \(\$h\) \{ my \$rd", code
+        )
+        if match:
+            device = self.devices.get(match.group(1), {})
+            return json.dumps(device.get("readings", {}))
         if "my $h = $defs{" in code:
             return json.dumps(self.own)
         match = re.search(r"CommandSet\(undef, '([^']+)'\)", code)
@@ -396,3 +404,19 @@ async def test_detail_page(module):
     )
     assert len(data["curve"]["points"]) == 36
     assert "<script>" not in json.dumps(data)
+    assert (
+        data["setup"]["sensors"]["flow_sensor"]["value"] == "boiler_room:temperature_0"
+    )
+    devices = [d[0] for d in data["setup"]["devices"]]
+    # devices with a temperature reading first
+    assert devices.index("boiler_room") < devices.index("pumpe")
+
+
+@pytest.mark.asyncio
+async def test_get_readings_of_a_device(module):
+    # any reading name, e.g. one device with all temperatures named freely
+    module.fake.devices["boiler_room"]["readings"]["Vorlauf"] = "41.5"
+    result = await module.Get(module.hash, [NAME, "readings", "boiler_room"], {})
+    readings = dict(json.loads(result))
+    assert readings["Vorlauf"] == "41.5"
+    assert readings["temperature_0"] == "40.0"

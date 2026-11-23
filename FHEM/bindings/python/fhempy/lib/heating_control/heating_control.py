@@ -35,6 +35,14 @@ SETTLE_SECONDS = 90 * 60
 PUMP_MIN_SECONDS = 10 * 60
 THERMOSTAT_REPEAT = 15 * 60
 OWN_SET_GRACE = 120
+# a FHEM reading value which starts with a number (Perl regexp)
+NUMBER_RE = r"/^\s*-?\d+(?:[.,]\d+)?(?![\d:.\-])/"
+GETS = {
+    "readings": {
+        "args": ["device"],
+        "help": "Number readings of a device as JSON (used by the detail page).",
+    },
+}
 ROOM_KEY = re.compile(r"[^A-Za-z0-9_]")
 MODES = ("auto", "off")
 
@@ -296,6 +304,7 @@ class heating_control(generic.FhemModule):
     def __init__(self, logger):
         super().__init__(logger)
         self.infos = {}
+        self.numeric_devices = []
         self.found = discover.discover({})
         self.values = {}
         self.rooms = {}
@@ -334,6 +343,7 @@ class heating_control(generic.FhemModule):
         self._stopping = False
         await super().Define(hash, args, argsh)
         await self.set_set_config(SETS)
+        await self.set_get_config(GETS)
         await self.set_attr_config(ATTRS)
         await self.set_icon("sani_heating")
         await fhem.readingsSingleUpdate(self.hash, "state", "starting", 1)
@@ -509,10 +519,51 @@ class heating_control(generic.FhemModule):
             self.logger.error(f"Failed to read the FHEM devices: {result}")
             return {}
 
+    async def read_numeric_devices(self):
+        """all devices with at least one number reading, for the sensor
+        selection: [(name, alias)]"""
+        cmd = (
+            "my @r; foreach my $d (sort keys %defs) { my $h = $defs{$d};"
+            " next if ($h->{TEMPORARY} || defined($h->{SNIPPET}));"
+            " my $rd = $h->{READINGS} // {};"
+            " next if (!grep { ($rd->{$_}{VAL} // '') =~ "
+            + NUMBER_RE
+            + " } keys %{$rd});"
+            " push(@r, [$d, AttrVal($d, 'alias', '')]) } to_json(\\@r)"
+        )
+        result = await fhem.sendCommandHash(self.hash, cmd)
+        try:
+            devices = json.loads(result)
+            return [d for d in devices if isinstance(d, list) and len(d) == 2]
+        except (TypeError, ValueError):
+            return []
+
+    async def get_readings(self, hash, params):
+        """number readings of a device as JSON, for the detail page"""
+        name = fhem.perlString(params["device"])
+        cmd = (
+            f"my $h = $defs{{{name}}}; my %r; if ($h) {{ my $rd = $h->{{READINGS}} // {{}};"
+            " foreach my $k (keys %{$rd}) { my $v = $rd->{$k}{VAL} // '';"
+            " $r{$k} = $v if ($v =~ " + NUMBER_RE + ") } } to_json(\\%r)"
+        )
+        result = await fhem.sendCommandHash(self.hash, cmd)
+        try:
+            readings = json.loads(result)
+        except (TypeError, ValueError):
+            readings = {}
+        if not isinstance(readings, dict):
+            readings = {}
+        ordered = sorted(
+            readings.items(),
+            key=lambda item: (not discover.TEMP_NAME.search(item[0]), item[0].lower()),
+        )
+        return json.dumps(ordered)
+
     async def reload(self):
         if self._stopping:
             return
         self._reload_handle = None
+        self.numeric_devices = await self.read_numeric_devices()
         self.infos = await self.read_infos()
         self.found = discover.discover(self.infos, self.hash["NAME"])
         self.values = {
@@ -1124,10 +1175,6 @@ class heating_control(generic.FhemModule):
         for attr, role, candidates in (
             ("mixer", "mixer", self.found["mixers"]),
             ("pump", "pump", self.found["pumps"]),
-            ("flow_sensor", "flow", temps),
-            ("return_sensor", "return", temps),
-            ("supply_sensor", "supply", temps),
-            ("outdoor_sensor", "outdoor", temps),
         ):
             suggestion = discover.suggest(role, candidates, self.infos)
             roles[attr] = {
@@ -1137,16 +1184,23 @@ class heating_control(generic.FhemModule):
                     ":".join(s for s in suggestion if s) if suggestion else ""
                 ),
             }
+        sensors = {}
+        for attr, role in (
+            ("flow_sensor", "flow"),
+            ("return_sensor", "return"),
+            ("supply_sensor", "supply"),
+            ("outdoor_sensor", "outdoor"),
+        ):
+            suggestion = discover.suggest(role, temps, self.infos)
+            sensors[attr] = {
+                "value": getattr(self, "_attr_" + attr),
+                "suggestion": ":".join(suggestion) if suggestion else "",
+            }
         thermometers = {}
         for room in self.rooms.values():
             candidates = discover.room_thermometers(room.name, self.found, self.infos)
-            others = [c for c in temps if c not in candidates]
-            options = self.options(candidates, "outdoor") + self.options(
-                others, "outdoor"
-            )
             thermometers[room.key] = {
                 "value": ":".join(r for r in room.thermometer if r) or "",
-                "options": options,
                 "suggestion": ":".join(candidates[0]) if candidates else "",
             }
         model = str(self._attr_pump_model).replace("_", " ")
@@ -1162,9 +1216,23 @@ class heating_control(generic.FhemModule):
             "pump_setting": self._attr_pump_setting,
             "pump_settings": pumps.settings_of(model),
             "pump_power": self._attr_pump_power,
+            "sensors": sensors,
             "thermometers": thermometers,
+            "devices": self.sensor_devices(),
             "missing": self.missing(),
         }
+
+    def sensor_devices(self):
+        """[name, label] of all devices with number readings, devices with
+        a temperature reading first"""
+        with_temp = {device for device, _ in self.found["temperatures"]}
+        devices = sorted(
+            self.numeric_devices,
+            key=lambda d: (d[0] not in with_temp, (d[1] or d[0]).lower()),
+        )
+        return [
+            [name, f"{alias} ({name})" if alias else name] for name, alias in devices
+        ]
 
     def curve_view(self, outdoor_eff):
         targets = [r.target for r in self.rooms.values() if r.target is not None]

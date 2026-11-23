@@ -573,6 +573,73 @@ function select(id, value, options, suggestion) {
   if (!found) h += '<option value="' + esc(value) + '" selected>' + esc(value) + '</option>';
   return h + '</select>';
 }
+// sensor: first the device, then one of its number readings
+var readingCache = null;
+function readingsOf(device) {
+  if (!readingCache) readingCache = {};
+  return readingCache[device];
+}
+function sensorPicker(id, value, suggestion) {
+  var current = value || suggestion || "";
+  var device = current.split(":")[0], reading = current.split(":").slice(1).join(":");
+  var st = D.setup;
+  var h = '<select id="' + id + '_dev" data-sensor="' + id + '"><option value="">' + L.unused + '</option>';
+  var found = !device;
+  (st.devices || []).forEach(function(d) {
+    if (d[0] === device) found = true;
+    h += '<option value="' + esc(d[0]) + '"' + (d[0] === device ? " selected" : "") + '>' + esc(d[1]) + '</option>';
+  });
+  if (!found) h += '<option value="' + esc(device) + '" selected>' + esc(device) + '</option>';
+  h += '</select> <select id="' + id + '_rd">' + readingOptions(device, reading) + '</select>';
+  if (!value && suggestion) h += ' <span class="sugg">★ ' + L.suggestion + '</span>';
+  return h;
+}
+function readingOptions(device, reading) {
+  if (!device) return '<option value=""></option>';
+  var list = readingsOf(device);
+  if (!list) {
+    loadReadings(device, reading);
+    return '<option value="' + esc(reading) + '">' + esc(reading || "…") + '</option>';
+  }
+  var h = "", found = !reading;
+  list.forEach(function(r) {
+    if (r[0] === reading) found = true;
+    h += '<option value="' + esc(r[0]) + '"' + (r[0] === reading ? " selected" : "") + '>' + esc(r[0]) +
+      (r[1] !== null && r[1] !== undefined ? " = " + esc(r[1]) : "") + '</option>';
+  });
+  if (!found) h += '<option value="' + esc(reading) + '" selected>' + esc(reading) + '</option>';
+  return h || '<option value="">–</option>';
+}
+var loading = {};
+function loadReadings(device, reading) {
+  if (loading[device]) return;
+  loading[device] = true;
+  FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEV + " readings " + device) + "&XHR=1", function(r) {
+    delete loading[device];
+    var list = [];
+    try { list = JSON.parse(r); } catch (e) { list = []; }
+    readingsOf(device);
+    readingCache[device] = list;
+    root.querySelectorAll('select[data-sensor]').forEach(function(sel) {
+      if (sel.value !== device) return;
+      var rd = document.getElementById(sel.dataset.sensor + "_rd");
+      rd.innerHTML = readingOptions(device, rd.value || reading);
+    });
+  });
+}
+var setupDirty = false;
+root.addEventListener("change", function(ev) {
+  var sel = ev.target;
+  if (sel.closest && sel.closest(".setup")) setupDirty = true;
+  if (!sel.dataset || !sel.dataset.sensor) return;
+  var rd = document.getElementById(sel.dataset.sensor + "_rd");
+  rd.innerHTML = readingOptions(sel.value, "");
+});
+function sensorValue(id) {
+  var dev = document.getElementById(id + "_dev"), rd = document.getElementById(id + "_rd");
+  if (!dev || !dev.value) return "";
+  return rd && rd.value ? dev.value + ":" + rd.value : dev.value;
+}
 var setupOpen = null;
 function setup() {
   var st = D.setup;
@@ -584,8 +651,14 @@ function setup() {
   if (st.missing && st.missing.length) h += '<div class="sugg">' + L.setup_missing + " " + esc(st.missing.join(", ")) + '</div>';
   h += '<table>';
   Object.keys(L.roles).forEach(function(attr) {
-    var r = st.roles[attr] || {value: "", options: []};
-    h += '<tr><td>' + L.roles[attr] + '</td><td>' + select("fhcA_" + attr, r.value, r.options, r.suggestion) +
+    var control;
+    if (st.sensors && st.sensors[attr]) {
+      control = sensorPicker("fhcA_" + attr, st.sensors[attr].value, st.sensors[attr].suggestion);
+    } else {
+      var r = st.roles[attr] || {value: "", options: []};
+      control = select("fhcA_" + attr, r.value, r.options, r.suggestion);
+    }
+    h += '<tr><td>' + L.roles[attr] + '</td><td>' + control +
       '</td><td><button data-attr="' + attr + '">' + L.apply + '</button></td></tr>';
   });
   h += '<tr><td>' + L.pump_model + '</td><td>' + select("fhcA_pump_model", st.pump_model,
@@ -597,9 +670,9 @@ function setup() {
   h += '<tr><td>' + L.weather + '</td><td colspan="2">' + (st.weather.used ? esc(st.weather.used) : '<span class="muted">' +
     L.weather_none + '</span>') + '</td></tr>';
   (D.rooms || []).forEach(function(room) {
-    var t = st.thermometers[room.key] || {value: "", options: []};
+    var t = st.thermometers[room.key] || {value: "", suggestion: ""};
     h += '<tr><td>' + L.thermometer + ": " + esc(room.name) + '</td><td>' +
-      select("fhcT_" + room.key, t.value, t.options, t.suggestion) + '</td><td><button data-therm="1">' + L.apply + '</button></td></tr>';
+      sensorPicker("fhcT_" + room.key, t.value, t.suggestion) + '</td><td><button data-therm="1">' + L.apply + '</button></td></tr>';
   });
   return h + '</table></div>';
 }
@@ -610,15 +683,17 @@ function setupClick(btn) {
   if (btn.dataset.setup) { setupOpen = !setupOpen; render(); return; }
   if (btn.dataset.attr) {
     var attr = btn.dataset.attr, el = document.getElementById("fhcA_" + attr);
-    var value = el ? el.value.trim() : "";
+    var value = el ? el.value.trim() : sensorValue("fhcA_" + attr);
     if (attr === "pump_model") value = value.replace(/ /g, "_");
+    setupDirty = false;
     attrCmd(attr, value);
   } else if (btn.dataset.therm) {
     var parts = [];
     (D.rooms || []).forEach(function(room) {
-      var el = document.getElementById("fhcT_" + room.key);
-      if (el && el.value) parts.push(room.key + "=" + el.value);
+      var value = sensorValue("fhcT_" + room.key);
+      if (value) parts.push(room.key + "=" + value);
     });
+    setupDirty = false;
     attrCmd("thermometers", parts.join(","));
   }
 }
@@ -655,6 +730,7 @@ window.fhcLive = function(data) {
   // keep what is typed into the vacation and setup fields
   var active = document.activeElement;
   if (active && root.contains(active) && /INPUT|SELECT/.test(active.tagName)) return;
+  if (setupDirty && setupOpen) return;
   if (dragging || vacOpen || Object.keys(pending).some(function(k) { return k !== "resize"; })) return;
   render();
 };
