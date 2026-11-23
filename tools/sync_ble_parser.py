@@ -33,7 +33,7 @@ MODULE = (
 )
 TARGET = MODULE / "ble_parser"
 UPSTREAM_CONST = MODULE / "upstream_const.py"
-TABLES = ("MEASUREMENT_DICT",)
+TABLES = ("MEASUREMENT_DICT", "MANUFACTURER_DICT")
 # helper script that needs bleak, not used by the parser
 SKIP = {"get_beacon_key.py"}
 # the only Home Assistant import of the parser

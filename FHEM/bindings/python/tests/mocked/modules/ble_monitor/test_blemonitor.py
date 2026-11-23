@@ -196,11 +196,14 @@ async def test_readings_without_spaces(mocker):
     )
     mocker.patch.object(ble_monitor.fhem, "readingsBeginUpdate", mocker.AsyncMock())
     mocker.patch.object(ble_monitor.fhem, "readingsEndUpdate", mocker.AsyncMock())
+    mocker.patch.object(ble_monitor.fhem, "AttrVal", mocker.AsyncMock())
     dev = ble_monitor.ble_monitor.__new__(ble_monitor.ble_monitor)
-    dev.hash = {}
+    dev.hash = {"NAME": "ble_dev"}
+    dev._values = {}
+    dev._alias_checked = False
     await dev.received_data({"battery low": 1, "temperature": 20.5})
     names = [call.args[1] for call in update.call_args_list]
-    assert names == ["battery_low", "temperature"]
+    assert names == ["battery_low", "temperature", "state"]
 
 
 @pytest.mark.asyncio

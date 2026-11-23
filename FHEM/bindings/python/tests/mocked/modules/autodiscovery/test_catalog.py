@@ -192,7 +192,9 @@ def test_ble_homekit_by_manufacturer_data():
     assert found["params"][0]["label"] == "Setup code"
     # iPhones, AirPods etc. send other Apple data types
     iphone = {76: bytes.fromhex("1005031c4f2a1b")}
-    assert not list(catalog.match_ble(entries, "", iphone, set(), -60))
+    # (only the ble_monitor fallback, which offers parsed devices only)
+    matches = catalog.match_ble(entries, "", iphone, set(), -60)
+    assert [rule.get("fallback") for _, rule in matches] == [True]
 
 
 def test_homekit_id_only_for_unpaired_devices():
