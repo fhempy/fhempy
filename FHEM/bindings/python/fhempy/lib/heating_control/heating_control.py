@@ -30,6 +30,7 @@ HEARTBEAT = 300
 HISTORY_SECONDS = 24 * 3600
 HISTORY_STEP = 60
 LIVE_STEP = 10
+ROOM_ICON = "sani_heating"
 LEARN_MIN_MINUTES = 15
 SETTLE_SECONDS = 90 * 60
 PUMP_MIN_SECONDS = 10 * 60
@@ -42,6 +43,8 @@ GETS = {
         "args": ["device"],
         "help": "Number readings of a device as JSON (used by the detail page).",
     },
+    "page": {"help": "The page of the heating control (used by its own room)."},
+    "live": {"help": "Current values as JSON (used by the page)."},
 }
 ROOM_KEY = re.compile(r"[^A-Za-z0-9_]")
 # setup: nothing is controlled until the user starts the control
@@ -235,6 +238,12 @@ SETS = {
     "vacation_off": {"help": "End the vacation now."},
     "reset_learning": {"help": "Forget the learned flow temperatures."},
     "rescan": {"help": "Search the devices again now."},
+    "create_room": {
+        "args": ["room"],
+        "params": {"room": {"optional": True}},
+        "help": "Creates a room of its own in FHEMWEB (default Heizungssteuerung "
+        "or Heating) which shows only the page of the heating control.",
+    },
 }
 
 
@@ -332,6 +341,8 @@ class heating_control(generic.FhemModule):
         # read before: while FHEM waits for FW_detailFn it answers no
         # command of another device (e.g. global), the page would time out
         self.language = "EN"
+        self.own_rooms = []
+        self.control_room = ""
         self.found = discover.discover({})
         self.values = {}
         self.rooms = {}
@@ -473,6 +484,11 @@ class heating_control(generic.FhemModule):
         )
         return str(result or "EN")
 
+    async def read_own_rooms(self):
+        name = fhem.perlString(self.hash["NAME"])
+        result = await fhem.sendCommandHash(self.hash, f"AttrVal({name}, 'room', '')")
+        return [room.strip() for room in str(result or "").split(",") if room.strip()]
+
     async def own_readings(self):
         name = fhem.perlString(self.hash["NAME"])
         cmd = (
@@ -493,6 +509,7 @@ class heating_control(generic.FhemModule):
         # only a control the user started once runs on, a new device (or one
         # from before setup_done existed) waits for the end of the setup
         self.setup_done = readings.get("setup_done", "")
+        self.control_room = readings.get(".control_room", "")
         self.mode = readings.get("mode", "setup") if self.setup_done else "setup"
         if self.mode not in MODES:
             self.mode = "setup"
@@ -601,6 +618,7 @@ class heating_control(generic.FhemModule):
             return
         self._reload_handle = None
         self.language = await self.read_language()
+        self.own_rooms = await self.read_own_rooms()
         self.numeric_devices = await self.read_numeric_devices()
         self.infos = await self.read_infos()
         self.found = discover.discover(self.infos, self.hash["NAME"])
@@ -701,6 +719,8 @@ class heating_control(generic.FhemModule):
             if words[2] == "room" and words[1] in self.infos:
                 self.schedule_reload()
             elif words[1] == "global" and words[2] == "language":
+                self.schedule_reload()
+            elif words[1] == self.hash["NAME"] and words[2] == "room":
                 self.schedule_reload()
 
     def thermostat_changed(self, device, value):
@@ -1187,11 +1207,19 @@ class heating_control(generic.FhemModule):
         if now - self.last_live < LIVE_STEP:
             return
         self.last_live = now
+        data = self.live_view()
+        script = "if(window.fhcLive)fhcLive(" + render.js_json(data) + ")"
+        await fhem.FW_runJavascript(self.hash, script, self.hash["NAME"])
+        # the page in the room of its own
+        for room in self.own_rooms:
+            if room == self.control_room:
+                await fhem.FW_runJavascript(self.hash, script, "room=" + room)
+
+    def live_view(self):
         data = self.view(history=False)
         if self.history:
             data["point"] = self.history[-1]
-        script = "if(window.fhcLive)fhcLive(" + render.js_json(data) + ")"
-        await fhem.FW_runJavascript(self.hash, script, self.hash["NAME"])
+        return data
 
     # --- detail page data ---
 
@@ -1369,6 +1397,9 @@ class heating_control(generic.FhemModule):
                 ),
             },
             "now": int(time.time()),
+            "control_room": (
+                self.control_room if self.control_room in self.own_rooms else ""
+            ),
         }
         if history:
             data["history"] = list(self.history)
@@ -1497,3 +1528,44 @@ class heating_control(generic.FhemModule):
     async def set_rescan(self, hash, params):
         await self.reload()
         return ""
+
+    async def set_create_room(self, hash, params):
+        default = (
+            "Heizungssteuerung" if self.language.upper().startswith("DE") else "Heating"
+        )
+        room = re.sub(r"[,\s]+", "_", str(params.get("room") or default)).strip("_")
+        if not room:
+            return "room name missing"
+        # FHEM waits for this set, the attribute commands run after it
+        self.control_room = room
+        self.create_async_task(self.create_room(room))
+        return ""
+
+    async def create_room(self, room):
+        name = self.hash["NAME"]
+        # alone in the room the page replaces the device row (fhempy_summaryFn)
+        cmd = (
+            f"my $n = {fhem.perlString(name)}; my $room = {fhem.perlString(room)};"
+            " my $cur = AttrVal($n, 'room', '');"
+            ' CommandAttr(undef, "$n room " . ($cur eq \'\' ? $room : "$cur,$room"))'
+            " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"
+            " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
+            " next if ($defs{$w}{TEMPORARY});"
+            " my $ri = AttrVal($w, 'roomIcons', '');"
+            " next if ($ri =~ /(^|\\s)\\Q$room\\E:/);"
+            " CommandAttr(undef, \"$w roomIcons \" . ($ri eq '' ? '' : \"$ri \")"
+            f" . {fhem.perlString(room + ':' + ROOM_ICON)}) }}"
+            " ''"
+        )
+        result = await fhem.sendCommandHash(self.hash, cmd)
+        if result:
+            self.logger.error(f"create_room {room}: {result}")
+            return
+        await fhem.readingsSingleUpdate(self.hash, ".control_room", room, 0)
+        self.own_rooms = await self.read_own_rooms()
+
+    async def get_page(self, hash, params):
+        return render.page(self.view(), self.language, room=True)
+
+    async def get_live(self, hash, params):
+        return json.dumps(self.live_view(), default=str)

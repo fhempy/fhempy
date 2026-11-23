@@ -35,7 +35,12 @@ Every device is chosen in a search field (type a part of the name, alias or room
 suggests devices where it can. Thermostats are found automatically (a temperature reading and a
 set command for the target temperature). Their FHEM room is only suggested, each thermostat can
 get its own room, thermostats with the same room are controlled together. At the end an overview
-shows what will be switched, only **Start control** starts the control (`set <name> mode auto`).
+shows what will be switched. **Save only** keeps the setup without control, **Start control**
+starts the control (`set <name> mode auto`), also later from the detail page.
+
+**Room of its own:** the button *Create the room "Heizungssteuerung"* (or `set <name> create_room
+[name]`) puts the device into its own FHEMWEB room. Alone in a room, the room shows only the page
+of the heating control, without readings and attributes, every room can be controlled there.
 
 | Setup | Example |
 |---|---|
@@ -84,6 +89,7 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 - `copy_schedule <from> <to>|all`
 - `vacation <day back> [temperature]`: e.g. `2026-12-27`, `27.12.` or `7d`.
 - `vacation_off`, `reset_learning`, `rescan`
+- `create_room [name]`: room of its own with only this page (default `Heizungssteuerung`/`Heating`).
 
 ## Attributes
 

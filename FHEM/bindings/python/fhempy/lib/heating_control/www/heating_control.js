@@ -34,7 +34,10 @@ var T = {
       gas: "Gastherme", oil: "Ölkessel", district: "Fernwärme", solar: "Solarthermie"},
     setup_mode: "Einrichtung – es wird noch nichts gesteuert",
     setup_hint: "Solange die Einrichtung läuft, schaltet das Modul nichts: kein Mischer, keine Pumpe, keine Thermostate. Es zeigt nur die Werte an.",
-    start: "Steuerung starten", start_missing: "Starten geht, sobald eingerichtet ist:",
+    room_create: "Eigenen Raum „Heizungssteuerung“ anlegen", room_open: "Raum öffnen",
+    room_hint: "Im eigenen Raum erscheint nur diese Seite, ohne Readings und Attribute.",
+    start: "Steuerung starten", save_only: "Nur speichern", change_setup: "Einrichtung ändern",
+    saved: "Die Einrichtung ist gespeichert. Die Steuerung startet erst mit „Steuerung starten“.", start_missing: "Starten geht, sobald eingerichtet ist:",
     start_ask: "Mit „Steuerung starten“ beginnt das Modul, Mischer, Pumpe und diese Thermostate zu schalten.", start_yes: "Ja, Steuerung jetzt starten",
     thermostats: "Thermostate", back_setup: "Zur Einrichtung (nichts steuern)",
     search: "Tippen zum Suchen …", suggested: "Vorschlag – bitte prüfen", no_match: "Nichts gefunden",
@@ -86,7 +89,10 @@ var T = {
       gas: "Gas boiler", oil: "Oil boiler", district: "District heating", solar: "Solar thermal"},
     setup_mode: "Setup – nothing is controlled yet",
     setup_hint: "While the setup is running the module switches nothing: no mixer, no pump, no thermostats. It only shows the values.",
-    start: "Start control", start_missing: "Starting is possible once this is set up:",
+    room_create: "Create the room “Heating”", room_open: "Open room",
+    room_hint: "The room of its own shows only this page, without readings and attributes.",
+    start: "Start control", save_only: "Save only", change_setup: "Change setup",
+    saved: "The setup is saved. The control starts only with “Start control”.", start_missing: "Starting is possible once this is set up:",
     start_ask: "With “Start control” the module begins to switch the mixer, the pump and these thermostats.", start_yes: "Yes, start the control now",
     thermostats: "Thermostats", back_setup: "Back to setup (control nothing)",
     search: "Type to search …", suggested: "Suggestion – please check", no_match: "Nothing found",
@@ -165,6 +171,10 @@ function top() {
   h += '<span class="seg"><button data-mode="auto" class="' + (D.mode === "auto" ? "on" : "") + '">' +
     L.auto + '</button><button data-mode="off" class="' + (D.mode === "off" ? "on" : "") + '">' +
     L.mode_off + '</button></span>';
+  if (D.control_room && !window.FHC_ROOM) {
+    h += '<a class="chip" href="' + FW_root + '?room=' + encodeURIComponent(D.control_room) + '">🏠 ' +
+      esc(L.room_open) + ": " + esc(D.control_room) + '</a>';
+  }
   if (D.vacation && D.vacation.active) {
     h += '<span class="chip vacation">' + L.vac_active + " " + esc(dateText(D.vacation.until)) + '</span>';
   }
@@ -968,7 +978,7 @@ function stepBody(name) {
     if (!list.length) return '<p class="sugg">' + esc(L.no_rooms) + '</p>';
     list.forEach(function(t) { names[t.fhem_room] = 1; names[v.rooms[t.name] || t.room] = 1; });
     h += '<p class="muted">' + esc(L.w_rooms) + '</p><datalist id="fhcRoomNames">' +
-      Object.keys(names).sort().map(function(n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>';
+      Object.keys(names).sort(function(a, b) { return a.localeCompare(b); }).map(function(n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>';
     h += '<div class="wtherm">';
     list.forEach(function(t) {
       var used = off.indexOf(t.name) < 0;
@@ -979,9 +989,9 @@ function stepBody(name) {
         esc(v.rooms[t.name] || t.room) + '" placeholder="' + esc(L.room) + '"' + (used ? "" : " disabled") + '></div>';
     });
     h += '</div>';
-    var rooms = usedRooms();
-    if (rooms.length) h += '<h4>' + esc(L.thermometer) + ' <span class="muted">(' + esc(L.optional) + ')</span></h4>';
-    rooms.forEach(function(r) {
+    var used = usedRooms();
+    if (used.length) h += '<h4>' + esc(L.thermometer) + ' <span class="muted">(' + esc(L.optional) + ')</span></h4>';
+    used.forEach(function(r) {
       if (v.thermometers[r[1]] === undefined) {
         v.thermometers[r[1]] = (st.thermometers[r[1]] || {}).suggestion || (st.room_thermometers || {})[r[0]] || "";
       }
@@ -1026,19 +1036,57 @@ function wizard() {
   if (name === "welcome") h += '<button class="primary" data-wnav="next">' + esc(L.w_go) + '</button>';
   else if (name !== "done") h += '<button class="primary" data-wnav="next">' + esc(L.next) + '</button>';
   else if (D.mode === "setup") {
-    h += '<button class="primary" data-wnav="start"' + (wizMissing().length ? " disabled" : "") + '>' + esc(L.start) + '</button>';
+    h += '<button data-wnav="save">' + esc(L.save_only) + '</button>' +
+      '<button class="primary" data-wnav="start"' + (wizMissing().length ? " disabled" : "") + '>' + esc(L.start) + '</button>';
   } else h += '<button class="primary" data-wnav="close">' + esc(L.finish) + '</button>';
   return h + '</div></div>';
 }
+// saved: the setup is stored, the control is started later
+var saved = null;
 function setup() {
   if (!D.setup) return "";
-  if (D.mode === "setup" && !W) wizStart(0);
+  if (D.mode === "setup" && !W) {
+    if (saved === null) saved = !(D.setup.missing || []).length;
+    if (!saved) wizStart(0);
+  }
   if (W) return '<h3>' + L.setup_title + '</h3>' + wizard();
-  return '<h3><a href="#" data-setup="open">▸ ' + L.setup_title + '</a></h3>';
+  if (D.mode === "setup") {
+    var missing = savedMissing();
+    return '<h3>' + L.setup_title + '</h3><div class="card setup wiz"><p><b>' + esc(L.saved) + '</b></p><p class="muted">' +
+      esc(L.setup_hint) + '</p>' + (missing.length ? '<p class="sugg">' + esc(L.start_missing) + " " +
+      esc(missing.join(", ")) + '</p>' : '') + '<div class="row wnav"><button data-setup="open">' + esc(L.change_setup) +
+      '</button><button class="primary" data-wnav="start"' + (missing.length ? " disabled" : "") + '>' +
+      esc(L.start) + '</button></div></div>' + roomOffer();
+  }
+  return '<h3><a href="#" data-setup="open">▸ ' + L.setup_title + '</a></h3>' + roomOffer();
 }
+function roomOffer() {
+  if (D.control_room || window.FHC_ROOM) return "";
+  return '<div class="row roomoffer"><button data-room="create">🏠 ' + esc(L.room_create) + '</button><span class="muted">' +
+    esc(L.room_hint) + '</span></div>';
+}
+var lastMissing = null;
+function savedMissing() { return lastMissing || (D.setup.missing || []); }
 var REQUIRED = {mixer: ["mixer", "w_need_mixer"], pump: ["pump", "w_need_pump"], temps: ["flow_sensor", "w_need_flow"]};
 function setupClick(btn) {
   if (btn.dataset.setup) { wizStart(1); render(); return; }
+  if (btn.dataset.room) {
+    set("create_room", function(r) {
+      if (r && r.trim()) return;
+      D.control_room = window.FHC_LANG === "de" ? "Heizungssteuerung" : "Heating";
+      render();
+    });
+    return;
+  }
+  if (btn.dataset.wnav === "start") {
+    btn.disabled = true;
+    set("mode auto", function(r) {
+      if (r && r.trim()) { btn.disabled = false; return; }
+      D.mode = "auto"; D.state = ""; W = null; render();
+      refreshLive();
+    });
+    return;
+  }
   if (!W) return;
   if (btn.dataset.src) { W.v.heat_source = btn.dataset.src; render(); return; }
   var nav = btn.dataset.wnav, name = STEPS[W.step];
@@ -1054,14 +1102,8 @@ function setupClick(btn) {
     root.scrollIntoView({block: "start"});
     return;
   }
-  if (nav === "close") { W = null; render(); return; }
-  if (nav === "start") {
-    btn.disabled = true;
-    set("mode auto", function(r) {
-      if (r && r.trim()) { btn.disabled = false; return; }
-      D.mode = "auto"; W = null; render();
-    });
-  }
+  if (nav === "save") { lastMissing = wizMissing(); saved = true; }
+  if (nav === "close" || nav === "save") { W = null; render(); }
 }
 
 // --- page ---
@@ -1088,10 +1130,26 @@ root.addEventListener("click", function(ev) {
   setupClick(btn);
 });
 
+// values come with fhcLive every 10 s, if they don't (e.g. a filter of
+// FHEMWEB), the page asks for them
+var lastLive = Date.now();
+setInterval(function() {
+  if (Date.now() - lastLive < 40000 || !document.body.contains(root)) return;
+  refreshLive();
+}, 30000);
+function refreshLive() {
+  lastLive = Date.now();
+  FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEV + " live") + "&XHR=1", function(r) {
+    var data = null;
+    try { data = JSON.parse(r); } catch (e) { data = null; }
+    if (data) window.fhcLive(data);
+  });
+}
 window.fhcLive = function(data) {
   if (!data || data.name !== DEV) return;
+  lastLive = Date.now();
   var point = data.point;
-  ["mode", "heat_source", "state", "house", "rooms", "vacation", "now"].forEach(function(k) { if (k in data) D[k] = data[k]; });
+  ["mode", "heat_source", "state", "house", "rooms", "vacation", "now", "control_room"].forEach(function(k) { if (k in data) D[k] = data[k]; });
   D.history = D.history || [];
   if (point && (!D.history.length || D.history[D.history.length - 1][0] < point[0])) D.history.push(point);
   if (D.curve && D.house) D.curve.current = [D.house.outdoor_eff, D.house.flow_target];

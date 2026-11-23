@@ -422,13 +422,20 @@ fhempy_summaryFn($$$$)
 {
   my ($FW_wname, $d, $room, $pageHash) = @_;
   my $hash = $defs{$d};
-  return undef if (!$room || $room eq 'all' || !$hash || ($hash->{FHEMPYTYPE} // '') ne 'timeline');
+  my $type = $hash ? ($hash->{FHEMPYTYPE} // '') : '';
+  return undef if (!$room || $room eq 'all' || ($type ne 'timeline' && $type ne 'heating_control'));
   foreach my $other (keys %defs) {
     next if ($other eq $d || $defs{$other}{TEMPORARY} || defined($defs{$other}{SNIPPET}));
     return undef if ((','.AttrVal($other, 'room', '').',') =~ /,\Q$room\E,/);
   }
   my $name = $d;
   $name =~ s/[^A-Za-z0-9._]//g;
+  # heating control: its page (without readings and attributes) is loaded
+  # from fhempy, the page draws itself
+  return "<div id=\"fhcRoom\"></div><script>".
+         "FW_cmd(FW_root+\"?cmd=\"+encodeURIComponent(\"get $name page\")+\"&XHR=1\",".
+         "function(r){jQuery(\"#fhcRoom\").html(r)})</script>"
+    if ($type eq 'heating_control');
   return "<div id=\"fhempyTimelineRoom\"></div><script>".
          "jQuery.getScript(FW_root+\"/fhempy/timeline.js\",".
          "function(){fhempyTimelineRoom(\"$name\")})</script>";

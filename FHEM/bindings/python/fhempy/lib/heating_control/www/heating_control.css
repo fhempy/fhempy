@@ -128,3 +128,4 @@ padding:4px 0;border-bottom:1px solid var(--line)}
 .fhc .wtherm .trow input[type=text]{width:200px}
 .fhc .sum td{padding:3px 12px 3px 0;vertical-align:top}
 @media (max-width:600px){.fhc .wtherm .trow input[type=text]{width:100%}.fhc .wnav button{flex:1}}
+.fhc .roomoffer{margin:10px 0}

@@ -82,10 +82,12 @@ class FakeFhem:
     def __init__(self):
         self.devices = devices()
         self.sets = []
+        self.sent = []
         self.own = {}
         self.module = None
 
     async def send(self, hash, code):
+        self.sent.append(code)
         if "my %r; my $re" in code:
             return json.dumps(self.devices)
         if "my @r; foreach" in code:
@@ -369,29 +371,16 @@ async def test_turning_the_thermostat_is_a_manual_override(module):
 
 @pytest.mark.asyncio
 async def test_saved_state_is_restored(mocker):
-    mock_fhem.mock_module(mocker)
-    mock_fhem.attributes[NAME] = dict(ATTRS)
-    fake = FakeFhem()
-    fake.own = {
-        "room_Bath_schedule": "Mo-Su 00:00-24:00",
-        "room_Bath_comfort": "23",
-        "vacation": "off",
-        "mode": "auto",
-        "setup_done": "2026-11-01 10:00",
-        "learned_curve": "0:+2.00:5.0",
-    }
-    mocker.patch("fhempy.lib.fhem.sendCommandHash", fake.send)
-    mocker.patch("fhempy.lib.fhem.setEventDevices", set_event_devices)
-    mocker.patch("fhempy.lib.fhem.setDefaultAttrs", set_default_attrs)
-    mocker.patch.object(
-        hc.heating_control, "history_path", lambda self: "/nonexistent/x.json"
+    mod = await define(
+        mocker,
+        own={
+            "room_Bath_schedule": "Mo-Su 00:00-24:00",
+            "room_Bath_comfort": "23",
+            "vacation": "off",
+            "learned_curve": "0:+2.00:5.0",
+            **STARTED,
+        },
     )
-    mod = hc.heating_control(logger)
-    await mod.Define({"NAME": NAME, "FHEMPYTYPE": "heating_control"}, [], {})
-    for _ in range(200):
-        if mod.house:
-            break
-        await asyncio.sleep(0.01)
     try:
         assert mod.rooms["Bath"].target == pytest.approx(23)
         assert mod.rooms["Bath"].state == "comfort"
@@ -416,6 +405,7 @@ async def test_detail_page(module, mocker):
         mocker.patch("fhempy.lib.fhem." + function, no_fhem)
     html = await module.FW_detailFn(module.hash, ["WEB", NAME, "", {}], {})
     assert calls == []
+    assert "window.FHC_ROOM=false" in html
     assert 'id="fhc"' in html
     assert "window.FHC_DATA=" in html
     data = json.loads(html.split("window.FHC_DATA=", 1)[1].split(";</script>", 1)[0])
@@ -497,3 +487,30 @@ async def test_own_rooms_for_thermostats(mocker):
         assert view["room_thermometers"]["Living"] == "living_sensor:temperature"
     finally:
         await mod.Undefine(mod.hash)
+
+
+@pytest.mark.asyncio
+async def test_page_of_its_own_room(module, mocker):
+    calls = []
+
+    async def no_fhem(*args, **kwargs):
+        calls.append(args)
+        return ""
+
+    mocker.patch("fhempy.lib.fhem.sendCommandHash", no_fhem)
+    page = await module.Get(module.hash, [NAME, "page"], {})
+    assert "window.FHC_ROOM=true" in page and 'id="fhc"' in page
+    # no README and no FHEM command while FHEM waits for the page
+    assert "fhempyReadme" not in page
+    live = json.loads(await module.Get(module.hash, [NAME, "live"], {}))
+    assert live["name"] == NAME and "history" not in live
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_create_room(module):
+    assert await module.Set(module.hash, [NAME, "create_room"], {}) == ""
+    await asyncio.sleep(0.1)
+    sent = [c for c in module.fake.sent if "roomIcons" in c]
+    assert sent and "Heating" in sent[-1]
+    assert readings()[".control_room"] == "Heating"
