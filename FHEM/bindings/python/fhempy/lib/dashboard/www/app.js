@@ -32,6 +32,14 @@
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
     apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apEnd: "fertig um {t}", apNew: "neues Programm, wird gelernt", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
     apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
+    apBigWasher: "Die Wäsche ist fertig", apBigDryer: "Der Trockner ist fertig", apBigDishwasher: "Das Geschirr ist fertig", apBigMany: "{n} Geräte sind fertig",
+    apTipWasher: "Bitte bald ausräumen, dann riecht nichts muffig.", apTipDryer: "Am besten gleich ausräumen, dann knittert nichts.", apTipDishwasher: "Das Geschirr kann ausgeräumt werden.",
+    apSayWasher: "Die Waschmaschine ist fertig.", apSayDryer: "Der Trockner ist fertig.", apSayDishwasher: "Die Spülmaschine ist fertig.",
+    apByTip: "Die Meldung verschwindet auch von selbst, sobald {name} etwas meldet.", apClose: "Schließen", apDoneNow: "gerade eben",
+    apSettings: "Waschmaschine & Co.", apSettingsValue: "{n} Geräte", apSettingsNone: "noch keine erkannt", apSettingsLead: "Ist ein Gerät fertig, zeigen die Tablets das 10 Minuten lang groß an, bis jemand auf Erledigt tippt. Ein Gerät kann die Meldung auch von selbst erledigen, z. B. der Türkontakt der Waschmaschine oder ein Bewegungsmelder im Raum. Gilt für alle Tablets.",
+    apNoKnown: "Noch keine Waschmaschine, kein Trockner und keine Spülmaschine bekannt. Läuft an einer Steckdose mit Strommessung ein langes Programm, fragt das Tablet, was dort hängt.",
+    apBy: "Erledigt durch", apByNone: "Nur mit dem Erledigt-Knopf", apBySuggest: "Vorschläge", apBySensors: "Kontakte und Bewegungsmelder", apByOther: "Weitere Geräte",
+    speak: "Ansage", speakLead: "Sagt laut, wenn Waschmaschine & Co. fertig sind", speakTest: "Probe", speakNone: "Dieser Browser kann nicht sprechen",
     smoke: "Rauchmelder", water: "Wassermelder", calm: "ruhig", smokeNow: "Rauch!", waterNow: "Wasser!", alSmoke: "Rauchalarm", alWater: "Wasseralarm", alIntrusion: "Einbruchalarm", alAlarm: "Alarm", alMute: "Ton aus", alSound: "Ton an", alHide: "Ausblenden", alShow: "Anzeigen", alSystemOff: "Alarmanlage aus",
     alSmokeTip: "Alle raus, Türen schließen, 112 anrufen.", alWaterTip: "Wasser abdrehen, Strom in der Nähe abschalten.", alIntrusionTip: "Bleib ruhig und ruf im Zweifel 110 an.", alAllCalm: "{n} Melder, alle ruhig", alDetectors: "Rauch- und Wassermelder",
     asOff: "Unscharf", asHome: "Scharf (zuhause)", asAway: "Scharf (abwesend)", asTriggered: "Alarm!", asGoOff: "Aus", asGoHome: "Zuhause", asGoAway: "Abwesend", asSure: "Wirklich aus?", asPinTitle: "Alarmanlage aus", asPinLead: "PIN der Alarmanlage", asDone: "Alarmanlage: {mode}",
@@ -126,6 +134,14 @@
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
     apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apEnd: "done at {t}", apNew: "new program, learning it", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
     apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
+    apBigWasher: "The laundry is done", apBigDryer: "The dryer is done", apBigDishwasher: "The dishes are done", apBigMany: "{n} appliances are done",
+    apTipWasher: "Please take it out soon, so nothing smells musty.", apTipDryer: "Take it out right away and nothing creases.", apTipDishwasher: "The dishes can be put away.",
+    apSayWasher: "The washing machine is done.", apSayDryer: "The dryer is done.", apSayDishwasher: "The dishwasher is done.",
+    apByTip: "The message also goes away by itself as soon as {name} reports something.", apClose: "Close", apDoneNow: "just now",
+    apSettings: "Washing machine & co.", apSettingsValue: "{n} appliances", apSettingsNone: "none found yet", apSettingsLead: "When an appliance is done, the tablets show it large for 10 minutes until somebody taps Done. A device can also set it to done by itself, e.g. the door contact of the washing machine or a motion sensor in the room. For all tablets.",
+    apNoKnown: "No washing machine, dryer or dishwasher known yet. When a long program runs on a plug which measures power, the tablet asks what is plugged in.",
+    apBy: "Done by", apByNone: "Only with the Done button", apBySuggest: "Suggestions", apBySensors: "Contacts and motion sensors", apByOther: "More devices",
+    speak: "Announcement", speakLead: "Says out loud when the washing machine & co. are done", speakTest: "Test", speakNone: "This browser cannot speak",
     smoke: "Smoke detector", water: "Water detector", calm: "calm", smokeNow: "Smoke!", waterNow: "Water!", alSmoke: "Smoke alarm", alWater: "Water alarm", alIntrusion: "Intrusion alarm", alAlarm: "Alarm", alMute: "Sound off", alSound: "Sound on", alHide: "Hide", alShow: "Show", alSystemOff: "Alarm system off",
     alSmokeTip: "Get everybody out, close the doors, call the fire brigade.", alWaterTip: "Turn off the water, switch off power nearby.", alIntrusionTip: "Stay calm and call the police if in doubt.", alAllCalm: "{n} detectors, all calm", alDetectors: "Smoke and water detectors",
     asOff: "Disarmed", asHome: "Armed (home)", asAway: "Armed (away)", asTriggered: "Alarm!", asGoOff: "Off", asGoHome: "Home", asGoAway: "Away", asSure: "Really off?", asPinTitle: "Alarm system off", asPinLead: "PIN of the alarm system", asDone: "Alarm system: {mode}",
@@ -387,7 +403,7 @@
     }
     if (m.type === "header") {
       var setupBefore = JSON.stringify((S.header && S.header.notice_setup) || {});
-      S.header = m.header; checkNotices();
+      S.header = m.header; checkNotices(); checkApplianceAlert();
       if (S.sheet && S.sheet.id && setupBefore !== JSON.stringify(m.header.notice_setup || {})) { renderSheet(); }
       renderHeader(); if (S.sheet && (S.sheet.batteries || S.sheet.people || S.sheet.routine || S.sheet.weather)) { renderSheet(); } if (S.tab === "home" && !(tdrag && tdrag.active)) { renderContent(); } if (S.saver) { renderSaver(); } return; }
     if (m.type === "bug_info") { S.bugInfo = m.info; if (S.sheet && S.sheet.page === "buginfo") { renderSettings(); } return; }
@@ -2152,9 +2168,128 @@
     }
     return rows ? '<div class="leave appl">' + rows + "</div>" : "";
   }
+  var AP_BIG = { washer: "apBigWasher", dryer: "apBigDryer", dishwasher: "apBigDishwasher" };
+  var AP_TIP = { washer: "apTipWasher", dryer: "apTipDryer", dishwasher: "apTipDishwasher" };
+  var AP_SAY = { washer: "apSayWasher", dryer: "apSayDryer", dishwasher: "apSayDishwasher" };
+  // the big message is shown this long, then the row on Zuhause stays
+  var AP_ALERT_SECONDS = 600;
   function applianceDone(m) {
     wake(); chime();
-    showToast(t(AP_DONE[m.what] || "apDoneWasher") + " · " + m.name, null, 10000);
+    var shown = shownList([{ id: m.id }]).length;
+    if (shown && layout().speak) { setTimeout(function () { say(t(AP_SAY[m.what] || "apSayWasher")); }, 1400); }
+    checkApplianceAlert();
+  }
+  // done appliances of the last 10 minutes, not set to done yet
+  function applianceAlerts() {
+    var a = (S.header && S.header.appliances) || {}, now = Date.now() / 1000, gone = S.apClosed || {};
+    return shownList(a.done).filter(function (d) { return now - d.at < AP_ALERT_SECONDS && !gone[d.id + ":" + d.at]; });
+  }
+  function checkApplianceAlert() {
+    var list = applianceAlerts(), el = document.getElementById("apalert");
+    clearTimeout(S.apTimer);
+    if (!list.length) { if (el) { el.parentNode.removeChild(el); } return; }
+    // hidden again after 10 minutes: one timer, no polling
+    var now = Date.now() / 1000, next = Math.min.apply(null, list.map(function (d) { return d.at + AP_ALERT_SECONDS - now; }));
+    S.apTimer = setTimeout(checkApplianceAlert, Math.max(1, next) * 1000 + 200);
+    var key = list.map(function (d) { return d.id + ":" + d.at; }).join(",");
+    if (!el) { el = document.createElement("div"); el.id = "apalert"; el.className = "apfull"; document.body.appendChild(el); wake(); }
+    else if (el.getAttribute("data-key") === key) { updateApplianceAgo(el, list); return; }
+    el.setAttribute("data-key", key);
+    var ro = S.tablet && S.tablet.readonly, one = list[0], known = ((S.header.appliances || {}).known) || [];
+    var byOf = function (id) { var k = known.filter(function (x) { return x.id === id; })[0]; return k && k.by ? k.by_name : ""; };
+    var title = list.length === 1 ? t(AP_BIG[one.what] || "apBigWasher") : t("apBigMany", { n: list.length });
+    var arts = list.slice(0, 3).map(function (d) { return '<div class="apart">' + applianceArt(d.what) + "</div>"; }).join("");
+    var rows = list.map(function (d) {
+      return '<div class="aprow"><b>' + esc(t(AP_NAME[d.what] || "apWasher")) + '</b><span data-apago="' + esc(String(d.at)) + '">' + esc([d.name, d.room, agoText(d.at)].filter(Boolean).join(" · ")) + "</span></div>";
+    }).join("");
+    var bys = list.map(function (d) { return byOf(d.id); }).filter(Boolean);
+    var tip = list.length === 1 ? t(AP_TIP[one.what] || "apTipWasher") : "";
+    el.innerHTML = '<div class="apin"><div class="aparts n' + Math.min(3, list.length) + '">' + arts + "</div><h1>" + esc(title) + "</h1>" +
+      (tip ? '<div class="aptip">' + esc(tip) + "</div>" : "") + '<div class="aplist">' + rows + "</div>" +
+      '<button class="apbtn" data-apdone="' + esc(list.map(function (d) { return d.id + ":" + d.at; }).join(",")) + '">' + I("check", 34) + " " + esc(t(ro ? "apClose" : "apSeen")) + "</button>" +
+      (bys.length ? '<div class="apby">' + esc(t("apByTip", { name: bys.join(", ") })) + "</div>" : "") + "</div>";
+  }
+  function agoText(at) { var s = Date.now() / 1000 - at; return s < 60 ? t("apDoneNow") : t("apAgo", { t: minutesText(s) }); }
+  function updateApplianceAgo(el, list) {
+    list.forEach(function (d) {
+      var span = el.querySelector('[data-apago="' + d.at + '"]');
+      if (span) { span.textContent = [d.name, d.room, agoText(d.at)].filter(Boolean).join(" · "); }
+    });
+  }
+  function applianceAlertDone(keys) {
+    var ro = S.tablet && S.tablet.readonly; S.apClosed = S.apClosed || {};
+    keys.split(",").forEach(function (k) {
+      S.apClosed[k] = true;
+      if (!ro) { send({ type: "appliance_seen", id: k.slice(0, k.lastIndexOf(":")) }); }
+    });
+    if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) { /* nothing to stop */ } }
+    checkApplianceAlert();
+  }
+  // a washing machine, dryer or dishwasher which is done: drawn, no image files
+  function applianceArt(what) {
+    var body = '<rect x="38" y="18" width="144" height="184" rx="24" fill="url(#apBody)"/><rect x="38" y="18" width="144" height="40" rx="24" fill="#dfe6ee"/><rect x="38" y="44" width="144" height="14" fill="#dfe6ee"/>' +
+      '<rect x="54" y="32" width="38" height="12" rx="6" fill="#4DA3FF" opacity=".85"/><circle cx="160" cy="38" r="9" fill="#c4ceda"/><circle cx="160" cy="38" r="3" fill="#8b97a7"/><circle cx="136" cy="38" r="5" fill="#c4ceda"/>';
+    var inner;
+    if (what === "dishwasher") {
+      inner = '<rect x="50" y="68" width="120" height="122" rx="14" fill="#d3dbe5"/><rect x="66" y="78" width="88" height="8" rx="4" fill="#aeb9c7"/>' +
+        '<g class="applate"><circle cx="86" cy="138" r="30" fill="#fff" stroke="#c9d3df" stroke-width="3"/><circle cx="86" cy="138" r="18" fill="none" stroke="#e3e9f0" stroke-width="3"/></g>' +
+        '<g class="applate p2"><path d="M128 112h26l-4 46a9 9 0 0 1-9 8h0a9 9 0 0 1-9-8z" fill="#cfe8ff" stroke="#9fc7ee" stroke-width="3"/><path d="M141 166v14M132 182h18" stroke="#9fc7ee" stroke-width="3" stroke-linecap="round"/></g>';
+    } else {
+      var drum = what === "dryer" ? "url(#apWarm)" : "url(#apWater)";
+      inner = '<circle cx="110" cy="128" r="56" fill="#c9d3df"/><circle cx="110" cy="128" r="46" fill="#eef3f8"/>' +
+        '<clipPath id="apDrum"><circle cx="110" cy="128" r="40"/></clipPath><g clip-path="url(#apDrum)"><rect x="60" y="80" width="100" height="100" fill="' + drum + '"/>' +
+        (what === "dryer"
+          ? '<g class="apswirl"><path d="M110 98c22 0 30 22 16 32s-30-4-22-16 26-2 22 14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".75"/></g>'
+          : '<path class="apwave" d="M40 130q15-10 30 0t30 0 30 0 30 0 30 0 30 0v60H40z" fill="#4DA3FF" opacity=".55"/><circle class="apbub" cx="96" cy="160" r="5" fill="#fff" opacity=".8"/><circle class="apbub b2" cx="122" cy="166" r="4" fill="#fff" opacity=".8"/><circle class="apbub b3" cx="110" cy="170" r="3" fill="#fff" opacity=".8"/>') +
+        "</g>" + '<path d="M78 106a40 40 0 0 1 22-14" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".8"/>';
+    }
+    var spark = function (x, y, r, c) { return '<path class="apspark' + c + '" d="M' + x + " " + (y - r) + "Q" + x + " " + y + " " + (x + r) + " " + y + "Q" + x + " " + y + " " + x + " " + (y + r) + "Q" + x + " " + y + " " + (x - r) + " " + y + "Q" + x + " " + y + " " + x + " " + (y - r) + 'z" fill="#FFD66B"/>'; };
+    return '<svg viewBox="0 0 220 230" aria-hidden="true"><defs><linearGradient id="apBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f9fc"/><stop offset="1" stop-color="#e4eaf1"/></linearGradient>' +
+      '<linearGradient id="apWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f3ff"/><stop offset="1" stop-color="#a9d4ff"/></linearGradient>' +
+      '<linearGradient id="apWarm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe2b8"/><stop offset="1" stop-color="#ffb37a"/></linearGradient></defs>' +
+      '<ellipse cx="110" cy="214" rx="78" ry="9" fill="#000" opacity=".18"/>' + body + inner +
+      spark(24, 46, 12, "") + spark(200, 86, 9, " s2") + spark(30, 150, 7, " s3") +
+      '<g class="apcheck"><circle cx="176" cy="186" r="28" fill="#34D399" stroke="#fff" stroke-width="5"/><path d="M163 186l9 9 17-18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g></svg>';
+  }
+  // ---------- speech: the voice of the browser ----------
+  function canSpeak() { return !!(window.speechSynthesis && window.SpeechSynthesisUtterance); }
+  function say(text) {
+    if (!canSpeak()) { return; }
+    try {
+      var u = new SpeechSynthesisUtterance(text), lang = (LANG && LANG.locale) || ({ de: "de-DE", en: "en-GB" }[LANG_CODE] || LANG_CODE);
+      var nav = navigator.language || "";
+      if (nav.slice(0, 2).toLowerCase() === LANG_CODE) { lang = nav; }
+      u.lang = lang;
+      var voices = speechSynthesis.getVoices() || [], exact = voices.filter(function (v) { return v.lang === lang || v.lang.replace("_", "-") === lang; });
+      var same = exact.length ? exact : voices.filter(function (v) { return v.lang.slice(0, 2).toLowerCase() === LANG_CODE; });
+      if (same.length) { u.voice = same.filter(function (v) { return v.localService; })[0] || same[0]; }
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) { /* no voice */ }
+  }
+  function speakRowHtml(lay) {
+    if (!canSpeak()) { return '<div class="mrow"><span class="mic">' + I("speaker", 20) + '</span><span class="ml"><b>' + esc(t("speak")) + "</b><span>" + esc(t("speakNone")) + "</span></span></div>"; }
+    return '<div class="mrow"><span class="mic">' + I("speaker", 20) + '</span><span class="ml"><b>' + esc(t("speak")) + "</b><span>" + esc(t("speakLead")) + '</span></span><div class="seg"><button class="' + (lay.speak ? "" : "on") + '" data-speak="0">' + esc(t("off")) + '</button><button class="' + (lay.speak ? "on" : "") + '" data-speak="1">' + esc(t("on")) + "</button></div>" +
+      '<button class="pill" data-speaktest="1">' + esc(t("speakTest")) + "</button></div>";
+  }
+  // ---------- settings: which device sets an appliance to done ----------
+  function renderAppliances() {
+    var known = ((S.header && S.header.appliances) || {}).known || [];
+    var rows = known.map(function (k) {
+      var tl = S.tiles[k.id], room = k.room, ids = Object.keys(S.tiles).filter(function (id) { return id !== k.id; });
+      var byName = function (a, b) { return S.tiles[a].name.localeCompare(S.tiles[b].name); };
+      var suggest = ids.filter(function (id) { var x = S.tiles[id]; return (x.kind === "contact" || x.kind === "motion") && room && (x.rooms || []).indexOf(room) >= 0; }).sort(byName);
+      var sensors = ids.filter(function (id) { var x = S.tiles[id]; return (x.kind === "contact" || x.kind === "motion") && suggest.indexOf(id) < 0; }).sort(byName);
+      var opt = function (id) { var x = S.tiles[id]; return '<option value="' + esc(id) + '"' + (id === k.by ? " selected" : "") + ">" + esc(x.name + ((x.rooms || [])[0] ? " · " + x.rooms[0] : "")) + "</option>"; };
+      var group = function (label, list) { return list.length ? '<optgroup label="' + esc(label) + '">' + list.map(opt).join("") + "</optgroup>" : ""; };
+      var listed = suggest.concat(sensors);
+      var others = ids.filter(function (id) { return listed.indexOf(id) < 0; }).sort(byName);
+      var missing = k.by && !S.tiles[k.by] ? '<option value="' + esc(k.by) + '" selected>' + esc(k.by_name || k.by) + "</option>" : "";
+      return '<div class="item apset"><span class="mic">' + I("washer", 20) + '</span><div class="grow"><b>' + esc(t(AP_NAME[k.what] || "apWasher")) + "</b><span>" + esc([tl ? tl.name : k.name, room].filter(Boolean).join(" · ")) + "</span>" +
+        '<label class="aplabel">' + esc(t("apBy")) + '<select data-apby="' + esc(k.id) + '"><option value="">' + esc(t("apByNone")) + "</option>" + missing +
+        group(t("apBySuggest"), suggest) + group(t("apBySensors"), sensors) + group(t("apByOther"), others) + "</select></label></div></div>";
+    }).join("");
+    sheetShell(settingsHead(t("apSettings"), t("setHome"), true) + '<div class="hint" style="text-align:left;margin:4px 0 16px">' + esc(t("apSettingsLead")) + "</div>" +
+      (rows ? '<div class="group"><div class="list">' + rows + "</div></div>" : '<div class="group"><div class="hint" style="text-align:left">' + esc(t("apNoKnown")) + "</div></div>"));
   }
 
   // ---------- status chips on Home and their overviews ----------
@@ -2506,6 +2641,7 @@
     if (page === "floors") { renderFloors(); return; }
     if (page === "buginfo") { renderBugInfo(); return; }
     if (page === "rooms") { renderSettingsRooms(); return; }
+    if (page === "appliances") { renderAppliances(); return; }
     if (page === "keepon") { sheetShell(settingsHead(t("keepOnList"), t("setHome"), true) + keepOnListHtml()); return; }
     var themes = ["auto", "dark", "light"].map(function (p) { return '<button class="' + ((lay.theme || "auto") === p ? "on" : "") + '" data-theme="' + p + '">' + esc(t(p)) + "</button>"; }).join("");
     var hidden = lay.hidden_rooms || [], shown = S.rooms.filter(function (r) { return hidden.indexOf(r.name) < 0; }).length;
@@ -2515,11 +2651,11 @@
       '<div class="group"><div class="label">' + esc(t("setTablet")) + '</div><div class="menu">' +
       settingsRow('data-setpage="tablet"', "frame", t("setNamePlace"), [t(tb.place), tb.room].filter(Boolean).join(" · ")) +
       '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" + accentHtml() +
-      '<div class="mrow"><span class="mic">' + I("sun", 20) + '</span><span class="ml"><b>' + esc(t("theme")) + '</b></span><div class="seg">' + themes + "</div></div>" +
       '<div class="mrow"><span class="mic">' + I("globe", 20) + '</span><span class="ml"><b>' + esc(t("language")) + '</b></span><select id="langsel" data-lang="1">' + LANGS.map(function (l) { return '<option value="' + l[0] + '"' + (langChoice() === l[0] ? " selected" : "") + ">" + esc(l[0] === "auto" ? t("auto") : l[1]) + "</option>"; }).join("") + "</select></div>" +
       (seesCameras() ? '<div class="mrow"><span class="mic">' + I("film", 20) + '</span><span class="ml"><b>' + esc(t("camStart")) + '</b></span><div class="seg"><button class="' + (lay.start !== "cameras" ? "on" : "") + '" data-camstart="">' + esc(t("camStartAuto")) + '</button><button class="' + (lay.start === "cameras" ? "on" : "") + '" data-camstart="cameras">' + esc(t("camStartCams")) + "</button></div></div>" : "") +
       liteRowHtml(lay) +
       '<div class="mrow"><span class="mic">' + I("clock", 20) + '</span><span class="ml"><b>' + esc(t("saver")) + '</b></span><div class="seg">' + [0, 2, 5, 10, 15, 30].map(function (m) { return '<button class="' + (saverMinutes() === m ? "on" : "") + '" data-saver="' + m + '">' + esc(m ? t("saverMin", { n: m }) : t("saverOff")) + "</button>"; }).join("") + "</div></div>" +
+      speakRowHtml(lay) +
       settingsRow('data-setpage="rooms"', "home", t("setRooms"), t("setRoomsValue", { n: shown, m: S.rooms.length })) +
       settingsRow('data-edit="1"', "plus", t("editTiles"), "") + "</div></div>";
     if (tb.arrange) {
@@ -2527,6 +2663,10 @@
         settingsRow('data-arrange="1"', "home", t("arrange"), t("setArrangeValue")) +
         settingsRow('data-setpage="keepon"', "power", t("keepOnList"), kept ? t("setKeepValue", { n: kept }) : t("setKeepNone")) +
         settingsRow('data-setpage="floors"', "stairs", t("floors"), floorList().length ? t("floorsValue", { n: floorList().length }) : t("floorsNone")) + "</div></div>";
+    }
+    if (!tb.readonly) {
+      var nAp = (((S.header && S.header.appliances) || {}).known || []).length;
+      html += '<div class="group"><div class="menu">' + settingsRow('data-setpage="appliances"', "washer", t("apSettings"), nAp ? t("apSettingsValue", { n: nAp }) : t("apSettingsNone")) + "</div></div>";
     }
     if (tb.https && location.protocol !== "https:") {
       html += '<div class="group"><div class="menu"><a class="mrow" href="' + esc(tb.https) + "#t=" + encodeURIComponent(S.token) + '"><span class="mic">' + I("mic", 20) + '</span><span class="ml"><b>' + esc(t("setTalk")) + "</b><span>" + esc(t("switchHttps")) + "</span></span>" + I("chev", 18) + "</a></div></div>";
@@ -3536,6 +3676,14 @@
       if (!pinOk()) { askPin(null); return; }
       var ap = el.getAttribute("data-appl").split("|"); send({ type: "appliance", id: ap[0], what: ap[1] }); el.closest(".apask").style.opacity = ".4"; return;
     }
+    if ((el = closest(target, "data-apdone"))) { applianceAlertDone(el.getAttribute("data-apdone")); return; }
+    if ((el = closest(target, "data-speaktest"))) { say(t("apSayWasher")); return; }
+    if ((el = closest(target, "data-speak"))) {
+      var l3 = copyLayout(); l3.speak = el.getAttribute("data-speak") === "1"; saveLayout(l3);
+      // the first words after a tap: browsers speak only after the user touched the page
+      if (l3.speak) { say(t("apSayWasher")); }
+      return;
+    }
     if ((el = closest(target, "data-applseen"))) { send({ type: "appliance_seen", id: el.getAttribute("data-applseen") }); el.closest(".row").style.opacity = ".4"; return; }
     if ((el = closest(target, "data-alarmmode"))) { alarmMode(el, el.getAttribute("data-alarmmode")); return; }
     if ((el = closest(target, "data-alarmmute"))) { S.alarmMuted = !S.alarmMuted; checkAlarm(); return; }
@@ -3697,6 +3845,7 @@
     if (ev.target.id === "tabname" && ev.target.value.trim()) { send({ type: "setup", name: ev.target.value.trim() }); }
     if (ev.target.id === "setuproom") { S.setupRoom = ev.target.value; }
     if (ev.target.id === "langsel") { setLang(ev.target.value); return; }
+    if (ev.target.getAttribute && ev.target.getAttribute("data-apby") !== null) { send({ type: "appliance_done_by", id: ev.target.getAttribute("data-apby"), by: ev.target.value }); return; }
     if (ev.target.getAttribute && S.sheet) {
       var ins = ev.target.getAttribute("data-inslider"), itm = ev.target.getAttribute("data-intime");
       if (ins) { S.sliding = false; setInput(ins, ev.target.value); }
