@@ -452,6 +452,91 @@ def test_exists_is_case_insensitive():
     assert _perl_exists("Bedroom") == ""
 
 
+_PERL_BRIDGE_PORTS_HARNESS = r"""
+use strict; use warnings; use JSON;
+our %defs = (
+  bridge1 => { FHEMPYTYPE => 'matter_bridge' },
+  bridge2 => { FHEMPYTYPE => 'matter_bridge' },
+  cast1 => { FHEMPYTYPE => 'googlecast' },
+);
+our %attr = (bridge2 => { port => '5560' });
+sub main::AttrVal { my ($d, $a, $def) = @_; return $attr{$d}{$a} // $def }
+%main::defs = %defs;
+local $/; my $msg = JSON->new->allow_nonref->decode(<STDIN>);
+my $ret = eval $msg->{command}; die $@ if $@;
+print $ret;
+"""
+
+
+def test_bridge_ports_of_all_matter_bridges():
+    import shutil
+    import subprocess
+
+    if shutil.which("perl") is None:
+        pytest.skip("perl not installed")
+    msg = json.dumps({"command": engine_module.bridge_ports_cmd()}).encode()
+    out = subprocess.run(
+        ["perl", "-e", _PERL_BRIDGE_PORTS_HARNESS],
+        input=msg,
+        capture_output=True,
+        check=True,
+    ).stdout.decode()
+    assert sorted(out.split(",")) == ["5550", "5560"]
+
+
+def test_is_local_address():
+    assert engine_module.is_local_address("127.0.0.1")
+    assert engine_module.is_local_address("::1")
+    # TEST-NET-3, never an address of this computer
+    assert not engine_module.is_local_address("203.0.113.7")
+    assert not engine_module.is_local_address("no address")
+
+
+def matter_values(discriminator, addresses, port=5550):
+    return {
+        "name": f"{discriminator:016X}",
+        "host": "AABBCCDDEEFF",
+        "ip": addresses[0],
+        "addresses": addresses,
+        "port": port,
+        "type": "_matterc._udp.local.",
+        "txt": {"CM": "2", "VP": "65521+32768", "D": str(discriminator)},
+    }
+
+
+async def found_matter(eng, mocker, values):
+    info = mocker.MagicMock()
+    info.async_request = mocker.AsyncMock(return_value=True)
+    mocker.patch.object(engine_module, "AsyncServiceInfo", return_value=info)
+    mocker.patch.object(engine_module, "mdns_values", return_value=values)
+    eng._zeroconf = mocker.MagicMock()
+    await eng.found_mdns("_matterc._udp.local.", values["name"])
+
+
+@pytest.mark.asyncio
+async def test_own_matter_bridge_is_never_offered(engine, mocker):
+    async def send(hash, cmd):
+        return "5550,5560" if "matter_bridge" in cmd else ""
+
+    mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
+    # every pairing mode opened by an app has a new random discriminator
+    for discriminator in (1234, 3001):
+        await found_matter(engine, mocker, matter_values(discriminator, ["127.0.0.1"]))
+    assert engine.candidates == {}
+
+
+@pytest.mark.asyncio
+async def test_other_matter_devices_are_offered(engine, fhem_mock, mocker):
+    # a Matter device on another computer, even on the same port
+    await found_matter(engine, mocker, matter_values(1234, ["203.0.113.7"]))
+    # a Matter device on this computer, but not on a port of a matter_bridge
+    await found_matter(engine, mocker, matter_values(99, ["127.0.0.1"], port=5540))
+    assert sorted(engine.candidates) == [
+        "matter:65521+32768-1234",
+        "matter:65521+32768-99",
+    ]
+
+
 @pytest.mark.asyncio
 async def test_ble_monitor_device_named_after_its_model(engine, fhem_mock, mocker):
     """The suggested name comes from the model the BLE parser recognizes in

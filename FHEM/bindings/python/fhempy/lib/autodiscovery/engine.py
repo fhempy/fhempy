@@ -20,6 +20,7 @@ import functools
 import importlib
 import ipaddress
 import json
+import socket
 import time
 from urllib.parse import urlsplit
 
@@ -45,6 +46,11 @@ POPUP_DELAY = 10
 MDNS_INFO_TIMEOUT = 3000
 # how long the candidates of the BLE scan are kept without advertisement
 BLE_FORGET = 3600
+# commissionable Matter devices, fhempy's own matter_bridge advertises it too
+MATTER_COMMISSIONABLE_TYPE = "_matterc._udp.local."
+# default of the attribute port of matter_bridge
+MATTER_BRIDGE_DEFAULT_PORT = 5550
+
 # try to recognize the model of a found Bluetooth device again after (s)
 DESCRIBE_RETRY = 30
 # devices remembered for DESCRIBE_RETRY before old entries are dropped
@@ -75,6 +81,35 @@ def exists_cmd(module, value):
         "return $d if ((ReadingsVal($d, 'address', '') =~ tr/A-Z/a-z/r) eq $u);; "
         "} return '';;"
     )
+
+
+def bridge_ports_cmd():
+    """Perl code which returns the Matter ports of all matter_bridge devices,
+    comma separated"""
+    return (
+        "join(',', map { AttrVal($_, 'port', "
+        f"'{MATTER_BRIDGE_DEFAULT_PORT}') }} "
+        "grep { ($main::defs{$_}{FHEMPYTYPE} // '') eq 'matter_bridge' } "
+        "keys %main::defs)"
+    )
+
+
+def is_local_address(address):
+    """True if the address belongs to this computer"""
+    try:
+        ip = ipaddress.ip_address(address.split("%")[0])
+    except ValueError:
+        return False
+    if ip.is_loopback:
+        return True
+    family = socket.AF_INET6 if ip.version == 6 else socket.AF_INET
+    try:
+        with socket.socket(family, socket.SOCK_DGRAM) as sock:
+            # only addresses of this computer can be bound
+            sock.bind((address, 0))
+        return True
+    except OSError:
+        return False
 
 
 def perl_json(value):
@@ -272,8 +307,27 @@ class Engine:
             return
         if service_type == MQTT_MDNS_TYPE:
             self.mqtt.found_broker(values["ip"], values["port"])
+        if service_type == MATTER_COMMISSIONABLE_TYPE and await self.is_own_bridge(
+            values
+        ):
+            return
         for entry, rule in catalog.match_mdns(self.catalog, service_type, values):
             await self.found(catalog.candidate(entry, rule, values, "mdns"), rule)
+
+    async def is_own_bridge(self, values):
+        """True if the Matter device is a matter_bridge of this fhempy, it is
+        no new device. Each time an app shares the bridge with another app
+        (pairing mode) it advertises a new random discriminator, its unique
+        value changes and an ignored bridge would be offered again."""
+        if not any(is_local_address(a) for a in values.get("addresses", [])):
+            return False
+        try:
+            ports = await fhem.sendCommandHash(self.hash, bridge_ports_cmd())
+        except Exception:
+            self.logger.debug("Failed to get the ports of matter_bridge", exc_info=True)
+            return False
+        own = {p.strip() for p in str(ports or "").split(",") if p.strip()}
+        return str(values.get("port")) in own
 
     # --- SSDP ---
 
@@ -854,6 +908,7 @@ def mdns_values(info):
         if key is not None
     }
     addresses = info.parsed_addresses(IPVersion.V4Only)
+    all_addresses = info.parsed_addresses(IPVersion.All)
     ip = ""
     for address in addresses:
         try:
@@ -870,6 +925,7 @@ def mdns_values(info):
         "name": name,
         "host": (info.server or "").rstrip(".").removesuffix(".local"),
         "ip": ip,
+        "addresses": all_addresses,
         "port": info.port,
         "type": service_type,
         "txt": txt,
