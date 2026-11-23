@@ -38,7 +38,7 @@
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
-    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
     rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
@@ -132,7 +132,7 @@
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
-    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
     rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
@@ -2066,11 +2066,11 @@
     return '<div class="rtwarn">' + I(warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + warn.kind, { t: warn.at })) + "</b><span>" +
       esc(t("warnWindows", { names: windows.map(function (x) { return x.tile.name; }).join(", ") })) + "</span></div></div>";
   }
-  // leaving home starts by itself after this many seconds, unless stopped
+  // good night and leaving home start by themselves after this many seconds, unless stopped
   var RT_AUTO_S = 60, rtTimer = null;
   function routineOpen(mode) {
     var p = routinePlan(mode), offN = p.off.filter(function (x) { return !x.tile.keep_on; }).length;
-    S.sheet = { routine: mode, autoAt: mode === "away" && offN ? Date.now() + RT_AUTO_S * 1000 : 0 };
+    S.sheet = { routine: mode, autoAt: offN || p.blinds.length ? Date.now() + RT_AUTO_S * 1000 : 0 };
     renderSheet();
     routineTick();
   }
@@ -2081,7 +2081,7 @@
     var left = routineLeft();
     if (left <= 0) { routineGo(S.sheet.routine); return; }
     var btn = document.querySelector("#sheet [data-rtgo]"), bar = document.querySelector("#sheet .rtbar i");
-    if (btn) { var lbl = btn.querySelector(".lbl"); if (lbl) { lbl.textContent = t("rtGoIn", { n: left }); } }
+    if (btn) { var lbl = btn.querySelector(".lbl"); if (lbl) { lbl.textContent = t(S.sheet.routine === "night" ? "rtGoNightIn" : "rtGoIn", { n: left }); } }
     if (bar) { bar.style.width = Math.min(100, 100 * (1 - (S.sheet.autoAt - Date.now()) / (RT_AUTO_S * 1000))) + "%"; }
     rtTimer = setTimeout(routineTick, 250);
   }
@@ -2114,7 +2114,7 @@
       });
     }
     var title = mode === "night" ? t("rtNight") : t("rtAway"), auto = S.sheet.autoAt ? routineLeft() : 0;
-    var go = '<button class="pill primary' + (auto ? " rtauto" : "") + '" data-rtgo="' + mode + '">' + (auto ? '<span class="rtbar"><i></i></span>' : "") + I(mode === "night" ? "moon" : "walk", 20) + ' <span class="lbl">' + esc(auto ? t("rtGoIn", { n: auto }) : t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</span></button>";
+    var go = '<button class="pill primary' + (auto ? " rtauto" : "") + '" data-rtgo="' + mode + '">' + (auto ? '<span class="rtbar"><i></i></span>' : "") + I(mode === "night" ? "moon" : "walk", 20) + ' <span class="lbl">' + esc(auto ? t(mode === "night" ? "rtGoNightIn" : "rtGoIn", { n: auto }) : t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</span></button>";
     sheetShell('<div class="head"><div><h1>' + esc(title) + '</h1><div class="subtitle">' + esc(auto ? t("rtAutoHint", { n: RT_AUTO_S }) : body ? t(mode === "night" ? "rtNightLead" : "rtAwayLead") : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       weatherWarn() + '<div class="blist ovlist">' + (body || '<div class="allclear">' + I("check", 26) + " " + esc(t("rtAllFine")) + "</div>") + "</div>" +
       '<div class="actions">' + (auto ? '<button class="pill" data-rtstop="1">' + esc(t("rtAutoStop")) + "</button>" : "") + go + "</div>");
