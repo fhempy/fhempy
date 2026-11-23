@@ -19,27 +19,49 @@
       }
     ]
   },
-  "discovery": {
-    "ble": [
-      {
-        "manufacturer_id": 220
-      },
-      {
-        "name": "LYWSD03MMC"
-      },
-      {
-        "name_prefix": [
-          "GVH5",
-          "Govee_"
-        ]
-      }
-    ],
-    "title": "{name}",
-    "name": "ble_sensor",
-    "unique": "{address}",
-    "define": [
-      "{address}"
-    ],
-    "hint": "E.g. Oral-B toothbrushes only send while they are used."
-  }
+  "discovery": [
+    {
+      "ble": [
+        {
+          "manufacturer_id": 220
+        },
+        {
+          "name": "LYWSD03MMC"
+        },
+        {
+          "name_prefix": [
+            "GVH5",
+            "Govee_"
+          ]
+        }
+      ],
+      "describe": true,
+      "title": "{label}",
+      "name": "{label}",
+      "model": "{kind}",
+      "unique": "{address}",
+      "define": [
+        "{address}"
+      ],
+      "hint": "Devices like toothbrushes or scales only send while they are used."
+    },
+    {
+      "ble": [
+        {
+          "any": true
+        }
+      ],
+      "describe": true,
+      "described_only": true,
+      "fallback": true,
+      "title": "{label}",
+      "name": "{label}",
+      "model": "{kind}",
+      "unique": "{address}",
+      "define": [
+        "{address}"
+      ],
+      "hint": "Devices like toothbrushes or scales only send while they are used."
+    }
+  ]
 }

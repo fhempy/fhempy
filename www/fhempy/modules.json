@@ -329,6 +329,15 @@
   ]
  },
  {
+  "id": "heating_control",
+  "title": "Heating control",
+  "description": "Controls mixer and circulation pump of a heating circuit and all room thermostats: very simple schedules, vacation in one tap, learns the right flow temperature with the weather forecast",
+  "category": "home",
+  "name": "heizung",
+  "single": true,
+  "icon": "🔥"
+ },
+ {
   "id": "huawei_modbus",
   "title": "Huawei inverter (Modbus)",
   "description": "Read Huawei inverters locally via Modbus TCP",

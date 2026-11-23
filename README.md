@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>77 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
+  <b>78 ready-to-use integrations for <a href="https://fhem.de">FHEM</a>, written in Python. Now with Matter support.</b>
 </p>
 
 <p align="center">
@@ -190,6 +190,7 @@ For Bluetooth and Matter (both ways):
 |[erelax_vaillant](FHEM/bindings/python/fhempy/lib/erelax_vaillant/README.md)|Control eRelax Vaillant|
 |[esphome](FHEM/bindings/python/fhempy/lib/esphome/README.md)|Installs and starts the ESPHome dashboard for easy ESPHome device management|
 |[gree_climate](FHEM/bindings/python/fhempy/lib/gree_climate/README.md)|Control Gree HVAC devices|
+|[heating_control](FHEM/bindings/python/fhempy/lib/heating_control/README.md)|Heating control for mixer, circulation pump and room thermostats: very simple schedules, vacation in one tap, learns the right flow temperature with the weather forecast|
 |[homekit](FHEM/bindings/python/fhempy/lib/homekit/README.md)|Control HomeKit devices|
 |[matter](FHEM/bindings/python/fhempy/lib/matter/README.md)|Control Matter devices (lights, plugs, sensors, thermostats, locks, blinds), also devices behind Hue/IKEA/Aqara bridges|
 |[matter_bridge](FHEM/bindings/python/fhempy/lib/matter_bridge/README.md)|Use FHEM devices in Apple Home, Google Home, Alexa and SmartThings, including voice control|

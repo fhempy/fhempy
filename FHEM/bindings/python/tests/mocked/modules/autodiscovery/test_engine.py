@@ -497,3 +497,184 @@ async def test_create_sends_result_with_device_to_the_dialog(mocker):
     with pytest.raises(RuntimeError):
         await device.set_create({}, {"id": "mdns:z"})
     assert '"error": "boom"' in run_js.call_args.args[1]
+
+
+_PERL_BRIDGE_PORTS_HARNESS = r"""
+use strict; use warnings; use JSON;
+our %defs = (
+  bridge1 => { FHEMPYTYPE => 'matter_bridge' },
+  bridge2 => { FHEMPYTYPE => 'matter_bridge' },
+  cast1 => { FHEMPYTYPE => 'googlecast' },
+);
+our %attr = (bridge2 => { port => '5560' });
+sub main::AttrVal { my ($d, $a, $def) = @_; return $attr{$d}{$a} // $def }
+%main::defs = %defs;
+local $/; my $msg = JSON->new->allow_nonref->decode(<STDIN>);
+my $ret = eval $msg->{command}; die $@ if $@;
+print $ret;
+"""
+
+
+def test_bridge_ports_of_all_matter_bridges():
+    import shutil
+    import subprocess
+
+    if shutil.which("perl") is None:
+        pytest.skip("perl not installed")
+    msg = json.dumps({"command": engine_module.bridge_ports_cmd()}).encode()
+    out = subprocess.run(
+        ["perl", "-e", _PERL_BRIDGE_PORTS_HARNESS],
+        input=msg,
+        capture_output=True,
+        check=True,
+    ).stdout.decode()
+    assert sorted(out.split(",")) == ["5550", "5560"]
+
+
+def test_is_local_address():
+    assert engine_module.is_local_address("127.0.0.1")
+    assert engine_module.is_local_address("::1")
+    # TEST-NET-3, never an address of this computer
+    assert not engine_module.is_local_address("203.0.113.7")
+    assert not engine_module.is_local_address("no address")
+
+
+def matter_values(discriminator, addresses, port=5550):
+    return {
+        "name": f"{discriminator:016X}",
+        "host": "AABBCCDDEEFF",
+        "ip": addresses[0],
+        "addresses": addresses,
+        "port": port,
+        "type": "_matterc._udp.local.",
+        "txt": {"CM": "2", "VP": "65521+32768", "D": str(discriminator)},
+    }
+
+
+async def found_matter(eng, mocker, values):
+    info = mocker.MagicMock()
+    info.async_request = mocker.AsyncMock(return_value=True)
+    mocker.patch.object(engine_module, "AsyncServiceInfo", return_value=info)
+    mocker.patch.object(engine_module, "mdns_values", return_value=values)
+    eng._zeroconf = mocker.MagicMock()
+    await eng.found_mdns("_matterc._udp.local.", values["name"])
+
+
+@pytest.mark.asyncio
+async def test_own_matter_bridge_is_never_offered(engine, mocker):
+    async def send(hash, cmd):
+        return "5550,5560" if "matter_bridge" in cmd else ""
+
+    mocker.patch.object(engine_module.fhem, "sendCommandHash", side_effect=send)
+    # every pairing mode opened by an app has a new random discriminator
+    for discriminator in (1234, 3001):
+        await found_matter(engine, mocker, matter_values(discriminator, ["127.0.0.1"]))
+    assert engine.candidates == {}
+
+
+@pytest.mark.asyncio
+async def test_other_matter_devices_are_offered(engine, fhem_mock, mocker):
+    # a Matter device on another computer, even on the same port
+    await found_matter(engine, mocker, matter_values(1234, ["203.0.113.7"]))
+    # a Matter device on this computer, but not on a port of a matter_bridge
+    await found_matter(engine, mocker, matter_values(99, ["127.0.0.1"], port=5540))
+    assert sorted(engine.candidates) == [
+        "matter:65521+32768-1234",
+        "matter:65521+32768-99",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_ble_monitor_device_named_after_its_model(engine, fhem_mock, mocker):
+    """The suggested name comes from the model the BLE parser recognizes in
+    the advertisement's data, not from a generic name."""
+    from types import SimpleNamespace
+
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("ble_monitor")
+    mocker.patch.object(engine_module, "POPUP_DELAY", 0)
+    await engine._load_describers()
+    assert "ble_monitor" in engine._describers
+
+    def adv(data):
+        return SimpleNamespace(
+            local_name="Some name",
+            service_uuids=[],
+            service_data={},
+            manufacturer_data={220: data},
+            rssi=-50,
+        )
+
+    device = SimpleNamespace(address="aa:bb:cc:dd:ee:01", name="")
+    # not the data of a known model yet: the sent name
+    engine._ble_advertisement(device, adv(b"\x01\x02"))
+    await asyncio.sleep(0.05)
+    candidate = engine.candidates["ble_monitor:AA:BB:CC:DD:EE:01"]
+    assert candidate["name"] == "Some_name"
+    assert candidate["described"] is False
+    # the model is recognized from a later advertisement
+    oralb = bytes([0x06, 0x32, 0x6B, 3, 114, 0, 10, 2, 1, 0, 6])
+    engine._ble_advertisement(device, adv(oralb))
+    await asyncio.sleep(0.05)
+    assert candidate["name"] == "Oral_B_IO_Series_7"
+    assert candidate["title"] == "Oral-B IO Series 7"
+    assert candidate["model"] == "Toothbrush"
+    assert candidate["described"] is True
+
+
+def _ble_adv(local_name, manufacturer_data, rssi=-50):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        local_name=local_name,
+        service_uuids=[],
+        service_data={},
+        manufacturer_data=manufacturer_data,
+        rssi=rssi,
+    )
+
+
+@pytest.mark.asyncio
+async def test_ble_monitor_offers_every_device_its_parser_knows(
+    engine, fhem_mock, mocker
+):
+    """Not only the few devices with an own matcher: every device the BLE
+    parser recognizes from its data is offered, others are not."""
+    from types import SimpleNamespace
+
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("ble_monitor")
+    mocker.patch.object(engine_module, "POPUP_DELAY", 0)
+    await engine._load_describers()
+    # ThermoPro TP357: 21.5 C, 45 %
+    thermopro = SimpleNamespace(address="aa:bb:cc:dd:ee:02", name="")
+    data = {0xD7C2: bytes([0x00, 0x2D, 0x22, 0x2C])}
+    engine._ble_advertisement(thermopro, _ble_adv("TP357 (EE02)", data))
+    # a device the parser doesn't know
+    other = SimpleNamespace(address="aa:bb:cc:dd:ee:03", name="")
+    engine._ble_advertisement(other, _ble_adv("Phone", {0x1234: b"\x01\x02\x03"}))
+    await asyncio.sleep(0.05)
+    candidate = engine.candidates["ble_monitor:AA:BB:CC:DD:EE:02"]
+    assert candidate["name"] == "Thermopro_TP357"
+    assert candidate["model"] == "Thermometer"
+    assert "ble_monitor:AA:BB:CC:DD:EE:03" not in engine.candidates
+    # the unknown device is checked again only after DESCRIBE_RETRY
+    assert engine._may_describe("ble_monitor:AA:BB:CC:DD:EE:03") is False
+
+
+@pytest.mark.asyncio
+async def test_ble_monitor_steps_back_for_modules_with_own_rule(engine, fhem_mock):
+    """A device another module has a rule for isn't offered by ble_monitor."""
+    from types import SimpleNamespace
+
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("ble_monitor")
+    await engine._load_describers()
+    device = SimpleNamespace(address="aa:bb:cc:dd:ee:04", name="")
+    engine._ble_advertisement(device, _ble_adv("CHEFBBQ", {}))
+    await asyncio.sleep(0.05)
+    modules = {c["module"] for c in engine.candidates.values()}
+    assert modules == {"chefbbq"}

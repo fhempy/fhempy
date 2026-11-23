@@ -71,6 +71,7 @@ ATTRS_TEXT = (
     "floors",
     "may_open",
     "appliances",
+    "appliance_done_by",
     "alarm_system",
     "alarm_pin",
     "device_views",
@@ -131,6 +132,7 @@ LOCKED_MESSAGES = ARRANGE_MESSAGES + (
     "layout",
     "notice",
     "appliance",
+    "appliance_done_by",
     "energy_price",
     "may_open",
 )
@@ -153,6 +155,8 @@ LAYOUT_KEYS = (
     "accent",
     "lite",
     "saver",
+    # say "laundry done" with the voice of the browser
+    "speak",
 )
 # small, wide, tall, big
 TILE_SIZES = ("s", "w", "t", "b")
@@ -204,6 +208,8 @@ def clean_layout(layout):
         elif key == "lite" and value in ("auto", "on", "off"):
             result[key] = value
         elif key == "saver" and not isinstance(value, bool) and value in SAVER_MINUTES:
+            result[key] = value
+        elif key == "speak" and isinstance(value, bool):
             result[key] = value
         elif isinstance(value, list):
             result[key] = [str(v)[:200] for v in value[:500]]
@@ -372,6 +378,8 @@ class dashboard(generic.FhemModule):
         # learned: durations of programs, done time, plugs to ask about
         # runs: learned power profiles of the programs, see model.ApplianceWatch
         self.appliance_data = {"cycles": {}, "done": {}, "ask": [], "runs": {}}
+        # "done by" device: when it last said somebody is there
+        self._done_by_seen = {}
         # device -> event which wakes its watch_timer up
         self._watch_wakes = {}
         self._done_task = None
@@ -486,6 +494,14 @@ class dashboard(generic.FhemModule):
                 "Plug_basement:washer,Plug_kitchen:dishwasher (none: no "
                 "appliance). The tablets ask after the first program found by "
                 "the power, this is set by their answer.",
+            },
+            "appliance_done_by": {
+                "default": "",
+                "help": "Device which sets a done appliance to done, e.g. "
+                "Plug_basement:Washer_door,Plug_kitchen:Motion_kitchen: the "
+                "door contact opens or the motion sensor sees somebody and "
+                "the big message on the tablets is gone. Also set on the "
+                "tablet.",
             },
             "alarm_system": {
                 "default": "",
@@ -790,6 +806,10 @@ class dashboard(generic.FhemModule):
         self.schedule_reload()
 
     def set_attr_appliances(self, hash):
+        if self.ready:
+            self.schedule_header()
+
+    def set_attr_appliance_done_by(self, hash):
         if self.ready:
             self.schedule_header()
 
@@ -1144,7 +1164,9 @@ class dashboard(generic.FhemModule):
                 # e.g. set_off until the device confirms: as before
                 state["on"] = item["state"]["on"]
             if state != item["state"]:
+                before = item["state"]
                 item["state"] = state
+                await self.done_by_event(item, before, state)
                 if state.get("on") is False and device in self.timers:
                     # switched off by hand or by the timer: the timer is done
                     await self.cancel_timer(item, send=False)
@@ -1235,6 +1257,12 @@ class dashboard(generic.FhemModule):
             cycles = data["cycles"].setdefault(name, [])
             cycles.append(int(watch.seconds))
             del cycles[: -model.APPLIANCE_KEEP]
+            if self.seen_since(name, watch.ended):
+                # the door was opened before the end was sure: nothing to tell
+                self.logger.info(f"{name} done, already seen")
+                await self.save_appliances()
+                self.schedule_header()
+                return
             data["done"][name] = time.time()
             self.arm_done_expiry()
             item = self.data["tiles"].get(name)
@@ -1283,7 +1311,8 @@ class dashboard(generic.FhemModule):
         known = self.appliances()
         tiles = self.data["tiles"]
         data = self.appliance_data
-        result = {"running": [], "done": [], "ask": []}
+        done_by = self.appliance_done_by()
+        result = {"running": [], "done": [], "ask": [], "known": []}
         for name, what in sorted(known.items()):
             item = tiles.get(name)
             if item is None or what not in model.APPLIANCES:
@@ -1312,6 +1341,15 @@ class dashboard(generic.FhemModule):
                 result["running"].append(running)
             elif name in data["done"]:
                 result["done"].append({**base, "at": int(data["done"][name])})
+            by = done_by.get(name)
+            by_item = tiles.get(by) if by else None
+            result["known"].append(
+                {
+                    **base,
+                    "by": by or "",
+                    "by_name": by_item["name"] if by_item else by or "",
+                }
+            )
         for name in data["ask"]:
             item = tiles.get(name)
             if item is None or name in known:
@@ -1359,6 +1397,62 @@ class dashboard(generic.FhemModule):
         if self.appliance_data["done"].pop(str(message.get("id", "")), None):
             await self.save_appliances()
             await self.update_header()
+
+    def appliance_done_by(self):
+        return model.parse_done_by(getattr(self, "_attr_appliance_done_by", ""))
+
+    async def set_appliance_done_by(self, tablet, message):
+        """the tablet chooses the device which sets an appliance to done,
+        empty: none"""
+        name = str(message.get("id", ""))
+        by = str(message.get("by") or "")
+        if self.appliances().get(name) not in model.APPLIANCES:
+            return
+        if by and (by == name or by not in self.infos):
+            return
+        done_by = self.appliance_done_by()
+        if by:
+            done_by[name] = by
+        else:
+            done_by.pop(name, None)
+        value = model.format_done_by(done_by)
+        self.logger.info(f"{tablet['name']}: {name} done by {by or 'nobody'}")
+        if value:
+            code = "CommandAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} appliance_done_by {value}"
+            )
+        else:
+            code = "CommandDeleteAttr(undef, " + fhem.perlString(
+                f"{self.hash['NAME']} appliance_done_by"
+            )
+        await fhem.sendCommandHash(self.hash, code + ")")
+        self._attr_appliance_done_by = value
+        await self.update_header()
+
+    def seen_since(self, name, since):
+        """the "done by" device of this appliance said somebody was there
+        after since"""
+        by = self.appliance_done_by().get(name)
+        return since is not None and self._done_by_seen.get(by, 0) >= since
+
+    async def done_by_event(self, item, before, after):
+        """the door of the washing machine opens, somebody walks by: the
+        done appliances which wait for this device are done"""
+        done_by = self.appliance_done_by()
+        if item["id"] not in done_by.values():
+            return
+        if not model.done_by_triggers(item["kind"], before, after):
+            return
+        self._done_by_seen[item["id"]] = time.time()
+        done = self.appliance_data["done"]
+        plugs = [n for n, by in done_by.items() if by == item["id"] and n in done]
+        if not plugs:
+            return
+        for name in plugs:
+            done.pop(name, None)
+            self.logger.info(f"{name} set to done by {item['id']}")
+        await self.save_appliances()
+        await self.update_header()
 
     def schedule_header(self):
         """build the header again soon: busy homes send hundreds of events per
@@ -2653,6 +2747,8 @@ class dashboard(generic.FhemModule):
             await self.answer_appliance(tablet, message)
         elif kind == "appliance_seen" and not tablet.get("readonly"):
             await self.appliance_seen(message)
+        elif kind == "appliance_done_by" and not tablet.get("readonly"):
+            await self.set_appliance_done_by(tablet, message)
         elif kind == "setup":
             place = message.get("place")
             if place in PLACES:
