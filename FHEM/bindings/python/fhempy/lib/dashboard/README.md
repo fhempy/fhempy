@@ -151,6 +151,10 @@ them with one tap), lights and switches, and at night the open blinds. One tap s
 minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
 forecast of `openmeteo_weather`).
 
+What will be switched off comes first in the list, marked with a coloured *Off* badge, so it is clear at a glance.
+Devices that stay on and open windows follow below. *Leave home* starts by itself after 60 seconds, so you can simply
+walk out; the button shows the countdown. *Not automatically* stops the countdown, closing the list cancels it.
+
 ## Connection and updates
 
 When the connection to fhempy is lost, the tablet says so at the top and greys out the values, so nobody trusts an old

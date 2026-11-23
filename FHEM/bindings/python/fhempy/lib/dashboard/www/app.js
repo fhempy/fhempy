@@ -38,7 +38,7 @@
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
-    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
     rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
@@ -132,7 +132,7 @@
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
-    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
     rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
@@ -2066,25 +2066,61 @@
     return '<div class="rtwarn">' + I(warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + warn.kind, { t: warn.at })) + "</b><span>" +
       esc(t("warnWindows", { names: windows.map(function (x) { return x.tile.name; }).join(", ") })) + "</span></div></div>";
   }
+  // leaving home starts by itself after this many seconds, unless stopped
+  var RT_AUTO_S = 60, rtTimer = null;
+  function routineOpen(mode) {
+    var p = routinePlan(mode), offN = p.off.filter(function (x) { return !x.tile.keep_on; }).length;
+    S.sheet = { routine: mode, autoAt: mode === "away" && offN ? Date.now() + RT_AUTO_S * 1000 : 0 };
+    renderSheet();
+    routineTick();
+  }
+  function routineLeft() { return Math.max(0, Math.ceil(((S.sheet && S.sheet.autoAt) - Date.now()) / 1000)); }
+  function routineTick() {
+    if (rtTimer) { clearTimeout(rtTimer); rtTimer = null; }
+    if (!S.sheet || !S.sheet.routine || !S.sheet.autoAt) { return; }
+    var left = routineLeft();
+    if (left <= 0) { routineGo(S.sheet.routine); return; }
+    var btn = document.querySelector("#sheet [data-rtgo]"), bar = document.querySelector("#sheet .rtbar i");
+    if (btn) { var lbl = btn.querySelector(".lbl"); if (lbl) { lbl.textContent = t("rtGoIn", { n: left }); } }
+    if (bar) { bar.style.width = Math.min(100, 100 * (1 - (S.sheet.autoAt - Date.now()) / (RT_AUTO_S * 1000))) + "%"; }
+    rtTimer = setTimeout(routineTick, 250);
+  }
   function renderRoutine() {
     var mode = S.sheet.routine, p = routinePlan(mode), body = "";
-    p.open.forEach(function (x) {
-      if (x.tile.kind === "lock") { body += ovRow(x, "unlock", "#FF8A3D", [x.room, t("unlocked")].join(" · "), '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); return; }
-      body += ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", [x.room, (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since)].join(" · "));
-    });
-    p.off.forEach(function (x) {
-      body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", isLight(x.tile) ? "#FFB547" : "#9B8CFF", [x.room, x.tile.keep_on ? t("staysOn") : t("rtOff")].join(" · "));
-    });
+    var goes = p.off.filter(function (x) { return !x.tile.keep_on; }), stays = p.off.filter(function (x) { return x.tile.keep_on; });
+    function section(text, cls) { return '<div class="section ovroom rtsec ' + (cls || "") + '">' + esc(text) + "</div>"; }
+    // first and clearly marked: what is switched off
+    if (goes.length) {
+      body += section(t("rtSecOff", { n: goes.length }), "off");
+      goes.forEach(function (x) {
+        body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
+      });
+    }
     if (p.blinds.length) {
       var rooms = []; p.blinds.forEach(function (x) { if (rooms.indexOf(x.room) < 0) { rooms.push(x.room); } });
-      body += '<div class="row"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
+      body += section(t("rtSecClose"), "off") + '<div class="row rtgoes"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
     }
-    var title = mode === "night" ? t("rtNight") : t("rtAway");
-    sheetShell('<div class="head"><div><h1>' + esc(title) + '</h1><div class="subtitle">' + esc(body ? t(mode === "night" ? "rtNightLead" : "rtAwayLead") : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
+    if (p.open.length) {
+      body += section(t("rtSecOpen", { n: p.open.length }));
+      p.open.forEach(function (x) {
+        if (x.tile.kind === "lock") { body += ovRow(x, "unlock", "#FF8A3D", [x.room, t("unlocked")].join(" · "), '<button class="pill" data-ovlock="' + esc(x.id) + '">' + esc(t("lock")) + "</button>"); return; }
+        body += ovRow(x, x.tile.door ? "door" : "win", "#FF8A3D", [x.room, (x.tile.state.tilted ? t("tilted") : t("open")) + " " + since(x.tile.state.since)].join(" · "));
+      });
+    }
+    if (stays.length) {
+      body += section(t("rtSecStays", { n: stays.length }), "stays");
+      stays.forEach(function (x) {
+        body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", "#8A93A6", [x.room, t("staysOn")].join(" · ")).replace('class="row tap"', 'class="row tap rtstays"');
+      });
+    }
+    var title = mode === "night" ? t("rtNight") : t("rtAway"), auto = S.sheet.autoAt ? routineLeft() : 0;
+    var go = '<button class="pill primary' + (auto ? " rtauto" : "") + '" data-rtgo="' + mode + '">' + (auto ? '<span class="rtbar"><i></i></span>' : "") + I(mode === "night" ? "moon" : "walk", 20) + ' <span class="lbl">' + esc(auto ? t("rtGoIn", { n: auto }) : t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</span></button>";
+    sheetShell('<div class="head"><div><h1>' + esc(title) + '</h1><div class="subtitle">' + esc(auto ? t("rtAutoHint", { n: RT_AUTO_S }) : body ? t(mode === "night" ? "rtNightLead" : "rtAwayLead") : "") + '</div></div><button class="iconbtn" data-close="1">' + I("x") + "</button></div>" +
       weatherWarn() + '<div class="blist ovlist">' + (body || '<div class="allclear">' + I("check", 26) + " " + esc(t("rtAllFine")) + "</div>") + "</div>" +
-      '<div class="actions"><button class="pill primary" data-rtgo="' + mode + '">' + I(mode === "night" ? "moon" : "walk", 20) + " " + esc(t(mode === "night" ? "rtGoNight" : "rtGoAway")) + "</button></div>");
+      '<div class="actions">' + (auto ? '<button class="pill" data-rtstop="1">' + esc(t("rtAutoStop")) + "</button>" : "") + go + "</div>");
   }
   function routineGo(mode) {
+    if (rtTimer) { clearTimeout(rtTimer); rtTimer = null; }
     if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
     var p = routinePlan(mode);
     send({ type: "action", action: "routine", mode: mode, off: p.off.filter(function (x) { return !x.tile.keep_on; }).map(function (x) { return x.id; }), close: p.blinds.map(function (x) { return x.id; }) });
@@ -3644,7 +3680,8 @@
     if ((el = closest(target, "data-energy"))) { openEnergy("day"); return; }
     if ((el = closest(target, "data-enrange"))) { openEnergy(el.getAttribute("data-enrange")); return; }
     if ((el = closest(target, "data-enprice"))) { energyPriceClick(el); return; }
-    if ((el = closest(target, "data-routine"))) { S.sheet = { routine: el.getAttribute("data-routine") }; renderSheet(); return; }
+    if ((el = closest(target, "data-routine"))) { routineOpen(el.getAttribute("data-routine")); return; }
+    if ((el = closest(target, "data-rtstop"))) { if (S.sheet) { S.sheet.autoAt = 0; } routineTick(); renderSheet(); return; }
     if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
     if ((el = closest(target, "data-undo"))) { send({ type: "action", action: "undo" }); S.undoUntil = 0; hideToast(); if (S.tab === "home") { renderContent(); } return; }
     if ((el = closest(target, "data-overview"))) { S.sheet = { overview: el.getAttribute("data-overview") }; renderSheet(); return; }
