@@ -348,13 +348,42 @@ class autodiscovery(generic.FhemModule):
     async def set_scan(self, hash, params):
         self.create_async_task(self.engine.search_all())
 
+    def _candidate_device(self, candidate_id):
+        return (self.engine.candidates.get(candidate_id) or {}).get("device", "")
+
+    async def _report(self, key, coro, device):
+        """FHEM gets the reply of a set after a few ms already, the device is
+        created in the background. The open dialog learns the result (error
+        or name of the created device for the link) from this event."""
+        try:
+            ret = await coro
+        except Exception as exc:
+            await self._finished(key, str(exc) or exc.__class__.__name__, "")
+            raise
+        await self._finished(key, str(ret) if ret else "", "" if ret else device())
+        return ret
+
+    async def _finished(self, key, error, device):
+        result = {"error": error, "device": device or ""}
+        params = ",".join(js_value(v) for v in (self.hash["NAME"], key, result))
+        try:
+            await fhem.FW_runJavascript(
+                self.hash,
+                "if(window.fhempyDiscovery&&fhempyDiscovery.finished)"
+                f"fhempyDiscovery.finished({params})",
+            )
+        except Exception:
+            self.logger.exception("Couldn't send the result to FHEMWEB")
+
     async def set_create(self, hash, params):
         values = {}
         for i in range(MAX_PARAMS):
             if params.get(f"p{i}"):
                 values[i] = str(params[f"p{i}"])
-        return await self.engine.create(
-            self.hash, params["id"], params.get("name", ""), values
+        return await self._report(
+            params["id"],
+            self.engine.create(self.hash, params["id"], params.get("name", ""), values),
+            lambda: self._candidate_device(params["id"]),
         )
 
     async def set_createAll(self, hash, params):
@@ -368,7 +397,11 @@ class autodiscovery(generic.FhemModule):
         return "\n".join(errors)
 
     async def set_recreate(self, hash, params):
-        return await self.engine.recreate(params["id"])
+        return await self._report(
+            params["id"],
+            self.engine.recreate(params["id"]),
+            lambda: self._candidate_device(params["id"]),
+        )
 
     async def set_recreateAll(self, hash, params):
         errors = []
@@ -426,23 +459,32 @@ class autodiscovery(generic.FhemModule):
         self._start_search("tag", residents.find_tag(self.hash, scanner))
 
     async def set_addResident(self, hash, params):
-        error, name = await residents.create_resident(
-            self.hash,
-            params.get("person", ""),
-            params.get("mac", ""),
-            params.get("bt", ""),
+        async def add():
+            error, name = await residents.create_resident(
+                self.hash,
+                params.get("person", ""),
+                params.get("mac", ""),
+                params.get("bt", ""),
+            )
+            self._created["resident"] = name
+            return error
+
+        return await self._report(
+            "resident", add(), lambda: self._created.get("resident", "")
         )
-        self._created["resident"] = name
-        return error
 
     async def set_addTag(self, hash, params):
         if not params.get("address"):
             return "address missing"
-        error, name = await residents.create_tag(
-            self.hash, params.get("title") or "tag", params["address"]
-        )
-        self._created["tag"] = name
-        return error
+
+        async def add():
+            error, name = await residents.create_tag(
+                self.hash, params.get("title") or "tag", params["address"]
+            )
+            self._created["tag"] = name
+            return error
+
+        return await self._report("tag", add(), lambda: self._created.get("tag", ""))
 
     # --- get ---
 
