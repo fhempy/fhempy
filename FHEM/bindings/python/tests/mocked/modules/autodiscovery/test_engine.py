@@ -450,3 +450,42 @@ def test_exists_finds_device_with_umlaut_in_definition():
 def test_exists_is_case_insensitive():
     assert _perl_exists("living room") == "cast2"
     assert _perl_exists("Bedroom") == ""
+
+
+@pytest.mark.asyncio
+async def test_ble_monitor_device_named_after_its_model(engine, fhem_mock, mocker):
+    """The suggested name comes from the model the BLE parser recognizes in
+    the advertisement's data, not from a generic name."""
+    from types import SimpleNamespace
+
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("ble_monitor")
+    mocker.patch.object(engine_module, "POPUP_DELAY", 0)
+    await engine._load_describers()
+    assert "ble_monitor" in engine._describers
+
+    def adv(data):
+        return SimpleNamespace(
+            local_name="Some name",
+            service_uuids=[],
+            service_data={},
+            manufacturer_data={220: data},
+            rssi=-50,
+        )
+
+    device = SimpleNamespace(address="aa:bb:cc:dd:ee:01", name="")
+    # not the data of a known model yet: the sent name
+    engine._ble_advertisement(device, adv(b"\x01\x02"))
+    await asyncio.sleep(0.05)
+    candidate = engine.candidates["ble_monitor:AA:BB:CC:DD:EE:01"]
+    assert candidate["name"] == "Some_name"
+    assert candidate["described"] is False
+    # the model is recognized from a later advertisement
+    oralb = bytes([0x06, 0x32, 0x6B, 3, 114, 0, 10, 2, 1, 0, 6])
+    engine._ble_advertisement(device, adv(oralb))
+    await asyncio.sleep(0.05)
+    assert candidate["name"] == "Oral_B_IO_Series_7"
+    assert candidate["title"] == "Oral-B IO Series 7"
+    assert candidate["model"] == "Toothbrush"
+    assert candidate["described"] is True

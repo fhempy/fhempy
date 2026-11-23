@@ -34,8 +34,10 @@
         ]
       }
     ],
-    "title": "{name}",
-    "name": "ble_sensor",
+    "describe": true,
+    "title": "{label}",
+    "name": "{label}",
+    "model": "{kind}",
     "unique": "{address}",
     "define": [
       "{address}"

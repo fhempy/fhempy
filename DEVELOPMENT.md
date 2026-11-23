@@ -76,7 +76,10 @@ its `manifest.json`. One rule or a list of rules:
   - `ble`: list of matchers with `name`, `name_prefix`, `manufacturer_id` or
     `service_uuid`, the rule may set `min_rssi`
     (default -80, the neighbour's devices are weaker). Values: `{address}`, `{name}`,
-    `{rssi}`
+    `{rssi}`. With `describe: true` `lib/<module>/discovery.py` has
+    `def describe_ble(address, advertisement)` which returns more values, e.g. the
+    model recognized from the advertisement's data for a meaningful device name
+    (ble_monitor: `{label}`, `{kind}`). It runs in the event loop, keep it fast.
   - `search: true`: `lib/<module>/discovery.py` has `async def search(ctx)`, for
     devices with their own protocol (e.g. a UDP broadcast). It runs every 10 minutes
     and must only import packages fhempy always has.
