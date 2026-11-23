@@ -390,8 +390,21 @@ async def test_saved_state_is_restored(mocker):
 
 
 @pytest.mark.asyncio
-async def test_detail_page(module):
+async def test_detail_page(module, mocker):
+    # FHEM answers no command of another device while it waits for the
+    # page, every call to FHEM here would block until its timeout
+    calls = []
+
+    async def no_fhem(*args, **kwargs):
+        calls.append(args)
+        return ""
+
+    mocker.patch("fhempy.lib.fhem.sendCommandHash", no_fhem)
+    mocker.patch("fhempy.lib.fhem.sendCommandName", no_fhem)
+    for function in ("AttrVal", "ReadingsVal", "InternalVal"):
+        mocker.patch("fhempy.lib.fhem." + function, no_fhem)
     html = await module.FW_detailFn(module.hash, ["WEB", NAME, "", {}], {})
+    assert calls == []
     assert 'id="fhc"' in html
     assert "window.FHC_DATA=" in html
     data = json.loads(html.split("window.FHC_DATA=", 1)[1].split(";</script>", 1)[0])
