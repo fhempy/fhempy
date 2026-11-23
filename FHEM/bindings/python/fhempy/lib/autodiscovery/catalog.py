@@ -155,14 +155,22 @@ def homekit_id(manufacturer_data):
 
 def match_ble(catalog, name, manufacturer_data, uuids, rssi):
     """manufacturer_data: {manufacturer id: bytes},
-    uuids: lowercase service UUIDs and service data UUIDs of the advertisement"""
+    uuids: lowercase service UUIDs and service data UUIDs of the advertisement.
+    Rules with fallback: true (e.g. {"any": true} of ble_monitor) only if no
+    rule of another module matches."""
+    matches = []
     for entry, rule in rules(catalog, "ble"):
         if rssi is not None and rssi < rule.get("min_rssi", DEFAULT_MIN_RSSI):
             continue
         for matcher in rule["ble"]:
             if _ble_matcher_matches(matcher, name, manufacturer_data, uuids):
-                yield entry, rule
+                matches.append((entry, rule))
                 break
+    specific = {entry["module"] for entry, rule in matches if not rule.get("fallback")}
+    for entry, rule in matches:
+        if rule.get("fallback") and specific - {entry["module"]}:
+            continue
+        yield entry, rule
 
 
 def candidate(entry, rule, values, source):

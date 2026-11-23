@@ -45,6 +45,10 @@ POPUP_DELAY = 10
 MDNS_INFO_TIMEOUT = 3000
 # how long the candidates of the BLE scan are kept without advertisement
 BLE_FORGET = 3600
+# try to recognize the model of a found Bluetooth device again after (s)
+DESCRIBE_RETRY = 30
+# devices remembered for DESCRIBE_RETRY before old entries are dropped
+DESCRIBE_TRIED_MAX = 2000
 
 STATUS_CHECKING = "checking"
 STATUS_NEW = "new"
@@ -119,6 +123,11 @@ class Engine:
         self._zeroconf = None
         self._ssdp_listeners = []
         self._ble = None
+        # module: describe_ble() of its discovery.py (rule "describe": true)
+        self._describers = {}
+        # candidate id: time of the last describe_ble() of a rule with
+        # described_only, the model of most devices around isn't known
+        self._describe_tried = {}
         self._popup_queue = []
         self._popup_task = None
         self._mdns_pending = set()
@@ -315,6 +324,7 @@ class Engine:
             except ImportError:
                 self.ble_state = "not available (bleak missing)"
                 return
+            await self._load_describers()
             self._ble = scanner_module.BleScanner.get_instance(self.logger)
             self._ble.add_callback(self._ble_advertisement)
             self._ble.add_state_callback(self._ble_state_changed)
@@ -324,6 +334,35 @@ class Engine:
         else:
             self._ble.set_mode("continuous", interval)
         self.ble_state = mode
+
+    async def _load_describers(self):
+        """describe_ble() of the modules, imported here: the advertisement
+        callback mustn't block the event loop with an import."""
+        for entry, rule in catalog.rules(self.catalog, "ble"):
+            module = entry["module"]
+            if not rule.get("describe") or module in self._describers:
+                continue
+            try:
+                discovery = await utils.run_blocking(
+                    functools.partial(
+                        importlib.import_module, f"fhempy.lib.{module}.discovery"
+                    )
+                )
+                self._describers[module] = discovery.describe_ble
+            except Exception:
+                self.logger.exception(f"describe_ble() of {module} isn't available")
+
+    def _describe(self, entry, rule, advertisement, values):
+        """values plus what describe_ble() of the module tells about the
+        device, e.g. its model for a meaningful name."""
+        describer = self._describers.get(entry["module"])
+        if not rule.get("describe") or describer is None:
+            return values
+        try:
+            return {**values, **describer(values["address"], advertisement)}
+        except Exception:
+            self.logger.exception(f"describe_ble() of {entry['module']} failed")
+            return values
 
     def _stop_ble(self):
         if self._ble is not None:
@@ -364,9 +403,54 @@ class Engine:
             if known is not None:
                 known["last_seen"] = time.time()
                 known["rssi"] = advertisement.rssi
+                if rule.get("describe") and not known.get("described"):
+                    self._describe_known(known, entry, rule, advertisement, values)
                 continue
+            if rule.get("describe"):
+                if rule.get("described_only") and not self._may_describe(found["id"]):
+                    continue
+                described = self._describe(entry, rule, advertisement, values)
+                if rule.get("described_only") and not described.get("described"):
+                    continue
+                found = catalog.candidate(entry, rule, described, "ble")
+                found["described"] = bool(described.get("described"))
             # the callback mustn't wait
             self._run_later(self.found(found, rule))
+
+    def _may_describe(self, candidate_id):
+        """Every device around is checked, but at most every DESCRIBE_RETRY
+        seconds."""
+        now = time.monotonic()
+        tried = self._describe_tried.get(candidate_id)
+        if tried is not None and now - tried < DESCRIBE_RETRY:
+            return False
+        if len(self._describe_tried) > DESCRIBE_TRIED_MAX:
+            self._describe_tried = {
+                key: when
+                for key, when in self._describe_tried.items()
+                if now - when < DESCRIBE_RETRY
+            }
+        self._describe_tried[candidate_id] = now
+        return True
+
+    def _describe_known(self, known, entry, rule, advertisement, values):
+        """The first advertisement didn't tell the model (e.g. a toothbrush
+        sends its data only while it's used): name it once it's known."""
+        now = time.monotonic()
+        tried = known.get("describe_tried")
+        if tried is not None and now - tried < DESCRIBE_RETRY:
+            return
+        known["describe_tried"] = now
+        described = self._describe(entry, rule, advertisement, values)
+        if not described.get("described"):
+            return
+        known["described"] = True
+        if known["status"] not in (STATUS_NEW, STATUS_IGNORED, STATUS_CHECKING):
+            return
+        found = catalog.candidate(entry, rule, described, "ble")
+        for key in ("title", "name", "model"):
+            known[key] = found[key]
+        self._run_later(self._notify_frontends())
 
     # --- search() of the modules ---
 

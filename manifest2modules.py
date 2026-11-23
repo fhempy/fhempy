@@ -106,10 +106,12 @@ def discovery_rule(module, rule, lib_dir):
     sources = [source for source in DISCOVERY_SOURCES if rule.get(source)]
     if not sources:
         raise ValueError(f"{module}: discovery rule needs one of {DISCOVERY_SOURCES}")
-    if "search" in sources and not os.path.isfile(
-        os.path.join(lib_dir, module, "discovery.py")
-    ):
-        raise ValueError(f"{module}: search needs {module}/discovery.py")
+    # search() and describe_ble() are in the module's discovery.py
+    for key in ("search", "describe"):
+        if rule.get(key) and not os.path.isfile(
+            os.path.join(lib_dir, module, "discovery.py")
+        ):
+            raise ValueError(f"{module}: {key} needs {module}/discovery.py")
     rule = dict(rule)
     if "mdns" in rule:
         rule["mdns"] = [
