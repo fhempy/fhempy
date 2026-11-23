@@ -129,13 +129,17 @@ ATTRS = {
 }
 
 
-@pytest_asyncio.fixture
-async def module(mocker):
+# a device whose setup the user finished and started
+STARTED = {"mode": "auto", "setup_done": "2026-11-01 10:00"}
+
+
+async def define(mocker, own=None, attrs=None):
     mock_fhem.mock_module(mocker)
     mock_fhem.readings.pop(NAME, None)
     mock_fhem.javascript.clear()
-    mock_fhem.attributes[NAME] = dict(ATTRS)
+    mock_fhem.attributes[NAME] = dict(ATTRS if attrs is None else attrs)
     fake = FakeFhem()
+    fake.own = dict(STARTED if own is None else own)
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake.send)
     mocker.patch("fhempy.lib.fhem.setEventDevices", set_event_devices)
     mocker.patch("fhempy.lib.fhem.setDefaultAttrs", set_default_attrs)
@@ -150,6 +154,12 @@ async def module(mocker):
         if mod._ready and mod.house:
             break
         await asyncio.sleep(0.01)
+    return mod
+
+
+@pytest_asyncio.fixture
+async def module(mocker):
+    mod = await define(mocker)
     yield mod
     await mod.Undefine(mod.hash)
     mock_fhem.attributes.pop(NAME, None)
@@ -367,6 +377,7 @@ async def test_saved_state_is_restored(mocker):
         "room_Bath_comfort": "23",
         "vacation": "off",
         "mode": "auto",
+        "setup_done": "2026-11-01 10:00",
         "learned_curve": "0:+2.00:5.0",
     }
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake.send)
@@ -433,3 +444,56 @@ async def test_get_readings_of_a_device(module):
     readings = dict(json.loads(result))
     assert readings["Vorlauf"] == "41.5"
     assert readings["temperature_0"] == "40.0"
+
+
+@pytest.mark.asyncio
+async def test_new_device_controls_nothing_until_started(mocker):
+    # all devices are set, but the user didn't start the control yet
+    mod = await define(mocker, own={})
+    try:
+        await asyncio.sleep(1.3)
+        assert mod.mode == "setup"
+        assert mod.fake.sets == []
+        assert readings()["state"] == "setup: ready to start"
+        mod.handle_event("boiler_room", "temperature_0", "20.0")
+        mod.handle_event("th_bath", "desired-temp", "24.0")
+        await asyncio.sleep(1.3)
+        assert mod.fake.sets == []
+        assert mod.rooms["Bath"].state != "manual"
+        # the user starts the control
+        assert await mod.Set(mod.hash, [NAME, "mode", "auto"], {}) == ""
+        assert "pumpe on" in mod.fake.sets
+        assert readings()["setup_done"]
+    finally:
+        await mod.Undefine(mod.hash)
+
+
+@pytest.mark.asyncio
+async def test_control_starts_only_with_finished_setup(mocker):
+    attrs = {k: v for k, v in ATTRS.items() if k not in ("mixer", "pump")}
+    # also a device saved before the setup step existed waits for its start
+    mod = await define(mocker, own={"mode": "auto"}, attrs=attrs)
+    try:
+        assert mod.mode == "setup"
+        assert readings()["state"] == "setup: mixer,pump"
+        ret = await mod.Set(mod.hash, [NAME, "mode", "auto"], {})
+        assert "mixer" in ret and "pump" in ret
+        assert mod.mode == "setup"
+        assert mod.fake.sets == []
+    finally:
+        await mod.Undefine(mod.hash)
+
+
+@pytest.mark.asyncio
+async def test_own_rooms_for_thermostats(mocker):
+    attrs = dict(ATTRS, thermostat_rooms="th_bath=Erdgeschoss,th_living=Erdgeschoss")
+    mod = await define(mocker, attrs=attrs)
+    try:
+        assert list(mod.rooms) == ["Erdgeschoss"]
+        assert sorted(mod.rooms["Erdgeschoss"].thermostats) == ["th_bath", "th_living"]
+        view = mod.setup_view()
+        rooms = {t["name"]: (t["room"], t["fhem_room"]) for t in view["thermostats"]}
+        assert rooms["th_bath"] == ("Erdgeschoss", "Bath")
+        assert view["room_thermometers"]["Living"] == "living_sensor:temperature"
+    finally:
+        await mod.Undefine(mod.hash)

@@ -29,10 +29,13 @@ source down to the flow temperature the house needs, the **circulation pump** (o
 
 `define heizung fhempy heating_control`
 
-Open the detail page and set up the devices in the section **Setup**. Thermostats are found
-automatically (a temperature reading and a set command for the target temperature) and grouped
-by their FHEM room. For the mixer, pump and the temperatures the module suggests devices, you
-confirm them with **Apply**:
+After define the module **controls nothing**. Open the detail page: a setup assistant goes
+through everything step by step (heat source, mixer, pump, flow and return, rooms, weather).
+Every device is chosen in a search field (type a part of the name, alias or room), the module
+suggests devices where it can. Thermostats are found automatically (a temperature reading and a
+set command for the target temperature). Their FHEM room is only suggested, each thermostat can
+get its own room, thermostats with the same room are controlled together. At the end an overview
+shows what will be switched, only **Start control** starts the control (`set <name> mode auto`).
 
 | Setup | Example |
 |---|---|
@@ -58,7 +61,7 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 
 | Reading | Description |
 |---|---|
-| `state` | `heating`, `warm` (all rooms warm, pump off), `summer`, `frost`, `vacation`, `off`, `setup: ...` |
+| `state` | `setup: <missing>` or `setup: ready to start` (nothing is controlled), `heating`, `warm` (all rooms warm, pump off), `summer`, `frost`, `vacation`, `off` |
 | `flow_temp`, `flow_target` | flow temperature and its target |
 | `return_temp`, `supply_temp` | return and heat source (before the mixer) |
 | `outdoor_temp`, `outdoor_effective` | outdoor temperature, with forecast |
@@ -71,7 +74,8 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 
 ## Set
 
-- `mode auto|off`: `off` only measures and controls nothing.
+- `mode setup|auto|off`: `setup` (after define) and `off` only measure and control nothing,
+  `auto` starts the control, only with a finished setup.
 - `room_temp <room> <temperature>|auto`: temperature until the next schedule change.
 - `comfort_temp <room>|all <temperature>`, `eco_temp <room>|all <temperature>`
 - `schedule <room> <schedule>`: comfort periods, e.g.
@@ -94,6 +98,7 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 - `forecast_hours` (6): hours of the forecast used.
 - `comfort_default` (21), `eco_default` (18), `vacation_default` (16)
 - `exclude_thermostats`: thermostats which the module leaves alone.
+- `thermostat_rooms`: own rooms instead of the FHEM rooms, `thermostat=room,...` (set by the assistant).
 
 ## Safety
 
