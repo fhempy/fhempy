@@ -2438,3 +2438,72 @@ async def test_cur_power_updates_tile_watch_and_energy(module):
     assert "wz_Fernseher" in module.watches
     consumers = module.energy_consumers({})
     assert ("wz_Fernseher", item["name"], "wz_Fernseher", "cur_power") in consumers
+
+
+def test_appliance_done_by_parsing():
+    assert model.parse_done_by("A:Door, B:Motion,C:,:x") == {"A": "Door", "B": "Motion"}
+    assert model.format_done_by({"B": "Motion", "A": "Door", "C": ""}) == "A:Door,B:Motion"
+    # motion: only when somebody comes, not when the room gets quiet
+    assert model.done_by_triggers("motion", {"occupied": False}, {"occupied": True})
+    assert not model.done_by_triggers("motion", {"occupied": True}, {"occupied": False})
+    # a door contact: opened or closed
+    assert model.done_by_triggers("contact", {"closed": True}, {"closed": False})
+    assert model.done_by_triggers("contact", {"closed": False}, {"closed": True})
+    assert not model.done_by_triggers("contact", {"closed": True}, {"closed": True, "since": "x"})
+    # anything else: any change, but no battery or time only
+    assert model.done_by_triggers("switch", {"on": False}, {"on": True})
+    assert not model.done_by_triggers("switch", {"on": True}, {"on": True, "battery_low": True})
+    assert clean_layout({"speak": True})["speak"] is True
+    assert "speak" not in clean_layout({"speak": "yes"})
+
+
+@pytest.mark.asyncio
+async def test_appliance_done_by_door_contact(module, mocker):
+    mocker.patch.object(model, "APPLIANCE_QUICK_SECONDS", 0.2)
+    mocker.patch.object(model, "APPLIANCE_MIN_MINUTES", 0)
+    mocker.patch.object(model, "APPLIANCE_CONFIRM_SECONDS", 0.1)
+    module._attr_appliances = "wz_Fernseher:dryer"
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        # the tablet chooses the window contact as "done by" device
+        await ws.send_json(
+            {"type": "appliance_done_by", "id": "wz_Fernseher", "by": "wz_Fenster"}
+        )
+        head = (await next_of(ws, "header"))["header"]
+        known = head["appliances"]["known"]
+        assert known[0]["by"] == "wz_Fenster" and known[0]["by_name"] == "Fenster Garten"
+        assert module._attr_appliance_done_by == "wz_Fernseher:wz_Fenster"
+        # unknown devices and the plug itself are refused
+        for by in ("nothing_here", "wz_Fernseher"):
+            await module.set_appliance_done_by(
+                {"name": "t"}, {"id": "wz_Fernseher", "by": by}
+            )
+            assert module._attr_appliance_done_by == "wz_Fernseher:wz_Fenster"
+
+        async def program():
+            await module.handle_event("wz_Fernseher", "power", "800")
+            await asyncio.sleep(0.3)
+            await module.handle_event("wz_Fernseher", "power", "1")
+            await asyncio.wait_for(next_of(ws, "appliance_done"), 5)
+
+        await program()
+        assert "wz_Fernseher" in module.appliance_data["done"]
+        # the door is closed: done, all tablets drop the big message
+        await module.handle_event("wz_Fenster", "contact", "closed")
+        assert "wz_Fernseher" not in module.appliance_data["done"]
+        assert module.make_header()["appliances"]["done"] == []
+
+        # the door opened before the end was sure: no message at all
+        await module.handle_event("wz_Fernseher", "power", "800")
+        await asyncio.sleep(0.3)
+        await module.handle_event("wz_Fernseher", "power", "1")
+        await module.handle_event("wz_Fenster", "contact", "open")
+        await asyncio.sleep(0.6)
+        assert "wz_Fernseher" not in module.appliance_data["done"]
+
+        # no "done by" device any more
+        await ws.send_json({"type": "appliance_done_by", "id": "wz_Fernseher", "by": ""})
+        while (await next_of(ws, "header"))["header"]["appliances"]["known"][0]["by"]:
+            pass
+        assert module._attr_appliance_done_by == ""
