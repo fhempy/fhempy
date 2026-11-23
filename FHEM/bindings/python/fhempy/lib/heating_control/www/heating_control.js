@@ -434,7 +434,7 @@ function editorClick(btn, room) {
     var d = Number(btn.dataset.day), i = e.days.indexOf(d);
     if (i >= 0 && e.days.length > 1) e.days.splice(i, 1);
     else if (i < 0) e.days.push(d);
-    e.days.sort();
+    e.days.sort(function(a, b) { return a - b; });
   } else if (btn.dataset.preset) {
     applySlots(slots(PRESETS[btn.dataset.preset]));
   } else if (btn.dataset.lvl) {

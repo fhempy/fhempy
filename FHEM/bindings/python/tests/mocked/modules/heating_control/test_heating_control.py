@@ -158,7 +158,7 @@ def test_pump_flow_rises_with_power():
     flows = [pumps.estimate_flow("ALPHA2 25-60", "PP2", w) for w in (4, 8, 12, 16, 20)]
     assert flows == sorted(flows)
     assert flows[0] > 0
-    assert pumps.estimate_flow("ALPHA2 25-60", "PP2", 2) == 0.0
+    assert pumps.estimate_flow("ALPHA2 25-60", "PP2", 2) == pytest.approx(0.0)
     assert pumps.estimate_flow("unknown", "PP2", 10) is None
     assert pumps.normalize_setting("pp 3") == "PP3"
     assert pumps.normalize_setting("Stufe 2") == "II"
@@ -192,7 +192,7 @@ def test_curve_learns_per_outdoor_temperature():
     assert learned.offset(0) == pytest.approx(1.0)
     assert curve.flow_target(0, 21, {}, learned) == pytest.approx(base + 1.0)
     # a mild day is not affected
-    assert learned.offset(10) == 0
+    assert learned.offset(10) == pytest.approx(0)
     text = learned.to_text()
     again = curve.Learned()
     again.from_text(text)
@@ -204,11 +204,11 @@ def test_curve_learns_per_outdoor_temperature():
 def test_mixer_feedforward_and_integral():
     mixer = controller.Mixer()
     # 50 % supply + 50 % return gives the target
-    assert mixer.position(45, 45, 60, 30, 0) == 50.0
+    assert mixer.position(45, 45, 60, 30, 0) == pytest.approx(50.0)
     first = mixer.position(45, 40, 60, 30, 60)
     second = mixer.position(45, 40, 60, 30, 60)
     assert second > first > 50
-    assert mixer.position(70, 40, 60, 30, 60) == 100.0
+    assert mixer.position(70, 40, 60, 30, 60) == pytest.approx(100.0)
 
 
 def test_pump_decision():
@@ -261,7 +261,7 @@ async def test_module_controls_mixer_pump_and_thermostats(module):
     assert set(module.rooms) == {"Bath", "Living"}
     living = module.rooms["Living"]
     # the room thermometer replaces the thermostat temperature
-    assert living.actual == 18.0
+    assert living.actual == pytest.approx(18.0)
     assert r["room_Living_temperature"] == "18.0"
     fake = module.fake
     assert "pumpe on" in fake.sets
@@ -299,7 +299,7 @@ async def test_set_commands(module):
     r = readings()
     assert await module.Set(module.hash, [NAME, "room_temp", "Bath", "23"], {}) == ""
     assert module.rooms["Bath"].state == "manual"
-    assert module.rooms["Bath"].target == 23
+    assert module.rooms["Bath"].target == pytest.approx(23)
     assert await module.Set(module.hash, [NAME, "room_temp", "Bath", "auto"], {}) == ""
     assert module.rooms["Bath"].state != "manual"
     ret = await module.Set(
@@ -320,13 +320,13 @@ async def test_set_commands(module):
     assert (
         await module.Set(module.hash, [NAME, "comfort_temp", "all", "21.5"], {}) == ""
     )
-    assert module.rooms["Bath"].comfort == 21.5
+    assert module.rooms["Bath"].comfort == pytest.approx(21.5)
     assert "Unknown room" in await module.Set(
         module.hash, [NAME, "eco_temp", "x", "17"], {}
     )
     assert await module.Set(module.hash, [NAME, "vacation", "7d", "15"], {}) == ""
     assert module.rooms["Living"].state == "vacation"
-    assert module.rooms["Living"].target == 15
+    assert module.rooms["Living"].target == pytest.approx(15)
     assert r["vacation"].endswith(" 15")
     assert r["state"] == "vacation"
     assert await module.Set(module.hash, [NAME, "vacation_off"], {}) == ""
@@ -345,7 +345,7 @@ async def test_turning_the_thermostat_is_a_manual_override(module):
     await asyncio.sleep(1.3)
     bath = module.rooms["Bath"]
     assert bath.state == "manual"
-    assert bath.target == 24.0
+    assert bath.target == pytest.approx(24.0)
     assert readings()["room_Bath_override"].startswith("24 ")
 
 
@@ -374,7 +374,7 @@ async def test_saved_state_is_restored(mocker):
             break
         await asyncio.sleep(0.01)
     try:
-        assert mod.rooms["Bath"].target == 23
+        assert mod.rooms["Bath"].target == pytest.approx(23)
         assert mod.rooms["Bath"].state == "comfort"
         assert mod.learned.offset(0) == pytest.approx(2.0)
     finally:

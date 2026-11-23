@@ -740,7 +740,7 @@ class heating_control(generic.FhemModule):
             room.target, room.state = room.comfort, "comfort"
         else:
             room.target, room.state = room.eco, "eco"
-        if old_target is not None and old_target != room.target:
+        if old_target is not None and abs(old_target - room.target) > 0.01:
             self.last_target_change = now
         temps, valves, window = [], [], False
         for name in room.thermostats:
@@ -791,7 +791,11 @@ class heating_control(generic.FhemModule):
             sent = self.sent_setpoints.get(name)
             if current is not None and abs(current - setpoint) < 0.25:
                 continue
-            if sent and sent[0] == setpoint and now - sent[1] < THERMOSTAT_REPEAT:
+            if (
+                sent
+                and abs(sent[0] - setpoint) < 0.01
+                and now - sent[1] < THERMOSTAT_REPEAT
+            ):
                 continue
             self.sent_setpoints[name] = (setpoint, now, current)
             await self.send_set(f"{name} {thermostat['setter']} {setpoint:g}")
