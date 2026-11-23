@@ -1,4 +1,4 @@
-.fhc{--hot:#d9480f;--warm:#e8590c;--cold:#1971c2;--eco:#1c7ed6;--comfort:#f08c00;
+.fhc{--card:rgba(128,128,128,.16);--hot:#d9480f;--warm:#e8590c;--cold:#1971c2;--eco:#1c7ed6;--comfort:#f08c00;
 --ok:#2b8a3e;--line:rgba(128,128,128,.35);--soft:rgba(128,128,128,.12);
 max-width:1100px;margin:0 0 18px 0;line-height:1.4;font-size:14px}
 .fhc *{box-sizing:border-box}
@@ -25,16 +25,36 @@ font-weight:bold;line-height:1}
 .fhc .scheme svg,.fhc .chart svg{width:100%;height:auto;display:block}
 .fhc svg text{fill:currentColor;font-size:12px}
 .fhc svg .big{font-size:16px;font-weight:bold}
-.fhc svg .pipe{fill:none;stroke-width:7;stroke-linecap:round}
-.fhc svg .pipe.hot{stroke:var(--hot)}
-.fhc svg .pipe.warm{stroke:var(--comfort)}
-.fhc svg .pipe.cold{stroke:var(--cold)}
-.fhc svg .flowdash{fill:none;stroke:#fff;stroke-width:2;stroke-dasharray:4 14;opacity:0}
-.fhc.running svg .flowdash{opacity:.8;animation:fhcflow 1.2s linear infinite}
-@keyframes fhcflow{to{stroke-dashoffset:-18}}
-.fhc svg .box{fill:var(--soft);stroke:var(--line);stroke-width:1.5}
-.fhc svg .pump{fill:var(--soft);stroke:currentColor;stroke-width:2}
-.fhc.running svg .pump{fill:var(--ok)}
+.fhc .scheme{background:linear-gradient(160deg,rgba(255,146,43,.08),rgba(77,171,247,.06))}
+.fhc svg .pipe{fill:none;stroke-width:10;stroke-linecap:round;opacity:.9}
+.fhc svg .flowdash{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-dasharray:1 16;opacity:0}
+.fhc.running svg .flowdash{opacity:.9;animation:fhcflow .9s linear infinite}
+@keyframes fhcflow{to{stroke-dashoffset:-17}}
+.fhc svg .tile{stroke:rgba(128,128,128,.25);stroke-width:1.5}
+.fhc svg .node{fill:#fff;stroke:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.18))}
+.fhc svg .ring{fill:none;stroke:rgba(128,128,128,.25);stroke-width:6}
+.fhc svg .ring.on{stroke:#fd7e14;stroke-linecap:round}
+.fhc svg .valve{fill:#868e96}
+.fhc svg .blade{stroke:#868e96;stroke-width:6;stroke-linecap:round}
+.fhc svg .hub{fill:#868e96}
+.fhc.running svg .blade,.fhc.running svg .hub{stroke:#2b8a3e;fill:#2b8a3e}
+.fhc.running svg .impeller{animation:fhcspin 1.1s linear infinite}
+@keyframes fhcspin{to{transform:rotate(360deg)}}
+.fhc svg .glow{opacity:0;transition:opacity 1s}
+.fhc.running svg .glow{opacity:.6}
+.fhc svg .radiator rect{fill:#adb5bd}
+.fhc.running svg .radiator rect{fill:#ff922b}
+.fhc svg .ic{fill:none;stroke:#e8590c;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.fhc svg .ic.thin{stroke-width:2}
+.fhc svg .icf{fill:#e8590c}
+.fhc svg .tl{font-size:13px;opacity:.75}
+.fhc svg .tv{font-size:30px;font-weight:bold}
+.fhc svg .tv.sm{font-size:18px}
+.fhc svg .pill{fill:#fff;filter:drop-shadow(0 2px 5px rgba(0,0,0,.18))}
+.fhc svg .pl{font-size:12px;fill:#495057}
+.fhc svg .pv{font-size:15px;font-weight:bold;fill:#212529}
+.fhc svg .pill.hot~.pv{fill:#e8590c}
+.fhc svg .pill.cold~.pv{fill:#1c7ed6}
 .fhc svg .gl{stroke:var(--line);stroke-width:1}
 .fhc svg .l{fill:none;stroke-width:2}
 .fhc svg .area{opacity:.25}
@@ -75,4 +95,5 @@ max-width:100%}
 margin:8px 0}
 .fhc .kpi div{border:1px solid var(--line);border-radius:10px;padding:8px}
 .fhc .kpi b{display:block;font-size:1.35em}
-@media (max-width:600px){.fhc .scheme .wide{overflow-x:auto}.fhc .scheme .wide svg{min-width:620px}.fhc .room .temp{font-size:1.7em}}
+.fhc .kpi .mob{display:none}
+@media (max-width:600px){.fhc svg .tl,.fhc svg .tv,.fhc svg .pillg{display:none}.fhc .kpi .mob{display:block}.fhc .room .temp{font-size:1.7em}}

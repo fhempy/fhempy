@@ -38,7 +38,8 @@ confirm them with **Apply**:
 |---|---|
 | Mixer | a Shelly with `pct`/`position`/`brightness` 0-100 (e.g. MQTT2_DEVICE) |
 | Circulation pump | a switchable device with `on`/`off`, ideally measuring its power |
-| Flow / return / supply temperature | `device:reading`, e.g. the temperature add-on of a Shelly |
+| Flow / return / heat source temperature | device and reading, one device may deliver all of them |
+| Type of heat source | buffer tank, heat pump, wood stove, pellets, gas, oil, district heating, solar (picture and name) |
 | Outdoor temperature | optional, otherwise the weather device |
 | Weather | found automatically: `openmeteo_weather` (recommended), `Weather`, ... |
 | Pump type and setting | all Grundfos ALPHA types, AUTOADAPT, PP1-3, CP1-3, I/II/III |
@@ -59,7 +60,7 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 |---|---|
 | `state` | `heating`, `warm` (all rooms warm, pump off), `summer`, `frost`, `vacation`, `off`, `setup: ...` |
 | `flow_temp`, `flow_target` | flow temperature and its target |
-| `return_temp`, `supply_temp` | return and supply (before the mixer) |
+| `return_temp`, `supply_temp` | return and heat source (before the mixer) |
 | `outdoor_temp`, `outdoor_effective` | outdoor temperature, with forecast |
 | `mixer`, `pump`, `pump_power`, `flow_rate` | mixer %, pump on/off, W, estimated l/h |
 | `heat_power`, `heat_today`, `heat_energy` | heat to the house in W, kWh today, kWh total |

@@ -4,7 +4,7 @@ var T = {
   de: {
     heating: "Heizt", idle: "Bereit", warm: "Räume warm", summer: "Sommer – keine Heizung",
     frost: "Frostschutz", off: "Aus (misst nur)", vacation: "Urlaub", setup: "Einrichtung fehlt",
-    auto: "Automatik", mode_off: "Aus", supply: "Zulauf", mixer: "Mischer", pump: "Pumpe",
+    auto: "Automatik", mode_off: "Aus", supply: "Wärmequelle", mixer: "Mischer", pump: "Pumpe",
     flow: "Vorlauf", ret: "Rücklauf", target: "Soll", house: "Haus", outdoor: "Außen",
     outdoor_eff: "mit Vorhersage", heat: "Wärme an das Haus", today: "heute", total: "gesamt",
     on: "an", off_: "aus", rooms: "Räume", comfort: "Komfort", eco: "Eco", manual: "Manuell",
@@ -26,14 +26,17 @@ var T = {
     no_rooms: "Keine Thermostate gefunden.", valve: "Ventil", source_t: "Raumthermometer",
     source_s: "Thermostat", flow_lh: "l/h", now: "jetzt", setup_missing: "Bitte noch einrichten:",
     roles: {mixer: "Mischer (0–100 %)", pump: "Umwälzpumpe (an/aus)", flow_sensor: "Vorlauf-Temperatur",
-      return_sensor: "Rücklauf-Temperatur", supply_sensor: "Zulauf (vor dem Mischer)",
+      return_sensor: "Rücklauf-Temperatur", supply_sensor: "Wärmequelle (Temperatur vor dem Mischer)",
       outdoor_sensor: "Außentemperatur (sonst vom Wetter)"},
-    days: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+    days: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    source_type: "Art der Wärmequelle",
+    sources: {buffer: "Pufferspeicher", heatpump: "Wärmepumpe", wood: "Holzofen", pellet: "Pelletkessel",
+      gas: "Gastherme", oil: "Ölkessel", district: "Fernwärme", solar: "Solarthermie"}
   },
   en: {
     heating: "Heating", idle: "Ready", warm: "Rooms warm", summer: "Summer – no heating",
     frost: "Frost protection", off: "Off (measuring only)", vacation: "Vacation", setup: "Setup missing",
-    auto: "Automatic", mode_off: "Off", supply: "Supply", mixer: "Mixer", pump: "Pump",
+    auto: "Automatic", mode_off: "Off", supply: "Heat source", mixer: "Mixer", pump: "Pump",
     flow: "Flow", ret: "Return", target: "Target", house: "House", outdoor: "Outdoor",
     outdoor_eff: "with forecast", heat: "Heat to the house", today: "today", total: "total",
     on: "on", off_: "off", rooms: "Rooms", comfort: "Comfort", eco: "Eco", manual: "Manual",
@@ -55,9 +58,12 @@ var T = {
     no_rooms: "No thermostats found.", valve: "Valve", source_t: "room thermometer",
     source_s: "thermostat", flow_lh: "l/h", now: "now", setup_missing: "Please set up:",
     roles: {mixer: "Mixer (0–100 %)", pump: "Circulation pump (on/off)", flow_sensor: "Flow temperature",
-      return_sensor: "Return temperature", supply_sensor: "Supply (before the mixer)",
+      return_sensor: "Return temperature", supply_sensor: "Heat source (temperature before the mixer)",
       outdoor_sensor: "Outdoor temperature (else from weather)"},
-    days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    source_type: "Type of heat source",
+    sources: {buffer: "Buffer tank", heatpump: "Heat pump", wood: "Wood stove", pellet: "Pellet boiler",
+      gas: "Gas boiler", oil: "Oil boiler", district: "District heating", solar: "Solar thermal"}
   }
 };
 var L = T[window.FHC_LANG] || T.en;
@@ -130,53 +136,105 @@ function dateText(iso) {
 }
 
 // --- hydraulic diagram ---
+var SOURCE_ICONS = {
+  buffer: '<rect x="-15" y="-24" width="30" height="48" rx="15" class="ic"/><path d="M-15 -6 H15 M-15 8 H15" class="ic thin"/>',
+  heatpump: '<rect x="-24" y="-18" width="48" height="36" rx="8" class="ic"/><circle cx="-6" cy="0" r="11" class="ic"/>' +
+    '<path d="M-6 -11 V11 M-17 0 H5" class="ic thin"/><path d="M12 -8 H18 M12 0 H18 M12 8 H18" class="ic thin"/>',
+  wood: '<path d="M0 -24 C10 -12 14 -6 10 4 C8 10 4 12 0 12 C-4 12 -9 9 -10 3 C-12 -6 -4 -10 0 -24 Z" class="ic"/>' +
+    '<path d="M-18 18 L18 24 M-18 24 L18 18" class="ic"/>',
+  pellet: '<path d="M0 -22 C10 -10 13 -4 9 6 C7 11 4 13 0 13 C-4 13 -9 10 -10 4 C-12 -4 -4 -8 0 -22 Z" class="ic"/>' +
+    '<circle cx="-10" cy="21" r="2.5" class="icf"/><circle cx="0" cy="22" r="2.5" class="icf"/><circle cx="10" cy="21" r="2.5" class="icf"/>',
+  gas: '<path d="M0 -24 C12 -10 16 -2 12 8 C9 16 4 18 0 18 C-4 18 -11 15 -12 7 C-14 -4 -4 -10 0 -24 Z" class="ic"/>' +
+    '<path d="M0 0 C5 6 5 12 0 14 C-5 12 -5 6 0 0 Z" class="ic thin"/>',
+  oil: '<path d="M0 -24 C10 -8 16 0 16 8 C16 17 9 22 0 22 C-9 22 -16 17 -16 8 C-16 0 -10 -8 0 -24 Z" class="ic"/>',
+  district: '<rect x="-22" y="-6" width="16" height="28" rx="3" class="ic"/><rect x="-2" y="-20" width="22" height="42" rx="3" class="ic"/>' +
+    '<path d="M4 -10 H14 M4 0 H14 M4 10 H14" class="ic thin"/>',
+  solar: '<circle cx="-8" cy="-12" r="7" class="ic"/><path d="M-22 22 L-12 4 H22 L12 22 Z M-17 13 H17 M5 4 L-5 22" class="ic thin"/>'
+};
+function pill(x, y, label, value, cls) {
+  // on a phone the drawing is scaled down, its texts are bigger (css)
+  var k = 1;
+  var w = k * (38 + label.length * 7 + value.length * 9.5), hh = 30 * k;
+  return '<g class="pillg" transform="translate(' + (x - w / 2) + ' ' + (y - hh / 2) + ')"><rect width="' + w + '" height="' + hh +
+    '" rx="' + hh / 2 + '" class="pill ' + (cls || "") + '"/><text x="' + 14 * k + '" y="' + 20 * k + '" class="pl">' +
+    esc(label) + '</text><text x="' + (w - 14 * k) + '" y="' + 20 * k + '" text-anchor="end" class="pv">' + esc(value) + '</text></g>';
+}
+function arc(cx, cy, r, pct) {
+  pct = Math.max(0, Math.min(100, pct || 0));
+  if (pct >= 99.9) return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" class="ring on"/>';
+  var a = pct / 100 * 2 * Math.PI, x = cx + r * Math.sin(a), y = cy - r * Math.cos(a);
+  return '<path class="ring on" d="M' + cx + ' ' + (cy - r) + ' A' + r + ' ' + r + ' 0 ' + (pct > 50 ? 1 : 0) +
+    ' 1 ' + x.toFixed(1) + ' ' + y.toFixed(1) + '"/>';
+}
+function heatText(w) {
+  if (w === null || w === undefined) return "–";
+  return w >= 1000 ? num(w / 1000, 2, " kW") : num(w, 0, " W");
+}
 function scheme() {
   var h = D.house || {};
-  var pumpText = h.pump ? L.on + (h.pump_power ? " · " + num(h.pump_power, 0, " W") : "") : L.off_;
-  var flowText = h.flow_lh ? num(h.flow_lh, 0, " " + L.flow_lh) : "";
-  var heat = h.heat_w !== null && h.heat_w !== undefined ? (h.heat_w >= 1000 ?
-    num(h.heat_w / 1000, 2, " kW") : num(h.heat_w, 0, " W")) : "–";
-  var s = '<svg viewBox="0 0 860 250" role="img" aria-label="' + esc(L.heat) + '">';
-  // supply from the heat source
-  s += '<rect class="box" x="10" y="40" width="150" height="150" rx="12"/>';
-  s += '<text x="85" y="70" text-anchor="middle">' + L.supply + '</text>';
-  s += '<text class="big" x="85" y="95" text-anchor="middle">' + deg(h.supply) + '</text>';
-  s += '<path class="pipe hot" d="M160 80 H300"/><path class="flowdash" d="M160 80 H300"/>';
-  // mixer
-  s += '<circle class="box" cx="330" cy="80" r="30"/>';
-  s += '<path d="M310 66 L350 94 M310 94 L350 66" stroke="currentColor" stroke-width="2"/>';
-  s += '<text x="330" y="22" text-anchor="middle">' + L.mixer + '</text>';
-  s += '<text class="big" x="330" y="42" text-anchor="middle">' + num(h.mixer, 0, " %") + '</text>';
-  s += '<path class="pipe warm" d="M360 80 H460"/><path class="flowdash" d="M360 80 H460"/>';
-  // pump
-  s += '<circle class="pump" cx="490" cy="80" r="26"/>';
-  s += '<path d="M478 66 L506 80 L478 94 Z" fill="currentColor"/>';
-  s += '<text x="490" y="40" text-anchor="middle">' + L.pump + '</text>';
-  s += '<text x="490" y="125" text-anchor="middle">' + esc(pumpText) + '</text>';
-  s += '<text x="490" y="142" text-anchor="middle">' + esc(flowText) + '</text>';
-  s += '<path class="pipe warm" d="M516 80 H680"/><path class="flowdash" d="M516 80 H680"/>';
-  s += '<text x="598" y="62" text-anchor="middle">' + L.flow + '</text>';
-  s += '<text class="big" x="598" y="110" text-anchor="middle">' + deg(h.flow) + '</text>';
-  s += '<text x="598" y="128" text-anchor="middle" class="muted">' + L.target + " " + deg(h.flow_target) + '</text>';
+  var src = SOURCE_ICONS[D.heat_source] ? D.heat_source : "buffer";
+  var pumpText = h.pump ? (h.pump_power ? num(h.pump_power, 0, " W") : L.on) : L.off_;
+  var flowText = h.pump && h.flow_lh ? num(h.flow_lh, 0, " " + L.flow_lh) : "";
+  var s = '<svg viewBox="0 0 860 300" role="img" aria-label="' + esc(L.heat) + '"><defs>' +
+    '<linearGradient id="fhcHot" gradientUnits="userSpaceOnUse" x1="190" x2="290"><stop offset="0" stop-color="#f03e3e"/><stop offset="1" stop-color="#fd7e14"/></linearGradient>' +
+    '<linearGradient id="fhcWarm" gradientUnits="userSpaceOnUse" x1="330" x2="640"><stop offset="0" stop-color="#fd7e14"/><stop offset="1" stop-color="#fab005"/></linearGradient>' +
+    '<linearGradient id="fhcCold" gradientUnits="userSpaceOnUse" x1="640" x2="300"><stop offset="0" stop-color="#4dabf7"/><stop offset="1" stop-color="#1c7ed6"/></linearGradient>' +
+    '<linearGradient id="fhcSrc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8787" stop-opacity=".35"/>' +
+    '<stop offset="1" stop-color="#fd7e14" stop-opacity=".12"/></linearGradient>' +
+    '<linearGradient id="fhcHouse" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd8a8" stop-opacity=".45"/>' +
+    '<stop offset="1" stop-color="#ffa94d" stop-opacity=".12"/></linearGradient>' +
+    '<radialGradient id="fhcGlow"><stop offset="0" stop-color="#ff922b" stop-opacity=".55"/><stop offset="1" stop-color="#ff922b" stop-opacity="0"/></radialGradient>' +
+    '</defs>';
+  // pipes first, everything else on top
+  s += '<path class="pipe" stroke="url(#fhcHot)" d="M190 90 H266"/>';
+  s += '<path class="pipe" stroke="url(#fhcWarm)" d="M334 90 H640"/>';
+  s += '<path class="pipe" stroke="url(#fhcCold)" d="M640 230 H300 V124"/>';
+  s += '<path class="pipe" stroke="#1c7ed6" d="M300 230 H190"/>';
+  ["M190 90 H266", "M334 90 H640", "M640 230 H300 V124", "M300 230 H190"].forEach(function(d) {
+    s += '<path class="flowdash" d="' + d + '"/>';
+  });
+  // heat source
+  s += '<rect x="20" y="30" width="170" height="240" rx="24" class="tile" fill="url(#fhcSrc)"/>';
+  s += '<g transform="translate(105 88)">' + SOURCE_ICONS[src] + '</g>';
+  s += '<text x="105" y="150" text-anchor="middle" class="tl">' + esc(L.sources[src]) + '</text>';
+  s += '<text x="105" y="190" text-anchor="middle" class="tv">' + num(h.supply, 1, "°") + '</text>';
+  // mixer: valve with a ring for its position
+  s += '<circle cx="300" cy="90" r="34" class="node"/><circle cx="300" cy="90" r="34" class="ring"/>' + arc(300, 90, 34, h.mixer);
+  s += '<path d="M284 80 L300 90 L284 100 Z M316 80 L300 90 L316 100 Z M290 112 L300 90 L310 112 Z" class="valve"/>';
+  s += '<text x="300" y="22" text-anchor="middle" class="tl">' + L.mixer + '</text>';
+  s += '<text x="300" y="46" text-anchor="middle" class="tv sm">' + num(h.mixer, 0, " %") + '</text>';
+  // pump with a turning impeller
+  s += '<circle cx="420" cy="90" r="30" class="node pumpnode"/>';
+  s += '<g class="impeller" style="transform-origin:420px 90px"><path d="M420 90 L420 68 M420 90 L439 101 M420 90 L401 101" class="blade"/>' +
+    '<circle cx="420" cy="90" r="5" class="hub"/></g>';
+  s += '<text x="420" y="22" text-anchor="middle" class="tl">' + L.pump + '</text>';
+  s += '<text x="420" y="46" text-anchor="middle" class="tv sm">' + esc(pumpText) + '</text>';
+  if (flowText) s += '<text x="420" y="146" text-anchor="middle" class="tl">' + esc(flowText) + '</text>';
+  s += pill(540, 90, L.flow, num(h.flow, 1, "°"), "hot");
+  s += pill(470, 230, L.ret, num(h["return"], 1, "°"), "cold");
   // house
-  s += '<path class="box" d="M680 110 L765 40 L850 110 V215 H680 Z"/>';
-  s += '<text x="765" y="140" text-anchor="middle">' + L.house + '</text>';
-  s += '<text class="big" x="765" y="165" text-anchor="middle">' + heat + '</text>';
-  s += '<text x="765" y="185" text-anchor="middle" class="muted">' + L.outdoor + " " + deg(h.outdoor) + '</text>';
-  // return
-  s += '<path class="pipe cold" d="M680 200 H330 V110"/><path class="flowdash" d="M680 200 H330 V110"/>';
-  s += '<path class="pipe cold" d="M330 200 H160"/>';
-  s += '<text x="520" y="190" text-anchor="middle">' + L.ret + '</text>';
-  s += '<text class="big" x="520" y="232" text-anchor="middle">' + deg(h["return"]) + '</text>';
+  s += '<circle cx="740" cy="170" r="110" fill="url(#fhcGlow)" class="glow"/>';
+  s += '<path d="M640 128 Q640 118 648 112 L732 48 Q740 42 748 48 L832 112 Q840 118 840 128 V256 Q840 270 826 270 H654 Q640 270 640 256 Z"' +
+    ' class="tile" fill="url(#fhcHouse)"/>';
+  [668, 718, 768].forEach(function(x) {
+    s += '<g class="radiator">';
+    for (var i = 0; i < 5; i++) s += '<rect x="' + (x + i * 8) + '" y="222" width="6" height="28" rx="3"/>';
+    s += '</g>';
+  });
+  s += '<text x="740" y="124" text-anchor="middle" class="tl">' + L.heat + '</text>';
+  s += '<text x="740" y="166" text-anchor="middle" class="tv">' + heatText(h.heat_w) + '</text>';
+  s += '<text x="740" y="196" text-anchor="middle" class="tl">' + L.target + " " + L.flow + " " + num(h.flow_target, 1, "°") + '</text>';
   s += '</svg>';
   var k = '<div class="kpi">';
-  k += '<div>' + L.heat + '<b>' + heat + '</b></div>';
-  k += '<div>' + L.flow + '<b>' + deg(h.flow) + '</b></div>';
-  k += '<div>' + L.ret + '<b>' + deg(h["return"]) + '</b></div>';
-  k += '<div>' + L.supply + '<b>' + deg(h.supply) + '</b></div>';
-  k += '<div>' + L.mixer + '<b>' + num(h.mixer, 0, " %") + '</b></div>';
-  k += '<div>' + L.pump + '<b>' + esc(pumpText) + '</b></div>';
+  // on a phone the drawing only shows pictures, the values are here
+  k += '<div class="mob">' + L.flow + '<b>' + deg(h.flow) + '</b></div>';
+  k += '<div class="mob">' + L.ret + '<b>' + deg(h["return"]) + '</b></div>';
+  k += '<div class="mob">' + esc(L.sources[src]) + '<b>' + deg(h.supply) + '</b></div>';
+  k += '<div class="mob">' + L.mixer + '<b>' + num(h.mixer, 0, " %") + '</b></div>';
+  k += '<div class="mob">' + L.pump + '<b>' + esc(pumpText) + (flowText ? " · " + esc(flowText) : "") + '</b></div>';
+  k += '<div class="mob">' + L.heat + '<b>' + heatText(h.heat_w) + '</b></div>';
   k += '<div>' + L.today + '<b>' + num(h.heat_today, 1, " kWh") + '</b></div>';
+  k += '<div>' + L.outdoor + '<b>' + deg(h.outdoor) + '</b></div>';
   k += '<div>' + L.outdoor + " " + L.outdoor_eff + '<b>' + deg(h.outdoor_eff) + '</b></div>';
   k += '<div>' + L.flow + " " + L.target + '<b>' + deg(h.flow_target) + '</b></div>';
   k += '</div>';
@@ -661,6 +719,9 @@ function setup() {
     h += '<tr><td>' + L.roles[attr] + '</td><td>' + control +
       '</td><td><button data-attr="' + attr + '">' + L.apply + '</button></td></tr>';
   });
+  h += '<tr><td>' + L.source_type + '</td><td>' + select("fhcA_heat_source", D.heat_source,
+    Object.keys(L.sources).map(function(k) { return [k, L.sources[k]]; }), "") +
+    '</td><td><button data-attr="heat_source">' + L.apply + '</button></td></tr>';
   h += '<tr><td>' + L.pump_model + '</td><td>' + select("fhcA_pump_model", st.pump_model,
     st.pump_models.map(function(m) { return [m, m]; }), "") + '</td><td><button data-attr="pump_model">' + L.apply + '</button></td></tr>';
   h += '<tr><td>' + L.pump_setting + '</td><td>' + select("fhcA_pump_setting", st.pump_setting,
@@ -723,7 +784,7 @@ root.addEventListener("click", function(ev) {
 window.fhcLive = function(data) {
   if (!data || data.name !== DEV) return;
   var point = data.point;
-  ["mode", "state", "house", "rooms", "vacation", "now"].forEach(function(k) { if (k in data) D[k] = data[k]; });
+  ["mode", "heat_source", "state", "house", "rooms", "vacation", "now"].forEach(function(k) { if (k in data) D[k] = data[k]; });
   D.history = D.history || [];
   if (point && (!D.history.length || D.history[D.history.length - 1][0] < point[0])) D.history.push(point);
   if (D.curve && D.house) D.curve.current = [D.house.outdoor_eff, D.house.flow_target];

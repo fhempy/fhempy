@@ -45,11 +45,21 @@ GETS = {
 }
 ROOM_KEY = re.compile(r"[^A-Za-z0-9_]")
 MODES = ("auto", "off")
+HEAT_SOURCES = (
+    "buffer",
+    "heatpump",
+    "wood",
+    "pellet",
+    "gas",
+    "oil",
+    "district",
+    "solar",
+)
 
 ATTRS = {
     "mixer": {
         "default": "",
-        "help": "Mixer 0-100 %: device[:set command], e.g. Mischer:pct. "
+        "help": "Mixer 0-100 %: device[:set command], e.g. mixer:pct. "
         "Choose it on the detail page.",
     },
     "mixer_invert": {
@@ -108,8 +118,14 @@ ATTRS = {
     },
     "supply_sensor": {
         "default": "",
-        "help": "Temperature before the mixer (Zulauf, from the heat source): "
-        "device:reading.",
+        "help": "Temperature of the heat source before the mixer: device:reading.",
+    },
+    "heat_source": {
+        "default": "buffer",
+        "options": ",".join(HEAT_SOURCES),
+        "help": "What delivers the heat, only for the picture and the name on "
+        "the detail page: buffer tank, heat pump, wood stove, pellets, gas, oil, "
+        "district heating, solar.",
     },
     "outdoor_sensor": {
         "default": "",
@@ -1261,6 +1277,7 @@ class heating_control(generic.FhemModule):
         data = {
             "name": self.hash["NAME"] if hasattr(self, "hash") else "",
             "mode": self.mode,
+            "heat_source": self._attr_heat_source,
             "state": self.state_text(),
             "house": self.house,
             "rooms": [room.view() for room in self.rooms.values()],
