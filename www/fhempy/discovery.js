@@ -10,6 +10,9 @@
  * fhempyDiscovery.tag(dev): adds a Bluetooth tag held next to the Raspberry Pi
  *
  * The device is created with set <dev> create <id> [name=...] [p0=...].
+ * FHEM gets the reply of the set after a few ms, the device is created in the
+ * background: fhempyDiscovery.finished(dev, key, {error, device}) is sent to
+ * the open pages when it's done, the tile then links to the new device.
  * MQTT devices show what they can do and their current values (details of
  * the candidate): up to 4 chips on the tile, all values below "Details",
  * refreshed every 10 seconds while the dialog is open.
@@ -28,15 +31,45 @@
   var filter = "";
 
   function esc(t) { return $("<div>").text(t === undefined || t === null ? "" : String(t)).html(); }
+  var german = /^de/i.test((navigator.languages && navigator.languages[0]) || navigator.language || "");
+  function tr(en, de) { return german ? de : en; }
+
   /* a click opens the detail page of the device */
   function deviceLink(name) {
     return '<a href="' + FW_root + "?detail=" + encodeURIComponent(name) + '">' + esc(name) + "</a>";
   }
-  /* shows the link to the created resident or tag below the done message */
-  function showCreated(d, kind) {
-    cmd("get " + dev + " device " + kind, function (name) {
-      name = (name || "").trim();
-      if (name) d.find(".fdDone").first().after('<div class="fdDone">Open ' + deviceLink(name) + "</div>");
+  /* button below the done message which opens the device in FHEM */
+  function openButton(name) {
+    return '<div class="fdBtns"><a class="fdBtn fdOpen" href="' + FW_root + "?detail=" + encodeURIComponent(name) + '">' +
+      esc(tr("Open " + name, name + " öffnen")) + " ›</a></div>";
+  }
+  /* shows the button to the created resident or tag below the done message */
+  function showCreated(d, name) {
+    if (name) d.find(".fdDone").first().after(openButton(name));
+  }
+
+  /* sets which create something wait for fhempyDiscovery.finished, kept
+     when the script is loaded again by a popup */
+  var waiting = window.fhempyDiscoveryWaiting = window.fhempyDiscoveryWaiting || {};
+  var WAIT_MS = 180000;
+
+  /* runs the set and calls cb({error, device}) when it's done in fhempy;
+     without an answer (e.g. fhempy restarted) the name is asked once */
+  function runSet(command, key, cb) {
+    var done = false, timer;
+    function finish(res) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (waiting[key] === finish) delete waiting[key];
+      cb(res);
+    }
+    waiting[key] = finish;
+    timer = setTimeout(function () {
+      cmd("get " + dev + " device " + arg(key), function (name) { finish({ error: "", device: (name || "").trim() }); });
+    }, WAIT_MS);
+    cmd(command, function (r) {
+      if (r) finish({ error: r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, ""), device: "" });
     });
   }
 
@@ -73,6 +106,7 @@
       ".fhempyDiscovery label{font-size:12px;font-weight:600;display:block;margin-top:5px}" +
       ".fhempyDiscovery .fdDone{font-size:12px;color:#3fa34d;font-weight:600}" +
       ".fhempyDiscovery .fdDone a{color:inherit;text-decoration:underline}" +
+      ".fhempyDiscovery a.fdBtn.fdOpen{text-decoration:none;display:inline-block}" +
       ".fhempyDiscovery .fdErr{font-size:12px;color:#d64545;white-space:pre-wrap}" +
       ".fhempyDiscovery .fdZigbee{margin:0 0 12px;padding:10px 14px;border-radius:12px;border:1px solid rgba(75,139,190,0.6);background:rgba(75,139,190,0.12)}" +
       ".fhempyDiscovery .fdZigbee.fdOn{border-color:#e0a000;background:rgba(224,160,0,0.14)}" +
@@ -228,9 +262,6 @@
 
   /* --- Zigbee2MQTT pairing, shown only while Zigbee2MQTT is running --- */
 
-  var german = /^de/i.test((navigator.languages && navigator.languages[0]) || navigator.language || "");
-  function tr(en, de) { return german ? de : en; }
-
   function zigbee(box) {
     if (!box.length || !document.body.contains(box[0])) return;
     cmd("get " + dev + " zigbee", function (r) {
@@ -287,7 +318,8 @@
       '<div class="fdInfo">' + esc(infoLine(d)) + "</div>" + chips(x) + (x && st.open ? detailsHtml(x) : "");
     if (!st.created && (d.status == "exists" || d.status == "created")) {
       /* in FHEM already: link to the device, MQTT devices can be set up again */
-      html += '<div class="fdDone">✓ ' + (st.recreated ? "set up again" : "in FHEM") + (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
+      html += '<div class="fdDone">✓ ' + (st.recreated ? tr("set up again", "neu eingerichtet") : tr("in FHEM", "in FHEM")) +
+        (d.device ? ": " + deviceLink(d.device) : "") + "</div>";
       if (d.can_recreate && d.device) {
         html += '<div class="fdBtns"><span class="fdBtn fdGrey fdRecreate" title="Readings, commands, state, alias and icon like a new device. ' +
           'The name and the other attributes (room, group...) stay.">' +
@@ -300,12 +332,12 @@
       (d.hint && !x ? '<div class="fdHint">' + esc(d.hint) + "</div>" : "");
     if (st.created) {
       /* a click on the link opens the new device */
-      var done = d.action == "set" ? "pairing started, see the " + esc(d.kind) + " device" : "created, see the room fhempy";
+      var done = d.action == "set" ? tr("pairing started, see the " + d.kind + " device", "Anlernen gestartet, siehe " + d.kind + "-Gerät") :
+        tr("created, see the room fhempy", "angelegt, siehe Raum fhempy");
       if (st.device) {
-        var link = deviceLink(st.device);
-        done = (d.action == "set" ? "pairing started, see " : "created: ") + link;
+        done = d.action == "set" ? tr("pairing started", "Anlernen gestartet") : tr("created", "angelegt");
       }
-      return html + '<div class="fdDone">✓ ' + done + "</div></div></div>";
+      return html + '<div class="fdDone">✓ ' + esc(done) + "</div>" + (st.device ? openButton(st.device) : "") + "</div></div>";
     }
     if (d.status == "ignored") {
       return html + '<div class="fdBtns"><span class="fdBtn fdGrey fdUnignore">Offer again</span></div></div></div>';
@@ -419,9 +451,9 @@
     st.busy = true;
     st.error = "";
     render(container, empty);
-    cmd("set " + dev + " recreate " + arg(d.id), function (r) {
+    runSet("set " + dev + " recreate " + arg(d.id), d.id, function (res) {
       st.busy = false;
-      if (r) st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
+      if (res.error) st.error = res.error;
       else st.recreated = true;
       render(container, empty);
     });
@@ -454,19 +486,16 @@
     st.busy = true;
     st.error = "";
     render(container);
-    cmd(command, function (r) {
+    runSet(command, d.id, function (res) {
       st.busy = false;
-      if (r) {
-        st.error = r.replace(/<br>/g, "\n").replace(/<[^>]+>/g, "");
+      if (res.error) {
+        st.error = res.error;
         render(container);
         return;
       }
       st.created = true;
+      st.device = res.device || d.device || "";
       render(container);
-      cmd("get " + dev + " device " + arg(d.id), function (name) {
-        st.device = (name || "").trim();
-        if (st.device) render(container);
-      });
     });
   }
 
@@ -672,9 +701,9 @@
       buttons(d, []);
       var command = "set " + dev + " addResident person=" + arg(resident.person) +
         (resident.mac ? " mac=" + arg(resident.mac) : "") + (resident.bt ? " bt=" + arg(resident.bt) : "");
-      cmd(command, function (r) {
-        if (r) {
-          d.html('<div class="fdErr">' + esc(r) + "</div>");
+      runSet(command, "resident", function (res) {
+        if (res.error) {
+          d.html('<div class="fdErr">' + esc(res.error) + "</div>");
           buttons(d, [{ text: "Back", click: stepNetwork }]);
           return;
         }
@@ -686,7 +715,7 @@
           { text: "Add another resident", click: function () { resident = { person: "", mac: "", bt: "" }; stepNetwork(); } },
           { text: "Close", click: function () { $(this).dialog("close"); } }
         ]);
-        showCreated(d, "resident");
+        showCreated(d, res.device);
       });
     }
 
@@ -722,11 +751,17 @@
               { text: "Create", click: function () {
                 var title = $("#fdTagTitle").val().trim();
                 if (!title) { $("#fdError").text("Please enter a name"); return; }
-                cmd("set " + dev + " addTag title=" + arg(title) + " address=" + arg(tag.address), function (r) {
-                  if (r) { $("#fdError").text(r); return; }
+                buttons(d, []);
+                $("#fdError").html('<span class="fdSpin"></span>');
+                runSet("set " + dev + " addTag title=" + arg(title) + " address=" + arg(tag.address), "tag", function (res) {
+                  if (res.error) {
+                    $("#fdError").text(res.error);
+                    buttons(d, [{ text: "Search again", click: start }, { text: "Cancel", click: function () { $(this).dialog("close"); } }]);
+                    return;
+                  }
                   d.html('<div class="fdDone" style="font-size:16px;margin:10px 0">✓ ' + esc(title) + " was added</div>");
                   buttons(d, [{ text: "Add another tag", click: start }, { text: "Close", click: function () { $(this).dialog("close"); } }]);
-                  showCreated(d, "tag");
+                  showCreated(d, res.device);
                 });
               } },
               { text: "Search again", click: start }
@@ -737,6 +772,11 @@
       ]);
     }
     start();
+  };
+
+  /* a set of this page is done in fhempy */
+  api.finished = function (name, key, res) {
+    if (name == dev && waiting[key]) waiting[key](res || {});
   };
 
   window.fhempyDiscovery = api;

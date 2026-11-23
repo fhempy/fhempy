@@ -452,6 +452,53 @@ def test_exists_is_case_insensitive():
     assert _perl_exists("Bedroom") == ""
 
 
+@pytest.mark.asyncio
+async def test_create_sends_result_with_device_to_the_dialog(mocker):
+    """FHEM gets the reply of the set before the device exists, the dialog
+    gets the name of the new device for the link from the event."""
+    from fhempy.lib import fhem as fhem_module
+    from fhempy.lib.autodiscovery import residents
+    from fhempy.lib.autodiscovery.autodiscovery import autodiscovery
+    from fhempy.lib.pkg_installer import check_and_install_dependencies
+
+    await check_and_install_dependencies("autodiscovery")
+    device = autodiscovery(logging.getLogger(__name__))
+    device.hash = {"NAME": "autodiscovery"}
+    device.engine = mocker.MagicMock()
+    device.engine.candidates = {}
+
+    async def create(hash, candidate_id, name, values):
+        device.engine.candidates[candidate_id] = {"device": "Living_Room"}
+        return ""
+
+    device.engine.create = create
+    device.engine.recreate = mocker.AsyncMock(return_value="MQTT device gone")
+    run_js = mocker.patch.object(fhem_module, "FW_runJavascript", mocker.AsyncMock())
+    mocker.patch.object(
+        residents, "create_tag", mocker.AsyncMock(return_value=("", "presence_Keys"))
+    )
+
+    assert await device.set_create({}, {"id": "mdns:x"}) == ""
+    js = run_js.call_args.args[1]
+    assert js.startswith("if(window.fhempyDiscovery&&fhempyDiscovery.finished)")
+    assert 'finished("autodiscovery","mdns:x",' in js
+    assert '"device": "Living_Room"' in js and '"error": ""' in js
+
+    # errors reach the dialog too, FHEM got an empty reply already
+    assert await device.set_recreate({}, {"id": "mqtt:y"}) == "MQTT device gone"
+    js = run_js.call_args.args[1]
+    assert '"error": "MQTT device gone"' in js and '"device": ""' in js
+
+    assert await device.set_addTag({}, {"title": "Keys", "address": "y"}) == ""
+    assert '"tag",{"error": "", "device": "presence_Keys"}' in run_js.call_args.args[1]
+
+    # an exception is reported and raised for the log
+    device.engine.create = mocker.AsyncMock(side_effect=RuntimeError("boom"))
+    with pytest.raises(RuntimeError):
+        await device.set_create({}, {"id": "mdns:z"})
+    assert '"error": "boom"' in run_js.call_args.args[1]
+
+
 _PERL_BRIDGE_PORTS_HARNESS = r"""
 use strict; use warnings; use JSON;
 our %defs = (
