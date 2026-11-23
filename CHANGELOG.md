@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v2.24.0 (2026-11-23)
+
+### Bug Fixes
+
+- **autodiscovery**: Never offer fhempy's own Matter bridge
+  ([#1033](https://github.com/fhempy/fhempy/pull/1033),
+  [`a3900c5`](https://github.com/fhempy/fhempy/commit/a3900c5c0c21550f8a2388b291f71038f93c1b60))
+
+### Features
+
+- **autodiscovery**: Open button for the created device
+  ([#1034](https://github.com/fhempy/fhempy/pull/1034),
+  [`65359da`](https://github.com/fhempy/fhempy/commit/65359daaa468e85c0f819420dbeef74632919195))
+
+- **ble_monitor**: Offer all supported devices with meaningful names, alias and correct state
+  ([#1032](https://github.com/fhempy/fhempy/pull/1032),
+  [`2511371`](https://github.com/fhempy/fhempy/commit/25113713118176c42ba01e70ad66d4a96100706e))
+
+- **dashboard**: Big full screen message when an appliance is done
+  ([#1036](https://github.com/fhempy/fhempy/pull/1036),
+  [`4d26e5e`](https://github.com/fhempy/fhempy/commit/4d26e5e72cc29af55ab650c1ceb914c486f05edd))
+
+- **dashboard**: Leave home and good night list what goes off first and start by themselves after
+  60s ([#1031](https://github.com/fhempy/fhempy/pull/1031),
+  [`54b9587`](https://github.com/fhempy/fhempy/commit/54b9587056d15babcdf3716dfccc08a6ea894532))
+
+- **heating_control**: Heating control for mixer, pump and room thermostats
+  ([#1035](https://github.com/fhempy/fhempy/pull/1035),
+  [`22c9ccb`](https://github.com/fhempy/fhempy/commit/22c9ccb3d4ffad35eac6af4b29bfb3c6119352be))
+
+
 ## v2.23.3 (2026-11-22)
 
 ### Bug Fixes
