@@ -57,7 +57,7 @@
 "needHttps":"Parler nécessite https, voir les réglages.","noMic":"Pas d’accès au microphone.","noCamera":"Aucune caméra configurée","camConnecting":"Connexion à la caméra …",
 "name":"Nom","place":"Emplacement","room":"Pièce","theme":"Design","auto":"Automatique","dark":"Sombre","light":"Clair","rooms":"Pièces","editTiles":"Modifier les tuiles","editDone":"Terminer","reset":"Réinitialiser",
 "rpLight":"Lumière","rpSwitches":"Interrupteurs","rpBlinds":"Volets","rpMore":"Plus dans cette pièce","rpOpenRoom":"Ouvrir toute la pièce","rpNofM":"{n} sur {m} allumées","rpAllOffShort":"Tout éteindre","rpHeatsNow":"Chauffe en ce moment","rpHoldRing":"Glissez l’anneau pour régler","rpReached":"Consigne atteinte","rpSetTo":"Régler à {t}°",
-"switchHttps":"Passer en https (pour parler)","energy":"Énergie","solar":"Solaire","usage":"Consommation","grid":"Réseau","storage":"Batterie","price":"Prix","surplus":"Surplus","fromGrid":"Du réseau","hiddenTiles":"Masquées, + les ramène",
+"switchHttps":"Passer en https (pour parler)","energy":"Énergie","solar":"Solaire","usage":"Consommation","voltage":"Tension","current":"Courant","energyToday":"Aujourd'hui","energyTotal":"Total","grid":"Réseau","storage":"Batterie","price":"Prix","surplus":"Surplus","fromGrid":"Du réseau","hiddenTiles":"Masquées, + les ramène",
 "days":["Di","Lu","Ma","Me","Je","Ve","Sa"],
 "months":["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"],
 "weekdays":["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"],

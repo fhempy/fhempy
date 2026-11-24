@@ -231,8 +231,29 @@ FORECAST_READINGS += tuple(
     for key in keys
 )
 # readings with the current power in W, the first one present is used
-POWER_READINGS = ("power", "cur_power", "current_power", "currentPower", "actPower")
+# (ENERGY_Power: Tasmota via MQTT2_DEVICE)
+POWER_READINGS = (
+    "power",
+    "cur_power",
+    "current_power",
+    "currentPower",
+    "actPower",
+    "ENERGY_Power",
+)
 READINGS = READINGS + POWER_READINGS
+# more values of metering plugs, only readings with a known unit:
+# voltage in V, current in A, energy in kWh (Tasmota ENERGY_*)
+METER_READINGS = {
+    "voltage": ("ENERGY_Voltage", "voltage"),
+    "current": ("ENERGY_Current",),
+    "energy_today": ("ENERGY_Today",),
+    "energy_total": ("ENERGY_Total",),
+}
+# below this the voltage is the one of a battery, not of the mains
+MAINS_MIN_VOLTAGE = 50
+READINGS = READINGS + tuple(
+    r for names in METER_READINGS.values() for r in names if r not in READINGS
+)
 READINGS = READINGS + tuple(r for r in FORECAST_READINGS if r not in READINGS)
 READING_SET = frozenset(READINGS)
 WEATHER_TYPES = ("Weather",)
@@ -307,6 +328,19 @@ def power_reading(info):
         if name in readings:
             return name
     return None
+
+
+def meter_state(info):
+    """voltage, current and energy of a metering plug, only those it has"""
+    result = {}
+    for key, names in METER_READINGS.items():
+        value = kinds.number(_reading(info, *names))
+        if value is None:
+            continue
+        if key == "voltage" and value < MAINS_MIN_VOLTAGE:
+            continue
+        result[key] = value
+    return result
 
 
 def _reading_time(info, *names):
@@ -457,6 +491,7 @@ def tile_state(kind, info):
         power = kinds.number(_reading(info, *POWER_READINGS))
         if power is not None:
             state["power"] = power
+        state.update(meter_state(info))
     if battery_low(info):
         state["battery_low"] = True
     co2 = kinds.number(_reading(info, *CO2_READINGS))

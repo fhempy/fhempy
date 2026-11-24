@@ -57,7 +57,7 @@
 "needHttps":"Per parlare serve https, vedi impostazioni.","noMic":"Nessun accesso al microfono.","noCamera":"Nessuna telecamera configurata","camConnecting":"Connessione alla telecamera …",
 "name":"Nome","place":"Posto","room":"Stanza","theme":"Design","auto":"Automatico","dark":"Scuro","light":"Chiaro","rooms":"Stanze","editTiles":"Modifica tessere","editDone":"Fine modifica","reset":"Ripristina",
 "rpLight":"Luce","rpSwitches":"Interruttori","rpBlinds":"Tapparelle","rpMore":"Altro in questa stanza","rpOpenRoom":"Apri tutta la stanza","rpNofM":"{n} di {m} accese","rpAllOffShort":"Spegni tutto","rpHeatsNow":"Riscalda adesso","rpHoldRing":"Trascina l’anello per regolare","rpReached":"Obiettivo raggiunto","rpSetTo":"Imposta a {t}°",
-"switchHttps":"Passa a https (per parlare)","energy":"Energia","solar":"Solare","usage":"Consumo","grid":"Rete","storage":"Accumulo","price":"Prezzo","surplus":"Eccedenza","fromGrid":"Dalla rete","hiddenTiles":"Nascoste, + le riporta",
+"switchHttps":"Passa a https (per parlare)","energy":"Energia","solar":"Solare","usage":"Consumo","voltage":"Tensione","current":"Corrente","energyToday":"Oggi","energyTotal":"Totale","grid":"Rete","storage":"Accumulo","price":"Prezzo","surplus":"Eccedenza","fromGrid":"Dalla rete","hiddenTiles":"Nascoste, + le riporta",
 "days":["Do","Lu","Ma","Me","Gi","Ve","Sa"],
 "months":["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"],
 "weekdays":["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"],
