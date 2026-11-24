@@ -1463,6 +1463,8 @@ def routine_steps(tiles, mode, off_ids, close_ids):
         if item is not None and item["kind"] == "media":
             _media_off(item, steps, undo)
             continue
+        if item is not None:
+            _fan_off(item, steps, undo)
         if (
             item is not None
             and item["kind"] in SWITCHABLE
@@ -1493,6 +1495,26 @@ def media_goes_off(item):
     if (item.get("media") or {}).get("power"):
         return bool(state.get("on"))
     return bool(state.get("playing"))
+
+
+def fan_percent(item):
+    """speed of a fan tile or of the fan of a ceiling light, 0: off"""
+    if not item.get("fan"):
+        return 0
+    state = item["state"] if item["kind"] == "fan" else item["state"].get("fan") or {}
+    return state.get("percent") or 0
+
+
+def _fan_off(item, steps, undo):
+    """fans and the fans of ceiling lights off, undo sets the speed again"""
+    percent = fan_percent(item)
+    if not percent or item.get("keep_on"):
+        return
+    if item["kind"] == "fan":
+        steps.append((item["id"], "off", None))
+    else:
+        steps.append((item["id"], "fan_percent", 0))
+    undo.append((item["id"], "fan_percent", percent))
 
 
 def _media_off(item, steps, undo):

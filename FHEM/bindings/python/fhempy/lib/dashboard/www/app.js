@@ -2072,10 +2072,16 @@
     if (tile.kind !== "media") { return false; }
     return tile.media && tile.media.power ? !!tile.state.on : !!tile.state.playing;
   }
-  // what the routine does: lights, switches and music off, at night the blinds down
+  // fans and the fans of ceiling lights
+  function fanRuns(tile) {
+    if (!tile.fan || tile.keep_on) { return false; }
+    var st = tile.kind === "fan" ? tile.state : tile.state.fan || {};
+    return (st.percent || 0) > 0;
+  }
+  // what the routine does: lights, switches, fans and music off, at night the blinds down
   function routinePlan(mode) {
     var all = shownTiles();
-    var off = all.filter(function (x) { return (["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on) || mediaGoesOff(x.tile); });
+    var off = all.filter(function (x) { return (["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on) || mediaGoesOff(x.tile) || fanRuns(x.tile); });
     var blinds = mode === "night" ? all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; }) : [];
     return { off: off, blinds: blinds, open: all.filter(function (x) { return secOpen(x.tile); }) };
   }
@@ -2114,8 +2120,8 @@
     if (goes.length) {
       body += section(t("rtSecOff", { n: goes.length }), "off");
       goes.forEach(function (x) {
-        var media = x.tile.kind === "media";
-        body += ovRow(x, media ? "music" : isLight(x.tile) ? "bulb" : "plug", media ? "#5AA9FF" : isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
+        var media = x.tile.kind === "media", fan = x.tile.kind === "fan" || (fanRuns(x.tile) && !x.tile.state.on);
+        body += ovRow(x, media ? "music" : fan ? "fan" : isLight(x.tile) ? "bulb" : "plug", media ? "#5AA9FF" : fan ? "#3DDBB8" : isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
       });
     }
     if (p.blinds.length) {

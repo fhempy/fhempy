@@ -147,7 +147,7 @@ rain and low/high, and sunrise and sunset. The screensaver shows the next hours 
 
 *Good night* and *Leave home* on *Home* first show what is still open or on: windows and doors, unlocked locks (lock
 them with one tap), lights and switches, and at night the open blinds. One tap switches off the lights and switches
-(not those left on with *All off*), music players, speakers and TVs, and, at night, closes the blinds. Players with
+(not those left on with *All off*), fans (also the fan of a ceiling light), music players, speakers and TVs, and, at night, closes the blinds. Players with
 on/off (e.g. BOSEST, dlna_dmr) are switched off, the others (e.g. googlecast) are paused when they play. *Undo* brings back how it was before, for 10
 minutes. When windows are open and rain, storm or frost comes in the next hours, the list says so (from the hourly
 forecast of `openmeteo_weather`).
