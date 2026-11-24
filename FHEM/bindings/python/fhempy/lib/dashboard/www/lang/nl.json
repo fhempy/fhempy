@@ -6,7 +6,7 @@
 "lightsOn":"{n} lampen aan","deviceOn":"1 apparaat aan","devicesOn":"{n} apparaten aan","humidity":"Luchtvochtigheid","temperature":"Temperatuur","lightOn":"1 lamp aan","atHome":"{n} thuis","nobody":"Niemand thuis",
 "chLight":"Licht","chClimate":"Klimaat","chBlinds":"Rolluiken","chSecurity":"Beveiliging","chNOn":"{n} aan","chAllOff":"alles uit","chNHeat":"{n} verwarmen","chOneHeat":"1 verwarmt","chNOpen":"{n} van {m} open","chAllClosed":"alles dicht","chSecOpen":"{n} open","chSecOk":"alles dicht",
 "ovLight":"Wat aan is","ovClimate":"Klimaat per kamer","ovBlinds":"Rolluiken","ovSecurity":"Ramen, deuren en sloten","ovNoLight":"Alle lampen zijn uit.","ovSecOk":"Alles dicht en op slot.",
-"allUp":"Alles omhoog","allDown":"Alles omlaag","lightsOff":"Alle lampen uit","heatsNow":"verwarmt",
+"allUp":"Alles omhoog","allDown":"Alles omlaag","lightsOff":"Alle lampen uit","heatsNow":"verwarmt","ovHeatNow":"Verwarmt nu · {n}","ovOtherRooms":"Andere kamers",
 "pairTitle":"Tablet verbinden","pairText":"Open het dashboard-apparaat in FHEM en scan de QR-code met de camera van deze tablet, of voer de getoonde code in.","pairButton":"Verbinden","pairWrong":"Code fout of verlopen. Laad de pagina in FHEM opnieuw voor een nieuwe code.",
 "whereTitle":"Waar hangt deze tablet?","whereText":"We vonden {rooms} kamers en {tiles} apparaten. Kies de plek, wij doen de rest.",
 "chMaint":"Onderhoud","chMaintN":"{n} apparaten","ovMaint":"Onderhoud","ovMaintLead":"Deze apparaten hebben aandacht nodig.","mtUnreachable":"niet bereikbaar","mtSilent":"geen waarden {t}","mtOk":"Alles in orde.","mtBattery":"batterij zwak",

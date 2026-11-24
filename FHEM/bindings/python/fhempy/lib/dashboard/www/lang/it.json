@@ -6,7 +6,7 @@
 "lightsOn":"{n} luci accese","deviceOn":"1 dispositivo acceso","devicesOn":"{n} dispositivi accesi","humidity":"Umidità","temperature":"Temperatura","lightOn":"1 luce accesa","atHome":"{n} a casa","nobody":"Nessuno a casa",
 "chLight":"Luce","chClimate":"Clima","chBlinds":"Tapparelle","chSecurity":"Sicurezza","chNOn":"{n} accese","chAllOff":"tutto spento","chNHeat":"{n} riscaldano","chOneHeat":"1 riscalda","chNOpen":"{n} di {m} aperte","chAllClosed":"tutto chiuso","chSecOpen":"{n} aperti","chSecOk":"tutto chiuso",
 "ovLight":"Cosa è acceso","ovClimate":"Clima delle stanze","ovBlinds":"Tapparelle","ovSecurity":"Finestre, porte e serrature","ovNoLight":"Tutte le luci sono spente.","ovSecOk":"Tutto chiuso e bloccato.",
-"allUp":"Tutte su","allDown":"Tutte giù","lightsOff":"Spegni tutte le luci","heatsNow":"riscalda",
+"allUp":"Tutte su","allDown":"Tutte giù","lightsOff":"Spegni tutte le luci","heatsNow":"riscalda","ovHeatNow":"Sta riscaldando · {n}","ovOtherRooms":"Altre stanze",
 "pairTitle":"Collega tablet","pairText":"Apri il dispositivo dashboard in FHEM e scansiona il codice QR con la fotocamera di questo tablet, oppure inserisci il codice mostrato.","pairButton":"Collega","pairWrong":"Codice errato o scaduto. Ricarica la pagina in FHEM per un nuovo codice.",
 "whereTitle":"Dove si trova questo tablet?","whereText":"Abbiamo trovato {rooms} stanze e {tiles} dispositivi. Scegli il posto, al resto pensiamo noi.",
 "chMaint":"Manutenzione","chMaintN":"{n} dispositivi","ovMaint":"Manutenzione","ovMaintLead":"Questi dispositivi richiedono attenzione.","mtUnreachable":"non raggiungibile","mtSilent":"nessun valore {t}","mtOk":"Tutto a posto.","mtBattery":"batteria scarica",

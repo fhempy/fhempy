@@ -870,6 +870,13 @@ body.lite .apart, body.lite .apbtn, body.lite .apfull * { animation: none !impor
 .ovlist .section.rtsec { display: flex; align-items: center; gap: 8px; }
 .ovlist .section.rtsec.off { color: var(--accent); }
 .ovlist .section.rtsec.stays { color: var(--mu2); }
+/* climate: rooms heating right now come first */
+.ovlist .section.rtsec.heat { color: var(--amber2); }
+.row.ovheat { background: rgba(255,138,61,.14); border-bottom: none; border-radius: 16px; padding: 10px 12px; margin: 6px 0; }
+.row.ovheat .ic { background: rgba(255,138,61,.22); color: var(--amber2); }
+.row.ovheat .t span { color: var(--tx); opacity: .7; }
+.row.ovheat .ovtemp { color: var(--amber2); }
+.ovlist .section.rtsec.heat span { display: inline-flex; align-items: center; gap: 6px; }
 .row.rtgoes { background: var(--accent-soft); border-bottom: none; border-radius: 16px; padding: 10px 12px; margin: 6px 0; }
 .row.rtgoes .t span { color: var(--tx); opacity: .7; }
 .rttag { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 14px; background: var(--accent); color: #1a1408; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
