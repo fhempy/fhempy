@@ -117,6 +117,8 @@ var T2 = {
   room_new: ["Name des neuen Raums","Name of the new room"],
   room_add: ["Raum anlegen","Create room"],
   room_free: ["Noch keinem Raum zugeordnet (wird nicht gesteuert)","Not in a room yet (not controlled)"],
+  battery_low: ["Batterie schwach","Battery low"],
+  unreachable: ["nicht erreichbar","not reachable"],
   w_need_mixer: ["Bitte den Mischer auswählen.","Please choose the mixer."],
   w_need_pump: ["Bitte die Pumpe auswählen.","Please choose the pump."],
   w_need_flow: ["Bitte die Vorlauf-Temperatur auswählen.","Please choose the flow temperature."]
@@ -437,6 +439,7 @@ function roomCard(room) {
   h += '<div class="temp">' + deg(room.actual) + '</div>';
   h += '<div class="muted">' + (room.source === "thermometer" ? L.source_t : L.source_s) +
     (room.valve !== null && room.valve !== undefined ? " · " + L.valve + " " + num(room.valve, 0, " %") : "") + '</div>';
+  h += alertsOf(room);
   h += '<div class="target"><button class="round" data-step="-0.5" aria-label="-">−</button>' +
     '<span class="val">' + num(room.target, 1, "°") + '</span>' +
     '<button class="round" data-step="0.5" aria-label="+">+</button></div>';
@@ -449,6 +452,16 @@ function roomCard(room) {
   return h;
 }
 
+// thermostats or the room thermometer: unreachable or battery low
+function alertsOf(room) {
+  return (room.alerts || []).map(function(a) {
+    var text = a.kind === "battery"
+      ? L.battery_low + (a.battery !== null && a.battery !== undefined ? " (" + num(a.battery, 0, " %") + ")" : "")
+      : L.unreachable;
+    return '<div class="alert ' + esc(a.kind) + '">' + (a.kind === "battery" ? "🪫 " : "⚠ ") +
+      esc(a.label) + ': ' + esc(text) + '</div>';
+  }).join("");
+}
 function rooms() {
   var list = D.rooms || [];
   var h = '<h3>' + L.rooms + '</h3>';

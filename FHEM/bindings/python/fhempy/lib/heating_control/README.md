@@ -74,6 +74,7 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 | `heat_power`, `heat_today`, `heat_energy` | heat to the house in W, kWh today, kWh total |
 | `room_<room>_temperature`, `_target`, `_state`, `_valve` | per room, state `comfort`, `eco`, `manual`, `vacation`, `window` |
 | `room_<room>_schedule`, `_comfort`, `_eco`, `_override` | the settings of the room (saved in the FHEM state file) |
+| `alerts` | thermostats and room thermometers which are not reachable or whose battery is low, e.g. `th_bath: battery low`, else `none`. The room cards on the page show them too. |
 | `learned_curve` | learned correction per outdoor temperature: `outdoor:offset:hours` |
 | `vacation` | `off` or `<day back> <temperature>` |
 
