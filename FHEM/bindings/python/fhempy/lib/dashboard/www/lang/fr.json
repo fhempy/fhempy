@@ -6,7 +6,7 @@
 "lightsOn":"{n} lumières allumées","deviceOn":"1 appareil allumé","devicesOn":"{n} appareils allumés","humidity":"Humidité","temperature":"Température","lightOn":"1 lumière allumée","atHome":"{n} à la maison","nobody":"Personne à la maison",
 "chLight":"Lumière","chClimate":"Climat","chBlinds":"Volets","chSecurity":"Sécurité","chNOn":"{n} allumées","chAllOff":"tout éteint","chNHeat":"{n} chauffent","chOneHeat":"1 chauffe","chNOpen":"{n} sur {m} ouverts","chAllClosed":"tout fermé","chSecOpen":"{n} ouvert(s)","chSecOk":"tout fermé",
 "ovLight":"Ce qui est allumé","ovClimate":"Climat des pièces","ovBlinds":"Volets","ovSecurity":"Fenêtres, portes et serrures","ovNoLight":"Toutes les lumières sont éteintes.","ovSecOk":"Tout est fermé et verrouillé.",
-"allUp":"Tout ouvrir","allDown":"Tout fermer","lightsOff":"Éteindre les lumières","heatsNow":"chauffe",
+"allUp":"Tout ouvrir","allDown":"Tout fermer","lightsOff":"Éteindre les lumières","heatsNow":"chauffe","ovHeatNow":"Chauffe en ce moment · {n}","ovOtherRooms":"Autres pièces",
 "pairTitle":"Connecter la tablette","pairText":"Ouvrez l’appareil dashboard dans FHEM et scannez le code QR avec la caméra de cette tablette, ou saisissez le code affiché.","pairButton":"Connecter","pairWrong":"Code faux ou expiré. Rechargez la page dans FHEM pour un nouveau code.",
 "whereTitle":"Où se trouve cette tablette ?","whereText":"Nous avons trouvé {rooms} pièces et {tiles} appareils. Choisissez l’emplacement, nous faisons le reste.",
 "chMaint":"Entretien","chMaintN":"{n} appareils","ovMaint":"Entretien","ovMaintLead":"Ces appareils demandent de l’attention.","mtUnreachable":"injoignable","mtSilent":"pas de valeurs {t}","mtOk":"Tout va bien.","mtBattery":"pile faible",

@@ -17,7 +17,7 @@
     allOffN: "Alles aus ({n})", beforeLeave: "Bevor du gehst", stillOpen: "Das ist noch offen oder an.",
     allClosed: "Alles zu, alles aus.", nowOn: "Gerade offen und an", lightsOn: "{n} Lichter an",
     lightOn: "1 Licht an", deviceOn: "1 Gerät an", devicesOn: "{n} Geräte an", humidity: "Luftfeuchte", atHome: "{n} zu Hause", nobody: "Niemand zu Hause",
-    chLight: "Licht", chClimate: "Klima", chBlinds: "Rollläden", chSecurity: "Sicherheit", chNOn: "{n} an", chAllOff: "alles aus", chNHeat: "{n} heizen", chOneHeat: "1 heizt", chNOpen: "{n} von {m} offen", chAllClosed: "alle zu", chSecOpen: "{n} offen", chSecOk: "alles zu", ovLight: "Was leuchtet", ovClimate: "Raumklima", ovBlinds: "Rollläden", ovSecurity: "Fenster, Türen und Schlösser", ovNoLight: "Alle Lichter sind aus.", ovSecOk: "Alles zu und verriegelt.", allUp: "Alle auf", allDown: "Alle zu", lightsOff: "Alle Lichter aus", heatsNow: "heizt",
+    chLight: "Licht", chClimate: "Klima", chBlinds: "Rollläden", chSecurity: "Sicherheit", chNOn: "{n} an", chAllOff: "alles aus", chNHeat: "{n} heizen", chOneHeat: "1 heizt", chNOpen: "{n} von {m} offen", chAllClosed: "alle zu", chSecOpen: "{n} offen", chSecOk: "alles zu", ovLight: "Was leuchtet", ovClimate: "Raumklima", ovBlinds: "Rollläden", ovSecurity: "Fenster, Türen und Schlösser", ovNoLight: "Alle Lichter sind aus.", ovSecOk: "Alles zu und verriegelt.", allUp: "Alle auf", allDown: "Alle zu", lightsOff: "Alle Lichter aus", heatsNow: "heizt", ovHeatNow: "Heizt gerade · {n}", ovOtherRooms: "Weitere Räume",
     pairTitle: "Tablet verbinden", pairText: "Öffne in FHEM das Gerät des Dashboards und scanne den QR-Code mit der Kamera dieses Tablets. Oder gib den Code ein, der dort steht.",
     pairButton: "Verbinden", pairWrong: "Der Code stimmt nicht oder ist abgelaufen. Lade die Seite in FHEM neu für einen neuen Code.",
     whereTitle: "Wo steht dieses Tablet?", whereText: "Wir haben {rooms} Räume und {tiles} Geräte gefunden. Wähle den Platz, den Rest machen wir.",
@@ -119,7 +119,7 @@
     allOffN: "All off ({n})", beforeLeave: "Before you leave", stillOpen: "Still open or on.",
     allClosed: "Everything closed and off.", nowOn: "Open and on right now", lightsOn: "{n} lights on", deviceOn: "1 device on", devicesOn: "{n} devices on", humidity: "Humidity", temperature: "Temperature",
     lightOn: "1 light on", atHome: "{n} at home", nobody: "Nobody at home",
-    chLight: "Light", chClimate: "Climate", chBlinds: "Blinds", chSecurity: "Security", chNOn: "{n} on", chAllOff: "all off", chNHeat: "{n} heating", chOneHeat: "1 heating", chNOpen: "{n} of {m} open", chAllClosed: "all closed", chSecOpen: "{n} open", chSecOk: "all closed", ovLight: "What is on", ovClimate: "Room climate", ovBlinds: "Blinds", ovSecurity: "Windows, doors and locks", ovNoLight: "All lights are off.", ovSecOk: "Everything closed and locked.", allUp: "All up", allDown: "All down", lightsOff: "All lights off", heatsNow: "heating",
+    chLight: "Light", chClimate: "Climate", chBlinds: "Blinds", chSecurity: "Security", chNOn: "{n} on", chAllOff: "all off", chNHeat: "{n} heating", chOneHeat: "1 heating", chNOpen: "{n} of {m} open", chAllClosed: "all closed", chSecOpen: "{n} open", chSecOk: "all closed", ovLight: "What is on", ovClimate: "Room climate", ovBlinds: "Blinds", ovSecurity: "Windows, doors and locks", ovNoLight: "All lights are off.", ovSecOk: "Everything closed and locked.", allUp: "All up", allDown: "All down", lightsOff: "All lights off", heatsNow: "heating", ovHeatNow: "Heating now · {n}", ovOtherRooms: "Other rooms",
     pairTitle: "Connect tablet", pairText: "Open the dashboard device in FHEM and scan the QR code with the camera of this tablet, or enter the code shown there.",
     pairButton: "Connect", pairWrong: "Wrong or expired code. Reload the page in FHEM for a new code.",
     whereTitle: "Where is this tablet?", whereText: "We found {rooms} rooms and {tiles} devices. Choose the place, we do the rest.",
@@ -2497,12 +2497,23 @@
       }) : '<div class="allclear">' + I("check", 26) + " " + esc(t("ovNoLight")) + "</div>";
       if (on.length > 1 && !ro) { actions = '<button class="pill primary" data-ovall="lights">' + I("power", 20) + " " + esc(t("lightsOff")) + "</button>"; }
     } else if (kind === "climate") {
-      title = t("ovClimate");
-      body = roomClimates().map(function (c) {
+      // what heats right now comes first and stands out, like with good night
+      var climates = roomClimates(), heating = climates.filter(function (c) { return c.heats; }), rest = climates.filter(function (c) { return !c.heats; });
+      title = t("ovClimate"); lead = heating.length ? (heating.length === 1 ? t("chOneHeat") : t("chNHeat", { n: heating.length })) : "";
+      if (heating.length) {
+        body += '<div class="section ovroom rtsec heat"><span>' + I("flame", 18) + " " + esc(t("ovHeatNow", { n: heating.length })) + "</span></div>";
+        body += heating.map(function (c) {
+          var tl = S.tiles[c.thermostat], sub = [];
+          if (tl && tl.name && tl.name !== c.room) { sub.push(tl.name); }
+          if (c.target !== undefined) { sub.push(t("target") + " " + num(c.target) + "°"); }
+          return '<div class="row tap ovheat" data-ovopen="' + esc(c.id) + '"><div class="ic">' + I("flame") + '</div><div class="t"><b>' + esc(c.room) + "</b><span>" + esc(sub.join(" · ")) + '</span></div><div class="ovtemp">' + num(c.temp) + "°</div>" + I("chev") + "</div>";
+        }).join("");
+        if (rest.length) { body += '<div class="section ovroom rtsec stays">' + esc(t("ovOtherRooms")) + "</div>"; }
+      }
+      body += rest.map(function (c) {
         var color = tempColor(c.temp), sub = [];
         if (c.target !== undefined) { sub.push(t("target") + " " + num(c.target) + "°"); }
         if (c.humidity !== undefined) { sub.push(Math.round(c.humidity) + " %"); }
-        if (c.heats) { sub.push(t("heatsNow")); }
         return '<div class="row tap" data-ovopen="' + esc(c.id) + '"><div class="ic" style="background:' + color + "26;color:" + color + '">' + I("thermo") + '</div><div class="t"><b>' + esc(c.room) + "</b><span>" + esc(sub.join(" · ")) + '</span></div><div class="ovtemp" style="color:' + color + '">' + num(c.temp) + "°</div>" + I("chev") + "</div>";
       }).join("");
     } else if (kind === "blinds") {
