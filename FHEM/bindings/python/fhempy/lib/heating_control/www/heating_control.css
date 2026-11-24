@@ -129,3 +129,12 @@ padding:4px 0;border-bottom:1px solid var(--line)}
 .fhc .sum td{padding:3px 12px 3px 0;vertical-align:top}
 @media (max-width:600px){.fhc .wtherm .trow input[type=text]{width:100%}.fhc .wnav button{flex:1}}
 .fhc .roomoffer{margin:10px 0}
+.fhc .wroom{padding:10px 12px;margin:10px 0}
+.fhc .whead{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.fhc .whead .rname{flex:1;font-size:1.1em;font-weight:600;padding:4px 6px}
+.fhc .del{padding:2px 9px;line-height:1.4}
+.fhc .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.fhc .tchip a{text-decoration:none;margin-left:4px;opacity:.7}
+.fhc .tchip a:hover{opacity:1}
+.fhc .wadd{display:flex;gap:8px;margin:10px 0}
+.fhc .wadd input{flex:1;padding:4px 6px}

@@ -109,7 +109,14 @@ var T2 = {
   w_power: ["Nur nötig, wenn der Schalter keine Leistung misst: der Wert auf dem Display der Pumpe.","Only needed if the switch doesn't measure the power: the value on the display of the pump."],
   w_flow: ["Temperatur nach dem Mischer, die zu den Heizkörpern geht.","Temperature after the mixer which goes to the radiators."],
   w_return: ["Für die Wärmeleistung in W (optional).","For the heat in W (optional)."],
-  w_rooms: ["Hake an, welche Thermostate gesteuert werden, und gib jedem einen Raum. Vorgeschlagen ist der FHEM-Raum, du kannst einen eigenen Namen eintippen. Thermostate mit demselben Raum werden zusammen gesteuert.","Tick the thermostats to control and give each one a room. The FHEM room is suggested, you can type your own name. Thermostats with the same room are controlled together."],
+  w_rooms: ["Jeder Raum ist eine Karte. Füge dem Raum seine Thermostate und optional einen Temperatursensor hinzu. Räume kannst du umbenennen, entfernen oder neu anlegen.","Every room is a card. Add its thermostats and optionally a temperature sensor to the room. You can rename, remove or create rooms."],
+  room_remove: ["Entfernen","Remove"],
+  room_empty: ["Noch kein Thermostat in diesem Raum.","No thermostat in this room yet."],
+  add_thermostat: ["＋ Thermostat hinzufügen …","＋ Add thermostat …"],
+  room_sensor: ["Temperatursensor im Raum","Temperature sensor in the room"],
+  room_new: ["Name des neuen Raums","Name of the new room"],
+  room_add: ["Raum anlegen","Create room"],
+  room_free: ["Noch keinem Raum zugeordnet (wird nicht gesteuert)","Not in a room yet (not controlled)"],
   w_need_mixer: ["Bitte den Mischer auswählen.","Please choose the mixer."],
   w_need_pump: ["Bitte die Pumpe auswählen.","Please choose the pump."],
   w_need_flow: ["Bitte die Vorlauf-Temperatur auswählen.","Please choose the flow temperature."]
@@ -119,6 +126,24 @@ var L = T[window.FHC_LANG] || T.en;
 var D = window.FHC_DATA || {};
 var root = document.getElementById("fhc");
 if (!root) return;
+if (window.FHC_ROOM) roomLayout();
+// own room: only the page, without the heading and the device row of FHEMWEB
+function roomLayout() {
+  var holder = document.getElementById("fhcRoom"), row = holder && holder.closest("tr");
+  if (!row) return;
+  var page = row.closest("table");
+  while (page.parentElement && page.parentElement.closest("table")) page = page.parentElement.closest("table");
+  page.parentNode.insertBefore(holder, page);
+  row.style.display = "none";
+  var block = row.closest("table.block");
+  if (!block) return;
+  var shown = Array.prototype.some.call(block.rows, function(r) { return r.style.display !== "none"; });
+  var outer = block.parentElement.closest("tr");
+  if (shown || !outer) return;
+  outer.style.display = "none";
+  var head = outer.previousElementSibling;
+  if (head && head.classList.contains("devTypeTr")) head.style.display = "none";
+}
 var DEV = D.name;
 var hours = 6;
 var editing = null;
@@ -692,11 +717,16 @@ function wizStart(step) {
   v.pump_model = saved.pump_model = st.pump_model || "";
   v.pump_setting = saved.pump_setting = st.pump_setting || "";
   v.pump_power = saved.pump_power = st.pump_power ? String(st.pump_power) : "";
-  v.exclude = saved.exclude = (st.thermostats || []).filter(function(t) { return !t.used; })
-    .map(function(t) { return t.name; }).join(",");
+  // room of each thermostat, "" = not controlled
   v.rooms = {};
-  (st.thermostats || []).forEach(function(t) { v.rooms[t.name] = t.room; });
+  (st.thermostats || []).forEach(function(t) { v.rooms[t.name] = t.used ? t.room : ""; });
   saved.thermostat_rooms = roomsText(v.rooms);
+  saved.exclude = excludedText(v.rooms);
+  v.roomNames = [];
+  Object.keys(v.rooms).forEach(function(n) {
+    if (v.rooms[n] && v.roomNames.indexOf(v.rooms[n]) < 0) v.roomNames.push(v.rooms[n]);
+  });
+  v.roomNames.sort(function(a, b) { return a.localeCompare(b); });
   v.thermometers = {}; saved.thermometers = "";
   var parts = [];
   Object.keys(st.thermometers || {}).forEach(function(key) {
@@ -713,6 +743,10 @@ function roomKey(name) {
     .replace(/[^A-Za-z0-9_]/g, "_").replace(/^_+|_+$/g, "");
   return key || "room";
 }
+function excludedText(rooms) {
+  return (D.setup.thermostats || []).filter(function(t) { return !rooms[t.name]; })
+    .map(function(t) { return t.name; }).join(",");
+}
 // own rooms: only where they differ from the FHEM room
 function roomsText(rooms) {
   return (D.setup.thermostats || []).filter(function(t) { return rooms[t.name] && rooms[t.name] !== t.fhem_room; })
@@ -720,14 +754,11 @@ function roomsText(rooms) {
 }
 // rooms with at least one controlled thermostat: [[name, key]]
 function usedRooms() {
-  var off = W.v.exclude ? W.v.exclude.split(",") : [], seen = {}, list = [];
-  (D.setup.thermostats || []).forEach(function(t) {
-    var name = W.v.rooms[t.name] || t.room;
-    if (off.indexOf(t.name) >= 0 || seen[name]) return;
-    seen[name] = true;
-    list.push([name, roomKey(name)]);
-  });
-  return list.sort(function(a, b) { return a[0].localeCompare(b[0]); });
+  return W.v.roomNames.filter(function(name) { return thermostatsIn(name).length; })
+    .map(function(name) { return [name, roomKey(name)]; });
+}
+function thermostatsIn(room) {
+  return (D.setup.thermostats || []).filter(function(t) { return W.v.rooms[t.name] === room; });
 }
 function thermometersText() {
   return usedRooms().filter(function(r) { return W.v.thermometers[r[1]]; })
@@ -739,7 +770,7 @@ var STEP_ATTRS = {
   rooms: ["thermostat_rooms", "exclude_thermostats", "thermometers"], outdoor: ["outdoor_sensor"]
 };
 function wizValue(attr) {
-  if (attr === "exclude_thermostats") return W.v.exclude;
+  if (attr === "exclude_thermostats") return excludedText(W.v.rooms);
   if (attr === "thermometers") return thermometersText();
   if (attr === "thermostat_rooms") return roomsText(W.v.rooms);
   if (attr === "pump_model") return W.v.pump_model.replace(/ /g, "_");
@@ -763,9 +794,7 @@ function wizSave(name) {
 }
 function wizMissing() {
   var m = [];
-  var all = (D.setup.thermostats || []).length;
-  var excluded = W.v.exclude ? W.v.exclude.split(",").length : 0;
-  if (!all || excluded >= all) m.push(L.thermostats);
+  if (!usedRooms().length) m.push(L.thermostats);
   if (!W.v.mixer) m.push(L.mixer);
   if (!W.v.pump) m.push(L.pump);
   if (!W.v.flow_sensor) m.push(L.flow);
@@ -816,7 +845,8 @@ function comboPick(input, i) {
   render();
 }
 function setWizValue(key, value) {
-  if (key.indexOf("therm_") === 0) W.v.thermometers[key.slice(6)] = value;
+  if (key.indexOf("add_") === 0) W.v.rooms[value] = W.v.roomNames[Number(key.slice(4))];
+  else if (key.indexOf("therm_") === 0) W.v.thermometers[key.slice(6)] = value;
   else W.v[key] = value;
 }
 function getWizValue(key) {
@@ -913,15 +943,8 @@ root.addEventListener("change", function(ev) {
   } else if (el.dataset.wiz) {
     W.v[el.dataset.wiz] = el.type === "checkbox" ? (el.checked ? "1" : "0") : el.value;
     if (el.dataset.wiz === "pump_model") render();
-  } else if (el.dataset.troom) {
-    var t = (D.setup.thermostats || []).filter(function(x) { return x.name === el.dataset.troom; })[0];
-    W.v.rooms[el.dataset.troom] = el.value.replace(/[,=]/g, " ").trim() || (t ? t.fhem_room : "");
-    render();
-  } else if (el.dataset.therm) {
-    var off = W.v.exclude ? W.v.exclude.split(",") : [];
-    off = off.filter(function(n) { return n !== el.dataset.therm; });
-    if (!el.checked) off.push(el.dataset.therm);
-    W.v.exclude = off.join(",");
+  } else if (el.dataset.rename !== undefined) {
+    renameRoom(Number(el.dataset.rename), el.value);
     render();
   }
 });
@@ -976,31 +999,36 @@ function stepBody(name) {
       field(L.roles.return_sensor, sensorField("return_sensor", st.sensors.return_sensor.suggestion), L.w_return);
   }
   if (name === "rooms") {
-    var off = v.exclude ? v.exclude.split(","): [], names = {};
-    var list = (st.thermostats || []).slice();
-    if (!list.length) return '<p class="sugg">' + esc(L.no_rooms) + '</p>';
-    list.forEach(function(t) { names[t.fhem_room] = 1; names[v.rooms[t.name] || t.room] = 1; });
-    h += '<p class="muted">' + esc(L.w_rooms) + '</p><datalist id="fhcRoomNames">' +
-      Object.keys(names).sort(function(a, b) { return a.localeCompare(b); }).map(function(n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>';
-    h += '<div class="wtherm">';
-    list.forEach(function(t) {
-      var used = off.indexOf(t.name) < 0;
-      h += '<div class="trow' + (used ? "" : " off") + '"><label class="chk"><input type="checkbox" data-therm="' + esc(t.name) + '"' +
-        (used ? " checked" : "") + '> ' + esc(t.label) +
-        (t.temp !== null && t.temp !== undefined ? ' <span class="muted">' + num(t.temp, 1, " °C") + '</span>' : '') +
-        '</label><input type="text" list="fhcRoomNames" data-troom="' + esc(t.name) + '" value="' +
-        esc(v.rooms[t.name] || t.room) + '" placeholder="' + esc(L.room) + '"' + (used ? "" : " disabled") + '></div>';
-    });
-    h += '</div>';
-    var used = usedRooms();
-    if (used.length) h += '<h4>' + esc(L.thermometer) + ' <span class="muted">(' + esc(L.optional) + ')</span></h4>';
-    used.forEach(function(r) {
-      if (v.thermometers[r[1]] === undefined) {
-        v.thermometers[r[1]] = (st.thermometers[r[1]] || {}).suggestion || (st.room_thermometers || {})[r[0]] || "";
+    if (!(st.thermostats || []).length) return '<p class="sugg">' + esc(L.no_rooms) + '</p>';
+    h += '<p class="muted">' + esc(L.w_rooms) + '</p>';
+    v.roomNames.forEach(function(roomName, i) {
+      var key = roomKey(roomName), inRoom = thermostatsIn(roomName);
+      h += '<div class="card wroom"><div class="whead"><input type="text" class="rname" data-rename="' + i +
+        '" value="' + esc(roomName) + '"><button class="del" data-delroom="' + i + '" title="' + esc(L.room_remove) +
+        '">✕</button></div><label class="f">' + esc(L.thermostats) + '</label><div class="chips">';
+      inRoom.forEach(function(t) {
+        h += '<span class="chip tchip">' + esc(t.label) +
+          (t.temp !== null && t.temp !== undefined ? ' <span class="muted">' + num(t.temp, 1, " °C") + '</span>' : '') +
+          ' <a href="#" data-untherm="' + esc(t.name) + '" title="' + esc(L.room_remove) + '">✕</a></span>';
+      });
+      if (!inRoom.length) h += '<span class="sugg">' + esc(L.room_empty) + '</span>';
+      h += '</div>' + combo("add_" + i, (st.thermostats || []).filter(function(t) {
+        return v.rooms[t.name] !== roomName;
+      }).map(function(t) {
+        return [t.name, t.label + (v.rooms[t.name] ? " – " + v.rooms[t.name] : "")];
+      }), "", "").replace(L.search, L.add_thermostat);
+      if (v.thermometers[key] === undefined) {
+        v.thermometers[key] = (st.thermometers[key] || {}).suggestion || (st.room_thermometers || {})[roomName] || "";
       }
-      var sugg = (st.thermometers[r[1]] || {}).suggestion || (st.room_thermometers || {})[r[0]] || "";
-      h += field(r[0], sensorField("therm_" + r[1], sugg), "");
+      var sugg = (st.thermometers[key] || {}).suggestion || (st.room_thermometers || {})[roomName] || "";
+      h += field(L.room_sensor, sensorField("therm_" + key, sugg), "") + '</div>';
     });
+    h += '<div class="row wadd"><input type="text" id="fhcNewRoom" placeholder="' + esc(L.room_new) +
+      '"><button data-addroom="1">＋ ' + esc(L.room_add) + '</button></div>';
+    var free = (st.thermostats || []).filter(function(t) { return !v.rooms[t.name]; });
+    if (free.length) {
+      h += '<p class="muted">' + esc(L.room_free) + ': ' + esc(free.map(function(t) { return t.label; }).join(", ")) + '</p>';
+    }
     return h;
   }
   if (name === "outdoor") {
@@ -1015,9 +1043,8 @@ function stepBody(name) {
     [L.pump, labelOf(withAll(st.roles.pump.options), v.pump)],
     [L.flow, v.flow_sensor], [L.ret, v.return_sensor],
     [L.rooms, usedRooms().map(function(r) { return r[0]; }).join(", ")],
-    [L.thermostats, (st.thermostats || []).filter(function(t) {
-      return (v.exclude ? v.exclude.split(",") : []).indexOf(t.name) < 0;
-    }).map(function(t) { return t.label; }).join(", ")]
+    [L.thermostats, (st.thermostats || []).filter(function(t) { return v.rooms[t.name]; })
+      .map(function(t) { return t.label; }).join(", ")]
   ];
   h += '<table class="sum">' + rows.map(function(r) {
     return '<tr><td>' + esc(r[0]) + '</td><td><b>' + esc(r[1] || "–") + '</b></td></tr>';
@@ -1070,6 +1097,32 @@ function roomOffer() {
 }
 var lastMissing = null;
 function savedMissing() { return lastMissing || (D.setup.missing || []); }
+function cleanName(text) { return String(text || "").replace(/[,=]/g, " ").replace(/\s+/g, " ").trim(); }
+function renameRoom(i, text) {
+  var old = W.v.roomNames[i], name = cleanName(text);
+  if (!name || name === old || W.v.roomNames.indexOf(name) >= 0) return;
+  W.v.roomNames[i] = name;
+  Object.keys(W.v.rooms).forEach(function(t) { if (W.v.rooms[t] === old) W.v.rooms[t] = name; });
+  W.v.thermometers[roomKey(name)] = W.v.thermometers[roomKey(old)];
+}
+function roomClick2(btn) {
+  var v = W.v;
+  if (btn.dataset.untherm) { v.rooms[btn.dataset.untherm] = ""; render(); return true; }
+  if (btn.dataset.delroom) {
+    var name = v.roomNames[Number(btn.dataset.delroom)];
+    Object.keys(v.rooms).forEach(function(t) { if (v.rooms[t] === name) v.rooms[t] = ""; });
+    v.roomNames.splice(Number(btn.dataset.delroom), 1);
+    render();
+    return true;
+  }
+  if (btn.dataset.addroom) {
+    var input = document.getElementById("fhcNewRoom"), name2 = cleanName(input && input.value);
+    if (name2 && v.roomNames.indexOf(name2) < 0) v.roomNames.push(name2);
+    render();
+    return true;
+  }
+  return false;
+}
 var REQUIRED = {mixer: ["mixer", "w_need_mixer"], pump: ["pump", "w_need_pump"], temps: ["flow_sensor", "w_need_flow"]};
 function setupClick(btn) {
   if (btn.dataset.setup) { wizStart(1); render(); return; }
@@ -1092,6 +1145,7 @@ function setupClick(btn) {
   }
   if (!W) return;
   if (btn.dataset.src) { W.v.heat_source = btn.dataset.src; render(); return; }
+  if (roomClick2(btn)) return;
   var nav = btn.dataset.wnav, name = STEPS[W.step];
   if (!nav) return;
   W.err = "";
@@ -1122,7 +1176,7 @@ function render() {
 }
 
 root.addEventListener("click", function(ev) {
-  var btn = ev.target.closest("button, a[data-setup]");
+  var btn = ev.target.closest("button, a[data-setup], a[data-untherm]");
   if (!btn || !root.contains(btn)) return;
   ev.preventDefault();
   var card = btn.closest(".room");
