@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.24.7 (2026-11-24)
+
+### Features
+
+- **dashboard**: List rooms that heat right now first in the climate overview
+  ([#1050](https://github.com/fhempy/fhempy/pull/1050),
+  [`6b90798`](https://github.com/fhempy/fhempy/commit/6b90798949f286fb35f1bdb55fa906bc5ed845b5))
+
+- **dashboard**: Show power, voltage, current and energy of Tasmota plugs
+  ([#1052](https://github.com/fhempy/fhempy/pull/1052),
+  [`4c7271f`](https://github.com/fhempy/fhempy/commit/4c7271f9a12b7196e284288db0743a588cd9e14f))
+
+
 ## v2.24.6 (2026-11-24)
 
 ### Bug Fixes
