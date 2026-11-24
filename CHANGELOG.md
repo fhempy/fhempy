@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.24.2 (2026-11-24)
+
+### Features
+
+- **heating_control**: Setup assistant, no control before the start, room of its own
+  ([#1038](https://github.com/fhempy/fhempy/pull/1038),
+  [`e9f2658`](https://github.com/fhempy/fhempy/commit/e9f2658992bc9318b36a233c41695fe7b1bbecfb))
+
+
 ## v2.24.1 (2026-11-23)
 
 ### Bug Fixes
