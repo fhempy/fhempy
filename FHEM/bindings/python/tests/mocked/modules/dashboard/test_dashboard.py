@@ -1464,6 +1464,41 @@ def test_routine_steps():
     assert undo == [("lamp", "on", None), ("blind", "position", 60)]
 
 
+def test_routine_switches_off_media():
+    tiles = {
+        # with on/off: off when on, even if nothing plays
+        "bose": {"id": "bose", "kind": "media", "media": {"power": True}, "state": {"on": True, "playing": False}},
+        "bose_off": {"id": "bose_off", "kind": "media", "media": {"power": True}, "state": {"on": False}},
+        # without on/off: pause what plays
+        "cast": {"id": "cast", "kind": "media", "media": {"power": False}, "state": {"on": True, "playing": True}},
+        "cast_idle": {"id": "cast_idle", "kind": "media", "media": {"power": False}, "state": {"on": True, "playing": False}},
+        "kept": {"id": "kept", "kind": "media", "media": {"power": True}, "state": {"on": True}, "keep_on": True},
+    }
+    off = list(tiles)
+    for mode in model.ROUTINES:
+        steps, undo = model.routine_steps(tiles, mode, off, [])
+        assert steps == [("bose", "off", None), ("cast", "pause", None)]
+        assert undo == [("bose", "on", None), ("cast", "play", None)]
+    assert [i for i, t in tiles.items() if model.media_goes_off(t)] == ["bose", "cast"]
+
+
+def test_routine_media_commands():
+    bose_dev = bose()
+    bose_dev["NAME"] = "speaker"
+    item = model.tile(bose_dev, "Wohnzimmer")
+    assert model.media_goes_off(item)
+    steps, _ = model.routine_steps({item["id"]: item}, "away", [item["id"]], [])
+    assert [model.command(item, bose_dev, a, v) for _, a, v in steps] == [["off"]]
+    cast = fake_home.device(
+        "PythonModule", "Küche", "play pause stop next volume:slider,0,1,100",
+        {"state": "playing", "playStatus": "PLAYING"}, fhempytype="googlecast",
+    )
+    cast["NAME"] = "cast"
+    item = model.tile(cast, "Küche")
+    steps, _ = model.routine_steps({item["id"]: item}, "night", [item["id"]], [])
+    assert [model.command(item, cast, a, v) for _, a, v in steps] == [["pause"]]
+
+
 @pytest.mark.asyncio
 async def test_good_night_and_undo(module):
     _, answer = await pair(module)
