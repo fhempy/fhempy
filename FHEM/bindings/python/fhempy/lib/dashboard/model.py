@@ -424,6 +424,8 @@ def tile_state(kind, info):
         state = {k: v for k, v in media.state(info).items() if v is not None}
         state["presets"] = media.presets(info)
         return state
+    if kind == "blind":
+        info = blind_info(info)
     state = {k: v for k, v in kinds.state(kind, info).items() if v is not None}
     if kind == "contact":
         raw = str(_reading(info, "contact", "state") or "").lower()
@@ -469,6 +471,53 @@ def tile_state(kind, info):
         if seen:
             state["seen"] = seen[:13]
     return state
+
+
+# state words of blinds which say where the blind is (not where it moves)
+BLIND_OPEN_WORDS = ("open", "opened", "offen", "auf")
+BLIND_CLOSED_WORDS = ("close", "closed", "geschlossen", "zu")
+
+
+def _blind_evidence(info):
+    """True: the device counts its position from open (0 = open), False:
+    from closed (0 = closed, like most FHEM modules), None: it doesn't say.
+    Modules differ (e.g. ROLLO and Warema count from open, zigbee2mqtt and
+    HomeMatic from closed), the state tells when the blind is at its end:
+    e.g. state CLOSE with position 0 is a blind which counts from closed."""
+    raw = kinds.number(_reading(info, *kinds.POSITION_SETS))
+    if raw is None or 1 < raw < 99:
+        return None
+    word = str(_reading(info, "state") or "").strip().lower()
+    if word in BLIND_CLOSED_WORDS:
+        closed = True
+    elif word in BLIND_OPEN_WORDS:
+        closed = False
+    else:
+        return None
+    return (raw <= 1) != closed
+
+
+def blind_inverted(info):
+    """counts the device the position from open? Learned from its state at
+    the ends (kept in info['blind_learned'] while the blind moves in between),
+    otherwise matterInvert or the module"""
+    learned = info.get("blind_learned")
+    found = _blind_evidence(info)
+    if found is not None:
+        if isinstance(learned, dict):
+            learned["inverted"] = found
+        return found
+    if isinstance(learned, dict) and "inverted" in learned:
+        return learned["inverted"]
+    return kinds.position_inverted(info)
+
+
+def blind_info(info):
+    """info of a blind with matterInvert set to what the device does, for
+    the state and the commands of the matter_bridge devices"""
+    attrs = dict(info.get("attrs") or {})
+    attrs["matterInvert"] = "1" if blind_inverted(info) else "0"
+    return {**info, "attrs": attrs}
 
 
 def heating_state(info):
@@ -1392,6 +1441,8 @@ def command(item, info, action, value=None):
         wanted = None
     if wanted is None:
         return []
+    if item["kind"] == "blind":
+        info = blind_info(info)
     return kinds.fhem_commands(item["kind"], info, wanted)
 
 

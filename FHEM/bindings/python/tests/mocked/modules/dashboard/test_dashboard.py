@@ -141,6 +141,42 @@ def test_low_batteries_also_without_tile():
     assert low[0]["level"] is None
 
 
+def _blind(type_, readings, attrs=None):
+    return {
+        "NAME": "cover",
+        "TYPE": type_,
+        "sets": "open close stop position:slider,0,1,100",
+        "readings": readings,
+        "attrs": attrs or {},
+        "blind_learned": {},
+    }
+
+
+def test_blind_position_follows_the_state_of_the_device():
+    # zigbee2mqtt/MQTT: 0 = closed, state CLOSE says so
+    info = _blind("MQTT2_DEVICE", {"state": "CLOSE", "position": "0"})
+    assert model.tile_state("blind", info)["position"] == 0
+    # counts from open (like Matter or ROLLO) but its module isn't known
+    info = _blind("MQTT2_DEVICE", {"state": "closed", "position": "100"})
+    assert model.tile_state("blind", info)["position"] == 0
+    tile = {"id": "cover", "kind": "blind", "state": {"position": 0}}
+    assert model.command(tile, info, "position", 100) == ["position 0"]
+    # learned at the end, kept while it moves (state without an end)
+    info["readings"] = {"state": "stopped", "position": "30"}
+    assert model.tile_state("blind", info)["position"] == 70
+    assert model.command(tile, info, "position", 20) == ["position 80"]
+    # the state wins over matterInvert and the module
+    info = _blind("ROLLO", {"state": "CLOSE", "position": "0"}, {"matterInvert": "1"})
+    assert model.tile_state("blind", info)["position"] == 0
+    info = _blind("MQTT2_DEVICE", {"state": "open", "position": "0"})
+    assert model.tile_state("blind", info)["position"] == 100
+    # nothing to learn: matterInvert or the module as before
+    info = _blind("ROLLO", {"state": "position-30", "position": "30"})
+    assert model.tile_state("blind", info)["position"] == 70
+    info = _blind("MQTT2_DEVICE", {"state": "stopped", "position": "30"})
+    assert model.tile_state("blind", info)["position"] == 30
+
+
 def test_commands():
     fake = FakeFhem()
     infos = fake.infos(fake.devices)

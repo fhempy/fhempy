@@ -386,6 +386,8 @@ class dashboard(generic.FhemModule):
         self.ca_pem = ""
         # covers of the presets of music players, learned while they play
         self.preset_art = {}
+        # blinds: does the device count its position from open, see model
+        self.blinds = {}
         self._preset_learners = {}
         self._images = {}
         # until Define has read the attributes, e.g. when FHEMWEB shows the
@@ -1035,6 +1037,8 @@ class dashboard(generic.FhemModule):
         for name, info in self.infos.items():
             if media.is_media(info):
                 info["preset_art"] = self.preset_art.setdefault(name, {})
+            # what a blind told about its position, also after a reload
+            info["blind_learned"] = self.blinds.setdefault(name, {})
         self._head_infos = {n: i for n, i in self.infos.items() if model.in_header(i)}
         before = (self.data, self.head)
         # the alarm system gets no tile: "All off" must not disarm it
