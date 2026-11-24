@@ -218,21 +218,48 @@ def test_pump_flow_rises_with_power():
 
 
 def test_schedule_parse_format_and_switch():
+    # the old form: comfort periods, the rest eco
     week = schedule.parse("Mo-Fr 06:00-08:00,16:30-22:00; Sa,So 07:30-23:00")
-    assert schedule.to_text(week) == "Mo-Fr 06:00-08:00,16:30-22:00; Sa-Su 07:30-23:00"
+    assert schedule.to_text(week) == (
+        "Mo-Fr 00:00 eco, 06:00 comfort, 08:00 eco, 16:30 comfort, 22:00 eco; "
+        "Sa-Su 00:00 eco, 07:30 comfort, 23:00 eco"
+    )
     monday = datetime.datetime(2026, 11, 23, 7, 0)
-    assert schedule.is_comfort(week, monday)
+    assert schedule.value_at(week, monday) == "comfort"
     assert schedule.next_switch(week, monday) == monday.replace(hour=8)
     saturday_night = datetime.datetime(2026, 11, 28, 23, 30)
     assert schedule.next_switch(week, saturday_night) == datetime.datetime(
         2026, 11, 29, 7, 30
     )
-    assert schedule.to_text(schedule.parse("Mo - ")) == "Mo-Su -"
+    assert schedule.to_text(schedule.parse("Mo - ")) == "Mo-Su eco"
     with pytest.raises(ValueError):
         schedule.parse("Mo 08:00-07:00")
     with pytest.raises(ValueError):
         schedule.parse("Xy 08:00-09:00")
-    assert sum(schedule.day_bar(week, 0)) == 4 + 11
+    with pytest.raises(ValueError):
+        schedule.parse("Mo 06:00 45")
+    with pytest.raises(ValueError):
+        schedule.parse("Mo 06:00-08:00, 09:00 21")
+
+
+def test_schedule_with_own_temperatures():
+    week = schedule.parse(
+        "Mo-Fr 00:00 17, 06:00 21,5, 08:00 18, 12:00 20, 16:00 21, 22:00 17; Sa-So 15"
+    )
+    assert schedule.to_text(week) == (
+        "Mo-Fr 00:00 17, 06:00 21.5, 08:00 18, 12:00 20, 16:00 21, 22:00 17; Sa-Su 15"
+    )
+    monday = datetime.datetime(2026, 11, 23, 7, 0)
+    assert schedule.value_at(week, monday) == pytest.approx(21.5)
+    assert schedule.next_switch(week, monday) == monday.replace(hour=8)
+    sunday = datetime.datetime(2026, 11, 29, 12, 0)
+    assert schedule.value_at(week, sunday) == pytest.approx(15)
+    assert schedule.next_switch(week, sunday) == datetime.datetime(2026, 11, 30, 0, 0)
+    # a day without 00:00 keeps the last temperature of the day before
+    week = schedule.parse("Mo-Su 06:00 21, 22:00 16")
+    assert schedule.value_at(week, monday.replace(hour=3)) == pytest.approx(16)
+    # always the same: no switch at all
+    assert schedule.next_switch(schedule.parse("Mo-Su 15"), monday) is None
 
 
 def test_curve_learns_per_outdoor_temperature():
@@ -374,7 +401,10 @@ async def test_set_commands(module):
         {},
     )
     assert ret == ""
-    assert r["room_Living_schedule"] == "Mo-Fr 05:30-07:00; Sa-Su -"
+    assert (
+        r["room_Living_schedule"]
+        == "Mo-Fr 00:00 eco, 05:30 comfort, 07:00 eco; Sa-Su eco"
+    )
     assert "invalid" in await module.Set(
         module.hash, [NAME, "schedule", "Living", "Mo", "6-7"], {}
     )
@@ -382,7 +412,30 @@ async def test_set_commands(module):
         await module.Set(module.hash, [NAME, "copy_schedule", "Living", "all"], {})
         == ""
     )
-    assert schedule.to_text(module.rooms["Bath"].week) == "Mo-Fr 05:30-07:00; Sa-Su -"
+    assert schedule.to_text(module.rooms["Bath"].week) == schedule.to_text(
+        module.rooms["Living"].week
+    )
+    # own temperatures per time
+    ret = await module.Set(
+        module.hash,
+        [
+            NAME,
+            "schedule",
+            "Bath",
+            "Mo-So",
+            "00:00",
+            "16,",
+            "06:00",
+            "22.5,",
+            "09:00",
+            "16",
+        ],
+        {},
+    )
+    assert ret == ""
+    assert r["room_Bath_schedule"] == "Mo-Su 00:00 16, 06:00 22.5, 09:00 16"
+    view = module.rooms["Bath"].view()
+    assert view["week"]["0"] == [[0, 16.0], [360, 22.5], [540, 16.0]]
     assert (
         await module.Set(module.hash, [NAME, "comfort_temp", "all", "21.5"], {}) == ""
     )

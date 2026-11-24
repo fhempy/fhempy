@@ -141,3 +141,12 @@ padding:4px 0;border-bottom:1px solid var(--line)}
 .fhc .alert{margin:6px 0 2px;padding:4px 8px;border-radius:8px;font-size:.9em;font-weight:600;
   background:#ffe3e3;color:#a61e1e}
 .fhc .alert.battery{background:#fff0db;color:#8a4500}
+.fhc .bar i.s{opacity:1;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-style:normal;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+.fhc .editor .bar{cursor:default}
+.fhc .editor .bar i.s{font-size:12px}
+.fhc .pts{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
+.fhc .pt{display:flex;align-items:center;gap:8px}
+.fhc .pt .muted{min-width:24px}
+.fhc .pt input[type=time]{width:110px;padding:4px 6px}
+.fhc .pt input[type=number]{width:72px;padding:4px 6px}
