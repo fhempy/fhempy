@@ -138,3 +138,6 @@ padding:4px 0;border-bottom:1px solid var(--line)}
 .fhc .tchip a:hover{opacity:1}
 .fhc .wadd{display:flex;gap:8px;margin:10px 0}
 .fhc .wadd input{flex:1;padding:4px 6px}
+.fhc .alert{margin:6px 0 2px;padding:4px 8px;border-radius:8px;font-size:.9em;font-weight:600;
+  background:#ffe3e3;color:#a61e1e}
+.fhc .alert.battery{background:#fff0db;color:#8a4500}

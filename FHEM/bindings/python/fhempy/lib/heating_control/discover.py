@@ -40,6 +40,34 @@ VALVE_READINGS = (
     "pi_heating_demand",
     "heating_demand",
 )
+# health of battery devices, by the readings the FHEM modules use
+BATTERY_LOW_FLAGS = (
+    "battery_low",
+    "batteryLow",
+    "lowBattery",
+    "low_battery",
+    "LowBattery",
+)
+BATTERY_TEXT = ("battery", "batteryState", "battery_state", "Battery")
+BATTERY_PERCENT = (
+    "batteryPercent",
+    "battery_percent",
+    "batteryPercentage",
+    "battery_percentage",
+    "battery",
+    "Battery",
+)
+BATTERY_LOW_PERCENT = 20
+LOW_WORDS = ("low", "empty", "critical", "replace", "warning", "true", "on", "yes", "1")
+UNREACHABLE_STATES = (
+    "unreachable",
+    "offline",
+    "dead",
+    "disconnected",
+    "unavailable",
+    "not connected",
+    "timeout",
+)
 WINDOW_READINGS = ("window", "windowOpen", "window_open", "windowopen")
 POWER_READINGS = (
     "power",
@@ -290,3 +318,55 @@ def current_outdoor(info):
         if value is not None:
             return value
     return None
+
+
+def _low_flag(value):
+    return str(value).strip().lower() in LOW_WORDS
+
+
+def battery(readings):
+    """(low, percent or None) from the battery readings of a device"""
+    readings = readings or {}
+    for reading in BATTERY_LOW_FLAGS:
+        if reading in readings and _low_flag(readings[reading]):
+            return True, None
+    percent = None
+    for reading in BATTERY_PERCENT:
+        value = readings.get(reading)
+        if value is None or number(value) is None:
+            continue
+        text = str(value).strip()
+        # voltages (e.g. "2.9" or "3.0 V") are no percent
+        if "v" in text.lower() or (number(value) < 5 and "." in text):
+            continue
+        percent = number(value)
+        break
+    if percent is not None:
+        return percent <= BATTERY_LOW_PERCENT, percent
+    for reading in BATTERY_TEXT:
+        value = readings.get(reading)
+        if value is not None and number(value) is None:
+            word = str(value).strip().lower().split(" ")[0]
+            if word in ("low", "empty", "critical", "replace", "warning"):
+                return True, None
+    return False, None
+
+
+def unreachable(readings):
+    """True if the readings of a device say it can't be reached"""
+    readings = readings or {}
+    if str(readings.get("Activity", "")).strip().lower() == "dead":
+        return True
+    for reading in ("availability", "available", "reachable", "connected"):
+        if reading in readings and str(readings[reading]).strip().lower() in (
+            "offline",
+            "false",
+            "0",
+            "no",
+            "unavailable",
+            "unreachable",
+            "disconnected",
+        ):
+            return True
+    state = str(readings.get("state", "")).strip().lower()
+    return state in UNREACHABLE_STATES or "unreachable" in state

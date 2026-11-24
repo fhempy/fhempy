@@ -313,6 +313,8 @@ class Room:
         self.state = "eco"
         self.valve = None
         self.window = False
+        # [{"device", "label", "kind": "unreachable"|"battery", "battery"}]
+        self.alerts = []
 
     def view(self):
         return {
@@ -329,6 +331,7 @@ class Room:
             "override_until": self.override[1] if self.override else None,
             "valve": self.valve,
             "window": self.window,
+            "alerts": list(self.alerts),
             "thermostats": list(self.thermostats),
             "thermometer": ":".join(r for r in self.thermometer if r) or "",
         }
@@ -551,7 +554,8 @@ class heating_control(generic.FhemModule):
     async def read_infos(self):
         pattern = (
             "temp|Temp|desired|setpoint|Setpoint|valve|Valve|actuator|demand|"
-            "window|power|Power|^state$|^pct$|^position$|^level$|^brightness$"
+            "window|power|Power|^state$|^pct$|^position$|^level$|^brightness$|"
+            "battery|Battery|^Activity$|^availab|^reachable$|^connected$"
         )
         cmd = (
             "my %r; my $re = " + fhem.perlString(pattern) + ";"
@@ -852,15 +856,8 @@ class heating_control(generic.FhemModule):
             room.target, room.state = room.eco, "eco"
         if old_target is not None and abs(old_target - room.target) > 0.01:
             self.last_target_change = now
-        temps, valves, window = [], [], False
-        for name in room.thermostats:
-            thermostat = self.thermostats[name]
-            temps.append(self.value(name, thermostat["temp"]))
-            if thermostat["valve"]:
-                valves.append(self.value(name, thermostat["valve"]))
-            if thermostat["window"]:
-                state = str(self.values.get(name, {}).get(thermostat["window"], ""))
-                window = window or state.lower() in ("open", "on", "1", "true", "offen")
+        room.alerts = self.alerts_of(room)
+        temps, valves, window = self.thermostat_values(room)
         temps = [t for t in temps if t is not None]
         valves = [v for v in valves if v is not None]
         thermostat_temp = sum(temps) / len(temps) if temps else None
@@ -878,6 +875,54 @@ class heating_control(generic.FhemModule):
         room.window = window
         if window:
             room.state = "window"
+
+    def thermostat_values(self, room):
+        """temperatures, valve positions and window state of the thermostats"""
+        temps, valves, window = [], [], False
+        dead = {a["device"] for a in room.alerts if a["kind"] == "unreachable"}
+        for name in room.thermostats:
+            thermostat = self.thermostats[name]
+            if name not in dead:
+                # an unreachable thermostat only has an old temperature
+                temps.append(self.value(name, thermostat["temp"]))
+            if thermostat["valve"]:
+                valves.append(self.value(name, thermostat["valve"]))
+            if thermostat["window"]:
+                state = str(self.values.get(name, {}).get(thermostat["window"], ""))
+                window = window or state.lower() in ("open", "on", "1", "true", "offen")
+        return temps, valves, window
+
+    def alerts_of(self, room):
+        """thermostats and the room thermometer which can't be reached or
+        whose battery is low"""
+        alerts = []
+        devices = list(room.thermostats)
+        if room.thermometer[0] and room.thermometer[0] not in devices:
+            devices.append(room.thermometer[0])
+        for name in devices:
+            readings = self.values.get(name, {})
+            label = discover.label(name, self.infos.get(name, {}))
+            if discover.unreachable(readings):
+                alerts.append({"device": name, "label": label, "kind": "unreachable"})
+            low, percent = discover.battery(readings)
+            if low:
+                alerts.append(
+                    {
+                        "device": name,
+                        "label": label,
+                        "kind": "battery",
+                        "battery": percent,
+                    }
+                )
+        return alerts
+
+    def alerts_text(self, rooms):
+        parts = [
+            f"{a['device']}: {'battery low' if a['kind'] == 'battery' else 'unreachable'}"
+            for room in rooms
+            for a in room.alerts
+        ]
+        return ", ".join(parts) or "none"
 
     async def send_set(self, definition):
         result = await fhem.sendCommandHash(
@@ -1136,6 +1181,7 @@ class heating_control(generic.FhemModule):
             "vacation": self.vacation_text(),
             "setup_done": self.setup_done or None,
             "state": self.state_text(),
+            "alerts": self.alerts_text(rooms),
         }
         for room in rooms:
             prefix = f"room_{room.key}_"

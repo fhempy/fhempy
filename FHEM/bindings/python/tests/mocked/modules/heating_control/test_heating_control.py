@@ -292,6 +292,22 @@ def test_discover_finds_thermostats_and_suggests():
     assert forecast[0] == (0, 2.0)
 
 
+def test_battery_and_reachability():
+    assert discover.battery({"battery": "low"}) == (True, None)
+    assert discover.battery({"battery": "ok"}) == (False, None)
+    assert discover.battery({"battery": "15"}) == (True, 15.0)
+    assert discover.battery({"battery": "80"}) == (False, 80.0)
+    assert discover.battery({"battery_low": "false", "battery": "90"}) == (False, 90.0)
+    assert discover.battery({"batteryLow": "true"}) == (True, None)
+    # a voltage is no percent
+    assert discover.battery({"battery": "2.9"}) == (False, None)
+    assert discover.unreachable({"Activity": "dead"})
+    assert not discover.unreachable({"Activity": "alive"})
+    assert discover.unreachable({"availability": "offline"})
+    assert discover.unreachable({"state": "UNREACHABLE"})
+    assert not discover.unreachable({"state": "21.0"})
+
+
 def test_parse_until():
     now = datetime.datetime(2026, 11, 23, 15, 0)
     assert hc.parse_until("7d", now) == datetime.datetime(2026, 11, 30)
@@ -513,3 +529,31 @@ async def test_create_room(module):
     sent = [c for c in module.fake.sent if "roomIcons" in c]
     assert sent and "Heating" in sent[-1]
     assert readings()[".control_room"] == "Heating"
+
+
+@pytest.mark.asyncio
+async def test_room_shows_unreachable_thermostat_and_low_battery(module):
+    module.handle_event("th_bath", "Activity", "dead")
+    module.handle_event("living_sensor", "battery", "10")
+    await asyncio.sleep(1.3)
+    bath = module.rooms["Bath"].view()
+    assert bath["alerts"] == [
+        {"device": "th_bath", "label": "th_bath", "kind": "unreachable"}
+    ]
+    # its old temperature isn't used
+    assert bath["actual"] is None
+    living = module.rooms["Living"].view()
+    assert living["alerts"] == [
+        {
+            "device": "living_sensor",
+            "label": "living_sensor",
+            "kind": "battery",
+            "battery": 10.0,
+        }
+    ]
+    r = readings()
+    assert "th_bath: unreachable" in r["alerts"]
+    assert "living_sensor: battery low" in r["alerts"]
+    module.handle_event("th_bath", "Activity", "alive")
+    await asyncio.sleep(1.3)
+    assert module.rooms["Bath"].view()["alerts"] == []
