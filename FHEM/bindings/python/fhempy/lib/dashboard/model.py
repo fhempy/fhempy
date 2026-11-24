@@ -1470,35 +1470,47 @@ def routine_steps(tiles, mode, off_ids, close_ids, lock_ids=()):
     steps, undo = [], []
     for device in off_ids:
         item = tiles.get(str(device))
-        if item is not None and item["kind"] == "media":
-            _media_off(item, steps, undo)
-            continue
         if item is not None:
-            _fan_off(item, steps, undo)
-        if (
-            item is not None
-            and item["kind"] in SWITCHABLE
-            and item["state"].get("on")
-            and not item.get("keep_on")
-        ):
-            steps.append((item["id"], "off", None))
-            undo.append((item["id"], "on", None))
+            _switch_off(item, steps, undo)
     if mode == "night":
-        for device in close_ids:
-            item = tiles.get(str(device))
-            if item is None or item["kind"] != "blind":
-                continue
-            position = item["state"].get("position")
-            if position is None or position > 0:
-                steps.append((item["id"], "position", 0))
-                if position is not None:
-                    undo.append((item["id"], "position", position))
+        _close_blinds(tiles, close_ids, steps, undo)
     if not door_open(tiles):
-        for device in lock_ids:
-            item = tiles.get(str(device))
-            if item is not None and item["kind"] == "lock" and item["state"].get("locked") is False:
-                steps.append((item["id"], "lock", None))
+        _lock(tiles, lock_ids, steps)
     return steps, undo
+
+
+def _switch_off(item, steps, undo):
+    if item["kind"] == "media":
+        _media_off(item, steps, undo)
+        return
+    _fan_off(item, steps, undo)
+    if (
+        item["kind"] in SWITCHABLE
+        and item["state"].get("on")
+        and not item.get("keep_on")
+    ):
+        steps.append((item["id"], "off", None))
+        undo.append((item["id"], "on", None))
+
+
+def _close_blinds(tiles, close_ids, steps, undo):
+    for device in close_ids:
+        item = tiles.get(str(device))
+        if item is None or item["kind"] != "blind":
+            continue
+        position = item["state"].get("position")
+        if position is None or position > 0:
+            steps.append((item["id"], "position", 0))
+            if position is not None:
+                undo.append((item["id"], "position", position))
+
+
+def _lock(tiles, lock_ids, steps):
+    """locks are never unlocked by undo"""
+    for device in lock_ids:
+        item = tiles.get(str(device))
+        if item is not None and item["kind"] == "lock" and item["state"].get("locked") is False:
+            steps.append((item["id"], "lock", None))
 
 
 # the alarm system mode of good night and leaving home
