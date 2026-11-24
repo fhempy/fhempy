@@ -427,10 +427,8 @@ function dayPoints(week, day) {
 // cold blue to warm orange
 function tempColor(t) {
   var x = Math.max(0, Math.min(1, ((Number(t) || 17) - 15) / 8));
-  var c = [[59, 130, 246], [249, 115, 22]].reduce(function(a, b) {
-    return a.map(function(v, i) { return Math.round(v + (b[i] - v) * x); });
-  });
-  return "rgb(" + c.join(",") + ")";
+  var cold = [59, 130, 246], warm = [249, 115, 22];
+  return "rgb(" + cold.map(function(v, i) { return Math.round(v + (warm[i] - v) * x); }).join(",") + ")";
 }
 function segments(pts) {
   return pts.map(function(p, i) {

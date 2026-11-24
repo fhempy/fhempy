@@ -83,7 +83,7 @@ def _minutes(hours, minutes):
 
 def value_of(text):
     """a temperature (float) or the level "comfort"/"eco"; ValueError"""
-    word = str(text).strip().lower().rstrip("°c").strip()
+    word = re.sub(r"\s*°?c?$", "", str(text).strip().lower())
     if word in LEVELS:
         return LEVELS[word]
     try:
