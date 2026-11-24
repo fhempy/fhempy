@@ -2,6 +2,31 @@
 
 <!-- version list -->
 
+## v2.24.4 (2026-11-24)
+
+### Features
+
+- **dashboard**: Good night and leaving home arm the alarm system
+  ([#1043](https://github.com/fhempy/fhempy/pull/1043),
+  [`6bdc9d2`](https://github.com/fhempy/fhempy/commit/6bdc9d22b074b60f8bae8a4d7291cce9983f0b62))
+
+- **dashboard**: Good night and leaving home lock the locks
+  ([#1044](https://github.com/fhempy/fhempy/pull/1044),
+  [`60e21f4`](https://github.com/fhempy/fhempy/commit/60e21f48044241262225732f1aa9ec674fec74aa))
+
+- **dashboard**: Good night and leaving home switch off fans
+  ([#1042](https://github.com/fhempy/fhempy/pull/1042),
+  [`8444a16`](https://github.com/fhempy/fhempy/commit/8444a1623be98f8978dd1bad9bd2530935b91e5b))
+
+- **dashboard**: Leaving home offers to close the blinds when it gets hot
+  ([#1046](https://github.com/fhempy/fhempy/pull/1046),
+  [`591d8ee`](https://github.com/fhempy/fhempy/commit/591d8ee87b25292ecb51ea153787c3f7190a3066))
+
+- **dashboard**: Leaving home offers to start robot vacuums
+  ([#1045](https://github.com/fhempy/fhempy/pull/1045),
+  [`499a175`](https://github.com/fhempy/fhempy/commit/499a1758798040ff149ea3942592f9b21a740d1e))
+
+
 ## v2.24.3 (2026-11-24)
 
 ### Bug Fixes
