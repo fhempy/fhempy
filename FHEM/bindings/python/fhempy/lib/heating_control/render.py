@@ -32,14 +32,17 @@ def _asset(name):
     return text
 
 
-def page(view, language="EN"):
+def page(view, language="EN", room=False):
+    """room: the page in the room of its own instead of the detail page"""
     lang = "de" if str(language).upper().startswith("DE") else "en"
     return (
         "<style>"
         + _asset("heating_control.css")
         + "</style>"
         + '<div id="fhc" class="fhc"></div>'
-        + "<script>window.FHC_LANG="
+        + "<script>window.FHC_ROOM="
+        + ("true" if room else "false")
+        + ";window.FHC_LANG="
         + js_json(lang)
         + ";window.FHC_DATA="
         + js_json(view)

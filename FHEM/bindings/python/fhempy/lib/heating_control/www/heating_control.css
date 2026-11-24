@@ -97,3 +97,35 @@ margin:8px 0}
 .fhc .kpi b{display:block;font-size:1.35em}
 .fhc .kpi .mob{display:none}
 @media (max-width:600px){.fhc svg .tl,.fhc svg .tv,.fhc svg .pillg{display:none}.fhc .kpi .mob{display:block}.fhc .room .temp{font-size:1.7em}}
+.fhc .wiz{max-width:720px}
+.fhc .wiz h3{margin-top:6px}
+.fhc .wiz h4{margin:14px 0 4px 0}
+.fhc .wsteps{display:flex;gap:6px;margin-bottom:4px}
+.fhc .wsteps i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.fhc .wsteps i.d{background:var(--ok)}
+.fhc .wsteps i.c{background:var(--warm)}
+.fhc .wf{margin:10px 0}
+.fhc .wf .hint{font-size:.9em;margin-top:2px}
+.fhc .wnav{margin-top:16px;justify-content:flex-end}
+.fhc .wnav button{min-width:110px}
+.fhc .err{color:#c92a2a}
+.fhc .combo{position:relative;max-width:460px}
+.fhc .combo input{width:100%;padding:8px 10px}
+.fhc .combo-list{position:absolute;z-index:20;left:0;right:0;top:100%;max-height:260px;overflow:auto;
+background:Canvas;color:CanvasText;border:1px solid var(--line);border-radius:8px;
+box-shadow:0 6px 18px rgba(0,0,0,.25);margin-top:2px}
+.fhc .combo-list .opt,.fhc .combo-list .none{padding:8px 10px;cursor:pointer}
+.fhc .combo-list .opt:hover,.fhc .combo-list .opt.act{background:var(--warm);color:#fff}
+.fhc .combo-list .none{opacity:.7;cursor:default}
+.fhc .chk{display:flex;gap:8px;align-items:center;margin:6px 0;cursor:pointer}
+.fhc .srcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:6px 0 12px 0}
+.fhc .src{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px}
+.fhc .src.on{background:rgba(232,89,12,.15);border:2px solid var(--warm)}
+.fhc .src.on span{font-weight:bold}
+.fhc .wtherm .trow{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;justify-content:space-between;
+padding:4px 0;border-bottom:1px solid var(--line)}
+.fhc .wtherm .trow.off{opacity:.55}
+.fhc .wtherm .trow input[type=text]{width:200px}
+.fhc .sum td{padding:3px 12px 3px 0;vertical-align:top}
+@media (max-width:600px){.fhc .wtherm .trow input[type=text]{width:100%}.fhc .wnav button{flex:1}}
+.fhc .roomoffer{margin:10px 0}

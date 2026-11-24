@@ -21,6 +21,7 @@ import re
 import time
 
 from .. import fhem, generic, utils
+from ..core import fhemweb
 from . import controller, curve, discover, pumps, render, schedule
 
 EVENT_DELAY = 1.0
@@ -30,6 +31,7 @@ HEARTBEAT = 300
 HISTORY_SECONDS = 24 * 3600
 HISTORY_STEP = 60
 LIVE_STEP = 10
+ROOM_ICON = "sani_heating"
 LEARN_MIN_MINUTES = 15
 SETTLE_SECONDS = 90 * 60
 PUMP_MIN_SECONDS = 10 * 60
@@ -42,9 +44,12 @@ GETS = {
         "args": ["device"],
         "help": "Number readings of a device as JSON (used by the detail page).",
     },
+    "page": {"help": "The page of the heating control (used by its own room)."},
+    "live": {"help": "Current values as JSON (used by the page)."},
 }
 ROOM_KEY = re.compile(r"[^A-Za-z0-9_]")
-MODES = ("auto", "off")
+# setup: nothing is controlled until the user starts the control
+MODES = ("setup", "auto", "off")
 HEAT_SOURCES = (
     "buffer",
     "heatpump",
@@ -141,6 +146,11 @@ ATTRS = {
         "help": "Room thermometers which replace the temperature of the "
         "thermostats: room=device:reading,room2=device",
     },
+    "thermostat_rooms": {
+        "default": "",
+        "help": "Own rooms instead of the FHEM rooms: "
+        "thermostat=room,thermostat2=room (set in the setup assistant).",
+    },
     "exclude_thermostats": {
         "default": "",
         "help": "Thermostats which are not controlled, comma separated.",
@@ -193,7 +203,9 @@ SETS = {
     "mode": {
         "args": ["mode"],
         "options": ",".join(MODES),
-        "help": "auto: the module controls everything, off: it only measures.",
+        "help": "setup: controls nothing (after define, until the setup is "
+        "finished), auto: the module controls mixer, pump and thermostats "
+        "(starts the control, only with a finished setup), off: it only measures.",
     },
     "room_temp": {
         "args": ["room", "temperature"],
@@ -227,6 +239,12 @@ SETS = {
     "vacation_off": {"help": "End the vacation now."},
     "reset_learning": {"help": "Forget the learned flow temperatures."},
     "rescan": {"help": "Search the devices again now."},
+    "create_room": {
+        "args": ["room"],
+        "params": {"room": {"optional": True}},
+        "help": "Creates a room of its own in FHEMWEB (default Heizungssteuerung "
+        "or Heating) which shows only the page of the heating control.",
+    },
 }
 
 
@@ -324,11 +342,14 @@ class heating_control(generic.FhemModule):
         # read before: while FHEM waits for FW_detailFn it answers no
         # command of another device (e.g. global), the page would time out
         self.language = "EN"
+        self.own_rooms = []
+        self.control_room = ""
         self.found = discover.discover({})
         self.values = {}
         self.rooms = {}
         self.thermostats = {}
-        self.mode = "auto"
+        self.mode = "setup"
+        self.setup_done = ""
         self.vacation = None  # (until timestamp, temperature)
         self.learned = curve.Learned()
         self.mixer_ctl = controller.Mixer()
@@ -464,6 +485,11 @@ class heating_control(generic.FhemModule):
         )
         return str(result or "EN")
 
+    async def read_own_rooms(self):
+        name = fhem.perlString(self.hash["NAME"])
+        result = await fhem.sendCommandHash(self.hash, f"AttrVal({name}, 'room', '')")
+        return [room.strip() for room in str(result or "").split(",") if room.strip()]
+
     async def own_readings(self):
         name = fhem.perlString(self.hash["NAME"])
         cmd = (
@@ -481,9 +507,13 @@ class heating_control(generic.FhemModule):
     async def load_state(self):
         readings = await self.own_readings()
         self.saved = readings
-        self.mode = readings.get("mode", "auto")
+        # only a control the user started once runs on, a new device (or one
+        # from before setup_done existed) waits for the end of the setup
+        self.setup_done = readings.get("setup_done", "")
+        self.control_room = readings.get(".control_room", "")
+        self.mode = readings.get("mode", "setup") if self.setup_done else "setup"
         if self.mode not in MODES:
-            self.mode = "auto"
+            self.mode = "setup"
         self.learned.from_text(readings.get("learned_curve", ""))
         self.heat_total = discover.number(readings.get("heat_energy")) or 0.0
         self.heat_today = discover.number(readings.get("heat_today")) or 0.0
@@ -589,6 +619,7 @@ class heating_control(generic.FhemModule):
             return
         self._reload_handle = None
         self.language = await self.read_language()
+        self.own_rooms = await self.read_own_rooms()
         self.numeric_devices = await self.read_numeric_devices()
         self.infos = await self.read_infos()
         self.found = discover.discover(self.infos, self.hash["NAME"])
@@ -614,7 +645,7 @@ class heating_control(generic.FhemModule):
             if name in excluded:
                 continue
             self.thermostats[name] = thermostat
-            room_name = thermostat["room"]
+            room_name = self.room_of(name)
             key = room_key(room_name)
             room = rooms.get(key)
             if room is None:
@@ -689,6 +720,8 @@ class heating_control(generic.FhemModule):
             if words[2] == "room" and words[1] in self.infos:
                 self.schedule_reload()
             elif words[1] == "global" and words[2] == "language":
+                self.schedule_reload()
+            elif words[1] == self.hash["NAME"] and words[2] == "room":
                 self.schedule_reload()
 
     def thermostat_changed(self, device, value):
@@ -1060,6 +1093,9 @@ class heating_control(generic.FhemModule):
         return 100 - value if self._attr_mixer_invert else value
 
     def state_text(self):
+        if self.mode == "setup":
+            missing = self.missing()
+            return "setup: " + (",".join(missing) if missing else "ready to start")
         if self.mode == "off":
             return "off"
         if self.vacation and self.vacation[0] > time.time():
@@ -1098,6 +1134,7 @@ class heating_control(generic.FhemModule):
             "heat_day": self.heat_day,
             "learned_curve": self.learned.to_text(),
             "vacation": self.vacation_text(),
+            "setup_done": self.setup_done or None,
             "state": self.state_text(),
         }
         for room in rooms:
@@ -1171,11 +1208,19 @@ class heating_control(generic.FhemModule):
         if now - self.last_live < LIVE_STEP:
             return
         self.last_live = now
+        data = self.live_view()
+        script = "if(window.fhcLive)fhcLive(" + render.js_json(data) + ")"
+        await fhem.FW_runJavascript(self.hash, script, self.hash["NAME"])
+        # the page in the room of its own
+        for room in self.own_rooms:
+            if room == self.control_room:
+                await fhem.FW_runJavascript(self.hash, script, "room=" + room)
+
+    def live_view(self):
         data = self.view(history=False)
         if self.history:
             data["point"] = self.history[-1]
-        script = "if(window.fhcLive)fhcLive(" + render.js_json(data) + ")"
-        await fhem.FW_runJavascript(self.hash, script, self.hash["NAME"])
+        return data
 
     # --- detail page data ---
 
@@ -1231,6 +1276,13 @@ class heating_control(generic.FhemModule):
                 "value": ":".join(r for r in room.thermometer if r) or "",
                 "suggestion": ":".join(candidates[0]) if candidates else "",
             }
+        # thermometer suggestion by FHEM room, for rooms named in the setup
+        room_thermometers = {}
+        for thermostat in self.found["thermostats"].values():
+            room = thermostat["room"]
+            candidates = discover.room_thermometers(room, self.found, self.infos)
+            if candidates and room not in room_thermometers:
+                room_thermometers[room] = ":".join(candidates[0])
         model = str(self._attr_pump_model).replace("_", " ")
         return {
             "roles": roles,
@@ -1243,12 +1295,57 @@ class heating_control(generic.FhemModule):
             "pump_models": pumps.model_names(),
             "pump_setting": self._attr_pump_setting,
             "pump_settings": pumps.settings_of(model),
+            "pump_settings_all": pumps.settings_of(None),
+            "no_autoadapt": [
+                m
+                for m in pumps.model_names()
+                if "AUTOADAPT" not in pumps.settings_of(m)
+            ],
+            "mixer_invert": bool(self._attr_mixer_invert),
             "pump_power": self._attr_pump_power,
             "sensors": sensors,
             "thermometers": thermometers,
+            "room_thermometers": room_thermometers,
             "devices": self.sensor_devices(),
             "missing": self.missing(),
+            "thermostats": self.thermostats_view(),
+            # what the control will switch, shown before the user starts it
+            "controlled": {
+                "mixer": split_ref(self._attr_mixer)[0] or "",
+                "pump": split_ref(self._attr_pump)[0] or "",
+                "thermostats": sorted(self.thermostats),
+            },
         }
+
+    def assigned_rooms(self):
+        """own rooms of the thermostats (attribute thermostat_rooms)"""
+        result = {}
+        for part in str(self._attr_thermostat_rooms or "").split(","):
+            name, sep, room = part.partition("=")
+            if sep and name.strip() and room.strip():
+                result[name.strip()] = room.strip()
+        return result
+
+    def room_of(self, thermostat):
+        found = self.found["thermostats"].get(thermostat, {})
+        return self.assigned_rooms().get(thermostat) or found.get("room") or thermostat
+
+    def thermostats_view(self):
+        """all found thermostats, also the excluded ones, for the setup"""
+        result = []
+        for name, thermostat in self.found["thermostats"].items():
+            info = self.infos.get(name, {})
+            result.append(
+                {
+                    "name": name,
+                    "label": discover.label(name, info),
+                    "room": self.room_of(name),
+                    "fhem_room": thermostat["room"],
+                    "temp": self.value(name, thermostat["temp"]),
+                    "used": name in self.thermostats,
+                }
+            )
+        return sorted(result, key=lambda t: (t["room"].lower(), t["label"].lower()))
 
     def sensor_devices(self):
         """[name, label] of all devices with number readings, devices with
@@ -1301,6 +1398,9 @@ class heating_control(generic.FhemModule):
                 ),
             },
             "now": int(time.time()),
+            "control_room": (
+                self.control_room if self.control_room in self.own_rooms else ""
+            ),
         }
         if history:
             data["history"] = list(self.history)
@@ -1338,9 +1438,17 @@ class heating_control(generic.FhemModule):
         return ""
 
     async def set_mode(self, hash, params):
-        if params["mode"] not in MODES:
+        mode = params["mode"]
+        if mode not in MODES:
             return f"mode must be one of {', '.join(MODES)}"
-        self.mode = params["mode"]
+        if mode == "auto":
+            missing = self.missing()
+            if missing:
+                return "Finish the setup first, missing: " + ", ".join(missing)
+            if not self.setup_done:
+                self.setup_done = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        self.mode = mode
+        self.logger.info(f"mode {mode}")
         await self.evaluate()
         return ""
 
@@ -1421,3 +1529,30 @@ class heating_control(generic.FhemModule):
     async def set_rescan(self, hash, params):
         await self.reload()
         return ""
+
+    async def set_create_room(self, hash, params):
+        default = (
+            "Heizungssteuerung" if self.language.upper().startswith("DE") else "Heating"
+        )
+        room = re.sub(r"[,\s]+", "_", str(params.get("room") or default)).strip("_")
+        if not room:
+            return "room name missing"
+        # FHEM waits for this set, the attribute commands run after it
+        self.control_room = room
+        self.create_async_task(self.create_room(room))
+        return ""
+
+    async def create_room(self, room):
+        # alone in the room the page replaces the device row (fhempy_summaryFn)
+        result = await fhemweb.add_room(self.hash, room, ROOM_ICON)
+        if result:
+            self.logger.error(f"create_room {room}: {result}")
+            return
+        await fhem.readingsSingleUpdate(self.hash, ".control_room", room, 0)
+        self.own_rooms = await self.read_own_rooms()
+
+    async def get_page(self, hash, params):
+        return render.page(self.view(), self.language, room=True)
+
+    async def get_live(self, hash, params):
+        return json.dumps(self.live_view(), default=str)

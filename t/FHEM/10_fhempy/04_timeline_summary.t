@@ -7,7 +7,7 @@ our %defs;
 our %modules;
 
 InternalTimer(time()+0.5, sub {
-	plan(7);
+	plan(9);
 
 	CommandDefine(undef, q[fhempy_local BindingsIo 10.33.11.27:15733 fhempy]);
 	RemoveInternalTimer($defs{fhempy_local});
@@ -21,6 +21,8 @@ InternalTimer(time()+0.5, sub {
 	CommandDefine(undef, q[other fhempy wienernetze_smartmeter]);
 	CommandAttr(undef, q[tl room fhempy,Timeline]);
 	CommandAttr(undef, q[other room fhempy]);
+	CommandDefine(undef, q[heizung fhempy heating_control]);
+	CommandAttr(undef, q[heizung room fhempy,Heizungssteuerung]);
 
 	is($modules{fhempy}{FW_summaryFn}, q[fhempy_summaryFn], q[summary function registered]);
 	like(fhempy_summaryFn(q[WEB], q[tl], q[Timeline], {}), qr/fhempyTimelineRoom\("tl"\)/,
@@ -30,6 +32,9 @@ InternalTimer(time()+0.5, sub {
 	is(fhempy_summaryFn(q[WEB], q[tl], q[], {}), U(), q[no timeline outside of a room]);
 	is(fhempy_summaryFn(q[WEB], q[other], q[Timeline], {}), U(), q[other devices keep their row]);
 	is(fhempy_summaryFn(q[WEB], q[missing], q[Timeline], {}), U(), q[unknown device]);
+	like(fhempy_summaryFn(q[WEB], q[heizung], q[Heizungssteuerung], {}), qr/get heizung page/,
+		q[heating control page in a room of its own]);
+	is(fhempy_summaryFn(q[WEB], q[heizung], q[fhempy], {}), U(), q[heating control row in room fhempy]);
 
 	exit(0);
 }, 0);

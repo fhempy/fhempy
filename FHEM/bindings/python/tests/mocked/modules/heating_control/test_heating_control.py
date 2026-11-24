@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import datetime
 import json
 import logging
@@ -82,10 +83,12 @@ class FakeFhem:
     def __init__(self):
         self.devices = devices()
         self.sets = []
+        self.sent = []
         self.own = {}
         self.module = None
 
     async def send(self, hash, code):
+        self.sent.append(code)
         if "my %r; my $re" in code:
             return json.dumps(self.devices)
         if "my @r; foreach" in code:
@@ -129,13 +132,17 @@ ATTRS = {
 }
 
 
-@pytest_asyncio.fixture
-async def module(mocker):
+# a device whose setup the user finished and started
+STARTED = {"mode": "auto", "setup_done": "2026-11-01 10:00"}
+
+
+async def define(mocker, own=None, attrs=None):
     mock_fhem.mock_module(mocker)
     mock_fhem.readings.pop(NAME, None)
     mock_fhem.javascript.clear()
-    mock_fhem.attributes[NAME] = dict(ATTRS)
+    mock_fhem.attributes[NAME] = dict(ATTRS if attrs is None else attrs)
     fake = FakeFhem()
+    fake.own = dict(STARTED if own is None else own)
     mocker.patch("fhempy.lib.fhem.sendCommandHash", fake.send)
     mocker.patch("fhempy.lib.fhem.setEventDevices", set_event_devices)
     mocker.patch("fhempy.lib.fhem.setDefaultAttrs", set_default_attrs)
@@ -150,9 +157,44 @@ async def module(mocker):
         if mod._ready and mod.house:
             break
         await asyncio.sleep(0.01)
-    yield mod
-    await mod.Undefine(mod.hash)
-    mock_fhem.attributes.pop(NAME, None)
+    return mod
+
+
+@contextlib.asynccontextmanager
+async def defined(mocker, own=None, attrs=None):
+    mod = await define(mocker, own=own, attrs=attrs)
+    try:
+        yield mod
+    finally:
+        await mod.Undefine(mod.hash)
+        mock_fhem.attributes.pop(NAME, None)
+
+
+@pytest_asyncio.fixture
+async def module(mocker):
+    async with defined(mocker) as mod:
+        yield mod
+
+
+@pytest.fixture
+def fhem_calls(mocker):
+    """FHEM waits for pages and gets and answers no command of another
+    device meanwhile: every call to FHEM there would block until its timeout"""
+    calls = []
+
+    async def no_fhem(*args, **kwargs):
+        calls.append(args)
+        return ""
+
+    for function in (
+        "sendCommandHash",
+        "sendCommandName",
+        "AttrVal",
+        "ReadingsVal",
+        "InternalVal",
+    ):
+        mocker.patch("fhempy.lib.fhem." + function, no_fhem)
+    return calls
 
 
 def readings():
@@ -359,52 +401,26 @@ async def test_turning_the_thermostat_is_a_manual_override(module):
 
 @pytest.mark.asyncio
 async def test_saved_state_is_restored(mocker):
-    mock_fhem.mock_module(mocker)
-    mock_fhem.attributes[NAME] = dict(ATTRS)
-    fake = FakeFhem()
-    fake.own = {
-        "room_Bath_schedule": "Mo-Su 00:00-24:00",
-        "room_Bath_comfort": "23",
-        "vacation": "off",
-        "mode": "auto",
-        "learned_curve": "0:+2.00:5.0",
-    }
-    mocker.patch("fhempy.lib.fhem.sendCommandHash", fake.send)
-    mocker.patch("fhempy.lib.fhem.setEventDevices", set_event_devices)
-    mocker.patch("fhempy.lib.fhem.setDefaultAttrs", set_default_attrs)
-    mocker.patch.object(
-        hc.heating_control, "history_path", lambda self: "/nonexistent/x.json"
-    )
-    mod = hc.heating_control(logger)
-    await mod.Define({"NAME": NAME, "FHEMPYTYPE": "heating_control"}, [], {})
-    for _ in range(200):
-        if mod.house:
-            break
-        await asyncio.sleep(0.01)
-    try:
+    async with defined(
+        mocker,
+        own={
+            "room_Bath_schedule": "Mo-Su 00:00-24:00",
+            "room_Bath_comfort": "23",
+            "vacation": "off",
+            "learned_curve": "0:+2.00:5.0",
+            **STARTED,
+        },
+    ) as mod:
         assert mod.rooms["Bath"].target == pytest.approx(23)
         assert mod.rooms["Bath"].state == "comfort"
         assert mod.learned.offset(0) == pytest.approx(2.0)
-    finally:
-        await mod.Undefine(mod.hash)
 
 
 @pytest.mark.asyncio
-async def test_detail_page(module, mocker):
-    # FHEM answers no command of another device while it waits for the
-    # page, every call to FHEM here would block until its timeout
-    calls = []
-
-    async def no_fhem(*args, **kwargs):
-        calls.append(args)
-        return ""
-
-    mocker.patch("fhempy.lib.fhem.sendCommandHash", no_fhem)
-    mocker.patch("fhempy.lib.fhem.sendCommandName", no_fhem)
-    for function in ("AttrVal", "ReadingsVal", "InternalVal"):
-        mocker.patch("fhempy.lib.fhem." + function, no_fhem)
+async def test_detail_page(module, fhem_calls):
     html = await module.FW_detailFn(module.hash, ["WEB", NAME, "", {}], {})
-    assert calls == []
+    assert fhem_calls == []
+    assert "window.FHC_ROOM=false" in html
     assert 'id="fhc"' in html
     assert "window.FHC_DATA=" in html
     data = json.loads(html.split("window.FHC_DATA=", 1)[1].split(";</script>", 1)[0])
@@ -433,3 +449,67 @@ async def test_get_readings_of_a_device(module):
     readings = dict(json.loads(result))
     assert readings["Vorlauf"] == "41.5"
     assert readings["temperature_0"] == "40.0"
+
+
+@pytest.mark.asyncio
+async def test_new_device_controls_nothing_until_started(mocker):
+    # all devices are set, but the user didn't start the control yet
+    async with defined(mocker, own={}) as mod:
+        await asyncio.sleep(1.3)
+        assert mod.mode == "setup"
+        assert mod.fake.sets == []
+        assert readings()["state"] == "setup: ready to start"
+        mod.handle_event("boiler_room", "temperature_0", "20.0")
+        mod.handle_event("th_bath", "desired-temp", "24.0")
+        await asyncio.sleep(1.3)
+        assert mod.fake.sets == []
+        assert mod.rooms["Bath"].state != "manual"
+        # the user starts the control
+        assert await mod.Set(mod.hash, [NAME, "mode", "auto"], {}) == ""
+        assert "pumpe on" in mod.fake.sets
+        assert readings()["setup_done"]
+
+
+@pytest.mark.asyncio
+async def test_control_starts_only_with_finished_setup(mocker):
+    attrs = {k: v for k, v in ATTRS.items() if k not in ("mixer", "pump")}
+    # also a device saved before the setup step existed waits for its start
+    async with defined(mocker, own={"mode": "auto"}, attrs=attrs) as mod:
+        assert mod.mode == "setup"
+        assert readings()["state"] == "setup: mixer,pump"
+        ret = await mod.Set(mod.hash, [NAME, "mode", "auto"], {})
+        assert "mixer" in ret and "pump" in ret
+        assert mod.mode == "setup"
+        assert mod.fake.sets == []
+
+
+@pytest.mark.asyncio
+async def test_own_rooms_for_thermostats(mocker):
+    attrs = dict(ATTRS, thermostat_rooms="th_bath=Erdgeschoss,th_living=Erdgeschoss")
+    async with defined(mocker, attrs=attrs) as mod:
+        assert list(mod.rooms) == ["Erdgeschoss"]
+        assert sorted(mod.rooms["Erdgeschoss"].thermostats) == ["th_bath", "th_living"]
+        view = mod.setup_view()
+        rooms = {t["name"]: (t["room"], t["fhem_room"]) for t in view["thermostats"]}
+        assert rooms["th_bath"] == ("Erdgeschoss", "Bath")
+        assert view["room_thermometers"]["Living"] == "living_sensor:temperature"
+
+
+@pytest.mark.asyncio
+async def test_page_of_its_own_room(module, fhem_calls):
+    page = await module.Get(module.hash, [NAME, "page"], {})
+    assert "window.FHC_ROOM=true" in page and 'id="fhc"' in page
+    # no README and no FHEM command while FHEM waits for the page
+    assert "fhempyReadme" not in page
+    live = json.loads(await module.Get(module.hash, [NAME, "live"], {}))
+    assert live["name"] == NAME and "history" not in live
+    assert fhem_calls == []
+
+
+@pytest.mark.asyncio
+async def test_create_room(module):
+    assert await module.Set(module.hash, [NAME, "create_room"], {}) == ""
+    await asyncio.sleep(0.1)
+    sent = [c for c in module.fake.sent if "roomIcons" in c]
+    assert sent and "Heating" in sent[-1]
+    assert readings()[".control_room"] == "Heating"

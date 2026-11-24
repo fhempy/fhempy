@@ -66,6 +66,55 @@ var T = {
       gas: "Gas boiler", oil: "Oil boiler", district: "District heating", solar: "Solar thermal"}
   }
 };
+// texts of the setup: [German, English]
+var T2 = {
+  setup_mode: ["Einrichtung – es wird noch nichts gesteuert","Setup – nothing is controlled yet"],
+  setup_hint: ["Solange die Einrichtung läuft, schaltet das Modul nichts: kein Mischer, keine Pumpe, keine Thermostate. Es zeigt nur die Werte an.","While the setup is running the module switches nothing: no mixer, no pump, no thermostats. It only shows the values."],
+  room_create: ["Eigenen Raum „Heizungssteuerung“ anlegen","Create the room “Heating”"],
+  room_open: ["Raum öffnen","Open room"],
+  room_hint: ["Im eigenen Raum erscheint nur diese Seite, ohne Readings und Attribute.","The room of its own shows only this page, without readings and attributes."],
+  start: ["Steuerung starten","Start control"],
+  save_only: ["Nur speichern","Save only"],
+  change_setup: ["Einrichtung ändern","Change setup"],
+  saved: ["Die Einrichtung ist gespeichert. Die Steuerung startet erst mit „Steuerung starten“.","The setup is saved. The control starts only with “Start control”."],
+  start_missing: ["Starten geht, sobald eingerichtet ist:","Starting is possible once this is set up:"],
+  start_ask: ["Mit „Steuerung starten“ beginnt das Modul, Mischer, Pumpe und diese Thermostate zu schalten.","With “Start control” the module begins to switch the mixer, the pump and these thermostats."],
+  start_yes: ["Ja, Steuerung jetzt starten","Yes, start the control now"],
+  thermostats: ["Thermostate","Thermostats"],
+  back_setup: ["Zur Einrichtung (nichts steuern)","Back to setup (control nothing)"],
+  search: ["Tippen zum Suchen …","Type to search …"],
+  suggested: ["Vorschlag – bitte prüfen","Suggestion – please check"],
+  no_match: ["Nichts gefunden","Nothing found"],
+  reading: ["Wert (Reading)","Value (reading)"],
+  optional: ["optional","optional"],
+  unknown: ["– weiß nicht –","– don't know –"],
+  room: ["Raum","Room"],
+  step: ["Schritt","Step"],
+  back: ["Zurück","Back"],
+  next: ["Weiter","Next"],
+  finish: ["Fertig","Done"],
+  w_go: ["Los geht's","Let's go"],
+  w_welcome_t: ["Willkommen bei der Heizungssteuerung","Welcome to the heating control"],
+  w_welcome: ["Der Assistent geht in 6 kurzen Schritten alles durch: Wärmequelle, Mischer, Pumpe, Temperaturen, Räume und Wetter. Am Ende siehst du eine Übersicht und startest die Steuerung selbst.","The assistant goes through everything in 6 short steps: heat source, mixer, pump, temperatures, rooms and weather. At the end you see an overview and start the control yourself."],
+  w_source_t: ["Wärmequelle","Heat source"],
+  w_mixer_t: ["Mischer","Mixer"],
+  w_pump_t: ["Umwälzpumpe","Circulation pump"],
+  w_temps_t: ["Vorlauf und Rücklauf","Flow and return"],
+  w_rooms_t: ["Räume und Thermostate","Rooms and thermostats"],
+  w_outdoor_t: ["Außentemperatur und Wetter","Outdoor temperature and weather"],
+  w_done_t: ["Übersicht","Overview"],
+  w_mixer: ["Das Gerät, das den Mischer 0–100 % stellt (z. B. ein Shelly).","The device which sets the mixer 0–100 % (e.g. a Shelly)."],
+  w_invert: ["Umgekehrt: 0 % bedeutet voll warm","Inverted: 0 % means fully hot"],
+  w_pump: ["Das Gerät, das die Umwälzpumpe ein- und ausschaltet. Misst es die Leistung, wird die Durchflussmenge daraus geschätzt.","The device which switches the circulation pump on and off. If it measures the power, the flow is estimated from it."],
+  w_power: ["Nur nötig, wenn der Schalter keine Leistung misst: der Wert auf dem Display der Pumpe.","Only needed if the switch doesn't measure the power: the value on the display of the pump."],
+  w_flow: ["Temperatur nach dem Mischer, die zu den Heizkörpern geht.","Temperature after the mixer which goes to the radiators."],
+  w_return: ["Für die Wärmeleistung in W (optional).","For the heat in W (optional)."],
+  w_rooms: ["Hake an, welche Thermostate gesteuert werden, und gib jedem einen Raum. Vorgeschlagen ist der FHEM-Raum, du kannst einen eigenen Namen eintippen. Thermostate mit demselben Raum werden zusammen gesteuert.","Tick the thermostats to control and give each one a room. The FHEM room is suggested, you can type your own name. Thermostats with the same room are controlled together."],
+  w_need_mixer: ["Bitte den Mischer auswählen.","Please choose the mixer."],
+  w_need_pump: ["Bitte die Pumpe auswählen.","Please choose the pump."],
+  w_need_flow: ["Bitte die Vorlauf-Temperatur auswählen.","Please choose the flow temperature."]
+};
+Object.keys(T2).forEach(function(k) { T.de[k] = T2[k][0]; T.en[k] = T2[k][1]; });
 var L = T[window.FHC_LANG] || T.en;
 var D = window.FHC_DATA || {};
 var root = document.getElementById("fhc");
@@ -118,10 +167,17 @@ function stateName(s) {
 function top() {
   var s = stateName(D.state);
   var text = s === "off" ? L.off : (L[s] || s);
+  if (D.mode === "setup") {
+    return '<div class="top"><span class="pill setup">' + esc(L.setup_mode) + '</span></div>';
+  }
   var h = '<div class="top"><span class="pill ' + esc(s) + '">' + esc(text) + '</span>';
   h += '<span class="seg"><button data-mode="auto" class="' + (D.mode === "auto" ? "on" : "") + '">' +
     L.auto + '</button><button data-mode="off" class="' + (D.mode === "off" ? "on" : "") + '">' +
     L.mode_off + '</button></span>';
+  if (D.control_room && !window.FHC_ROOM) {
+    h += '<a class="chip" href="' + FW_root + '?room=' + encodeURIComponent(D.control_room) + '">🏠 ' +
+      esc(L.room_open) + ": " + esc(D.control_room) + '</a>';
+  }
   if (D.vacation && D.vacation.active) {
     h += '<span class="chip vacation">' + L.vac_active + " " + esc(dateText(D.vacation.until)) + '</span>';
   }
@@ -618,151 +674,447 @@ function curveChart() {
     '</span><span class="muted">' + num(c.hours, 0, " " + L.learned_h) + '</span></div>' + s + '</div>';
 }
 
-// --- setup ---
-function select(id, value, options, suggestion) {
-  var found = !value;
-  var h = '<select id="' + id + '"><option value="">' + L.unused + '</option>';
-  options.forEach(function(o) {
-    var sel = o[0] === value || (!value && o[0] === suggestion);
-    if (o[0] === value) found = true;
-    h += '<option value="' + esc(o[0]) + '"' + (sel ? " selected" : "") + '>' + esc(o[1]) +
-      (o[0] === suggestion ? " ★ " + L.suggestion : "") + '</option>';
+// --- setup assistant: step by step, nothing is controlled until the end ---
+var STEPS = ["welcome", "source", "mixer", "pump", "temps", "rooms", "outdoor", "done"];
+var W = null; // {step, v: chosen values, saved: values on the server, err}
+var setupOpen = false;
+function suggested(o) { return o ? (o.value || o.suggestion || "") : ""; }
+function wizStart(step) {
+  var st = D.setup, v = {}, saved = {};
+  ["mixer", "pump"].forEach(function(a) {
+    v[a] = suggested(st.roles[a]); saved[a] = st.roles[a].value || "";
   });
-  if (!found) h += '<option value="' + esc(value) + '" selected>' + esc(value) + '</option>';
-  return h + '</select>';
-}
-// sensor: first the device, then one of its number readings
-var readingCache = null;
-function readingsOf(device) {
-  if (!readingCache) readingCache = {};
-  return readingCache[device];
-}
-function sensorPicker(id, value, suggestion) {
-  var current = value || suggestion || "";
-  var device = current.split(":")[0], reading = current.split(":").slice(1).join(":");
-  var st = D.setup;
-  var h = '<select id="' + id + '_dev" data-sensor="' + id + '"><option value="">' + L.unused + '</option>';
-  var found = !device;
-  (st.devices || []).forEach(function(d) {
-    if (d[0] === device) found = true;
-    h += '<option value="' + esc(d[0]) + '"' + (d[0] === device ? " selected" : "") + '>' + esc(d[1]) + '</option>';
+  ["flow_sensor", "return_sensor", "supply_sensor", "outdoor_sensor"].forEach(function(a) {
+    v[a] = suggested(st.sensors[a]); saved[a] = st.sensors[a].value || "";
   });
-  if (!found) h += '<option value="' + esc(device) + '" selected>' + esc(device) + '</option>';
-  h += '</select> <select id="' + id + '_rd">' + readingOptions(device, reading) + '</select>';
-  if (!value && suggestion) h += ' <span class="sugg">★ ' + L.suggestion + '</span>';
-  return h;
+  v.heat_source = saved.heat_source = D.heat_source || "buffer";
+  v.mixer_invert = saved.mixer_invert = st.mixer_invert ? "1" : "0";
+  v.pump_model = saved.pump_model = st.pump_model || "";
+  v.pump_setting = saved.pump_setting = st.pump_setting || "";
+  v.pump_power = saved.pump_power = st.pump_power ? String(st.pump_power) : "";
+  v.exclude = saved.exclude = (st.thermostats || []).filter(function(t) { return !t.used; })
+    .map(function(t) { return t.name; }).join(",");
+  v.rooms = {};
+  (st.thermostats || []).forEach(function(t) { v.rooms[t.name] = t.room; });
+  saved.thermostat_rooms = roomsText(v.rooms);
+  v.thermometers = {}; saved.thermometers = "";
+  var parts = [];
+  Object.keys(st.thermometers || {}).forEach(function(key) {
+    var t = st.thermometers[key];
+    v.thermometers[key] = suggested(t);
+    if (t.value) parts.push(key + "=" + t.value);
+  });
+  saved.thermometers = parts.join(",");
+  W = {step: step || 0, v: v, saved: saved, err: ""};
 }
-function readingOptions(device, reading) {
-  if (!device) return '<option value=""></option>';
-  var list = readingsOf(device);
-  if (!list) {
-    loadReadings(device, reading);
-    return '<option value="' + esc(reading) + '">' + esc(reading || "…") + '</option>';
+function roomKey(name) {
+  var map = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss", "Ä": "Ae", "Ö": "Oe", "Ü": "Ue"};
+  var key = String(name).replace(/[äöüßÄÖÜ]/g, function(c) { return map[c]; })
+    .replace(/[^A-Za-z0-9_]/g, "_").replace(/^_+|_+$/g, "");
+  return key || "room";
+}
+// own rooms: only where they differ from the FHEM room
+function roomsText(rooms) {
+  return (D.setup.thermostats || []).filter(function(t) { return rooms[t.name] && rooms[t.name] !== t.fhem_room; })
+    .map(function(t) { return t.name + "=" + rooms[t.name]; }).join(",");
+}
+// rooms with at least one controlled thermostat: [[name, key]]
+function usedRooms() {
+  var off = W.v.exclude ? W.v.exclude.split(",") : [], seen = {}, list = [];
+  (D.setup.thermostats || []).forEach(function(t) {
+    var name = W.v.rooms[t.name] || t.room;
+    if (off.indexOf(t.name) >= 0 || seen[name]) return;
+    seen[name] = true;
+    list.push([name, roomKey(name)]);
+  });
+  return list.sort(function(a, b) { return a[0].localeCompare(b[0]); });
+}
+function thermometersText() {
+  return usedRooms().filter(function(r) { return W.v.thermometers[r[1]]; })
+    .map(function(r) { return r[1] + "=" + W.v.thermometers[r[1]]; }).join(",");
+}
+var STEP_ATTRS = {
+  source: ["heat_source", "supply_sensor"], mixer: ["mixer", "mixer_invert"],
+  pump: ["pump", "pump_model", "pump_setting", "pump_power"], temps: ["flow_sensor", "return_sensor"],
+  rooms: ["thermostat_rooms", "exclude_thermostats", "thermometers"], outdoor: ["outdoor_sensor"]
+};
+function wizValue(attr) {
+  if (attr === "exclude_thermostats") return W.v.exclude;
+  if (attr === "thermometers") return thermometersText();
+  if (attr === "thermostat_rooms") return roomsText(W.v.rooms);
+  if (attr === "pump_model") return W.v.pump_model.replace(/ /g, "_");
+  return W.v[attr] || "";
+}
+function wizSaved(attr) {
+  if (attr === "exclude_thermostats") return W.saved.exclude;
+  if (attr === "pump_model") return (W.saved.pump_model || "").replace(/ /g, "_");
+  return W.saved[attr] || "";
+}
+function wizSave(name) {
+  (STEP_ATTRS[name] || []).forEach(function(attr) {
+    var value = wizValue(attr);
+    if (value === wizSaved(attr)) return;
+    if (attr === "mixer_invert" && value === "0" && !wizSaved(attr)) return;
+    attrCmd(attr, value);
+    if (attr === "exclude_thermostats") W.saved.exclude = value;
+    else W.saved[attr] = attr === "pump_model" ? W.v.pump_model : value;
+    if (attr === "heat_source") D.heat_source = value;
+  });
+}
+function wizMissing() {
+  var m = [];
+  var all = (D.setup.thermostats || []).length;
+  var excluded = W.v.exclude ? W.v.exclude.split(",").length : 0;
+  if (!all || excluded >= all) m.push(L.thermostats);
+  if (!W.v.mixer) m.push(L.mixer);
+  if (!W.v.pump) m.push(L.pump);
+  if (!W.v.flow_sensor) m.push(L.flow);
+  return m;
+}
+function attrCmd(attr, value) {
+  send(value ? "attr " + DEV + " " + attr + " " + value : "deleteattr " + DEV + " " + attr);
+}
+
+// type-ahead device field
+var combos = {};
+function labelOf(options, value) {
+  for (var i = 0; i < options.length; i++) if (options[i][0] === value) return options[i][1];
+  return value || "";
+}
+function combo(key, options, value, suggestion) {
+  var id = "fhcW_" + key;
+  combos[id] = {key: key, options: options};
+  return '<div class="combo"><input type="text" id="' + id + '" data-combo="' + id + '" autocomplete="off" ' +
+    'spellcheck="false" placeholder="' + esc(L.search) + '" value="' + esc(labelOf(options, value)) + '">' +
+    '<div class="combo-list" hidden></div></div>' +
+    (value && value === suggestion ? '<div class="sugg">★ ' + esc(L.suggested) + '</div>' : '');
+}
+function withAll(first) {
+  var seen = {}, list = [];
+  first.forEach(function(o) { seen[o[0].split(":")[0]] = true; list.push(o); });
+  (D.setup.devices || []).forEach(function(d) { if (!seen[d[0]]) list.push(d); });
+  return list;
+}
+function comboFill(input, all) {
+  var c = combos[input.dataset.combo], box = input.nextElementSibling;
+  var words = all ? [] : input.value.toLowerCase().split(/\s+/).filter(Boolean);
+  var hits = c.options.filter(function(o) {
+    var text = (o[0] + " " + o[1]).toLowerCase();
+    return words.every(function(w) { return text.indexOf(w) >= 0; });
+  }).slice(0, 60);
+  c.hits = hits; c.active = -1;
+  box.innerHTML = hits.length ? hits.map(function(o, i) {
+    return '<div class="opt" data-i="' + i + '">' + esc(o[1]) + '</div>';
+  }).join("") : '<div class="none">' + esc(L.no_match) + '</div>';
+  box.hidden = false;
+}
+function comboPick(input, i) {
+  var c = combos[input.dataset.combo], o = c.hits && c.hits[i];
+  input.nextElementSibling.hidden = true;
+  if (!o) return;
+  setWizValue(c.key, o[0]);
+  render();
+}
+function setWizValue(key, value) {
+  if (key.indexOf("therm_") === 0) W.v.thermometers[key.slice(6)] = value;
+  else W.v[key] = value;
+}
+function getWizValue(key) {
+  return key.indexOf("therm_") === 0 ? W.v.thermometers[key.slice(6)] || "" : W.v[key] || "";
+}
+root.addEventListener("focusin", function(ev) {
+  var input = ev.target;
+  if (!input.dataset || !input.dataset.combo) return;
+  input.select();
+  comboFill(input, true);
+});
+root.addEventListener("input", function(ev) {
+  var el = ev.target;
+  if (el.dataset && el.dataset.combo) comboFill(el, false);
+  if (el.dataset && el.dataset.wiz && W) W.v[el.dataset.wiz] = el.value.trim();
+});
+root.addEventListener("keydown", function(ev) {
+  var input = ev.target;
+  if (!input.dataset || !input.dataset.combo) return;
+  var c = combos[input.dataset.combo], box = input.nextElementSibling;
+  if (!c.hits) return;
+  if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+    ev.preventDefault();
+    c.active = Math.max(0, Math.min(c.hits.length - 1, c.active + (ev.key === "ArrowDown" ? 1 : -1)));
+    box.querySelectorAll(".opt").forEach(function(el, i) {
+      el.classList.toggle("act", i === c.active);
+      if (i === c.active) el.scrollIntoView({block: "nearest"});
+    });
+  } else if (ev.key === "Enter") {
+    ev.preventDefault();
+    comboPick(input, c.active >= 0 ? c.active : 0);
+  } else if (ev.key === "Escape") {
+    box.hidden = true;
   }
-  var h = "", found = !reading;
+});
+root.addEventListener("mousedown", function(ev) {
+  var opt = ev.target.closest(".combo-list .opt");
+  if (!opt) return;
+  ev.preventDefault();
+  comboPick(opt.closest(".combo").querySelector("input"), Number(opt.dataset.i));
+});
+root.addEventListener("focusout", function(ev) {
+  var input = ev.target;
+  if (!input.dataset || !input.dataset.combo || !W) return;
+  var c = combos[input.dataset.combo];
+  setTimeout(function() {
+    if (!input.isConnected) return;
+    input.nextElementSibling.hidden = true;
+    if (!input.value.trim()) { setWizValue(c.key, ""); render(); return; }
+    input.value = labelOf(c.options, getWizValue(c.key).split(":")[0]) ||
+      labelOf(c.options, getWizValue(c.key));
+  }, 150);
+});
+
+// sensor: first the device, then one of its number readings
+var readingCache = {};
+function sensorField(key, suggestion) {
+  var cur = getWizValue(key), dev = cur.split(":")[0], rd = cur.split(":").slice(1).join(":");
+  var options = withAll([]);
+  var h = combo(key, options, dev, (suggestion || "").split(":")[0]);
+  if (!dev) return h;
+  var list = readingCache[dev];
+  if (!list) { loadReadings(dev); return h + '<div class="muted">…</div>'; }
+  if (!rd && list.length) { rd = list[0][0]; setWizValue(key, dev + ":" + rd); }
+  h += '<label class="f">' + esc(L.reading) + '</label><select data-rd="' + esc(key) + '">';
+  var found = !rd;
   list.forEach(function(r) {
-    if (r[0] === reading) found = true;
-    h += '<option value="' + esc(r[0]) + '"' + (r[0] === reading ? " selected" : "") + '>' + esc(r[0]) +
+    if (r[0] === rd) found = true;
+    h += '<option value="' + esc(r[0]) + '"' + (r[0] === rd ? " selected" : "") + '>' + esc(r[0]) +
       (r[1] !== null && r[1] !== undefined ? " = " + esc(r[1]) : "") + '</option>';
   });
-  if (!found) h += '<option value="' + esc(reading) + '" selected>' + esc(reading) + '</option>';
-  return h || '<option value="">–</option>';
+  if (!found) h += '<option value="' + esc(rd) + '" selected>' + esc(rd) + '</option>';
+  return h + '</select>';
 }
 var loading = {};
-function loadReadings(device, reading) {
+function loadReadings(device) {
   if (loading[device]) return;
   loading[device] = true;
   FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEV + " readings " + device) + "&XHR=1", function(r) {
     delete loading[device];
     var list = [];
     try { list = JSON.parse(r); } catch (e) { list = []; }
-    readingsOf(device);
     readingCache[device] = list;
-    root.querySelectorAll('select[data-sensor]').forEach(function(sel) {
-      if (sel.value !== device) return;
-      var rd = document.getElementById(sel.dataset.sensor + "_rd");
-      rd.innerHTML = readingOptions(device, rd.value || reading);
-    });
+    var active = document.activeElement;
+    if (!(active && root.contains(active) && /INPUT|SELECT/.test(active.tagName))) render();
   });
 }
-var setupDirty = false;
 root.addEventListener("change", function(ev) {
-  var sel = ev.target;
-  if (sel.closest && sel.closest(".setup")) setupDirty = true;
-  if (!sel.dataset || !sel.dataset.sensor) return;
-  var rd = document.getElementById(sel.dataset.sensor + "_rd");
-  rd.innerHTML = readingOptions(sel.value, "");
-});
-function sensorValue(id) {
-  var dev = document.getElementById(id + "_dev"), rd = document.getElementById(id + "_rd");
-  if (!dev || !dev.value) return "";
-  return rd && rd.value ? dev.value + ":" + rd.value : dev.value;
-}
-var setupOpen = null;
-function setup() {
-  var st = D.setup;
-  if (!st) return "";
-  if (setupOpen === null) setupOpen = st.missing && st.missing.length > 0;
-  var h = '<h3><a href="#" data-setup="toggle">' + (setupOpen ? "▾ " : "▸ ") + L.setup_title + '</a></h3>';
-  if (!setupOpen) return h;
-  h += '<div class="card setup">';
-  if (st.missing && st.missing.length) h += '<div class="sugg">' + L.setup_missing + " " + esc(st.missing.join(", ")) + '</div>';
-  h += '<table>';
-  Object.keys(L.roles).forEach(function(attr) {
-    var control;
-    if (st.sensors && st.sensors[attr]) {
-      control = sensorPicker("fhcA_" + attr, st.sensors[attr].value, st.sensors[attr].suggestion);
-    } else {
-      var r = st.roles[attr] || {value: "", options: []};
-      control = select("fhcA_" + attr, r.value, r.options, r.suggestion);
-    }
-    h += '<tr><td>' + L.roles[attr] + '</td><td>' + control +
-      '</td><td><button data-attr="' + attr + '">' + L.apply + '</button></td></tr>';
-  });
-  h += '<tr><td>' + L.source_type + '</td><td>' + select("fhcA_heat_source", D.heat_source,
-    Object.keys(L.sources).map(function(k) { return [k, L.sources[k]]; }), "") +
-    '</td><td><button data-attr="heat_source">' + L.apply + '</button></td></tr>';
-  h += '<tr><td>' + L.pump_model + '</td><td>' + select("fhcA_pump_model", st.pump_model,
-    st.pump_models.map(function(m) { return [m, m]; }), "") + '</td><td><button data-attr="pump_model">' + L.apply + '</button></td></tr>';
-  h += '<tr><td>' + L.pump_setting + '</td><td>' + select("fhcA_pump_setting", st.pump_setting,
-    st.pump_settings.map(function(m) { return [m, m]; }), "") + '</td><td><button data-attr="pump_setting">' + L.apply + '</button></td></tr>';
-  h += '<tr><td>' + L.pump_power + '</td><td><input id="fhcA_pump_power" type="number" min="0" max="100" step="1" value="' +
-    esc(st.pump_power) + '" style="width:80px"></td><td><button data-attr="pump_power">' + L.apply + '</button></td></tr>';
-  h += '<tr><td>' + L.weather + '</td><td colspan="2">' + (st.weather.used ? esc(st.weather.used) : '<span class="muted">' +
-    L.weather_none + '</span>') + '</td></tr>';
-  (D.rooms || []).forEach(function(room) {
-    var t = st.thermometers[room.key] || {value: "", suggestion: ""};
-    h += '<tr><td>' + L.thermometer + ": " + esc(room.name) + '</td><td>' +
-      sensorPicker("fhcT_" + room.key, t.value, t.suggestion) + '</td><td><button data-therm="1">' + L.apply + '</button></td></tr>';
-  });
-  return h + '</table></div>';
-}
-function attrCmd(attr, value) {
-  send(value ? "attr " + DEV + " " + attr + " " + value : "deleteattr " + DEV + " " + attr);
-}
-function setupClick(btn) {
-  if (btn.dataset.setup) { setupOpen = !setupOpen; render(); return; }
-  if (btn.dataset.attr) {
-    var attr = btn.dataset.attr, el = document.getElementById("fhcA_" + attr);
-    var value = el ? el.value.trim() : sensorValue("fhcA_" + attr);
-    if (attr === "pump_model") value = value.replace(/ /g, "_");
-    setupDirty = false;
-    attrCmd(attr, value);
-  } else if (btn.dataset.therm) {
-    var parts = [];
-    (D.rooms || []).forEach(function(room) {
-      var value = sensorValue("fhcT_" + room.key);
-      if (value) parts.push(room.key + "=" + value);
-    });
-    setupDirty = false;
-    attrCmd("thermometers", parts.join(","));
+  var el = ev.target;
+  if (!W || !el.dataset) return;
+  if (el.dataset.rd) {
+    var key = el.dataset.rd, dev = getWizValue(key).split(":")[0];
+    setWizValue(key, dev + ":" + el.value);
+  } else if (el.dataset.wiz) {
+    W.v[el.dataset.wiz] = el.type === "checkbox" ? (el.checked ? "1" : "0") : el.value;
+    if (el.dataset.wiz === "pump_model") render();
+  } else if (el.dataset.troom) {
+    var t = (D.setup.thermostats || []).filter(function(x) { return x.name === el.dataset.troom; })[0];
+    W.v.rooms[el.dataset.troom] = el.value.replace(/[,=]/g, " ").trim() || (t ? t.fhem_room : "");
+    render();
+  } else if (el.dataset.therm) {
+    var off = W.v.exclude ? W.v.exclude.split(",") : [];
+    off = off.filter(function(n) { return n !== el.dataset.therm; });
+    if (!el.checked) off.push(el.dataset.therm);
+    W.v.exclude = off.join(",");
+    render();
   }
+});
+function field(label, body, hint) {
+  return '<div class="wf"><label class="f">' + esc(label) + '</label>' + body +
+    (hint ? '<div class="muted hint">' + esc(hint) + '</div>' : '') + '</div>';
+}
+function plainSelect(key, value, options) {
+  var h = '<select data-wiz="' + key + '">', found = false;
+  options.forEach(function(o) {
+    if (o[0] === value) found = true;
+    h += '<option value="' + esc(o[0]) + '"' + (o[0] === value ? " selected" : "") + '>' + esc(o[1]) + '</option>';
+  });
+  if (!found) h = h.replace('<select data-wiz="' + key + '">', '<select data-wiz="' + key + '"><option value="" selected></option>');
+  return h + '</select>';
+}
+function stepBody(name) {
+  var st = D.setup, v = W.v, h = "";
+  if (name === "welcome") return '<p>' + esc(L.w_welcome) + '</p><p class="muted">' + esc(L.setup_hint) + '</p>';
+  if (name === "source") {
+    h += '<div class="srcs">';
+    Object.keys(L.sources).forEach(function(k) {
+      h += '<button class="src' + (v.heat_source === k ? " on" : "") + '" data-src="' + k + '">' +
+        '<svg viewBox="-30 -30 60 60" width="54" height="54">' + SOURCE_ICONS[k] + '</svg><span>' +
+        esc(L.sources[k]) + '</span></button>';
+    });
+    h += '</div>';
+    return h + field(L.roles.supply_sensor, sensorField("supply_sensor", st.sensors.supply_sensor.suggestion), L.optional);
+  }
+  if (name === "mixer") {
+    h += field(L.roles.mixer, combo("mixer", withAll(st.roles.mixer.options), v.mixer, st.roles.mixer.suggestion), L.w_mixer);
+    return h + '<label class="chk"><input type="checkbox" data-wiz="mixer_invert"' + (v.mixer_invert === "1" ? " checked" : "") +
+      '> ' + esc(L.w_invert) + '</label>';
+  }
+  if (name === "pump") {
+    h += field(L.roles.pump, combo("pump", withAll(st.roles.pump.options), v.pump, st.roles.pump.suggestion), L.w_pump);
+    h += field(L.pump_model, plainSelect("pump_model", v.pump_model,
+      [["", L.unknown]].concat(st.pump_models.map(function(m) { return [m, m]; }))));
+    var settings = (st.pump_settings_all || []).filter(function(s) {
+      return s !== "AUTOADAPT" || (st.no_autoadapt || []).indexOf(v.pump_model) < 0;
+    });
+    h += field(L.pump_setting, plainSelect("pump_setting", v.pump_setting, [["", L.unknown]].concat(
+      settings.map(function(s) { return [s, s]; }))));
+    if (v.pump && v.pump.indexOf(":") < 0) {
+      h += field(L.pump_power, '<input type="number" min="0" max="100" step="1" data-wiz="pump_power" value="' +
+        esc(v.pump_power) + '" style="width:90px"> W', L.w_power);
+    }
+    return h;
+  }
+  if (name === "temps") {
+    return field(L.roles.flow_sensor, sensorField("flow_sensor", st.sensors.flow_sensor.suggestion), L.w_flow) +
+      field(L.roles.return_sensor, sensorField("return_sensor", st.sensors.return_sensor.suggestion), L.w_return);
+  }
+  if (name === "rooms") {
+    var off = v.exclude ? v.exclude.split(","): [], names = {};
+    var list = (st.thermostats || []).slice();
+    if (!list.length) return '<p class="sugg">' + esc(L.no_rooms) + '</p>';
+    list.forEach(function(t) { names[t.fhem_room] = 1; names[v.rooms[t.name] || t.room] = 1; });
+    h += '<p class="muted">' + esc(L.w_rooms) + '</p><datalist id="fhcRoomNames">' +
+      Object.keys(names).sort(function(a, b) { return a.localeCompare(b); }).map(function(n) { return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>';
+    h += '<div class="wtherm">';
+    list.forEach(function(t) {
+      var used = off.indexOf(t.name) < 0;
+      h += '<div class="trow' + (used ? "" : " off") + '"><label class="chk"><input type="checkbox" data-therm="' + esc(t.name) + '"' +
+        (used ? " checked" : "") + '> ' + esc(t.label) +
+        (t.temp !== null && t.temp !== undefined ? ' <span class="muted">' + num(t.temp, 1, " °C") + '</span>' : '') +
+        '</label><input type="text" list="fhcRoomNames" data-troom="' + esc(t.name) + '" value="' +
+        esc(v.rooms[t.name] || t.room) + '" placeholder="' + esc(L.room) + '"' + (used ? "" : " disabled") + '></div>';
+    });
+    h += '</div>';
+    var used = usedRooms();
+    if (used.length) h += '<h4>' + esc(L.thermometer) + ' <span class="muted">(' + esc(L.optional) + ')</span></h4>';
+    used.forEach(function(r) {
+      if (v.thermometers[r[1]] === undefined) {
+        v.thermometers[r[1]] = (st.thermometers[r[1]] || {}).suggestion || (st.room_thermometers || {})[r[0]] || "";
+      }
+      var sugg = (st.thermometers[r[1]] || {}).suggestion || (st.room_thermometers || {})[r[0]] || "";
+      h += field(r[0], sensorField("therm_" + r[1], sugg), "");
+    });
+    return h;
+  }
+  if (name === "outdoor") {
+    h += '<p>' + esc(L.weather) + ': ' + (st.weather.used ? '<b>' + esc(st.weather.used) + '</b>' :
+      '<span class="sugg">' + esc(L.weather_none) + '</span>') + '</p>';
+    return h + field(L.roles.outdoor_sensor, sensorField("outdoor_sensor", st.sensors.outdoor_sensor.suggestion), L.optional);
+  }
+  // done: summary and start
+  var rows = [
+    [L.supply, L.sources[v.heat_source] || v.heat_source],
+    [L.mixer, labelOf(withAll(st.roles.mixer.options), v.mixer)],
+    [L.pump, labelOf(withAll(st.roles.pump.options), v.pump)],
+    [L.flow, v.flow_sensor], [L.ret, v.return_sensor],
+    [L.rooms, usedRooms().map(function(r) { return r[0]; }).join(", ")],
+    [L.thermostats, (st.thermostats || []).filter(function(t) {
+      return (v.exclude ? v.exclude.split(",") : []).indexOf(t.name) < 0;
+    }).map(function(t) { return t.label; }).join(", ")]
+  ];
+  h += '<table class="sum">' + rows.map(function(r) {
+    return '<tr><td>' + esc(r[0]) + '</td><td><b>' + esc(r[1] || "–") + '</b></td></tr>';
+  }).join("") + '</table>';
+  if (D.mode !== "setup") return h;
+  var missing = wizMissing();
+  if (missing.length) return h + '<p class="sugg">' + esc(L.start_missing) + " " + esc(missing.join(", ")) + '</p>';
+  return h + '<p><b>' + esc(L.start_ask) + '</b></p>';
+}
+function wizard() {
+  var name = STEPS[W.step], n = STEPS.length - 1;
+  var h = '<div class="card setup wiz"><div class="wsteps">';
+  for (var i = 1; i <= n; i++) h += '<i class="' + (i < W.step ? "d" : i === W.step ? "c" : "") + '"></i>';
+  h += '</div><div class="muted">' + (W.step ? esc(L.step + " " + W.step + " / " + n) : "") + '</div>';
+  h += '<h3>' + esc(L["w_" + name + "_t"]) + '</h3>' + stepBody(name);
+  if (W.err) h += '<p class="sugg err">' + esc(W.err) + '</p>';
+  h += '<div class="row wnav">';
+  if (W.step > 0) h += '<button data-wnav="back">' + esc(L.back) + '</button>';
+  if (name === "welcome") h += '<button class="primary" data-wnav="next">' + esc(L.w_go) + '</button>';
+  else if (name !== "done") h += '<button class="primary" data-wnav="next">' + esc(L.next) + '</button>';
+  else if (D.mode === "setup") {
+    h += '<button data-wnav="save">' + esc(L.save_only) + '</button>' +
+      '<button class="primary" data-wnav="start"' + (wizMissing().length ? " disabled" : "") + '>' + esc(L.start) + '</button>';
+  } else h += '<button class="primary" data-wnav="close">' + esc(L.finish) + '</button>';
+  return h + '</div></div>';
+}
+// saved: the setup is stored, the control is started later
+var saved = null;
+function setup() {
+  if (!D.setup) return "";
+  if (D.mode === "setup" && !W) {
+    if (saved === null) saved = !(D.setup.missing || []).length;
+    if (!saved) wizStart(0);
+  }
+  if (W) return '<h3>' + L.setup_title + '</h3>' + wizard();
+  if (D.mode === "setup") {
+    var missing = savedMissing();
+    return '<h3>' + L.setup_title + '</h3><div class="card setup wiz"><p><b>' + esc(L.saved) + '</b></p><p class="muted">' +
+      esc(L.setup_hint) + '</p>' + (missing.length ? '<p class="sugg">' + esc(L.start_missing) + " " +
+      esc(missing.join(", ")) + '</p>' : '') + '<div class="row wnav"><button data-setup="open">' + esc(L.change_setup) +
+      '</button><button class="primary" data-wnav="start"' + (missing.length ? " disabled" : "") + '>' +
+      esc(L.start) + '</button></div></div>' + roomOffer();
+  }
+  return '<h3><a href="#" data-setup="open">▸ ' + L.setup_title + '</a></h3>' + roomOffer();
+}
+function roomOffer() {
+  if (D.control_room || window.FHC_ROOM) return "";
+  return '<div class="row roomoffer"><button data-room="create">🏠 ' + esc(L.room_create) + '</button><span class="muted">' +
+    esc(L.room_hint) + '</span></div>';
+}
+var lastMissing = null;
+function savedMissing() { return lastMissing || (D.setup.missing || []); }
+var REQUIRED = {mixer: ["mixer", "w_need_mixer"], pump: ["pump", "w_need_pump"], temps: ["flow_sensor", "w_need_flow"]};
+function setupClick(btn) {
+  if (btn.dataset.setup) { wizStart(1); render(); return; }
+  if (btn.dataset.room) {
+    set("create_room", function(r) {
+      if (r && r.trim()) return;
+      D.control_room = window.FHC_LANG === "de" ? "Heizungssteuerung" : "Heating";
+      render();
+    });
+    return;
+  }
+  if (btn.dataset.wnav === "start") {
+    btn.disabled = true;
+    set("mode auto", function(r) {
+      if (r && r.trim()) { btn.disabled = false; return; }
+      D.mode = "auto"; D.state = ""; W = null; render();
+      refreshLive();
+    });
+    return;
+  }
+  if (!W) return;
+  if (btn.dataset.src) { W.v.heat_source = btn.dataset.src; render(); return; }
+  var nav = btn.dataset.wnav, name = STEPS[W.step];
+  if (!nav) return;
+  W.err = "";
+  if (nav === "back") { W.step = Math.max(0, W.step - 1); render(); return; }
+  if (nav === "next") {
+    var need = REQUIRED[name];
+    if (need && !W.v[need[0]]) { W.err = L[need[1]]; render(); return; }
+    wizSave(name);
+    W.step = Math.min(STEPS.length - 1, W.step + 1);
+    render();
+    root.scrollIntoView({block: "start"});
+    return;
+  }
+  if (nav === "save") { lastMissing = wizMissing(); saved = true; }
+  if (nav === "close" || nav === "save") { W = null; render(); }
 }
 
 // --- page ---
 function render() {
   root.className = "fhc" + (D.house && D.house.pump ? " running" : "");
-  root.innerHTML = top() + scheme() + rooms() + vacation() + charts() + curveChart() + setup();
+  root.innerHTML = D.mode === "setup"
+    ? top() + setup() + scheme()
+    : top() + scheme() + rooms() + vacation() + charts() + curveChart() + setup();
   if (editing) {
     var card = root.querySelector('.room[data-room="' + editing.key + '"]');
     if (card) bindEditor(card);
@@ -781,17 +1133,34 @@ root.addEventListener("click", function(ev) {
   setupClick(btn);
 });
 
+// values come with fhcLive every 10 s, if they don't (e.g. a filter of
+// FHEMWEB), the page asks for them
+var lastLive = Date.now();
+setInterval(function() {
+  if (Date.now() - lastLive < 40000 || !document.body.contains(root)) return;
+  refreshLive();
+}, 30000);
+function refreshLive() {
+  lastLive = Date.now();
+  FW_cmd(FW_root + "?cmd=" + encodeURIComponent("get " + DEV + " live") + "&XHR=1", function(r) {
+    var data = null;
+    try { data = JSON.parse(r); } catch (e) { data = null; }
+    if (data) window.fhcLive(data);
+  });
+}
 window.fhcLive = function(data) {
   if (!data || data.name !== DEV) return;
+  lastLive = Date.now();
   var point = data.point;
-  ["mode", "heat_source", "state", "house", "rooms", "vacation", "now"].forEach(function(k) { if (k in data) D[k] = data[k]; });
+  ["mode", "heat_source", "state", "house", "rooms", "vacation", "now", "control_room"].forEach(function(k) { if (k in data) D[k] = data[k]; });
   D.history = D.history || [];
   if (point && (!D.history.length || D.history[D.history.length - 1][0] < point[0])) D.history.push(point);
   if (D.curve && D.house) D.curve.current = [D.house.outdoor_eff, D.house.flow_target];
   // keep what is typed into the vacation and setup fields
   var active = document.activeElement;
   if (active && root.contains(active) && /INPUT|SELECT/.test(active.tagName)) return;
-  if (setupDirty && setupOpen) return;
+  // the assistant keeps its values itself, a new drawing doesn't lose them
+  if (W && root.querySelector(".combo-list:not([hidden])")) return;
   if (dragging || vacOpen || Object.keys(pending).some(function(k) { return k !== "resize"; })) return;
   render();
 };

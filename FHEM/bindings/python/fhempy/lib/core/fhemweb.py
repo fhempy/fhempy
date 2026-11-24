@@ -15,7 +15,22 @@ async def setup_room(hash, room, room_icon, device_icon, keep_fhempy=False):
         return
     # fhempy puts new devices into room fhempy
     move = "" if keep_fhempy else " || $cur eq 'fhempy'"
-    cmd = (
+    icon = (
+        f" CommandAttr(undef, {fhem.perlString(name + ' icon ' + device_icon)})"
+        " if (AttrVal($n, 'icon', '') eq '');"
+    )
+    await fhem.sendCommandHash(hash, room_command(name, room, room_icon, move, icon))
+    await fhem.readingsSingleUpdate(hash, SETUP_READING, "done", 0)
+
+
+async def add_room(hash, room, room_icon):
+    """Puts the device also into room (keeps its other rooms) and gives the
+    room room_icon in all FHEMWEB instances. Returns an error or ''."""
+    return await fhem.sendCommandHash(hash, room_command(hash["NAME"], room, room_icon))
+
+
+def room_command(name, room, room_icon, move="", extra=""):
+    return (
         f"my $n = {fhem.perlString(name)};"
         f" my $room = {fhem.perlString(room)};"
         " my $cur = AttrVal($n, 'room', '');"
@@ -23,15 +38,12 @@ async def setup_room(hash, room, room_icon, device_icon, keep_fhempy=False):
         ' ? $room : "$cur,$room";'
         ' CommandAttr(undef, "$n room $rooms")'
         " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"
-        f" CommandAttr(undef, {fhem.perlString(name + ' icon ' + device_icon)})"
-        " if (AttrVal($n, 'icon', '') eq '');"
-        " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
+        + extra
+        + " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
         " next if ($defs{$w}{TEMPORARY});"
         " my $ri = AttrVal($w, 'roomIcons', '');"
         " next if ($ri =~ /(^|\\s)\\Q$room\\E:/);"
         " CommandAttr(undef, \"$w roomIcons \" . ($ri eq '' ? '' : \"$ri \")"
         f" . {fhem.perlString(room + ':' + room_icon)}) }}"
-        " 'ok'"
+        " ''"
     )
-    await fhem.sendCommandHash(hash, cmd)
-    await fhem.readingsSingleUpdate(hash, SETUP_READING, "done", 0)
