@@ -46,7 +46,7 @@
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ gehen Licht und Musik aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
-    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.", rtSecAlarm: "Alarmanlage", rtSecLock: "Wird verriegelt · {n}", rtSecVacuum: "Während du weg bist", rtVacStart: "Saugen starten", rtVacStarted: "Saugt", rtLocks: "alle Türen sind zu", rtLockTag: "Zu", rtLockDoor: "Tür offen, bleibt offen", rtAlarmTag: "Scharf", rtAlarmTap: "antippen: unscharf lassen", rtAlarmStays: "Bleibt unscharf · antippen zum Scharfschalten",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.", rtSecAlarm: "Alarmanlage", rtSecLock: "Wird verriegelt · {n}", rtSecVacuum: "Während du weg bist", rtSecHeat: "Es wird heiß · bis {t}°", rtHeatOffer: "gegen die Hitze schließen?", rtHeatClose: "Schließen", rtVacStart: "Saugen starten", rtVacStarted: "Saugt", rtLocks: "alle Türen sind zu", rtLockTag: "Zu", rtLockDoor: "Tür offen, bleibt offen", rtAlarmTag: "Scharf", rtAlarmTap: "antippen: unscharf lassen", rtAlarmStays: "Bleibt unscharf · antippen zum Scharfschalten",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
     rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
@@ -148,7 +148,7 @@
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights and music off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
-    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.", rtSecAlarm: "Alarm system", rtSecLock: "Will lock · {n}", rtSecVacuum: "While you are away", rtVacStart: "Start cleaning", rtVacStarted: "Cleaning", rtLocks: "all doors are closed", rtLockTag: "Lock", rtLockDoor: "a door is open, stays unlocked", rtAlarmTag: "Armed", rtAlarmTap: "tap to leave it disarmed", rtAlarmStays: "Stays disarmed · tap to arm",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.", rtSecAlarm: "Alarm system", rtSecLock: "Will lock · {n}", rtSecVacuum: "While you are away", rtSecHeat: "It gets hot · up to {t}°", rtHeatOffer: "close them against the heat?", rtHeatClose: "Close", rtVacStart: "Start cleaning", rtVacStarted: "Cleaning", rtLocks: "all doors are closed", rtLockTag: "Lock", rtLockDoor: "a door is open, stays unlocked", rtAlarmTag: "Armed", rtAlarmTap: "tap to leave it disarmed", rtAlarmStays: "Stays disarmed · tap to arm",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
     rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
@@ -2082,14 +2082,15 @@
   function routinePlan(mode) {
     var all = shownTiles();
     var off = all.filter(function (x) { return (["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on) || mediaGoesOff(x.tile) || fanRuns(x.tile); });
-    var blinds = mode === "night" ? all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; }) : [];
+    var heat = mode === "away" ? hotSoon() : null, openBlinds = all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; });
+    var blinds = mode === "night" || (heat && S.sheet && S.sheet.heatBlinds) ? openBlinds : [];
     // locks are locked when every door is closed, else they stay in the open list
     var doorOpen = all.some(function (x) { return x.tile.kind === "contact" && x.tile.door && x.tile.state.closed === false; });
     var locks = doorOpen ? [] : all.filter(function (x) { return x.tile.kind === "lock" && x.tile.state.locked === false; });
     var open = all.filter(function (x) { return secOpen(x.tile) && locks.indexOf(x) < 0; });
     // leaving home: robot vacuums which could clean now, only offered, never started by itself
     var vacuums = mode === "away" ? all.filter(function (x) { return x.tile.kind === "vacuum" && x.tile.view && x.tile.view.actions.indexOf("start") >= 0 && (!viewRunning(x.tile.state || {}) || (S.sheet && S.sheet.vacStarted && S.sheet.vacStarted[x.id])); }) : [];
-    return { off: off, blinds: blinds, locks: locks, doorOpen: doorOpen, open: open, alarm: routineAlarm(mode), vacuums: vacuums };
+    return { off: off, blinds: blinds, heat: heat && openBlinds.length ? { max: heat, blinds: openBlinds } : null, locks: locks, doorOpen: doorOpen, open: open, alarm: routineAlarm(mode), vacuums: vacuums };
   }
   function weatherWarn() {
     var w = S.header && S.header.weather, warn = w && w.warn;
@@ -2098,6 +2099,14 @@
     if (!windows.length) { return ""; }
     return '<div class="rtwarn">' + I(warn.kind === "frost" ? "drop" : "rain", 22) + '<div class="t"><b>' + esc(t("warn" + warn.kind, { t: warn.at })) + "</b><span>" +
       esc(t("warnWindows", { names: windows.map(function (x) { return x.tile.name; }).join(", ") })) + "</span></div></div>";
+  }
+  // hot in the next hours (forecast or outside now): leaving home offers to close the blinds
+  var HOT_C = 26, HOT_HOURS = 10;
+  function hotSoon() {
+    var w = S.header && S.header.weather; if (!w) { return null; }
+    var temps = (w.hours || []).slice(0, HOT_HOURS).map(function (x) { return x.temp; }).concat([w.temperature]).filter(has);
+    var max = temps.length ? Math.max.apply(null, temps) : null;
+    return max !== null && max >= HOT_C ? max : null;
   }
   // the alarm system is armed too (home at night, away when leaving), one tap leaves it off
   function routineAlarm(mode) {
@@ -2137,9 +2146,12 @@
         body += ovRow(x, media ? "music" : fan ? "fan" : isLight(x.tile) ? "bulb" : "plug", media ? "#5AA9FF" : fan ? "#3DDBB8" : isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
       });
     }
+    if (p.heat && !p.blinds.length) {
+      body += section(t("rtSecHeat", { t: num(p.heat.max, 0) })) + '<div class="row tap rtstays" data-rtheat="1"><div class="ic" style="background:#FF8A3D26;color:#FF8A3D">' + I("blind") + '</div><div class="t"><b>' + esc(p.heat.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.heat.blinds.length })) + "</b><span>" + esc(t("rtHeatOffer")) + '</span></div><span class="pill">' + esc(t("rtHeatClose")) + "</span></div>";
+    }
     if (p.blinds.length) {
       var rooms = []; p.blinds.forEach(function (x) { if (rooms.indexOf(x.room) < 0) { rooms.push(x.room); } });
-      body += section(t("rtSecClose"), "off") + '<div class="row rtgoes"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
+      body += section(t("rtSecClose"), "off") + '<div class="row rtgoes' + (p.heat ? ' tap" data-rtheat="1' : "") + '"><div class="ic" style="background:#3DDBB826;color:#3DDBB8">' + I("blind") + '</div><div class="t"><b>' + esc(p.blinds.length === 1 ? t("rtBlind") : t("rtBlinds", { n: p.blinds.length })) + "</b><span>" + esc(rooms.join(", ") + " · " + t("rtBlindsSub")) + "</span></div></div>";
     }
     if (p.locks.length) {
       body += section(t("rtSecLock", { n: p.locks.length }), "off");
@@ -2180,7 +2192,7 @@
     if (rtTimer) { clearTimeout(rtTimer); rtTimer = null; }
     if (S.tablet && S.tablet.readonly) { showBanner(t("readonly"), 3000); return; }
     var p = routinePlan(mode);
-    send({ type: "action", action: "routine", mode: mode, off: p.off.filter(function (x) { return !x.tile.keep_on; }).map(function (x) { return x.id; }), close: p.blinds.map(function (x) { return x.id; }), lock: p.locks.map(function (x) { return x.id; }), alarm: p.alarm && rtAlarmOn() ? p.alarm.mode : null });
+    send({ type: "action", action: "routine", mode: mode, off: p.off.filter(function (x) { return !x.tile.keep_on; }).map(function (x) { return x.id; }), close: p.blinds.map(function (x) { return x.id; }), heat: mode === "away" && p.blinds.length > 0, lock: p.locks.map(function (x) { return x.id; }), alarm: p.alarm && rtAlarmOn() ? p.alarm.mode : null });
     closeSheet();
   }
   function routineDone(m) {
@@ -3872,6 +3884,7 @@
     if ((el = closest(target, "data-enprice"))) { energyPriceClick(el); return; }
     if ((el = closest(target, "data-routine"))) { routineOpen(el.getAttribute("data-routine")); return; }
     if ((el = closest(target, "data-rtvac"))) { var vid = el.getAttribute("data-rtvac"); act(vid, "start", null, null); if (S.sheet) { S.sheet.vacStarted = S.sheet.vacStarted || {}; S.sheet.vacStarted[vid] = true; renderSheet(); } return; }
+    if ((el = closest(target, "data-rtheat"))) { if (S.sheet) { S.sheet.heatBlinds = !S.sheet.heatBlinds; } renderSheet(); return; }
     if ((el = closest(target, "data-rtalarm"))) { if (S.sheet) { S.sheet.noAlarm = rtAlarmOn(); } renderSheet(); return; }
     if ((el = closest(target, "data-rtstop"))) { if (S.sheet) { S.sheet.autoAt = 0; } routineTick(); renderSheet(); return; }
     if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
