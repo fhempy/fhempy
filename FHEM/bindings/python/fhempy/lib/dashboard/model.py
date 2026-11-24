@@ -816,6 +816,8 @@ def build(infos, order=None, keep_on=None, measure=None, device_views=None):
             if measure and name in measure and item["kind"] in MEASURE_KINDS:
                 item["measure"] = True
                 item["keep_on"] = True
+        elif item["kind"] == "media" and keep_on and name in keep_on:
+            item["keep_on"] = True
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -1458,6 +1460,9 @@ def routine_steps(tiles, mode, off_ids, close_ids):
     steps, undo = [], []
     for device in off_ids:
         item = tiles.get(str(device))
+        if item is not None and item["kind"] == "media":
+            _media_off(item, steps, undo)
+            continue
         if (
             item is not None
             and item["kind"] in SWITCHABLE
@@ -1477,6 +1482,29 @@ def routine_steps(tiles, mode, off_ids, close_ids):
                 if position is not None:
                     undo.append((item["id"], "position", position))
     return steps, undo
+
+
+def media_goes_off(item):
+    """music players, speakers and TVs good night / leaving home switches
+    off: those with on/off when they are on, the others when they play"""
+    if item["kind"] != "media" or item.get("keep_on"):
+        return False
+    state = item["state"]
+    if (item.get("media") or {}).get("power"):
+        return bool(state.get("on"))
+    return bool(state.get("playing"))
+
+
+def _media_off(item, steps, undo):
+    """off where the device can be switched off, else pause what plays"""
+    if not media_goes_off(item):
+        return
+    if (item.get("media") or {}).get("power"):
+        steps.append((item["id"], "off", None))
+        undo.append((item["id"], "on", None))
+    else:
+        steps.append((item["id"], "pause", None))
+        undo.append((item["id"], "play", None))
 
 
 # --- energy ---

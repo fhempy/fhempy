@@ -45,7 +45,7 @@
     asOff: "Unscharf", asHome: "Scharf (zuhause)", asAway: "Scharf (abwesend)", asTriggered: "Alarm!", asGoOff: "Aus", asGoHome: "Zuhause", asGoAway: "Abwesend", asSure: "Wirklich aus?", asPinTitle: "Alarmanlage aus", asPinLead: "PIN der Alarmanlage", asDone: "Alarmanlage: {mode}",
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
-    rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ geht das Licht aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
+    rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ gehen Licht und Musik aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
     rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
     rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
@@ -147,7 +147,7 @@
     asOff: "Disarmed", asHome: "Armed (home)", asAway: "Armed (away)", asTriggered: "Alarm!", asGoOff: "Off", asGoHome: "Home", asGoAway: "Away", asSure: "Really off?", asPinTitle: "Alarm system off", asPinLead: "PIN of the alarm system", asDone: "Alarm system: {mode}",
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
-    rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
+    rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights and music off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
     rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
     rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
@@ -2067,10 +2067,15 @@
     return '<div class="routines"><button class="routine" data-routine="night">' + I("moon", 22) + " " + esc(t("rtNight")) + '</button><button class="routine" data-routine="away">' + I("walk", 22) + " " + esc(t("rtAway")) + "</button>" +
       (S.undoUntil && Date.now() < S.undoUntil * 1000 ? '<button class="routine" data-undo="1">' + I("left", 22) + " " + esc(t("undo")) + "</button>" : "") + "</div>";
   }
-  // what the routine does: lights and switches off, at night the blinds down
+  // music players, speakers and TVs: off if they can be switched off, else paused when they play
+  function mediaGoesOff(tile) {
+    if (tile.kind !== "media") { return false; }
+    return tile.media && tile.media.power ? !!tile.state.on : !!tile.state.playing;
+  }
+  // what the routine does: lights, switches and music off, at night the blinds down
   function routinePlan(mode) {
     var all = shownTiles();
-    var off = all.filter(function (x) { return ["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on; });
+    var off = all.filter(function (x) { return (["light", "dimmer", "switch", "outlet"].indexOf(x.tile.kind) >= 0 && x.tile.state.on) || mediaGoesOff(x.tile); });
     var blinds = mode === "night" ? all.filter(function (x) { return x.tile.kind === "blind" && x.tile.state.position !== 0; }) : [];
     return { off: off, blinds: blinds, open: all.filter(function (x) { return secOpen(x.tile); }) };
   }
@@ -2109,7 +2114,8 @@
     if (goes.length) {
       body += section(t("rtSecOff", { n: goes.length }), "off");
       goes.forEach(function (x) {
-        body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
+        var media = x.tile.kind === "media";
+        body += ovRow(x, media ? "music" : isLight(x.tile) ? "bulb" : "plug", media ? "#5AA9FF" : isLight(x.tile) ? "#FFB547" : "#9B8CFF", x.room, '<span class="rttag">' + I("power", 16) + " " + esc(t("rtOffTag")) + "</span>").replace('class="row tap"', 'class="row tap rtgoes"');
       });
     }
     if (p.blinds.length) {
@@ -2126,7 +2132,7 @@
     if (stays.length) {
       body += section(t("rtSecStays", { n: stays.length }), "stays");
       stays.forEach(function (x) {
-        body += ovRow(x, isLight(x.tile) ? "bulb" : "plug", "#8A93A6", [x.room, t("staysOn")].join(" · ")).replace('class="row tap"', 'class="row tap rtstays"');
+        body += ovRow(x, x.tile.kind === "media" ? "music" : isLight(x.tile) ? "bulb" : "plug", "#8A93A6", [x.room, t("staysOn")].join(" · ")).replace('class="row tap"', 'class="row tap rtstays"');
       });
     }
     var title = mode === "night" ? t("rtNight") : t("rtAway"), auto = S.sheet.autoAt ? routineLeft() : 0;
