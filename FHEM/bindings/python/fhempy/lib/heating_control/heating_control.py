@@ -227,7 +227,10 @@ SETS = {
         "08:00 18, 16:00 21.5, 22:00 17; Sa-So 15</code>. <code>comfort</code> "
         "and <code>eco</code> instead of a number use the temperatures of the "
         "room, the old form <code>Mo-Fr 06:00-08:00,16:00-22:00</code> "
-        "(comfort periods, the rest eco) works as well.",
+        "(comfort periods, the rest eco) works as well. The JSON of the module "
+        'weekprofile (<code>{"Mon":{"time":["06:00","24:00"],'
+        '"temp":["17","21"]},...}</code>) is taken too, the schedule '
+        "is saved in this format.",
     },
     "copy_schedule": {
         "args": ["from", "to"],
@@ -1231,10 +1234,13 @@ class heating_control(generic.FhemModule):
         override = (
             f"{room.override[0]:g} {int(room.override[1])}" if room.override else "-"
         )
+        # weekprofile has numbers only: comfort/eco become their temperature
+        profile = schedule.to_weekprofile(room.week, room.temp_of)
+        room.week = schedule.from_weekprofile(profile)
         await fhem.readingsBeginUpdate(self.hash)
         try:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, prefix + "schedule", schedule.to_text(room.week)
+                self.hash, prefix + "schedule", profile
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, prefix + "comfort", f"{room.comfort:g}"

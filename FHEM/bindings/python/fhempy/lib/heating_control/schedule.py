@@ -15,9 +15,17 @@ eco:
 
 German day names work as well (Mo Di Mi Do Fr Sa So), "-" alone means the
 whole day eco.
+
+The schedule is stored in the JSON format of the FHEM module weekprofile
+(every temperature applies until its time, the last one until 24:00):
+
+    {"Mon":{"time":["06:00","08:00","24:00"],"temp":["17","21","17"]},...}
+
+and the set command takes this format as well.
 """
 
 import datetime
+import json
 import re
 
 DAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
@@ -35,6 +43,7 @@ DAY_ALIASES = {
     "so": 6,
 }
 LEVELS = {"comfort": "comfort", "komfort": "comfort", "eco": "eco", "spar": "eco"}
+WEEKPROFILE_DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 DEFAULT = "Mo-Fr 06:00-08:00,16:00-22:00; Sa-Su 07:00-22:30"
 PERIOD = re.compile(r"^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$")
 POINT = re.compile(r"^(?:(\d{1,2}):(\d{2})\s+)?(\S+)$")
@@ -155,6 +164,8 @@ def parse(text):
     text = (text or "").strip()
     if not text:
         return week
+    if text.startswith("{"):
+        return from_weekprofile(text)
     for group in text.split(";"):
         group = group.strip()
         if not group:
@@ -229,3 +240,69 @@ def next_switch(week, when):
             if value_at(week, moment) != current:
                 return moment
     return None
+
+
+def day_points(week, day):
+    """points of a day from 00:00 on (the start from the day before)"""
+    points = list(week.get(day, []))
+    if not points or points[0][0] > 0:
+        # 2026-11-23 is a Monday
+        start = value_at(week, datetime.datetime(2026, 11, 23 + day))
+        points.insert(0, (0, start))
+    return points
+
+
+def to_weekprofile(week, temp_of):
+    """weekprofile JSON, temp_of turns comfort/eco into a temperature"""
+    profile = {}
+    for day in range(7):
+        points = []
+        for minute, value in day_points(week, day):
+            temp = f"{temp_of(value):g}"
+            if not points or points[-1][1] != temp:
+                points.append((minute, temp))
+        times = [_hm(m) for m, _ in points[1:]] + ["24:00"]
+        temps = [t for _, t in points]
+        profile[WEEKPROFILE_DAYS[day]] = {"time": times, "temp": temps}
+    return json.dumps(profile, separators=(",", ":"))
+
+
+def _weekprofile_temp(text):
+    word = str(text).strip().lower()
+    if word == "off":
+        return MIN_TEMP
+    if word == "on":
+        return MAX_TEMP
+    return value_of(word)
+
+
+def from_weekprofile(text):
+    """weekprofile JSON -> week; ValueError"""
+    try:
+        profile = json.loads(text) if isinstance(text, str) else text
+    except ValueError:
+        raise ValueError("invalid weekprofile JSON") from None
+    if not isinstance(profile, dict):
+        raise ValueError("invalid weekprofile JSON")
+    week = {day: [(0, "eco")] for day in range(7)}
+    for day, name in enumerate(WEEKPROFILE_DAYS):
+        entry = profile.get(name)
+        if entry is None:
+            continue
+        times, temps = entry.get("time") or [], entry.get("temp") or []
+        if not times or len(times) != len(temps):
+            raise ValueError(f"{name}: time and temp need the same length")
+        points, start = [], 0
+        for until, temp in zip(times, temps):
+            match = re.fullmatch(r"(\d{1,2}):(\d{2})", str(until).strip())
+            if not match:
+                raise ValueError(f"{name}: invalid time {until}")
+            end = _minutes(match.group(1), match.group(2))
+            if end <= start:
+                raise ValueError(f"{name}: times have to rise")
+            value = _weekprofile_temp(temp)
+            if not points or points[-1][1] != value:
+                points.append((start, value))
+            start = end
+        week[day] = points
+    return week
