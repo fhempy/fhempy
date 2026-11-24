@@ -1486,6 +1486,23 @@ def routine_steps(tiles, mode, off_ids, close_ids):
     return steps, undo
 
 
+# the alarm system mode of good night and leaving home
+ROUTINE_ALARM = {"night": "home", "away": "away"}
+
+
+def routine_alarm(system, mode):
+    """mode the alarm system is armed to with good night / leaving home,
+    None: no alarm system, it can't, it already is or it is triggered"""
+    if not system:
+        return None
+    wanted = ROUTINE_ALARM.get(mode)
+    if wanted not in system.get("modes", ()):
+        return None
+    if system.get("mode") in (wanted, "triggered"):
+        return None
+    return wanted
+
+
 def media_goes_off(item):
     """music players, speakers and TVs good night / leaving home switches
     off: those with on/off when they are on, the others when they play"""

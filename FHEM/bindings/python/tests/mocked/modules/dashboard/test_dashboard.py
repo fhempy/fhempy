@@ -2004,6 +2004,42 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_routine_alarm_mode():
+    system = {"modes": ["away", "home", "off"], "mode": "off"}
+    assert model.routine_alarm(system, "away") == "away"
+    assert model.routine_alarm(system, "night") == "home"
+    assert model.routine_alarm({**system, "mode": "away"}, "away") is None
+    assert model.routine_alarm({**system, "mode": "triggered"}, "night") is None
+    assert model.routine_alarm({"modes": ["away", "off"], "mode": "off"}, "night") is None
+    assert model.routine_alarm(None, "away") is None
+
+
+@pytest.mark.asyncio
+async def test_leaving_home_arms_alarm(module):
+    module._attr_alarm_system = "Alarmanlage"
+    await module.reload()
+    _, answer = await pair(module)
+    async with aiohttp.ClientSession() as session:
+        ws, _ = await connect(session, module, answer["token"])
+        module.fake.sets.clear()
+        # not asked: stays as it is
+        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": []})
+        assert (await next_of(ws, "routine"))["alarm"] is None
+        assert module.fake.sets == []
+        # a mode that doesn't fit the routine is ignored
+        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": [], "alarm": "off"})
+        assert (await next_of(ws, "routine"))["alarm"] is None
+        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": [], "alarm": "away"})
+        assert (await next_of(ws, "routine"))["alarm"] == "away"
+        assert module.fake.sets == ["Alarmanlage armAway"]
+        # undo never disarms
+        module.fake.sets.clear()
+        await ws.send_json({"type": "action", "action": "undo"})
+        await asyncio.sleep(0.2)
+        assert module.fake.sets == []
+        await ws.close()
+
+
 def test_languages():
     import os
     import re

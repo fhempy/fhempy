@@ -1874,6 +1874,7 @@ class dashboard(generic.FhemModule):
         close = message.get("close") if isinstance(message.get("close"), list) else []
         steps, undo = model.routine_steps(tiles, mode, off, close)
         failed = await self.run_steps(tablet, steps)
+        alarm = await self.routine_alarm(tablet, mode, message.get("alarm"))
         self.undo[tablet["id"]] = {
             "until": time.time() + model.UNDO_SECONDS,
             "steps": undo,
@@ -1887,8 +1888,26 @@ class dashboard(generic.FhemModule):
                 "failed": failed,
                 "undo": bool(undo),
                 "until": self.undo[tablet["id"]]["until"],
+                "alarm": alarm,
             },
         )
+
+    async def routine_alarm(self, tablet, mode, wanted):
+        """arm the alarm system after the lights went off, if the tablet
+        asked for it. Never undone: disarming needs the PIN.
+        Returns the armed mode, False if it failed, None if not asked."""
+        info = self.infos.get(self.alarm_system_name())
+        system = model.alarm_system(info)
+        armed = model.routine_alarm(system, mode)
+        if not wanted or armed is None or wanted != armed:
+            return None
+        command = model.alarm_commands(info)[armed]
+        error = await self.fhem_set_error(tablet, info["NAME"], command)
+        if error:
+            await self.send_failed(tablet, info["NAME"], model.display_name(info), error)
+            return False
+        await self.update_header()
+        return armed
 
     async def action_undo(self, tablet, message):
         entry = self.undo.pop(tablet["id"], None)
