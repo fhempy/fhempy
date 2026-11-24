@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.24.5 (2026-11-24)
+
+### Features
+
+- **heating_control**: Show unreachable thermostats and low batteries
+  ([#1047](https://github.com/fhempy/fhempy/pull/1047),
+  [`f2bd632`](https://github.com/fhempy/fhempy/commit/f2bd632548b86fcb5e296eb61419a025c455b806))
+
+
 ## v2.24.4 (2026-11-24)
 
 ### Features
