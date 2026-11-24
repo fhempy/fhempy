@@ -46,7 +46,7 @@
     colorTitle: "Farbe", whiteTitle: "Weiß", warm: "warm", cold: "kalt",
     wxTitle: "Wetter", wxHours: "Nächste 24 Stunden", wxDays: "Nächste Tage", wxSunrise: "Sonnenaufgang", wxSunset: "Sonnenuntergang", wxToday: "Heute", wxNone: "Keine Vorhersage, das Wetter-Gerät liefert keine Stunden oder Tage.",
     rtNight: "Gute Nacht", rtAway: "Haus verlassen", rtNightLead: "Das ist noch offen oder an. Mit „Gute Nacht“ gehen Licht und Musik aus und die Rollläden gehen zu.", rtAwayLead: "Das ist noch offen oder an. Beim Gehen geht alles aus, was nicht anbleiben soll.",
-    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.", rtSecAlarm: "Alarmanlage", rtSecLock: "Wird verriegelt · {n}", rtLocks: "alle Türen sind zu", rtLockTag: "Zu", rtLockDoor: "Tür offen, bleibt offen", rtAlarmTag: "Scharf", rtAlarmTap: "antippen: unscharf lassen", rtAlarmStays: "Bleibt unscharf · antippen zum Scharfschalten",
+    rtAllFine: "Alles zu und aus.", rtBlinds: "{n} Rollläden offen", rtBlind: "1 Rollladen offen", rtBlindsSub: "gehen zu", rtGoNight: "Gute Nacht", rtGoAway: "Los geht’s", rtOff: "geht aus", rtSecOff: "Geht aus · {n}", rtSecClose: "Geht zu", rtSecStays: "Bleibt an · {n}", rtSecOpen: "Noch offen · {n}", rtOffTag: "Aus", rtGoIn: "Los geht’s · {n} s", rtGoNightIn: "Gute Nacht · {n} s", rtAutoStop: "Nicht automatisch", rtAutoHint: "Geht in {n} Sekunden von selbst los.", rtSecAlarm: "Alarmanlage", rtSecLock: "Wird verriegelt · {n}", rtSecVacuum: "Während du weg bist", rtVacStart: "Saugen starten", rtVacStarted: "Saugt", rtLocks: "alle Türen sind zu", rtLockTag: "Zu", rtLockDoor: "Tür offen, bleibt offen", rtAlarmTag: "Scharf", rtAlarmTap: "antippen: unscharf lassen", rtAlarmStays: "Bleibt unscharf · antippen zum Scharfschalten",
     warnrain: "Regen ab {t}", warnstorm: "Sturm oder Gewitter ab {t}", warnfrost: "Frost ab {t}", warnWindows: "Fenster offen: {names}",
     rtDoneNight: "Gute Nacht! {n} Geräte aus.", rtDoneAway: "Tschüss! {n} Geräte aus.", rtDoneNone: "Alles war schon aus.", rtFailed: "Nicht reagiert: {names}", undo: "Rückgängig", undone: "Wieder wie vorher.",
     wall: "An der Wand", couch: "Bei der Couch", door: "Bei der Tür",
@@ -148,7 +148,7 @@
     colorTitle: "Colour", whiteTitle: "White", warm: "warm", cold: "cold",
     wxTitle: "Weather", wxHours: "Next 24 hours", wxDays: "Next days", wxSunrise: "Sunrise", wxSunset: "Sunset", wxToday: "Today", wxNone: "No forecast, the weather device gives no hours or days.",
     rtNight: "Good night", rtAway: "Leave home", rtNightLead: "Still open or on. “Good night” switches the lights and music off and closes the blinds.", rtAwayLead: "Still open or on. Leaving switches off everything that should not stay on.",
-    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.", rtSecAlarm: "Alarm system", rtSecLock: "Will lock · {n}", rtLocks: "all doors are closed", rtLockTag: "Lock", rtLockDoor: "a door is open, stays unlocked", rtAlarmTag: "Armed", rtAlarmTap: "tap to leave it disarmed", rtAlarmStays: "Stays disarmed · tap to arm",
+    rtAllFine: "Everything closed and off.", rtBlinds: "{n} blinds open", rtBlind: "1 blind open", rtBlindsSub: "will close", rtGoNight: "Good night", rtGoAway: "Let’s go", rtOff: "goes off", rtSecOff: "Goes off · {n}", rtSecClose: "Will close", rtSecStays: "Stays on · {n}", rtSecOpen: "Still open · {n}", rtOffTag: "Off", rtGoIn: "Let’s go · {n} s", rtGoNightIn: "Good night · {n} s", rtAutoStop: "Not automatically", rtAutoHint: "Starts by itself in {n} seconds.", rtSecAlarm: "Alarm system", rtSecLock: "Will lock · {n}", rtSecVacuum: "While you are away", rtVacStart: "Start cleaning", rtVacStarted: "Cleaning", rtLocks: "all doors are closed", rtLockTag: "Lock", rtLockDoor: "a door is open, stays unlocked", rtAlarmTag: "Armed", rtAlarmTap: "tap to leave it disarmed", rtAlarmStays: "Stays disarmed · tap to arm",
     warnrain: "Rain from {t}", warnstorm: "Storm or thunder from {t}", warnfrost: "Frost from {t}", warnWindows: "Windows open: {names}",
     rtDoneNight: "Good night! {n} devices off.", rtDoneAway: "Bye! {n} devices off.", rtDoneNone: "Everything was off already.", rtFailed: "Did not react: {names}", undo: "Undo", undone: "Back as before.",
     wall: "On the wall", couch: "At the couch", door: "At the door",
@@ -2087,7 +2087,9 @@
     var doorOpen = all.some(function (x) { return x.tile.kind === "contact" && x.tile.door && x.tile.state.closed === false; });
     var locks = doorOpen ? [] : all.filter(function (x) { return x.tile.kind === "lock" && x.tile.state.locked === false; });
     var open = all.filter(function (x) { return secOpen(x.tile) && locks.indexOf(x) < 0; });
-    return { off: off, blinds: blinds, locks: locks, doorOpen: doorOpen, open: open, alarm: routineAlarm(mode) };
+    // leaving home: robot vacuums which could clean now, only offered, never started by itself
+    var vacuums = mode === "away" ? all.filter(function (x) { return x.tile.kind === "vacuum" && x.tile.view && x.tile.view.actions.indexOf("start") >= 0 && (!viewRunning(x.tile.state || {}) || (S.sheet && S.sheet.vacStarted && S.sheet.vacStarted[x.id])); }) : [];
+    return { off: off, blinds: blinds, locks: locks, doorOpen: doorOpen, open: open, alarm: routineAlarm(mode), vacuums: vacuums };
   }
   function weatherWarn() {
     var w = S.header && S.header.weather, warn = w && w.warn;
@@ -2147,6 +2149,13 @@
       var on = rtAlarmOn();
       body += section(t("rtSecAlarm"), on ? "off" : "stays") + '<div class="row tap ' + (on ? "rtgoes" : "rtstays") + '" data-rtalarm="1"><div class="ic" style="background:' + (on ? "#34D39926;color:#34D399" : "#8A93A626;color:#8A93A6") + '">' + I("shield") + '</div><div class="t"><b>' + esc(p.alarm.name) + "</b><span>" +
         esc(on ? alarmModeText(p.alarm.mode) + " · " + t("rtAlarmTap") : t("rtAlarmStays")) + "</span></div>" + (on ? '<span class="rttag">' + I("shield", 16) + " " + esc(t("rtAlarmTag")) + "</span>" : "") + "</div>";
+    }
+    if (p.vacuums.length) {
+      body += section(t("rtSecVacuum"));
+      p.vacuums.forEach(function (x) {
+        var started = S.sheet.vacStarted && S.sheet.vacStarted[x.id];
+        body += ovRow(x, "robot", "#5AA9FF", [x.room, viewLook(x.tile).sub].filter(Boolean).join(" · "), started ? '<span class="rttag">' + I("check", 16) + " " + esc(t("rtVacStarted")) + "</span>" : '<button class="pill" data-rtvac="' + esc(x.id) + '">' + esc(t("rtVacStart")) + "</button>");
+      });
     }
     if (p.open.length) {
       body += section(t("rtSecOpen", { n: p.open.length }));
@@ -3862,6 +3871,7 @@
     if ((el = closest(target, "data-enrange"))) { openEnergy(el.getAttribute("data-enrange")); return; }
     if ((el = closest(target, "data-enprice"))) { energyPriceClick(el); return; }
     if ((el = closest(target, "data-routine"))) { routineOpen(el.getAttribute("data-routine")); return; }
+    if ((el = closest(target, "data-rtvac"))) { var vid = el.getAttribute("data-rtvac"); act(vid, "start", null, null); if (S.sheet) { S.sheet.vacStarted = S.sheet.vacStarted || {}; S.sheet.vacStarted[vid] = true; renderSheet(); } return; }
     if ((el = closest(target, "data-rtalarm"))) { if (S.sheet) { S.sheet.noAlarm = rtAlarmOn(); } renderSheet(); return; }
     if ((el = closest(target, "data-rtstop"))) { if (S.sheet) { S.sheet.autoAt = 0; } routineTick(); renderSheet(); return; }
     if ((el = closest(target, "data-rtgo"))) { routineGo(el.getAttribute("data-rtgo")); return; }
