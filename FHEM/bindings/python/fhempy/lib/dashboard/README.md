@@ -292,8 +292,9 @@ stored in `attr <dashboard> device_views` (`Robby:vacuum,Valve:irrigation,Plug:n
 
 A tap on the energy card of *Home* opens the energy page: today by hour, the last 7 or 30 days by day. It shows how much
 the solar system made, what the house used, what came from the grid and was fed in, how much the home supplied itself
-and the cost. *Biggest consumers* lists the plugs and switches which report their power (reading `power`, `cur_power`, `current_power`, `currentPower` or `actPower` in W), with kWh and
-cost; a tap opens the device.
+and the cost. *Biggest consumers* lists the plugs and switches which report their power (reading `power`, `cur_power`, `current_power`, `currentPower`, `actPower` or `ENERGY_Power` of Tasmota in W), with kWh and
+cost; a tap opens the device. The device page of a metering plug also shows its voltage, current and energy of today
+and in total when it reports them (Tasmota `ENERGY_Voltage`, `ENERGY_Current`, `ENERGY_Today`, `ENERGY_Total`).
 
 The page needs a [timeline](../timeline/README.md) device: it keeps the power of every hour, the energy is calculated
 from it. The price is set on the tablet or with `attr <dashboard> energy_price 0.32` (€/kWh, optionally with the

@@ -2571,6 +2571,51 @@ def test_power_from_other_reading_names():
     assert model.power_reading({"readings": {"state": "on"}}) is None
 
 
+def test_tasmota_plug_shows_power_voltage_current_energy():
+    # Tasmota plug via MQTT2_DEVICE: ENERGY_* readings from tele/.../SENSOR
+    plug = {
+        "NAME": "p",
+        "TYPE": "MQTT2_DEVICE",
+        "sets": "on:noArg off:noArg toggle:noArg",
+        "readings": {
+            "state": "on",
+            "ENERGY_Power": "39",
+            "ENERGY_Voltage": "230",
+            "ENERGY_Current": "0.264",
+            "ENERGY_Today": "0.698",
+            "ENERGY_Total": "119.101",
+        },
+    }
+    assert model.power_reading(plug) == "ENERGY_Power"
+    state = model.tile_state("switch", plug)
+    assert state["power"] == 39
+    assert state["voltage"] == 230
+    assert state["current"] == 0.264
+    assert state["energy_today"] == 0.698
+    assert state["energy_total"] == 119.101
+    for name in ("ENERGY_Power", "ENERGY_Voltage", "ENERGY_Current", "ENERGY_Today", "ENERGY_Total"):
+        assert name in model.READING_SET
+    # a voltage below the mains is the one of a battery: not shown
+    remote = {"NAME": "r", "sets": "on off", "readings": {"state": "on", "voltage": "3.0"}}
+    assert "voltage" not in model.tile_state("switch", remote)
+    # plugs without these readings stay as before
+    assert set(model.tile_state("outlet", {"readings": {"state": "on"}})) & set(model.METER_READINGS) == set()
+
+
+@pytest.mark.asyncio
+async def test_tasmota_power_event_updates_tile(module):
+    info = module.infos["wz_Fernseher"]
+    info["readings"].pop("power")
+    info["readings"]["ENERGY_Power"] = "0"
+    await module.handle_event("wz_Fernseher", "ENERGY_Power", "1200")
+    await module.handle_event("wz_Fernseher", "ENERGY_Total", "12.5")
+    item = module.data["tiles"]["wz_Fernseher"]
+    assert item["state"]["power"] == 1200
+    assert item["state"]["energy_total"] == 12.5
+    consumers = module.energy_consumers({})
+    assert ("wz_Fernseher", item["name"], "wz_Fernseher", "ENERGY_Power") in consumers
+
+
 @pytest.mark.asyncio
 async def test_cur_power_updates_tile_watch_and_energy(module):
     info = module.infos["wz_Fernseher"]

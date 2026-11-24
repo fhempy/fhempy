@@ -100,7 +100,7 @@
     name: "Name", place: "Standort", room: "Raum", theme: "Design", auto: "Automatisch", dark: "Dunkel", light: "Hell",
     rooms: "Räume", editTiles: "Kacheln bearbeiten", editDone: "Bearbeiten beenden", reset: "Zurücksetzen",
     rpLight: "Licht", rpSwitches: "Schalter", rpBlinds: "Rollläden", rpMore: "Mehr in diesem Raum", rpOpenRoom: "Ganzen Raum öffnen", rpNofM: "{n} von {m} an", rpAllOffShort: "Alle aus", rpHeatsNow: "Heizt gerade", rpHoldRing: "Ring ziehen zum Einstellen", rpReached: "Soll erreicht", rpSetTo: "Soll {t}°",
-    switchHttps: "Zu https wechseln (für Sprechen)", energy: "Energie", solar: "Solar", usage: "Verbrauch",
+    switchHttps: "Zu https wechseln (für Sprechen)", energy: "Energie", solar: "Solar", usage: "Verbrauch", voltage: "Spannung", current: "Strom", energyToday: "Heute", energyTotal: "Gesamt",
     grid: "Netz", storage: "Speicher", price: "Preis", surplus: "Überschuss", fromGrid: "Netzbezug",
     hiddenTiles: "Ausgeblendet, + zum Zurückholen", days: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
     months: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
@@ -202,7 +202,7 @@
     name: "Name", place: "Place", room: "Room", theme: "Design", auto: "Automatic", dark: "Dark", light: "Light",
     rooms: "Rooms", editTiles: "Edit tiles", editDone: "Done editing", reset: "Reset",
     rpLight: "Light", rpSwitches: "Switches", rpBlinds: "Blinds", rpMore: "More in this room", rpOpenRoom: "Open the whole room", rpNofM: "{n} of {m} on", rpAllOffShort: "All off", rpHeatsNow: "Heating now", rpHoldRing: "Drag the ring to set", rpReached: "Target reached", rpSetTo: "Set to {t}°",
-    switchHttps: "Switch to https (for talking)", energy: "Energy", solar: "Solar", usage: "Usage",
+    switchHttps: "Switch to https (for talking)", energy: "Energy", solar: "Solar", usage: "Usage", voltage: "Voltage", current: "Current", energyToday: "Today", energyTotal: "Total",
     grid: "Grid", storage: "Battery", price: "Price", surplus: "Surplus", fromGrid: "From grid",
     hiddenTiles: "Hidden, + brings them back", days: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
     months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -308,6 +308,17 @@
     if (v === null || v === undefined || isNaN(v)) { return "–"; }
     var s = Number(v).toFixed(digits === undefined ? 1 : digits);
     return COMMA ? s.replace(".", ",") : s;
+  }
+  // values of a metering plug: power, voltage, current, energy today / total
+  function meterHtml(st, always) {
+    var facts = [];
+    function add(value, label) { facts.push('<div class="fact2"><b>' + esc(value) + "</b><span>" + esc(t(label)) + "</span></div>"); }
+    if (always || st.power) { add(st.power !== undefined ? watt(st.power) : "–", "usage"); }
+    if (st.voltage !== undefined) { add(Math.round(st.voltage) + " V", "voltage"); }
+    if (st.current !== undefined) { add(num(st.current, 2) + " A", "current"); }
+    if (st.energy_today !== undefined) { add(num(st.energy_today, 2) + " kWh", "energyToday"); }
+    if (st.energy_total !== undefined) { add(num(st.energy_total, 1) + " kWh", "energyTotal"); }
+    return facts.length ? '<div class="group"><div class="facts2">' + facts.join("") + "</div></div>" : "";
   }
   function watt(w) {
     if (w === null || w === undefined) { return "–"; }
@@ -1548,11 +1559,11 @@
     if (k === "media") {
       var ms = mediaSheet(tile); left = ms.left; body += ms.body;
     } else if (tile.measure) {
-      body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + (st.power !== undefined ? watt(st.power) : "–") + "</b><span>" + esc(t("usage")) + "</span></div></div></div>";
+      body += meterHtml(st, true);
       if (S.tablet && S.tablet.arrange) { body += measureHtml(tile); }
     } else if (k === "light" || k === "dimmer" || k === "switch" || k === "outlet") {
       body += '<div class="group"><div class="actions"><button class="pill' + (st.on ? " on" : "") + '" data-do="on">' + I("power", 20) + " " + esc(t("on")) + '</button><button class="pill' + (!st.on ? " on" : "") + '" data-do="off">' + esc(t("off")) + "</button></div></div>";
-      if (st.power) { body += '<div class="group"><div class="facts2"><div class="fact2"><b>' + watt(st.power) + "</b><span>" + esc(t("usage")) + "</span></div></div></div>"; }
+      body += meterHtml(st, false);
       if (tile.color) { body += colorHtml(tile); }
       body += timerHtml(tile);
       if (S.tablet && S.tablet.arrange) { body += keepOnHtml(tile) + (k === "switch" || k === "outlet" ? measureHtml(tile) : ""); }

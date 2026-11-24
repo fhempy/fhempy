@@ -57,7 +57,7 @@
 "needHttps":"Praten heeft https nodig, zie instellingen.","noMic":"Geen toegang tot de microfoon.","noCamera":"Geen camera ingesteld","camConnecting":"Camera verbinden …",
 "name":"Naam","place":"Plek","room":"Kamer","theme":"Ontwerp","auto":"Automatisch","dark":"Donker","light":"Licht","rooms":"Kamers","editTiles":"Tegels bewerken","editDone":"Bewerken klaar","reset":"Herstellen",
 "rpLight":"Licht","rpSwitches":"Schakelaars","rpBlinds":"Rolluiken","rpMore":"Meer in deze kamer","rpOpenRoom":"Hele kamer openen","rpNofM":"{n} van {m} aan","rpAllOffShort":"Alles uit","rpHeatsNow":"Verwarmt nu","rpHoldRing":"Sleep de ring om in te stellen","rpReached":"Doel bereikt","rpSetTo":"Instellen op {t}°",
-"switchHttps":"Naar https (om te praten)","energy":"Energie","solar":"Zon","usage":"Verbruik","grid":"Net","storage":"Accu","price":"Prijs","surplus":"Overschot","fromGrid":"Van het net","hiddenTiles":"Verborgen, + haalt ze terug",
+"switchHttps":"Naar https (om te praten)","energy":"Energie","solar":"Zon","usage":"Verbruik","voltage":"Spanning","current":"Stroom","energyToday":"Vandaag","energyTotal":"Totaal","grid":"Net","storage":"Accu","price":"Prijs","surplus":"Overschot","fromGrid":"Van het net","hiddenTiles":"Verborgen, + haalt ze terug",
 "days":["zo","ma","di","wo","do","vr","za"],
 "months":["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"],
 "weekdays":["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"],
