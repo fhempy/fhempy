@@ -2021,6 +2021,13 @@ def test_routine_locks_only_with_doors_closed():
     assert model.command(tiles["front"], info, "lock") == ["lock"]
 
 
+def test_leaving_home_closes_blinds_only_against_heat():
+    tiles = {"blind": {"id": "blind", "kind": "blind", "state": {"position": 80}}}
+    assert model.routine_steps(tiles, "away", [], ["blind"]) == ([], [])
+    steps, undo = model.routine_steps(tiles, "away", [], ["blind"], heat=True)
+    assert steps == [("blind", "position", 0)] and undo == [("blind", "position", 80)]
+
+
 def test_routine_alarm_mode():
     system = {"modes": ["away", "home", "off"], "mode": "off"}
     assert model.routine_alarm(system, "away") == "away"

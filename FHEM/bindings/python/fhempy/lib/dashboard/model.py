@@ -1460,11 +1460,12 @@ def door_open(tiles):
     )
 
 
-def routine_steps(tiles, mode, off_ids, close_ids, lock_ids=()):
+def routine_steps(tiles, mode, off_ids, close_ids, lock_ids=(), heat=False):
     """what good night / leaving home does, and how to undo it:
     (steps, undo) with (device, action, value). Switches off the lights and
     switches the tablet sends (not those left on with 'All off'); at night
-    also closes the blinds it sends. Locks it sends are locked when all
+    also closes the blinds it sends, when leaving only against the heat
+    (heat=True, chosen on the tablet). Locks it sends are locked when all
     doors are closed, never unlocked again by undo.
     Undo restores what was before."""
     steps, undo = [], []
@@ -1472,7 +1473,7 @@ def routine_steps(tiles, mode, off_ids, close_ids, lock_ids=()):
         item = tiles.get(str(device))
         if item is not None:
             _switch_off(item, steps, undo)
-    if mode == "night":
+    if mode == "night" or heat:
         _close_blinds(tiles, close_ids, steps, undo)
     if not door_open(tiles):
         _lock(tiles, lock_ids, steps)
