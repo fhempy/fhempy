@@ -248,7 +248,8 @@ def extra_sensors(device_type, info):
     ]
 
 
-def _position_inverted(info):
+def position_inverted(info):
+    """position 0 = open: attr matterInvert or the module"""
     inverted = info.get("attrs", {}).get("matterInvert", "")
     if inverted in ("0", "1"):
         return inverted == "1"
@@ -333,7 +334,7 @@ def _dimmer_state(info):
 
 def _blind_state(info):
     position = _percent(_reading(info, "pct", "position"))
-    if position is not None and _position_inverted(info):
+    if position is not None and position_inverted(info):
         position = 100 - position
     return {"position": position}
 
@@ -471,7 +472,7 @@ def _blind_commands(info, sets, command):
     if "position" not in command or position_set is None:
         return []
     position = command["position"]
-    if _position_inverted(info):
+    if position_inverted(info):
         position = 100 - position
     return [f"{position_set} {position}"]
 
