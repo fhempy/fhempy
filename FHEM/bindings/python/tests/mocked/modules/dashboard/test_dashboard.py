@@ -1482,6 +1482,19 @@ def test_routine_switches_off_media():
     assert [i for i, t in tiles.items() if model.media_goes_off(t)] == ["bose", "cast"]
 
 
+def test_routine_switches_off_fans():
+    tiles = {
+        "fan": {"id": "fan", "kind": "fan", "fan": True, "state": {"on": True, "mode": "high", "percent": 100}},
+        "still": {"id": "still", "kind": "fan", "fan": True, "state": {"on": False, "mode": "off", "percent": 0}},
+        "ceiling": {"id": "ceiling", "kind": "light", "fan": True, "state": {"on": False, "fan": {"mode": "low", "percent": 33}}},
+    }
+    steps, undo = model.routine_steps(tiles, "away", list(tiles), [])
+    assert steps == [("fan", "off", None), ("ceiling", "fan_percent", 0)]
+    assert undo == [("fan", "fan_percent", 100), ("ceiling", "fan_percent", 33)]
+    info = {"NAME": "fan", "sets": "on off fan_mode:off,low,medium,high pct:slider,0,1,100", "readings": {"pct": "100"}, "attrs": {}}
+    assert model.command(tiles["fan"], info, "off") != []
+
+
 def test_routine_media_commands():
     bose_dev = bose()
     bose_dev["NAME"] = "speaker"
