@@ -21,6 +21,7 @@ import re
 import time
 
 from .. import fhem, generic, utils
+from ..core import fhemweb
 from . import controller, curve, discover, pumps, render, schedule
 
 EVENT_DELAY = 1.0
@@ -1542,22 +1543,8 @@ class heating_control(generic.FhemModule):
         return ""
 
     async def create_room(self, room):
-        name = self.hash["NAME"]
         # alone in the room the page replaces the device row (fhempy_summaryFn)
-        cmd = (
-            f"my $n = {fhem.perlString(name)}; my $room = {fhem.perlString(room)};"
-            " my $cur = AttrVal($n, 'room', '');"
-            ' CommandAttr(undef, "$n room " . ($cur eq \'\' ? $room : "$cur,$room"))'
-            " if ((','.$cur.',') !~ /,\\Q$room\\E,/);"
-            " foreach my $w (devspec2array('TYPE=FHEMWEB')) {"
-            " next if ($defs{$w}{TEMPORARY});"
-            " my $ri = AttrVal($w, 'roomIcons', '');"
-            " next if ($ri =~ /(^|\\s)\\Q$room\\E:/);"
-            " CommandAttr(undef, \"$w roomIcons \" . ($ri eq '' ? '' : \"$ri \")"
-            f" . {fhem.perlString(room + ':' + ROOM_ICON)}) }}"
-            " ''"
-        )
-        result = await fhem.sendCommandHash(self.hash, cmd)
+        result = await fhemweb.add_room(self.hash, room, ROOM_ICON)
         if result:
             self.logger.error(f"create_room {room}: {result}")
             return
