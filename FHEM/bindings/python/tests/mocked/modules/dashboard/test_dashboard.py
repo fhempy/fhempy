@@ -2004,6 +2004,23 @@ async def test_arm_and_disarm_with_pin(module):
         await ws.close()
 
 
+def test_routine_locks_only_with_doors_closed():
+    tiles = {
+        "front": {"id": "front", "kind": "lock", "state": {"locked": False}},
+        "back": {"id": "back", "kind": "lock", "state": {"locked": True}},
+        "door": {"id": "door", "kind": "contact", "door": True, "state": {"closed": True}},
+        "window": {"id": "window", "kind": "contact", "door": False, "state": {"closed": False}},
+    }
+    for mode in model.ROUTINES:
+        steps, undo = model.routine_steps(tiles, mode, [], [], ["front", "back", "door"])
+        assert steps == [("front", "lock", None)] and undo == []
+    # an open door: nothing is locked
+    tiles["door"]["state"]["closed"] = False
+    assert model.routine_steps(tiles, "away", [], [], ["front"]) == ([], [])
+    info = {"NAME": "front", "sets": "lock unlock", "readings": {"state": "unlocked"}, "attrs": {}}
+    assert model.command(tiles["front"], info, "lock") == ["lock"]
+
+
 def test_routine_alarm_mode():
     system = {"modes": ["away", "home", "off"], "mode": "off"}
     assert model.routine_alarm(system, "away") == "away"

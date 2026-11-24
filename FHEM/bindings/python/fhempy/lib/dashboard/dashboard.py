@@ -1872,7 +1872,8 @@ class dashboard(generic.FhemModule):
         }
         off = message.get("off") if isinstance(message.get("off"), list) else []
         close = message.get("close") if isinstance(message.get("close"), list) else []
-        steps, undo = model.routine_steps(tiles, mode, off, close)
+        lock = message.get("lock") if isinstance(message.get("lock"), list) else []
+        steps, undo = model.routine_steps(tiles, mode, off, close, lock)
         failed = await self.run_steps(tablet, steps)
         alarm = await self.routine_alarm(tablet, mode, message.get("alarm"))
         self.undo[tablet["id"]] = {

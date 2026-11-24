@@ -1452,11 +1452,21 @@ ROUTINES = ("night", "away")
 UNDO_SECONDS = 10 * 60
 
 
-def routine_steps(tiles, mode, off_ids, close_ids):
+def door_open(tiles):
+    """a door contact is open: then good night / leaving home lock nothing"""
+    return any(
+        t["kind"] == "contact" and t.get("door") and t["state"].get("closed") is False
+        for t in tiles.values()
+    )
+
+
+def routine_steps(tiles, mode, off_ids, close_ids, lock_ids=()):
     """what good night / leaving home does, and how to undo it:
     (steps, undo) with (device, action, value). Switches off the lights and
     switches the tablet sends (not those left on with 'All off'); at night
-    also closes the blinds it sends. Undo restores what was before."""
+    also closes the blinds it sends. Locks it sends are locked when all
+    doors are closed, never unlocked again by undo.
+    Undo restores what was before."""
     steps, undo = [], []
     for device in off_ids:
         item = tiles.get(str(device))
@@ -1483,6 +1493,11 @@ def routine_steps(tiles, mode, off_ids, close_ids):
                 steps.append((item["id"], "position", 0))
                 if position is not None:
                     undo.append((item["id"], "position", position))
+    if not door_open(tiles):
+        for device in lock_ids:
+            item = tiles.get(str(device))
+            if item is not None and item["kind"] == "lock" and item["state"].get("locked") is False:
+                steps.append((item["id"], "lock", None))
     return steps, undo
 
 
