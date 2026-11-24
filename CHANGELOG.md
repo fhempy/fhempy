@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v2.24.6 (2026-11-24)
+
+### Bug Fixes
+
+- **dashboard**: Show blinds open or closed like the device says
+  ([#1049](https://github.com/fhempy/fhempy/pull/1049),
+  [`ccd886e`](https://github.com/fhempy/fhempy/commit/ccd886e4a042cfd25dc2743afff5240120afa18f))
+
+
 ## v2.24.5 (2026-11-24)
 
 ### Features
