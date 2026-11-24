@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v2.24.3 (2026-11-24)
+
+### Bug Fixes
+
+- **heating_control**: Room cards in the setup assistant, own room shows only the page
+  ([#1040](https://github.com/fhempy/fhempy/pull/1040),
+  [`fda44e9`](https://github.com/fhempy/fhempy/commit/fda44e9568fb5380b627134220b5a3549ac0b9f7))
+
+### Features
+
+- **dashboard**: Good night and leaving home switch off music players and TVs
+  ([#1041](https://github.com/fhempy/fhempy/pull/1041),
+  [`12ca037`](https://github.com/fhempy/fhempy/commit/12ca0372c74d2960447554144d9de8245005765c))
+
+
 ## v2.24.2 (2026-11-24)
 
 ### Features
