@@ -88,7 +88,7 @@ jobs:
             Devel::Cover
 
     - name: Install FHEM via debian nightly 
-      uses: fhem/setup-fhem@v1.0.1
+      uses: fhem/setup-fhem@v1.0.2
 
     - name: fix permissions
       run: |
