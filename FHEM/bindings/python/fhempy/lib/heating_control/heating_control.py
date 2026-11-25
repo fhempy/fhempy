@@ -222,8 +222,15 @@ SETS = {
     },
     "schedule": {
         "args": ["room", "schedule"],
-        "help": "Comfort periods of a room, the rest is eco, e.g. "
-        "<code>Mo-Fr 06:00-08:00,16:00-22:00; Sa-So 07:00-23:00</code>",
+        "help": "Schedule of a room: from which time which temperature, as many "
+        "points per day as you like, e.g. <code>Mo-Fr 00:00 17, 06:00 21, "
+        "08:00 18, 16:00 21.5, 22:00 17; Sa-So 15</code>. <code>comfort</code> "
+        "and <code>eco</code> instead of a number use the temperatures of the "
+        "room, the old form <code>Mo-Fr 06:00-08:00,16:00-22:00</code> "
+        "(comfort periods, the rest eco) works as well. The JSON of the module "
+        'weekprofile (<code>{"Mon":{"time":["06:00","24:00"],'
+        '"temp":["17","21"]},...}</code>) is taken too, the schedule '
+        "is saved in this format.",
     },
     "copy_schedule": {
         "args": ["from", "to"],
@@ -316,6 +323,14 @@ class Room:
         # [{"device", "label", "kind": "unreachable"|"battery", "battery"}]
         self.alerts = []
 
+    def temp_of(self, value):
+        """temperature of a schedule value (number or comfort/eco)"""
+        if value == "comfort":
+            return self.comfort
+        if value == "eco":
+            return self.eco
+        return value
+
     def view(self):
         return {
             "key": self.key,
@@ -327,7 +342,11 @@ class Room:
             "comfort": self.comfort,
             "eco": self.eco,
             "schedule": schedule.to_text(self.week),
-            "week": {str(d): self.week.get(d, []) for d in range(7)},
+            # switch points with temperatures, comfort/eco resolved
+            "week": {
+                str(d): [[m, self.temp_of(v)] for m, v in self.week.get(d, [])]
+                for d in range(7)
+            },
             "override_until": self.override[1] if self.override else None,
             "valve": self.valve,
             "window": self.window,
@@ -850,10 +869,14 @@ class heating_control(generic.FhemModule):
             room.target, room.state = self.vacation[1], "vacation"
         elif room.override:
             room.target, room.state = room.override[0], "manual"
-        elif schedule.is_comfort(room.week, datetime.datetime.fromtimestamp(now)):
-            room.target, room.state = room.comfort, "comfort"
         else:
-            room.target, room.state = room.eco, "eco"
+            value = schedule.value_at(room.week, datetime.datetime.fromtimestamp(now))
+            room.target = room.temp_of(value)
+            if isinstance(value, str):
+                room.state = value
+            else:
+                # own temperatures: warm or saving by the eco temperature
+                room.state = "comfort" if value > room.eco + 0.01 else "eco"
         if old_target is not None and abs(old_target - room.target) > 0.01:
             self.last_target_change = now
         room.alerts = self.alerts_of(room)
@@ -1211,10 +1234,13 @@ class heating_control(generic.FhemModule):
         override = (
             f"{room.override[0]:g} {int(room.override[1])}" if room.override else "-"
         )
+        # weekprofile has numbers only: comfort/eco become their temperature
+        profile = schedule.to_weekprofile(room.week, room.temp_of)
+        room.week = schedule.from_weekprofile(profile)
         await fhem.readingsBeginUpdate(self.hash)
         try:
             await fhem.readingsBulkUpdateIfChanged(
-                self.hash, prefix + "schedule", schedule.to_text(room.week)
+                self.hash, prefix + "schedule", profile
             )
             await fhem.readingsBulkUpdateIfChanged(
                 self.hash, prefix + "comfort", f"{room.comfort:g}"
@@ -1535,7 +1561,7 @@ class heating_control(generic.FhemModule):
         except ValueError as exc:
             return str(exc)
         for room in rooms:
-            room.week = {day: list(periods) for day, periods in week.items()}
+            room.week = {day: list(points) for day, points in week.items()}
         return await self.changed(rooms)
 
     async def set_copy_schedule(self, hash, params):
@@ -1545,7 +1571,7 @@ class heating_control(generic.FhemModule):
         except ValueError as exc:
             return str(exc)
         for room in rooms:
-            room.week = {day: list(periods) for day, periods in source.week.items()}
+            room.week = {day: list(points) for day, points in source.week.items()}
             room.comfort, room.eco = source.comfort, source.eco
         return await self.changed(rooms)
 

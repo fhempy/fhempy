@@ -6,9 +6,10 @@ source down to the flow temperature the house needs, the **circulation pump** (o
 
 ![Detail page](screenshot.png)
 
-- **Very simple schedules per room**: comfort periods on a 24 h bar, tap or swipe, the rest of
-  the day is eco. Presets (work day, home all day), Mo-Fr / Sa-Su or single days, one tap to
-  use the schedule for all rooms.
+- **Schedules per room**: from which time which temperature, as many times per day as you
+  like (a room can also stay at 15 °C all day). A colored 24 h bar shows the day. Presets
+  (work day, home all day), Mo-Fr / Sa-Su or single days, one tap to use the schedule for all
+  rooms.
 - **Change a room for now**: − / + on the detail page or simply turn the thermostat. The room
   keeps the temperature until its next schedule change.
 - **Vacation in one tap**: choose the day you are back (or 1 week / 2 weeks), on that day the
@@ -83,10 +84,16 @@ heat meter use `flow_factor` to calibrate, or `fixed_flow` for a known flow.
 - `mode setup|auto|off`: `setup` (after define) and `off` only measure and control nothing,
   `auto` starts the control, only with a finished setup.
 - `room_temp <room> <temperature>|auto`: temperature until the next schedule change.
-- `comfort_temp <room>|all <temperature>`, `eco_temp <room>|all <temperature>`
-- `schedule <room> <schedule>`: comfort periods, e.g.
-  `set heizung schedule Wohnzimmer Mo-Fr 06:00-08:00,16:00-22:00; Sa-So 07:00-23:00`
-  (German or English day names, `-` = eco all day).
+- `comfort_temp <room>|all <temperature>`, `eco_temp <room>|all <temperature>`: the two
+  temperatures for the presets and for `comfort`/`eco` in a schedule.
+- `schedule <room> <schedule>`: from which time which temperature, e.g.
+  `set heizung schedule Wohnzimmer Mo-Fr 00:00 17, 06:00 21, 08:00 18, 16:00 21.5, 22:00 17; Sa-So 15`
+  (German or English day names, a value without time = the whole day, `comfort`/`eco` = the
+  temperatures of the room, a day without 00:00 keeps the last temperature of the day before).
+  The old form with comfort periods `Mo-Fr 06:00-08:00,16:00-22:00` (the rest eco) still works.
+  The JSON of the FHEM module weekprofile works as well, e.g.
+  `{"Mon":{"time":["06:00","22:00","24:00"],"temp":["17","21","17"]},...}`. The reading
+  `room_<room>_schedule` is saved in this format (every temperature until its time).
 - `copy_schedule <from> <to>|all`
 - `vacation <day back> [temperature]`: e.g. `2026-12-27`, `27.12.` or `7d`.
 - `vacation_off`, `reset_learning`, `rescan`
