@@ -324,13 +324,9 @@ def _low_flag(value):
     return str(value).strip().lower() in LOW_WORDS
 
 
-def battery(readings):
-    """(low, percent or None) from the battery readings of a device"""
-    readings = readings or {}
-    for reading in BATTERY_LOW_FLAGS:
-        if reading in readings and _low_flag(readings[reading]):
-            return True, None
-    percent = None
+def _battery_percent(readings):
+    """battery level in percent, None if there is none (voltages are no
+    percent)"""
     for reading in BATTERY_PERCENT:
         value = readings.get(reading)
         if value is None or number(value) is None:
@@ -339,17 +335,30 @@ def battery(readings):
         # voltages (e.g. "2.9" or "3.0 V") are no percent
         if "v" in text.lower() or (number(value) < 5 and "." in text):
             continue
-        percent = number(value)
-        break
-    if percent is not None:
-        return percent <= BATTERY_LOW_PERCENT, percent
+        return number(value)
+    return None
+
+
+def _battery_text_low(readings):
     for reading in BATTERY_TEXT:
         value = readings.get(reading)
         if value is not None and number(value) is None:
             word = str(value).strip().lower().split(" ")[0]
             if word in ("low", "empty", "critical", "replace", "warning"):
-                return True, None
-    return False, None
+                return True
+    return False
+
+
+def battery(readings):
+    """(low, percent or None) from the battery readings of a device"""
+    readings = readings or {}
+    for reading in BATTERY_LOW_FLAGS:
+        if reading in readings and _low_flag(readings[reading]):
+            return True, None
+    percent = _battery_percent(readings)
+    if percent is not None:
+        return percent <= BATTERY_LOW_PERCENT, percent
+    return _battery_text_low(readings), None
 
 
 def unreachable(readings):

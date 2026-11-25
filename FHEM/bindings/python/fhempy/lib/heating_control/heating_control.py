@@ -865,6 +865,22 @@ class heating_control(generic.FhemModule):
             room.override = None
             self.create_async_task(self.save_room(room))
         old_target = room.target
+        self.update_target(room, now)
+        if old_target is not None and abs(old_target - room.target) > 0.01:
+            self.last_target_change = now
+        room.alerts = self.alerts_of(room)
+        self.update_measurements(room)
+
+    @staticmethod
+    def schedule_state(room, value):
+        """comfort/eco state of a schedule value"""
+        if isinstance(value, str):
+            return value
+        # own temperatures: warm or saving by the eco temperature
+        return "comfort" if value > room.eco + 0.01 else "eco"
+
+    def update_target(self, room, now):
+        """target temperature and state from vacation, override or schedule"""
         if self.vacation and self.vacation[0] > now:
             room.target, room.state = self.vacation[1], "vacation"
         elif room.override:
@@ -872,14 +888,10 @@ class heating_control(generic.FhemModule):
         else:
             value = schedule.value_at(room.week, datetime.datetime.fromtimestamp(now))
             room.target = room.temp_of(value)
-            if isinstance(value, str):
-                room.state = value
-            else:
-                # own temperatures: warm or saving by the eco temperature
-                room.state = "comfort" if value > room.eco + 0.01 else "eco"
-        if old_target is not None and abs(old_target - room.target) > 0.01:
-            self.last_target_change = now
-        room.alerts = self.alerts_of(room)
+            room.state = self.schedule_state(room, value)
+
+    def update_measurements(self, room):
+        """actual temperature, thermostat bias, valve and window of a room"""
         temps, valves, window = self.thermostat_values(room)
         temps = [t for t in temps if t is not None]
         valves = [v for v in valves if v is not None]
