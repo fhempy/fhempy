@@ -2,6 +2,73 @@
 
 <!-- version list -->
 
+## v2.24.8 (2026-11-25)
+
+### Bug Fixes
+
+- **ci**: Pin third-party actions in fhem_test.yml by full commit SHA
+  ([#1057](https://github.com/fhempy/fhempy/pull/1057),
+  [`c48b96f`](https://github.com/fhempy/fhempy/commit/c48b96fcc608ee2e821f793c0515b82bee5fd8e6))
+
+- **ci**: Update tox to 4.67.16 and tox-gh-actions to 3.5.1
+  ([#1056](https://github.com/fhempy/fhempy/pull/1056),
+  [`a6c7bc8`](https://github.com/fhempy/fhempy/commit/a6c7bc829a342e8d5cb78a0528bc61a167872473))
+
+- **dashboard**: Reduce cognitive complexity of tile_state, build and command
+  ([#1059](https://github.com/fhempy/fhempy/pull/1059),
+  [`edadfd2`](https://github.com/fhempy/fhempy/commit/edadfd252e4b98f7c0998e80952ccb2816a53db5))
+
+- **deps**: Bump fhem/setup-fhem from 1.0.1 to 1.0.2
+  ([#829](https://github.com/fhempy/fhempy/pull/829),
+  [`22d6cc6`](https://github.com/fhempy/fhempy/commit/22d6cc68ae9d08417d926824a61a2e088bc9365d))
+
+- **deps**: Bump shogo82148/actions-setup-perl from 1.44.3 to 1.44.4
+  ([#828](https://github.com/fhempy/fhempy/pull/828),
+  [`112a8a1`](https://github.com/fhempy/fhempy/commit/112a8a10b690bd68cdd2c77c5982d46c0c6038c0))
+
+- **deps-dev**: Bump graphql-core from 3.3.0 to 3.3.1
+  ([#843](https://github.com/fhempy/fhempy/pull/843),
+  [`bcc2815`](https://github.com/fhempy/fhempy/commit/bcc2815c95a263b237562296b87040ac86810ad0))
+
+- **deps-dev**: Bump pyasn1 from 0.6.4 to 0.6.5 ([#842](https://github.com/fhempy/fhempy/pull/842),
+  [`07c0b06`](https://github.com/fhempy/fhempy/commit/07c0b06b2e2677967b76ca8fff5c25fd88c8dd96))
+
+- **esphome**: Update ESPHome Device Builder to 1.28.1
+  ([#1055](https://github.com/fhempy/fhempy/pull/1055),
+  [`3a71c0f`](https://github.com/fhempy/fhempy/commit/3a71c0f3b289af6cb0fc6ae39db030402ad847cd))
+
+- **gree_climate**: Update greeclimate to 4.3.0
+  ([#1054](https://github.com/fhempy/fhempy/pull/1054),
+  [`31df971`](https://github.com/fhempy/fhempy/commit/31df971d06e07ad412b51379a60d33167b2f5f4b))
+
+- **heating_control**: SonarCloud findings (regex, complexity, JS/CSS)
+  ([#1058](https://github.com/fhempy/fhempy/pull/1058),
+  [`dc9ecfc`](https://github.com/fhempy/fhempy/commit/dc9ecfc5636283035a65a41e3cf0c1970c3bdc13))
+
+- **tibber**: Test the setup without the live Tibber demo API
+  ([#1053](https://github.com/fhempy/fhempy/pull/1053),
+  [`2c5f23a`](https://github.com/fhempy/fhempy/commit/2c5f23ad5e888763a605ca015be95146e0207448))
+
+### Build System
+
+- **deps**: Bump fhem/fhem-controls-actions from 4.0.2 to 4.0.3
+  ([#1012](https://github.com/fhempy/fhempy/pull/1012),
+  [`5e4ddaa`](https://github.com/fhempy/fhempy/commit/5e4ddaab9c8b70f95e4d13e33b0cf15be12a29c3))
+
+- **deps-dev**: Bump soupsieve from 3.0.3 to 4.0 ([#932](https://github.com/fhempy/fhempy/pull/932),
+  [`ec8dab5`](https://github.com/fhempy/fhempy/commit/ec8dab5fe5433149800dbf7862c718d6174cfc5e))
+
+- **deps-dev**: Bump starlette from 0.52.1 to 1.3.1
+  ([#1039](https://github.com/fhempy/fhempy/pull/1039),
+  [`b18b1b8`](https://github.com/fhempy/fhempy/commit/b18b1b8955a8a24dc3202ae8fdb5ae44e357722f))
+
+### Features
+
+- **heating_control**: Own temperature per time in the schedule, weekprofile format
+  ([#1048](https://github.com/fhempy/fhempy/pull/1048),
+  [`8b4a57e`](https://github.com/fhempy/fhempy/commit/8b4a57e80c0566fca822b165673cb7f128f65057))
+
+
 ## v2.24.7 (2026-11-24)
 
 ### Features
