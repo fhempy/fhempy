@@ -450,6 +450,60 @@ def is_door(info):
     return any(word in text for word in DOOR_WORDS)
 
 
+def _set_number(state, key, value):
+    """state[key] = value as number, nothing if it isn't one"""
+    value = kinds.number(value)
+    if value is not None:
+        state[key] = value
+
+
+def _contact_state(info, state):
+    raw = str(_reading(info, "contact", "state") or "").lower()
+    if state.get("closed") is False and any(w in raw for w in TILTED_WORDS):
+        state["tilted"] = True
+    state["since"] = _reading_time(info, "contact", "state")
+
+
+def _kind_state(kind, info, state):
+    """the parts of a tile state which only some kinds have"""
+    if kind == "contact":
+        _contact_state(info, state)
+    if kind == "thermostat":
+        state.update(heating_state(info))
+    if kind == "motion":
+        # last change: since when somebody is there or the room is quiet
+        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
+    if kind in HAZARD_READINGS:
+        state["alarm"] = bool(hazard_alarm(kind, info))
+        state["since"] = _reading_time(info, *HAZARD_READINGS[kind])
+    if kind in ("temperature", "thermostat"):
+        _set_number(state, "humidity", _reading(info, "humidity"))
+    if kind == "fan":
+        state["on"] = bool(state.get("percent"))
+    elif kinds.has_fan_endpoint(kind, info):
+        state["fan"] = kinds.state("fan", info)
+    if kind in LIGHTS and color_caps(info):
+        state.update(color_state(info))
+
+
+def _common_state(kind, info, state):
+    """power, battery, CO2, reachability and last seen of a tile"""
+    if kind in ("switch", "outlet"):
+        _set_number(state, "power", _reading(info, *POWER_READINGS))
+        state.update(meter_state(info))
+    if battery_low(info):
+        state["battery_low"] = True
+    _set_number(state, "co2", _reading(info, *CO2_READINGS))
+    if unreachable(info):
+        state["unreachable"] = True
+    if kind in CLIMATE_KINDS:
+        # sensors report every few minutes: the hour of the newest value
+        # shows one that went silent (battery, radio, gone)
+        seen = max((str(t) for t in (info.get("times") or {}).values()), default="")
+        if seen:
+            state["seen"] = seen[:13]
+
+
 def tile_state(kind, info):
     """state of a tile, keys depend on kind"""
     if kind == "inputs":
@@ -461,50 +515,10 @@ def tile_state(kind, info):
     if kind == "blind":
         info = blind_info(info)
     state = {k: v for k, v in kinds.state(kind, info).items() if v is not None}
-    if kind == "contact":
-        raw = str(_reading(info, "contact", "state") or "").lower()
-        if state.get("closed") is False and any(w in raw for w in TILTED_WORDS):
-            state["tilted"] = True
-        state["since"] = _reading_time(info, "contact", "state")
-    if kind == "thermostat":
-        state.update(heating_state(info))
-    if kind == "motion":
-        # last change: since when somebody is there or the room is quiet
-        state["since"] = _reading_time(info, "motion", "occupancy", "presence", "state")
-
-    if kind in HAZARD_READINGS:
-        state["alarm"] = bool(hazard_alarm(kind, info))
-        state["since"] = _reading_time(info, *HAZARD_READINGS[kind])
-    if kind in ("temperature", "thermostat"):
-        humidity = kinds.number(_reading(info, "humidity"))
-        if humidity is not None:
-            state["humidity"] = humidity
-    if kind == "fan":
-        state["on"] = bool(state.get("percent"))
-    elif kinds.has_fan_endpoint(kind, info):
-        state["fan"] = kinds.state("fan", info)
-    if kind in LIGHTS and color_caps(info):
-        state.update(color_state(info))
+    _kind_state(kind, info, state)
     if kind in views.VIEWS:
         return views.state(kind, info)
-    if kind in ("switch", "outlet"):
-        power = kinds.number(_reading(info, *POWER_READINGS))
-        if power is not None:
-            state["power"] = power
-        state.update(meter_state(info))
-    if battery_low(info):
-        state["battery_low"] = True
-    co2 = kinds.number(_reading(info, *CO2_READINGS))
-    if co2 is not None:
-        state["co2"] = co2
-    if unreachable(info):
-        state["unreachable"] = True
-    if kind in CLIMATE_KINDS:
-        # sensors report every few minutes: the hour of the newest value
-        # shows one that went silent (battery, radio, gone)
-        seen = max((str(t) for t in (info.get("times") or {}).values()), default="")
-        if seen:
-            state["seen"] = seen[:13]
+    _common_state(kind, info, state)
     return state
 
 
@@ -870,6 +884,17 @@ def keeps_on(info):
 MEASURE_KINDS = ("switch", "outlet")
 
 
+def _set_keep_on(item, name, info, keep_on, measure):
+    """keep_on/measure flags of a tile, see build"""
+    if item["kind"] in SWITCHABLE:
+        item["keep_on"] = keeps_on(info) if keep_on is None else name in keep_on
+        if measure and name in measure and item["kind"] in MEASURE_KINDS:
+            item["measure"] = True
+            item["keep_on"] = True
+    elif item["kind"] == "media" and keep_on and name in keep_on:
+        item["keep_on"] = True
+
+
 def build(infos, order=None, keep_on=None, measure=None, device_views=None):
     """rooms and tiles of all devices.
     order: names of rooms in the wanted order (others follow sorted)
@@ -886,22 +911,12 @@ def build(infos, order=None, keep_on=None, measure=None, device_views=None):
             scenes.extend(_scene_items(name, info))
             continue
         device_rooms = rooms_of(info)
-        item = (
-            tile(info, device_rooms[0], device_views.get(name))
-            if device_rooms
-            else None
-        )
+        if not device_rooms:
+            continue
+        item = tile(info, device_rooms[0], device_views.get(name))
         if item is None:
             continue
-        if item["kind"] in SWITCHABLE:
-            item["keep_on"] = (
-                keeps_on(info) if keep_on is None else name in keep_on
-            )
-            if measure and name in measure and item["kind"] in MEASURE_KINDS:
-                item["measure"] = True
-                item["keep_on"] = True
-        elif item["kind"] == "media" and keep_on and name in keep_on:
-            item["keep_on"] = True
+        _set_keep_on(item, name, info, keep_on, measure)
         tiles[name] = item
         for room in device_rooms:
             rooms.setdefault(room, []).append(item)
@@ -1448,6 +1463,12 @@ def _fan_toggle(item, info, action):
     return kinds.fhem_commands("fan", info, {"mode": mode})
 
 
+def _inputs_command(info, action, value):
+    if action != "input" or not isinstance(value, dict):
+        return []
+    return inputs.command(info, str(value.get("name", "")), value.get("value"))
+
+
 def command(item, info, action, value=None):
     """FHEM set arguments for an action of a tablet, e.g. ['pct 50'].
     Only what the kind of the tile allows, never free commands."""
@@ -1459,21 +1480,28 @@ def command(item, info, action, value=None):
     if item["kind"] in views.VIEWS:
         return views.command(item["kind"], info, action, value)
     if item["kind"] == "inputs":
-        if action != "input" or not isinstance(value, dict):
-            return []
-        return inputs.command(info, str(value.get("name", "")), value.get("value"))
+        return _inputs_command(info, action, value)
     if item.get("fan") and action in FAN_ACTIONS:
         return kinds.fhem_commands("fan", info, FAN_ACTIONS[action](value))
     if item["kind"] == "fan":
         return _fan_toggle(item, info, action)
     if item["kind"] in LIGHTS and action in ("rgb", "ct"):
         return color_command(info, action, value)
+    return _state_command(item, info, action, value)
+
+
+def _wanted(item, action, value):
+    """wanted state of an action, None if the action is unknown"""
     if action == "toggle":
-        wanted = _toggle(item["kind"], item["state"])
-    elif action in ACTIONS:
-        wanted = ACTIONS[action](value)
-    else:
-        wanted = None
+        return _toggle(item["kind"], item["state"])
+    if action in ACTIONS:
+        return ACTIONS[action](value)
+    return None
+
+
+def _state_command(item, info, action, value):
+    """FHEM set arguments of the plain actions (on/off/toggle/pct/...)"""
+    wanted = _wanted(item, action, value)
     if wanted is None:
         return []
     if item["kind"] == "blind":
