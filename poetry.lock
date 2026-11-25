@@ -2360,14 +2360,14 @@ test = ["asyncmock (==0.4.2)", "flake8 (==7.4.1)", "hypothesis (==6.92.1)", "imp
 
 [[package]]
 name = "esphome-device-builder"
-version = "1.27.0"
+version = "1.28.1"
 description = "ESPHome Device Builder"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "esphome_device_builder-1.27.0-py3-none-any.whl", hash = "sha256:38723702f906b28390ecdf74b2c18ca2b07a15bf5a3743d2edbe55e5f6b341ba"},
-    {file = "esphome_device_builder-1.27.0.tar.gz", hash = "sha256:b95daa43f1eab845466f27c9c0f5b9e04a7541d5885c4c69db26b7fafaebe2d0"},
+    {file = "esphome_device_builder-1.28.1-py3-none-any.whl", hash = "sha256:3f89c8dc89c26e3c3bbe3c2bc17f23e6a9ad6180e74a6f8522d3f427a84a46c5"},
+    {file = "esphome_device_builder-1.28.1.tar.gz", hash = "sha256:6985d68e2768d290846b1fedee1a273097d92ed38cf655c057d4b349806c5063"},
 ]
 
 [package.dependencies]
@@ -2375,7 +2375,7 @@ aiohttp = ">=3.9.0"
 aiohttp-asyncmdnsresolver = ">=0.1.1"
 colorlog = ">=6.8.0"
 cryptography = ">=42.0.2"
-esphome-device-builder-frontend = "0.1.381"
+esphome-device-builder-frontend = "0.1.387"
 fnv-hash-fast = ">=2.0.0"
 icmplib = ">=3.0.4"
 ifaddr = ">=0.2.0"
@@ -2390,18 +2390,18 @@ zeroconf = ">=0.150.0"
 [package.extras]
 esphome = ["esphome (>=2026.10.2)"]
 mcp-interop = ["mcp (>=1.26,<2)"]
-test = ["blockbuster (>=1.5.5,<1.6)", "codespell (==2.4.3)", "importtime-waterfall (==1.0.0)", "jsonschema (>=4.20.0)", "mypy (==2.4.1)", "pre-commit (==4.7.0)", "pre-commit-hooks (==6.0.0)", "pytest (==9.2.0)", "pytest-aiohttp (==1.1.1)", "pytest-codspeed (==5.0.4)", "pytest-cov (==7.1.0)", "pytest-timeout (==2.4.0)", "pytest-xdist (==3.8.0)", "ruff (==0.17.3)", "types-PyYAML"]
+test = ["blockbuster (>=1.5.5,<1.6)", "codespell (==2.4.3)", "importtime-waterfall (==1.0.0)", "jsonschema (>=4.20.0)", "mypy (==2.4.1)", "pre-commit (==4.7.0)", "pre-commit-hooks (==6.0.0)", "pytest (==9.2.0)", "pytest-aiohttp (==1.1.1)", "pytest-codspeed (==5.0.4)", "pytest-cov (==7.1.0)", "pytest-timeout (==2.4.0)", "pytest-xdist (==3.8.0)", "ruff (==0.17.4)", "types-PyYAML"]
 
 [[package]]
 name = "esphome-device-builder-frontend"
-version = "0.1.381"
+version = "0.1.387"
 description = "Prebuilt web frontend for the ESPHome Device Builder Dashboard"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "esphome_device_builder_frontend-0.1.381-py3-none-any.whl", hash = "sha256:c0d263a9bdc259a4d86ae09eda00c8f0dc42badc1ada44d3bac7b60c987f9808"},
-    {file = "esphome_device_builder_frontend-0.1.381.tar.gz", hash = "sha256:5c21801f1dd24e54c4d9f2782406949374efeae69eaaa1c9a16a057374d2279a"},
+    {file = "esphome_device_builder_frontend-0.1.387-py3-none-any.whl", hash = "sha256:0df6aec175fe6b008d807a29222fc2aa163208679f45ce8a546d8513e990179e"},
+    {file = "esphome_device_builder_frontend-0.1.387.tar.gz", hash = "sha256:8c0307561467192a39a0eb2bb90e5e59c72ce0d3e4a2d69ddd5c07d7976c7781"},
 ]
 
 [[package]]
@@ -8227,4 +8227,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "15012572f2b185c5f1b5c47050df98eb475ec62b6bd39c1285abceb66045dc59"
+content-hash = "e5a53032d48a0bba37792fc4c62017e51d0b23489bffcbebf7ccde3c4cd00e35"

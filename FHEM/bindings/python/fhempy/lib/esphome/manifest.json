@@ -1,7 +1,7 @@
 {
   "requirements": [
     "esphome==2026.10.2",
-    "esphome-device-builder==1.27.0"
+    "esphome-device-builder==1.28.1"
   ],
   "installer": {
     "title": "ESPHome",
