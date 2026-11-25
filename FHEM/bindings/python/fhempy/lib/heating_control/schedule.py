@@ -83,7 +83,7 @@ def _minutes(hours, minutes):
 
 def value_of(text):
     """a temperature (float) or the level "comfort"/"eco"; ValueError"""
-    word = re.sub(r"\s*°?c?$", "", str(text).strip().lower())
+    word = str(text).strip().lower().removesuffix("c").removesuffix("°").rstrip()
     if word in LEVELS:
         return LEVELS[word]
     try:
@@ -126,30 +126,43 @@ def _tokens(spec):
     return tokens
 
 
+def _period(token):
+    """(start, end) of a comfort period like 06:00-08:00, None otherwise"""
+    match = PERIOD.match(token)
+    if not match:
+        return None
+    start = _minutes(match.group(1), match.group(2))
+    end = _minutes(match.group(3), match.group(4))
+    if end <= start:
+        raise ValueError(f"period {token} ends before it starts")
+    return start, end
+
+
+def _point(token):
+    """(minute, value) of a switch point like 06:00 21; ValueError"""
+    match = POINT.match(token)
+    if not match:
+        raise ValueError(f"invalid point {token}, use 06:00 21")
+    minute = 0
+    if match.group(1) is not None:
+        minute = _minutes(match.group(1), match.group(2))
+        if minute >= 24 * 60:
+            raise ValueError(f"invalid time {token}")
+    return minute, value_of(match.group(3))
+
+
 def _points(spec):
     spec = spec.strip()
     if spec in ("-", ""):
         return [(0, "eco")]
-    tokens = _tokens(spec)
     periods, points = [], {}
-    for token in tokens:
-        match = PERIOD.match(token)
-        if match:
-            start = _minutes(match.group(1), match.group(2))
-            end = _minutes(match.group(3), match.group(4))
-            if end <= start:
-                raise ValueError(f"period {token} ends before it starts")
-            periods.append((start, end))
-            continue
-        match = POINT.match(token)
-        if not match:
-            raise ValueError(f"invalid point {token}, use 06:00 21")
-        minute = 0
-        if match.group(1) is not None:
-            minute = _minutes(match.group(1), match.group(2))
-            if minute >= 24 * 60:
-                raise ValueError(f"invalid time {token}")
-        points[minute] = value_of(match.group(3))
+    for token in _tokens(spec):
+        period = _period(token)
+        if period:
+            periods.append(period)
+        else:
+            minute, value = _point(token)
+            points[minute] = value
     if periods and points:
         raise ValueError("use either periods (06:00-08:00) or points (06:00 21)")
     if periods:
@@ -287,22 +300,30 @@ def from_weekprofile(text):
     week = {day: [(0, "eco")] for day in range(7)}
     for day, name in enumerate(WEEKPROFILE_DAYS):
         entry = profile.get(name)
-        if entry is None:
-            continue
-        times, temps = entry.get("time") or [], entry.get("temp") or []
-        if not times or len(times) != len(temps):
-            raise ValueError(f"{name}: time and temp need the same length")
-        points, start = [], 0
-        for until, temp in zip(times, temps):
-            match = re.fullmatch(r"(\d{1,2}):(\d{2})", str(until).strip())
-            if not match:
-                raise ValueError(f"{name}: invalid time {until}")
-            end = _minutes(match.group(1), match.group(2))
-            if end <= start:
-                raise ValueError(f"{name}: times have to rise")
-            value = _weekprofile_temp(temp)
-            if not points or points[-1][1] != value:
-                points.append((start, value))
-            start = end
-        week[day] = points
+        if entry is not None:
+            week[day] = _weekprofile_day(name, entry)
     return week
+
+
+def _weekprofile_minute(name, until):
+    match = re.fullmatch(r"(\d{1,2}):(\d{2})", str(until).strip())
+    if not match:
+        raise ValueError(f"{name}: invalid time {until}")
+    return _minutes(match.group(1), match.group(2))
+
+
+def _weekprofile_day(name, entry):
+    """one weekprofile day {"time": [...], "temp": [...]} -> points"""
+    times, temps = entry.get("time") or [], entry.get("temp") or []
+    if not times or len(times) != len(temps):
+        raise ValueError(f"{name}: time and temp need the same length")
+    points, start = [], 0
+    for until, temp in zip(times, temps):
+        end = _weekprofile_minute(name, until)
+        if end <= start:
+            raise ValueError(f"{name}: times have to rise")
+        value = _weekprofile_temp(temp)
+        if not points or points[-1][1] != value:
+            points.append((start, value))
+        start = end
+    return points
