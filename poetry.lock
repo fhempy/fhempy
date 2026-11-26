@@ -6019,14 +6019,14 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-env"
-version = "1.8.5"
+version = "1.8.7"
 description = "Set environment variables for pytest sessions."
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
 files = [
-    {file = "pytest_env-1.8.5-py3-none-any.whl", hash = "sha256:0e3b3a4c84d3303904005e3b62eab51e197c36735f5862bed229c0ac6f1fd739"},
-    {file = "pytest_env-1.8.5.tar.gz", hash = "sha256:992c37efdc1bde2f0783975080ac4cdcea85f36df9d6fe3a835edd01a7e06584"},
+    {file = "pytest_env-1.8.7-py3-none-any.whl", hash = "sha256:7093379c9c5003cdf11d140d23f3cd28c31734407f666e0992726cb3a3b09df7"},
+    {file = "pytest_env-1.8.7.tar.gz", hash = "sha256:917e169e829e328aca7cbe0426801672f1243a7b03bbbccd687490d2a3c6725e"},
 ]
 
 [package.dependencies]
@@ -8227,4 +8227,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "e5a53032d48a0bba37792fc4c62017e51d0b23489bffcbebf7ccde3c4cd00e35"
+content-hash = "127584731f9d0120c44e4459b30e5fef2c0ce2146008cf6e322c8e715b29d72f"
