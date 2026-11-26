@@ -3084,14 +3084,14 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "huawei-solar"
-version = "3.0.7"
+version = "3.2.3"
 description = "A Python wrapper for the Huawei Inverter modbus TCP API"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "huawei_solar-3.0.7-py3-none-any.whl", hash = "sha256:0af1c091cf616f251010db760488be99d6521e05b414c43bf62e1322de42cb82"},
-    {file = "huawei_solar-3.0.7.tar.gz", hash = "sha256:29976ea686ca53c055ef99c75e14ad3fe0c692b6bf8362a61695d67ab6db5304"},
+    {file = "huawei_solar-3.2.3-py3-none-any.whl", hash = "sha256:188fa0f34033977dda365a2af93c8ffdac0fdb49b567d6cd4078b6081da6fd25"},
+    {file = "huawei_solar-3.2.3.tar.gz", hash = "sha256:dbd3b77d986fec0806f437a73c356673fedefe7de6e4ccd2239f0e583fb3f3ad"},
 ]
 
 [package.dependencies]
@@ -8228,4 +8228,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "72156866b11a06f555c2aa39898150e0ea7b525c0b53e2ceed8f55a5acba4e77"
+content-hash = "9e3c25b290a1299ef751827d23473b9f9b98da669ea37da6cac18a38679e8a49"
