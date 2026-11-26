@@ -93,7 +93,7 @@ goodwe = "==0.4.10"
 greeclimate = "==4.3.0"
 habluetooth = "==7.1.2"
 httpx = "==0.28.1"
-huawei-solar = "==3.0.7"
+huawei-solar = "==3.2.3"
 # hyundai_kia_connect_api 4.41 needs pycryptodome>=4, greeclimate 4.1 still pins <4,
 # fhempy installs it with an uv override (pkg_installer.UV_OVERRIDES)
 # hyundai_kia_connect_api = "==4.41.2"
