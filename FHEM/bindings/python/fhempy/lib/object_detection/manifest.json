@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "opencv-python-headless==5.0.0.93",
+    "opencv-python-headless==5.1.0.95",
     "ai-edge-litert==2.3.0"
   ],
   "installer": {
