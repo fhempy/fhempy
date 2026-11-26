@@ -7375,14 +7375,14 @@ files = [
 
 [[package]]
 name = "volvocarsapi"
-version = "0.5.0"
+version = "0.6.0"
 description = "Python client for the Volvo Cars API."
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "volvocarsapi-0.5.0-py3-none-any.whl", hash = "sha256:d20364abd6457f9a67cb0a7ae2d131bc0c82babe75d252fb6ab43deadb5b685a"},
-    {file = "volvocarsapi-0.5.0.tar.gz", hash = "sha256:570f9fcb841fc6163f2d85b5ef51dddc10d7d9ce2c32948560f7725acf2de77f"},
+    {file = "volvocarsapi-0.6.0-py3-none-any.whl", hash = "sha256:0d447b58e42de17c6c91b38945fffb4ebd80dde4433470bbbd28052d00975841"},
+    {file = "volvocarsapi-0.6.0.tar.gz", hash = "sha256:ca2adb799781d4249724ce649dca7be782e3ba6e320e06260cfba4e13ffaf83e"},
 ]
 
 [package.dependencies]
@@ -8228,4 +8228,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "558fb3d7aa5feb556eae2df68915cf4a51a3293a20889f6e50c3dedacde651da"
+content-hash = "72156866b11a06f555c2aa39898150e0ea7b525c0b53e2ceed8f55a5acba4e77"
