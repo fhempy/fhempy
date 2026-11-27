@@ -97,9 +97,7 @@ def test_model_rooms_and_tiles():
 def test_display_name():
     assert model.display_name({"NAME": "wz_LampeDecke"}) == "Lampe Decke"
     assert model.display_name({"NAME": "TV_Licht_links"}) == "Licht Links"
-    assert (
-        model.display_name({"NAME": "Wohnzimmer_Lampe"}, "Wohnzimmer") == "Lampe"
-    )
+    assert model.display_name({"NAME": "Wohnzimmer_Lampe"}, "Wohnzimmer") == "Lampe"
     assert model.display_name({"NAME": "x", "alias": "Mein Licht"}) == "Mein Licht"
 
 
@@ -325,7 +323,9 @@ async def test_pair_and_websocket(module):
         assert tablet["place"] == "door" and tablet["name"] == "Flur Tür"
 
         # tap on the light: FHEM gets set, all tablets get the new state
-        await ws.send_json({"type": "action", "id": "wz_Deckenlicht", "action": "toggle"})
+        await ws.send_json(
+            {"type": "action", "id": "wz_Deckenlicht", "action": "toggle"}
+        )
         tile = (await next_of(ws, "tile"))["tile"]
         assert tile["id"] == "wz_Deckenlicht" and tile["state"]["on"] is False
         assert "wz_Deckenlicht off" in module.fake.sets
@@ -334,7 +334,9 @@ async def test_pair_and_websocket(module):
         await ws.send_json({"type": "action", "id": "global", "action": "toggle"})
         await ws.send_json({"type": "action", "id": "fl_Haustuer", "action": "delete"})
         await asyncio.sleep(0.1)
-        assert not any(s.startswith(("global", "fl_Haustuer")) for s in module.fake.sets)
+        assert not any(
+            s.startswith(("global", "fl_Haustuer")) for s in module.fake.sets
+        )
 
         # per tablet layout
         await ws.send_json({"type": "layout", "layout": {"hidden_rooms": ["Bad"]}})
@@ -353,7 +355,9 @@ async def test_restricted_tablet(module):
     _, answer = await pair(module)
     token = answer["token"]
     await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Bad"})
-    await module.set_tablet_readonly(module.hash, {"tablet": "Tablet1", "readonly": "1"})
+    await module.set_tablet_readonly(
+        module.hash, {"tablet": "Tablet1", "readonly": "1"}
+    )
     async with aiohttp.ClientSession() as session:
         ws, welcome = await connect(session, module, token)
         assert set(welcome["tiles"]) == {"bad_Fenster", "bad_Heizung"}
@@ -366,7 +370,9 @@ async def test_restricted_tablet(module):
             module.hash, {"tablet": "Tablet1", "readonly": "0"}
         )
         # other rooms stay forbidden
-        await ws.send_json({"type": "action", "id": "wz_Deckenlicht", "action": "toggle"})
+        await ws.send_json(
+            {"type": "action", "id": "wz_Deckenlicht", "action": "toggle"}
+        )
         await ws.send_json({"type": "action", "action": "all_off", "room": None})
         await asyncio.sleep(0.1)
         assert module.fake.sets == []
@@ -425,9 +431,7 @@ async def test_detail_page_while_starting(mocker):
     mock_fhem.mock_module(mocker)
     mod = dashboard(logging.getLogger(__name__))
     mod.hash = {"NAME": NAME}
-    mocker.patch(
-        "fhempy.lib.generic.FhemModule.FW_detailFn", return_value=""
-    )
+    mocker.patch("fhempy.lib.generic.FhemModule.FW_detailFn", return_value="")
     page = await mod.FW_detailFn({"NAME": NAME}, [], {})
     assert "starting" in page
     assert mod.url().endswith(f":{dash_module.DEFAULT_PORT}/")
@@ -450,8 +454,16 @@ async def test_reload_sends_model_only_on_changes(module, mocker):
 def test_sparks_temperature_and_humidity_per_device():
     trends = [
         {"device": "wz_Heizung", "reading": "desired-temp", "points": [20, 21]},
-        {"device": "wz_Heizung", "reading": "measured-temp", "points": [20.5, None, 21]},
-        {"device": "wz_Heizung", "reading": "humidity", "points": [[0, 48], [3600, 50]]},
+        {
+            "device": "wz_Heizung",
+            "reading": "measured-temp",
+            "points": [20.5, None, 21],
+        },
+        {
+            "device": "wz_Heizung",
+            "reading": "humidity",
+            "points": [[0, 48], [3600, 50]],
+        },
         {"device": "kue_Klima", "reading": "temperature", "points": [22, None]},
         {"device": "other", "reading": "temperature", "points": [1, 2]},
     ]
@@ -541,14 +553,35 @@ async def test_restricted_tablet_cannot_arrange_rooms(module):
 
 def test_all_off_leaves_heating_on():
     infos = {
-        "Heizstab": {"NAME": "Heizstab", "TYPE": "dummy", "room": "Keller",
-                     "sets": "on off", "readings": {"state": "on"}},
-        "Plug_TV": {"NAME": "Plug_TV", "TYPE": "dummy", "room": "Keller",
-                    "sets": "on off", "readings": {"state": "on"}},
-        "sw1": {"NAME": "sw1", "TYPE": "dummy", "room": "Keller",
-                   "alias": "FRITZ!Box", "sets": "on off", "readings": {"state": "on"}},
-        "Heimtheater": {"NAME": "Heimtheater", "TYPE": "dummy", "room": "Keller",
-                        "sets": "on off", "readings": {"state": "on"}},
+        "Heizstab": {
+            "NAME": "Heizstab",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "Plug_TV": {
+            "NAME": "Plug_TV",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "sw1": {
+            "NAME": "sw1",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "alias": "FRITZ!Box",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
+        "Heimtheater": {
+            "NAME": "Heimtheater",
+            "TYPE": "dummy",
+            "room": "Keller",
+            "sets": "on off",
+            "readings": {"state": "on"},
+        },
     }
     tiles = model.build(infos)["tiles"]
     assert sorted(model.all_off(tiles)) == ["Heimtheater", "Plug_TV"]
@@ -583,13 +616,26 @@ def test_arrangement_only_offers_devices_shown_on_tablets():
     data = model.arrangement(infos)
     assert [d["id"] for d in data["unassigned"]] == ["Lampe"]
 
+
 def test_idle_devices_when_arranging():
     now = model.datetime.datetime(2026, 11, 2, 12, 0, 0)
     infos = {
-        "old": {"NAME": "old", "TYPE": "dummy", "room": "Bad", "sets": "on off",
-                "readings": {"state": "off"}, "last": "2026-09-01 10:00:00"},
-        "new": {"NAME": "new", "TYPE": "dummy", "room": "Bad", "sets": "on off",
-                "readings": {"state": "off"}, "last": "2026-10-30 10:00:00"},
+        "old": {
+            "NAME": "old",
+            "TYPE": "dummy",
+            "room": "Bad",
+            "sets": "on off",
+            "readings": {"state": "off"},
+            "last": "2026-09-01 10:00:00",
+        },
+        "new": {
+            "NAME": "new",
+            "TYPE": "dummy",
+            "room": "Bad",
+            "sets": "on off",
+            "readings": {"state": "off"},
+            "last": "2026-10-30 10:00:00",
+        },
         "none": {"NAME": "none", "TYPE": "dummy", "room": "", "sets": "on off"},
     }
     data = model.arrangement(infos, now)
@@ -625,12 +671,20 @@ async def test_delete_idle_device(module):
 
 def test_presence_people_with_arrival_and_departure():
     infos = {
-        "rr_A": {"NAME": "rr_A", "TYPE": "ROOMMATE", "alias": "Anna",
-                 "readings": {"state": "awoken", "lastArrival": "2026-11-02 18:42:00"},
-                 "times": {"state": "2026-11-02 20:00:00"}},
-        "rr_L": {"NAME": "rr_L", "TYPE": "ROOMMATE", "alias": "Lea",
-                 "readings": {"state": "absent"},
-                 "times": {"state": "2026-11-01 07:10:00"}},
+        "rr_A": {
+            "NAME": "rr_A",
+            "TYPE": "ROOMMATE",
+            "alias": "Anna",
+            "readings": {"state": "awoken", "lastArrival": "2026-11-02 18:42:00"},
+            "times": {"state": "2026-11-02 20:00:00"},
+        },
+        "rr_L": {
+            "NAME": "rr_L",
+            "TYPE": "ROOMMATE",
+            "alias": "Lea",
+            "readings": {"state": "absent"},
+            "times": {"state": "2026-11-01 07:10:00"},
+        },
     }
     people = model.presence(infos)["people"]
     assert [(p["name"], p["home"], p["since"]) for p in people] == [
@@ -672,7 +726,9 @@ async def test_tablet_without_timeline(module):
             data = await resp.json()
             assert [e["text"] for e in data["entries"]] == ["Light on"]
             assert data["periods"] == []
-        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "all"})
+        await module.set_tablet_rooms(
+            module.hash, {"tablet": "Tablet1", "rooms": "all"}
+        )
         await module.set_tablet_timeline(
             module.hash, {"tablet": "Tablet1", "timeline": "0"}
         )
@@ -928,13 +984,17 @@ async def test_media_cover_through_fhempy(module):
         presets = module.data["tiles"]["wz_Radio"]["state"]["presets"]
         assert "art" in presets[0]
         # a song cover: the tile also gets the station logo, served as preset=logo
-        await module.handle_event("wz_Radio", "art", "http://speaker.local/album/song.jpg")
+        await module.handle_event(
+            "wz_Radio", "art", "http://speaker.local/album/song.jpg"
+        )
         state = module.data["tiles"]["wz_Radio"]["state"]
         assert state["logo"] == presets[0]["art"] != state["art"]
         async with session.get(url + "&preset=logo", headers=auth) as resp:
             assert resp.status == 200
         # a tablet for other rooms gets nothing
-        await module.set_tablet_rooms(module.hash, {"tablet": "Tablet1", "rooms": "Küche"})
+        await module.set_tablet_rooms(
+            module.hash, {"tablet": "Tablet1", "rooms": "Küche"}
+        )
         async with session.get(url, headers=auth) as resp:
             assert resp.status == 404
     assert loaded == [
@@ -984,7 +1044,9 @@ def test_fans():
     assert model.command(light, ceiling, "fan_mode", "high") == ["fan_mode high"]
     assert model.command(light, ceiling, "level", 60) == ["pct 60"]
     # lights without fan know no fan commands
-    plain = model.tile(fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer")
+    plain = model.tile(
+        fake_home.DEVICES["wz_Deckenlicht"] | {"NAME": "x"}, "Wohnzimmer"
+    )
     assert "fan" not in plain
     assert model.command(plain, {"sets": "on off pct"}, "fan_mode", "high") == []
 
@@ -1265,9 +1327,7 @@ async def test_timer_switches_off_later(module, mocker):
                 break
         assert "timer" not in tile
         assert lamp["id"] not in module.timers
-        assert any(
-            f"'dashboard_timer_{lamp['id']}'; CommandDelete" in c for c in sent
-        )
+        assert any(f"'dashboard_timer_{lamp['id']}'; CommandDelete" in c for c in sent)
         await ws.close()
 
 
@@ -1322,7 +1382,11 @@ def test_maintenance_and_co2():
     seen = tiles["ga_Aussen"]["state"]["seen"]
     assert len(seen) == 13 and seen == fake_home.ts(3 * 24 * 60)[:13]
     assert "seen" not in tiles["ku_Licht"]["state"]
-    for readings in ({"Activity": "dead"}, {"state": "unreachable"}, {"availability": "offline"}):
+    for readings in (
+        {"Activity": "dead"},
+        {"state": "unreachable"},
+        {"availability": "offline"},
+    ):
         assert model.unreachable({"readings": readings})
     assert not model.unreachable({"readings": {"Activity": "alive", "state": "on"}})
 
@@ -1434,8 +1498,16 @@ def test_bins_and_calendar():
 
 def test_bin_devices():
     infos = {
-        "abfall": {"NAME": "abfall", "TYPE": "ABFALL", "readings": {"next_text": "Biotonne", "next_days": "1"}},
-        "later": {"NAME": "later", "TYPE": "ABFALL", "readings": {"next_text": "Papier", "next_days": "4"}},
+        "abfall": {
+            "NAME": "abfall",
+            "TYPE": "ABFALL",
+            "readings": {"next_text": "Biotonne", "next_days": "1"},
+        },
+        "later": {
+            "NAME": "later",
+            "TYPE": "ABFALL",
+            "readings": {"next_text": "Papier", "next_days": "4"},
+        },
     }
     assert model.in_header(infos["abfall"])
     assert model.bin_devices(infos) == [{"what": "Biotonne", "day": 1}]
@@ -1461,9 +1533,10 @@ def test_weather_warning():
         return {"readings": readings}
 
     assert model.weather_warning({"readings": {}}) is None
-    assert model.weather_warning(
-        forecast(h0={"precipitation": "10", "temperature": "5"})
-    ) is None
+    assert (
+        model.weather_warning(forecast(h0={"precipitation": "10", "temperature": "5"}))
+        is None
+    )
     assert model.weather_warning(
         forecast(
             h0={"precipitation": "10", "temperature": "5"},
@@ -1486,7 +1559,12 @@ def test_weather_warning_in_header():
 def test_routine_steps():
     tiles = {
         "lamp": {"id": "lamp", "kind": "light", "state": {"on": True}},
-        "fridge": {"id": "fridge", "kind": "outlet", "state": {"on": True}, "keep_on": True},
+        "fridge": {
+            "id": "fridge",
+            "kind": "outlet",
+            "state": {"on": True},
+            "keep_on": True,
+        },
         "dark": {"id": "dark", "kind": "light", "state": {"on": False}},
         "blind": {"id": "blind", "kind": "blind", "state": {"position": 60}},
         "shut": {"id": "shut", "kind": "blind", "state": {"position": 0}},
@@ -1503,12 +1581,38 @@ def test_routine_steps():
 def test_routine_switches_off_media():
     tiles = {
         # with on/off: off when on, even if nothing plays
-        "bose": {"id": "bose", "kind": "media", "media": {"power": True}, "state": {"on": True, "playing": False}},
-        "bose_off": {"id": "bose_off", "kind": "media", "media": {"power": True}, "state": {"on": False}},
+        "bose": {
+            "id": "bose",
+            "kind": "media",
+            "media": {"power": True},
+            "state": {"on": True, "playing": False},
+        },
+        "bose_off": {
+            "id": "bose_off",
+            "kind": "media",
+            "media": {"power": True},
+            "state": {"on": False},
+        },
         # without on/off: pause what plays
-        "cast": {"id": "cast", "kind": "media", "media": {"power": False}, "state": {"on": True, "playing": True}},
-        "cast_idle": {"id": "cast_idle", "kind": "media", "media": {"power": False}, "state": {"on": True, "playing": False}},
-        "kept": {"id": "kept", "kind": "media", "media": {"power": True}, "state": {"on": True}, "keep_on": True},
+        "cast": {
+            "id": "cast",
+            "kind": "media",
+            "media": {"power": False},
+            "state": {"on": True, "playing": True},
+        },
+        "cast_idle": {
+            "id": "cast_idle",
+            "kind": "media",
+            "media": {"power": False},
+            "state": {"on": True, "playing": False},
+        },
+        "kept": {
+            "id": "kept",
+            "kind": "media",
+            "media": {"power": True},
+            "state": {"on": True},
+            "keep_on": True,
+        },
     }
     off = list(tiles)
     for mode in model.ROUTINES:
@@ -1520,14 +1624,34 @@ def test_routine_switches_off_media():
 
 def test_routine_switches_off_fans():
     tiles = {
-        "fan": {"id": "fan", "kind": "fan", "fan": True, "state": {"on": True, "mode": "high", "percent": 100}},
-        "still": {"id": "still", "kind": "fan", "fan": True, "state": {"on": False, "mode": "off", "percent": 0}},
-        "ceiling": {"id": "ceiling", "kind": "light", "fan": True, "state": {"on": False, "fan": {"mode": "low", "percent": 33}}},
+        "fan": {
+            "id": "fan",
+            "kind": "fan",
+            "fan": True,
+            "state": {"on": True, "mode": "high", "percent": 100},
+        },
+        "still": {
+            "id": "still",
+            "kind": "fan",
+            "fan": True,
+            "state": {"on": False, "mode": "off", "percent": 0},
+        },
+        "ceiling": {
+            "id": "ceiling",
+            "kind": "light",
+            "fan": True,
+            "state": {"on": False, "fan": {"mode": "low", "percent": 33}},
+        },
     }
     steps, undo = model.routine_steps(tiles, "away", list(tiles), [])
     assert steps == [("fan", "off", None), ("ceiling", "fan_percent", 0)]
     assert undo == [("fan", "fan_percent", 100), ("ceiling", "fan_percent", 33)]
-    info = {"NAME": "fan", "sets": "on off fan_mode:off,low,medium,high pct:slider,0,1,100", "readings": {"pct": "100"}, "attrs": {}}
+    info = {
+        "NAME": "fan",
+        "sets": "on off fan_mode:off,low,medium,high pct:slider,0,1,100",
+        "readings": {"pct": "100"},
+        "attrs": {},
+    }
     assert model.command(tiles["fan"], info, "off") != []
 
 
@@ -1539,8 +1663,11 @@ def test_routine_media_commands():
     steps, _ = model.routine_steps({item["id"]: item}, "away", [item["id"]], [])
     assert [model.command(item, bose_dev, a, v) for _, a, v in steps] == [["off"]]
     cast = fake_home.device(
-        "PythonModule", "Küche", "play pause stop next volume:slider,0,1,100",
-        {"state": "playing", "playStatus": "PLAYING"}, fhempytype="googlecast",
+        "PythonModule",
+        "Küche",
+        "play pause stop next volume:slider,0,1,100",
+        {"state": "playing", "playStatus": "PLAYING"},
+        fhempytype="googlecast",
     )
     cast["NAME"] = "cast"
     item = model.tile(cast, "Küche")
@@ -1552,7 +1679,11 @@ def test_routine_media_commands():
 async def test_good_night_and_undo(module):
     _, answer = await pair(module)
     tiles = module.data["tiles"]
-    on = [i for i, t in tiles.items() if t["kind"] in model.SWITCHABLE and t["state"].get("on")]
+    on = [
+        i
+        for i, t in tiles.items()
+        if t["kind"] in model.SWITCHABLE and t["state"].get("on")
+    ]
     blinds = [i for i, t in tiles.items() if t["kind"] == "blind"]
     open_blind = next(i for i in blinds if tiles[i]["state"].get("position"))
     position = tiles[open_blind]["state"]["position"]
@@ -1560,7 +1691,13 @@ async def test_good_night_and_undo(module):
         ws, _ = await connect(session, module, answer["token"])
         module.fake.sets.clear()
         await ws.send_json(
-            {"type": "action", "action": "routine", "mode": "night", "off": on, "close": blinds}
+            {
+                "type": "action",
+                "action": "routine",
+                "mode": "night",
+                "off": on,
+                "close": blinds,
+            }
         )
         done = await next_of(ws, "routine")
         assert done["mode"] == "night" and done["undo"] and done["failed"] == []
@@ -1619,8 +1756,18 @@ def test_parse_notices():
         "Briefkasten Post ist da; Keller:water=wet Wasser im Keller\nGarage"
     )
     assert notices == [
-        {"device": "Briefkasten", "reading": "state", "value": None, "text": "Post ist da"},
-        {"device": "Keller", "reading": "water", "value": "wet", "text": "Wasser im Keller"},
+        {
+            "device": "Briefkasten",
+            "reading": "state",
+            "value": None,
+            "text": "Post ist da",
+        },
+        {
+            "device": "Keller",
+            "reading": "water",
+            "value": "wet",
+            "text": "Wasser im Keller",
+        },
         {"device": "Garage", "reading": "state", "value": None, "text": ""},
     ]
     assert model.parse_notices(model.format_notices(notices)) == notices
@@ -1639,7 +1786,9 @@ def test_parse_notices():
 
 @pytest.mark.asyncio
 async def test_notice_shown_and_ticked_off(module):
-    module._attr_notices = "Briefkasten Post ist da; wz_Fenster:contact=open Fenster zu!"
+    module._attr_notices = (
+        "Briefkasten Post ist da; wz_Fenster:contact=open Fenster zu!"
+    )
     await module.reload()
     texts = [n["text"] for n in module.head["notices"]]
     assert sorted(texts) == ["Fenster zu!", "Post ist da"]
@@ -1650,18 +1799,24 @@ async def test_notice_shown_and_ticked_off(module):
         ws, _ = await connect(session, module, answer["token"])
         # the tick sets the dummy off, its event takes the notice away
         module.fake.sets.clear()
-        await ws.send_json({"type": "action", "action": "notice_done", "id": "Briefkasten"})
+        await ws.send_json(
+            {"type": "action", "action": "notice_done", "id": "Briefkasten"}
+        )
         await asyncio.sleep(0.1)
         assert module.fake.sets == ["Briefkasten off"]
         await module.handle_event("Briefkasten", "state", "off")
         await module.update_header()
         assert [n["id"] for n in module.head["notices"]] == ["wz_Fenster"]
         # no command to reset a window: hidden until it reports again
-        await ws.send_json({"type": "action", "action": "notice_done", "id": "wz_Fenster"})
+        await ws.send_json(
+            {"type": "action", "action": "notice_done", "id": "wz_Fenster"}
+        )
         await asyncio.sleep(0.1)
         assert module.head["notices"] == []
         # a tablet adds a notice in the details of a device
-        await ws.send_json({"type": "notice", "id": "wz_Stehlampe", "on": True, "text": "Lampe an"})
+        await ws.send_json(
+            {"type": "notice", "id": "wz_Stehlampe", "on": True, "text": "Lampe an"}
+        )
         await asyncio.sleep(0.1)
         assert module.head["notice_setup"]["wz_Stehlampe"] == "Lampe an"
         assert any(n["id"] == "wz_Stehlampe" for n in module.head["notices"])
@@ -1686,8 +1841,12 @@ def test_thermostat_heats_and_range():
         "valve": 0,
         "heating": False,
     }
-    assert model.heating_state(thermostat({"hvac_action": "heating"})) == {"heating": True}
-    assert model.heating_state(thermostat({"running_state": "idle"})) == {"heating": False}
+    assert model.heating_state(thermostat({"hvac_action": "heating"})) == {
+        "heating": True
+    }
+    assert model.heating_state(thermostat({"running_state": "idle"})) == {
+        "heating": False
+    }
     assert model.heating_state(thermostat({})) == {}
     assert model.target_range(thermostat({})) == (5, 29, 0.5)
     assert model.target_range(thermostat({}, "desired-temp:4.5,5.0,6.0,30.5")) == (
@@ -1727,7 +1886,10 @@ def test_appliance_watch():
     watch.feed(2, 125 * minute)
     assert watch.tick(140 * minute) == "short"
     assert len(watch.runs) == 1
-    assert model.parse_appliances("A:washer, B:none,C:toaster") == {"A": "washer", "B": "none"}
+    assert model.parse_appliances("A:washer, B:none,C:toaster") == {
+        "A": "washer",
+        "B": "none",
+    }
     assert model.format_appliances({"B": "none", "A": "washer"}) == "A:washer,B:none"
     assert model.typical_seconds([3000, 3600, 4000]) == 3600
     assert model.typical_seconds([]) is None
@@ -1737,9 +1899,27 @@ def test_appliance_watch():
 
 MINUTE = 60
 # a 40 °C program: water, heating, washing, a pause, rinsing, spinning
-PROGRAM_SHORT = [(5, 8), (10, 2000), (15, 120), (4, 3), (20, 150), (3, 4), (15, 150), (3, 500)]
+PROGRAM_SHORT = [
+    (5, 8),
+    (10, 2000),
+    (15, 120),
+    (4, 3),
+    (20, 150),
+    (3, 4),
+    (15, 150),
+    (3, 500),
+]
 # a 60 °C program: longer heating, a longer pause in the middle
-PROGRAM_LONG = [(5, 8), (25, 2100), (30, 130), (6, 3), (40, 140), (10, 600), (4, 3), (6, 700)]
+PROGRAM_LONG = [
+    (5, 8),
+    (25, 2100),
+    (30, 130),
+    (6, 3),
+    (40, 140),
+    (10, 600),
+    (4, 3),
+    (6, 700),
+]
 
 
 def run_program(watch, program, start, scale=1.0, wobble=0, every=20, until=None):
@@ -1801,6 +1981,28 @@ def test_appliance_first_program_waits():
         (25, 4, 3),
         (49, 3, 4),
     ]
+
+
+def test_appliance_switched_off_first_program():
+    # nothing learned, but 0 W: the washer switched itself off
+    watch = model.ApplianceWatch("washer", [])
+    end = run_program(watch, PROGRAM_SHORT, 0)
+    assert watch.feed(1, end) is None
+    assert watch.idle_since == end and watch.running
+    # counted from the drop of the power, not from the 0 W value
+    assert finish(watch, end + 30, power=0) == model.APPLIANCE_OFF_SECONDS - 30
+    assert watch.idle_since is None
+    # a dishwasher may dry at well below 1 W: it waits
+    watch = model.ApplianceWatch("dishwasher", [])
+    end = run_program(watch, PROGRAM_SHORT, 0)
+    assert finish(watch, end, power=0) == model.APPLIANCE_DONE_MINUTES * 60
+
+
+def test_appliance_switched_off_learned():
+    watch, t = learned_washer()
+    # an unknown program, but less power than in every learned pause
+    end = run_program(watch, [(5, 8), (50, 2300)], t)
+    assert finish(watch, end, power=0) == model.APPLIANCE_QUICK_SECONDS
 
 
 def test_appliance_end_within_30_seconds():
@@ -1920,7 +2122,9 @@ async def test_appliance_asked_then_done(module, mocker):
         await tick(52)
         ask = module.make_header()["appliances"]["ask"]
         assert [a["id"] for a in ask] == ["wz_Fernseher"]
-        await ws.send_json({"type": "appliance", "id": "wz_Fernseher", "what": "washer"})
+        await ws.send_json(
+            {"type": "appliance", "id": "wz_Fernseher", "what": "washer"}
+        )
         head = (await next_of(ws, "header"))["header"]
         assert head["appliances"]["ask"] == []
         assert module._attr_appliances == "wz_Fernseher:washer"
@@ -1969,7 +2173,12 @@ def test_smoke_and_water_detectors():
 
 def test_alarm_system_modes():
     def system(state, sets="armAway armHome disarm"):
-        return {"NAME": "a", "TYPE": "dummy", "sets": sets, "readings": {"state": state}}
+        return {
+            "NAME": "a",
+            "TYPE": "dummy",
+            "sets": sets,
+            "readings": {"state": state},
+        }
 
     assert model.alarm_mode(system("disarmed")) == "off"
     assert model.alarm_mode(system("armed_away")) == "away"
@@ -2044,16 +2253,33 @@ def test_routine_locks_only_with_doors_closed():
     tiles = {
         "front": {"id": "front", "kind": "lock", "state": {"locked": False}},
         "back": {"id": "back", "kind": "lock", "state": {"locked": True}},
-        "door": {"id": "door", "kind": "contact", "door": True, "state": {"closed": True}},
-        "window": {"id": "window", "kind": "contact", "door": False, "state": {"closed": False}},
+        "door": {
+            "id": "door",
+            "kind": "contact",
+            "door": True,
+            "state": {"closed": True},
+        },
+        "window": {
+            "id": "window",
+            "kind": "contact",
+            "door": False,
+            "state": {"closed": False},
+        },
     }
     for mode in model.ROUTINES:
-        steps, undo = model.routine_steps(tiles, mode, [], [], ["front", "back", "door"])
+        steps, undo = model.routine_steps(
+            tiles, mode, [], [], ["front", "back", "door"]
+        )
         assert steps == [("front", "lock", None)] and undo == []
     # an open door: nothing is locked
     tiles["door"]["state"]["closed"] = False
     assert model.routine_steps(tiles, "away", [], [], ["front"]) == ([], [])
-    info = {"NAME": "front", "sets": "lock unlock", "readings": {"state": "unlocked"}, "attrs": {}}
+    info = {
+        "NAME": "front",
+        "sets": "lock unlock",
+        "readings": {"state": "unlocked"},
+        "attrs": {},
+    }
     assert model.command(tiles["front"], info, "lock") == ["lock"]
 
 
@@ -2070,7 +2296,9 @@ def test_routine_alarm_mode():
     assert model.routine_alarm(system, "night") == "home"
     assert model.routine_alarm({**system, "mode": "away"}, "away") is None
     assert model.routine_alarm({**system, "mode": "triggered"}, "night") is None
-    assert model.routine_alarm({"modes": ["away", "off"], "mode": "off"}, "night") is None
+    assert (
+        model.routine_alarm({"modes": ["away", "off"], "mode": "off"}, "night") is None
+    )
     assert model.routine_alarm(None, "away") is None
 
 
@@ -2083,13 +2311,39 @@ async def test_leaving_home_arms_alarm(module):
         ws, _ = await connect(session, module, answer["token"])
         module.fake.sets.clear()
         # not asked: stays as it is
-        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": []})
+        await ws.send_json(
+            {
+                "type": "action",
+                "action": "routine",
+                "mode": "away",
+                "off": [],
+                "close": [],
+            }
+        )
         assert (await next_of(ws, "routine"))["alarm"] is None
         assert module.fake.sets == []
         # a mode that doesn't fit the routine is ignored
-        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": [], "alarm": "off"})
+        await ws.send_json(
+            {
+                "type": "action",
+                "action": "routine",
+                "mode": "away",
+                "off": [],
+                "close": [],
+                "alarm": "off",
+            }
+        )
         assert (await next_of(ws, "routine"))["alarm"] is None
-        await ws.send_json({"type": "action", "action": "routine", "mode": "away", "off": [], "close": [], "alarm": "away"})
+        await ws.send_json(
+            {
+                "type": "action",
+                "action": "routine",
+                "mode": "away",
+                "off": [],
+                "close": [],
+                "alarm": "away",
+            }
+        )
         assert (await next_of(ws, "routine"))["alarm"] == "away"
         assert module.fake.sets == ["Alarmanlage armAway"]
         # undo never disarms
@@ -2118,9 +2372,7 @@ def test_languages():
         assert len(data["texts"]["weekdays"]) == 7
         assert len(data["texts"]["months"]) == 12
     # the same keys and placeholders in every language as in English
-    source = open(
-        os.path.join(dash_module.WWW_DIR, "app.js"), encoding="utf-8"
-    ).read()
+    source = open(os.path.join(dash_module.WWW_DIR, "app.js"), encoding="utf-8").read()
     english = source[source.index("var EN = {") : source.index("var LANG = ")]
     for code, found in texts.items():
         for key, value in found.items():
@@ -2175,18 +2427,36 @@ def test_device_views_found_by_commands_and_readings():
     car = view_device(
         "x1",
         "lock unlock start_charging stop_charging update",
-        {"soc": "64", "range": "212 km", "mileage": "12345", "charging_status": "CHARGING", "locked": "true", "charging_power": "7.4"},
+        {
+            "soc": "64",
+            "range": "212 km",
+            "mileage": "12345",
+            "charging_status": "CHARGING",
+            "locked": "true",
+            "charging_power": "7.4",
+        },
     )
     kia = view_device("ev", "", {"soc": "50"}, TYPE="fhempy", FHEMPYTYPE="kia_hyundai")
     wallbox = view_device(
         "wb",
         "charge_mode:Fast,Eco,Eco+,Stop",
-        {"plug_status": "EV Connected", "charge_mode": "Eco", "power_ct": "3.7", "energy_today": "8.2"},
+        {
+            "plug_status": "EV Connected",
+            "charge_mode": "Eco",
+            "power_ct": "3.7",
+            "energy_today": "8.2",
+        },
     )
     heatpump = view_device(
         "wp",
         "",
-        {"flow_temperature": "35.2", "return_temperature": "30.1", "outside_temperature": "4", "compressor": "on", "cop": "3.9"},
+        {
+            "flow_temperature": "35.2",
+            "return_temperature": "30.1",
+            "outside_temperature": "4",
+            "compressor": "on",
+            "cop": "3.9",
+        },
     )
     valve = view_device("garden", "on off", {"state": "off", "soil_moisture": "31"})
     plug = view_device("plug", "on off", {"state": "on", "power": "12"})
@@ -2200,9 +2470,16 @@ def test_device_views_found_by_commands_and_readings():
     assert views.detect(valve) == "irrigation"
     assert views.detect(plug) is None
     assert views.detect(named) is None
-    assert views.detect(view_device("v", "", attrs={"genericDeviceType": "vacuum"})) == "vacuum"
+    assert (
+        views.detect(view_device("v", "", attrs={"genericDeviceType": "vacuum"}))
+        == "vacuum"
+    )
 
-    assert views.state("vacuum", vacuum) == {"status": "cleaning", "battery": 81, "area": 23.5}
+    assert views.state("vacuum", vacuum) == {
+        "status": "cleaning",
+        "battery": 81,
+        "area": 23.5,
+    }
     assert views.features("vacuum", vacuum) == {
         "view": "vacuum",
         "actions": ["start", "pause", "stop", "dock", "locate"],
@@ -2264,8 +2541,12 @@ async def test_device_view_chosen_on_tablet(module):
         tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
         assert tile["kind"] == "irrigation"
         assert module._attr_device_views == "ku_Kaffeemaschine:irrigation"
-        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": "rocket"})
-        await ws.send_json({"type": "device_view", "id": "ku_Kaffeemaschine", "view": ""})
+        await ws.send_json(
+            {"type": "device_view", "id": "ku_Kaffeemaschine", "view": "rocket"}
+        )
+        await ws.send_json(
+            {"type": "device_view", "id": "ku_Kaffeemaschine", "view": ""}
+        )
         tile = (await next_of(ws, "model"))["tiles"]["ku_Kaffeemaschine"]
         assert tile["kind"] == "outlet"
         assert module._attr_device_views == ""
@@ -2280,10 +2561,19 @@ def test_energy_report_from_hourly_values():
         # kW without unit: 2 kW all the time
         ("PV", "pv"): {"carry": 2.5, "rows": [(hour, 1.5, 1, 1.5, 1.5)]},
         # 1000 W from the grid, then 500 W fed in from the second hour on
-        ("Meter", "grid"): {"carry": 1000.0, "rows": [(hour + 3600, -500.0, 1, -500.0, -500.0)]},
-        ("Plug", "power"): {"carry": None, "rows": [(hour + 7200, 200.0, 1, 200.0, 200.0)]},
+        ("Meter", "grid"): {
+            "carry": 1000.0,
+            "rows": [(hour + 3600, -500.0, 1, -500.0, -500.0)],
+        },
+        ("Plug", "power"): {
+            "carry": None,
+            "rows": [(hour + 7200, 200.0, 1, 200.0, 200.0)],
+        },
     }
-    consumers = [("Plug", "Kaffee", "Plug", "power"), ("Quiet", "Quiet", "Quiet", "power")]
+    consumers = [
+        ("Plug", "Kaffee", "Plug", "power"),
+        ("Quiet", "Quiet", "Quiet", "power"),
+    ]
     report = model.energy_report(series, sources, consumers, buckets, now, (0.3, 0.08))
     totals = report["totals"]
     # solar: 2 + 1.5 + 1.5 + 0.75 (half an hour so far)
@@ -2349,14 +2639,18 @@ async def test_energy_page(module, mocker):
     _, answer = await pair(module)
     auth = {"Authorization": "Bearer " + answer["token"]}
     async with aiohttp.ClientSession() as session:
-        async with session.get(base(module) + "api/energy?range=week", headers=auth) as resp:
+        async with session.get(
+            base(module) + "api/energy?range=week", headers=auth
+        ) as resp:
             data = await resp.json()
         assert len(data["bars"]) == 7
         assert data["range"] == "week"
         assert data["sources"] == ["load", "solar"]
         assert ("ku_Kaffeemaschine", "power") in asked[0][0]
         assert asked[0][2] - asked[0][1] >= 7 * 86400 - 3600
-        async with session.get(base(module) + "api/energy?range=year", headers=auth) as resp:
+        async with session.get(
+            base(module) + "api/energy?range=year", headers=auth
+        ) as resp:
             assert resp.status == 400
         async with session.get(base(module) + "api/energy") as resp:
             assert resp.status == 401
@@ -2368,7 +2662,9 @@ async def test_energy_page(module, mocker):
                 break
             await asyncio.sleep(0.02)
         assert module._attr_energy_price == "0.32,0.08"
-        async with session.get(base(module) + "api/energy?range=day", headers=auth) as resp:
+        async with session.get(
+            base(module) + "api/energy?range=day", headers=auth
+        ) as resp:
             data = await resp.json()
         assert len(data["bars"]) in (23, 24, 25)
         assert data["price_attr"] == "0.32,0.08"
@@ -2505,7 +2801,9 @@ async def test_may_open_set_on_tablet(module):
     _, answer = await pair(module)
     async with aiohttp.ClientSession() as session:
         ws, _ = await connect(session, module, answer["token"])
-        await ws.send_json({"type": "may_open", "id": "bad_Fenster", "window": "9:00-17:30"})
+        await ws.send_json(
+            {"type": "may_open", "id": "bad_Fenster", "window": "9:00-17:30"}
+        )
         await asyncio.sleep(0.1)
         assert module.data["tiles"]["bad_Fenster"]["may_open"] == "09:00-17:30"
         await ws.send_json({"type": "may_open", "id": "wz_Fenster", "window": ""})
@@ -2534,10 +2832,14 @@ async def test_measure_only_plug_is_never_switched(module):
     async with aiohttp.ClientSession() as session:
         ws, _ = await connect(session, module, answer["token"])
         module.fake.sets.clear()
-        await ws.send_json({"type": "action", "action": "off", "id": "ku_Kaffeemaschine"})
+        await ws.send_json(
+            {"type": "action", "action": "off", "id": "ku_Kaffeemaschine"}
+        )
         await asyncio.sleep(0.1)
         assert module.fake.sets == []
-        await ws.send_json({"type": "measure_only", "id": "ku_Kaffeemaschine", "measure": False})
+        await ws.send_json(
+            {"type": "measure_only", "id": "ku_Kaffeemaschine", "measure": False}
+        )
         await asyncio.sleep(0.1)
         assert "measure" not in module.data["tiles"]["ku_Kaffeemaschine"]
         await ws.close()
@@ -2560,7 +2862,12 @@ def test_header_lists_playing_media():
 
 
 def test_power_from_other_reading_names():
-    plug = {"NAME": "p", "TYPE": "dummy", "sets": "on off", "readings": {"state": "on", "cur_power": "650.5"}}
+    plug = {
+        "NAME": "p",
+        "TYPE": "dummy",
+        "sets": "on off",
+        "readings": {"state": "on", "cur_power": "650.5"},
+    }
     assert model.power_reading(plug) == "cur_power"
     assert model.tile_state("outlet", plug)["power"] == 650.5
     assert "cur_power" in model.READING_SET
@@ -2593,13 +2900,27 @@ def test_tasmota_plug_shows_power_voltage_current_energy():
     assert state["current"] == 0.264
     assert state["energy_today"] == 0.698
     assert state["energy_total"] == 119.101
-    for name in ("ENERGY_Power", "ENERGY_Voltage", "ENERGY_Current", "ENERGY_Today", "ENERGY_Total"):
+    for name in (
+        "ENERGY_Power",
+        "ENERGY_Voltage",
+        "ENERGY_Current",
+        "ENERGY_Today",
+        "ENERGY_Total",
+    ):
         assert name in model.READING_SET
     # a voltage below the mains is the one of a battery: not shown
-    remote = {"NAME": "r", "sets": "on off", "readings": {"state": "on", "voltage": "3.0"}}
+    remote = {
+        "NAME": "r",
+        "sets": "on off",
+        "readings": {"state": "on", "voltage": "3.0"},
+    }
     assert "voltage" not in model.tile_state("switch", remote)
     # plugs without these readings stay as before
-    assert set(model.tile_state("outlet", {"readings": {"state": "on"}})) & set(model.METER_READINGS) == set()
+    assert (
+        set(model.tile_state("outlet", {"readings": {"state": "on"}}))
+        & set(model.METER_READINGS)
+        == set()
+    )
 
 
 @pytest.mark.asyncio
@@ -2631,17 +2952,23 @@ async def test_cur_power_updates_tile_watch_and_energy(module):
 
 def test_appliance_done_by_parsing():
     assert model.parse_done_by("A:Door, B:Motion,C:,:x") == {"A": "Door", "B": "Motion"}
-    assert model.format_done_by({"B": "Motion", "A": "Door", "C": ""}) == "A:Door,B:Motion"
+    assert (
+        model.format_done_by({"B": "Motion", "A": "Door", "C": ""}) == "A:Door,B:Motion"
+    )
     # motion: only when somebody comes, not when the room gets quiet
     assert model.done_by_triggers("motion", {"occupied": False}, {"occupied": True})
     assert not model.done_by_triggers("motion", {"occupied": True}, {"occupied": False})
     # a door contact: opened or closed
     assert model.done_by_triggers("contact", {"closed": True}, {"closed": False})
     assert model.done_by_triggers("contact", {"closed": False}, {"closed": True})
-    assert not model.done_by_triggers("contact", {"closed": True}, {"closed": True, "since": "x"})
+    assert not model.done_by_triggers(
+        "contact", {"closed": True}, {"closed": True, "since": "x"}
+    )
     # anything else: any change, but no battery or time only
     assert model.done_by_triggers("switch", {"on": False}, {"on": True})
-    assert not model.done_by_triggers("switch", {"on": True}, {"on": True, "battery_low": True})
+    assert not model.done_by_triggers(
+        "switch", {"on": True}, {"on": True, "battery_low": True}
+    )
     assert clean_layout({"speak": True})["speak"] is True
     assert "speak" not in clean_layout({"speak": "yes"})
 
@@ -2661,7 +2988,9 @@ async def test_appliance_done_by_door_contact(module, mocker):
         )
         head = (await next_of(ws, "header"))["header"]
         known = head["appliances"]["known"]
-        assert known[0]["by"] == "wz_Fenster" and known[0]["by_name"] == "Fenster Garten"
+        assert (
+            known[0]["by"] == "wz_Fenster" and known[0]["by_name"] == "Fenster Garten"
+        )
         assert module._attr_appliance_done_by == "wz_Fernseher:wz_Fenster"
         # unknown devices and the plug itself are refused
         for by in ("nothing_here", "wz_Fernseher"):
@@ -2692,7 +3021,9 @@ async def test_appliance_done_by_door_contact(module, mocker):
         assert "wz_Fernseher" not in module.appliance_data["done"]
 
         # no "done by" device any more
-        await ws.send_json({"type": "appliance_done_by", "id": "wz_Fernseher", "by": ""})
+        await ws.send_json(
+            {"type": "appliance_done_by", "id": "wz_Fernseher", "by": ""}
+        )
         while (await next_of(ws, "header"))["header"]["appliances"]["known"][0]["by"]:
             pass
         assert module._attr_appliance_done_by == ""

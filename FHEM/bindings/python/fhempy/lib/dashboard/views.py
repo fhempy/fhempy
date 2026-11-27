@@ -25,16 +25,39 @@ FACTS = {
     "vacuum": {
         "status": ("activity", "status", "state"),
         "battery": ("batteryPercent", "battery_level", "batteryLevel", "battery"),
-        "area": ("cleaned_area", "cleanedArea", "clean_area", "cleaningArea", "last_clean_area"),
+        "area": (
+            "cleaned_area",
+            "cleanedArea",
+            "clean_area",
+            "cleaningArea",
+            "last_clean_area",
+        ),
         "duration": ("cleaning_time", "clean_time", "cleanTime", "cleaningTime"),
         "fan": ("fan_speed", "fanSpeed", "suction", "fan_power"),
         "error": ("error", "error_code", "lastError"),
     },
     "car": {
-        "soc": ("soc", "battery_level", "batteryLevel", "charging_level", "stateOfCharge"),
+        "soc": (
+            "soc",
+            "battery_level",
+            "batteryLevel",
+            "charging_level",
+            "stateOfCharge",
+        ),
         "fuel": ("fuel_level", "fuelLevel", "fuel"),
-        "range": ("range", "range_estimate", "range_km", "remaining_range", "rangeElectric"),
-        "charging": ("charging_status", "chargingState", "charging_hv_status", "charging"),
+        "range": (
+            "range",
+            "range_estimate",
+            "range_km",
+            "remaining_range",
+            "rangeElectric",
+        ),
+        "charging": (
+            "charging_status",
+            "chargingState",
+            "charging_hv_status",
+            "charging",
+        ),
         "power": ("charging_power", "chargingPower", "charge_power"),
         "plugged": ("plugged", "plugin", "charging_cable", "cable_connected"),
         "locked": ("locked", "doors_locked", "door_lock_state", "lockState"),
@@ -42,19 +65,62 @@ FACTS = {
         "remaining": ("charging_time_remaining", "chargingTimeRemaining"),
     },
     "wallbox": {
-        "status": ("operating_status", "charging_state", "chargingState", "car_state", "state"),
+        "status": (
+            "operating_status",
+            "charging_state",
+            "chargingState",
+            "car_state",
+            "state",
+        ),
         "plugged": ("plug_status", "car_connected", "carConnected", "plugged", "car"),
         "power": ("charging_power", "charge_power", "power_ct", "power"),
-        "energy": ("session_energy", "energy_session", "charged_energy", "energy_today"),
+        "energy": (
+            "session_energy",
+            "energy_session",
+            "charged_energy",
+            "energy_today",
+        ),
         "mode": ("charge_mode", "chargeMode", "mode"),
     },
     "heatpump": {
         "status": ("operating_mode", "operatingMode", "heatpump_state", "state"),
-        "flow": ("flow_temperature", "flowTemperature", "flow_temp", "temperature_flow", "vorlauf", "Vorlauftemperatur"),
-        "return": ("return_temperature", "returnTemperature", "return_temp", "temperature_return", "ruecklauf", "Ruecklauftemperatur"),
-        "outside": ("outside_temperature", "outsideTemperature", "outdoor_temperature", "outside_temp", "aussentemperatur"),
-        "dhw": ("hot_water_temperature", "hotWaterTemperature", "dhw_temperature", "dhw_temp", "warmwasser"),
-        "compressor": ("compressor", "compressor_state", "compressorState", "compressor_speed", "verdichter"),
+        "flow": (
+            "flow_temperature",
+            "flowTemperature",
+            "flow_temp",
+            "temperature_flow",
+            "vorlauf",
+            "Vorlauftemperatur",
+        ),
+        "return": (
+            "return_temperature",
+            "returnTemperature",
+            "return_temp",
+            "temperature_return",
+            "ruecklauf",
+            "Ruecklauftemperatur",
+        ),
+        "outside": (
+            "outside_temperature",
+            "outsideTemperature",
+            "outdoor_temperature",
+            "outside_temp",
+            "aussentemperatur",
+        ),
+        "dhw": (
+            "hot_water_temperature",
+            "hotWaterTemperature",
+            "dhw_temperature",
+            "dhw_temp",
+            "warmwasser",
+        ),
+        "compressor": (
+            "compressor",
+            "compressor_state",
+            "compressorState",
+            "compressor_speed",
+            "verdichter",
+        ),
         "cop": ("cop", "COP"),
         "power": ("power", "electrical_power", "power_consumption"),
     },
@@ -65,7 +131,9 @@ FACTS = {
     },
 }
 READINGS = tuple(
-    sorted({name for facts in FACTS.values() for names in facts.values() for name in names})
+    sorted(
+        {name for facts in FACTS.values() for names in facts.values() for name in names}
+    )
 )
 
 # set commands of the actions: action -> set names, the first found wins
@@ -82,8 +150,18 @@ ACTIONS = {
         "unlock": ("unlock", "door_unlock", "unlock_doors"),
         "charge_start": ("start_charging", "charge_start", "startCharging"),
         "charge_stop": ("stop_charging", "charge_stop", "stopCharging"),
-        "climate_start": ("start_climatisation", "climate_start", "start_climate", "climatisation_start"),
-        "climate_stop": ("stop_climatisation", "climate_stop", "stop_climate", "climatisation_stop"),
+        "climate_start": (
+            "start_climatisation",
+            "climate_start",
+            "start_climate",
+            "climatisation_start",
+        ),
+        "climate_stop": (
+            "stop_climatisation",
+            "climate_stop",
+            "stop_climate",
+            "climatisation_stop",
+        ),
         "update": ("update", "refresh", "update_data"),
     },
     "wallbox": {
@@ -178,7 +256,11 @@ def detect(info):
     facts = FACTS["car"]
     if info.get("FHEMPYTYPE") in CAR_FHEMPY_TYPES or (
         _has(info, facts["mileage"])
-        and (_has(info, facts["range"]) or _has(info, facts["soc"]) or _has(info, facts["fuel"]))
+        and (
+            _has(info, facts["range"])
+            or _has(info, facts["soc"])
+            or _has(info, facts["fuel"])
+        )
     ):
         return "car"
     facts = FACTS["wallbox"]
@@ -226,7 +308,10 @@ def state(view, info):
             result["compressor_pct"] = _number(value)
             result[key] = result["compressor_pct"] > 0
             continue
-        if key in ("charging", "plugged", "locked", "compressor") and _bool(value) is not None:
+        if (
+            key in ("charging", "plugged", "locked", "compressor")
+            and _bool(value) is not None
+        ):
             result[key] = _bool(value)
             continue
         if key in ("status", "mode", "next", "error", "fan", "charging", "plugged"):

@@ -30,7 +30,7 @@
     moTitle: "Darf offen sein", moHint: "In dieser Zeit warnt das Dashboard nicht, wenn offen ist, z. B. ein Hoftor tagsüber. Gilt für alle Tablets.", moFrom: "von", moTo: "bis", moUntil: "darf offen sein bis {t}", moAllowed: "Darf gerade offen sein",
     half: "50 %", pullWindow: "Ziehen zum Bewegen",
     valveOpen: "Ventil {n} %", valveShut: "Ventil zu", idleNow: "heizt gerade nicht",
-    apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apEnd: "fertig um {t}", apNew: "neues Programm, wird gelernt", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
+    apWasher: "Waschmaschine", apDryer: "Trockner", apDishwasher: "Spülmaschine", apRuns: "läuft seit {t}", apLeft: "noch ca. {t}", apAlmost: "gleich fertig", apIdle: "seit {t} ohne Strom, Pause oder fertig", apEnd: "fertig um {t}", apNew: "neues Programm, wird gelernt", apDoneWasher: "Wäsche fertig", apDoneDryer: "Trockner fertig", apDoneDishwasher: "Geschirr fertig", apAgo: "seit {t}",
     apAsk: "Was hängt an „{name}“?", apAskLead: "Hier lief gerade ein langes Programm. Bei Waschmaschine, Trockner und Spülmaschine sagt das Tablet, wann es fertig ist.", apNone: "Nichts davon", apSeen: "Erledigt",
     apBigWasher: "Die Wäsche ist fertig", apBigDryer: "Der Trockner ist fertig", apBigDishwasher: "Das Geschirr ist fertig", apBigMany: "{n} Geräte sind fertig",
     apTipWasher: "Bitte bald ausräumen, dann riecht nichts muffig.", apTipDryer: "Am besten gleich ausräumen, dann knittert nichts.", apTipDishwasher: "Das Geschirr kann ausgeräumt werden.",
@@ -132,7 +132,7 @@
     moTitle: "May be open", moHint: "During this time the dashboard does not warn when it is open, e.g. a yard gate by day. Applies to all tablets.", moFrom: "from", moTo: "to", moUntil: "may be open until {t}", moAllowed: "May be open now",
     half: "50 %", pullWindow: "Drag to move",
     valveOpen: "valve {n} %", valveShut: "valve closed", idleNow: "not heating right now",
-    apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apEnd: "done at {t}", apNew: "new program, learning it", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
+    apWasher: "Washing machine", apDryer: "Dryer", apDishwasher: "Dishwasher", apRuns: "running for {t}", apLeft: "about {t} left", apAlmost: "almost done", apIdle: "no power for {t}, paused or done", apEnd: "done at {t}", apNew: "new program, learning it", apDoneWasher: "Laundry done", apDoneDryer: "Dryer done", apDoneDishwasher: "Dishes done", apAgo: "for {t}",
     apAsk: "What is plugged into “{name}”?", apAskLead: "A long program just ran here. For a washing machine, dryer or dishwasher the tablet tells you when it is done.", apNone: "None of these", apSeen: "Done",
     apBigWasher: "The laundry is done", apBigDryer: "The dryer is done", apBigDishwasher: "The dishes are done", apBigMany: "{n} appliances are done",
     apTipWasher: "Please take it out soon, so nothing smells musty.", apTipDryer: "Take it out right away and nothing creases.", apTipDishwasher: "The dishes can be put away.",
@@ -2253,7 +2253,9 @@
     shownList(a.running).forEach(function (r) {
       // end: predicted from the learned programs, typical: median of the last ones
       var ran = now - r.since, total = r.end ? r.end - r.since : r.typical, frac = total ? Math.min(0.97, ran / total) : null, left = total ? total - ran : null;
-      var leftText = r.new ? t("apNew") : left === null ? "" : left > 120 ? t("apLeft", { t: minutesText(left) }) + " · " + t("apEnd", { t: clockText(new Date((r.since + total) * 1000)) }) : t("apAlmost");
+      // no power for a minute: a pause or the end, the time left is unsure
+      var idle = r.idle && now - r.idle >= 60;
+      var leftText = idle ? t("apIdle", { t: minutesText(now - r.idle) }) : r.new ? t("apNew") : left === null ? "" : left > 120 ? t("apLeft", { t: minutesText(left) }) + " · " + t("apEnd", { t: clockText(new Date((r.since + total) * 1000)) }) : t("apAlmost");
       rows += '<div class="row aprun"><div class="ic" style="background:#4DA3FF26;color:#4DA3FF">' + I("washer") + '</div><div class="t"><b>' + esc(t(AP_NAME[r.what])) + "</b><span>" +
         esc([t("apRuns", { t: minutesText(ran) }), leftText].filter(Boolean).join(" · ")) + "</span>" +
         (frac !== null ? '<div class="apbar"><i style="width:' + Math.round(frac * 100) + '%"></i></div>' : "") + "</div></div>";

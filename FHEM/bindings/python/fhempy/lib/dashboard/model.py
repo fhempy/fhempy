@@ -221,8 +221,14 @@ FORECAST_READINGS = tuple(
 )
 # days: openmeteo_weather next_days_N_*, FHEM Weather fcN_*
 DAY_READINGS = {
-    "openmeteo": ("next_days_{}_", ("name", "weather", "max_temp", "min_temp", "precipitation")),
-    "weather": ("fc{}_", ("day_of_week", "condition", "high_c", "low_c", "chOfRainDay")),
+    "openmeteo": (
+        "next_days_{}_",
+        ("name", "weather", "max_temp", "min_temp", "precipitation"),
+    ),
+    "weather": (
+        "fc{}_",
+        ("day_of_week", "condition", "high_c", "low_c", "chOfRainDay"),
+    ),
 }
 FORECAST_READINGS += tuple(
     prefix.format(i) + key
@@ -352,7 +358,15 @@ def _reading_time(info, *names):
 
 
 WINDOW_WORDS = ("fenster", "window", "tür", "tuer", "door", "kontakt", "contact")
-CONTACT_STATES = ("open", "opened", "closed", "tilted", "offen", "geschlossen", "gekippt")
+CONTACT_STATES = (
+    "open",
+    "opened",
+    "closed",
+    "tilted",
+    "offen",
+    "geschlossen",
+    "gekippt",
+)
 
 
 def kind_of(info, view=None):
@@ -825,8 +839,13 @@ def scenes_of(info):
 
 def _scene_items(name, info):
     return [
-        {"id": f"{name}:{scene}", "device": name, "scene": scene, "name": scene,
-         "room": room}
+        {
+            "id": f"{name}:{scene}",
+            "device": name,
+            "scene": scene,
+            "name": scene,
+            "room": room,
+        }
         for room in rooms_of(info)
         for scene in scenes_of(info)
     ]
@@ -933,9 +952,7 @@ def _person(info):
 
 def presence(infos):
     """people at home: ROOMMATE/GUEST, otherwise presence devices"""
-    residents = [
-        i for i in infos.values() if i.get("TYPE") in PRESENCE_TYPES
-    ]
+    residents = [i for i in infos.values() if i.get("TYPE") in PRESENCE_TYPES]
     if not residents:
         residents = [
             i
@@ -952,7 +969,9 @@ def presence(infos):
         present = state in PRESENT_STATES
         if present:
             home.append(person)
-        people.append({**person, "home": present, "since": _presence_since(info, present)})
+        people.append(
+            {**person, "home": present, "since": _presence_since(info, present)}
+        )
     people.sort(key=lambda p: (not p["home"], p["name"].lower()))
     return {"home": home, "total": len(residents), "people": people}
 
@@ -1139,9 +1158,7 @@ def may_open_now(window, minutes):
     window = clean_window(window)
     if window is None:
         return False
-    start, end = (
-        int(part[:2]) * 60 + int(part[3:]) for part in window.split("-")
-    )
+    start, end = (int(part[:2]) * 60 + int(part[3:]) for part in window.split("-"))
     if start < end:
         return start <= minutes < end
     return minutes >= start or minutes < end
@@ -1333,7 +1350,9 @@ def parse_calendar(text):
             continue
         summary = parts[3].strip().replace("\\,", ",")
         if summary:
-            result.append({"cal": parts[0], "start": start, "end": end, "summary": summary})
+            result.append(
+                {"cal": parts[0], "start": start, "end": end, "summary": summary}
+            )
     result.sort(key=lambda e: (e["start"], e["summary"].lower()))
     return result
 
@@ -1367,8 +1386,7 @@ def calendar(events, now):
         if day > 1:
             continue
         allday = event["end"] - event["start"] >= 86400 and (
-            datetime.datetime.fromtimestamp(event["start"]).strftime("%H:%M")
-            == "00:00"
+            datetime.datetime.fromtimestamp(event["start"]).strftime("%H:%M") == "00:00"
         )
         if event["cal"] in bin_cals or is_bin(event["summary"]):
             if allday or day == 1 or event["start"] > now - 3600:
@@ -1379,9 +1397,13 @@ def calendar(events, now):
                 "summary": event["summary"],
                 "day": day,
                 "allday": allday,
-                "at": ""
-                if allday
-                else datetime.datetime.fromtimestamp(event["start"]).strftime("%H:%M"),
+                "at": (
+                    ""
+                    if allday
+                    else datetime.datetime.fromtimestamp(event["start"]).strftime(
+                        "%H:%M"
+                    )
+                ),
                 "now": event["start"] <= now,
             }
         )
@@ -1624,7 +1646,11 @@ def _lock(tiles, lock_ids, steps):
     """locks are never unlocked by undo"""
     for device in lock_ids:
         item = tiles.get(str(device))
-        if item is not None and item["kind"] == "lock" and item["state"].get("locked") is False:
+        if (
+            item is not None
+            and item["kind"] == "lock"
+            and item["state"].get("locked") is False
+        ):
             steps.append((item["id"], "lock", None))
 
 
@@ -1695,7 +1721,9 @@ def is_energy(info):
     if info.get("FHEMPYTYPE") in ENERGY_FHEMPY_TYPES:
         return True
     readings = info.get("readings") or {}
-    return any(r in readings for r in ENERGY_READINGS["solar"] + ENERGY_READINGS["grid"])
+    return any(
+        r in readings for r in ENERGY_READINGS["solar"] + ENERGY_READINGS["grid"]
+    )
 
 
 def watts(value):
@@ -1731,7 +1759,6 @@ def energy(infos):
     if "load" not in result and "solar" in result and "grid" in result:
         result["load"] = result["solar"] + result["grid"]
     return result
-
 
 
 # --- energy over days: from the hourly values of the timeline ---
@@ -1921,9 +1948,7 @@ def energy_report(series, sources, consumers, buckets, now, price=None):
         if kwh >= 0.01:
             entry = {"id": item_id, "name": name, "kwh": round(kwh, 2)}
             if fixed is not None or hourly_price:
-                cost = sum(
-                    v * (price_at(h) or 0) for h, v in _kwh(watt, 1).items()
-                )
+                cost = sum(v * (price_at(h) or 0) for h, v in _kwh(watt, 1).items())
                 entry["cost"] = round(cost, 2)
             used.append(entry)
     used.sort(key=lambda e: (-e["kwh"], e["name"].lower()))
@@ -2008,9 +2033,7 @@ def sparks(trends, devices):
         key = _spark_key(str(trend.get("reading", "")))
         if device not in devices or key is None:
             continue
-        points = [
-            p[1] if isinstance(p, list) else p for p in trend.get("points") or []
-        ]
+        points = [p[1] if isinstance(p, list) else p for p in trend.get("points") or []]
         if sum(p is not None for p in points) < 2:
             continue
         result.setdefault(device, {}).setdefault(key, points)
@@ -2070,8 +2093,10 @@ def _matches(word, room):
         return False
     if word == plain or word == _initials(room):
         return True
-    return len(word) >= 3 and len(plain) >= 3 and (
-        plain.startswith(word) or word.startswith(plain)
+    return (
+        len(word) >= 3
+        and len(plain) >= 3
+        and (plain.startswith(word) or word.startswith(plain))
     )
 
 
@@ -2326,6 +2351,11 @@ APPLIANCE_DONE_MINUTES = 10
 # the end is reported this long after the power dropped, when the learned
 # programs say that the program ends here
 APPLIANCE_QUICK_SECONDS = 30
+# no power at all: the electronics of a washing machine draw a few W in
+# every pause of a program, 0 W means it switched itself off. Without
+# learned programs a washer is done this long after it reads 0 W.
+APPLIANCE_OFF_W = 0.5
+APPLIANCE_OFF_SECONDS = 60
 # a pause the learned programs know may take this long at most
 APPLIANCE_MAX_PAUSE = 90 * 60
 # shorter dips below APPLIANCE_RUN_W are no pause
@@ -2468,6 +2498,14 @@ class ApplianceWatch:
     def running(self):
         """a program runs, shown on the tablets"""
         return self.start is not None and self.confirmed
+
+    @property
+    def idle_since(self):
+        """time since the power is below APPLIANCE_RUN_W in a running
+        program (a pause or the end), None: it draws power"""
+        if not self.running or self.power >= APPLIANCE_RUN_W:
+            return None
+        return self._gap_start
 
     def feed(self, power, now):
         """'start', 'done', 'short' (no program) or None"""
@@ -2627,15 +2665,31 @@ class ApplianceWatch:
             "like": {"at": int(best.get("start", 0)), "seconds": int(best["seconds"])},
         }
 
+    def _first_wait(self, power):
+        """done_wait while nothing is learned about the plug"""
+        if self.what == "dryer":
+            # a dryer turns its drum all the time, there are no pauses
+            return APPLIANCE_QUICK_SECONDS
+        if self.what == "washer" and power < APPLIANCE_OFF_W:
+            # switched off: a dishwasher may dry at well below 1 W
+            return APPLIANCE_OFF_SECONDS
+        return APPLIANCE_DONE_MINUTES * 60
+
+    def _below_pauses(self, power):
+        """less power than in every pause of the learned programs"""
+        levels = [g[2] for r, _ in self._refs for g in r.get("gaps", []) if len(g) > 2]
+        if not levels:
+            return False
+        lowest = min(levels)
+        if lowest >= 1.0 and power < 0.6 * lowest:
+            return True
+        return power < APPLIANCE_OFF_W <= lowest
+
     def done_wait(self, power):
         """seconds after the power dropped until the program is done"""
         if not self._refs:
-            if self.what == "dryer":
-                # a dryer turns its drum all the time, there are no pauses
-                return APPLIANCE_QUICK_SECONDS
-            return APPLIANCE_DONE_MINUTES * 60
-        levels = [g[2] for r, _ in self._refs for g in r.get("gaps", []) if len(g) > 2]
-        if levels and min(levels) >= 1.0 and power < 0.6 * min(levels):
+            return self._first_wait(power)
+        if self._below_pauses(power):
             # less than in any pause of the learned programs: off or standby
             return APPLIANCE_QUICK_SECONDS
         found = self.matches()

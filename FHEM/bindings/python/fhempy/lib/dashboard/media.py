@@ -124,7 +124,7 @@ _COVER_URL = re.compile(r"cdn-albums\.|/albums?/|album|cover", re.IGNORECASE)
 
 
 def image_kind(url):
-    """"logo" for a station logo, "cover" for a song cover, None if unknown"""
+    """ "logo" for a station logo, "cover" for a song cover, None if unknown"""
     if not url:
         return None
     if _COVER_URL.search(url):
