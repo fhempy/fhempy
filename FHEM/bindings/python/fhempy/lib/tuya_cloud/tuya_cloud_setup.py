@@ -17,6 +17,9 @@ class tuya_cloud_setup:
         self.hash = fhemdevice.hash
         self._t_devicelist = []
         self._ready = False
+        self._errors = utils.ErrorLogger(logger)
+        self.tuya_pulsar = None
+        self.tuya_mq = None
 
     async def Define(self, hash, args, argsh):
         self._t_apikey = args[4]
@@ -55,10 +58,42 @@ class tuya_cloud_setup:
 
     async def run_setup(self):
         await fhem.readingsSingleUpdate(self.hash, "state", "connecting", 1)
-        if await self._init_tuya_sdk() is True:
+        while True:
+            try:
+                connected = await self._init_tuya_sdk()
+                self._errors.success(key="connect")
+                break
+            except Exception as ex:
+                # e.g. no internet yet after a reboot, the cloud comes back
+                self._stop_clients()
+                self._errors.failed(
+                    "Failed to connect to Tuya cloud, retrying", key="connect"
+                )
+                delay = self._errors.next_delay("connect", 10, 600)
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "state",
+                    f"connection failed, retry in {int(delay)}s: "
+                    + utils.describe_exception(ex)[:150],
+                    1,
+                )
+                await asyncio.sleep(delay)
+        if connected is True:
             self._ready = True
             await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
             await self._init_devices()
+
+    def _stop_clients(self):
+        """Stop the clients of a failed attempt before the next one starts."""
+        for client in (self.tuya_pulsar, self.tuya_mq):
+            if client is None:
+                continue
+            try:
+                client.stop()
+            except Exception:
+                self.logger.debug("Failed to stop Tuya client", exc_info=True)
+        self.tuya_pulsar = None
+        self.tuya_mq = None
 
     async def _init_tuya_openpulsar(self):
         self.tuya_pulsar = TuyaOpenPulsar(

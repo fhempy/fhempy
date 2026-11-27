@@ -335,14 +335,28 @@ class volvo(generic.FhemModule):
 
     async def start_login(self):
         await fhem.readingsSingleUpdate(self.hash, "state", "login", 1)
-        try:
-            done = await self.auth.async_start_login(self.username, self.password)
-        except Exception as ex:
-            self.logger.error(f"Volvo login failed: {ex}")
-            await fhem.readingsSingleUpdate(
-                self.hash, "state", "login failed, check username/password", 1
-            )
-            return
+        while True:
+            try:
+                done = await self.auth.async_start_login(self.username, self.password)
+                self._errors.success(key="login")
+                break
+            except Exception as ex:
+                if not utils.is_connection_error(ex):
+                    self.logger.error(f"Volvo login failed: {ex}")
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "state", "login failed, check username/password", 1
+                    )
+                    return
+                # e.g. no internet yet after a reboot
+                self._errors.failed("Volvo not reachable, retrying login", key="login")
+                delay = self._errors.next_delay("login", 10, 600)
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "state",
+                    f"connection failed, retry in {int(delay)}s",
+                    1,
+                )
+                await asyncio.sleep(delay)
         if done:
             await self.start_updates()
             return
