@@ -11,6 +11,7 @@ from fhempy.lib.fusionsolar import fusionsolar as fusionsolar_module
 from fhempy.lib.fusionsolar.fusionsolar_api import (
     FusionSolarError,
     FusionSolarRestApi,
+    FusionSolarSessionExpired,
 )
 
 
@@ -40,8 +41,11 @@ class FakeApi:
         return result is True
 
     async def update(self):
-        if not FakeApi.updates.pop(0):
-            raise FusionSolarError("Response was no JSON, session expired?")
+        result = FakeApi.updates.pop(0)
+        if result == "expired":
+            raise FusionSolarSessionExpired("Response was no JSON, session expired")
+        if not result:
+            raise FusionSolarError("Request failed")
 
 
 async def run_update_loop(mocker, logins, updates, sleeps):
@@ -102,6 +106,37 @@ async def test_reconnects_after_hours_of_maintenance(mocker):
     assert mock_fhem.readings["testsolar"]["state"] == "connected"
     assert FakeApi.logins == []
     assert delays[17] == 300
+
+
+@pytest.mark.asyncio
+async def test_expired_session_logs_in_again_right_away(mocker, caplog):
+    # works for two cycles, session expires, new login works at once
+    logins = [True, True]
+    updates = [True, True, "expired", True]
+    with caplog.at_level(logging.INFO):
+        states, delays = await run_update_loop(mocker, logins, updates, sleeps=3)
+
+    # no waiting and no "failed" state, the next update follows directly
+    assert delays == [300, 300, 300]
+    assert not any(state.startswith("failed") for state in states)
+    assert mock_fhem.readings["testsolar"]["state"] == "connected"
+    assert FakeApi.logins == []
+    assert FakeApi.updates == []
+    # an expired session is no error
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert "Session expired, logging in again" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_expired_right_after_login_backs_off(mocker):
+    # the new session doesn't work either: no login loop (captcha!)
+    logins = [True, True, True]
+    updates = [True, "expired", "expired", True]
+    states, delays = await run_update_loop(mocker, logins, updates, sleeps=3)
+
+    assert delays == [300, 30, 300]
+    assert states[1] == "failed, reconnect in 30s"
+    assert FakeApi.logins == []
 
 
 @pytest.mark.asyncio
@@ -183,9 +218,12 @@ async def test_get_raises_on_expired_session(server):
     base = str(server.make_url("/"))
 
     assert await api._get(base + "data", {}) == {"dn": "station"}
-    for path in ("login", "failed", "unauthorized"):
-        with pytest.raises(FusionSolarError):
+    for path in ("login", "unauthorized"):
+        with pytest.raises(FusionSolarSessionExpired):
             await api._get(base + path, {})
+    with pytest.raises(FusionSolarError) as err:
+        await api._get(base + "failed", {})
+    assert not isinstance(err.value, FusionSolarSessionExpired)
 
 
 @pytest.mark.asyncio
