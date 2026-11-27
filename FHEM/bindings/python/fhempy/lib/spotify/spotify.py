@@ -212,27 +212,54 @@ class spotify(generic.FhemModule):
         await self.connect_spotipy()
 
     async def connect_spotipy(self):
-        if self.spotipy_pkce.get_cached_token() is None:
-            await fhem.readingsSingleUpdate(self.hash, "state", "login required", 1)
+        if self.spotipy is not None:
             return
-
-        if self.spotipy is None:
-            self.spotipy = spotipy.Spotify(auth_manager=self.spotipy_pkce)
-            user = await utils.run_blocking(
-                functools.partial(self.spotipy.current_user)
-            )
-            if user is not None:
-                self.loggedin = True
-                await fhem.readingsSingleUpdate(
-                    self.hash,
-                    "user",
-                    user["display_name"] + " (" + user["email"] + ")",
-                    1,
+        client = spotipy.Spotify(auth_manager=self.spotipy_pkce)
+        while True:
+            try:
+                # refreshes an expired token, needs the internet as well
+                token = await utils.run_blocking(
+                    functools.partial(self.spotipy_pkce.get_cached_token)
                 )
-                await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
-                await self.update_devices()
-                self.create_async_task(self.update_playback_loop())
-                self.create_async_task(self.update_devices_loop())
+                if token is None:
+                    await fhem.readingsSingleUpdate(
+                        self.hash, "state", "login required", 1
+                    )
+                    return
+                user = await utils.run_blocking(functools.partial(client.current_user))
+                self._errors.success(key="login")
+                break
+            except Exception as exc:
+                if not self._is_connection_error(exc):
+                    raise
+                # e.g. no internet yet after a reboot
+                delay = self._errors.next_delay("login", 10, 600)
+                self._errors.failed(
+                    f"Spotify not reachable, retry in {int(delay)}s",
+                    key="login",
+                    exc=exc,
+                    expected=True,
+                )
+                await fhem.readingsSingleUpdateIfChanged(
+                    self.hash, "state", "connection failed, retrying", 1
+                )
+                await asyncio.sleep(delay)
+        if self.spotipy is not None:
+            # connected meanwhile, e.g. by a new login
+            return
+        self.spotipy = client
+        if user is not None:
+            self.loggedin = True
+            await fhem.readingsSingleUpdate(
+                self.hash,
+                "user",
+                user["display_name"] + " (" + user["email"] + ")",
+                1,
+            )
+            await fhem.readingsSingleUpdate(self.hash, "state", "connected", 1)
+            await self.update_devices()
+            self.create_async_task(self.update_playback_loop())
+            self.create_async_task(self.update_devices_loop())
 
     async def update_playback_loop(self):
         while True:

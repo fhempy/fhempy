@@ -133,3 +133,54 @@ async def test_command_uses_default_device(mocker):
 
     await device.set_command(device.hash, {"cmd": "volume", "vol": "40"})
     device.spotipy.volume.assert_called_with(40, "default1")
+
+
+@pytest.mark.asyncio
+async def test_connect_retries_without_internet(mocker):
+    import requests
+
+    device = await create_device(mocker)
+    from fhempy.lib.spotify import spotify as spotify_module
+
+    device.spotipy = None
+    device.loggedin = False
+    device.spotipy_pkce = mocker.MagicMock()
+    device.spotipy_pkce.get_cached_token.side_effect = [
+        requests.exceptions.ConnectionError("Name or service not known"),
+        {"access_token": "token"},
+        {"access_token": "token"},
+    ]
+    client = mocker.MagicMock()
+    client.current_user.side_effect = [
+        requests.exceptions.ConnectionError("Connection aborted."),
+        {"display_name": "Test", "email": "test@example.com"},
+    ]
+    mocker.patch.object(spotify_module.spotipy, "Spotify", return_value=client)
+    sleeps = []
+
+    async def no_sleep(delay):
+        sleeps.append(delay)
+
+    mocker.patch.object(spotify_module.asyncio, "sleep", no_sleep)
+    mocker.patch.object(device, "update_devices", mocker.AsyncMock())
+    mocker.patch.object(device, "create_async_task", lambda coro: coro.close())
+
+    await device.connect_spotipy()
+
+    assert len(sleeps) == 2
+    assert device.spotipy is client
+    assert device.loggedin is True
+    assert mock_fhem.readings["testspotify"]["state"] == "connected"
+
+
+@pytest.mark.asyncio
+async def test_connect_without_token_needs_login(mocker):
+    device = await create_device(mocker)
+    device.spotipy = None
+    device.spotipy_pkce = mocker.MagicMock()
+    device.spotipy_pkce.get_cached_token.return_value = None
+
+    await device.connect_spotipy()
+
+    assert device.spotipy is None
+    assert mock_fhem.readings["testspotify"]["state"] == "login required"

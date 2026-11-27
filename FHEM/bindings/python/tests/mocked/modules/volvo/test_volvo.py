@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import pytest
+import aiohttp
 import pytest_asyncio
 from aiohttp import web
 from tests.utils import mock_fhem
@@ -365,3 +366,56 @@ async def test_expired_refresh_token_starts_login(fake_volvo):
         await wait_for(lambda: readings().get("state", "").startswith("one-time"))
     finally:
         await device.Undefine(testhash)
+
+
+@pytest.mark.asyncio
+async def test_login_retries_without_internet(fake_volvo, mocker):
+    _, volvo_module = fake_volvo
+    # no background login, the test runs it
+    mocker.patch.object(volvo_module.volvo, "connect", mocker.AsyncMock())
+    device, _ = await define(volvo_module)
+    sleeps = []
+
+    async def no_sleep(delay):
+        sleeps.append(delay)
+
+    try:
+        mocker.patch.object(volvo_module.asyncio, "sleep", no_sleep)
+        mocker.patch.object(
+            device.auth,
+            "async_start_login",
+            mocker.AsyncMock(
+                side_effect=[aiohttp.ClientConnectionError("offline"), True]
+            ),
+        )
+        mocker.patch.object(device, "start_updates", mocker.AsyncMock())
+
+        await device.start_login()
+
+        assert len(sleeps) == 1
+        device.start_updates.assert_awaited_once()
+    finally:
+        await device.Undefine(device.hash)
+
+
+@pytest.mark.asyncio
+async def test_wrong_password_is_not_retried(fake_volvo, mocker):
+    _, volvo_module = fake_volvo
+    mocker.patch.object(volvo_module.volvo, "connect", mocker.AsyncMock())
+    device, _ = await define(volvo_module)
+    try:
+        mocker.patch.object(
+            device.auth,
+            "async_start_login",
+            mocker.AsyncMock(
+                side_effect=volvo_module.VolvoAuthException("401 wrong", "login")
+            ),
+        )
+        mocker.patch.object(device, "start_updates", mocker.AsyncMock())
+
+        await device.start_login()
+
+        assert readings()["state"] == "login failed, check username/password"
+        device.start_updates.assert_not_awaited()
+    finally:
+        await device.Undefine(device.hash)
