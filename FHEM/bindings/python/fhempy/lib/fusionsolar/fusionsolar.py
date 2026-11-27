@@ -1,7 +1,10 @@
 import asyncio
 import time
 
-from fhempy.lib.fusionsolar.fusionsolar_api import FusionSolarRestApi
+from fhempy.lib.fusionsolar.fusionsolar_api import (
+    FusionSolarRestApi,
+    FusionSolarSessionExpired,
+)
 
 from .. import fhem, generic, utils
 
@@ -73,8 +76,14 @@ class fusionsolar(generic.FhemModule):
             if await self.restapi.login():
                 # returns as soon as an update fails, e.g. expired session
                 captchas = 0
-                if await self.update_readings():
+                updated, expired = await self.update_readings()
+                if updated:
                     failures = 0
+                    if expired:
+                        # FusionSolar ends sessions after a while: log in
+                        # again right away, the readings continue seamlessly
+                        self.logger.info("Session expired, logging in again")
+                        continue
                 failures += 1
                 state, delay = "failed", self.retry_delay(failures)
             elif self.restapi.captcha_required:
@@ -97,7 +106,11 @@ class fusionsolar(generic.FhemModule):
         return min(CAPTCHA_DELAY_MIN * 2 ** min(captchas - 1, 10), CAPTCHA_DELAY_MAX)
 
     async def update_readings(self):
-        """Update until a request fails, returns True if any update worked."""
+        """Update until a request fails.
+
+        Returns (updated, expired): updated is True if any update worked with
+        this session, expired is True if it ended because the session expired.
+        """
         updated = False
         while True:
             cycle_start = time.monotonic()
@@ -220,10 +233,18 @@ class fusionsolar(generic.FhemModule):
                 await fhem.readingsBulkUpdateIfChanged(self.hash, "state", "connected")
                 self._errors.success()
                 updated = True
+            except FusionSolarSessionExpired as ex:
+                if updated:
+                    # expected after a while, no error
+                    self.logger.debug(f"Session expired: {ex}")
+                else:
+                    # a new session which doesn't work at all
+                    self._errors.failed("Failed to update readings", expected=True)
+                return updated, True
             except Exception:
                 self._errors.failed("Failed to update readings")
                 self.logger.debug(f"Received data:\n{self.restapi.data_string}")
-                return updated
+                return updated, False
             finally:
                 await fhem.readingsEndUpdate(self.hash, 1)
             await asyncio.sleep(self.next_update_delay(cycle_start))

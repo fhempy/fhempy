@@ -22,6 +22,10 @@ class FusionSolarError(Exception):
     pass
 
 
+class FusionSolarSessionExpired(FusionSolarError):
+    """The session is no longer valid, a new login is needed."""
+
+
 @dataclass
 class SignalSet:
     signals: list
@@ -380,14 +384,16 @@ class FusionSolarRestApi:
                 status = resp.status
                 body = await resp.read()
 
+        if status in (401, 403):
+            raise FusionSolarSessionExpired(f"Response from {url} was {status}")
         if status != 200:
             raise FusionSolarError(f"Response from {url} was {status}")
         try:
             response = json.loads(body)
         except ValueError:
             # FusionSolar answers with the login page if the session expired
-            raise FusionSolarError(
-                f"Response from {url} was no JSON, session expired?"
+            raise FusionSolarSessionExpired(
+                f"Response from {url} was no JSON, session expired"
             ) from None
         if isinstance(response, dict):
             if response.get("success") is False:
