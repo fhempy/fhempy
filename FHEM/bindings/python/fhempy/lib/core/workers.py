@@ -128,6 +128,9 @@ class Worker:
             await asyncio.sleep(delay)
 
     async def _start_and_serve(self):
+        # also a failing setup of the environment counts as a crash, otherwise
+        # the restart delay never grows
+        self._started_at = time.monotonic()
         python, env = await self._prepare()
         path = socket_path(self.group)
         await utils.run_blocking(functools.partial(_prepare_socket, path))
@@ -141,7 +144,6 @@ class Worker:
             self.group,
         ]
         logger.info(f"Start fhempy worker '{self.group}'")
-        self._started_at = time.monotonic()
         # stdout/stderr like fhempy itself, the log lines go to the fhempy log
         self.proc = child_process.start(args, env=env, cwd=os.getcwd())
         self.ws = await self._connect(path)
@@ -207,7 +209,7 @@ class Worker:
             args = [uv, "pip", "install", "--quiet", "--python", python] + reqs
             if overrides is not None:
                 args += ["--override", overrides]
-            await _run_command(args + pkg_installer.uv_index_args(), env)
+            await _install(args + pkg_installer.uv_index_args(), env, self.group)
         src = await utils.run_blocking(functools.partial(_link_fhempy, base))
         env["PYTHONPATH"] = src
         env.pop("PYTHONHOME", None)
@@ -301,6 +303,31 @@ def _link_fhempy(base):
             shutil.rmtree(link)
         os.symlink(target, link)
     return src
+
+
+# uv error texts of a broken file in its cache, a new download repairs it
+_BROKEN_CACHE_ERRORS = (
+    "The wheel is invalid",
+    "Failed to read from zip file",
+    "Failed to extract archive",
+    "invalid zip",
+    "checksum mismatch",
+    "Hash mismatch",
+)
+
+
+async def _install(args, env, group):
+    """uv pip install, without the cache once if a cached file is broken"""
+    try:
+        await _run_command(args, env)
+    except RuntimeError as err:
+        if not any(text in str(err) for text in _BROKEN_CACHE_ERRORS):
+            raise
+        logger.warning(
+            f"Broken package in the uv cache for fhempy worker '{group}', "
+            f"downloading it again: {str(err).strip()}"
+        )
+        await _run_command(args + ["--refresh"], env)
 
 
 async def _run_command(args, env):

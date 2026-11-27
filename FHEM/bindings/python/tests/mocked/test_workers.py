@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+import types
 
 import pytest
 from fhempy.lib import fhem, fhem_pythonbinding, pkg_installer
@@ -450,3 +451,66 @@ async def test_module_installed_into_core_by_mistake_moves_to_worker(
 
     assert await a.group_for("discovery") == "discovery"
     assert a.state["families"]["discovery"]["reason"] == "conflict"
+
+
+@pytest.mark.asyncio
+async def test_broken_cached_wheel_is_downloaded_again(monkeypatch):
+    calls = []
+
+    async def run_command(args, env):
+        calls.append(list(args))
+        if "--refresh" not in args:
+            raise RuntimeError(
+                "pip install failed: error: Failed to install: x.whl\n"
+                "  cause: The wheel is invalid: Invalid Wheel-Version"
+            )
+
+    monkeypatch.setattr(workers, "_run_command", run_command)
+    await workers._install(["uv", "pip", "install", "x==1"], {}, "grp")
+    assert calls == [
+        ["uv", "pip", "install", "x==1"],
+        ["uv", "pip", "install", "x==1", "--refresh"],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_other_install_errors_are_not_retried(monkeypatch):
+    calls = []
+
+    async def run_command(args, env):
+        calls.append(list(args))
+        raise RuntimeError("pip install failed: No solution found")
+
+    monkeypatch.setattr(workers, "_run_command", run_command)
+    with pytest.raises(RuntimeError):
+        await workers._install(["uv", "pip", "install", "x==1"], {}, "grp")
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_failing_setup_increases_the_restart_delay(monkeypatch):
+    delays = []
+
+    class Router:
+        async def worker_down(self, worker):
+            pass
+
+    worker = workers.Worker(Router(), "grp", True)
+
+    async def prepare():
+        raise RuntimeError("pip install failed")
+
+    def error(msg, *args, **kwargs):
+        delays.append(msg.rsplit(" ", 1)[-1])
+        if len(delays) >= 4:
+            worker.stopping = True
+
+    monkeypatch.setattr(worker, "_prepare", prepare)
+    monkeypatch.setattr(workers, "RESTART_DELAYS", (0, 0.001, 0.002, 0.003))
+    # a long running system, the monotonic clock is far beyond STABLE_TIME
+    clock = types.SimpleNamespace(monotonic=lambda: time.monotonic() + 100000)
+    monkeypatch.setattr(workers, "time", clock)
+    monkeypatch.setattr(workers.logger, "error", error)
+    monkeypatch.setattr(workers.logger, "exception", lambda *a, **k: None)
+    await asyncio.wait_for(worker._run(), 10)
+    assert delays == ["0s", "0.001s", "0.002s", "0.003s"]
