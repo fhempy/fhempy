@@ -209,7 +209,7 @@ class Worker:
             args = [uv, "pip", "install", "--quiet", "--python", python] + reqs
             if overrides is not None:
                 args += ["--override", overrides]
-            await _install(args + pkg_installer.uv_index_args(), env, self.group)
+            await _install(args, pkg_installer.uv_index_args(), env, self.group)
         src = await utils.run_blocking(functools.partial(_link_fhempy, base))
         env["PYTHONPATH"] = src
         env.pop("PYTHONHOME", None)
@@ -316,18 +316,45 @@ _BROKEN_CACHE_ERRORS = (
 )
 
 
-async def _install(args, env, group):
-    """uv pip install, without the cache once if a cached file is broken"""
+async def _install(args, index_args, env, group):
+    """uv pip install, repairs broken packages of the cache or an extra index
+
+    A broken file in the uv cache is downloaded again. If an extra index (e.g.
+    piwheels from /etc/pip.conf) delivers the broken file, PyPI alone is used.
+    """
     try:
-        await _run_command(args, env)
+        await _run_command(args + index_args, env)
+        return
     except RuntimeError as err:
-        if not any(text in str(err) for text in _BROKEN_CACHE_ERRORS):
+        if not _broken_package(err):
             raise
         logger.warning(
-            f"Broken package in the uv cache for fhempy worker '{group}', "
+            f"Broken package for fhempy worker '{group}', "
             f"downloading it again: {str(err).strip()}"
         )
-        await _run_command(args + ["--refresh"], env)
+    try:
+        await _run_command(args + index_args + ["--refresh"], env)
+        return
+    except RuntimeError as err:
+        if not _broken_package(err) or not _uses_other_index(index_args, env):
+            raise
+        logger.warning(
+            f"Package index delivers a broken package for fhempy worker "
+            f"'{group}', installing from PyPI only: {str(err).strip()}"
+        )
+    pypi_env = {k: v for k, v in env.items() if k not in _UV_INDEX_VARS}
+    await _run_command(args + ["--refresh"], pypi_env)
+
+
+_UV_INDEX_VARS = ("UV_INDEX_URL", "UV_DEFAULT_INDEX", "UV_INDEX", "UV_EXTRA_INDEX_URL")
+
+
+def _broken_package(err):
+    return any(text in str(err) for text in _BROKEN_CACHE_ERRORS)
+
+
+def _uses_other_index(index_args, env):
+    return bool(index_args) or any(env.get(var) for var in _UV_INDEX_VARS)
 
 
 async def _run_command(args, env):

@@ -453,24 +453,59 @@ async def test_module_installed_into_core_by_mistake_moves_to_worker(
     assert a.state["families"]["discovery"]["reason"] == "conflict"
 
 
+BROKEN = RuntimeError(
+    "pip install failed: error: Failed to install: x.whl\n"
+    "  cause: The wheel is invalid: Invalid Wheel-Version in `WHEEL` file: None"
+)
+EXTRA = ["--extra-index-url", "https://www.piwheels.org/simple"]
+
+
+def recording(calls, fail):
+    async def run_command(args, env):
+        calls.append((list(args), dict(env)))
+        if fail(args, env):
+            raise BROKEN
+
+    return run_command
+
+
 @pytest.mark.asyncio
 async def test_broken_cached_wheel_is_downloaded_again(monkeypatch):
     calls = []
-
-    async def run_command(args, env):
-        calls.append(list(args))
-        if "--refresh" not in args:
-            raise RuntimeError(
-                "pip install failed: error: Failed to install: x.whl\n"
-                "  cause: The wheel is invalid: Invalid Wheel-Version"
-            )
-
-    monkeypatch.setattr(workers, "_run_command", run_command)
-    await workers._install(["uv", "pip", "install", "x==1"], {}, "grp")
-    assert calls == [
-        ["uv", "pip", "install", "x==1"],
-        ["uv", "pip", "install", "x==1", "--refresh"],
+    monkeypatch.setattr(
+        workers, "_run_command", recording(calls, lambda a, e: "--refresh" not in a)
+    )
+    await workers._install(["uv", "pip", "install", "x==1"], EXTRA, {}, "grp")
+    assert [c[0] for c in calls] == [
+        ["uv", "pip", "install", "x==1"] + EXTRA,
+        ["uv", "pip", "install", "x==1"] + EXTRA + ["--refresh"],
     ]
+
+
+@pytest.mark.asyncio
+async def test_broken_wheel_of_extra_index_is_taken_from_pypi(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        workers,
+        "_run_command",
+        recording(
+            calls,
+            lambda a, e: "--extra-index-url" in a or "UV_EXTRA_INDEX_URL" in e,
+        ),
+    )
+    env = {"UV_EXTRA_INDEX_URL": "https://www.piwheels.org/simple", "PATH": "/bin"}
+    await workers._install(["uv", "pip", "install", "x==1"], EXTRA, env, "grp")
+    assert len(calls) == 3
+    assert calls[2] == (["uv", "pip", "install", "x==1", "--refresh"], {"PATH": "/bin"})
+
+
+@pytest.mark.asyncio
+async def test_broken_wheel_without_extra_index_fails(monkeypatch):
+    calls = []
+    monkeypatch.setattr(workers, "_run_command", recording(calls, lambda a, e: True))
+    with pytest.raises(RuntimeError):
+        await workers._install(["uv", "pip", "install", "x==1"], [], {}, "grp")
+    assert len(calls) == 2
 
 
 @pytest.mark.asyncio
@@ -483,7 +518,7 @@ async def test_other_install_errors_are_not_retried(monkeypatch):
 
     monkeypatch.setattr(workers, "_run_command", run_command)
     with pytest.raises(RuntimeError):
-        await workers._install(["uv", "pip", "install", "x==1"], {}, "grp")
+        await workers._install(["uv", "pip", "install", "x==1"], EXTRA, {}, "grp")
     assert len(calls) == 1
 
 
