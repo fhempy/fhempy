@@ -2665,22 +2665,31 @@ class ApplianceWatch:
             "like": {"at": int(best.get("start", 0)), "seconds": int(best["seconds"])},
         }
 
+    def _first_wait(self, power):
+        """done_wait while nothing is learned about the plug"""
+        if self.what == "dryer":
+            # a dryer turns its drum all the time, there are no pauses
+            return APPLIANCE_QUICK_SECONDS
+        if self.what == "washer" and power < APPLIANCE_OFF_W:
+            # switched off: a dishwasher may dry at well below 1 W
+            return APPLIANCE_OFF_SECONDS
+        return APPLIANCE_DONE_MINUTES * 60
+
+    def _below_pauses(self, power):
+        """less power than in every pause of the learned programs"""
+        levels = [g[2] for r, _ in self._refs for g in r.get("gaps", []) if len(g) > 2]
+        if not levels:
+            return False
+        lowest = min(levels)
+        if lowest >= 1.0 and power < 0.6 * lowest:
+            return True
+        return power < APPLIANCE_OFF_W <= lowest
+
     def done_wait(self, power):
         """seconds after the power dropped until the program is done"""
-        off = power < APPLIANCE_OFF_W
         if not self._refs:
-            if self.what == "dryer":
-                # a dryer turns its drum all the time, there are no pauses
-                return APPLIANCE_QUICK_SECONDS
-            if self.what == "washer" and off:
-                # switched off: a dishwasher may dry at well below 1 W
-                return APPLIANCE_OFF_SECONDS
-            return APPLIANCE_DONE_MINUTES * 60
-        levels = [g[2] for r, _ in self._refs for g in r.get("gaps", []) if len(g) > 2]
-        if levels and (
-            (min(levels) >= 1.0 and power < 0.6 * min(levels))
-            or (off and min(levels) >= APPLIANCE_OFF_W)
-        ):
+            return self._first_wait(power)
+        if self._below_pauses(power):
             # less than in any pause of the learned programs: off or standby
             return APPLIANCE_QUICK_SECONDS
         found = self.matches()
