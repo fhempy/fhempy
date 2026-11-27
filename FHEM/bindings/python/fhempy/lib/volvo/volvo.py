@@ -348,10 +348,8 @@ class volvo(generic.FhemModule):
                     )
                     return
                 # e.g. no internet yet after a reboot
+                self._errors.failed("Volvo not reachable, retrying login", key="login")
                 delay = self._errors.next_delay("login", 10, 600)
-                self._errors.failed(
-                    f"Volvo not reachable, retry login in {int(delay)}s", key="login"
-                )
                 await fhem.readingsSingleUpdate(
                     self.hash,
                     "state",

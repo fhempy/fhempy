@@ -168,6 +168,7 @@ async def test_connect_retries_without_internet(mocker):
     await device.connect_spotipy()
 
     assert len(sleeps) == 2
+    assert 18 <= sleeps[1] <= 22
     assert device.spotipy is client
     assert device.loggedin is True
     assert mock_fhem.readings["testspotify"]["state"] == "connected"

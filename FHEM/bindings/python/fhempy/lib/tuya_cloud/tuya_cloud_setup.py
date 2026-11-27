@@ -66,11 +66,10 @@ class tuya_cloud_setup:
             except Exception as ex:
                 # e.g. no internet yet after a reboot, the cloud comes back
                 self._stop_clients()
-                delay = self._errors.next_delay("connect", 10, 600)
                 self._errors.failed(
-                    f"Failed to connect to Tuya cloud, retry in {int(delay)}s",
-                    key="connect",
+                    "Failed to connect to Tuya cloud, retrying", key="connect"
                 )
+                delay = self._errors.next_delay("connect", 10, 600)
                 await fhem.readingsSingleUpdate(
                     self.hash,
                     "state",

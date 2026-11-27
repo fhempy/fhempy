@@ -233,13 +233,13 @@ class spotify(generic.FhemModule):
                 if not self._is_connection_error(exc):
                     raise
                 # e.g. no internet yet after a reboot
-                delay = self._errors.next_delay("login", 10, 600)
                 self._errors.failed(
-                    f"Spotify not reachable, retry in {int(delay)}s",
+                    "Spotify not reachable, retrying",
                     key="login",
                     exc=exc,
                     expected=True,
                 )
+                delay = self._errors.next_delay("login", 10, 600)
                 await fhem.readingsSingleUpdateIfChanged(
                     self.hash, "state", "connection failed, retrying", 1
                 )

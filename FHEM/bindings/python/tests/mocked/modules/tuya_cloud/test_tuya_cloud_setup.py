@@ -51,7 +51,9 @@ async def test_setup_retries_without_internet(mocker):
     await setup.run_setup()
 
     assert len(sleeps) == 2
-    assert sleeps[1] > sleeps[0]
+    # backoff: about 10s, then about 20s
+    assert 9 <= sleeps[0] <= 11
+    assert 18 <= sleeps[1] <= 22
     assert pulsar.stop.call_count == 2
     assert setup.ready is True
     assert mock_fhem.readings[NAME]["state"] == "connected"
