@@ -204,6 +204,13 @@ class timeline(generic.FhemModule):
                     "args": ["day"],
                     "help": "Hidden events of a day (YYYY-MM-DD) as JSON.",
                 },
+                "noisy": {
+                    "args": ["day"],
+                    "params": {"day": {"optional": True}},
+                    "help": "Readings with the most hidden events of a day "
+                    "(YYYY-MM-DD, default today) as JSON, to find what fills "
+                    "the database. Stop recording them with set ignore.",
+                },
             }
         )
         await self.set_attr_config(
@@ -830,6 +837,46 @@ class timeline(generic.FhemModule):
             "carry": self.store.values_before(start, device),
             "absences": self.store.absences(start - 86400, end),
         }
+
+    async def get_noisy(self, hash, params):
+        if self.store is None:
+            return json.dumps({"error": "The timeline is starting"})
+        try:
+            day = self.parse_day(params.get("day"), datetime.date.today())
+        except ValueError:
+            return "Use YYYY-MM-DD"
+        await self.flush()
+        name = day.isoformat()
+        start = day_start(name)
+        stored, rows = await utils.run_blocking(
+            functools.partial(self.store.noisy, start, start + 86400)
+        )
+        hidden = await utils.run_blocking(
+            functools.partial(self.store.hidden, name, name)
+        )
+        total = max(hidden.get(name, 0), stored)
+        return json.dumps(
+            {
+                "day": name,
+                "hidden": total,
+                # signal strength, last seen and skip_events: FHEM only counts them
+                "counted": total - stored,
+                "readings": [
+                    {
+                        "device": device,
+                        "reading": reading,
+                        "count": count,
+                        "value": value,
+                        "text": f"{story.label(self.infos, device)}: {reading}",
+                        "on_change": classify.on_change(
+                            self.infos.get(device, {}), reading
+                        ),
+                    }
+                    for device, reading, count, value in rows
+                ],
+            },
+            ensure_ascii=False,
+        )
 
     async def get_details(self, hash, params):
         if self.store is None:

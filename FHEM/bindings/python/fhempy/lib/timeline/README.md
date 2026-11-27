@@ -44,9 +44,14 @@ fhempy.
 
 If something is wrong:
 
+- **Hidden events**: the button in the bar, the number of hidden events next to each day and the link
+  *+ … technical events and measurements* at the end of a day open the list of hidden events of that day (‹ › step
+  to other days). It starts with the readings which send the most events, with their share of the day: these fill
+  the database, *Stop recording* is right next to them. Below are the newest single events
+
 - **Hide from story** next to an entry takes this reading out of the story, it is still recorded and listed in the hidden events of the day (attribute `hidden`). It asks whether every value of the reading or only this value is hidden, e.g. only `status: booting` of a router
-- **Always show** in the list of hidden events of a day shows a reading in the story (attribute `always_show`)
-- **Stop recording** in the list of hidden events of a day adds a reading (or only this value) to `skip_events`, FHEM doesn't send its events anymore and nothing is stored. *Delete recorded events* (`set <timeline> prune`) then deletes what was already stored
+- **Always show** in the list of hidden events shows a reading in the story (attribute `always_show`)
+- **Stop recording** in the list of hidden events adds a reading (or only this value) to `skip_events`, FHEM doesn't send its events anymore and nothing is stored. *Delete recorded events* (`set <timeline> prune`) then deletes what was already stored
 - **Only on change** next to a curve or a hidden event adds the reading to `event-on-change-reading` of the device, so FHEM only creates events when the value changes
 - Click a device name for the history of the device (story and curves of the last 7 or 31 days) with an *Open device* button, Ctrl+click opens the device directly
 - Curves which stayed the same all day are folded away, *Show unchanged curves* shows them
@@ -84,4 +89,5 @@ a device history or stopping fhempy writes them right away.
 - `database_size`
 
 `get timeline entries [YYYY-MM-DD] [YYYY-MM-DD]` returns the timeline as JSON, `get timeline trends YYYY-MM-DD`
-the curves of a day, `get timeline details YYYY-MM-DD` the hidden events of a day.
+the curves of a day, `get timeline details YYYY-MM-DD` the hidden events of a day, `get timeline noisy [YYYY-MM-DD]` the readings with the
+most hidden events of a day (default today), e.g. to stop recording them with `set timeline ignore device:reading`.

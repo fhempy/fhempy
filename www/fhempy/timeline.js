@@ -2,7 +2,8 @@
  * Timeline of the fhempy module timeline on its detail page.
  * fhempyTimeline(device): loads the last days with get <device> entries and
  * shows them as story per day. Older days are loaded on demand, hidden events
- * of a day with get <device> details <day>.
+ * of a day with get <device> details <day>, the readings with the most hidden
+ * events with get <device> noisy <day>.
  */
 (function () {
   "use strict";
@@ -169,10 +170,14 @@
       ".ftcKey i.ftcDash{height:0;border-top:2px dashed;background:none!important;border-radius:0}" +
       "#fhempyTimeline .ftlTarget{opacity:0.75;color:#d0662a}" +
       "#fhempyTimelineDevice .ftlEmpty{opacity:0.75;margin:8px 0}" +
-      "#fhempyTimelineDetails .ftlDetail{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
+      "#fhempyTimelineDetails .ftlDetail,#fhempyTimelineDetails .ftlNoisy{display:grid;grid-template-columns:70px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid rgba(128,128,128,0.2);font-size:13px}" +
       "#fhempyTimelineDetails .ftlAction{font-size:11px;cursor:pointer;margin-left:4px;border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0 5px;white-space:nowrap}" +
-      "#fhempyTimelineDetails .ftlDetail>span:last-child{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center}" +
-      "@media (max-width:600px){#fhempyTimelineDetails .ftlDetail{grid-template-columns:48px 1fr}#fhempyTimelineDetails .ftlDetail>span:last-child{grid-column:2;justify-content:flex-start}#fhempyTimelineDetails .ftlAction{margin-left:0}}" +
+      "#fhempyTimelineDetails .ftlNoisy>span:first-child{text-align:right;font-variant-numeric:tabular-nums}" +
+      "#fhempyTimelineDetails .ftlNoisyHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px}" +
+      "#fhempyTimelineDetails .ftlNoisyHead b{font-size:15px}" +
+      "#fhempyTimelineDetails h4{margin:14px 0 4px;font-size:13px}" +
+      "#fhempyTimelineDetails .ftlDetail>span:last-child,#fhempyTimelineDetails .ftlNoisy>span:last-child{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center}" +
+      "@media (max-width:600px){#fhempyTimelineDetails .ftlDetail,#fhempyTimelineDetails .ftlNoisy{grid-template-columns:48px 1fr}#fhempyTimelineDetails .ftlDetail>span:last-child,#fhempyTimelineDetails .ftlNoisy>span:last-child{grid-column:2;justify-content:flex-start}#fhempyTimelineDetails .ftlAction{margin-left:0}}" +
       "@media (max-width:600px){#fhempyTimeline .ftlTrends,#fhempyTimeline .ftlHiddenRow,#fhempyTimeline .ftlQuiet{margin-left:0;padding-left:0}}" +
       "</style>");
   }
@@ -579,7 +584,7 @@
     var entries = day.entries.filter(visible);
     var info = [];
     info.push(entries.length + (entries.length === 1 ? " entry" : " entries"));
-    if (day.hidden) info.push(day.hidden.toLocaleString() + " hidden events");
+    if (day.hidden) info.push(hiddenLink(day.day, day.hidden));
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(dayTitle(day.day)) + "</span>" +
       (day.absent ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + info.join(" · ") + "</span></div>";
@@ -616,6 +621,12 @@
     restoreExpanded(nodes);
   }
 
+  // the number of hidden events opens the list of hidden events of the day
+  function hiddenLink(day, count) {
+    return '<span class="ftlLink ftlDetails" data-day="' + esc(day) + '" title="Show the hidden events, ' +
+      'stop recording the noisy ones">' + count.toLocaleString() + " hidden events</span>";
+  }
+
   function quietHtml(group) {
     var first = group[group.length - 1].day, last = group[0].day;
     var hidden = group.reduce(function (s, d) { return s + d.hidden; }, 0);
@@ -624,7 +635,7 @@
     var html = '<div class="ftlDay"><div class="ftlDayHead"><span class="ftlDayName">' + esc(title) + "</span>" +
       (away ? '<span class="ftlAway">away</span>' : "") +
       '<span class="ftlDayInfo">' + (group.length === 1 ? "quiet day" : group.length + " quiet days") +
-      (hidden ? " · " + hidden.toLocaleString() + " hidden events" : "") + "</span></div>";
+      (hidden ? " · " + hiddenLink(group.filter(function (d) { return d.hidden; })[0].day, hidden) : "") + "</span></div>";
     html += '<div class="ftlDayMain"></div><div class="ftlDaySide">';
     group.forEach(function (day) { html += trendsHtml(day); });
     return html + "</div></div>";
@@ -643,6 +654,8 @@
       html += '<span class="ftlChip ftlPeriod" data-from="' + p.start + '" data-to="' + p.end + '" title="Nobody was at home">Away ' +
         esc(shortDate(p.start)) + " – " + esc(shortDate(p.end)) + "</span>";
     });
+    html += '<span class="ftlChip ftlDetails" data-day="' + dayIso(new Date()) + '" title="Hidden events of today: ' +
+      'which readings fill the database, stop recording them">Hidden events</span>';
     html += '<input type="date" class="ftlDate" title="Go to day" min="' + esc(firstDay) + '" max="' + dayIso(new Date()) + '">' +
       "</div><div class=\"ftlBar\">";
     Object.keys(categoryInfo).forEach(function (c) {
@@ -1230,70 +1243,128 @@
     showDevice($(this).attr("data-device"));
   }
 
+  // hidden events of a day: first the readings with the most events, the ones
+  // which fill the database, then the newest single events
   function showDetails(day) {
-    cmd("get " + device + " details " + day, function (r) {
-      var rows;
-      try { rows = JSON.parse(r); } catch (e) { rows = []; }
-      if (rows.error) rows = [];
-      $("#fhempyTimelineDetails").remove();
-      var d = $('<div id="fhempyTimelineDetails"></div>');
-      var html = '<div style="margin-bottom:8px;opacity:0.75">Measurements and technical events of ' + esc(dayTitle(day)) +
-        " (newest first, at most 500). Signal strength, last seen and similar are only counted.</div>";
-      if (!rows.length) html += "<div>Nothing stored for this day.</div>";
-      rows.forEach(function (row) {
-        html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + deviceLink(row.device, row.text) + "</span>" +
-          "<span>" + onChangeAction(row) +
-          '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
-          esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span>' +
-          '<span class="ftlAction" data-ignoreask="' + rows.indexOf(row) + '" title="Don\'t record ' +
-          esc(row.device + ":" + row.reading) + ' at all anymore (attribute skip_events)">Stop recording</span></span></div>';
+    cmd("get " + device + " noisy " + day, function (r1) {
+      cmd("get " + device + " details " + day, function (r2) {
+        detailsDialog(day, parseJson(r1, {}), parseJson(r2, []));
       });
-      d.html(html);
-      $("body").append(d);
-      openDialog(d, 700, function () { $(this).dialog("destroy").remove(); });
-      d.dialog("option", "title", "Hidden events");
-      d.on("click", "[data-onchange]", onChangeClick);
-      d.on("click", "a.ftlDevice", deviceClick);
-      d.on("click", "[data-show]", function () {
-        var target = $(this).attr("data-show");
-        var el = $(this);
-        cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
+    });
+  }
+
+  function parseJson(text, empty) {
+    try {
+      var v = JSON.parse(text);
+      return v && !v.error ? v : empty;
+    } catch (e) {
+      return empty;
+    }
+  }
+
+  function actionsHtml(row, i, attr) {
+    return "<span>" + onChangeAction(row) +
+      '<span class="ftlAction" data-show="' + esc(row.device + ":" + row.reading) + '" title="Show ' +
+      esc(row.device + ":" + row.reading) + ' in the timeline from now on">Always show</span>' +
+      '<span class="ftlAction" ' + attr + '="' + i + '" title="Don\'t record ' +
+      esc(row.device + ":" + row.reading) + ' at all anymore (attribute skip_events)">Stop recording</span></span>';
+  }
+
+  function detailsDialog(day, noisy, rows) {
+    var readings = noisy.readings || [];
+    var total = noisy.hidden || 0;
+    var today = dayIso(new Date());
+    $("#fhempyTimelineDetails").remove();
+    var d = $('<div id="fhempyTimelineDetails"></div>');
+    var html = '<div class="ftlNoisyHead">' +
+      (day > firstDay ? '<span class="ftlAction" data-detailsday="' + addDays(day, -1) + '" title="Day before">‹</span>' : "<span></span>") +
+      "<b>" + esc(dayTitle(day)) + " · " + total.toLocaleString() + " hidden events</b>" +
+      (day < today ? '<span class="ftlAction" data-detailsday="' + addDays(day, 1) + '" title="Next day">›</span>' : "<span></span>") +
+      "</div>";
+    if (readings.length) {
+      html += "<h4>Most frequent readings</h4>" +
+        '<div style="margin-bottom:6px;opacity:0.75;font-size:13px">Stop recording what you don\'t need, ' +
+        "this keeps the database small.</div>";
+      readings.forEach(function (row, i) {
+        var share = total ? Math.round(row.count * 100 / total) : 0;
+        html += '<div class="ftlNoisy"><span>' + row.count.toLocaleString() + "×</span><span>" +
+          deviceLink(row.device, row.text) + (share ? ' <span style="opacity:0.6">' + share + " %</span>" : "") +
+          "</span>" + actionsHtml(row, i, "data-ignorereading") + "</div>";
       });
-      d.on("click", "[data-ignoreask]", function () {
-        var row = rows[parseInt($(this).attr("data-ignoreask"), 10)];
-        if (!hasValue(row)) {
-          ignore($(this), row.device + ":" + row.reading);
+    }
+    if (noisy.counted) {
+      html += '<div class="ftlNoisy"><span>' + noisy.counted.toLocaleString() + "×</span>" +
+        '<span style="opacity:0.75">only counted by FHEM, not stored: signal strength, last seen and the ' +
+        "readings in skip_events</span><span></span></div>";
+    }
+    html += "<h4>Newest events</h4>" +
+      '<div style="margin-bottom:6px;opacity:0.75;font-size:13px">Measurements and technical events, at most 500.</div>';
+    if (!rows.length) html += "<div>Nothing stored for this day.</div>";
+    rows.forEach(function (row, i) {
+      html += '<div class="ftlDetail"><span>' + clock(row.ts) + "</span><span>" + deviceLink(row.device, row.text) + "</span>" +
+        actionsHtml(row, i, "data-ignoreask") + "</div>";
+    });
+    d.html(html);
+    $("body").append(d);
+    openDialog(d, 700, function () { $(this).dialog("destroy").remove(); });
+    d.dialog("option", "title", "Hidden events");
+    d.on("click", "[data-detailsday]", function () {
+      d.dialog("close");
+      showDetails($(this).attr("data-detailsday"));
+    });
+    d.on("click", "[data-onchange]", onChangeClick);
+    d.on("click", "a.ftlDevice", deviceClick);
+    d.on("click", "[data-show]", function () {
+      var target = $(this).attr("data-show");
+      var el = $(this);
+      cmd("set " + device + " show " + target, function () { el.text("Shown from now on").removeClass("ftlAction"); });
+    });
+    d.on("click", "[data-ignorereading]", function () {
+      var row = readings[parseInt($(this).attr("data-ignorereading"), 10)];
+      ignore($(this), row.device + ":" + row.reading);
+    });
+    d.on("click", "[data-ignoreask]", function () {
+      var row = rows[parseInt($(this).attr("data-ignoreask"), 10)];
+      if (!hasValue(row)) {
+        ignore($(this), row.device + ":" + row.reading);
+        return;
+      }
+      $(this).replaceWith(choiceHtml("data-ignore", "Stop recording:", row));
+    });
+    d.on("click", "[data-ignore]", function () {
+      ignore($(this).parent(), $(this).attr("data-ignore"));
+    });
+    d.on("click", ".ftlNo", function () {
+      var i = d.find(".ftlDetail").index($(this).closest(".ftlDetail"));
+      $(this).parent().replaceWith('<span class="ftlAction" data-ignoreask="' + i + '">Stop recording</span>');
+    });
+    d.on("click", "[data-prune]", function () {
+      var el = $(this);
+      el.text("Deleting…").removeAttr("data-prune").removeClass("ftlAction");
+      cmd("set " + device + " prune", function (r) { el.text((r || "").trim() || "Deleted"); });
+    });
+
+    function ignore(el, target) {
+      cmd("set " + device + " ignore " + target, function (r) {
+        if (r && r.trim()) {
+          el.replaceWith('<span>' + esc(r.trim()) + "</span>");
           return;
         }
-        $(this).replaceWith(choiceHtml("data-ignore", "Stop recording:", row));
-      });
-      d.on("click", "[data-ignore]", function () {
-        ignore($(this).parent(), $(this).attr("data-ignore"));
-      });
-      d.on("click", ".ftlNo", function () {
-        var i = d.find(".ftlDetail").index($(this).closest(".ftlDetail"));
-        $(this).parent().replaceWith('<span class="ftlAction" data-ignoreask="' + i + '">Stop recording</span>');
-      });
-      d.on("click", "[data-prune]", function () {
-        var el = $(this);
-        el.text("Deleting…").removeAttr("data-prune").removeClass("ftlAction");
-        cmd("set " + device + " prune", function (r) { el.text((r || "").trim() || "Deleted"); });
-      });
-
-      function ignore(el, target) {
-        cmd("set " + device + " ignore " + target, function (r) {
-          if (r && r.trim()) {
-            el.replaceWith('<span>' + esc(r.trim()) + "</span>");
-            return;
-          }
-          d.find(".ftlDetail").each(function (i) {
-            if (!ruleMatches(target, rows[i])) return;
-            $(this).children().last().html('Not recorded anymore <span class="ftlAction" data-prune="1" ' +
-              'title="Delete the events already recorded which match skip_events">Delete recorded events</span>');
+        var done = 'Not recorded anymore <span class="ftlAction" data-prune="1" ' +
+          'title="Delete the events already recorded which match skip_events">Delete recorded events</span>';
+        // one delete button is enough, the others only say it
+        var first = true;
+        function mark(list, items) {
+          d.find(list).each(function (i) {
+            if (!items[i] || !ruleMatches(target, items[i])) return;
+            $(this).children().last().html(first ? done : "Not recorded anymore");
+            first = false;
           });
-        });
-      }
-    });
+        }
+        mark(".ftlNoisy", readings);
+        mark(".ftlDetail", rows);
+      });
+    }
   }
 
   function onChangeClick() {

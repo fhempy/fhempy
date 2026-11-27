@@ -526,6 +526,24 @@ async def test_timeline_module(mocker, tmp_path, monkeypatch):
         "Hallway: temperature 21.5 °C",
     ]
 
+    # the readings with the most hidden events, the ones FHEM only counted apart
+    await fhem.dispatch_recorded_events(
+        "tl", [[[f"{now - 20:.3f}", "hall", "action: long"]], {}]
+    )
+    noisy = json.loads(await module.Get(hash, ["tl", "noisy"], {}))
+    assert noisy["day"] == data["today"]
+    assert noisy["hidden"] == 10
+    assert noisy["counted"] == 7
+    assert [(r["text"], r["count"], r["value"]) for r in noisy["readings"]] == [
+        ("Hallway: action", 2, "long"),
+        ("Hallway: temperature", 1, "21.5"),
+    ]
+    assert noisy["readings"][0]["device"] == "hall"
+    assert noisy["readings"][0]["reading"] == "action"
+    same = json.loads(await module.Get(hash, ["tl", "noisy", data["today"]], {}))
+    assert same == noisy
+    assert await module.Get(hash, ["tl", "noisy", "x"], {}) == "Use YYYY-MM-DD"
+
     # "Hide from story" and "Always show"
     assert await module.Set(hash, ["tl", "hide", "door:state"], {}) is None
     assert "tl hidden door:state" in mock_fhem.command_attr
