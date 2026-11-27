@@ -72,6 +72,7 @@ class piclock(generic.FhemModule):
         set_config = {
             "notification": {
                 "args": ["text"],
+                "text": True,
                 "help": "Display a notification on piclock.",
             },
             "brightness": {

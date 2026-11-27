@@ -33,7 +33,7 @@ set cast play url=https://open.spotify.com/artist/4PBCFEjR4a3OGdOZ6jeKKM
  - rewind
  - seek
  - skip
- - speak: E.g. set dev speak "Good morning". Long texts are split into parts and joined to one announcement. Devices with a screen (e.g. Nest Hub) show the text (shortened) and the fhempy icon.
+ - speak: E.g. set dev speak Good morning (quotes are not needed). Long texts are split into parts and joined to one announcement. Devices with a screen (e.g. Nest Hub) show the text (shortened) and the fhempy icon.
  - speakDisplay: Speaks the first text and shows the second one on the screen, e.g. set dev speakDisplay "Today it will be sunny with up to 25 degrees..." "Weather today"
  - startApp
  - stop
