@@ -243,6 +243,13 @@
         renderError(r);
         return;
       }
+      if (data.starting) {
+        renderStarting();
+        waitForStart(function () {
+          load(from, to, append);
+        });
+        return;
+      }
       if (data.error) {
         renderError(data.error);
         return;
@@ -736,6 +743,33 @@
     var root = $("#fhempyTimeline");
     if (!root.children().length) root.html('<div class="ftlEmpty">Loading the timeline…</div>');
     root.find(".ftlOlder").text("Loading…");
+  }
+
+  function renderStarting() {
+    var root = $("#fhempyTimeline");
+    root.html('<div class="ftlEmpty">The timeline is being prepared, it appears as soon as it is ready…</div>');
+    if (!window.FW_widgets || $("body").attr("longpoll") === "0") {
+      // no events without longpoll
+      root.find(".ftlEmpty").append(' <a href="#" class="ftlRetry">Try again</a>');
+      root.find(".ftlRetry").on("click", function (e) {
+        e.preventDefault();
+        window.fhempyTimeline(device);
+      });
+    }
+  }
+
+  // event based: FHEMWEB sends the reading state of the timeline device via
+  // longpoll, it changes from "starting" when the database is open
+  function waitForStart(callback) {
+    if (!window.FW_widgets) return;
+    var name = device;
+    FW_widgets.fhempyTimelineStart = {
+      updateLine: function (d) {
+        if (!d || d[0] !== name + "-state" || d[1] === "starting") return;
+        delete FW_widgets.fhempyTimelineStart;
+        if (device === name) callback();
+      },
+    };
   }
 
   function renderError(text) {

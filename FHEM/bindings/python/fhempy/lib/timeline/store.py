@@ -37,6 +37,8 @@ HOURLY_COLUMNS = (
 CARRY_DAYS = 31
 # layers of events, see classify
 LAYERS = ("story", "trend", "tech")
+# events deleted at once by the cleanup, the lock is free in between
+CLEANUP_CHUNK = 2000
 
 
 def day_of(ts):
@@ -215,7 +217,7 @@ class Store:
         with self._lock:
             return self._db.execute(
                 "SELECT ts, device, reading, value, layer FROM events"
-                " WHERE layer != 'story' AND ts >= ? AND ts < ?"
+                " WHERE layer IN ('trend', 'tech') AND ts >= ? AND ts < ?"
                 " ORDER BY ts DESC LIMIT ?",
                 (start, end, limit),
             ).fetchall()
@@ -226,13 +228,13 @@ class Store:
         with self._lock:
             total = self._db.execute(
                 "SELECT COUNT(*) FROM events"
-                " WHERE layer != 'story' AND ts >= ? AND ts < ?",
+                " WHERE layer IN ('trend', 'tech') AND ts >= ? AND ts < ?",
                 (start, end),
             ).fetchone()[0]
             # SQLite returns the value of the row with MAX(ts)
             rows = self._db.execute(
                 "SELECT device, reading, COUNT(*) AS n, value, MAX(ts) FROM events"
-                " WHERE layer != 'story' AND ts >= ? AND ts < ?"
+                " WHERE layer IN ('trend', 'tech') AND ts >= ? AND ts < ?"
                 " GROUP BY device, reading ORDER BY n DESC, device, reading"
                 " LIMIT ?",
                 (start, end, limit),
@@ -319,22 +321,46 @@ class Store:
         return min(values) if values else None
 
     def cleanup(self, details_days, story_days):
+        """delete everything older than the attributes keep_*days at once,
+        timeline.cleanup_loop uses cleanup_step"""
+        while self.cleanup_step(details_days, story_days):
+            pass
+
+    def cleanup_step(self, details_days, story_days, limit=CLEANUP_CHUNK):
+        """delete at most limit old events -> number deleted, 0 when done.
+        Along the index per layer and in small chunks: on a database of
+        several GB one DELETE over all events read the whole file and held the
+        lock for minutes, the timeline couldn't be loaded meanwhile."""
         now = time.time()
         details_end = now - details_days * 86400
         story_end = now - story_days * 86400
         with self._lock:
             db = self._db
-            db.execute(
-                "DELETE FROM events WHERE layer != 'story' AND ts < ?", (details_end,)
-            )
-            db.execute("DELETE FROM events WHERE ts < ?", (story_end,))
-            db.execute("DELETE FROM hourly WHERE hour < ?", (int(story_end),))
+            for layer in LAYERS:
+                end = story_end if layer == "story" else max(details_end, story_end)
+                deleted = db.execute(
+                    "DELETE FROM events WHERE rowid IN (SELECT rowid FROM events"
+                    " WHERE layer = ? AND ts < ? LIMIT ?)",
+                    (layer, end, limit),
+                ).rowcount
+                if deleted:
+                    db.commit()
+                    return deleted
+            deleted = db.execute(
+                "DELETE FROM hourly WHERE rowid IN (SELECT rowid FROM hourly"
+                " WHERE hour < ? LIMIT ?)",
+                (int(story_end), limit),
+            ).rowcount
+            if deleted:
+                db.commit()
+                return deleted
             db.execute("DELETE FROM daily WHERE day < ?", (day_of(story_end),))
             db.execute(
                 "DELETE FROM absences WHERE end IS NOT NULL AND end < ?",
                 (story_end,),
             )
             db.commit()
+        return 0
 
     def size(self):
         try:
