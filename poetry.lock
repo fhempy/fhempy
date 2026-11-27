@@ -3084,14 +3084,14 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "huawei-solar"
-version = "3.2.3"
+version = "3.2.4"
 description = "A Python wrapper for the Huawei Inverter modbus TCP API"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
 files = [
-    {file = "huawei_solar-3.2.3-py3-none-any.whl", hash = "sha256:188fa0f34033977dda365a2af93c8ffdac0fdb49b567d6cd4078b6081da6fd25"},
-    {file = "huawei_solar-3.2.3.tar.gz", hash = "sha256:dbd3b77d986fec0806f437a73c356673fedefe7de6e4ccd2239f0e583fb3f3ad"},
+    {file = "huawei_solar-3.2.4-py3-none-any.whl", hash = "sha256:18cf44fd8a2f368a1e7769739718626334d10d47b2f85282e20aa4030b18d5d3"},
+    {file = "huawei_solar-3.2.4.tar.gz", hash = "sha256:f6e3c8abf4edfe01bb215d42419f46ec32440037c5d4e2d126aee88d1afdf285"},
 ]
 
 [package.dependencies]
@@ -4516,14 +4516,14 @@ files = [
 
 [[package]]
 name = "packaging"
-version = "26.3"
+version = "26.4"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main", "all", "dev"]
 files = [
-    {file = "packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"},
-    {file = "packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79"},
+    {file = "packaging-26.4-py3-none-any.whl", hash = "sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"},
+    {file = "packaging-26.4.tar.gz", hash = "sha256:c4b671c41ddb9bf26e543c37723610d28fb6bf7affc4da17cf048d419d2c062a"},
 ]
 
 [[package]]
@@ -6005,14 +6005,14 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-env"
-version = "1.8.7"
+version = "1.8.8"
 description = "Set environment variables for pytest sessions."
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
 files = [
-    {file = "pytest_env-1.8.7-py3-none-any.whl", hash = "sha256:7093379c9c5003cdf11d140d23f3cd28c31734407f666e0992726cb3a3b09df7"},
-    {file = "pytest_env-1.8.7.tar.gz", hash = "sha256:917e169e829e328aca7cbe0426801672f1243a7b03bbbccd687490d2a3c6725e"},
+    {file = "pytest_env-1.8.8-py3-none-any.whl", hash = "sha256:fa2ca73225081b7c926be23ca77716427377ea898afcaa02ca25d50a6e94f816"},
+    {file = "pytest_env-1.8.8.tar.gz", hash = "sha256:5ff0688eb64b43edc4e0a3b2c3e7931f76a5f2859d755ae9ddfe10851e41ceef"},
 ]
 
 [package.dependencies]
@@ -8213,4 +8213,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "ce6384f1ad5d0804afc352cd621e7d98e57f16983fc4a908d4b97459f8644a38"
+content-hash = "5ef06f9609723f3cdacd83d903c1a58160ed22ad1152fb19a0edeceede700f3b"

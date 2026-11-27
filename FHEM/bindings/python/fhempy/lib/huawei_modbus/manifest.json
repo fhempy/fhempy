@@ -1,6 +1,6 @@
 {
   "requirements": [
-    "huawei-solar==3.2.3"
+    "huawei-solar==3.2.4"
   ],
   "installer": {
     "title": "Huawei inverter (Modbus)",
