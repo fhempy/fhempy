@@ -64,6 +64,10 @@ ORPHAN_CHECK_DELAY = 300
 SET_REPLY_TIMEOUT = 0.05
 # the read loop yields to other tasks after this many messages in a row
 YIELD_EVERY = 20
+# a Set while its device is loading runs once the device is ready, a Get
+# waits for it a bit shorter than FHEM waits for the reply (s)
+LOADING_SET_WAIT = 600
+LOADING_GET_WAIT = 2.5
 
 
 def is_backgroundable_set(hash):
@@ -586,10 +590,11 @@ class fhempy:
 
             if not (hash["NAME"] in loadedModuleInstances):
                 if hash["NAME"] in moduleLoadingRunning:
-                    await self.sendBackReturn(hash, "")
-                    return 0
+                    return await self.call_while_loading(
+                        hash, msg, moduleLoadingRunning[hash["NAME"]]
+                    )
 
-                moduleLoadingRunning[hash["NAME"]] = True
+                loaded = moduleLoadingRunning[hash["NAME"]] = asyncio.Event()
 
                 # loading a module might take some time,
                 # therefore sendBackReturn now
@@ -658,6 +663,8 @@ class fhempy:
                 finally:
                     # allow a new Define after loading failed
                     moduleLoadingRunning.pop(hash["NAME"], None)
+                    # commands which came in meanwhile continue now
+                    loaded.set()
 
         try:
             nmInstance = loadedModuleInstances[hash["NAME"]]
@@ -715,6 +722,70 @@ class fhempy:
         if hash["function"] == "Undefine":
             if hash["NAME"] in loadedModuleInstances:
                 del loadedModuleInstances[hash["NAME"]]
+
+    async def call_while_loading(self, hash, msg, loaded):
+        """Set or Get for a device whose module is still loading, e.g. right
+        after fhempy started or while its dependencies are installed. They
+        were dropped before, so a notify or DOIF thought they had worked."""
+        if is_backgroundable_set(hash):
+            # FHEM doesn't wait minutes for the reply, run it when it's ready
+            await self.sendBackReturn(hash, "")
+            self.create_background_task(self._set_after_loading(hash, msg, loaded))
+            return 0
+        args = hash.get("args") or []
+        if hash["function"] == "Get" and len(args) > 1 and args[1] != "?":
+            try:
+                await asyncio.wait_for(loaded.wait(), LOADING_GET_WAIT)
+            except asyncio.TimeoutError:
+                await self.sendBackReturn(
+                    hash, f"{hash['NAME']} is starting, please try again in a moment"
+                )
+                return 0
+            instance = loadedModuleInstances.get(hash["NAME"])
+            if instance is not None and getattr(instance, "hash", None) is not None:
+                try:
+                    ret = await self.execute_function(hash, False, instance)
+                except Exception:
+                    await self.sendBackError(
+                        hash,
+                        "Failed to execute function Get: " + traceback.format_exc(),
+                    )
+                    return 0
+                await self.sendBackReturn(hash, ret)
+                return 0
+            if self.router is not None and await self.router.route_function(
+                hash, msg
+            ):
+                # the device runs in a worker process now
+                return 0
+            await self.sendBackReturn(hash, f"{hash['NAME']} failed to start")
+            return 0
+        # set/get lists of FHEMWEB, Attr: FHEM stored the value already and
+        # Define reads it
+        await self.sendBackReturn(hash, "")
+        return 0
+
+    async def _set_after_loading(self, hash, msg, loaded):
+        moduleLogger = logging.getLogger(hash["NAME"])
+        # only the set command, further arguments might be credentials
+        cmd = hash["args"][1]
+        try:
+            await asyncio.wait_for(loaded.wait(), LOADING_SET_WAIT)
+        except asyncio.TimeoutError:
+            moduleLogger.error(f"set {cmd} not executed, the device didn't start")
+            return
+        instance = loadedModuleInstances.get(hash["NAME"])
+        if instance is None or getattr(instance, "hash", None) is None:
+            if self.router is not None and await self.router.route_function(
+                hash, msg
+            ):
+                # the device runs in a worker process now, FHEM ignores its
+                # second reply
+                return
+            moduleLogger.error(f"set {cmd} not executed, the device didn't start")
+            return
+        task = asyncio.ensure_future(self.execute_set(hash, instance))
+        self.finish_set_in_background(hash, task, instance)
 
     async def execute_set(self, hash, nmInstance):
         lock = self._set_locks.setdefault(hash["NAME"], asyncio.Lock())

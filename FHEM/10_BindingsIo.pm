@@ -619,6 +619,12 @@ BindingsIo_Write($$$$$) {
       if (($devhash->{".AttrList"} // ".*") eq ".*" && defined(&fhempy_setBaseAttrList)) {
         fhempy_setBaseAttrList($devhash);
       }
+      # without a message notify, DOIF and at think the command worked,
+      # the set/get list of FHEMWEB (?) and attributes still work as before
+      if (($function eq "Set" || $function eq "Get") && defined(@$a[1]) && @$a[1] ne "?") {
+        Log3 $hash, 3, "BindingsIo ($hash->{NAME}): $devhash->{NAME} $function @$a[1] not executed, $hash->{BindingType} server offline";
+        return $hash->{BindingType}." server offline, command not executed";
+      }
     }
     return undef;
   }
