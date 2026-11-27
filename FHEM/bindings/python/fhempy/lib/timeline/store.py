@@ -220,6 +220,25 @@ class Store:
                 (start, end, limit),
             ).fetchall()
 
+    def noisy(self, start, end, limit=50):
+        """hidden events stored between start and end: (number of all,
+        [(device, reading, number, last value)]), the most frequent first"""
+        with self._lock:
+            total = self._db.execute(
+                "SELECT COUNT(*) FROM events"
+                " WHERE layer != 'story' AND ts >= ? AND ts < ?",
+                (start, end),
+            ).fetchone()[0]
+            # SQLite returns the value of the row with MAX(ts)
+            rows = self._db.execute(
+                "SELECT device, reading, COUNT(*) AS n, value, MAX(ts) FROM events"
+                " WHERE layer != 'story' AND ts >= ? AND ts < ?"
+                " GROUP BY device, reading ORDER BY n DESC, device, reading"
+                " LIMIT ?",
+                (start, end, limit),
+            ).fetchall()
+        return total, [row[:4] for row in rows]
+
     def hourly(self, start, end):
         with self._lock:
             return self._db.execute(
