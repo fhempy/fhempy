@@ -2,32 +2,36 @@
 
 [[package]]
 name = "ai-edge-litert"
-version = "2.3.0"
+version = "2.4.0"
 description = "LiteRT is for mobile and embedded devices."
 optional = false
 python-versions = "*"
 groups = ["all"]
 files = [
-    {file = "ai_edge_litert-2.3.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:259433a003149edb091f77cbec7948e6d2ddcf9e5b983e97466ca1e87f868909"},
-    {file = "ai_edge_litert-2.3.0-cp310-cp310-manylinux_2_27_aarch64.whl", hash = "sha256:a72fc35d66c1d8b17f52b195bfb39b89aa839d39ea6e0d57fb88d77ac5aeb8c9"},
-    {file = "ai_edge_litert-2.3.0-cp310-cp310-manylinux_2_27_x86_64.whl", hash = "sha256:e104683ee0dead1243002a218637cc435c36fdb01103799335027252314e727b"},
-    {file = "ai_edge_litert-2.3.0-cp310-cp310-win_amd64.whl", hash = "sha256:2b9c0a189250c5f9296de08f6fd0ba85cbd3b95f80219a433096abb0a433967e"},
-    {file = "ai_edge_litert-2.3.0-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:da19cb1ad08d5113600d1038fbe7390e74e38fcb3e92af86d56a60120343e6d2"},
-    {file = "ai_edge_litert-2.3.0-cp311-cp311-manylinux_2_27_aarch64.whl", hash = "sha256:853fc608f96da87bd5f3458465dfb9abbf18d5ae6b94eceacead407146f175ae"},
-    {file = "ai_edge_litert-2.3.0-cp311-cp311-manylinux_2_27_x86_64.whl", hash = "sha256:1f15078a6725d2357d9de9221664c29afa0545d807559c5f7199ce5e40b96b23"},
-    {file = "ai_edge_litert-2.3.0-cp311-cp311-win_amd64.whl", hash = "sha256:ffee5993b859580650e844fce322e93b7abf50dfa36fd0fcbde41e079d1eebe3"},
-    {file = "ai_edge_litert-2.3.0-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:2cd92f02fc9616755670027c5b020bfee5c72ae50cf5d33e92465a863b705a8b"},
-    {file = "ai_edge_litert-2.3.0-cp312-cp312-manylinux_2_27_aarch64.whl", hash = "sha256:9891611b23a87cc2ace60e4b5ee9a2ee6f0fb7f395f009470961ae6e6310e1b8"},
-    {file = "ai_edge_litert-2.3.0-cp312-cp312-manylinux_2_27_x86_64.whl", hash = "sha256:dc9f56c23e0dcf182b6c35f23fbb102ed048296588882b806d5eff7654c04c88"},
-    {file = "ai_edge_litert-2.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:b33b039667da6c57815f88d4709c1b31890375fa2cd35f165a3bf9dfd36f23a3"},
-    {file = "ai_edge_litert-2.3.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:b4c4fa67442c5add9a5a2b672ee885e3be38a8f517d3ec33efb49c3ec57d5261"},
-    {file = "ai_edge_litert-2.3.0-cp313-cp313-manylinux_2_27_aarch64.whl", hash = "sha256:2ab71e4f5dfa65b3882634b42755f455f3e7415630d720200bd792733e15e257"},
-    {file = "ai_edge_litert-2.3.0-cp313-cp313-manylinux_2_27_x86_64.whl", hash = "sha256:985ac3823fe1d5d6a04cf5f613cc2adf98a9c8a456af0b5efa8d9ac6b118ea14"},
-    {file = "ai_edge_litert-2.3.0-cp313-cp313-win_amd64.whl", hash = "sha256:c61e7bfe1938f94f2de7062e580b95f141157220af46c59c65fac8dd72d426b0"},
-    {file = "ai_edge_litert-2.3.0-cp314-cp314-macosx_12_0_arm64.whl", hash = "sha256:61fcf2e6b270d300c2e732330325324df036dd9ec547de6d6f073eaa438fbc8f"},
-    {file = "ai_edge_litert-2.3.0-cp314-cp314-manylinux_2_27_aarch64.whl", hash = "sha256:899b41423b30f3cef1ce8a361443092fdeefc4d536132511634fa21548347b0a"},
-    {file = "ai_edge_litert-2.3.0-cp314-cp314-manylinux_2_27_x86_64.whl", hash = "sha256:695f5164b66ebdb0a3bbb4edc4d7024e87c65a0e417d48d0a2db2503bc01b78d"},
-    {file = "ai_edge_litert-2.3.0-cp314-cp314-win_amd64.whl", hash = "sha256:08cec0910d071345743379c9bac1b1d76f5050d9dd2d525e2300826ba132e89c"},
+    {file = "ai_edge_litert-2.4.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:3bc86e0671bbee9dd5de0e899b15b020bd583bef620b979a651a0cf69c0ca70b"},
+    {file = "ai_edge_litert-2.4.0-cp310-cp310-manylinux_2_27_aarch64.whl", hash = "sha256:157b8490e4aab84e14efcf4e5fb9b869781645d2e88e4ca906dc7f2f624f0449"},
+    {file = "ai_edge_litert-2.4.0-cp310-cp310-manylinux_2_27_x86_64.whl", hash = "sha256:c984c175c0c58df75b6ce7fd5c78364983d960375fc7f57b6dad20a6add55f6f"},
+    {file = "ai_edge_litert-2.4.0-cp310-cp310-win_amd64.whl", hash = "sha256:55564051fe24a60ff739f8650c78bd033766ea58ce1857a161efbd9eb1f0cccd"},
+    {file = "ai_edge_litert-2.4.0-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:268259f12fdca9764269c0bcb32dedd4c4e7fa610636709db19e87653fb5d481"},
+    {file = "ai_edge_litert-2.4.0-cp311-cp311-manylinux_2_27_aarch64.whl", hash = "sha256:de4714f9a20ddd876b43301b5f125ea32427f4704fb9163de8fb30ed7ebcd20f"},
+    {file = "ai_edge_litert-2.4.0-cp311-cp311-manylinux_2_27_x86_64.whl", hash = "sha256:a3066a45353e92d0c28689e2268a31637af9891baf71e3f44ad75cdf16198b4f"},
+    {file = "ai_edge_litert-2.4.0-cp311-cp311-win_amd64.whl", hash = "sha256:0f6dced01f9affb32d19197773f5aafb8b04d8619239c69cde92989cd2a84ec2"},
+    {file = "ai_edge_litert-2.4.0-cp311-cp311-win_arm64.whl", hash = "sha256:2939ab5361b002aebb093dcd0c72c2f1e77807460176dd80a3f8f0622536a4bb"},
+    {file = "ai_edge_litert-2.4.0-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:34320266cf76c374aa7f2776120cd15a9c4ae8cb810f99d0ef1bb619594c1e14"},
+    {file = "ai_edge_litert-2.4.0-cp312-cp312-manylinux_2_27_aarch64.whl", hash = "sha256:575ff9fdd7fcdda0fe8b79f26bcc08dca2b98395d41d1b59771f87eda01bc6f0"},
+    {file = "ai_edge_litert-2.4.0-cp312-cp312-manylinux_2_27_x86_64.whl", hash = "sha256:1ad7b17c7fd0267db96a58d48ae09c7a39738c181a3f23c414b5cb0555f9ee47"},
+    {file = "ai_edge_litert-2.4.0-cp312-cp312-win_amd64.whl", hash = "sha256:c96479e4fd791976e68d1985db655e293e6e5492a19e1863ed0c9a2223287acc"},
+    {file = "ai_edge_litert-2.4.0-cp312-cp312-win_arm64.whl", hash = "sha256:d26b9b68e82a0b18c6003dc6ce0ac39e243c34bf06bdcdc33cf85fd8de6ea8a1"},
+    {file = "ai_edge_litert-2.4.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:cbc7cf7fa714ebc22d4173b66c8dbac39225aecdfbb4de06039393762d910778"},
+    {file = "ai_edge_litert-2.4.0-cp313-cp313-manylinux_2_27_aarch64.whl", hash = "sha256:8b4b2ac6e9a79bf67f78d43d984791af41ff7cc92fc876eb1101ba675c35346f"},
+    {file = "ai_edge_litert-2.4.0-cp313-cp313-manylinux_2_27_x86_64.whl", hash = "sha256:a6247e9f95b750e602634de6376e106db5d059dff5353dfe7ca8fef52c9bea15"},
+    {file = "ai_edge_litert-2.4.0-cp313-cp313-win_amd64.whl", hash = "sha256:fd751c98b0ce57b30ad07de41b048d8c8981efa7a8137d21ca4f7f0807bf08cd"},
+    {file = "ai_edge_litert-2.4.0-cp313-cp313-win_arm64.whl", hash = "sha256:c2d7bbb6934b8c382121931898add6996f22ec1d526f7de9284e1d55d9ca201f"},
+    {file = "ai_edge_litert-2.4.0-cp314-cp314-macosx_12_0_arm64.whl", hash = "sha256:df9308cf3c7b84c94bdbbf95f7b7a19b5ad73b55284f24a509ffd6b61e19dbb3"},
+    {file = "ai_edge_litert-2.4.0-cp314-cp314-manylinux_2_27_aarch64.whl", hash = "sha256:c2742eab703412c0c4613cffde6839ed52e8142ad8ebd15abf4f372707eecee9"},
+    {file = "ai_edge_litert-2.4.0-cp314-cp314-manylinux_2_27_x86_64.whl", hash = "sha256:bed92cb7e7a13d4856049b254207057287b9bf1c761466870cb8348fa9f676ad"},
+    {file = "ai_edge_litert-2.4.0-cp314-cp314-win_amd64.whl", hash = "sha256:939ec56b86d7d2bfb6714810c9a252e833f02f5e062355d378cb61c42278eda7"},
+    {file = "ai_edge_litert-2.4.0-cp314-cp314-win_arm64.whl", hash = "sha256:8a854943ec55cd3c41e63f2794606afa07750389958eab57875edc2add841f68"},
 ]
 
 [package.dependencies]
@@ -42,7 +46,7 @@ typing-extensions = "*"
 [package.extras]
 model-utils = ["lark", "xdsl (==0.28.0)"]
 npu-intel = ["ai-edge-litert-sdk-intel-nightly"]
-npu-sdk = ["ai-edge-litert-sdk-intel-nightly", "ai-edge-litert-sdk-mediatek (>=0.2.0,<0.3.0)", "ai-edge-litert-sdk-qualcomm (>=0.2.0,<0.3.0)"]
+npu-sdk = ["ai-edge-litert-sdk-intel-nightly", "ai-edge-litert-sdk-mediatek (>=0.2.0,<0.3.0)", "ai-edge-litert-sdk-qualcomm (>=0.2.0,<0.3.0) ; sys_platform != \"win32\" or platform_machine != \"ARM64\"", "ai-edge-litert-sdk-qualcomm (>=2.4.0) ; sys_platform == \"win32\" and platform_machine == \"ARM64\""]
 
 [[package]]
 name = "aioblescan"
@@ -4038,8 +4042,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=2.0.0"},
-    {version = ">=2.1.0", markers = "python_version >= \"3.13\""},
+    {version = ">=2.0.0", markers = "python_version < \"3.13\""},
+    {version = ">=2.1.0", markers = "python_version == \"3.13\""},
     {version = ">=2.3.0", markers = "python_version >= \"3.14\""},
 ]
 
@@ -8228,4 +8232,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "9e3c25b290a1299ef751827d23473b9f9b98da669ea37da6cac18a38679e8a49"
+content-hash = "ad1e72520fb2b8cb56dc400c9d93841fc4cf2dc69640ff116860d258ed806767"
