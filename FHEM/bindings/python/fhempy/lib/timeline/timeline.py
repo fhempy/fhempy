@@ -23,6 +23,8 @@ from .store import Store, day_of, day_start
 FLUSH_INTERVAL = 60
 READINGS_INTERVAL = 60
 CLEANUP_INTERVAL = 6 * 3600
+# seconds between two chunks of the cleanup
+CLEANUP_PAUSE = 0.05
 INFO_RELOAD_DELAY = 5
 # story readings changing more often become tech (not security/presence,
 # their repeats are bundled)
@@ -128,6 +130,7 @@ class timeline(generic.FhemModule):
         self._story_today = 0
         self._hidden_today = 0
         self._last_story = ""
+        self._open_error = None
 
     # FHEM FUNCTION
     async def Define(self, hash, args, argsh):
@@ -270,18 +273,22 @@ class timeline(generic.FhemModule):
         )
 
     async def run(self):
-        self.store = Store(self.db_path())
+        store = Store(self.db_path())
         try:
-            await utils.run_blocking(functools.partial(self.store.open))
-            self._frequent = await utils.run_blocking(
-                functools.partial(self.store.frequent)
-            )
+            await utils.run_blocking(functools.partial(store.open))
+            self._frequent = await utils.run_blocking(functools.partial(store.frequent))
         except Exception as exc:
             self.logger.exception("Failed to open the timeline database")
+            self._open_error = utils.describe_exception(exc)
             await fhem.readingsSingleUpdate(
-                self.hash, "state", f"error: {utils.describe_exception(exc)}", 1
+                self.hash, "state", f"error: {self._open_error}", 1
             )
             return
+        if self._stopping:
+            await utils.run_blocking(functools.partial(store.close))
+            return
+        # the gets answer "starting" until the database is open
+        self.store = store
         # stays in room fhempy like all fhempy devices, there as usual row
         await fhemweb.setup_room(
             self.hash, ROOM, ROOM_ICON, DEVICE_ICON, keep_fhempy=True
@@ -513,16 +520,37 @@ class timeline(generic.FhemModule):
     async def cleanup_loop(self):
         while not self._stopping:
             try:
-                await utils.run_blocking(
-                    functools.partial(
-                        self.store.cleanup,
-                        self._attr_keep_details_days,
-                        self._attr_keep_days,
-                    )
-                )
+                await self.cleanup()
             except Exception:
                 self.logger.exception("Failed to clean up the timeline database")
             await asyncio.sleep(CLEANUP_INTERVAL)
+
+    async def cleanup(self):
+        """delete old events in small chunks, the gets of the detail page
+        get the database in between"""
+        deleted = 0
+        while not self._stopping:
+            count = await utils.run_blocking(
+                functools.partial(
+                    self.store.cleanup_step,
+                    self._attr_keep_details_days,
+                    self._attr_keep_days,
+                )
+            )
+            if not count:
+                break
+            deleted += count
+            await asyncio.sleep(CLEANUP_PAUSE)
+        if deleted:
+            self.logger.info(f"Deleted {deleted} old timeline entries")
+        return deleted
+
+    def not_ready(self):
+        """JSON answer of the gets while the database isn't open yet"""
+        if self._open_error:
+            return json.dumps({"error": f"Database error: {self._open_error}"})
+        # the detail page waits for the event of the reading state
+        return json.dumps({"error": "The timeline is starting", "starting": True})
 
     # --- sets ---
 
@@ -628,7 +656,7 @@ class timeline(generic.FhemModule):
 
     async def get_entries(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         today = datetime.date.today()
         try:
             last = self.parse_day(params.get("to"), today)
@@ -694,7 +722,7 @@ class timeline(generic.FhemModule):
 
     async def get_trends(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         try:
             day = self.parse_day(params.get("day"), None)
         except ValueError:
@@ -721,7 +749,7 @@ class timeline(generic.FhemModule):
 
     async def get_device(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         device = params["device"]
         if device not in self.infos:
             return json.dumps({"error": f"Unknown device {device}"})
@@ -790,7 +818,7 @@ class timeline(generic.FhemModule):
 
     async def get_curve(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         device, _, reading = str(params.get("reading", "")).partition(":")
         if device not in self.infos or not classify.READING_NAME_RE.match(reading):
             return json.dumps({"error": "Use device:reading of an existing device"})
@@ -840,7 +868,7 @@ class timeline(generic.FhemModule):
 
     async def get_noisy(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         try:
             day = self.parse_day(params.get("day"), datetime.date.today())
         except ValueError:
@@ -880,7 +908,7 @@ class timeline(generic.FhemModule):
 
     async def get_details(self, hash, params):
         if self.store is None:
-            return json.dumps({"error": "The timeline is starting"})
+            return self.not_ready()
         try:
             day = self.parse_day(params.get("day"), None)
         except ValueError:

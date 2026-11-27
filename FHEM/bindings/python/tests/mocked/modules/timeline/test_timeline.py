@@ -458,6 +458,52 @@ def test_store(tmp_path):
     store.close()
 
 
+def test_cleanup_in_chunks(tmp_path):
+    store = Store(str(tmp_path / "t.db"))
+    store.open()
+    now = time.time()
+    old = now - 20 * 86400
+    store.add(
+        [(old + i, "hall", "rssi", str(i), "tech", "devices") for i in range(5)]
+        + [(old, "hall", "temperature", "20", "trend", "climate")]
+        + [(old, "door", "state", "open", "story", "security")]
+        + [(now, "hall", "rssi", "1", "tech", "devices")],
+        {},
+        {},
+    )
+    # a few rows per step, the lock is free in between
+    assert [store.cleanup_step(14, 730, limit=2) for _ in range(5)] == [1, 2, 2, 1, 0]
+    # the story of 20 days ago stays, only the hidden events are gone
+    assert [row[3] for row in store.story(0, now + 10)] == ["open"]
+    assert store.details(0, now + 10) == [(now, "hall", "rssi", "1", "tech")]
+    # along the index, not over the whole file
+    for layer in ("story", "tech"):
+        plan = store._db.execute(
+            "EXPLAIN QUERY PLAN SELECT rowid FROM events"
+            " WHERE layer = ? AND ts < ? LIMIT 2",
+            (layer, now),
+        ).fetchall()
+        assert "events_layer_ts" in str(plan)
+    plan = store._db.execute(
+        "EXPLAIN QUERY PLAN SELECT ts FROM events"
+        " WHERE layer IN ('trend', 'tech') AND ts >= ? AND ts < ?",
+        (0, now),
+    ).fetchall()
+    assert "SCAN" not in str(plan)
+    store.close()
+
+
+def test_gets_while_starting():
+    module = timeline(logger)
+    module.hash = {"NAME": "tl"}
+    assert json.loads(module.not_ready()) == {
+        "error": "The timeline is starting",
+        "starting": True,
+    }
+    module._open_error = "disk I/O error"
+    assert json.loads(module.not_ready()) == {"error": "Database error: disk I/O error"}
+
+
 class FakeFhem:
     def __init__(self):
         self.recorder = None
