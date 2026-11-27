@@ -87,6 +87,7 @@ def test_uv_gets_extra_indexes(tmp_path, monkeypatch):
         "pip_config_indexes",
         lambda: (None, ["https://www.piwheels.org/simple"]),
     )
+    monkeypatch.setattr(pkg_installer, "piwheels_compatible", lambda: True)
     monkeypatch.setenv("FHEMPY_UV", fake_uv(tmp_path))
     monkeypatch.setattr(pkg_installer, "is_virtual_env", lambda: True)
 
@@ -129,11 +130,38 @@ PIWHEELS = "https://www.piwheels.org/simple"
 
 def test_piwheels_kept_for_system_python(monkeypatch):
     monkeypatch.setattr(pkg_installer, "pip_config_indexes", lambda: (None, [PIWHEELS]))
+    monkeypatch.setattr(pkg_installer, "is_32bit_arm", lambda: True)
     monkeypatch.setattr(
         pkg_installer, "system_python_version", lambda: tuple(sys.version_info[:2])
     )
 
     assert pkg_installer.usable_indexes() == (None, [PIWHEELS], False)
+
+
+def test_piwheels_skipped_on_64bit(monkeypatch):
+    monkeypatch.setattr(pkg_installer, "pip_config_indexes", lambda: (None, [PIWHEELS]))
+    monkeypatch.setattr(
+        pkg_installer, "system_python_version", lambda: tuple(sys.version_info[:2])
+    )
+    monkeypatch.setattr(pkg_installer, "is_32bit_arm", lambda: False)
+
+    assert pkg_installer.usable_indexes() == (None, [], True)
+
+
+@pytest.mark.parametrize(
+    "machine, maxsize, expected",
+    [
+        ("armv7l", 2**31 - 1, True),
+        ("armv6l", 2**31 - 1, True),
+        ("aarch64", 2**31 - 1, True),
+        ("aarch64", 2**63 - 1, False),
+        ("x86_64", 2**63 - 1, False),
+    ],
+)
+def test_is_32bit_arm(monkeypatch, machine, maxsize, expected):
+    monkeypatch.setattr(pkg_installer.platform, "machine", lambda: machine)
+    monkeypatch.setattr(pkg_installer.sys, "maxsize", maxsize)
+    assert pkg_installer.is_32bit_arm() is expected
 
 
 def test_piwheels_skipped_for_other_python(monkeypatch):
@@ -226,6 +254,7 @@ def test_dependency_caching_and_invalidation(tmp_path, monkeypatch):
     class FakeSuccessfulPopen:
         def __init__(self, *args, **kwargs):
             self.returncode = 0
+
         def communicate(self):
             return b"", b""
 
@@ -265,7 +294,9 @@ def test_pygobject_kept_without_girepository2(monkeypatch):
     monkeypatch.setattr(pkg_installer, "pygobject_works", lambda: False)
     monkeypatch.setattr(pkg_installer, "has_girepository2", lambda: False)
 
-    assert pkg_installer.platform_requirement("PyGObject<=3.50.0") == "PyGObject<=3.50.0"
+    assert (
+        pkg_installer.platform_requirement("PyGObject<=3.50.0") == "PyGObject<=3.50.0"
+    )
 
 
 def test_pygobject_replaced_with_girepository2(monkeypatch):

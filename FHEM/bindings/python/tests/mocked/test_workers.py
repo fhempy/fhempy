@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+import types
 
 import pytest
 from fhempy.lib import fhem, fhem_pythonbinding, pkg_installer
@@ -450,3 +451,101 @@ async def test_module_installed_into_core_by_mistake_moves_to_worker(
 
     assert await a.group_for("discovery") == "discovery"
     assert a.state["families"]["discovery"]["reason"] == "conflict"
+
+
+BROKEN = RuntimeError(
+    "pip install failed: error: Failed to install: x.whl\n"
+    "  cause: The wheel is invalid: Invalid Wheel-Version in `WHEEL` file: None"
+)
+EXTRA = ["--extra-index-url", "https://www.piwheels.org/simple"]
+
+
+def recording(calls, fail):
+    async def run_command(args, env):
+        calls.append((list(args), dict(env)))
+        if fail(args, env):
+            raise BROKEN
+
+    return run_command
+
+
+@pytest.mark.asyncio
+async def test_broken_cached_wheel_is_downloaded_again(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        workers, "_run_command", recording(calls, lambda a, e: "--refresh" not in a)
+    )
+    await workers._install(["uv", "pip", "install", "x==1"], EXTRA, {}, "grp")
+    assert [c[0] for c in calls] == [
+        ["uv", "pip", "install", "x==1"] + EXTRA,
+        ["uv", "pip", "install", "x==1"] + EXTRA + ["--refresh"],
+    ]
+
+
+@pytest.mark.asyncio
+async def test_broken_wheel_of_extra_index_is_taken_from_pypi(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        workers,
+        "_run_command",
+        recording(
+            calls,
+            lambda a, e: "--extra-index-url" in a or "UV_EXTRA_INDEX_URL" in e,
+        ),
+    )
+    env = {"UV_EXTRA_INDEX_URL": "https://www.piwheels.org/simple", "PATH": "/bin"}
+    await workers._install(["uv", "pip", "install", "x==1"], EXTRA, env, "grp")
+    assert len(calls) == 3
+    assert calls[2] == (["uv", "pip", "install", "x==1", "--refresh"], {"PATH": "/bin"})
+
+
+@pytest.mark.asyncio
+async def test_broken_wheel_without_extra_index_fails(monkeypatch):
+    calls = []
+    monkeypatch.setattr(workers, "_run_command", recording(calls, lambda a, e: True))
+    with pytest.raises(RuntimeError):
+        await workers._install(["uv", "pip", "install", "x==1"], [], {}, "grp")
+    assert len(calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_other_install_errors_are_not_retried(monkeypatch):
+    calls = []
+
+    async def run_command(args, env):
+        calls.append(list(args))
+        raise RuntimeError("pip install failed: No solution found")
+
+    monkeypatch.setattr(workers, "_run_command", run_command)
+    with pytest.raises(RuntimeError):
+        await workers._install(["uv", "pip", "install", "x==1"], EXTRA, {}, "grp")
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_failing_setup_increases_the_restart_delay(monkeypatch):
+    delays = []
+
+    class Router:
+        async def worker_down(self, worker):
+            pass
+
+    worker = workers.Worker(Router(), "grp", True)
+
+    async def prepare():
+        raise RuntimeError("pip install failed")
+
+    def error(msg, *args, **kwargs):
+        delays.append(msg.rsplit(" ", 1)[-1])
+        if len(delays) >= 4:
+            worker.stopping = True
+
+    monkeypatch.setattr(worker, "_prepare", prepare)
+    monkeypatch.setattr(workers, "RESTART_DELAYS", (0, 0.001, 0.002, 0.003))
+    # a long running system, the monotonic clock is far beyond STABLE_TIME
+    clock = types.SimpleNamespace(monotonic=lambda: time.monotonic() + 100000)
+    monkeypatch.setattr(workers, "time", clock)
+    monkeypatch.setattr(workers.logger, "error", error)
+    monkeypatch.setattr(workers.logger, "exception", lambda *a, **k: None)
+    await asyncio.wait_for(worker._run(), 10)
+    assert delays == ["0s", "0.001s", "0.002s", "0.003s"]
