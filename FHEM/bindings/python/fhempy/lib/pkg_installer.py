@@ -9,6 +9,7 @@ import inspect
 import json
 import logging
 import os
+import platform
 import re
 import shutil
 import sys
@@ -163,8 +164,19 @@ def piwheels_compatible():
     release which ships it (cp311 on Bookworm, cp313 on Trixie). If fhempy runs
     with another Python (e.g. Python 3.13 from uv on Bookworm), those wheels were
     built for another release and might need a newer glibc, so skip piwheels.
+
+    piwheels only builds for 32-bit ARM. On 64-bit systems PyPI has all wheels
+    and the pure Python wheels of piwheels are rejected by newer uv versions
+    (Invalid Wheel-Version in WHEEL file), so skip piwheels there too.
     """
-    return system_python_version() == tuple(sys.version_info[:2])
+    return is_32bit_arm() and system_python_version() == tuple(sys.version_info[:2])
+
+
+def is_32bit_arm():
+    """Return if Python runs as 32-bit ARM process (armv6l/armv7l)."""
+    machine = platform.machine().lower()
+    # a 32-bit userland on a 64-bit kernel reports aarch64
+    return sys.maxsize <= 2**32 and (machine.startswith("arm") or machine == "aarch64")
 
 
 def usable_indexes():
@@ -446,13 +458,9 @@ async def check_and_install_dependencies(module):
                         inst_tries = 0
                         while inst_tries < max_tries:
                             with concurrent.futures.ThreadPoolExecutor() as pool:
-                                ret = (
-                                    await asyncio.get_event_loop().run_in_executor(
-                                        pool,
-                                        functools.partial(
-                                            install_package, req, **kwargs
-                                        ),
-                                    )
+                                ret = await asyncio.get_event_loop().run_in_executor(
+                                    pool,
+                                    functools.partial(install_package, req, **kwargs),
                                 )
                             if ret:
                                 break
