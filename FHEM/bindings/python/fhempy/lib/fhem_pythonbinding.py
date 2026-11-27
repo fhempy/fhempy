@@ -590,9 +590,10 @@ class fhempy:
 
             if not (hash["NAME"] in loadedModuleInstances):
                 if hash["NAME"] in moduleLoadingRunning:
-                    return await self.call_while_loading(
+                    await self.call_while_loading(
                         hash, msg, moduleLoadingRunning[hash["NAME"]]
                     )
+                    return 0
 
                 loaded = moduleLoadingRunning[hash["NAME"]] = asyncio.Event()
 
@@ -727,43 +728,41 @@ class fhempy:
         """Set or Get for a device whose module is still loading, e.g. right
         after fhempy started or while its dependencies are installed. They
         were dropped before, so a notify or DOIF thought they had worked."""
+        args = hash.get("args") or []
         if is_backgroundable_set(hash):
             # FHEM doesn't wait minutes for the reply, run it when it's ready
             await self.sendBackReturn(hash, "")
             self.create_background_task(self._set_after_loading(hash, msg, loaded))
-            return 0
-        args = hash.get("args") or []
-        if hash["function"] == "Get" and len(args) > 1 and args[1] != "?":
-            try:
-                await asyncio.wait_for(loaded.wait(), LOADING_GET_WAIT)
-            except asyncio.TimeoutError:
-                await self.sendBackReturn(
-                    hash, f"{hash['NAME']} is starting, please try again in a moment"
-                )
-                return 0
-            instance = loadedModuleInstances.get(hash["NAME"])
-            if instance is not None and getattr(instance, "hash", None) is not None:
-                try:
-                    ret = await self.execute_function(hash, False, instance)
-                except Exception:
-                    await self.sendBackError(
-                        hash,
-                        "Failed to execute function Get: " + traceback.format_exc(),
-                    )
-                    return 0
-                await self.sendBackReturn(hash, ret)
-                return 0
-            if self.router is not None and await self.router.route_function(
-                hash, msg
-            ):
-                # the device runs in a worker process now
-                return 0
-            await self.sendBackReturn(hash, f"{hash['NAME']} failed to start")
-            return 0
-        # set/get lists of FHEMWEB, Attr: FHEM stored the value already and
-        # Define reads it
-        await self.sendBackReturn(hash, "")
-        return 0
+        elif hash["function"] == "Get" and len(args) > 1 and args[1] != "?":
+            await self._get_after_loading(hash, msg, loaded)
+        else:
+            # set/get lists of FHEMWEB, Attr: FHEM stored the value already
+            # and Define reads it
+            await self.sendBackReturn(hash, "")
+
+    async def _get_after_loading(self, hash, msg, loaded):
+        try:
+            await asyncio.wait_for(loaded.wait(), LOADING_GET_WAIT)
+        except asyncio.TimeoutError:
+            await self.sendBackReturn(
+                hash, f"{hash['NAME']} is starting, please try again in a moment"
+            )
+            return
+        instance = loadedModuleInstances.get(hash["NAME"])
+        if instance is None or getattr(instance, "hash", None) is None:
+            if self.router is None or not await self.router.route_function(hash, msg):
+                await self.sendBackReturn(hash, f"{hash['NAME']} failed to start")
+            # otherwise the device runs in a worker process now
+            return
+        try:
+            ret = await self.execute_function(hash, False, instance)
+        except Exception:
+            await self.sendBackError(
+                hash,
+                "Failed to execute function Get: " + traceback.format_exc(),
+            )
+            return
+        await self.sendBackReturn(hash, ret)
 
     async def _set_after_loading(self, hash, msg, loaded):
         moduleLogger = logging.getLogger(hash["NAME"])
@@ -776,9 +775,7 @@ class fhempy:
             return
         instance = loadedModuleInstances.get(hash["NAME"])
         if instance is None or getattr(instance, "hash", None) is None:
-            if self.router is not None and await self.router.route_function(
-                hash, msg
-            ):
+            if self.router is not None and await self.router.route_function(hash, msg):
                 # the device runs in a worker process now, FHEM ignores its
                 # second reply
                 return
