@@ -191,7 +191,8 @@ class dlna_dmr(FhemModule):
             "seek": {"args": ["position"], "params": {"position": {"format": "int"}}},
             "speak": {
                 "args": ["text"],
-                "help": "Please use double quotes for the text to speak",
+                "text": True,
+                "help": "Speaks the text, e.g. set dev speak Good morning",
             },
         }
         await self.set_set_config(set_config)

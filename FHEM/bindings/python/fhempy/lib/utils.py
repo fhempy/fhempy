@@ -719,6 +719,8 @@ def _format_error(name, value, config, exc):
 
 
 # See helloworld for examples of command configuration and validation.
+# "text": True joins all remaining words into the last of "args", for
+# free text like set dev speak Hello world (no quotes needed).
 async def handle_set(set_list_conf, obj, hash, args, argsh):
     return await _handle_command("set", set_list_conf, obj, hash, args, argsh)
 
@@ -777,6 +779,10 @@ async def _handle_command(command_type, command_config, obj, hash, args, argsh):
         return "Command not available for this device."
     cmd_def = command_config[cmd]
     positional = cmd_def.get("args", [])
+    if cmd_def.get("text") and positional and len(args) - 2 > len(positional):
+        # free text in the last argument, e.g. set dev speak Hello world
+        last = 2 + len(positional) - 1
+        args = args[:last] + [" ".join(args[last:])]
     if len(args) > 2 and (
         args[2] == "?" or ("args" in cmd_def and len(args) - 2 > len(positional))
     ):

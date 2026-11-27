@@ -97,15 +97,18 @@ class googlecast(generic.FhemModule):
             },
             "speak": {
                 "args": ["text"],
-                "help": "Please provide text with quotes.",
+                "text": True,
+                "help": "Speaks the text, e.g. set dev speak Good morning",
             },
             "speakDisplay": {
                 "args": ["text", "display"],
+                "text": True,
                 "help": "Speaks text and shows display on the screen,"
                 + ' e.g. set dev speakDisplay "long text" "short text"',
             },
             "alarm": {
                 "args": ["text"],
+                "text": True,
                 "argsh": ["text", "duration", "volume"],
                 "params": {
                     "text": {"default": "Alarm"},

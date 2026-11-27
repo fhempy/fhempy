@@ -134,3 +134,55 @@ async def test_plain_function_event_listener():
     finally:
         fhem.unregister_event_listener("plain_dev", listener)
     assert events == [("plain_dev", "temperature", "21")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("args,params", [
+    (["dev", "speak", "Hello", "world"], {"text": "Hello world"}),
+    (["dev", "speak", "Hello world"], {"text": "Hello world"}),
+    (["dev", "speak", "Hello"], {"text": "Hello"}),
+])
+async def test_text_argument_takes_all_remaining_words(args, params):
+    obj = SimpleNamespace(set_speak=AsyncMock(return_value=None))
+    config = {"speak": {"args": ["text"], "text": True}}
+    reply = await utils.handle_set(config, obj, {"NAME": "dev"}, args, {})
+    assert reply is None
+    obj.set_speak.assert_awaited_once_with({"NAME": "dev"}, params)
+
+
+@pytest.mark.asyncio
+async def test_text_argument_is_the_last_one():
+    obj = SimpleNamespace(set_show=AsyncMock(return_value=None))
+    config = {"show": {"args": ["text", "display"], "text": True}}
+    await utils.handle_set(
+        config, obj, {"NAME": "dev"}, ["dev", "show", "Long text", "short", "one"], {}
+    )
+    obj.set_show.assert_awaited_once_with(
+        {"NAME": "dev"}, {"text": "Long text", "display": "short one"}
+    )
+
+
+@pytest.mark.asyncio
+async def test_without_text_extra_words_are_rejected():
+    obj = SimpleNamespace(set_speak=AsyncMock())
+    config = {"speak": {"args": ["text"]}}
+    reply = await utils.handle_set(
+        config, obj, {"NAME": "dev"}, ["dev", "speak", "Hello", "world"], {}
+    )
+    assert reply == "Usage: set dev speak text"
+    obj.set_speak.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_text_argument_with_named_arguments():
+    obj = SimpleNamespace(set_alarm=AsyncMock(return_value=None))
+    config = {"alarm": {
+        "args": ["text"], "text": True, "argsh": ["text", "duration"],
+        "params": {"text": {"default": "Alarm"}, "duration": {"format": "int"}},
+    }}
+    await utils.handle_set(
+        config, obj, {"NAME": "dev"}, ["dev", "alarm", "Door", "open"], {"duration": "5"}
+    )
+    obj.set_alarm.assert_awaited_once_with(
+        {"NAME": "dev"}, {"text": "Door open", "duration": 5}
+    )
