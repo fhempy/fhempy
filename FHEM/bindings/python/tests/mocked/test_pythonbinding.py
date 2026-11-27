@@ -664,6 +664,7 @@ async def test_control_calls_are_not_refused_during_dependency_install(
     monkeypatch, function, args
 ):
     pb = validating_binding(monkeypatch)
+    monkeypatch.setattr(fhem_pythonbinding, "LOADING_GET_WAIT", 0.01)
     entered = asyncio.Event()
 
     async def install(hash):
@@ -679,13 +680,112 @@ async def test_control_calls_are_not_refused_during_dependency_install(
         control = function_hash(function, args)
         control["id"] = 2
         await asyncio.wait_for(pb.handle_function(control, ""), 1)
-        assert finished_returns(pb) == ["", ""]
+        expected = "counting_dev is starting, please try again in a moment"
+        assert finished_returns(pb) == ["", expected if function == "Get" else ""]
         assert not task.done()
     finally:
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
     assert fhem_pythonbinding.moduleLoadingRunning == {}
     assert fhem.function_active == []
+
+
+def slow_loading_binding(monkeypatch):
+    """Binding whose module loads until finish is set."""
+    pb = validating_binding(monkeypatch)
+    entered, finish = asyncio.Event(), asyncio.Event()
+    calls = []
+
+    async def install(hash):
+        entered.set()
+        await finish.wait()
+
+    async def module_set(self, hash, args, argsh):
+        calls.append(("Set", list(args)))
+        return ""
+
+    async def module_get(self, hash, args, argsh):
+        calls.append(("Get", list(args)))
+        return "42"
+
+    monkeypatch.setattr(pb, "check_and_install_dependencies", install)
+    monkeypatch.setattr(CountingModule, "Set", module_set, raising=False)
+    monkeypatch.setattr(CountingModule, "Get", module_get, raising=False)
+    return pb, entered, finish, calls
+
+
+@pytest.mark.asyncio
+async def test_set_while_loading_runs_when_the_device_is_ready(monkeypatch):
+    pb, entered, finish, calls = slow_loading_binding(monkeypatch)
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting", "value"])
+    task = asyncio.create_task(pb.handle_function(request, ""))
+    await asyncio.wait_for(entered.wait(), 1)
+
+    command = function_hash("Set", ["counting_dev", "on"])
+    command["id"] = 2
+    await asyncio.wait_for(pb.handle_function(command, ""), 1)
+    # FHEM got its reply right away, the command waits for the device
+    assert finished_returns(pb) == ["", ""]
+    assert calls == []
+
+    finish.set()
+    await task
+    for _ in range(20):
+        if calls:
+            break
+        await asyncio.sleep(0.01)
+    assert CountingModule.calls == ["Define"]
+    assert calls == [("Set", ["counting_dev", "on"])]
+    await asyncio.gather(*pb._background_tasks, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_get_while_loading_waits_for_the_device(monkeypatch):
+    pb, entered, finish, calls = slow_loading_binding(monkeypatch)
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting", "value"])
+    task = asyncio.create_task(pb.handle_function(request, ""))
+    await asyncio.wait_for(entered.wait(), 1)
+
+    query = function_hash("Get", ["counting_dev", "value"])
+    query["id"] = 2
+    get_task = asyncio.create_task(pb.handle_function(query, ""))
+    await asyncio.sleep(0.05)
+    assert not get_task.done()
+    finish.set()
+    await task
+    await asyncio.wait_for(get_task, 1)
+
+    assert calls == [("Get", ["counting_dev", "value"])]
+    assert finished_returns(pb) == ["", "42"]
+
+
+@pytest.mark.asyncio
+async def test_set_is_dropped_with_a_log_when_the_device_fails_to_load(
+    monkeypatch, caplog
+):
+    pb, entered, finish, calls = slow_loading_binding(monkeypatch)
+
+    async def broken_import(hash):
+        raise RuntimeError("broken module")
+
+    pb.import_module = broken_import
+    readings = AsyncMock()
+    monkeypatch.setattr(fhem, "readingsSingleUpdate", readings)
+    request = function_hash("Define", ["counting_dev", "fhempy", "counting", "value"])
+    task = asyncio.create_task(pb.handle_function(request, ""))
+    await asyncio.wait_for(entered.wait(), 1)
+    command = function_hash("Set", ["counting_dev", "on", "secret"])
+    command["id"] = 2
+    await pb.handle_function(command, "")
+
+    finish.set()
+    await task
+    await asyncio.gather(*pb._background_tasks, return_exceptions=True)
+
+    assert calls == []
+    assert "set on not executed, the device didn't start" in caplog.text
+    # further arguments might be credentials
+    assert "secret" not in caplog.text
 
 
 @pytest.mark.asyncio
