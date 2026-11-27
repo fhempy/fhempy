@@ -2,6 +2,61 @@
 
 <!-- version list -->
 
+## v2.24.9 (2026-11-27)
+
+### Bug Fixes
+
+- **dashboard**: Washer at 0 W is done after 1 min, show pause instead of time left
+  ([#1072](https://github.com/fhempy/fhempy/pull/1072),
+  [`d6b683f`](https://github.com/fhempy/fhempy/commit/d6b683f6b34d58b3e0c606ba5aae5df398783938))
+
+- **deps**: Bump packaging from 26.3 to 26.4 ([#1068](https://github.com/fhempy/fhempy/pull/1068),
+  [`7aa07a4`](https://github.com/fhempy/fhempy/commit/7aa07a4db94df0634229ba47b27aac2f0b9db37d))
+
+- **huawei_modbus**: Update huawei-solar to 3.2.3
+  ([#1064](https://github.com/fhempy/fhempy/pull/1064),
+  [`df649c0`](https://github.com/fhempy/fhempy/commit/df649c0eb3e42092db41cf04a8162ae3c34cdc85))
+
+- **huawei_modbus**: Update huawei-solar to 3.2.4
+  ([#1066](https://github.com/fhempy/fhempy/pull/1066),
+  [`7fc08a5`](https://github.com/fhempy/fhempy/commit/7fc08a5b8c824f171ecc2ac2294aefecbed28226))
+
+- **object_detection**: Update ai-edge-litert to 2.4.0
+  ([#1069](https://github.com/fhempy/fhempy/pull/1069),
+  [`6616daa`](https://github.com/fhempy/fhempy/commit/6616daad7274c3498284c038a0865fde24c77777))
+
+- **object_detection**: Update opencv-python-headless to 5.1.0.95
+  ([#1062](https://github.com/fhempy/fhempy/pull/1062),
+  [`031591d`](https://github.com/fhempy/fhempy/commit/031591d4298e155d926c7e54e47964dabd386172))
+
+- **spotify_connect_player**: Update playwright to 1.65.2
+  ([#1065](https://github.com/fhempy/fhempy/pull/1065),
+  [`488fd00`](https://github.com/fhempy/fhempy/commit/488fd00d19dc9a4dd56af88a7628d8de511a5839))
+
+- **volvo**: Update volvocarsapi to 0.6.0 ([#1063](https://github.com/fhempy/fhempy/pull/1063),
+  [`bc4509c`](https://github.com/fhempy/fhempy/commit/bc4509c9b24a8db8842aab8a226d74b4adbe778f))
+
+### Build System
+
+- **deps-dev**: Bump pytest-asyncio from 1.4.1.post1 to 1.5.0
+  ([#1060](https://github.com/fhempy/fhempy/pull/1060),
+  [`5d4872d`](https://github.com/fhempy/fhempy/commit/5d4872dcda8f57bea8a3d3b3c3cabb4ece132127))
+
+- **deps-dev**: Bump pytest-env from 1.8.5 to 1.8.7
+  ([#1061](https://github.com/fhempy/fhempy/pull/1061),
+  [`e20b2d6`](https://github.com/fhempy/fhempy/commit/e20b2d6aa7f7f22684b0f68b564dac5856a7298d))
+
+- **deps-dev**: Bump pytest-env from 1.8.7 to 1.8.8
+  ([#1067](https://github.com/fhempy/fhempy/pull/1067),
+  [`a4b00b8`](https://github.com/fhempy/fhempy/commit/a4b00b840d6dd3420df9f1cf84d641f4a2c192a5))
+
+### Features
+
+- **timeline**: Hidden events easy to find, sorted by noisiest reading
+  ([#1073](https://github.com/fhempy/fhempy/pull/1073),
+  [`577f5bc`](https://github.com/fhempy/fhempy/commit/577f5bc47a024f6ca2ec318169a4569ab699a392))
+
+
 ## v2.24.8 (2026-11-25)
 
 ### Bug Fixes
