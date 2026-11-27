@@ -1,7 +1,7 @@
 {
   "requirements": [
     "opencv-python-headless==5.1.0.95",
-    "ai-edge-litert==2.3.0"
+    "ai-edge-litert==2.4.0"
   ],
   "installer": {
     "title": "Object detection",
