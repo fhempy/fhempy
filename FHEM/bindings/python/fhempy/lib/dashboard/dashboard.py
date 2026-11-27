@@ -937,10 +937,10 @@ class dashboard(generic.FhemModule):
         code = (
             "my @r; foreach my $c (devspec2array('TYPE=Calendar')) {"
             " next if (!defined($defs{$c}) || $defs{$c}{TYPE} ne 'Calendar');"
-            " my $t = CommandGet(undef, \"$c events format:custom=\\\"\\$t1|\\$t2|\\$S\\\""
+            ' my $t = CommandGet(undef, "$c events format:custom=\\"\\$t1|\\$t2|\\$S\\"'
             f" limit:from=0,to=+{model.CALENDAR_DAYS}d\") // '';"
-            " foreach my $l (split(/\\n/, $t)) { push(@r, \"$c|$l\") } }"
-            " join(\"\\n\", @r)"
+            ' foreach my $l (split(/\\n/, $t)) { push(@r, "$c|$l") } }'
+            ' join("\\n", @r)'
         )
         try:
             result = await fhem.sendCommandHash(self.hash, code)
@@ -1148,7 +1148,10 @@ class dashboard(generic.FhemModule):
             return
         await self.check_special_event(info, device, reading, value)
         if reading not in model.device_readings(info):
-            if any(n["device"] == device and n["reading"] == reading for n in self.notices()):
+            if any(
+                n["device"] == device and n["reading"] == reading
+                for n in self.notices()
+            ):
                 info.setdefault("readings", {})[reading] = value
                 info.setdefault("times", {})[reading] = now_text()
                 self.schedule_header()
@@ -1213,10 +1216,12 @@ class dashboard(generic.FhemModule):
             watch = self.watches[name] = model.ApplianceWatch(runs=runs)
         watch.what = self.appliances().get(name)
         minutes = len(watch.bins)
+        idle = watch.idle_since
         result = watch.feed(model.kinds.number(value), time.time())
         await self.appliance_result(name, watch, result)
-        if watch.running and len(watch.bins) != minutes:
-            # a new minute of the profile: the remaining time may change
+        if watch.running and (len(watch.bins) != minutes or watch.idle_since != idle):
+            # a new minute of the profile or a pause: the remaining time
+            # may change
             self.schedule_header()
         self.arm_watch(name, watch)
 
@@ -1334,6 +1339,9 @@ class dashboard(generic.FhemModule):
                     "since": int(watch.start),
                     "typical": model.typical_seconds(data["cycles"].get(name)),
                 }
+                if watch.idle_since is not None:
+                    # no power: a pause or the end, not "26 min left"
+                    running["idle"] = int(watch.idle_since)
                 guess = watch.predict(time.time())
                 if guess is not None:
                     running["end"] = guess["end"]
@@ -1654,7 +1662,9 @@ class dashboard(generic.FhemModule):
             code = f"CommandAttr(undef, {fhem.perlString(name + ' device_views ' + value)})"
         else:
             self.logger.info(f"{tablet['name']}: deleteattr device_views")
-            code = f"CommandDeleteAttr(undef, {fhem.perlString(name + ' device_views')})"
+            code = (
+                f"CommandDeleteAttr(undef, {fhem.perlString(name + ' device_views')})"
+            )
         await fhem.sendCommandHash(self.hash, code)
         self._attr_device_views = value
         await self.reload()
@@ -1870,9 +1880,7 @@ class dashboard(generic.FhemModule):
         if mode not in model.ROUTINES:
             return
         tiles = {
-            i: t
-            for i, t in self.data["tiles"].items()
-            if self.allowed_tile(tablet, t)
+            i: t for i, t in self.data["tiles"].items() if self.allowed_tile(tablet, t)
         }
         off = message.get("off") if isinstance(message.get("off"), list) else []
         close = message.get("close") if isinstance(message.get("close"), list) else []
@@ -1911,7 +1919,9 @@ class dashboard(generic.FhemModule):
         command = model.alarm_commands(info)[armed]
         error = await self.fhem_set_error(tablet, info["NAME"], command)
         if error:
-            await self.send_failed(tablet, info["NAME"], model.display_name(info), error)
+            await self.send_failed(
+                tablet, info["NAME"], model.display_name(info), error
+            )
             return False
         await self.update_header()
         return armed
@@ -2012,7 +2022,9 @@ class dashboard(generic.FhemModule):
                 return
         error = await self.fhem_set_error(tablet, info["NAME"], command)
         if error:
-            await self.send_failed(tablet, info["NAME"], model.display_name(info), error)
+            await self.send_failed(
+                tablet, info["NAME"], model.display_name(info), error
+            )
         answer["ok"] = not error
         await self.send_to_tablet(tablet, answer)
 
@@ -2092,7 +2104,7 @@ class dashboard(generic.FhemModule):
             + "); CommandDelete(undef, $n) if ($defs{$n});"
             " my $r = CommandDefine(undef, $d);"
             " if (!$r && $defs{$n}) { $defs{$n}{TEMPORARY} = 1;"
-            " CommandAttr(undef, \"$n room hidden\") }"
+            ' CommandAttr(undef, "$n room hidden") }'
             " $r // '' }",
         )
         if result:
