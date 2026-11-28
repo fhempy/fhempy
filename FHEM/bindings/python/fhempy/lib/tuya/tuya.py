@@ -32,6 +32,7 @@ class tuya(generic.FhemModule):
         self.last_status = None
         self.create_device_list = []
         self.update_lock = asyncio.Lock()
+        self._cloud_lock = asyncio.Lock()
         self.master_switch = ""
 
     # FHEM FUNCTION
@@ -63,7 +64,7 @@ class tuya(generic.FhemModule):
             hash["API_KEY"] = self.tt_key
             hash["API_SECRET"] = self.tt_secret
             hash["REGION"] = self.tt_region
-            self.create_async_task(self.setup_cloud())
+            self.create_async_task(self._setup_cloud_for_scan())
             return
 
         await fhem.readingsSingleUpdateIfChanged(self.hash, "online", "0", 1)
@@ -138,26 +139,61 @@ class tuya(generic.FhemModule):
             await self.close_connection()
 
             self.tt_localkey = self._attr_localkey
-            await self.setup_cloud()
 
-            # create device, stop a create_device still running for the old key
+            # create device (logs in to the cloud in the background if needed),
+            # stop a create_device still running for the old key
             create_task = getattr(self, "_create_device_task", None)
             if create_task is not None and not create_task.done():
                 self.cancel_async_task(create_task)
             self._create_device_task = self.create_async_task(self.create_device())
 
+    # seconds to wait for one Tuya cloud login (tinytuya uses no timeout)
+    CLOUD_LOGIN_TIMEOUT = 30
+
     async def setup_cloud(self):
-        # create cloud device for cloud calls
-        if self.tt_key and self.tt_secret and self.tuya_cloud is None:
-            self.tuya_cloud = await utils.run_blocking(
-                functools.partial(
-                    tt.Cloud,
-                    self.tt_region,
-                    self.tt_key,
-                    self.tt_secret,
-                    self.tt_did,
+        """Log in to the Tuya cloud, retry with backoff on network errors
+        (no internet yet after a reboot, connection reset by the cloud)."""
+        if not self.tt_key or not self.tt_secret:
+            return
+        async with self._cloud_lock:
+            await self._login_cloud()
+
+    async def _login_cloud(self):
+        while self.tuya_cloud is None:
+            try:
+                cloud = await asyncio.wait_for(
+                    utils.run_blocking(
+                        functools.partial(
+                            tt.Cloud,
+                            self.tt_region,
+                            self.tt_key,
+                            self.tt_secret,
+                            self.tt_did,
+                        )
+                    ),
+                    self.CLOUD_LOGIN_TIMEOUT,
                 )
-            )
+            except Exception as ex:
+                if not utils.is_connection_error(ex):
+                    raise
+                self._errors.failed(
+                    "Failed to connect to Tuya cloud, retrying", key="cloud"
+                )
+                delay = self._errors.next_delay("cloud", 10, 600)
+                await fhem.readingsSingleUpdate(
+                    self.hash,
+                    "state",
+                    f"cloud connection failed, retry in {int(delay)}s: "
+                    + utils.describe_exception(ex)[:150],
+                    1,
+                )
+                await asyncio.sleep(delay)
+                continue
+            self._errors.success(key="cloud")
+            if not cloud.token:
+                # wrong API key/secret or region, retrying doesn't help
+                raise TuyaCloudError(f"Tuya cloud login failed: {cloud.error}")
+            self.tuya_cloud = cloud
 
     async def _create_mapping_dev(self):
         self.tuya_spec_functions = []
@@ -513,6 +549,8 @@ class tuya(generic.FhemModule):
         # check if attributes are set
         await self.check_tuya_attributes()
         if len(self.tuya_spec_functions) == 0 and len(self.tuya_spec_status) == 0:
+            # the cloud is only needed once to get the specification
+            await self.setup_cloud()
             await self.retrieve_tuya_specs()
             info = await self.get_tuya_dev_info()
             await self.update_info_readings(info)
@@ -912,6 +950,15 @@ class tuya(generic.FhemModule):
         await self.close_connection()
 
     # The following code is only for setup/scan process via tuya cloud
+    async def _setup_cloud_for_scan(self):
+        try:
+            await self.setup_cloud()
+        except TuyaCloudError as exc:
+            self.logger.error(str(exc))
+            await fhem.readingsSingleUpdate(self.hash, "state", str(exc), 1)
+            return
+        await fhem.readingsSingleUpdate(self.hash, "state", "ready", 1)
+
     async def set_scan_devices(self, hash, params):
         self.create_async_task(self._scan_devices())
 
@@ -924,6 +971,12 @@ class tuya(generic.FhemModule):
             await self._show_devices_dialog(f"Scan failed: {e}")
 
     async def _scan_devices_and_show(self):
+        if self.tuya_cloud is None:
+            # the login runs in the background and is retried
+            await self._show_devices_dialog(
+                "Not connected to the Tuya cloud yet, see state and the log."
+            )
+            return
         json_data = await utils.run_blocking(
             functools.partial(self.tuya_cloud.getdevices, verbose=True)
         )
