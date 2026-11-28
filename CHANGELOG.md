@@ -2,6 +2,44 @@
 
 <!-- version list -->
 
+## v2.24.10 (2026-11-28)
+
+### Bug Fixes
+
+- **core**: Don't drop set and get commands while fhempy or the device is starting
+  ([#1077](https://github.com/fhempy/fhempy/pull/1077),
+  [`956f0bd`](https://github.com/fhempy/fhempy/commit/956f0bdb8ca3184530c8dfdac8b65e8d767d13fb))
+
+- **fusionsolar**: Log in again right away when the session expires
+  ([#1078](https://github.com/fhempy/fhempy/pull/1078),
+  [`0cebbb4`](https://github.com/fhempy/fhempy/commit/0cebbb451811e6a227df27bf8a7bb2af3410e718))
+
+- **googlecast,dlna_dmr,piclock**: Speak text with spaces without quotes
+  ([#1076](https://github.com/fhempy/fhempy/pull/1076),
+  [`c84512a`](https://github.com/fhempy/fhempy/commit/c84512a51724c045575a4e531368d92f89b901b2))
+
+- **timeline**: Load the timeline right after the start of fhempy
+  ([#1074](https://github.com/fhempy/fhempy/pull/1074),
+  [`ed96c4d`](https://github.com/fhempy/fhempy/commit/ed96c4dd2e4074d9b5a0961441ea3fdf9ad90f46))
+
+- **tuya**: Don't fail define when the Tuya cloud resets the connection
+  ([#1080](https://github.com/fhempy/fhempy/pull/1080),
+  [`a4c21bb`](https://github.com/fhempy/fhempy/commit/a4c21bb61607a675e12d4264b5c8a34c8c7c9db7))
+
+- **tuya_cloud,meross,volvo,spotify**: Retry the cloud login when the internet isn't there yet
+  ([#1075](https://github.com/fhempy/fhempy/pull/1075),
+  [`8a4ecf7`](https://github.com/fhempy/fhempy/commit/8a4ecf7fed33f0a083d016e828dd3e7a3e8b7ee0))
+
+- **workers**: Restart backoff, broken wheels and piwheels on 64-bit
+  ([#1079](https://github.com/fhempy/fhempy/pull/1079),
+  [`343c00b`](https://github.com/fhempy/fhempy/commit/343c00b02eaa836ad3712bc0d8ec8edfcd98ff65))
+
+### Features
+
+- **core**: Support Python 3.15 ([#1081](https://github.com/fhempy/fhempy/pull/1081),
+  [`0011a9e`](https://github.com/fhempy/fhempy/commit/0011a9e671daa3474c7f9e19de311fcd042f3ba1))
+
+
 ## v2.24.9 (2026-11-27)
 
 ### Bug Fixes
