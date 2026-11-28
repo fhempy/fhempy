@@ -426,3 +426,23 @@ def test_failed_requirements(tmp_path, monkeypatch):
 
     assert pkg_installer.failed_requirements("test_mod") == ["broken-pkg==1.0"]
     pkg_installer.invalidate_dependency_cache()
+
+
+def test_unsupported_python(monkeypatch):
+    monkeypatch.setitem(
+        pkg_installer._MANIFEST_CACHE, "old_mod", {"requires_python": "<3.15"}
+    )
+    monkeypatch.setitem(pkg_installer._MANIFEST_CACHE, "any_mod", {})
+    monkeypatch.setitem(
+        pkg_installer._MANIFEST_CACHE, "bad_mod", {"requires_python": "nonsense"}
+    )
+    assert pkg_installer.unsupported_python("old_mod", "3.14.2") is None
+    msg = pkg_installer.unsupported_python("old_mod", "3.15.0")
+    assert "Python 3.15.0" in msg and "<3.15" in msg
+    assert pkg_installer.unsupported_python("any_mod", "3.15.0") is None
+    assert pkg_installer.unsupported_python("bad_mod", "3.15.0") is None
+
+
+def test_object_detection_not_on_python_315():
+    assert pkg_installer.unsupported_python("object_detection", "3.14.0") is None
+    assert pkg_installer.unsupported_python("object_detection", "3.15.0")
