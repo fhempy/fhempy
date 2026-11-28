@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="https://pypistats.org/packages/fhempy"><img src="https://img.shields.io/pypi/dm/fhempy" alt="Downloads"></a>
-  <a href="https://github.com/fhempy/fhempy"><img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+"></a>
+  <a href="https://github.com/fhempy/fhempy"><img src="https://img.shields.io/badge/python-3.12--3.15-blue" alt="Python 3.12-3.15"></a>
   <a href="https://pypi.org/project/fhempy/"><img src="https://img.shields.io/pypi/v/fhempy" alt="Version"></a>
   <a href="https://github.com/fhempy/fhempy/commits/master"><img src="https://img.shields.io/github/last-commit/fhempy/fhempy" alt="Last commit"></a>
   <a href="https://paypal.me/todominik"><img src="https://img.shields.io/badge/buy%20me%20a%20coffee-thx-yellow" alt="Buy me a coffee"></a>
@@ -117,7 +117,9 @@ That's it. FHEM downloads the fhempy files and creates `fhempy_local`, which set
 When fhempy is ready, the window offers Matter, Matter Bridge, Zigbee2MQTT and the AI MCP server: one click creates the device.
 
 > [!NOTE]
-> fhempy runs with Python 3.12 or newer. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm), fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
+> fhempy runs with Python 3.12 to 3.15. You don't need to upgrade your system for that: if your Python is older than 3.13 (e.g. Debian 12 Bookworm or Raspberry Pi OS Bookworm) or newer than fhempy supports, fhempy installs Python 3.13 for itself with [uv](https://docs.astral.sh/uv/). uv also installs all Python packages, which is much faster than pip.
+>
+> On Python 3.15 the `object_detection` module doesn't work yet, because there's no LiteRT (`ai-edge-litert`) for Python 3.15 so far.
 
 The line runs [install_fhempy.pl](install_fhempy.pl): it adds the fhempy update source, downloads the fhempy FHEM modules (`update all pythonbinding`), loads them and defines `fhempy_local`. Running it again is harmless, e.g. after a failed try. If nothing happens at all, FHEM couldn't download the script from GitHub.
 

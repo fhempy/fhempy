@@ -29,6 +29,8 @@ FHEMPY_VENV=$FHEMPY_DIR/fhempy_venv
 UV_DIR=$FHEMPY_DIR/bin
 # Python version uv installs for fhempy if the system Python is older
 UV_PYTHON_VERSION=3.13
+# newest Python version fhempy supports, a newer system Python is not used either
+MAX_PYTHON_VERSION_NUM=315
 UV_INSTALLER_URL=https://github.com/astral-sh/uv/releases/latest/download/uv-installer.sh
 # Python versions installed by uv are kept within the fhempy directory
 export UV_PYTHON_INSTALL_DIR="$PWD/$FHEMPY_DIR/python"
@@ -78,12 +80,14 @@ find_or_install_uv() {
 }
 
 # creates the fhempy virtual environment
-# uses uv if available and lets uv install Python $UV_PYTHON_VERSION if the system Python is older
+# uses uv if available and lets uv install Python $UV_PYTHON_VERSION if the system Python
+# is older (or newer than fhempy supports)
 create_venv() {
   if [ -n "$UV" ]; then
     local system_version
     system_version=$(python_version_num python3)
-    if [ -n "$system_version" ] && [ "$system_version" -ge 313 ]; then
+    if [ -n "$system_version" ] && [ "$system_version" -ge 313 ] \
+      && [ "$system_version" -le "$MAX_PYTHON_VERSION_NUM" ]; then
       echo "fhempy-install: 2/4 creating Python environment"
       echo -n "Creating fhempy virtual environment with uv..."
       "$UV" venv --quiet --seed --python "$(command -v python3)" "$FHEMPY_VENV" && echo "OK" && return 0
