@@ -20,6 +20,7 @@ from subprocess import PIPE, Popen, SubprocessError, run
 from urllib.parse import urlparse
 
 from packaging.requirements import InvalidRequirement, Requirement
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
 
 from fhempy.lib import utils
 
@@ -369,6 +370,38 @@ def invalidate_dependency_cache():
     _VERIFIED_MODULES.clear()
     _MANIFEST_CACHE.clear()
     _pygobject_import_ok.cache_clear()
+
+
+def _module_manifest(module):
+    if module not in _MANIFEST_CACHE:
+        path = os.path.join(utils.get_fhempy_root(), module, "manifest.json")
+        try:
+            _MANIFEST_CACHE[module] = _read_json(path)
+        except (OSError, ValueError):
+            return {}
+    return _MANIFEST_CACHE[module]
+
+
+def unsupported_python(module, python_version=None):
+    """Error message if the module doesn't run on this Python version.
+
+    A module declares it in its manifest.json, e.g. "requires_python": "<3.15"
+    if a requirement has no wheels for newer Python versions yet."""
+    spec = _module_manifest(module).get("requires_python")
+    if not spec:
+        return None
+    if python_version is None:
+        python_version = platform.python_version()
+    try:
+        if SpecifierSet(spec).contains(python_version, prereleases=True):
+            return None
+    except InvalidSpecifier:
+        logger.warning("Invalid requires_python %r in %s manifest", spec, module)
+        return None
+    return (
+        f"{module} doesn't run on Python {python_version} yet "
+        f"(requires Python {spec})"
+    )
 
 
 def failed_requirements(module):

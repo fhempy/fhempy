@@ -30,7 +30,7 @@ Sponsorship = "https://github.com/sponsors/fhempy"
 fhempy = "fhempy.lib.fhem_pythonbinding:run"
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.15"
+python = ">=3.12,<3.16"
 websockets = "==17.4"
 pycryptodomex = "3.24.2"
 ifaddr = "==0.2.0"
@@ -87,7 +87,9 @@ cryptography = [
     { version = "==48.0.1", markers = "platform_system == 'Darwin' and platform_machine == 'x86_64'" },
 ]
 dbus-python = "==1.5.1"
-esphome = "==2026.10.2"
+# esphome 2026.10.2 declares Python <3.15, uv installs it on 3.15 anyway (2026.11 needs
+# paho-mqtt 2 and a newer zeroconf than the core, it would conflict in this group)
+esphome = { version = "==2026.10.2", python = "<3.15" }
 esphome-device-builder = "==1.28.1"
 goodwe = "==0.4.10"
 greeclimate = "==4.3.0"

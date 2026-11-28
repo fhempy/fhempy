@@ -603,6 +603,13 @@ class fhempy:
                 fhem_reply_done = True
 
                 try:
+                    unsupported = await utils.run_blocking(
+                        functools.partial(
+                            pkg_installer.unsupported_python, hash["FHEMPYTYPE"]
+                        )
+                    )
+                    if unsupported:
+                        raise ModuleDefineException(unsupported)
                     if self.router is not None and await self.router.route_after_reply(
                         hash
                     ):

@@ -6,7 +6,11 @@ from unittest.mock import MagicMock
 import pytest
 from fhempy.lib import utils
 from fhempy.lib.generic import FhemModule
-from fhempy.lib.pkg_installer import check_and_install_dependencies, check_dependencies
+from fhempy.lib.pkg_installer import (
+    check_and_install_dependencies,
+    check_dependencies,
+    unsupported_python,
+)
 
 from ..utils import mock_fhem
 
@@ -28,6 +32,10 @@ def pytest_generate_tests(metafunc):
 @pytest.mark.asyncio
 async def test_basics(module_name, mocker):
     # TODO uninstall all dependencies
+    unsupported = unsupported_python(module_name)
+    if unsupported:
+        # declared in manifest.json, fhempy shows this message on define
+        pytest.skip(unsupported)
 
     await check_and_install_dependencies(module_name)
     module_object = importlib.import_module(

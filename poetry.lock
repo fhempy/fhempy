@@ -530,6 +530,7 @@ description = "Async JSON-RPC 2.0 protocol + server powered by asyncio"
 optional = false
 python-versions = ">=3.5"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "ajsonrpc-1.2.0-py3-none-any.whl", hash = "sha256:0fa2c1cf8e619d18ffee96043822032d6520eda65d3b712f9540a3a63e9cac25"},
     {file = "ajsonrpc-1.2.0.tar.gz", hash = "sha256:791bac18f0bf0dee109194644f151cf8b7ff529c4b8d6239ac48104a3251a19f"},
@@ -608,6 +609,7 @@ description = "Bash tab completion for argparse"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "argcomplete-3.7.2-py3-none-any.whl", hash = "sha256:6029205678bdd9c1c728a155f5f9ecf5812393f969eef58807641a2bc2aa5b19"},
     {file = "argcomplete-3.7.2.tar.gz", hash = "sha256:aad8b69a0b9969edb62db0d1752354c0d50717b10e0cbb00e2a958381b9fc6b9"},
@@ -884,6 +886,7 @@ description = "Simple construction, analysis and modification of binary data: bi
 optional = false
 python-versions = ">=3.11"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "bitstring-5.0.0-py3-none-any.whl", hash = "sha256:c247398845ae1ca6cadde0158d04a825f8ef1ad7487b473766a0bb17b1fded68"},
     {file = "bitstring-5.0.0.tar.gz", hash = "sha256:01d876b6e7bbd912bfa3ae1d028ed419ed2193245fe2337f21d30afaa391c053"},
@@ -1187,6 +1190,7 @@ description = "Fast and simple WSGI-framework for small web-applications."
 optional = false
 python-versions = "*"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "bottle-0.13.4-py2.py3-none-any.whl", hash = "sha256:045684fbd2764eac9cdeb824861d1551d113e8b683d8d26e296898d3dd99a12e"},
     {file = "bottle-0.13.4.tar.gz", hash = "sha256:787e78327e12b227938de02248333d788cfe45987edca735f8f88e03472c3f47"},
@@ -1344,7 +1348,7 @@ files = [
     {file = "brotli-1.2.1-pp312-pypy312_pp80-win_amd64.whl", hash = "sha256:06a22fcbcae059c0679098232779095fc50a735a3fea02db5c79cab10b84d877"},
     {file = "brotli-1.2.1.tar.gz", hash = "sha256:02b2f7b5a83485efe448a44ddf7983def05c3bb1dcf917d4f7154070260e13de"},
 ]
-markers = {main = "platform_python_implementation == \"CPython\" and sys_platform != \"android\" and sys_platform != \"ios\"", all = "platform_python_implementation == \"CPython\""}
+markers = {main = "platform_python_implementation == \"CPython\" and sys_platform != \"android\" and sys_platform != \"ios\"", all = "python_version < \"3.15\" and platform_python_implementation == \"CPython\""}
 
 [[package]]
 name = "brotlicffi"
@@ -1374,7 +1378,7 @@ files = [
     {file = "brotlicffi-1.2.1.0-pp312-pypy312_pp80-win_amd64.whl", hash = "sha256:52b99120543ffa3b0667e922c6a7dc6b6e01350f7fd38f21aaca511bb9f8b4f2"},
     {file = "brotlicffi-1.2.1.0.tar.gz", hash = "sha256:5d0b89e959f643aab4c58c15c06e1e87b6f6605e5e88c3c1c28f5ce1c58c4e5f"},
 ]
-markers = {main = "platform_python_implementation != \"CPython\"", all = "platform_python_implementation == \"PyPy\""}
+markers = {main = "platform_python_implementation != \"CPython\"", all = "python_version < \"3.15\" and platform_python_implementation == \"PyPy\""}
 
 [package.dependencies]
 cffi = [
@@ -1749,7 +1753,7 @@ description = "Universal encoding detector for Python 3"
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
-markers = "platform_machine in \"arm\" and platform_system == \"Darwin\""
+markers = "platform_machine in \"arm\" and platform_system == \"Darwin\" and python_version < \"3.15\""
 files = [
     {file = "chardet-5.2.0-py3-none-any.whl", hash = "sha256:e1cf59446890a00105fe7b7912492ea04b6e6f06d4b742b2c788469e34c82970"},
     {file = "chardet-5.2.0.tar.gz", hash = "sha256:1b3b6ff479a8c414bc3fa2c0852995695c4a026dcd6d0633b2dd092ca39c1cf7"},
@@ -2001,6 +2005,7 @@ description = "CRC Generator"
 optional = false
 python-versions = "*"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "crcmod-1.7.tar.gz", hash = "sha256:dc7051a0db5f2bd48665a990d3ec1cc305a466a77358ca4492826f41f283601e"},
 ]
@@ -2286,6 +2291,7 @@ description = "Python library for logging, utils and constants for Espressif Sys
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "esp_pylib-1.2.0-py3-none-any.whl", hash = "sha256:581fd31eb20db4b80519fe883eaeacf5b3c6a2c0b7cce353a7d326ae7cbd4f5f"},
     {file = "esp_pylib-1.2.0.tar.gz", hash = "sha256:51f0c44a0f7a92fdded9cab54bde92441b22b464f7d684ed179afb57000bed70"},
@@ -2312,6 +2318,7 @@ description = "ESPHome is a system to configure your microcontrollers by simple 
 optional = false
 python-versions = "<3.15,>=3.12.0"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "esphome-2026.10.2-py3-none-any.whl", hash = "sha256:8146ce24a39df875d9a522ffac8633a39f5f864b0b359cb52f67405c8f91ca62"},
     {file = "esphome-2026.10.2.tar.gz", hash = "sha256:bc37f004a511886d93872dcdfbe7311337c4f48aee7bb71cf464bd054658e758"},
@@ -2415,6 +2422,7 @@ description = "A lightweight version of glyphsets for ESPHome"
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "esphome_glyphsets-0.2.0-py3-none-any.whl", hash = "sha256:3875fd581f8605b5038315dac5913423474a3eb0c1cb2849d9841ad3c9e8b1e7"},
     {file = "esphome_glyphsets-0.2.0.tar.gz", hash = "sha256:f68523dabd1960659d1b0d5d2d39e0bf002885228bd494fb8ed857302297d95c"},
@@ -2427,6 +2435,7 @@ description = "A serial utility for flashing, provisioning, and interacting with
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "esptool-5.4.0.tar.gz", hash = "sha256:fd756598db0a26c9975fa18511b08687c54bf2ce7322ede80cf1f5117dad1f50"},
 ]
@@ -2458,6 +2467,7 @@ files = [
     {file = "filelock-4.0.10-py3-none-any.whl", hash = "sha256:698048d158dc3c9e18cc5e88b3efdd4bd0e77d76686b22adb4511cc4b2c2f0db"},
     {file = "filelock-4.0.10.tar.gz", hash = "sha256:00d6a81f976a6332551c2c10f39e12b4abb7e01c64d4c497b81a615bc9186f1f"},
 ]
+markers = {all = "python_version < \"3.15\""}
 
 [[package]]
 name = "firebase-messaging"
@@ -2566,6 +2576,7 @@ description = "Freetype python bindings"
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "freetype-py-2.5.1.zip", hash = "sha256:cfe2686a174d0dd3d71a9d8ee9bf6a2c23f5872385cf8ce9f24af83d076e2fbd"},
     {file = "freetype_py-2.5.1-py3-none-macosx_10_9_universal2.whl", hash = "sha256:d01ded2557694f06aa0413f3400c0c0b2b5ebcaabeef7aaf3d756be44f51e90b"},
@@ -3167,6 +3178,7 @@ description = "deflate64 compression/decompression library"
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "inflate64-1.0.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f1a47837d4322e0684824f91eb635aa6fd1967584140c478b0a1aca7b11740d6"},
     {file = "inflate64-1.0.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8600478542e2354d1ee7b5c57c957006cabacd8b787b4046951f487a2216e5c0"},
@@ -3265,6 +3277,7 @@ description = "Python library for Intel HEX files manipulations"
 optional = false
 python-versions = "*"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "intelhex-2.3.0-py2.py3-none-any.whl", hash = "sha256:87cc5225657524ec6361354be928adfd56bcf2a3dcc646c40f8f094c39c07db4"},
     {file = "intelhex-2.3.0.tar.gz", hash = "sha256:892b7361a719f4945237da8ccf754e9513db32f5628852785aea108dcd250093"},
@@ -3289,6 +3302,7 @@ description = "A very fast and expressive template engine."
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"},
     {file = "jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d"},
@@ -3671,6 +3685,7 @@ description = "Python port of markdown-it. Markdown parsing, done right!"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "markdown_it_py-4.2.0-py3-none-any.whl", hash = "sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"},
     {file = "markdown_it_py-4.2.0.tar.gz", hash = "sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49"},
@@ -3713,6 +3728,7 @@ description = "Safely add untrusted strings to HTML/XML markup."
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "markupsafe-3.0.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:dd8ea6ebee7aedbf7c749fa80521d9ccf1ba473e0d1e14805caafbaad281c889"},
     {file = "markupsafe-3.0.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:dff05cb7016dff1e9fd68f4122c127b65dfc59de5306cfb7ad92f956f230bee2"},
@@ -3874,6 +3890,7 @@ description = "A lightweight library for converting complex datatypes to and fro
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "marshmallow-3.26.2-py3-none-any.whl", hash = "sha256:013fa8a3c4c276c24d26d84ce934dc964e2aa794345a0f8c7e5a7191482c8a73"},
     {file = "marshmallow-3.26.2.tar.gz", hash = "sha256:bbe2adb5a03e6e3571b573f42527c6fe926e17467833660bebd11593ab8dfd57"},
@@ -3915,6 +3932,7 @@ description = "Markdown URL utilities"
 optional = false
 python-versions = ">=3.7"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
@@ -4218,6 +4236,7 @@ description = "multi volume file wrapper library"
 optional = false
 python-versions = ">=3.6"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "multivolumefile-0.2.3-py3-none-any.whl", hash = "sha256:237f4353b60af1703087cf7725755a1f6fcaeeea48421e1896940cd1c920d678"},
     {file = "multivolumefile-0.2.3.tar.gz", hash = "sha256:a0648d0aafbc96e59198d5c17e9acad7eb531abea51035d08ce8060dcad709d6"},
@@ -4296,6 +4315,7 @@ description = "Ninja is a small build system with a focus on speed"
 optional = false
 python-versions = ">=3.8"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "ninja-1.13.2-py3-none-macosx_10_9_universal2.whl", hash = "sha256:fd82e26c0706ad4ab88e5fdd26f3fab0a987a90f810160f6c322e752c6af298b"},
     {file = "ninja-1.13.2-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d775a5e43e9088f507a6250d57fcf5678eb31268c545feb5064ffeee33735622"},
@@ -4529,6 +4549,7 @@ files = [
     {file = "packaging-26.4-py3-none-any.whl", hash = "sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2"},
     {file = "packaging-26.4.tar.gz", hash = "sha256:c4b671c41ddb9bf26e543c37723610d28fb6bf7affc4da17cf048d419d2c062a"},
 ]
+markers = {all = "python_version < \"3.15\""}
 
 [[package]]
 name = "paho-mqtt"
@@ -4671,6 +4692,7 @@ description = "The PyPA recommended tool for installing Python packages."
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "pip-26.2.2-py3-none-any.whl", hash = "sha256:fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"},
     {file = "pip-26.2.2.tar.gz", hash = "sha256:3a8e5c800492787f33a4114ef54444546c340df428974ebba17e0fd47e11af2f"},
@@ -4687,6 +4709,7 @@ files = [
     {file = "platformdirs-4.12.3-py3-none-any.whl", hash = "sha256:080f3b39423b5abfca9a23d84c4e9795f54d395cd8459867a8ded44084fcd5f8"},
     {file = "platformdirs-4.12.3.tar.gz", hash = "sha256:427fc0bb321ae0c5b037fa03238ca74820437be162e78b4848c4d4055b9b766c"},
 ]
+markers = {all = "python_version < \"3.15\""}
 
 [[package]]
 name = "platformio"
@@ -4695,6 +4718,7 @@ description = "Your Gateway to Embedded Software Development Excellence. Unlock 
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "platformio-6.2.0-py3-none-any.whl", hash = "sha256:c3de675539f90cbd51466dd326f2fb64c7b83a54c7229b6c30c55865a85eddc2"},
     {file = "platformio-6.2.0.tar.gz", hash = "sha256:880ea06734908b3d6c0a96598ca7be572c2b6755585784aa63a201bbdfb8c59d"},
@@ -4924,7 +4948,7 @@ description = "Cross-platform lib for process and system monitoring."
 optional = false
 python-versions = ">=3.6"
 groups = ["all"]
-markers = "sys_platform != \"cygwin\""
+markers = "python_version < \"3.15\" and sys_platform != \"cygwin\""
 files = [
     {file = "psutil-7.2.2-cp313-cp313t-macosx_10_13_x86_64.whl", hash = "sha256:2edccc433cbfa046b980b0df0171cd25bcaeb3a68fe9022db0979e7aa74a826b"},
     {file = "psutil-7.2.2-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:e78c8603dcd9a04c7364f1a3e670cea95d51ee865e4efb3556a3a63adef958ea"},
@@ -4972,6 +4996,7 @@ description = "Pure python implementation of magic file detection"
 optional = false
 python-versions = ">=3.12"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "puremagic-2.2.0-py3-none-any.whl", hash = "sha256:c4f7ed7307f056c787199acfda839555921be1df13abba61e8e6db0c787ae1d0"},
     {file = "puremagic-2.2.0.tar.gz", hash = "sha256:eb4bddf07c177c4b434554b92165b67449f5a51e152b976202d6254498810eef"},
@@ -5001,6 +5026,7 @@ description = "Pure python 7-zip library"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "py7zr-1.1.3-py3-none-any.whl", hash = "sha256:17934a35089e026dec6c72ee275d9b841e646881ef822d618e805c3006661d9a"},
     {file = "py7zr-1.1.3.tar.gz", hash = "sha256:8d51894abb38355bf14881088bb97f01fe4cb5b14ebe22f66d6297668c7e1a74"},
@@ -5069,6 +5095,7 @@ description = "bcj filter library"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "pybcj-1.0.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d0bb3b8ca2c16aa05c4919bea35141f02c500a79d7e4eb6c34065e10b81a7f15"},
     {file = "pybcj-1.0.8-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:3253ef9c93ea59b0d6fcac451dd7970cbc815d9e19d0af9ceb151b20975364f1"},
@@ -5421,6 +5448,7 @@ files = [
     {file = "pycryptodomex-3.24.2-pp311-pypy311_pp80-win_amd64.whl", hash = "sha256:225d18de3ccbb08b11a2c7a9b159db51053444a568756eab92cc938ec3f15f2e"},
     {file = "pycryptodomex-3.24.2.tar.gz", hash = "sha256:e4dbc29e2575365d15e272f769329106277649aea081e2119cf43d66950f8f8f"},
 ]
+markers = {all = "python_version < \"3.15\""}
 
 [[package]]
 name = "pydantic"
@@ -5601,6 +5629,7 @@ description = "Library for analyzing ELF files and DWARF debugging information"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "pyelftools-0.33-py3-none-any.whl", hash = "sha256:f215ad5f47d3f1373a21496a6c9e0707c622840d0622f23ff7ce08678b020036"},
     {file = "pyelftools-0.33.tar.gz", hash = "sha256:660d82dcbeb8e83d1702bd97f223f761625da06111c0cc988eac6b8ab0c1b61f"},
@@ -5636,6 +5665,7 @@ files = [
     {file = "pygments-2.21.0-py3-none-any.whl", hash = "sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9"},
     {file = "pygments-2.21.0.tar.gz", hash = "sha256:610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c"},
 ]
+markers = {all = "python_version < \"3.15\""}
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
@@ -5787,6 +5817,7 @@ description = "pyparsing - Classes and methods to define and execute parsing gra
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "pyparsing-3.3.3-py3-none-any.whl", hash = "sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4"},
     {file = "pyparsing-3.3.3.tar.gz", hash = "sha256:928ae7e20211f3b6f3915a72f06a0cfd29ab9d24279dd6346b6b1a7146397d36"},
@@ -5802,6 +5833,7 @@ description = "PPMd compression/decompression library"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "pyppmd-1.3.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:041f46fbeb0a59888c0a94d6b9a557c652935633a104be1c31c12de491b5f448"},
     {file = "pyppmd-1.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9512a8b39740923559c26eb16266bf8b70d4eab6ad27a9b39cd2465e60e0acfa"},
@@ -6344,6 +6376,7 @@ description = "Pure-Python Reed Solomon encoder/decoder"
 optional = false
 python-versions = "*"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "reedsolo-1.7.0-py3-none-any.whl", hash = "sha256:2b6a3e402a1ee3e1eea3f932f81e6c0b7bbc615588074dca1dbbcdeb055002bd"},
     {file = "reedsolo-1.7.0.tar.gz", hash = "sha256:c1359f02742751afe0f1c0de9f0772cc113835aa2855d2db420ea24393c87732"},
@@ -6396,6 +6429,7 @@ description = ""
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "resvg_py-0.5.0-cp310-abi3-android_24_arm64_v8a.whl", hash = "sha256:2715f2b88ce2cf91f57ff37bb34c5909c8007de431d488e9c3ebf6cf2d69c91b"},
     {file = "resvg_py-0.5.0-cp310-abi3-android_24_x86_64.whl", hash = "sha256:9901e2f9ce53e7535d2676123c8d4894bff040f52821e54192605b5dd4fb5af9"},
@@ -6464,6 +6498,7 @@ description = "Render rich text, tables, progress bars, syntax highlighting, mar
 optional = false
 python-versions = ">=3.9.0"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "rich-15.0.0-py3-none-any.whl", hash = "sha256:33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"},
     {file = "rich-15.0.0.tar.gz", hash = "sha256:edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36"},
@@ -6483,6 +6518,7 @@ description = "Format click help output nicely with rich"
 optional = false
 python-versions = ">=3.8"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "rich_click-1.9.9-py3-none-any.whl", hash = "sha256:365e7a9d0adb42e41ea832a0a12e02c44c079a26536dee688125eb9814f97274"},
     {file = "rich_click-1.9.9.tar.gz", hash = "sha256:324cba7513cd4187ee92b2eef21f071714e45be062458c8b157bd7e0c81103e3"},
@@ -6572,6 +6608,7 @@ description = "C version of reader, parser and emitter for ruamel.yaml derived f
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "ruamel_yaml_clib-0.2.15-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:88eea8baf72f0ccf232c22124d122a7f26e8a24110a0273d9bcddcb0f7e1fa03"},
     {file = "ruamel_yaml_clib-0.2.15-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:9b6f7d74d094d1f3a4e157278da97752f16ee230080ae331fcc219056ca54f77"},
@@ -6675,6 +6712,7 @@ description = "A library implementing the 'SemVer' scheme."
 optional = false
 python-versions = ">=2.7"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "semantic_version-2.10.0-py2.py3-none-any.whl", hash = "sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177"},
     {file = "semantic_version-2.10.0.tar.gz", hash = "sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c"},
@@ -6812,7 +6850,7 @@ description = "Simple Management Protocol (SMP) for remotely managing MCU firmwa
 optional = false
 python-versions = ">=3.9"
 groups = ["all"]
-markers = "platform_system == \"Darwin\" and platform_machine == \"x86_64\""
+markers = "platform_system == \"Darwin\" and platform_machine == \"x86_64\" and python_version < \"3.15\""
 files = [
     {file = "smp-4.1.0-py3-none-any.whl", hash = "sha256:ca06376b130f028e02dc147a82f1f32bd1ce8e9397b23a0d6d391f7de76e883c"},
     {file = "smp-4.1.0.tar.gz", hash = "sha256:def270346a9f67e99e526a3c789a814e6e2203afa4d913cb11bb5a9bda6423a9"},
@@ -6830,7 +6868,7 @@ description = "Simple Management Protocol (SMP) for remotely managing MCU firmwa
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
-markers = "platform_system != \"Darwin\" or platform_machine != \"x86_64\""
+markers = "(platform_system != \"Darwin\" or platform_machine != \"x86_64\") and python_version < \"3.15\""
 files = [
     {file = "smp-4.2.0-py3-none-any.whl", hash = "sha256:6f76fb20234075c884bd0481188bba27a458890c513a31d14b9b0d513c334fda"},
     {file = "smp-4.2.0.tar.gz", hash = "sha256:9888e3becbfaf2473b76051cf255cb364d5dcfb5fb1712df00d0db2b99bc1f5b"},
@@ -6848,6 +6886,7 @@ description = "Simple Management Protocol (SMP) Client for remotely managing MCU
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "smpclient-7.3.0-py3-none-any.whl", hash = "sha256:7bdbb8849bbde4de49bd915faca127b6a0e2e553d1467a60f44c13a0f13ef0c1"},
     {file = "smpclient-7.3.0.tar.gz", hash = "sha256:86aa4bc1c621805d97f449793a4077f049aa88a98a1e916bf59423d072bd2a3b"},
@@ -6904,6 +6943,7 @@ description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6"},
     {file = "starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0"},
@@ -6923,6 +6963,7 @@ description = "Pretty-print tabular data"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "tabulate-0.10.0-py3-none-any.whl", hash = "sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3"},
     {file = "tabulate-0.10.0.tar.gz", hash = "sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d"},
@@ -6954,6 +6995,7 @@ description = "module to create simple ASCII tables"
 optional = false
 python-versions = "*"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "texttable-1.7.2-py2.py3-none-any.whl", hash = "sha256:a381e1ed30e4d4bd24cdacabe26463b7a570c0e964fc0b35d8d9276b2fcbe252"},
     {file = "texttable-1.7.2.tar.gz", hash = "sha256:dc16ea6b35fbf5291ba6ef79d79e37d9b3ca6acd7bae3ca3450488d7c2e19c99"},
@@ -6966,6 +7008,7 @@ description = "A sleek Python library for binary data."
 optional = false
 python-versions = ">=3.11"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "tibs-2.0.2-cp311-abi3-macosx_10_12_x86_64.whl", hash = "sha256:bcda2abfcb17d6f0e93278cfef3d9e7fef6bf6e3344990b1be1e5bea6336264b"},
     {file = "tibs-2.0.2-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:6f14831fd88fb7b946c8fbca1ce1598a56097bb02bb0c8e21a20ffd72884bd80"},
@@ -7303,6 +7346,7 @@ description = "The lightning-fast ASGI server."
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "uvicorn-0.40.0-py3-none-any.whl", hash = "sha256:c6c8f55bc8bf13eb6fa9ff87ad62308bbbc33d0b67f84293151efe87e0d5f2ee"},
     {file = "uvicorn-0.40.0.tar.gz", hash = "sha256:839676675e87e73694518b5574fd0f24c9d97b46bea16df7b8c05ea1a51071ea"},
@@ -7902,6 +7946,7 @@ description = "Pure-Python WebSocket protocol implementation"
 optional = false
 python-versions = ">=3.10"
 groups = ["all"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "wsproto-1.3.2-py3-none-any.whl", hash = "sha256:61eea322cdf56e8cc904bd3ad7573359a242ba65688716b0710a5eb12beab584"},
     {file = "wsproto-1.3.2.tar.gz", hash = "sha256:b86885dcf294e15204919950f666e06ffc6c7c114ca900b060d6e16293528294"},
@@ -8216,5 +8261,5 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12,<3.15"
-content-hash = "06a4a803f828569d49f2b026f05dd6f81043e9a03eae8999834567160d60ebe0"
+python-versions = ">=3.12,<3.16"
+content-hash = "379fcf4fde3dc08e94ffadc7d1e559e5ea1c75f6f33993a9063502ce67379e53"
